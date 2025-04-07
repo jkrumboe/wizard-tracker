@@ -1,19 +1,19 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
+import { VitePWA } from "vite-plugin-pwa"
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {
-        name: 'Wizard Tracker',
-        short_name: 'Wizard',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#4A90E2',
+        name: "Wizard Tracker",
+        short_name: "WizTracker",
+        description: "Track your Wizard card game stats and performance",
+        theme_color: "#4A90E2",
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -25,8 +25,14 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png'
           }
-        ]
-      }
-    })
-  ]
+        ],
+      },
+    }),
+  ],
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
 })
+

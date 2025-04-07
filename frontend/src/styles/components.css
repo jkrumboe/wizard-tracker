@@ -1,0 +1,185 @@
+/* PlayerCard Component */
+.player-card {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: var(--text-color);
+    display: block;
+  }
+  
+  .player-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .player-card-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .player-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .player-info {
+    flex: 1;
+  }
+  
+  .player-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .player-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .player-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* SearchBar Component */
+  .search-bar {
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: var(--card-background);
+  }
+  
+  /* FilterTags Component */
+  .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tag-filter {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .tag-filter.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+  
+  /* Game Details Page */
+  .game-details-container {
+    padding: 1rem;
+  }
+  
+  .game-details-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .game-date {
+    color: var(--text-light);
+    margin-top: 0.5rem;
+  }
+  
+  .game-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .winner-section,
+  .results-section {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+  }
+  
+  .winner-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+  }
+  
+  .winner-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .winner-info h3 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .results-table {
+    margin-top: 1rem;
+  }
+  
+  .results-header {
+    display: grid;
+    grid-template-columns: 0.5fr 2fr 1fr;
+    padding: 0.75rem 0.5rem;
+    background-color: #f8f8f8;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .results-row {
+    display: grid;
+    grid-template-columns: 0.5fr 2fr 1fr;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+  }
+  
+  .results-row:last-child {
+    border-bottom: none;
+  }
+  
+  .player-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text-color);
+  }
+  
+  .player-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+  }
+  
+  @media (min-width: 768px) {
+    .game-summary {
+      grid-template-columns: 1fr 2fr;
+    }
+  }
+  
+  
