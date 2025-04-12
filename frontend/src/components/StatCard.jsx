@@ -2,6 +2,7 @@ const StatCard = ({ title, value, change }) => {
   const hasChange = change !== undefined
   const isPositive = hasChange && change > 0
   const changeClass = isPositive ? "positive" : "negative"
+  const changeIcon = isPositive ? "↑" : "↓"
 
   return (
     <div className="stat-card">
@@ -9,8 +10,7 @@ const StatCard = ({ title, value, change }) => {
       <div className="stat-value">{value}</div>
       {hasChange && (
         <div className={`stat-change ${changeClass}`}>
-          {isPositive ? "+" : ""}
-          {change}
+          {changeIcon} {Math.abs(change)}
         </div>
       )}
     </div>

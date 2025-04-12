@@ -1,9 +1,9 @@
-"use client"
-
-import { useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback } from "react"
 import { createGame } from "../services/gameService"
 
-export function useGameState() {
+const GameStateContext = createContext()
+
+export function GameStateProvider({ children }) {
   const [gameState, setGameState] = useState({
     players: [],
     currentRound: 1,
@@ -203,18 +203,35 @@ export function useGameState() {
     })
   }, [])
 
-  return {
-    gameState,
-    addPlayer,
-    removePlayer,
-    startGame,
-    updateCall,
-    updateMade,
-    nextRound,
-    previousRound,
-    finishGame,
-    resetGame,
-    setMaxRounds: (rounds) => setGameState((prev) => ({ ...prev, maxRounds: rounds })),
+  const setMaxRounds = (rounds) => {
+    setGameState((prev) => ({ ...prev, maxRounds: rounds }))
   }
+
+  return (
+    <GameStateContext.Provider
+      value={{
+        gameState,
+        addPlayer,
+        removePlayer,
+        startGame,
+        updateCall,
+        updateMade,
+        nextRound,
+        previousRound,
+        finishGame,
+        resetGame,
+        setMaxRounds,
+      }}
+    >
+      {children}
+    </GameStateContext.Provider>
+  )
 }
 
+export function useGameStateContext() {
+  const context = useContext(GameStateContext)
+  if (!context) {
+    throw new Error("useGameStateContext must be used within a GameStateProvider")
+  }
+  return context
+}
