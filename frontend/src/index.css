@@ -207,7 +207,7 @@ button:disabled {
 
 /* Navbar styles */
 .navbar {
-  background-color: var(--primary-color);
+  background-color: var(--card-background);
   height: 64px;
   width: 100%;
   display: flex;
@@ -283,12 +283,13 @@ button:disabled {
   flex-direction: column;
   width: 100%;
   position: absolute;
-  top: 0; /* Position right below the navbar */
+  top: 64px; /* Adjust to match the height of the navbar */
   left: 0;
-  transform: translateY(-100%); /* Hidden above the viewport */
+  transform: translateY(-10px); /* Start slightly above */
   opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease; /* Smooth transition for both */
-  background-color: var(--primary-dark);
+  visibility: hidden;
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
+  background-color: var(--card-background);
   box-shadow: var(--shadow);
   z-index: 1;
 }
@@ -296,6 +297,7 @@ button:disabled {
 .nav-menu.active {
   transform: translateY(0); /* Drop down into view */
   opacity: 1;
+  visibility: visible;
 }
 
 .nav-item {
@@ -311,6 +313,7 @@ button:disabled {
   padding: 0 var(--spacing-md);
   height: 100%;
   color: var(--text-white);
+  position: relative;
 }
 
 .nav-link.active {

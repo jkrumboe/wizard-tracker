@@ -29,8 +29,8 @@ const Navbar = () => {
         <div className="menu-icon" onClick={toggleMenu}>
           <div className={`hamburger ${isOpen ? "open" : ""}`}></div>
         </div>
-
-        <ul className={`nav-menu ${isOpen ? "active" : ""}`}>
+      </div>
+      <ul className={`nav-menu ${isOpen ? "active" : ""}`}>
           <li className="nav-item">
             <Link to="/" className={`nav-link ${isActive("/")}`} onClick={closeMenu}>
               Home
@@ -47,7 +47,6 @@ const Navbar = () => {
             </Link>
           </li>
         </ul>
-      </div>
     </nav>
   )
 }
