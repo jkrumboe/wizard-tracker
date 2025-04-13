@@ -1010,7 +1010,7 @@
   }
   
   .cards-info {
-    color: var(--accent-color);
+    color: var (--accent-color);
     font-weight: 600;
   }
   
@@ -1402,5 +1402,41 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: var(--spacing-lg);
+}
+
+/* Ensure the nav-menu is visible on larger screens */
+.nav-menu {
+  display: none;
+}
+
+.nav-menu.active {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--card-background);
+  box-shadow: var(--shadow);
+  z-index: 10;
+}
+
+@media (min-width: 768px) {
+  .nav-menu {
+    display: flex;
+    flex-direction: row;
+    position: static;
+    width: auto;
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+  .nav-item {
+    margin: 0 var(--spacing-md);
+  }
+
+  .menu-icon {
+    display: none;
+  }
 }
 

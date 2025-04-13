@@ -10,6 +10,8 @@ import NewGame from "./pages/NewGame"
 import GameDetails from "./pages/GameDetails"
 import GameInProgress from "./pages/GameInProgress"
 import Navbar from "./components/Navbar"
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 // import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
 
@@ -31,6 +33,8 @@ function App() {
           <Route path="/new-game" element={<NewGame />} />
           <Route path="/game/:id" element={<GameDetails />} />
           <Route path="/game/current" element={<GameInProgress />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
         </Routes>
       </GameStateProvider>
     </Router>
