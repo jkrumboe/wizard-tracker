@@ -10,13 +10,13 @@ import NewGame from "./pages/NewGame"
 import GameDetails from "./pages/GameDetails"
 import GameInProgress from "./pages/GameInProgress"
 import Navbar from "./components/Navbar"
-import { register } from "./serviceWorkerRegistration"
+// import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
 
 function App() {
   useEffect(() => {
     // Register service worker for PWA functionality
-    register()
+    // register()
   }, [])
 
   return (

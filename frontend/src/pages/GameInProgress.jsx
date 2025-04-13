@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
+import React from "react";
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import NumberPicker from "../components/NumberPicker"
@@ -8,9 +9,9 @@ import NumberPicker from "../components/NumberPicker"
 const GameInProgress = () => {
   const navigate = useNavigate()
   const { gameState, updateCall, updateMade, nextRound, previousRound, finishGame } = useGameStateContext()
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null)
 
   useEffect(() => {
-    // Redirect if no game is in progress
     if (!gameState.gameStarted) {
       navigate("/new-game")
     }
@@ -34,6 +35,35 @@ const GameInProgress = () => {
 
   // Check if all players have made their calls and tricks for the current round
   const isRoundComplete = currentRound?.players.every((player) => player.call !== null && player.made !== null)
+
+  // Add a section to display stats for the current game
+  const calculateCurrentGameStats = () => {
+    const currentPlayers = currentRound?.players || [];
+
+    return currentPlayers.map((player) => {
+      const totalBids = currentRoundIndex + 1; // Total rounds so far
+      const totalTricks = currentRoundIndex + 1; // Total rounds so far
+
+      const bidAccuracy = ((player.call === player.made ? 1 : 0) / totalBids) * 100;
+      const avgBid = player.call / totalBids;
+      const avgTricks = player.made / totalTricks;
+
+      return {
+        id: player.id,
+        name: player.name,
+        bidAccuracy: bidAccuracy.toFixed(2),
+        avgBid: avgBid.toFixed(2),
+        avgTricks: avgTricks.toFixed(2),
+      };
+    });
+  };
+
+  const currentGameStats = calculateCurrentGameStats();
+
+  // Add functionality to toggle player stats on row click
+  const togglePlayerStats = (playerId) => {
+    setSelectedPlayerId((prev) => (prev === playerId ? null : playerId));
+  };
 
   return (
     <div className="game-in-progress">
@@ -68,43 +98,64 @@ const GameInProgress = () => {
               <th>Total</th>
             </tr>
           </thead>
+          {/* Modify the player row to include stats and handle click events */}
           <tbody>
             {currentRound?.players.map((player) => (
-              <tr key={player.id}>
-                <td className="player-cell">
-                  <img
-                    src={
-                      gameState.players.find((p) => p.id === player.id)?.avatar ||
-                      "/placeholder.svg"
+              <React.Fragment key={player.id}>
+                <tr
+                  className="player-row"
+                  onClick={(e) => {
+                    if (!e.target.closest(".number-picker")) {
+                      togglePlayerStats(player.id);
                     }
-                    alt={player.name}
-                    className="player-avatar"
-                  />
-                  {player.name}
-                </td>
-                <td>
-                  <NumberPicker
-                    value={player.call !== null ? player.call : 0}
-                    onChange={(value) => updateCall(player.id, value)}
-                    min={0}
-                    max={currentRound.cards}
-                    title={`${player.name}'s Call`}
-                  />
-                </td>
-                <td>
-                  <NumberPicker
-                    value={player.made !== null ? player.made : 0}
-                    onChange={(value) => updateMade(player.id, value)}
-                    min={0}
-                    max={currentRound.cards}
-                    title={`${player.name}'s Tricks Made`}
-                  />
-                </td>
-                <td className={player.score > 0 ? "positive-score" : player.score < 0 ? "negative-score" : ""}>
-                  {player.score !== null ? player.score : "-"}
-                </td>
-                <td>{player.totalScore !== null ? player.totalScore : "-"}</td>
-              </tr>
+                  }}
+                >
+                  <td className="player-cell">
+                    <img
+                      src={
+                        gameState.players.find((p) => p.id === player.id)?.avatar ||
+                        "/placeholder.svg"
+                      }
+                      alt={player.name}
+                      className="player-avatar"
+                    />
+                    {player.name}
+                  </td>
+                  <td>
+                    <NumberPicker
+                      value={player.call !== null ? player.call : 0}
+                      onChange={(value) => updateCall(player.id, value)}
+                      min={0}
+                      max={currentRound.cards}
+                      title={`${player.name}'s Call`}
+                    />
+                  </td>
+                  <td>
+                    <NumberPicker
+                      value={player.made !== null ? player.made : 0}
+                      onChange={(value) => updateMade(player.id, value)}
+                      min={0}
+                      max={currentRound.cards}
+                      title={`${player.name}'s Tricks Made`}
+                    />
+                  </td>
+                  <td className={player.score > 0 ? "positive-score" : player.score < 0 ? "negative-score" : ""}>
+                    {player.score !== null ? player.score : "-"}
+                  </td>
+                  <td>{player.totalScore !== null ? player.totalScore : "-"}</td>
+                </tr>
+                {selectedPlayerId === player.id && (
+                  <tr className="player-stats-row">
+                    <td colSpan="5">
+                      <div className="player-stats-game">
+                        <p>Bid Accuracy: {currentGameStats.find((stat) => stat.id === player.id)?.bidAccuracy}%</p>
+                        <p>Avg. Bid: {currentGameStats.find((stat) => stat.id === player.id)?.avgBid}</p>
+                        <p>Avg. Tricks: {currentGameStats.find((stat) => stat.id === player.id)?.avgTricks}</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

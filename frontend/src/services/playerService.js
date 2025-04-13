@@ -87,3 +87,29 @@ export async function updatePlayer(id, playerData) {
   return playerAPI.update(id, playerData)
 }
 
+// Add a function to get player stats
+export async function getPlayerStats(id) {
+  if (MOCK_MODE) {
+    const player = mockPlayers.find((p) => p.id === Number.parseInt(id))
+    if (!player) return Promise.resolve(null)
+
+    // Mock stats for the player
+    const stats = {
+      totalBids: Math.floor(Math.random() * 100),
+      totalTricks: Math.floor(Math.random() * 100),
+      correctBids: Math.floor(Math.random() * 50),
+      bidAccuracy: (Math.random() * 100).toFixed(2),
+      overbids: Math.floor(Math.random() * 20),
+      underbids: Math.floor(Math.random() * 20),
+      avgDiff: (Math.random() * 5).toFixed(2),
+      totalPoints: Math.floor(Math.random() * 1000),
+      avgPoints: (Math.random() * 100).toFixed(2),
+      highestScore: Math.floor(Math.random() * 200),
+      lowestScore: Math.floor(Math.random() * 50),
+    }
+
+    return Promise.resolve(stats)
+  }
+  return playerAPI.getStats(id)
+}
+

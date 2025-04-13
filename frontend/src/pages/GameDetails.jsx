@@ -11,6 +11,7 @@ const GameDetails = () => {
   const [playerDetails, setPlayerDetails] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null)
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -60,6 +61,57 @@ const GameDetails = () => {
     }))
     .sort((a, b) => b.score - a.score)
 
+  // Add detailed statistics for each player
+  const calculatePlayerStats = (game) => {
+    if (!game.rounds || !Array.isArray(game.rounds)) {
+      return [];
+    }
+
+    const stats = Object.entries(game.scores).map(([playerId]) => {
+      const playerRounds = game.rounds.map((round) =>
+        round.players.find((p) => p.id === Number(playerId))
+      );
+
+      const totalBids = playerRounds.reduce((sum, round) => sum + (round?.call || 0), 0);
+      const totalTricks = playerRounds.reduce((sum, round) => sum + (round?.made || 0), 0);
+      const correctBids = playerRounds.filter((round) => round?.call === round?.made).length;
+      const overbids = playerRounds.filter((round) => round?.made > round?.call).length;
+      const underbids = playerRounds.filter((round) => round?.made < round?.call).length;
+      const totalPoints = playerRounds.reduce((sum, round) => sum + (round?.score || 0), 0);
+      const avgPoints = totalPoints / game.rounds.length;
+      const avgBid = totalBids / game.rounds.length;
+      const avgTricks = totalTricks / game.rounds.length;
+      const avgDiff =
+        playerRounds.reduce((sum, round) => sum + Math.abs((round?.made || 0) - (round?.call || 0)), 0) /
+        game.rounds.length;
+
+      return {
+        id: Number(playerId),
+        totalBids,
+        totalTricks,
+        correctBids,
+        bidAccuracy: ((correctBids / game.rounds.length) * 100).toFixed(2),
+        overbids,
+        underbids,
+        avgDiff: avgDiff.toFixed(2),
+        totalPoints,
+        avgPoints: avgPoints.toFixed(2),
+        avgBid: avgBid.toFixed(2),
+        avgTricks: avgTricks.toFixed(2),
+        highestScore: Math.max(...playerRounds.map((round) => round?.score || 0)),
+        lowestScore: Math.min(...playerRounds.map((round) => round?.score || 0)),
+      };
+    });
+
+    return stats;
+  }
+
+  const playerStats = calculatePlayerStats(game)
+
+  const togglePlayerStats = (playerId) => {
+    setSelectedPlayerId((prev) => (prev === playerId ? null : playerId));
+  };
+
   return (
     <div className="game-details-container">
       <div className="game-details-header">
@@ -106,6 +158,25 @@ const GameDetails = () => {
                   </Link>
                 </div>
                 <div className="score-col">{player.score}</div>
+                <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
+                  Adv. Stats
+                </button>
+                {selectedPlayerId === player.id && (
+                  <div className="advanced-stats">
+                    <h3>Advanced Stats</h3>
+                    <p>Total Bids: {playerStats.find((stat) => stat.id === player.id)?.totalBids}</p>
+                    <p>Total Tricks: {playerStats.find((stat) => stat.id === player.id)?.totalTricks}</p>
+                    <p>Correct Bids: {playerStats.find((stat) => stat.id === player.id)?.correctBids}</p>
+                    <p>Bid Accuracy: {playerStats.find((stat) => stat.id === player.id)?.bidAccuracy}%</p>
+                    <p>Overbids: {playerStats.find((stat) => stat.id === player.id)?.overbids}</p>
+                    <p>Underbids: {playerStats.find((stat) => stat.id === player.id)?.underbids}</p>
+                    <p>Average Difference: {playerStats.find((stat) => stat.id === player.id)?.avgDiff}</p>
+                    <p>Total Points: {playerStats.find((stat) => stat.id === player.id)?.totalPoints}</p>
+                    <p>Average Points: {playerStats.find((stat) => stat.id === player.id)?.avgPoints}</p>
+                    <p>Highest Score: {playerStats.find((stat) => stat.id === player.id)?.highestScore}</p>
+                    <p>Lowest Score: {playerStats.find((stat) => stat.id === player.id)?.lowestScore}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

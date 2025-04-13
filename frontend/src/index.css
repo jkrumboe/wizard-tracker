@@ -216,6 +216,7 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 999;
+  border-bottom: 2px solid var(--border-color);
   box-shadow: var(--shadow);
 }
 
@@ -345,10 +346,6 @@ button:disabled {
   justify-content: center;
   gap: var(--spacing-md);
   margin: var(--spacing-lg) 0;
-}
-
-.recent-games {
-  margin-top: var(--spacing-xl);
 }
 
 .recent-games h2 {
