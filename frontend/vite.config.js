@@ -4,6 +4,15 @@ import { VitePWA } from "vite-plugin-pwa"
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    host: "localhost",
+    port: 5173, // Ensure this matches the port you're using
+    strictPort: true,
+    hmr: {
+      protocol: "ws",
+      host: "localhost",
+    },
+  },  
   plugins: [
     react(),
     VitePWA({
