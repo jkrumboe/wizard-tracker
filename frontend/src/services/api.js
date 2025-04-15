@@ -1,5 +1,5 @@
-// Base API URL - replace with your actual API endpoint
-const API_BASE_URL = "https://api.wizardtracker.com"
+// Use the VITE_API_URL environment variable for the base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5055/api"
 
 // Helper function for making API requests
 async function fetchAPI(endpoint, options = {}) {

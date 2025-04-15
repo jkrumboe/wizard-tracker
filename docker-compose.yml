@@ -1,17 +1,15 @@
-version: '3.8'
-
 services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "8088:80"  # Host:Container
     depends_on:
       - backend
 
   backend:
     build: ./backend
     ports:
-      - "5000:5000"
+      - "5055:5000"  # Host:Container
     environment:
       - DATABASE_URL=postgres://wizard:geheim@db:5432/wizard_db
     depends_on:
@@ -25,6 +23,8 @@ services:
       POSTGRES_DB: wizard_db
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+       - "5433:5432"
 
 volumes:
   pgdata:

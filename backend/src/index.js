@@ -138,6 +138,19 @@ app.get('/api/games/:id', async (req, res) => {
   }
 })
 
+// Get recent games with optional ?limit param
+app.get('/api/games/recent', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 5
+  try {
+    const result = await db.query('SELECT * FROM games ORDER BY date DESC LIMIT $1', [limit])
+    res.json(result.rows)
+  } catch (err) {
+    console.error('Error fetching recent games:', err)
+    res.status(500).json({ error: 'Failed to fetch recent games' })
+  }
+})
+
+
 // Middleware for admin authentication
 function adminAuth(req, res, next) {
   const { username, password } = req.headers;
@@ -193,5 +206,11 @@ app.get("/api/admin/games", async (req, res) => {
 
 // ...existing code...
 
-const PORT = process.env.PORT || 5000
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+pool.connect()
+  .then(() => console.log('✅ Connected to PostgreSQL DB'))
+  .catch(err => console.error('❌ DB connection error:', err));
+
+const PORT = process.env.PORT || 5055
 app.listen(PORT, () => console.log(`Backend läuft auf Port ${PORT}`))

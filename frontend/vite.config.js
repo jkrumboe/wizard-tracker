@@ -6,7 +6,7 @@ import { VitePWA } from "vite-plugin-pwa"
 export default defineConfig({
   server: {
     host: "localhost",
-    port: 3000, // Ensure this matches the port you're using
+    port: 3000, 
     strictPort: true,
     hmr: {
       protocol: "ws",
