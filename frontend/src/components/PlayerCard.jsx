@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import defaultAvatar from "../assets/default-avatar.png"
 
 const PlayerCard = ({ player, onClick, showStats = true }) => {
   if (!player) return null
@@ -14,7 +15,7 @@ const PlayerCard = ({ player, onClick, showStats = true }) => {
   return (
     <CardWrapper {...cardProps}>
       <div className="player-card-content">
-        <img src={avatar || "/placeholder.svg"} alt={name} className="player-avatar" />
+        <img src={avatar || defaultAvatar} alt={name} className="player-avatar" />
         <div className="player-info">
           <h3 className="player-name">{name}</h3>
 

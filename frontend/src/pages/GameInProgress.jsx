@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import NumberPicker from "../components/NumberPicker"
+import defaultAvatar from "../assets/default-avatar.png";
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -113,8 +114,7 @@ const GameInProgress = () => {
                   <td className="player-cell">
                     <img
                       src={
-                        gameState.players.find((p) => p.id === player.id)?.avatar ||
-                        "/placeholder.svg"
+                        gameState.players.find((p) => p.id === player.id)?.avatar || defaultAvatar
                       }
                       alt={player.name}
                       className="player-avatar"

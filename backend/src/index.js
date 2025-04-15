@@ -116,12 +116,13 @@ app.get('/api/players/:id/stats', async (req, res) => {
   try {
     const result = await db.query(
       `SELECT 
-        COALESCE(SUM((scores->>$1)::int), 0) AS total_points,
+        COALESCE(SUM(CAST(scores->>$1 AS INT)), 0) AS total_points,
         COUNT(*) AS total_games,
-        COALESCE(AVG((scores->>$1)::int), 0) AS avg_points,
-        COUNT(CASE WHEN winner = $1 THEN 1 END) AS wins
-      FROM games`,
-      [id]
+        COALESCE(AVG(CAST(scores->>$1 AS INT)), 0) AS avg_points,
+        COUNT(CASE WHEN CAST(winner AS TEXT) = $1 THEN 1 END) AS wins
+      FROM games
+      WHERE players @> $2::jsonb`,
+      [id, JSON.stringify([parseInt(id)])]
     );
     res.json(result.rows[0]);
   } catch (error) {

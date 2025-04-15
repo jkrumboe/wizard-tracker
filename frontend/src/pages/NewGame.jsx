@@ -6,6 +6,8 @@ import { usePlayers } from "../hooks/usePlayers"
 import { useGameStateContext } from "../hooks/useGameState"
 import SearchBar from "../components/SearchBar"
 import NumberPicker from "../components/NumberPicker"
+import defaultAvatar from "../assets/default-avatar.png";
+
 
 const NewGame = () => {
   const navigate = useNavigate()
@@ -69,7 +71,7 @@ const NewGame = () => {
             <div className="search-results">
               {filteredPlayers.map((player) => (
                 <div key={player.id} className="player-result" onClick={() => handleAddPlayer(player)}>
-                  <img src={player.avatar || "/placeholder.svg"} alt={player.name} className="player-avatar" />
+                  <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
                   <span>{player.name}</span>
                 </div>
               ))}
@@ -90,7 +92,7 @@ const NewGame = () => {
             <div className="player-list">
               {gameState.players.map((player) => (
                 <div key={player.id} className="player-item">
-                  <img src={player.avatar || "/placeholder.svg"} alt={player.name} className="player-avatar" />
+                  <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
                   <span>{player.name}</span>
                   <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
                     ×

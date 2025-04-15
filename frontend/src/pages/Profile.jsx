@@ -5,6 +5,7 @@ import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
 import { getPlayerById, getPlayerStats } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
+import defaultAvatar from "../assets/default-avatar.png"; // Assuming the default avatar is stored in assets
 
 const Profile = () => {
   const { id } = useParams()
@@ -19,8 +20,11 @@ const Profile = () => {
     const fetchData = async () => {
       try {
         const playerData = await getPlayerById(id)
-        setPlayer(playerData)
-        
+        setPlayer({
+          ...playerData,
+          avatar: playerData.avatar || defaultAvatar, // Use default avatar if none is provided
+        });
+
         const history = await getPlayerGameHistory(id)
         setGameHistory(history)
         
@@ -71,9 +75,9 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        <img src={player.avatar} alt={player.name} className="avatar" />
+        <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="avatar" />
         <div className="player-info">
-          <h1>{player.name}</h1>
+          <h1>{player?.name || "Unknown Player"}</h1>
           <div className="tags-container">
             {player.tags.map(tag => (
               <span key={tag} className="tag">{tag}</span>

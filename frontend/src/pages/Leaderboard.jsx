@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getPlayers } from '../services/playerService'
+import defaultAvatar from "../assets/default-avatar.png";
 
 const Leaderboard = () => {
   const [players, setPlayers] = useState([])
@@ -97,7 +98,7 @@ const Leaderboard = () => {
               <div className="rank-col">{index + 1}</div>
               <div className="player-col">
                 <Link to={`/profile/${player.id}`} className="player-link">
-                  <img src={player.avatar} alt={player.name} className="player-avatar" />
+                  <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
                   <span className="player-name">{player.name}</span>
                 </Link>
               </div>
@@ -112,4 +113,4 @@ const Leaderboard = () => {
   )
 }
 
-export default Leaderboard 
+export default Leaderboard

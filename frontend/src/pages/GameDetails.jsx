@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { getGameById } from "../services/gameService"
 import { getPlayerById } from "../services/playerService"
+import defaultAvatar from "../assets/default-avatar.png" 
 
 const GameDetails = () => {
   const { id } = useParams()
@@ -130,7 +131,7 @@ const GameDetails = () => {
           {playerDetails[game.winner] && (
             <div className="winner-card">
               <img
-                src={playerDetails[game.winner].avatar || "/placeholder.svg"}
+                src={playerDetails[game.winner].avatar || defaultAvatar}
                 alt={playerDetails[game.winner].name}
                 className="winner-avatar"
               />
@@ -155,7 +156,7 @@ const GameDetails = () => {
                 <div className="rank-col">{index + 1}</div>
                 <div className="player-col">
                   <Link to={`/profile/${player.id}`} className="player-link">
-                    <img src={player.avatar || "/placeholder.svg"} alt={player.name} className="player-avatar" />
+                    <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
                     <span>{player.name}</span>
                   </Link>
                 </div>
