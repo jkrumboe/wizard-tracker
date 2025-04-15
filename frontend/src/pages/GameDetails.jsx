@@ -62,15 +62,17 @@ const GameDetails = () => {
     .sort((a, b) => b.score - a.score)
 
   // Add detailed statistics for each player
+  // Add a null check for round.players in calculatePlayerStats
   const calculatePlayerStats = (game) => {
     if (!game.rounds || !Array.isArray(game.rounds)) {
       return [];
     }
 
     const stats = Object.entries(game.scores).map(([playerId]) => {
-      const playerRounds = game.rounds.map((round) =>
-        round.players.find((p) => p.id === Number(playerId))
-      );
+      const playerRounds = game.rounds.map((round) => {
+        if (!round || !round.players) return null; // Ensure round and round.players are defined
+        return round.players.find((p) => p.id === Number(playerId));
+      });
 
       const totalBids = playerRounds.reduce((sum, round) => sum + (round?.call || 0), 0);
       const totalTricks = playerRounds.reduce((sum, round) => sum + (round?.made || 0), 0);
