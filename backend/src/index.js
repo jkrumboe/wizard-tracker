@@ -123,6 +123,21 @@ app.post('/api/games', async (req, res) => {
   }
 })
 
+// Get recent games
+app.get('/api/games/recent', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 5;
+  try {
+    const result = await db.query(
+      'SELECT * FROM games ORDER BY date DESC LIMIT $1',
+      [limit]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching recent games:', err);
+    res.status(500).json({ error: 'Failed to fetch recent games' });
+  }
+});
+
 // Get a game by ID
 app.get('/api/games/:id', async (req, res) => {
   const { id } = req.params
@@ -138,17 +153,8 @@ app.get('/api/games/:id', async (req, res) => {
   }
 })
 
-// Get recent games with optional ?limit param
-app.get('/api/games/recent', async (req, res) => {
-  const limit = parseInt(req.query.limit) || 5
-  try {
-    const result = await db.query('SELECT * FROM games ORDER BY date DESC LIMIT $1', [limit])
-    res.json(result.rows)
-  } catch (err) {
-    console.error('Error fetching recent games:', err)
-    res.status(500).json({ error: 'Failed to fetch recent games' })
-  }
-})
+
+
 
 
 // Middleware for admin authentication
@@ -208,9 +214,25 @@ app.get("/api/admin/games", async (req, res) => {
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
-pool.connect()
-  .then(() => console.log('✅ Connected to PostgreSQL DB'))
-  .catch(err => console.error('❌ DB connection error:', err));
+async function connectWithRetry(retries = 20, delay = 1000) {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await pool.connect()
+      console.log('✅ Connected to PostgreSQL DB')
+      break
+    } catch (err) {
+      if (err.code === '57P03') {
+        console.log(`🕐 DB starting up... retrying (${i}/${retries})`)
+        await new Promise(res => setTimeout(res, delay))
+      } else {
+        console.error('❌ DB connection error:', err)
+        process.exit(1)
+      }
+    }
+  }
+}
+connectWithRetry()
 
-const PORT = process.env.PORT || 5055
-app.listen(PORT, () => console.log(`Backend läuft auf Port ${PORT}`))
+
+const PORT = process.env.PORT || 5000
+app.listen(PORT, '0.0.0.0', () => console.log(`Backend läuft auf Port ${PORT}`))
