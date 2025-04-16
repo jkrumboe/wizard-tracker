@@ -31,8 +31,28 @@ CREATE TABLE leaderboard (
   rankings JSONB NOT NULL -- Rankings data
 );
 
-CREATE TABLE admin_users (
+-- Drop the admin_users table as it has been replaced by the users and roles tables
+DROP TABLE IF EXISTS admin_users;
+
+-- Create roles table
+CREATE TABLE roles (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE -- Role names: user, moderator, admin
+);
+
+-- Insert default roles
+INSERT INTO roles (name) VALUES ('user'), ('moderator'), ('admin')
+ON CONFLICT (name) DO NOTHING;
+
+-- Create users table
+CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL -- Hashed password for security
+  password_hash TEXT NOT NULL, -- Hashed password for security
+  role_id INT REFERENCES roles(id) NOT NULL -- Foreign key to roles table
 );
+
+-- Insert default admin user
+INSERT INTO users (username, password_hash, role_id)
+VALUES ('admin', '$2b$10$341mxSi9rwUS9QPhm6p/DenOMSFZAIHrIV.bL53IEx8EiO8qptTRW', (SELECT id FROM roles WHERE name = 'admin'))
+ON CONFLICT (username) DO NOTHING;

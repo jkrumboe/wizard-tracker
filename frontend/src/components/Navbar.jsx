@@ -46,6 +46,11 @@ const Navbar = () => {
               New Game
             </Link>
           </li>
+          <li className="nav-item">
+            <Link to="/login" className={`nav-link ${isActive("/login")}`} onClick={closeMenu}>
+              Login
+            </Link>
+          </li>
         </ul>
     </nav>
   )

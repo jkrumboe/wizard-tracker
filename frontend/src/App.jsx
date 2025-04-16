@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import Home from "./pages/Home"
 import Profile from "./pages/Profile"
 import Leaderboard from "./pages/Leaderboard"
@@ -12,8 +12,31 @@ import GameInProgress from "./pages/GameInProgress"
 import Navbar from "./components/Navbar"
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
+import Login from "./pages/Login";
 // import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
+
+function ProtectedRoute({ children, roles }) {
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      setUserRole(decoded.role);
+    }
+  }, []);
+
+  if (!userRole) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!roles.includes(userRole)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   useEffect(() => {
@@ -33,8 +56,15 @@ function App() {
           <Route path="/new-game" element={<NewGame />} />
           <Route path="/game/:id" element={<GameDetails />} />
           <Route path="/game/current" element={<GameInProgress />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </GameStateProvider>
     </Router>

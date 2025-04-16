@@ -2,6 +2,9 @@ import express from 'express'
 import cors from 'cors'
 import pg from 'pg'
 import dotenv from 'dotenv'
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';
 
 dotenv.config()
 const app = express()
@@ -11,6 +14,56 @@ app.use(express.json())
 const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
 })
+
+// Secret key for JWT
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+// Middleware for verifying JWT and roles
+function verifyToken(req, res, next) {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid token.' });
+  }
+}
+
+function authorizeRoles(roles) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
+    }
+    next();
+  };
+}
+
+// User login route
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    const user = result.rows[0];
+
+    if (!user || !(await bcryptjs.compare(password, user.password_hash))) {
+      return res.status(400).json({ error: 'Invalid username or password.' });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role_id }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (err) {
+    console.error('Error during login:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Example protected route
+app.get('/api/protected', verifyToken, authorizeRoles(['admin']), (req, res) => {
+  res.json({ message: 'This is a protected route for admins.' });
+});
 
 // Testroute
 app.get('/api/players', async (req, res) => {
@@ -237,6 +290,25 @@ app.get("/api/admin/games", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch games" });
+  }
+});
+
+// Add a default admin user for testing purposes
+app.post('/api/setup-default-admin', async (req, res) => {
+  const username = 'admin';
+  const password = 'admin123';
+  const role = 'admin';
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await db.query(
+      'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
+      [username, hashedPassword]
+    );
+    res.status(201).json({ message: 'Default admin user created or already exists.' });
+  } catch (err) {
+    console.error('Error creating default admin user:', err);
+    res.status(500).json({ error: 'Failed to create default admin user.' });
   }
 });
 
