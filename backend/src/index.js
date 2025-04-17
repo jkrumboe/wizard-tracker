@@ -52,7 +52,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid username or password.' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role_id, p_id: user.player_id }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, role: user.role_id, player_id: user.player_id }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
     console.error('Error during login:', err);
