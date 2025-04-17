@@ -62,7 +62,7 @@ app.post('/api/login', async (req, res) => {
 
 // Register a new standard user and create a player for that user
 app.post('/api/register', async (req, res) => {
-  const { username, password} = req.body;
+  const { username, email, password } = req.body;
   try {
     // Create a new player
     const playerResult = await db.query(
@@ -74,15 +74,26 @@ app.post('/api/register', async (req, res) => {
     // Hash the password and create a new user linked to the player
     const hashedPassword = await bcrypt.hash(password, 10);
     const userResult = await db.query(
-      'INSERT INTO users (username, password_hash, role_id, player_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [username, hashedPassword, 1, newPlayer.id]
+      'INSERT INTO users (username, email, password_hash, role_id, player_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [username, email, hashedPassword, 1, newPlayer.id]
     );
     const newUser = userResult.rows[0];
 
-    res.status(201).json({ userId: newUser.id, playerId: newPlayer.id });
+    const token = jwt.sign({ id: newUser.id, role: newUser.role_id, player_id: newUser.player_id }, JWT_SECRET, { expiresIn: '1h' });
+    res.status(201).json({ token });
   } catch (err) {
-    console.error('Error during registration:', err);
-    res.status(500).json({ error: 'Internal server error.' });
+    console.error('Fehler bei der Registrierung:', err);
+  
+    if (err.code === '23505') {
+      // Überprüfe, welche Einschränkung verletzt wurde
+      if (err.constraint === 'users_username_key') {
+        return res.status(409).json({ error: 'Benutzername bereits vergeben.' });
+      } else if (err.constraint === 'users_email_key') {
+        return res.status(409).json({ error: 'E-Mail-Adresse bereits registriert.' });
+      }
+    }
+  
+    res.status(500).json({ error: 'Interner Serverfehler.' });
   }
 });
 

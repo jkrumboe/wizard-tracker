@@ -46,7 +46,8 @@ CREATE TABLE users (
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash TEXT NOT NULL, -- Hashed password for security
   role_id INT REFERENCES roles(id) NOT NULL, -- Foreign key to roles table
-  player_id INT REFERENCES players(id) ON DELETE SET NULL -- Foreign key to link users and players
+  player_id INT REFERENCES players(id) ON DELETE SET NULL, -- Foreign key to link users and players
+  email VARCHAR(255) UNIQUE;
 );
 
 -- Insert default admin user

@@ -79,13 +79,14 @@ const Login = () => {
         <input
           type="password"
           placeholder="Password"
+          className="password-input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit">{isRegistering ? "Register" : "Login"}</button>
-        <button type="button" className="btn switch-btn" onClick={() => setIsRegistering(!isRegistering)}>
+        <button type="button" className="switch-btn" onClick={() => setIsRegistering(!isRegistering)}>
           {isRegistering ? "Switch to Login" : "Switch to Register"}
         </button>
+        <button type="submit">{isRegistering ? "Register" : "Login"}</button>
         {error && <p className="error-message">{error}</p>}
       </form>
     </div>

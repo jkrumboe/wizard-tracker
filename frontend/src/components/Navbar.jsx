@@ -77,7 +77,7 @@ const Navbar = () => {
         {user ? (
           <>
           <li className="nav-item">
-            <Link to={`/profile/${user?.p_id}`} className={`nav-link ${isActive("/profile")}`} onClick={closeMenu}>
+            <Link to={`/profile/${user?.player_id}`} className={`nav-link ${isActive("/profile")}`} onClick={closeMenu}>
               Profile
             </Link>
           </li>

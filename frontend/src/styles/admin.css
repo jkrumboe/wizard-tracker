@@ -162,6 +162,10 @@
     color: var(--text-color);
     margin-bottom: var(--spacing-md);
   }
+
+  input.password-input {
+    margin-bottom: var(--spacing-xs);
+  }
   
   .login-form input:focus {
     border-color: var(--primary-color);
@@ -171,6 +175,17 @@
   
   .login-form button {
     width: 100%;
+  }
+
+  .switch-btn {
+    color: var(--primary-color);
+    border: none;
+    background-color: transparent;
+    padding: var(--spacing-sm) 0;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: var(--spacing-md);
+    max-width: 130px; /* Set a smaller width */
   }
   
   .error-message {
