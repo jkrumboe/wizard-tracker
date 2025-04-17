@@ -9,6 +9,8 @@ const Leaderboard = () => {
   const [sortBy, setSortBy] = useState('elo')
   const [sortOrder, setSortOrder] = useState('desc')
   const [filter, setFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const playersPerPage = 5
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -36,6 +38,7 @@ const Leaderboard = () => {
 
   const handleFilterChange = (e) => {
     setFilter(e.target.value)
+    setCurrentPage(1) // Reset to the first page when filtering
   }
 
   const filteredPlayers = players.filter(
@@ -49,6 +52,24 @@ const Leaderboard = () => {
       return b[sortBy] - a[sortBy]
     }
   })
+
+  const totalPages = Math.ceil(sortedPlayers.length / playersPerPage)
+  const paginatedPlayers = sortedPlayers.slice(
+    (currentPage - 1) * playersPerPage,
+    currentPage * playersPerPage
+  )
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
 
   if (loading) {
     return <div className="loading">Loading leaderboard...</div>
@@ -82,7 +103,7 @@ const Leaderboard = () => {
             className={`winrate-col ${sortBy === 'winRate' ? 'sorted' : ''}`}
             onClick={() => handleSort('winRate')}
           >
-            Win % {sortBy === 'winRate' && (sortOrder === 'asc' ? '↑' : '↓')}
+            Win% {sortBy === 'winRate' && (sortOrder === 'asc' ? '↑' : '↓')}
           </div>
           <div 
             className={`games-col ${sortBy === 'totalGames' ? 'sorted' : ''}`}
@@ -93,21 +114,44 @@ const Leaderboard = () => {
         </div>
 
         <div className="leaderboard-body">
-          {sortedPlayers.map((player, index) => (
-            <div key={player.id} className="leaderboard-row">
-              <div className="rank-col">{index + 1}</div>
-              <div className="player-col">
-                <Link to={`/profile/${player.id}`} className="player-link">
-                  <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
-                  <span className="player-name">{player.name}</span>
-                </Link>
+          {Array.from({ length: playersPerPage }).map((_, index) => {
+            const player = paginatedPlayers[index];
+            return player ? (
+              <div key={player.id} className="leaderboard-row">
+                <div className="rank-col">{(currentPage - 1) * playersPerPage + index + 1}</div>
+                <div className="player-col">
+                  <Link to={`/profile/${player.id}`} className="player-link">
+                    <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
+                    <span className="player-name">{player.name}</span>
+                  </Link>
+                </div>
+                <div className="elo-col">{player.elo}</div>
+                <div className="winrate-col">{player.winRate}%</div>
+                <div className="games-col">{player.totalGames}</div>
               </div>
-              <div className="elo-col">{player.elo}</div>
-              <div className="winrate-col">{player.winRate}%</div>
-              <div className="games-col">{player.totalGames}</div>
-            </div>
-          ))}
+            ) : (
+              <div key={`empty-${index}`} className="leaderboard-row empty-row">
+                <div className="rank-col"></div>
+                <div className="player-col"></div>
+                <div className="elo-col"></div>
+                <div className="winrate-col"></div>
+                <div className="games-col"></div>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      <div className="pagination-controls">
+        <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+          Prev.
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button onClick={handleNextPage} disabled={currentPage === totalPages}>
+          Next
+        </button>
       </div>
     </div>
   )
