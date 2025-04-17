@@ -11,7 +11,6 @@ import GameDetails from "./pages/GameDetails"
 import GameInProgress from "./pages/GameInProgress"
 import Navbar from "./components/Navbar"
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminLogin from "./pages/AdminLogin";
 import Login from "./pages/Login";
 // import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"

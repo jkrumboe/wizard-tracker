@@ -52,10 +52,36 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid username or password.' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role_id }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, role: user.role_id, p_id: user.player_id }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
     console.error('Error during login:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Register a new standard user and create a player for that user
+app.post('/api/register', async (req, res) => {
+  const { username, password} = req.body;
+  try {
+    // Create a new player
+    const playerResult = await db.query(
+      'INSERT INTO players (name, avatar, elo, win_rate, total_games) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [username, null, 1000, 0, 0]
+    );
+    const newPlayer = playerResult.rows[0];
+
+    // Hash the password and create a new user linked to the player
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userResult = await db.query(
+      'INSERT INTO users (username, password_hash, role_id, player_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [username, hashedPassword, 1, newPlayer.id]
+    );
+    const newUser = userResult.rows[0];
+
+    res.status(201).json({ userId: newUser.id, playerId: newPlayer.id });
+  } catch (err) {
+    console.error('Error during registration:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });

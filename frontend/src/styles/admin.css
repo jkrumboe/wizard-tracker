@@ -125,13 +125,22 @@
     border: 1px solid var(--border-color);
   }
   
-  /* === Admin Login Page === */
+  /* === Login Page === */
   .admin-login {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
+    background-color: var(--background-color);
+  }
+
+  .login-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 90vh;
     background-color: var(--background-color);
   }
   

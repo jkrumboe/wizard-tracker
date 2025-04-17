@@ -31,10 +31,6 @@ CREATE TABLE leaderboard (
   rankings JSONB NOT NULL -- Rankings data
 );
 
--- Drop the admin_users table as it has been replaced by the users and roles tables
-DROP TABLE IF EXISTS admin_users;
-
--- Create roles table
 CREATE TABLE roles (
   id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL UNIQUE -- Role names: user, moderator, admin
@@ -49,7 +45,8 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash TEXT NOT NULL, -- Hashed password for security
-  role_id INT REFERENCES roles(id) NOT NULL -- Foreign key to roles table
+  role_id INT REFERENCES roles(id) NOT NULL, -- Foreign key to roles table
+  player_id INT REFERENCES players(id) ON DELETE SET NULL -- Foreign key to link users and players
 );
 
 -- Insert default admin user

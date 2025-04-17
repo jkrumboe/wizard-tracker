@@ -317,6 +317,10 @@ button:disabled {
   position: relative;
 }
 
+#logout.nav-link {
+  color: var(--error-color);
+}
+
 .nav-link.active {
   background-color: rgba(255, 255, 255, 0.1);
   font-weight: 500;

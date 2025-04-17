@@ -6,7 +6,9 @@ import "../styles/admin.css";
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
+  const [isRegistering, setIsRegistering] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -17,36 +19,75 @@ const Login = () => {
       });
       localStorage.setItem("token", response.data.token);
       const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
-      if (decoded.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      console.log("Decoded token Login:", decoded);
+      setTimeout(() => {
+        if (decoded.role === "3") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+          window.location.reload();
+        }
+      }, 0);
     } catch (err) {
       console.error("Login error:", err);
       setError("Invalid credentials");
     }
   };
 
+  const handleRegister = async () => {
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/register`, {
+        username,
+        email,
+        password,
+      });
+      localStorage.setItem("token", response.data.token);
+      const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
+      console.log("Decoded token Register:", decoded);
+      setTimeout(() => {
+        if (decoded.role === "3") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+          window.location.reload();
+        }
+      }, 0);
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError("Registration failed");
+    }
+  };
+
   return (
     <div className="login-page">
-      <h1>Login</h1>
-      <div className="login-form">
+      <h1>{isRegistering ? "Register" : "Login"}</h1>
+      <form className="login-form" onSubmit={(e) => { e.preventDefault(); isRegistering ? handleRegister() : handleLogin(); }}>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
+        {isRegistering && (
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        )}
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <button type="submit">{isRegistering ? "Register" : "Login"}</button>
+        <button type="button" className="btn switch-btn" onClick={() => setIsRegistering(!isRegistering)}>
+          {isRegistering ? "Switch to Login" : "Switch to Register"}
+        </button>
         {error && <p className="error-message">{error}</p>}
-        <button onClick={handleLogin}>Login</button>
-      </div>
+      </form>
     </div>
   );
 };
