@@ -14,7 +14,14 @@ const Profile = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [playerStats, setPlayerStats] = useState(null)
-  const [activeTab, setActiveTab] = useState('performance') // State for active tab
+  const [activeTab, setActiveTab] = useState('performance')
+
+  // Logs
+  // console.log("Player ID:", id)
+  // console.log("Player:", player)
+  // console.log("Game History:", gameHistory)
+  // console.log("Player Stats:", playerStats)
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,7 +29,7 @@ const Profile = () => {
         const playerData = await getPlayerById(id)
         setPlayer({
           ...playerData,
-          avatar: playerData.avatar || defaultAvatar, // Use default avatar if none is provided
+          avatar: playerData.avatar || defaultAvatar,
         });
 
         const history = await getPlayerGameHistory(id)
@@ -61,16 +68,29 @@ const Profile = () => {
   if (error || !player) {
     return <div className="error">{error || 'Player not found'}</div>
   }
-
+  
   const recentGames = gameHistory.slice(0, 3)
-  const winRate = player.winRate
-  const lossRate = 100 - winRate
+  let winRate = 0;
+  let lossRate = 0;
+  let totalGames = 1;
+
+  if (playerStats) {
+    winRate = playerStats.total_games > 0
+      ? parseFloat(((playerStats.wins / playerStats.total_games) * 100).toFixed(2))
+      : 0;
+    lossRate = parseFloat((100 - winRate).toFixed(2));
+    totalGames = playerStats.total_games || 1;
+  }
+
 
   const data = [
     { name: 'Wins', value: winRate },
     { name: 'Losses', value: lossRate }
   ]
-  const COLORS = ['#00C49F', '#FF8042']
+  const COLORS = [
+    '#1DBF73',
+     '#FF5C5C'
+    ]
 
   return (
     <div className="profile-container">
@@ -90,7 +110,7 @@ const Profile = () => {
             />
             <StatCard 
               title="Games" 
-              value={player.totalGames}
+              value={totalGames}
             />
             <StatCard 
               title="Win Rate" 
@@ -98,7 +118,7 @@ const Profile = () => {
             />
             <StatCard 
               title="Total Points"
-              value={playerStats ? playerStats.totalPoints : 0}
+              value={playerStats ? playerStats.total_points : 0}
             />
           </div>
         </div>
@@ -127,8 +147,8 @@ const Profile = () => {
                 <PieChart>
                   <Pie
                     data={data}
-                    innerRadius={60}
-                    outerRadius={80}
+                    innerRadius={30}
+                    outerRadius={50}
                     paddingAngle={5}
                     dataKey="value"
                   >

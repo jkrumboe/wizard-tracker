@@ -205,21 +205,35 @@ app.get('/api/players/:id/stats', async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.query(
-      `SELECT 
-        COALESCE(SUM(CAST(scores->>$1 AS INT)), 0) AS total_points,
-        COUNT(*) AS total_games,
-        COALESCE(AVG(CAST(scores->>$1 AS INT)), 0) AS avg_points,
-        COUNT(CASE WHEN CAST(winner AS TEXT) = $1 THEN 1 END) AS wins
+      `
+      SELECT 
+        COUNT(*) FILTER (WHERE scores->>$1 IS NOT NULL) AS total_games,
+        SUM((scores->>$1)::int) AS total_points,
+        AVG((scores->>$1)::int) AS avg_points,
+        MAX((scores->>$1)::int) AS highest_score,
+        MIN((scores->>$1)::int) AS lowest_score,
+        COUNT(CASE WHEN winner::text = $1 THEN 1 END) AS wins,
+        SUM((scores->>$1)::jsonb->>'called')::int AS total_bids,
+        SUM((scores->>$1)::jsonb->>'made')::int AS total_tricks,
+        SUM(CASE WHEN (scores->>$1)::jsonb->>'called' = (scores->>$1)::jsonb->>'made' THEN 1 ELSE 0 END) AS correct_bids,
+        ROUND(100.0 * SUM(CASE WHEN (scores->>$1)::jsonb->>'called' = (scores->>$1)::jsonb->>'made' THEN 1 ELSE 0 END) 
+              / NULLIF(COUNT(*), 0), 1) AS bid_accuracy,
+        SUM(CASE WHEN (scores->>$1)::jsonb->>'made'::int > (scores->>$1)::jsonb->>'called'::int THEN 1 ELSE 0 END) AS overbids,
+        SUM(CASE WHEN (scores->>$1)::jsonb->>'made'::int < (scores->>$1)::jsonb->>'called'::int THEN 1 ELSE 0 END) AS underbids,
+        AVG(ABS((scores->>$1)::jsonb->>'made'::int - (scores->>$1)::jsonb->>'called'::int)) AS avg_diff
       FROM games
-      WHERE players @> $2::jsonb`,
+      WHERE players @> $2::jsonb;
+      `,
       [id, JSON.stringify([parseInt(id)])]
     );
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching player stats:', error);
     res.status(500).json({ error: 'Failed to fetch player stats' });
   }
 });
+
 
 // Game routes
 
@@ -330,7 +344,7 @@ app.get("/api/admin/games", async (req, res) => {
   }
 });
 
-// Add a default admin user for testing purposes
+/* Add a default admin user for testing purposes
 app.post('/api/setup-default-admin', async (req, res) => {
   const username = 'admin';
   const password = 'admin123';
@@ -347,7 +361,7 @@ app.post('/api/setup-default-admin', async (req, res) => {
     console.error('Error creating default admin user:', err);
     res.status(500).json({ error: 'Failed to create default admin user.' });
   }
-});
+});*/
 
 // ...other admin routes for updating and deleting players/games...
 
