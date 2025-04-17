@@ -38,8 +38,8 @@ const NewGame = () => {
     console.log("Adding player:", player);
     addPlayer(player);
     console.log("Players after add:", gameState.players);
-    setSearchQuery("");
-    setShowSearch(false);
+    setSearchQuery(""); // Clear the search query
+    setShowSearch(false); 
   }
 
   const handleRemovePlayer = (playerId) => {
@@ -66,7 +66,11 @@ const NewGame = () => {
       <div className="setup-section">
         <h2>Select Players</h2>
         <div className="player-search">
-          <SearchBar onSearch={handleSearch} placeholder="Search players..." />
+        <SearchBar
+          onSearch={handleSearch}
+          placeholder="Search players..."
+          value={searchQuery}
+        />
           {showSearch && filteredPlayers.length > 0 && (
             <div className="search-results">
               {filteredPlayers.map((player) => (

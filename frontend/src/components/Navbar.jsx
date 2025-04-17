@@ -26,10 +26,8 @@ const Navbar = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("Token from localStorage:", token);
     if (token) {
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      console.log("Decoded token:", decoded);
       setUser(decoded);
     } else {
       console.log("No token found in localStorage.");

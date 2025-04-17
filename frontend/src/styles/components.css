@@ -155,13 +155,12 @@
   
   /* SearchBar Component */
   .search-bar {
-    margin-bottom: var(--spacing-md);
     width: 100%;
   }
   
   .search-input {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
     font-size: 1rem;
@@ -178,6 +177,13 @@
   
   .search-input::placeholder {
     color: var(--text-light);
+  }
+  
+  .no-bottom-radius {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.2);
   }
   
   /* FilterTags Component */
@@ -839,7 +845,7 @@
   .setup-section,
   .settings-section {
     background-color: var(--card-background);
-    border-radius: var (--radius-lg);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow);
@@ -866,7 +872,6 @@
   
   .player-search {
     position: relative;
-    margin-bottom: var(--spacing-md);
   }
   
   .search-results {
@@ -875,12 +880,15 @@
     left: 0;
     right: 0;
     background-color: var(--card-background);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--primary-color);
+    border-top: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     max-height: 200px;
     overflow-y: auto;
     z-index: 5;
     box-shadow: var(--shadow);
+    box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.2);
+    transition: all 0.2s;
   }
   
   .player-result {
@@ -1047,11 +1055,6 @@
     opacity: 0.7;
   }
   
-  .round-display {
-    font-weight: 600;
-    color: var(--primary-color);
-  }
-  
   .player-scores {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
@@ -1140,23 +1143,6 @@
 
   .filter-container {
     margin-bottom: var(--spacing-md);
-  }
-
-  .search-input {
-    width: 100%;
-    padding: var(--spacing-sm);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    background-color: var(--card-background);
-    color: var(--text-color);
-    font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.2);
   }
 
   .leaderboard-table {

@@ -19,7 +19,6 @@ const Login = () => {
       });
       localStorage.setItem("token", response.data.token);
       const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
-      console.log("Decoded token Login:", decoded);
       setTimeout(() => {
         if (decoded.role === "3") {
           navigate("/admin");
@@ -43,7 +42,6 @@ const Login = () => {
       });
       localStorage.setItem("token", response.data.token);
       const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
-      console.log("Decoded token Register:", decoded);
       setTimeout(() => {
         if (decoded.role === "3") {
           navigate("/admin");

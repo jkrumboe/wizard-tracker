@@ -55,16 +55,6 @@
     margin-bottom: var(--spacing-md);
   }
   
-  .search-input {
-    width: 100%;
-    padding: var(--spacing-sm);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    background-color: var(--card-background);
-    color: var(--text-color);
-    margin-bottom: var(--spacing-md);
-  }
-  
   .player-list {
     list-style: none;
     margin-bottom: var(--spacing-lg);
