@@ -31,10 +31,12 @@ export function GameStateProvider({ children }) {
 
   // Start a new game
   const startGame = useCallback(() => {
-    if (gameState.players.length < 2) return
+    if (gameState.players.length < 2) return;
+
+    const referenceDate = new Date(); // Store the start time of the game
 
     // Initialize round data
-    const initialRoundData = []
+    const initialRoundData = [];
     for (let i = 1; i <= gameState.maxRounds; i++) {
       initialRoundData.push({
         round: i,
@@ -47,15 +49,16 @@ export function GameStateProvider({ children }) {
           score: null,
           totalScore: i === 1 ? 0 : null, // Initialize with 0 for first round
         })),
-      })
+      });
     }
 
     setGameState((prevState) => ({
       ...prevState,
       roundData: initialRoundData,
       gameStarted: true,
-    }))
-  }, [gameState.players, gameState.maxRounds])
+      referenceDate, // Save the start time in the game state
+    }));
+  }, [gameState.players, gameState.maxRounds]);
 
   // Update player's call for current round
   const updateCall = useCallback((playerId, call) => {
@@ -155,18 +158,19 @@ export function GameStateProvider({ children }) {
   const finishGame = useCallback(async () => {
     try {
       // Prepare game data for saving
-      const lastRound = gameState.roundData[gameState.maxRounds - 1]
-      const finalScores = {}
-      let winnerId = null
-      let maxScore = Number.NEGATIVE_INFINITY
+      const lastRound = gameState.roundData[gameState.maxRounds - 1];
+      const finalScores = {};
+      let winnerId = null;
+      let maxScore = Number.NEGATIVE_INFINITY;
+      const duration = new Date() - new Date(gameState.referenceDate); // Calculate duration
 
       lastRound.players.forEach((player) => {
-        finalScores[player.id] = player.totalScore
+        finalScores[player.id] = player.totalScore;
         if (player.totalScore > maxScore) {
-          maxScore = player.totalScore
-          winnerId = player.id
+          maxScore = player.totalScore;
+          winnerId = player.id;
         }
-      })
+      });
 
       const gameData = {
         date: new Date().toISOString().split("T")[0],
@@ -174,22 +178,25 @@ export function GameStateProvider({ children }) {
         winner: winnerId,
         scores: finalScores,
         rounds: gameState.roundData,
-      }
+        duration,
+      };
+
+      console.log("Game data to save:", gameData);
 
       // Save game data
-      await createGame(gameData)
+      await createGame(gameData);
 
       setGameState((prevState) => ({
         ...prevState,
         gameFinished: true,
-      }))
+      }));
 
-      return true
+      return true;
     } catch (error) {
-      console.error("Error saving game:", error)
-      return false
+      console.error("Error saving game:", error);
+      return false;
     }
-  }, [gameState])
+  }, [gameState]);
 
   // Reset game state
   const resetGame = useCallback(() => {

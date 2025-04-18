@@ -35,9 +35,7 @@ const NewGame = () => {
   }
 
   const handleAddPlayer = (player) => {
-    console.log("Adding player:", player);
     addPlayer(player);
-    console.log("Players after add:", gameState.players);
     setSearchQuery(""); // Clear the search query
     setShowSearch(false); 
   }

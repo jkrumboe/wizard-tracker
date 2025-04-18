@@ -135,7 +135,7 @@
   .game-players {
     margin-top: var(--spacing-sm);
     font-size: 0.9rem;
-    color: var (--text-color);
+    color: var(--text-color);
   }
   
   .game-details {
@@ -298,7 +298,8 @@
   }
   
   .winner-section,
-  .results-section {
+  .results-section,
+  .rounds-section {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
@@ -306,7 +307,8 @@
   }
   
   .winner-section h2,
-  .results-section h2 {
+  .results-section h2,
+  .rounds-section h2 {
     color: var(--primary-color);
     position: relative;
     padding-bottom: var(--spacing-sm);
@@ -314,7 +316,8 @@
   }
   
   .winner-section h2::after,
-  .results-section h2::after {
+  .results-section h2::after,
+  .rounds-section h2::after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -400,6 +403,39 @@
     height: 30px;
     border-radius: var(--radius-full);
     border: 2px solid var(--primary-light);
+  }
+
+  .round-player {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .round-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--card-background-alt);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .round-player .name {
+    font-weight: 600;
+    color: var(--text-color);
+    flex: 1;
+  }
+
+  .round-player .bid,
+  .round-player .made,
+  .round-player .score {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    flex: 1;
+    text-align: center;
   }
   
   /* Profile Page */
@@ -765,7 +801,7 @@
 
 .reset-button {
   background-color: var(--card-background-alt);
-  color: var (--text-color);
+  color: var(--text-color);
   border: 1px solid var(--border-color);
 }
 
@@ -1018,7 +1054,7 @@
   }
   
   .cards-info {
-    color: var (--accent-color);
+    color: var(--accent-color);
     font-weight: 600;
   }
   
@@ -1028,7 +1064,7 @@
     align-items: center;
     margin-bottom: var(--spacing-md);
     background-color: var(--card-background);
-    border-radius: var (--radius-lg);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-md);
     box-shadow: var(--shadow);
   }
@@ -1096,12 +1132,12 @@
   }
   
   .positive-score {
-    color: var (--success-color);
+    color: var(--success-color);
     font-weight: 600;
   }
   
   .negative-score {
-    color: var (--error-color);
+    color: var(--error-color);
     font-weight: 600;
   }
   
@@ -1375,8 +1411,9 @@
 
 /* Styling for the card-like tabs */
 .card-tabs {
-  display: flex-gird;
+  display: flex;
   justify-content: center;
+  align-items: center;
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);

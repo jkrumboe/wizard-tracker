@@ -15,6 +15,7 @@ CREATE TABLE games (
   winner INT REFERENCES players(id),
   scores JSONB NOT NULL, -- Player scores
   rounds JSONB NOT NULL -- Detailed round data
+  duration INT NOT NULL, -- Duration of the game in seconds
 );
 
 CREATE TABLE rounds (

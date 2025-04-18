@@ -74,7 +74,11 @@ const GameInProgress = () => {
           <span>
             Round {gameState.currentRound} of {gameState.maxRounds}
           </span>
-          <span className="cards-info">{currentRound?.cards} Cards</span>
+          <span className="cards-info">
+            {currentRound?.cards === 1
+              ? "1 Card"
+              : `${currentRound?.cards} Card's`}
+          </span>
         </div>
       </div>
 
@@ -126,7 +130,7 @@ const GameInProgress = () => {
                       value={player.call !== null ? player.call : 0}
                       onChange={(value) => updateCall(player.id, value)}
                       min={0}
-                      max={currentRound.cards}
+                      max={currentRound.cards + 1}
                       title={`${player.name}'s Call`}
                     />
                   </td>
@@ -135,8 +139,9 @@ const GameInProgress = () => {
                       value={player.made !== null ? player.made : 0}
                       onChange={(value) => updateMade(player.id, value)}
                       min={0}
-                      max={currentRound.cards}
+                      max={currentRound.cards + 1}
                       title={`${player.name}'s Tricks Made`}
+                      disabled={player.call === null} // Disable until Call is set
                     />
                   </td>
                   <td className={player.score > 0 ? "positive-score" : player.score < 0 ? "negative-score" : ""}>

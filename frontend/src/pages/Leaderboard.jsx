@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getPlayers } from '../services/playerService'
+import {getPlayerStats } from '../services/playerService'
 import defaultAvatar from "../assets/default-avatar.png";
 
 const Leaderboard = () => {
@@ -25,7 +26,7 @@ const Leaderboard = () => {
     }
 
     fetchPlayers()
-  }, [])
+  }, []) 
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -58,6 +59,11 @@ const Leaderboard = () => {
     (currentPage - 1) * playersPerPage,
     currentPage * playersPerPage
   )
+
+  console.log("Paginated Players:", paginatedPlayers)
+
+
+  
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {

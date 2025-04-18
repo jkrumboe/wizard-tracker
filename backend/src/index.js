@@ -205,25 +205,13 @@ app.get('/api/players/:id/stats', async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.query(
-      `
-      SELECT 
-        COUNT(*) FILTER (WHERE scores->>$1 IS NOT NULL) AS total_games,
-        SUM((scores->>$1)::int) AS total_points,
-        AVG((scores->>$1)::int) AS avg_points,
-        MAX((scores->>$1)::int) AS highest_score,
-        MIN((scores->>$1)::int) AS lowest_score,
-        COUNT(CASE WHEN winner::text = $1 THEN 1 END) AS wins,
-        SUM((scores->>$1)::jsonb->>'called')::int AS total_bids,
-        SUM((scores->>$1)::jsonb->>'made')::int AS total_tricks,
-        SUM(CASE WHEN (scores->>$1)::jsonb->>'called' = (scores->>$1)::jsonb->>'made' THEN 1 ELSE 0 END) AS correct_bids,
-        ROUND(100.0 * SUM(CASE WHEN (scores->>$1)::jsonb->>'called' = (scores->>$1)::jsonb->>'made' THEN 1 ELSE 0 END) 
-              / NULLIF(COUNT(*), 0), 1) AS bid_accuracy,
-        SUM(CASE WHEN (scores->>$1)::jsonb->>'made'::int > (scores->>$1)::jsonb->>'called'::int THEN 1 ELSE 0 END) AS overbids,
-        SUM(CASE WHEN (scores->>$1)::jsonb->>'made'::int < (scores->>$1)::jsonb->>'called'::int THEN 1 ELSE 0 END) AS underbids,
-        AVG(ABS((scores->>$1)::jsonb->>'made'::int - (scores->>$1)::jsonb->>'called'::int)) AS avg_diff
+      `SELECT 
+        COALESCE(SUM(CAST(scores->>$1 AS INT)), 0) AS total_points,
+        COUNT(*) AS total_games,
+        COALESCE(AVG(CAST(scores->>$1 AS INT)), 0) AS avg_points,
+        COUNT(CASE WHEN CAST(winner AS TEXT) = $1 THEN 1 END) AS wins
       FROM games
-      WHERE players @> $2::jsonb;
-      `,
+      WHERE players @> $2::jsonb`,
       [id, JSON.stringify([parseInt(id)])]
     );
 
@@ -250,15 +238,25 @@ app.get('/api/games', async (req, res) => {
 
 // Fix the POST /api/games route to include the rounds field
 app.post('/api/games', async (req, res) => {
-  const { date, players, winner, scores, rounds } = req.body;
+  const { date, players, winner, scores, rounds, duration } = req.body;
+
+  // Debugging: Log the incoming request body
+  // console.log('Incoming request body:', req.body);
+
   try {
     const result = await db.query(
-      'INSERT INTO games (date, players, winner, scores, rounds) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [date, JSON.stringify(players), winner, JSON.stringify(scores), JSON.stringify(rounds)]
+      'INSERT INTO games (date, players, winner, scores, rounds, duration) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [date, JSON.stringify(players), winner, JSON.stringify(scores), JSON.stringify(rounds), duration]
     );
+
+    // Debugging: Log the result from the database
+    // console.log('Database insert result:', result.rows[0]);
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    // Debugging: Log the error
     console.error('Error saving game:', err);
+
     res.status(500).json({ error: 'Failed to save game' });
   }
 });
