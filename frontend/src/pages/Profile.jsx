@@ -168,6 +168,7 @@ const Profile = () => {
                   <span>Losses ({lossRate}%)</span>
                 </div>
               </div>
+              
               {playerStats && (
                 <div className="player-stats">
                   <h2>Player Statistics</h2>
