@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getPlayers } from '../services/playerService'
-import {getPlayerStats } from '../services/playerService'
+import { getPlayers, getPlayerStats } from '../services/playerService'
 import defaultAvatar from "../assets/default-avatar.png";
 
 const Leaderboard = () => {
@@ -17,7 +16,13 @@ const Leaderboard = () => {
     const fetchPlayers = async () => {
       try {
         const playerData = await getPlayers()
-        setPlayers(playerData)
+        const playerStatsPromises = playerData.map(player => getPlayerStats(player.id))
+        const playerStats = await Promise.all(playerStatsPromises)
+        const playerDataWithStats = playerData.map((player, index) => ({
+          ...player,
+          ...playerStats[index],
+        }))
+        setPlayers(playerDataWithStats)
         setLoading(false)
       } catch (error) {
         console.error('Error fetching players:', error)
@@ -30,6 +35,7 @@ const Leaderboard = () => {
 
   const handleSort = (field) => {
     if (sortBy === field) {
+ 
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortBy(field)
@@ -39,7 +45,7 @@ const Leaderboard = () => {
 
   const handleFilterChange = (e) => {
     setFilter(e.target.value)
-    setCurrentPage(1) // Reset to the first page when filtering
+    setCurrentPage(1)
   }
 
   const filteredPlayers = players.filter(
@@ -48,9 +54,19 @@ const Leaderboard = () => {
 
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
     if (sortOrder === 'asc') {
-      return a[sortBy] - b[sortBy]
+      if (sortBy === 'winRate') {
+        return (a.wins / a.total_games) - (b.wins / b.total_games);
+      } else if (sortBy === 'totalGames') {
+        return a.total_games - b.total_games;
+      }
+      return a[sortBy] - b[sortBy];
     } else {
-      return b[sortBy] - a[sortBy]
+      if (sortBy === 'winRate') {
+        return (b.wins / b.total_games) - (a.wins / a.total_games);
+      } else if (sortBy === 'totalGames') {
+        return b.total_games - a.total_games;
+      }
+      return b[sortBy] - a[sortBy];
     }
   })
 
@@ -59,11 +75,6 @@ const Leaderboard = () => {
     (currentPage - 1) * playersPerPage,
     currentPage * playersPerPage
   )
-
-  console.log("Paginated Players:", paginatedPlayers)
-
-
-  
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -132,8 +143,8 @@ const Leaderboard = () => {
                   </Link>
                 </div>
                 <div className="elo-col">{player.elo}</div>
-                <div className="winrate-col">{player.winRate}%</div>
-                <div className="games-col">{player.totalGames}</div>
+                <div className="winrate-col">{((player.wins / player.total_games)  * 100).toFixed(2)}%</div>
+                <div className="games-col">{player.total_games}</div>
               </div>
             ) : (
               <div key={`empty-${index}`} className="leaderboard-row empty-row">

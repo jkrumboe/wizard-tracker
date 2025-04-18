@@ -111,10 +111,10 @@ const GameDetails = () => {
   }
 
   const playerStats = calculatePlayerStats(game)
-  console.log("Game Stats:", playerStats)
-  console.log("Player Details:", playerDetails)
-  console.log("Game Data:", game)
-  console.log("Game Data Rounds:", game.rounds)
+  // console.log("Game Stats:", playerStats)
+  // console.log("Player Details:", playerDetails)
+  // console.log("Game Data:", game)
+  // console.log("Game Data Rounds:", game.rounds)
 
   const formattedDate = new Date(game.date).toLocaleDateString("en-US", {
     year: "numeric",
@@ -139,7 +139,11 @@ const GameDetails = () => {
           ← Back to Home
         </Link>
         <h1>Game Details</h1>
-        <div className="game-date">{formattedDate} | {duration}</div>
+        
+        <div className="game-date">Finished: {formattedDate}</div>
+        <div className="game-date">Duration: {duration}</div>
+
+
       </div>
 
       <div className="game-summary">

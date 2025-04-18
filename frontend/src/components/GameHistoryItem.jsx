@@ -33,7 +33,7 @@ const GameHistoryItem = ({ game }) => {
 
   if (!game) return null;
 
-  const { id, date, players, winner, duration } = game;
+  const { id, date, players, winner } = game;
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "2-digit",
@@ -42,12 +42,12 @@ const GameHistoryItem = ({ game }) => {
     minute: "2-digit",
   });
 
-  // console.log("Game :", game.rounds.length);
+  // console.log("Game :", game);
 
   return (
     <div className="game-card">
 
-      <div className="game-date">{formattedDate} | { duration }</div>
+      <div className="game-date">Finished: {formattedDate}</div>
       <div className="game-rounds">Rounds: {game.rounds.length}</div>
       <div className="game-winner">
         Winner: {playerDetails[winner]?.name || "Unknown"}

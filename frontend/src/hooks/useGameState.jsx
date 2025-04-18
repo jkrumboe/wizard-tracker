@@ -173,7 +173,7 @@ export function GameStateProvider({ children }) {
       });
 
       const gameData = {
-        date: new Date().toISOString().split("T")[0],
+        date: new Date().toISOString(),
         players: gameState.players.map((p) => p.id),
         winner: winnerId,
         scores: finalScores,
@@ -181,7 +181,10 @@ export function GameStateProvider({ children }) {
         duration,
       };
 
-      console.log("Game data to save:", gameData);
+      // console.log("Game data to save:", gameData);
+      // console.log("Game state:", gameState);
+      // console.log("Game date split:", gameData.date);
+
 
       // Save game data
       await createGame(gameData);

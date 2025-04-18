@@ -241,7 +241,7 @@ app.post('/api/games', async (req, res) => {
   const { date, players, winner, scores, rounds, duration } = req.body;
 
   // Debugging: Log the incoming request body
-  // console.log('Incoming request body:', req.body);
+  console.log('Incoming request body:', req.body);
 
   try {
     const result = await db.query(
@@ -250,7 +250,7 @@ app.post('/api/games', async (req, res) => {
     );
 
     // Debugging: Log the result from the database
-    // console.log('Database insert result:', result.rows[0]);
+    console.log('Database insert result:', result.rows[0]);
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
