@@ -18,14 +18,10 @@ const Login = () => {
         password,
       });
       localStorage.setItem("token", response.data.token);
-      const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
       setTimeout(() => {
-        if (decoded.role === "3") {
-          navigate("/admin");
-        } else {
           navigate("/");
           window.location.reload();
-        }
+        
       }, 0);
     } catch (err) {
       console.error("Login error:", err);

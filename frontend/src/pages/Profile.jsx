@@ -83,6 +83,24 @@ const Profile = () => {
   }
 
 
+  const canEdit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      const editACcess = decoded.role >= 3 || decoded.player_id === player.id;
+      return editACcess;
+      }else {
+        console.error("No token found in localStorage.");
+        return false;
+      }
+    } catch (err) {
+      console.error("Edit error:", err);
+      setError("Invalid credentials");
+    }
+  };
+
+
   const data = [
     { name: 'Wins', value: winRate },
     { name: 'Losses', value: lossRate }
@@ -95,6 +113,8 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <div className="profile-header">
+        {canEdit() && <div className="canEdit" onClick={canEdit}>Edit</div>}
+
         <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="avatar" />
         <div className="player-info">
           <h1>{player?.name || "Unknown Player"}</h1>

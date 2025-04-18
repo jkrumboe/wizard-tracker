@@ -1469,6 +1469,12 @@
   z-index: 10;
 }
 
+/* Editing */
+
+.edit {
+  
+}
+
 @media (min-width: 768px) {
   .nav-menu {
     display: flex;

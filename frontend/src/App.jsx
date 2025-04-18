@@ -22,6 +22,7 @@ function ProtectedRoute({ children, roles }) {
     const token = localStorage.getItem("token");
     if (token) {
       const decoded = JSON.parse(atob(token.split(".")[1]));
+      console.log("Decoded token:", decoded); // Debugging line
       setUserRole(decoded.role);
     }
   }, []);
