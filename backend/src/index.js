@@ -103,10 +103,10 @@ app.get('/api/protected', verifyToken, authorizeRoles(['admin']), (req, res) => 
 });
 
 // Testroute
-app.get('/api/players', async (req, res) => {
-  const result = await db.query('SELECT * FROM players')
-  res.json(result.rows)
-})
+// app.get('/api/players', async (req, res) => {
+//   const result = await db.query('SELECT * FROM players')
+//   res.json(result.rows)
+// })
 
 // Player routes
 

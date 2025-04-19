@@ -8,7 +8,6 @@ import SearchBar from "../components/SearchBar"
 import NumberPicker from "../components/NumberPicker"
 import defaultAvatar from "../assets/default-avatar.png";
 
-
 const NewGame = () => {
   const navigate = useNavigate()
   const { players, loading } = usePlayers()
@@ -23,7 +22,8 @@ const NewGame = () => {
       const filtered = players.filter(
         (player) =>
           !gameState.players.some((p) => p.id === player.id) &&
-          player.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          (player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            player.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())))
       )
       setFilteredPlayers(filtered)
     }
@@ -35,9 +35,9 @@ const NewGame = () => {
   }
 
   const handleAddPlayer = (player) => {
-    addPlayer(player);
-    setSearchQuery(""); // Clear the search query
-    setShowSearch(false); 
+    addPlayer(player)
+    setSearchQuery("")
+    setShowSearch(false)
   }
 
   const handleRemovePlayer = (playerId) => {
@@ -64,11 +64,11 @@ const NewGame = () => {
       <div className="setup-section">
         <h2>Select Players</h2>
         <div className="player-search">
-        <SearchBar
-          onSearch={handleSearch}
-          placeholder="Search players..."
-          value={searchQuery}
-        />
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search players..."
+            value={searchQuery}
+          />
           {showSearch && filteredPlayers.length > 0 && (
             <div className="search-results">
               {filteredPlayers.map((player) => (
@@ -131,4 +131,3 @@ const NewGame = () => {
 }
 
 export default NewGame
-
