@@ -134,6 +134,8 @@ const Profile = () => {
      '#FF5C5C'
     ]
 
+    console.log("Player:", player)
+
   if (editing) {
     return (
       <div className="profile-edit-container">
@@ -222,10 +224,12 @@ const Profile = () => {
         <div className="player-info">
           <h1>{player?.name || "Unknown Player"}</h1>
           <div className="tags-container">
-            {/* {player.tags.map(tag => (
+            {player.tags && player.tags.length > 0 && 
+            player.tags.map(tag => (
               <span key={tag} className="tag">{tag}</span>
-            ))} */}
-          </div>
+            ))
+            }
+          </div>  
           <div className="stats-summary">
             <StatCard 
               title="ELO" 
