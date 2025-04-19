@@ -669,7 +669,7 @@
   }
   
   .avatar-upload-label:hover {
-    background-color: var(--primary-color-dark, #1c7c63);
+    background-color: var(--primary-color-dark, var(--primary-dark));
   }
 
   .close-button-edit {

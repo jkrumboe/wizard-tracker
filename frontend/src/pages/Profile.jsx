@@ -5,7 +5,8 @@ import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
 import { getPlayerById, getPlayerStats, updatePlayerProfile } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
-import defaultAvatar from "../assets/default-avatar.png"; // Assuming the default avatar is stored in assets
+import defaultAvatar from "../assets/default-avatar.png";
+import imageCompression from 'browser-image-compression';
 
 const Profile = () => {
   const { id } = useParams()
@@ -150,17 +151,28 @@ const Profile = () => {
               <input
                 type="file"
                 className="edit-avatar"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => setEditedAvatar(reader.result);
-                    reader.readAsDataURL(file);
-                  }
+                    if (file) {
+                      const options = {
+                        maxSizeMB: 0.2, 
+                        maxWidthOrHeight: 500, 
+                        useWebWorker: true
+                      };
+
+                      try {
+                        const compressedFile = await imageCompression(file, options);
+                        const reader = new FileReader();
+                        reader.onload = () => setEditedAvatar(reader.result);
+                        reader.readAsDataURL(compressedFile);
+                      } catch (err) {
+                        console.error("Image compression failed:", err);
+                      }
+                    }
                 }}
                 hidden
               />
-            </label>
+          </label>
 
             {editedAvatar && (
               <button
@@ -210,9 +222,9 @@ const Profile = () => {
         <div className="player-info">
           <h1>{player?.name || "Unknown Player"}</h1>
           <div className="tags-container">
-            {player.tags.map(tag => (
+            {/* {player.tags.map(tag => (
               <span key={tag} className="tag">{tag}</span>
-            ))}
+            ))} */}
           </div>
           <div className="stats-summary">
             <StatCard 

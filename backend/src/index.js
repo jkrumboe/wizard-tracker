@@ -153,22 +153,34 @@ app.get('/api/players/:id', async (req, res) => {
 
 // Update a player
 app.put('/api/players/:id', async (req, res) => {
-  const { id } = req.params
-  const { name, avatar, elo, winRate, totalGames } = req.body
+  const { id } = req.params;
+  const { name, avatar, elo, winRate, totalGames, tags } = req.body;
+
   try {
     const result = await db.query(
-      'UPDATE players SET name = $1, avatar = $2, elo = $3, win_rate = $4, total_games = $5 WHERE id = $6 RETURNING *',
-      [name, avatar, elo, winRate, totalGames, id]
-    )
+      `UPDATE players
+       SET name = $1,
+           avatar = $2,
+           elo = $3,
+           win_rate = $4,
+           total_games = $5,
+           tags = $6
+       WHERE id = $7
+       RETURNING *`,
+      [name, avatar, elo, winRate, totalGames, tags || '[]', id]
+    );
+
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Player not found' })
+      return res.status(404).json({ error: 'Player not found' });
     }
-    res.json(result.rows[0])
+
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Failed to update player' })
+    console.error('Error updating player:', err);
+    res.status(500).json({ error: 'Failed to update player' });
   }
-})
+});
+
 
 // Delete a player
 app.delete('/api/players/:id', async (req, res) => {
