@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
+import { getPlayerById} from '../services/playerService'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
 const Navbar = () => {
+  const [player, setPlayer] = useState(null)
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState(null)
+  // const [loading, setLoading] = useState(true)
+  // const [error, setError] = useState(null)
   const location = useLocation()
   const navigate = useNavigate()
+
 
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -34,23 +39,46 @@ const Navbar = () => {
     }
   }, [])
 
+  useEffect(() => {
+    if (!user?.player_id) return;
+  
+    const fetchData = async () => {
+      try {
+        const playerData = await getPlayerById(user.player_id);
+        if (playerData) {
+          setPlayer({
+            ...playerData,
+            avatar: playerData.avatar || defaultAvatar,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+      }
+    };
+  
+    fetchData();
+  }, [user]);
+  
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
     navigate("/login", { replace: true });
-    window.location.reload(); // Silent refresh after logout
+    window.location.reload();
   };
+
+  console.log("Player:", player); // Debugging line
 
   return (
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" onClick={closeMenu}>
           Wizard Tracker
-        </Link>
+        </Link>       
 
         <div className="profile-icon" onClick={toggleMenu}>
           <img
-            src={user?.avatar || defaultAvatar}
+            src={player?.avatar || defaultAvatar}
             alt="Profile"
             className="profile-avatar"
           />

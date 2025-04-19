@@ -139,6 +139,11 @@ app.post('/api/players', async (req, res) => {
 // Get a player by ID
 app.get('/api/players/:id', async (req, res) => {
   const { id } = req.params
+
+  if (!id || id === 'undefined') {
+    return res.status(400).json({ error: 'Missing or invalid player ID' });
+  }
+
   try {
     const result = await db.query('SELECT * FROM players WHERE id = $1', [id])
     if (result.rows.length === 0) {
@@ -155,6 +160,15 @@ app.get('/api/players/:id', async (req, res) => {
 app.put('/api/players/:id', async (req, res) => {
   const { id } = req.params;
   const { name, avatar, elo, winRate, totalGames, tags } = req.body;
+
+  // ✅ Validate types
+  if (typeof name !== 'string' || name.length > 50) {
+    return res.status(400).json({ error: 'Invalid name format' });
+  }
+
+  if (avatar && typeof avatar !== 'string') {
+    return res.status(400).json({ error: 'Invalid avatar format' });
+  }
 
   try {
     const result = await db.query(

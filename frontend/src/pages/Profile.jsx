@@ -7,6 +7,7 @@ import { getPlayerById, getPlayerStats, updatePlayerProfile } from '../services/
 import { getPlayerGameHistory } from '../services/gameService'
 import defaultAvatar from "../assets/default-avatar.png";
 import imageCompression from 'browser-image-compression';
+import DOMPurify from 'dompurify';
 
 const Profile = () => {
   const { id } = useParams()
@@ -85,10 +86,13 @@ const Profile = () => {
 
   const handleEditProfile = async () => {
     try {
+      const sanitizedEditedName = DOMPurify.sanitize(editedName);
+      const sanitizedEditedAvatar = DOMPurify.sanitize(editedAvatar);
+
       const updatedPlayer = {
         ...player,
-        name: editedName || player.name,
-        avatar: editedAvatar || player.avatar,
+        name: sanitizedEditedName || player.name,
+        avatar: sanitizedEditedAvatar || player.avatar,
         tags: editedTags.length > 0 ? editedTags : player.tags,
       };
       await updatePlayerProfile(updatedPlayer);
@@ -133,8 +137,6 @@ const Profile = () => {
     '#1DBF73',
      '#FF5C5C'
     ]
-
-    console.log("Player:", player)
 
   if (editing) {
     return (
