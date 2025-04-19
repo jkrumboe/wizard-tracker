@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
-import { getPlayerById, getPlayerStats } from '../services/playerService'
+import { getPlayerById, getPlayerStats, updatePlayerProfile } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 import defaultAvatar from "../assets/default-avatar.png"; // Assuming the default avatar is stored in assets
 
@@ -15,6 +15,10 @@ const Profile = () => {
   const [error, setError] = useState(null)
   const [playerStats, setPlayerStats] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
+  const [editing, setEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedAvatar, setEditedAvatar] = useState('');
+  const [editedTags, setEditedTags] = useState([]);
 
   // Logs
   // console.log("Player ID:", id)
@@ -61,6 +65,42 @@ const Profile = () => {
     }
   }, [player])
 
+  const canEdit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        const editAccess = decoded.role >= 2 || decoded.player_id === player.id;
+        return editAccess;
+      } else {
+        console.error("No token found in localStorage.");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error decoding token:", err);
+      return false;
+    }
+  };
+
+  const handleEditProfile = async () => {
+    try {
+      const updatedPlayer = {
+        ...player,
+        name: editedName || player.name,
+        avatar: editedAvatar || player.avatar,
+        tags: editedTags.length > 0 ? editedTags : player.tags,
+      };
+      await updatePlayerProfile(updatedPlayer);
+      setPlayer(updatedPlayer);
+      setEditedName('');
+      setEditedAvatar('');
+      setEditedTags([]);
+      setEditing(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading player profile...</div>
   }
@@ -68,6 +108,8 @@ const Profile = () => {
   if (error || !player) {
     return <div className="error">{error || 'Player not found'}</div>
   }
+
+
   
   const recentGames = gameHistory.slice(0, 3)
   let winRate = 0;
@@ -82,25 +124,6 @@ const Profile = () => {
     totalGames = playerStats.total_games || 1;
   }
 
-
-  const canEdit = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      const editACcess = decoded.role >= 3 || decoded.player_id === player.id;
-      return editACcess;
-      }else {
-        console.error("No token found in localStorage.");
-        return false;
-      }
-    } catch (err) {
-      console.error("Edit error:", err);
-      setError("Invalid credentials");
-    }
-  };
-
-
   const data = [
     { name: 'Wins', value: winRate },
     { name: 'Losses', value: lossRate }
@@ -110,10 +133,78 @@ const Profile = () => {
      '#FF5C5C'
     ]
 
+  if (editing) {
+    return (
+      <div className="profile-edit-container">
+        
+        <div className="profile-edit-header">
+          <button onClick={() => setEditing(false)} className='close-button-edit'>x</button>
+          
+          {editedAvatar && (
+              <img src={editedAvatar} alt="Preview" className="avatar-preview" />
+          )}
+
+          <div>
+            <label className="avatar-upload-label">
+              <span>📁 Upload Avatar</span>
+              <input
+                type="file"
+                className="edit-avatar"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => setEditedAvatar(reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                hidden
+              />
+            </label>
+
+            {editedAvatar && (
+              <button
+                onClick={() => setEditedAvatar('')}
+                className='cancle-button'>
+                  Cancel
+              </button>
+            )}
+          </div>
+
+
+          <input
+            type="text"
+            className='edit-name'
+            value={editedName}
+            onChange={(e) => setEditedName(e.target.value)}
+            placeholder="Edit username"
+          />
+          
+          <input
+            type="text"
+            className='edit-tags'
+            value={editedTags}
+            onChange={(e) => setEditedTags(e.target.value.split(","))}
+            placeholder="Edit tags (comma-separated)"
+          />
+          <div className="edit-buttons">
+            <button onClick={handleEditProfile} className='save-button'>Save Changes</button>
+          </div>
+        </div>
+      </div>
+    );
+  }else{
+
   return (
     <div className="profile-container">
       <div className="profile-header">
-        {canEdit() && <div className="canEdit" onClick={canEdit}>Edit</div>}
+        {canEdit() && (
+          <button
+            onClick={() => setEditing(true)}
+            className='edit-button'>
+            Edit
+          </button>
+        )}
 
         <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="avatar" />
         <div className="player-info">
@@ -169,7 +260,6 @@ const Profile = () => {
                     data={data}
                     innerRadius={30}
                     outerRadius={50}
-                    paddingAngle={5}
                     dataKey="value"
                   >
                     {data.map((entry, index) => (
@@ -227,7 +317,7 @@ const Profile = () => {
           )}
       </div>
     </div>
-  )
+  )}
 }
 
 export default Profile

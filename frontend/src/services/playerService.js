@@ -25,3 +25,8 @@ export async function getPlayerStats(id) {
   return playerAPI.getStats(id);
 }
 
+// Add a function to update player profile
+export async function updatePlayerProfile(playerData) {
+  return playerAPI.update(playerData.id, playerData);
+}
+

@@ -42,6 +42,7 @@
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
 
   /* Border radius */
   --radius-sm: 0.25rem;
@@ -107,6 +108,8 @@ h2 {
 h3 {
   font-size: 1.25rem;
 }
+
+/* Buttons */
 
 button,
 .btn {
@@ -180,6 +183,18 @@ button:disabled {
   background-color: #dc2626;
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+}
+
+/* Cancle Button */
+
+.cancle-button {
+  background-color: var(--error-color);
+  color: var(--text-white);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
 }
 
 /* Loading and error states */
@@ -382,6 +397,8 @@ button:disabled {
   color: var(--text-light);
   box-shadow: var(--shadow);
 }
+
+
 
 /* Media queries for responsive design */
 @media (min-width: 576px) {
