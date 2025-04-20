@@ -33,27 +33,10 @@ export async function getTagsByPlayerId(id){
 
 //=== Get by Tag ===//
 
-// Update the searchPlayersByTag function to handle non-JSON responses gracefully
+// Get players by tag
 export async function searchPlayersByTag(tag) {
-  const response = await fetch(`/api/players/search?tag=${encodeURIComponent(tag)}`);
-  if (!response.ok) {
-    const text = await response.text();
-    console.error(`API error: ${response.statusText}`, text);
-    throw new Error(`API error: ${response.statusText}`);
-  }
-  const contentType = response.headers.get("Content-Type");
-  if (contentType && contentType.includes("application/json")) {
-    try {
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to parse JSON response:', error);
-      throw new Error('Invalid JSON response from API');
-    }
-  } else {
-    const text = await response.text();
-    console.error('Unexpected response format:', text);
-    throw new Error('API did not return JSON');
-  }
+  return await playerAPI.getbyTag(tag);
+
 }
 
 //=== Creators ===//

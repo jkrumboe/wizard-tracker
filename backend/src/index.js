@@ -280,8 +280,8 @@ app.get('/api/players/:id/tags', async (req, res) => {
 });
 
 // Fetch players by tag ID
-app.get('/api/players/search', async (req, res) => {
-  const { tag } = req.query;
+app.get('/api/players/search/:tag', async (req, res) => {
+  const { tag } = req.params;
 
   if (!tag) {
     return res.status(400).json({ error: 'Tag is required for search' });

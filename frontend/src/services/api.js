@@ -30,7 +30,8 @@ export const playerAPI = {
   getTags: () => fetchAPI("/tags"),
   getById: (id) => fetchAPI(`/players/${id}`),
   getStats: (id) => fetchAPI(`/players/${id}/stats`),
-  getTagsById: (id) => fetchAPI(`/players/${id}/tags`), 
+  getTagsById: (id) => fetchAPI(`/players/${id}/tags`),
+  getbyTag: (tag) => fetchAPI(`/players/search/${tag}`), 
   create: (data) => fetchAPI("/players", { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) => fetchAPI(`/players/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 }
