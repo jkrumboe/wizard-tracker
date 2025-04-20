@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { usePlayers } from "../hooks/usePlayers"
 import { useGameStateContext } from "../hooks/useGameState"
+// import { searchPlayersByTag } from "../services/playerService"
 import SearchBar from "../components/SearchBar"
 import NumberPicker from "../components/NumberPicker"
 import defaultAvatar from "../assets/default-avatar.png";
 
 const NewGame = () => {
   const navigate = useNavigate()
-  const { players, loading } = usePlayers()
+  const { players, loading, tags } = usePlayers()
   const { gameState, addPlayer, removePlayer, startGame, setMaxRounds } = useGameStateContext()
 
   const [searchQuery, setSearchQuery] = useState("")
@@ -22,12 +23,14 @@ const NewGame = () => {
       const filtered = players.filter(
         (player) =>
           !gameState.players.some((p) => p.id === player.id) &&
-          (player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            player.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+          (player.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          tags.some((tag) => typeof tag === "string" && tag.toLowerCase().includes(searchQuery.toLowerCase()))
       )
       setFilteredPlayers(filtered)
     }
-  }, [players, searchQuery, gameState.players])
+  }, [players, tags, searchQuery, gameState.players])
+  
+  console.log("Tags:", tags)
 
   const handleSearch = (query) => {
     setSearchQuery(query)
@@ -53,6 +56,10 @@ const NewGame = () => {
     setMaxRounds(value)
   }
 
+  // console.log("Players:", players)
+  // console.log("Tags:", tags)
+  // console.log("Filtered Players:", filteredPlayers)
+
   if (loading) {
     return <div className="loading">Loading players...</div>
   }
@@ -63,6 +70,13 @@ const NewGame = () => {
 
       <div className="setup-section">
         <h2>Select Players</h2>
+        <div className="tags-list">
+          {tags.map((tag) => (
+            <span key={tag.id} className="tag">
+              {tag.name}
+            </span>
+          ))}
+        </div>
         <div className="player-search">
           <SearchBar
             onSearch={handleSearch}

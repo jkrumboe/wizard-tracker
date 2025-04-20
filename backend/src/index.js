@@ -248,8 +248,63 @@ app.get('/api/players/:id/stats', async (req, res) => {
   }
 });
 
+// Fetch all tags
+app.get('/api/tags', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT * FROM tags')
+    res.json(result.rows)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch tags' })
+  }
+})
 
-// Game routes
+// Fetch tags by player ID
+app.get('/api/players/:id/tags', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query(
+      `SELECT t.id, t.name 
+       FROM tags t
+       INNER JOIN player_tags pt ON t.id = pt.tag_id
+       WHERE pt.player_id = $1`,
+      [id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching tags for player:', error);
+    res.status(500).json({ error: 'Failed to fetch tags for player' });
+  }
+});
+
+// Fetch players by tag ID
+app.get('/api/players/search', async (req, res) => {
+  const { tag } = req.query;
+
+  if (!tag) {
+    return res.status(400).json({ error: 'Tag is required for search' });
+  }
+
+  try {
+    const result = await db.query(
+      `SELECT p.id, p.name, p.avatar, p.elo, p.win_rate, p.total_games
+       FROM players p
+       INNER JOIN player_tags pt ON p.id = pt.player_id
+       INNER JOIN tags t ON pt.tag_id = t.id
+       WHERE t.name ILIKE $1`,
+      [`%${tag}%`]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error searching players by tag:', error);
+    res.status(500).json({ error: 'Failed to search players by tag' });
+  }
+});
+
+//=== Game routes ===//
 
 // Get all games
 app.get('/api/games', async (req, res) => {
@@ -317,7 +372,7 @@ app.get('/api/games/:id', async (req, res) => {
   }
 })
 
-// Middleware for admin authentication
+//=== Middleware for admin authentication ===//
 function adminAuth(req, res, next) {
   const { username, password } = req.headers;
   if (
@@ -343,6 +398,8 @@ app.get("/api/admin/players", async (req, res) => {
   }
 });
 
+
+// Admin: Add a new player
 app.post("/api/admin/players", async (req, res) => {
   const { name, avatar, elo, winRate, totalGames } = req.body;
   try {

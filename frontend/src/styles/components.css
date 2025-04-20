@@ -78,17 +78,29 @@
     flex-wrap: wrap;
     gap: var(--spacing-xs);
   }
-  
+
+  /* Tags */
+
+  .tags-list {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 0.5rem;
+    margin: var(--spacing-md);
+  }
+
   .tag {
     background-color: var(--primary-dark);
     color: var(--text-white);
-    padding: 0.2rem 0.6rem;
+    padding: 0.4rem 0.8rem;
     border-radius: var(--radius-full);
     font-size: 0.7rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    flex-shrink: 0;
   }
+  
   
   /* Game Card */
   .game-card {

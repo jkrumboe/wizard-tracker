@@ -67,7 +67,7 @@ const Navbar = () => {
     window.location.reload();
   };
 
-  console.log("Player:", player); // Debugging line
+  // console.log("Player:", player); // Debugging line
 
   return (
     <nav className="navbar">

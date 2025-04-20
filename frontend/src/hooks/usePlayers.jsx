@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getPlayers } from "../services/playerService"
+import { getPlayers, getTags } from "../services/playerService"
 
 export function usePlayers() {
   const [players, setPlayers] = useState([])
+  const [tags, setTags] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -13,6 +14,8 @@ export function usePlayers() {
       try {
         setLoading(true)
         const data = await getPlayers()
+        const tagdata = await getTags()
+        setTags(tagdata)
         setPlayers(data)
         setError(null)
       } catch (err) {
@@ -26,6 +29,6 @@ export function usePlayers() {
     fetchPlayers()
   }, [])
 
-  return { players, loading, error }
+  return { players, loading, error, tags }
 }
 

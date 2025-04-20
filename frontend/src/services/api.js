@@ -1,4 +1,4 @@
-// Use the VITE_API_URL environment variable for the base URL
+// Update the API base URL to ensure it points to the correct backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5055/api"
 
 // Helper function for making API requests
@@ -27,8 +27,10 @@ async function fetchAPI(endpoint, options = {}) {
 // Player-related API calls
 export const playerAPI = {
   getAll: () => fetchAPI("/players"),
+  getTags: () => fetchAPI("/tags"),
   getById: (id) => fetchAPI(`/players/${id}`),
   getStats: (id) => fetchAPI(`/players/${id}/stats`),
+  getTagsById: (id) => fetchAPI(`/players/${id}/tags`), 
   create: (data) => fetchAPI("/players", { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) => fetchAPI(`/players/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 }

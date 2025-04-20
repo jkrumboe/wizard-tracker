@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
-import { getPlayerById, getPlayerStats, updatePlayerProfile } from '../services/playerService'
+import { getPlayerById, getPlayerStats, updatePlayerProfile, getTagsByPlayerId } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 import defaultAvatar from "../assets/default-avatar.png";
 import imageCompression from 'browser-image-compression';
@@ -13,6 +13,7 @@ const Profile = () => {
   const { id } = useParams()
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
+  const [tags, setTags] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [playerStats, setPlayerStats] = useState(null)
@@ -33,6 +34,7 @@ const Profile = () => {
     const fetchData = async () => {
       try {
         const playerData = await getPlayerById(id)
+        
         setPlayer({
           ...playerData,
           avatar: playerData.avatar || defaultAvatar,
@@ -50,7 +52,7 @@ const Profile = () => {
     }
 
     fetchData()
-  }, [id])
+  }, [defaultAvatar, id])
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -66,6 +68,25 @@ const Profile = () => {
       fetchPlayerStats()
     }
   }, [player])
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const fetchedtags = await getTagsByPlayerId(id);
+        setTags(fetchedtags);
+        console.log("Fetched Tags:", fetchedtags);
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch tags", error);
+        setLoading(false);
+      }
+    };
+  
+    if (id) {
+      fetchTags();
+    }
+  }, [id]);
+  
 
   const canEdit = async () => {
     try {
@@ -137,6 +158,8 @@ const Profile = () => {
     '#1DBF73',
      '#FF5C5C'
     ]
+
+    console.log("Tags:", tags)
 
   if (editing) {
     return (
@@ -226,10 +249,10 @@ const Profile = () => {
         <div className="player-info">
           <h1>{player?.name || "Unknown Player"}</h1>
           <div className="tags-container">
-            {player.tags && player.tags.length > 0 && 
-            player.tags.map(tag => (
-              <span key={tag} className="tag">{tag}</span>
-            ))
+            {tags && tags.length > 0 && 
+              tags.map(tag => (
+                <span key={tag.id} className="tag">{tag.name}</span>
+              ))
             }
           </div>  
           <div className="stats-summary">
