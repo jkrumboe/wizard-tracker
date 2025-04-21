@@ -177,11 +177,10 @@ app.put('/api/players/:id', async (req, res) => {
            avatar = $2,
            elo = $3,
            win_rate = $4,
-           total_games = $5,
-           tags = $6
-       WHERE id = $7
+           total_games = $5
+       WHERE id = $6
        RETURNING *`,
-      [name, avatar, elo, winRate, totalGames, tags || '[]', id]
+      [name, avatar, elo, winRate, totalGames, id]
     );
 
     if (result.rows.length === 0) {
@@ -192,6 +191,47 @@ app.put('/api/players/:id', async (req, res) => {
   } catch (err) {
     console.error('Error updating player:', err);
     res.status(500).json({ error: 'Failed to update player' });
+  }
+});
+
+// Update player tags
+app.put('/api/players/:id/tags', async (req, res) => {
+  const { id } = req.params;
+  const { tags } = req.body;
+
+  // Debugging: Log the incoming request parameters and body
+  // console.log('Incoming request to update player tags:', { id, tags });
+
+  if (!Array.isArray(tags)) {
+    console.error('Invalid tags format. Tags must be an array.');
+    return res.status(400).json({ error: 'Tags must be an array' });
+  }
+
+  try {
+    // Debugging: Log the deletion query
+    // console.log(`Deleting existing tags for player with ID: ${id}`);
+    await db.query('DELETE FROM player_tags WHERE player_id = $1', [id]);
+
+    // Debugging: Log the insertion process
+    // console.log(`Inserting new tags for player with ID: ${id}`);
+    const tagInsertPromises = tags.map(async (tag) => {
+      // console.log(`Inserting tag with ID: ${tag.id} for player ID: ${id}`);
+      const tagResult = await db.query(
+        'INSERT INTO player_tags (player_id, tag_id) VALUES ($1, $2) RETURNING *',
+        [id, tag.id]
+      );
+      // console.log('Inserted tag result:', tagResult.rows[0]);
+      return tagResult.rows[0];
+    });
+
+    const insertedTags = await Promise.all(tagInsertPromises);
+
+    // Debugging: Log the final response
+    // console.log('Player tags updated successfully:', insertedTags);
+    res.json({ message: 'Player tags updated successfully', tags: insertedTags });
+  } catch (err) {
+    console.error('Error updating player tags:', err);
+    res.status(500).json({ error: 'Failed to update player tags' });
   }
 });
 

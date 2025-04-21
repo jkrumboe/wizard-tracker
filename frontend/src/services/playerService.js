@@ -60,5 +60,5 @@ export async function updatePlayerProfile(playerData) {
 
 // Update player tags
 export async function updatePlayerTags(playerId, tags) {
-  return playerAPI.update(playerId, { tags });
+  return playerAPI.updateTags(playerId, { tags });
 }

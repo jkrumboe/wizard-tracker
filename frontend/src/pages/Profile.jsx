@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
-import { getPlayerById, getPlayerStats, updatePlayerProfile, getTagsByPlayerId } from '../services/playerService'
+
+import { getPlayerById, getPlayerStats, updatePlayerProfile, updatePlayerTags, getTagsByPlayerId, getTags } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 import defaultAvatar from "../assets/default-avatar.png";
 import imageCompression from 'browser-image-compression';
@@ -14,6 +15,7 @@ const Profile = () => {
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
   const [tags, setTags] = useState(null)
+  const [defaultTags, setDefaultTags] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [playerStats, setPlayerStats] = useState(null)
@@ -21,7 +23,7 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedAvatar, setEditedAvatar] = useState('');
-  const [editedTags, setEditedTags] = useState([]);
+  // const [editedTags, setEditedTags] = useState([]);
 
   // Logs
   // console.log("Player ID:", id)
@@ -34,6 +36,9 @@ const Profile = () => {
     const fetchData = async () => {
       try {
         const playerData = await getPlayerById(id)
+        const tagdata = await getTags()
+        setDefaultTags(tagdata)
+        console.log("Tags:", tagdata)
         
         setPlayer({
           ...playerData,
@@ -52,7 +57,7 @@ const Profile = () => {
     }
 
     fetchData()
-  }, [defaultAvatar, id])
+  }, [id])
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -74,7 +79,6 @@ const Profile = () => {
       try {
         const fetchedtags = await getTagsByPlayerId(id);
         setTags(fetchedtags);
-        console.log("Fetched Tags:", fetchedtags);
         setLoading(false);
       } catch (error) {
         console.error("Failed to fetch tags", error);
@@ -114,13 +118,12 @@ const Profile = () => {
         ...player,
         name: sanitizedEditedName || player.name,
         avatar: sanitizedEditedAvatar || player.avatar,
-        tags: editedTags.length > 0 ? editedTags : player.tags,
       };
       await updatePlayerProfile(updatedPlayer);
+      await updatePlayerTags(player.id, tags);
       setPlayer(updatedPlayer);
       setEditedName('');
       setEditedAvatar('');
-      setEditedTags([]);
       setEditing(false);
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -134,8 +137,6 @@ const Profile = () => {
   if (error || !player) {
     return <div className="error">{error || 'Player not found'}</div>
   }
-
-
   
   const recentGames = gameHistory.slice(0, 3)
   let winRate = 0;
@@ -160,72 +161,90 @@ const Profile = () => {
     ]
 
     console.log("Tags:", tags)
+    // console.log("Edit Tags:", editedTags)
+
+  // Add functionality to toggle tags for adding or removing
+  const toggleTag = (tag) => {
+    if (tags.some((t) => t.name === tag.name)) {
+      // If the tag is already active, mark it for removal
+      setTags(tags.filter((t) => t.name !== tag.name));
+    } else {
+      // If the tag is not active, mark it for adding
+      setTags([...tags, tag]);
+    }
+  };
 
   if (editing) {
     return (
       <div className="profile-edit-container">
-        
+      
         <div className="profile-edit-header">
           <button onClick={() => setEditing(false)} className='close-button-edit'>x</button>
           
           {editedAvatar && (
-              <img src={editedAvatar} alt="Preview" className="avatar-preview" />
+          <img src={editedAvatar} alt="Preview" className="avatar-preview" />
           )}
 
           <div>
             <label className="avatar-upload-label">
               <span>📁 Upload Avatar</span>
               <input
-                type="file"
-                className="edit-avatar"
-                onChange={async (e) => {
-                  const file = e.target.files[0];
-                    if (file) {
-                      const options = {
-                        maxSizeMB: 0.2, 
-                        maxWidthOrHeight: 500, 
-                        useWebWorker: true
-                      };
+              type="file"
+              className="edit-avatar"
+              onChange={async (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const options = {
+                maxSizeMB: 0.2, 
+                maxWidthOrHeight: 500, 
+                useWebWorker: true
+                };
 
-                      try {
-                        const compressedFile = await imageCompression(file, options);
-                        const reader = new FileReader();
-                        reader.onload = () => setEditedAvatar(reader.result);
-                        reader.readAsDataURL(compressedFile);
-                      } catch (err) {
-                        console.error("Image compression failed:", err);
-                      }
-                    }
-                }}
-                hidden
+                try {
+                const compressedFile = await imageCompression(file, options);
+                const reader = new FileReader();
+                reader.onload = () => setEditedAvatar(reader.result);
+                reader.readAsDataURL(compressedFile);
+                } catch (err) {
+                console.error("Image compression failed:", err);
+                }
+              }
+              }}
+              hidden
               />
-          </label>
+            </label>
 
             {editedAvatar && (
-              <button
-                onClick={() => setEditedAvatar('')}
-                className='cancle-button'>
-                  Cancel
-              </button>
+            <button
+            onClick={() => setEditedAvatar('')}
+            className='cancle-button'>
+            Cancel
+            </button>
             )}
           </div>
 
+          <input
+          type="text"
+          className='edit-name'
+          value={editedName}
+          onChange={(e) => setEditedName(e.target.value)}
+          placeholder="Edit username"
+          />
 
-          <input
-            type="text"
-            className='edit-name'
-            value={editedName}
-            onChange={(e) => setEditedName(e.target.value)}
-            placeholder="Edit username"
-          />
-          
-          <input
-            type="text"
-            className='edit-tags'
-            value={editedTags}
-            onChange={(e) => setEditedTags(e.target.value.split(","))}
-            placeholder="Edit tags (comma-separated)"
-          />
+          <div className="edit-tags-list">
+            {defaultTags
+            .filter(tag => !tag.name.startsWith("Top "))
+            .map(tag => (
+            <span 
+              key={tag.id} 
+              className={`tag ${tags.some(t => t.name === tag.name) ? 'active-tag' : ''}`} 
+              onClick={() => toggleTag(tag)}>
+              {tag.name}
+            </span>
+            
+            ))}
+          </div>  
+              
           <div className="edit-buttons">
             <button onClick={handleEditProfile} className='save-button'>Save Changes</button>
           </div>

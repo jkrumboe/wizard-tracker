@@ -34,6 +34,7 @@ export const playerAPI = {
   getbyTag: (tag) => fetchAPI(`/players/search/${tag}`), 
   create: (data) => fetchAPI("/players", { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) => fetchAPI(`/players/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateTags: (id, tags) => fetchAPI(`/players/${id}/tags`, { method: "PUT", body: JSON.stringify(tags) }),
 }
 
 // Game-related API calls
