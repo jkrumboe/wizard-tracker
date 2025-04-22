@@ -184,6 +184,24 @@
   .game-details:hover {
     background-color: rgba(53, 99, 233, 0.2);
   }
+
+  .mode-badge {
+    padding: var(--spacing-xs) var(--spacing-md);
+    margin: var(--spacing-md);
+    border-radius: 12px;
+    font-size: var(--font-size);
+    color: white;
+    font-weight: bold;
+  }
+  
+  .mode-badge.casual {
+    background-color: var(--secondary-color);
+  }
+  
+  .mode-badge.ranked {
+    background-color: var(--primary-color);
+  }
+  
   
   /* SearchBar Component */
   .search-bar {

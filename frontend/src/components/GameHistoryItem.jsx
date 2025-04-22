@@ -42,7 +42,7 @@ const GameHistoryItem = ({ game }) => {
     minute: "2-digit",
   });
 
-  // console.log("Game :", game);
+  console.log("Game :", game);
 
   return (
     <div className="game-card">
@@ -66,6 +66,10 @@ const GameHistoryItem = ({ game }) => {
       <Link to={`/game/${id}`} className="game-details">
         View Details
       </Link>
+      <span className={`mode-badge ${game.mode.toLowerCase()}`}>
+        {game.mode}
+      </span>
+
     </div>
   );
 };

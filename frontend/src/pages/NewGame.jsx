@@ -12,7 +12,7 @@ import defaultAvatar from "../assets/default-avatar.png";
 const NewGame = () => {
   const navigate = useNavigate()
   const { players, loading, tags } = usePlayers()
-  const { gameState, addPlayer, removePlayer, startGame, setMaxRounds } = useGameStateContext()
+  const { gameState, addPlayer, removePlayer, startGame, setMaxRounds, setMode } = useGameStateContext()
 
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredPlayers, setFilteredPlayers] = useState([])
@@ -137,6 +137,12 @@ const NewGame = () => {
       <div className="settings-section">
         <h2>Game Settings</h2>
         <div className="setting-item">
+
+        <select value={gameState.mode} onChange={(e) => setMode(e.target.value)}>
+          <option value="Casual">Casual</option>
+          <option value="Ranked">Ranked</option>
+        </select>
+
           <span>Number of Rounds:</span>
           <NumberPicker
             value={gameState.maxRounds}

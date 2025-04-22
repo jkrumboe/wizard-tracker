@@ -38,7 +38,7 @@ const Profile = () => {
         const playerData = await getPlayerById(id)
         const tagdata = await getTags()
         setDefaultTags(tagdata)
-        console.log("Tags:", tagdata)
+        // console.log("Tags:", tagdata)
         
         setPlayer({
           ...playerData,

@@ -11,6 +11,7 @@ export function GameStateProvider({ children }) {
     roundData: [],
     gameStarted: false,
     gameFinished: false,
+    mode: "Ranked",
   })
 
   // Add a player to the game
@@ -33,21 +34,21 @@ export function GameStateProvider({ children }) {
   const startGame = useCallback(() => {
     if (gameState.players.length < 2) return;
 
-    const referenceDate = new Date(); // Store the start time of the game
+    const referenceDate = new Date(); 
 
     // Initialize round data
     const initialRoundData = [];
     for (let i = 1; i <= gameState.maxRounds; i++) {
       initialRoundData.push({
         round: i,
-        cards: i <= 10 ? i : 20 - i, // Wizard card distribution
+        cards: i <= 10 ? i : 20 - i, 
         players: gameState.players.map((player) => ({
           id: player.id,
           name: player.name,
           call: null,
           made: null,
           score: null,
-          totalScore: i === 1 ? 0 : null, // Initialize with 0 for first round
+          totalScore: i === 1 ? 0 : null, 
         })),
       });
     }
@@ -179,6 +180,7 @@ export function GameStateProvider({ children }) {
         scores: finalScores,
         rounds: gameState.roundData,
         duration,
+        mode: gameState.mode || "Ranked",
       };
 
       // console.log("Game data to save:", gameData);
@@ -217,6 +219,13 @@ export function GameStateProvider({ children }) {
     setGameState((prev) => ({ ...prev, maxRounds: rounds }))
   }
 
+  const setMode = (mode) => {
+    setGameState((prevState) => ({
+      ...prevState,
+      mode,
+    }));
+  };
+
   return (
     <GameStateContext.Provider
       value={{
@@ -231,6 +240,7 @@ export function GameStateProvider({ children }) {
         finishGame,
         resetGame,
         setMaxRounds,
+        setMode,
       }}
     >
       {children}

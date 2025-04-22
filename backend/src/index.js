@@ -359,16 +359,27 @@ app.get('/api/games', async (req, res) => {
 
 // Fix the POST /api/games route to include the rounds field
 app.post('/api/games', async (req, res) => {
-  const { date, players, winner, scores, rounds, duration } = req.body;
+  const { date, players, winner, scores, rounds, duration, mode } = req.body;
 
   // Debugging: Log the incoming request body
   console.log('Incoming request body:', req.body);
 
   try {
     const result = await db.query(
-      'INSERT INTO games (date, players, winner, scores, rounds, duration) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [date, JSON.stringify(players), winner, JSON.stringify(scores), JSON.stringify(rounds), duration]
+      `INSERT INTO games (date, players, winner, scores, rounds, duration, mode) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING *`,
+      [
+        date,
+        JSON.stringify(players),
+        winner,
+        JSON.stringify(scores),
+        JSON.stringify(rounds),
+        duration,
+        mode || 'Ranked',
+      ]
     );
+    
 
     // Debugging: Log the result from the database
     console.log('Database insert result:', result.rows[0]);
