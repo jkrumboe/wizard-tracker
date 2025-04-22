@@ -393,7 +393,7 @@
     height: 80px;
     border-radius: var(--radius-full);
     object-fit: cover;
-    border: 3px solid var(--success-color);
+    border: 3px solid var(--primary-color);
   }
   
   .winner-info h3 {
@@ -403,7 +403,7 @@
   
   .winner-score {
     font-weight: 700;
-    color: var(--success-color);
+    color: var(--primary-color);
     font-size: 1.1rem;
   }
   

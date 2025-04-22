@@ -42,7 +42,7 @@ const GameHistoryItem = ({ game }) => {
     minute: "2-digit",
   });
 
-  console.log("Game :", game);
+  // console.log("Game :", game);
 
   return (
     <div className="game-card">

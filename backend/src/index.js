@@ -251,20 +251,32 @@ app.delete('/api/players/:id', async (req, res) => {
   }
 })
 
-// Fix query for fetching game history for a player
+// Fetch recent games for a specific player
 app.get('/api/players/:id/games', async (req, res) => {
   const { id } = req.params;
+  const limit = parseInt(req.query.limit);
+
   try {
-    const result = await db.query(
-      'SELECT * FROM games WHERE players @> $1::jsonb',
-      [JSON.stringify([parseInt(id)])]
-    );
+    let query = `
+      SELECT * FROM games
+      WHERE players @> $1::jsonb
+      ORDER BY date DESC
+    `;
+    const params = [JSON.stringify([parseInt(id)])];
+
+    if (!isNaN(limit)) {
+      query += ' LIMIT $2';
+      params.push(limit);
+    }
+
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching player games:', error);
     res.status(500).json({ error: 'Failed to fetch player games' });
   }
 });
+
 
 // Fix query for fetching stats for a player
 app.get('/api/players/:id/stats', async (req, res) => {

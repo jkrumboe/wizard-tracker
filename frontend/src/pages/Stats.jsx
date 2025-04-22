@@ -59,12 +59,13 @@ const Stats = () => {
   const getPerformanceStats = () => {
     const history = filteredHistory()
     if (!history.length) return { games: 0 }
+
+    console.log("filteredHistory", history)
     
-    const wins = history.filter(game => game.position === 1).length
+    const wins = history.map(game => game.winner === player.id).filter(Boolean).length
     const totalGames = history.length
     const winRate = Math.round((wins / totalGames) * 100)
-    const avgScore = Math.round(history.reduce((sum, game) => sum + game.score, 0) / totalGames)
-    const avgPosition = parseFloat((history.reduce((sum, game) => sum + game.position, 0) / totalGames).toFixed(2))
+    const avgScore = Math.round(history.reduce((sum, game) => sum + (game.scores[player.id] || 0), 0) / totalGames)
     
     // Calculate ELO change
     const oldestGame = history[history.length - 1] // History is sorted newest first
@@ -75,7 +76,6 @@ const Stats = () => {
       games: totalGames,
       wins,
       winRate,
-      avgPosition,
       avgScore,
       currentElo: player.elo,
       eloChange
@@ -91,10 +91,17 @@ const Stats = () => {
   }
 
   const stats = getPerformanceStats()
+
   const chartData = filteredHistory().map(game => ({
-    date: game.date,
+    date: new Date(game.date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
     elo: player.elo // In a real app, we'd have ELO history
   }))
+
+  console.log("filteredHistory scores", filteredHistory().map(game => game.scores[player.id]))
 
   return (
     <div className="stats-container">
@@ -111,10 +118,10 @@ const Stats = () => {
           All Time
         </button>
         <button 
-          className={`filter-btn ${timeRange === '1y' ? 'active' : ''}`}
-          onClick={() => setTimeRange('1y')}
+          className={`filter-btn ${timeRange === '3m' ? 'active' : ''}`}
+          onClick={() => setTimeRange('3m')}
         >
-          Last Year
+          Last 3 Months
         </button>
         <button 
           className={`filter-btn ${timeRange === '6m' ? 'active' : ''}`}
@@ -123,10 +130,10 @@ const Stats = () => {
           Last 6 Months
         </button>
         <button 
-          className={`filter-btn ${timeRange === '3m' ? 'active' : ''}`}
-          onClick={() => setTimeRange('3m')}
+          className={`filter-btn ${timeRange === '1y' ? 'active' : ''}`}
+          onClick={() => setTimeRange('1y')}
         >
-          Last 3 Months
+          Last Year
         </button>
       </div>
 
@@ -143,10 +150,6 @@ const Stats = () => {
           title="Current ELO"
           value={stats.currentElo}
           change={stats.eloChange}
-        />
-        <StatCard
-          title="Avg Position"
-          value={stats.avgPosition}
         />
         <StatCard
           title="Avg Score"
@@ -182,16 +185,22 @@ const Stats = () => {
           <div className="position-col">Position</div>
           <div className="score-col">Score</div>
           <div className="elo-col">ELO</div>
-          <div className="players-col">Players</div>
         </div>
         <div className="table-body">
           {filteredHistory().map(game => (
             <div key={game.id} className="table-row">
-              <div className="date-col">{game.date}</div>
-              <div className="position-col">{game.position}</div>
-              <div className="score-col">{game.score}</div>
+              <div className="date-col">{
+                new Date(game.date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              <div className="position-col">{game.positions}</div>
+              <div className="score-col">{game.scores[player.id]}</div>
               <div className="elo-col">{player.elo}</div>
-              <div className="players-col">{game.players}</div>
             </div>
           ))}
         </div>

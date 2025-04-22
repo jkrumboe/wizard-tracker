@@ -145,9 +145,9 @@ const Profile = () => {
 
   if (playerStats) {
     winRate = playerStats.total_games > 0
-      ? parseFloat(((playerStats.wins / playerStats.total_games) * 100).toFixed(2))
+      ? Math.round((playerStats.wins / playerStats.total_games) * 100)
       : 0;
-    lossRate = parseFloat((100 - winRate).toFixed(2));
+    lossRate = Math.round(100 - winRate);
     totalGames = playerStats.total_games || 1;
   }
 
@@ -160,7 +160,7 @@ const Profile = () => {
      '#FF5C5C'
     ]
 
-    console.log("Tags:", tags)
+    // console.log("Tags:", tags)
     // console.log("Edit Tags:", editedTags)
 
   // Add functionality to toggle tags for adding or removing
@@ -339,7 +339,7 @@ const Profile = () => {
                 </div>
               </div>
               
-              {playerStats && (
+              {/* {playerStats && (
                 <div className="player-stats">
                   <h2>Player Statistics</h2>
                   <p>Total Bids: {playerStats.totalBids}</p>
@@ -354,7 +354,10 @@ const Profile = () => {
                   <p>Highest Score: {playerStats.highestScore}</p>
                   <p>Lowest Score: {playerStats.lowestScore}</p>
                 </div>
-              )}
+              )} */}
+              <Link to={`/stats/${player.id}`} className="view-all-stats">
+                View Complete Stats History
+              </Link>
             </div>
           )}
 
@@ -370,9 +373,6 @@ const Profile = () => {
                   <div className="empty-message">No game history found</div>
                 )}
               </div>
-              <Link to={`/stats/${player.id}`} className="view-all-stats">
-                View Complete Stats History
-              </Link>
             </div>
           )}
       </div>

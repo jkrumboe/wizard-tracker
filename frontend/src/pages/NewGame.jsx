@@ -41,7 +41,6 @@ const NewGame = () => {
   }
 
   const handleSearch = (query) => {
-  
     setSearchQuery(query)
     setShowSearch(query.length > 0)
   }
