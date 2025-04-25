@@ -32,34 +32,34 @@ export function GameStateProvider({ children }) {
 
   // Start a new game
   const startGame = useCallback(() => {
-    if (gameState.players.length < 2) return;
+  if (gameState.players.length < 2) return;
 
-    const referenceDate = new Date(); 
+  const referenceDate = new Date();
+  const initialRoundData = [];
 
-    // Initialize round data
-    const initialRoundData = [];
-    for (let i = 1; i <= gameState.maxRounds; i++) {
-      initialRoundData.push({
-        round: i,
-        cards: i <= 10 ? i : 20 - i, 
-        players: gameState.players.map((player) => ({
-          id: player.id,
-          name: player.name,
-          call: null,
-          made: null,
-          score: null,
-          totalScore: i === 1 ? 0 : null, 
-        })),
-      });
-    }
+  for (let i = 1; i <= gameState.maxRounds; i++) {
+    initialRoundData.push({
+      round: i,
+      cards: i <= 10 ? i : 20 - i,
+      players: gameState.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        call: null,
+        made: null,
+        score: null,
+        totalScore: i === 1 ? 0 : null,
+      })),
+    });
+  }
 
-    setGameState((prevState) => ({
-      ...prevState,
-      roundData: initialRoundData,
-      gameStarted: true,
-      referenceDate, // Save the start time in the game state
-    }));
-  }, [gameState.players, gameState.maxRounds]);
+  setGameState((prevState) => ({
+    ...prevState,
+    roundData: initialRoundData,
+    gameStarted: true,
+    gameFinished: false, // Reset gameFinished
+    referenceDate,
+  }));
+}, [gameState.players, gameState.maxRounds]);
 
   // Update player's call for current round
   const updateCall = useCallback((playerId, call) => {
@@ -183,11 +183,6 @@ export function GameStateProvider({ children }) {
         mode: gameState.mode || "Ranked",
       };
 
-      // console.log("Game data to save:", gameData);
-      // console.log("Game state:", gameState);
-      // console.log("Game date split:", gameData.date);
-
-
       // Save game data
       await createGame(gameData);
 
@@ -212,6 +207,7 @@ export function GameStateProvider({ children }) {
       roundData: [],
       gameStarted: false,
       gameFinished: false,
+      mode: "Ranked",
     })
   }, [])
 

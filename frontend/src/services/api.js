@@ -29,6 +29,7 @@ export const playerAPI = {
   getAll: () => fetchAPI("/players"),
   getTags: () => fetchAPI("/tags"),
   getById: (id) => fetchAPI(`/players/${id}`),
+  getElo: (id) => fetchAPI(`/players/${id}/elo-history`),
   getStats: (id) => fetchAPI(`/players/${id}/stats`),
   getTagsById: (id) => fetchAPI(`/players/${id}/tags`),
   getbyTag: (tag) => fetchAPI(`/players/search/${tag}`), 

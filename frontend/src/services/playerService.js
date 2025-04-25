@@ -31,6 +31,11 @@ export async function getTagsByPlayerId(id){
   return await playerAPI.getTagsById(id);
 };
 
+// Get Elo history for a player
+export async function getEloHistory(id) {
+  return await playerAPI.getElo(id);
+}
+
 //=== Get by Tag ===//
 
 // Get players by tag

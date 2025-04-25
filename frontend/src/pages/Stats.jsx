@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import StatCard from '../components/StatCard'
-import { getPlayerById } from '../services/playerService'
+import { getPlayerById, getEloHistory } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 
 const Stats = () => {
   const { id } = useParams()
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
+  const [eloHistory, setEloHistory] = useState([]);
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('all')
   const [error, setError] = useState(null)
@@ -29,9 +30,23 @@ const Stats = () => {
         setLoading(false)
       }
     }
+    const fetchEloHistory = async () => {
+      try {
+        const elodata = await getEloHistory(id);
+        console.log("eloHistory", elodata)
+        setEloHistory(elodata);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchEloHistory();
     fetchData()
   }, [id])
+
+  console.log("eloHistory", eloHistory)
 
   const filteredHistory = () => {
     if (timeRange === 'all' || !gameHistory.length) return gameHistory
@@ -68,9 +83,11 @@ const Stats = () => {
     const avgScore = Math.round(history.reduce((sum, game) => sum + (game.scores[player.id] || 0), 0) / totalGames)
     
     // Calculate ELO change
-    const oldestGame = history[history.length - 1] // History is sorted newest first
-    const newestGame = history[0]
-    const eloChange = oldestGame && newestGame ? newestGame.elo - oldestGame.elo : 0
+    const latestGame = eloHistory[0] // History is sorted newest first
+    console.log("latestGame", latestGame)
+    const eloChange = latestGame.new_elo - latestGame.old_elo
+    console.log("eloChange", eloChange)
+    // const eloChange = oldestGame && newestGame ? newestGame.elo - oldestGame.elo : 0
     
     return {
       games: totalGames,
@@ -82,6 +99,8 @@ const Stats = () => {
     }
   }
 
+  
+
   if (loading) {
     return <div className="loading">Loading statistics...</div>
   }
@@ -92,15 +111,16 @@ const Stats = () => {
 
   const stats = getPerformanceStats()
 
-  const chartData = filteredHistory().map(game => ({
+  const chartData = filteredHistory().map((game, index) => ({
     date: new Date(game.date).toLocaleDateString("en-US", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     }),
-    elo: player.elo // In a real app, we'd have ELO history
+    elo: eloHistory[index]?.new_elo || 0 // Use ELO history if available, fallback to 0
   }))
 
+  // console.log("eloHistory", eloHistory[index]?.new_elo)
   console.log("filteredHistory scores", filteredHistory().map(game => game.scores[player.id]))
 
   return (

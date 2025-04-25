@@ -87,6 +87,8 @@
     white-space: nowrap;
     gap: 0.5rem;
     margin: var(--spacing-md);
+    justify-content: center;
+    align-items: center;
   }
 
   .edit-tags-list {
@@ -124,7 +126,7 @@
   
   /* Game Card */
   .game-card {
-    background-color: var(--card-background);
+    background-color: var(--card-background-light);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
@@ -858,16 +860,16 @@
 }
 
 .number-display {
-  background-color: var(--card-background);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: var(--spacing-sm);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  background-color: var(--card-background-alt);
   color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 0.5rem 1rem;
-  min-width: 50px;
-  text-align: center;
-  font-weight: 500;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  appearance: none;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .number-display:hover {
@@ -1199,6 +1201,31 @@
     margin-top: var(--spacing-sm);
     color: var(--error-color);
     text-align: center;
+  }
+
+  /* Dropdown Styling */
+  select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-sm);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    background-color: var(--card-background-alt);
+    color: var(--text-color);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.2);
+  }
+
+  select option {
+    background-color: var(--card-background);
+    color: var(--text-color);
   }
   
   /* Game in progress */

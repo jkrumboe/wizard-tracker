@@ -356,6 +356,12 @@ app.get('/api/players/search/:tag', async (req, res) => {
   }
 });
 
+//=== ELO ===//
+function calculateElo(playerElo, opponentElo, score, kFactor = 32) {
+  const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+  return Math.round(playerElo + kFactor * (score - expectedScore));
+}
+
 //=== Game routes ===//
 
 // Get all games
@@ -369,41 +375,67 @@ app.get('/api/games', async (req, res) => {
   }
 })
 
-// Fix the POST /api/games route to include the rounds field
+// Add a new game with Elo calculation
 app.post('/api/games', async (req, res) => {
-  const { date, players, winner, scores, rounds, duration, mode } = req.body;
-
-  // Debugging: Log the incoming request body
-  console.log('Incoming request body:', req.body);
-
-  try {
-    const result = await db.query(
-      `INSERT INTO games (date, players, winner, scores, rounds, duration, mode) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING *`,
-      [
-        date,
-        JSON.stringify(players),
-        winner,
-        JSON.stringify(scores),
-        JSON.stringify(rounds),
-        duration,
-        mode || 'Ranked',
-      ]
-    );
-    
-
-    // Debugging: Log the result from the database
-    console.log('Database insert result:', result.rows[0]);
-
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    // Debugging: Log the error
-    console.error('Error saving game:', err);
-
-    res.status(500).json({ error: 'Failed to save game' });
-  }
-});
+    const { players, scores, winner, rounds, duration, mode } = req.body;
+  
+    try {
+      console.log('Incoming request body:', req.body);
+  
+      // Insert game data
+      const gameResult = await db.query(
+        `INSERT INTO games (date, players, winner, scores, rounds, duration, mode) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING id`,
+        [
+          new Date(),
+          JSON.stringify(players),
+          winner,
+          JSON.stringify(scores),
+          JSON.stringify(rounds),
+          duration,
+          mode || 'Ranked',
+        ]
+      );
+      const gameId = gameResult.rows[0].id;
+      console.log('Game inserted successfully with ID:', gameId);
+  
+      // Fetch player Elo data
+      const playerData = await db.query('SELECT id, elo FROM players WHERE id = ANY($1)', [players]);
+      const playerEloMap = Object.fromEntries(playerData.rows.map((p) => [p.id, p.elo]));
+  
+      // Calculate new Elo ratings
+      const newEloMap = {};
+      for (const playerId of players) {
+        const playerElo = playerEloMap[playerId];
+        const opponents = players.filter((id) => id !== playerId);
+        const opponentEloAvg = opponents.reduce((sum, id) => sum + playerEloMap[id], 0) / opponents.length;
+        const score = playerId === winner ? 1 : 0;
+        newEloMap[playerId] = calculateElo(playerElo, opponentEloAvg, score);
+      }
+  
+      // Update Elo ratings
+      for (const [playerId, newElo] of Object.entries(newEloMap)) {
+        await db.query('UPDATE players SET elo = $1 WHERE id = $2', [newElo, playerId]);
+      }
+  
+      // Log Elo history
+      for (const [playerId, newElo] of Object.entries(newEloMap)) {
+        const oldElo = playerEloMap[playerId];
+        const change = newElo - oldElo;
+        await db.query(
+          'INSERT INTO elo_history (player_id, game_id, old_elo, new_elo, change) VALUES ($1, $2, $3, $4, $5)',
+          [playerId, gameId, oldElo, newElo, change]
+        );
+      }
+  
+      console.log('Elo update process completed successfully.');
+      res.status(201).json({ message: 'Game saved and Elo updated', newEloMap });
+    } catch (error) {
+      console.error('Error saving game or updating Elo:', error);
+      res.status(500).json({ error: 'Failed to save game or update Elo' });
+    }
+  });
 
 // Get recent games
 app.get('/api/games/recent', async (req, res) => {
@@ -434,6 +466,31 @@ app.get('/api/games/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch game' })
   }
 })
+
+//=== ELO History ===//
+
+// Get Elo history for a player
+app.get('/api/players/:id/elo-history', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query(
+      `SELECT id, game_id, old_elo, new_elo, change, timestamp
+       FROM elo_history
+       WHERE player_id = $1
+       ORDER BY timestamp DESC`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'No Elo history found for this player' });
+    }
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching Elo history:', err);
+    res.status(500).json({ error: 'Failed to fetch Elo history' });
+  }
+});
 
 //=== Middleware for admin authentication ===//
 function adminAuth(req, res, next) {

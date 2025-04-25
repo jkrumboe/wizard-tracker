@@ -19,6 +19,12 @@ const NewGame = () => {
   const [showSearch, setShowSearch] = useState(false)
 
   useEffect(() => {
+    setSearchQuery(""); // Clear the search query
+    setFilteredPlayers([]); // Clear the filtered players
+    setShowSearch(false); // Hide the search results
+  }, [gameState.gameFinished]); // Trigger reset when the game is finished
+
+  useEffect(() => {
     if (players.length > 0) {
       const filtered = players.filter(
         (player) =>
@@ -30,6 +36,11 @@ const NewGame = () => {
   }, [players, tags, searchQuery, gameState.players])
 
   const handleTagClick = async (tag) => {
+    if(tag === searchQuery) {
+      setSearchQuery("")
+      setShowSearch(false)
+      return
+    }
     setSearchQuery(tag)
     setShowSearch(true)
     try {

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react";
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import NumberPicker from "../components/NumberPicker"
@@ -9,18 +9,14 @@ import defaultAvatar from "../assets/default-avatar.png";
 
 const GameInProgress = () => {
   const navigate = useNavigate()
-  const { gameState, updateCall, updateMade, nextRound, previousRound, finishGame } = useGameStateContext()
+  const { gameState, updateCall, updateMade, nextRound, previousRound, finishGame, resetGame } = useGameStateContext()
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
 
-  useEffect(() => {
-    if (!gameState.gameStarted) {
-      navigate("/new-game")
-    }
-  }, [gameState.gameStarted, navigate])
 
   const handleFinishGame = async () => {
     const success = await finishGame()
     if (success) {
+      resetGame(); 
       navigate("/")
     }
   }
