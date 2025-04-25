@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import StatCard from '../components/StatCard'
 import { getPlayerById, getEloHistory } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
@@ -46,8 +46,6 @@ const Stats = () => {
     fetchData()
   }, [id])
 
-  console.log("eloHistory", eloHistory)
-
   const filteredHistory = () => {
     if (timeRange === 'all' || !gameHistory.length) return gameHistory
     
@@ -74,8 +72,6 @@ const Stats = () => {
   const getPerformanceStats = () => {
     const history = filteredHistory()
     if (!history.length) return { games: 0 }
-
-    console.log("filteredHistory", history)
     
     const wins = history.map(game => game.winner === player.id).filter(Boolean).length
     const totalGames = history.length
@@ -84,9 +80,10 @@ const Stats = () => {
     
     // Calculate ELO change
     const latestGame = eloHistory[0] // History is sorted newest first
-    console.log("latestGame", latestGame)
     const eloChange = latestGame.new_elo - latestGame.old_elo
-    console.log("eloChange", eloChange)
+
+    // console.log("latestGame", latestGame)
+    // console.log("eloChange", eloChange)
     // const eloChange = oldestGame && newestGame ? newestGame.elo - oldestGame.elo : 0
     
     return {
@@ -111,17 +108,18 @@ const Stats = () => {
 
   const stats = getPerformanceStats()
 
-  const chartData = filteredHistory().map((game, index) => ({
-    date: new Date(game.date).toLocaleDateString("en-US", {
+  const chartData = [...eloHistory]
+  .reverse()
+  .map((entry) => ({
+    date: new Date(entry.timestamp).toLocaleDateString("en-US", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     }),
-    elo: eloHistory[index]?.new_elo || 0 // Use ELO history if available, fallback to 0
-  }))
+    elo: entry.new_elo,
+  }));
 
-  // console.log("eloHistory", eloHistory[index]?.new_elo)
-  console.log("filteredHistory scores", filteredHistory().map(game => game.scores[player.id]))
+  console.log("filteredHistory scores", filteredHistory().map(game => game))
 
   return (
     <div className="stats-container">
@@ -179,20 +177,38 @@ const Stats = () => {
 
       <div className="chart-container">
         <h2>ELO Progress</h2>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250}>
           <LineChart
             data={chartData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 20, right: 40, left: 10, bottom: 25 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
+            <defs>
+              <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#4A90E2" />
+                <stop offset="100%" stopColor="#50E3C2" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="1 0" stroke="#e0e0e0" />
             <XAxis dataKey="date" />
             <YAxis domain={['dataMin - 20', 'dataMax + 20']} />
-            <Tooltip />
-            <Line 
-              type="monotone" 
-              dataKey="elo" 
-              stroke="#4A90E2" 
-              activeDot={{ r: 8 }} 
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #ccc',
+                borderRadius: '5px',
+                padding: '10px',
+              }}
+              labelStyle={{ fontWeight: 'bold', color: '#333' }}
+              cursor={{ stroke: '#ccc', strokeWidth: 1 }}
+            />
+            <Legend verticalAlign="top" height={36} />
+            <Line
+              type="monotone"
+              dataKey="elo"
+              stroke="url(#lineGradient)"
+              strokeWidth={3}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -207,7 +223,7 @@ const Stats = () => {
           <div className="elo-col">ELO</div>
         </div>
         <div className="table-body">
-          {filteredHistory().map(game => (
+          {filteredHistory().slice(0, 5).map(game => (
             <div key={game.id} className="table-row">
               <div className="date-col">{
                 new Date(game.date).toLocaleDateString("en-US", {
@@ -218,7 +234,9 @@ const Stats = () => {
                   minute: "2-digit",
                 })}
               </div>
-              <div className="position-col">{game.positions}</div>
+              <div className="position-col">
+                {Object.keys(game.scores).sort((a, b) => game.scores[b] - game.scores[a]).indexOf(player.id.toString()) + 1}
+              </div>
               <div className="score-col">{game.scores[player.id]}</div>
               <div className="elo-col">{player.elo}</div>
             </div>
