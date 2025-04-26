@@ -339,22 +339,6 @@ const Profile = () => {
                 </div>
               </div>
               
-              {/* {playerStats && (
-                <div className="player-stats">
-                  <h2>Player Statistics</h2>
-                  <p>Total Bids: {playerStats.totalBids}</p>
-                  <p>Total Tricks: {playerStats.totalTricks}</p>
-                  <p>Correct Bids: {playerStats.correctBids}</p>
-                  <p>Bid Accuracy: {playerStats.bidAccuracy}%</p>
-                  <p>Overbids: {playerStats.overbids}</p>
-                  <p>Underbids: {playerStats.underbids}</p>
-                  <p>Average Difference: {playerStats.avgDiff}</p>
-                  <p>Total Points: {playerStats.totalPoints}</p>
-                  <p>Average Points: {playerStats.avgPoints}</p>
-                  <p>Highest Score: {playerStats.highestScore}</p>
-                  <p>Lowest Score: {playerStats.lowestScore}</p>
-                </div>
-              )} */}
               <Link to={`/stats/${player.id}`} className="view-all-stats">
                 View Complete Stats History
               </Link>

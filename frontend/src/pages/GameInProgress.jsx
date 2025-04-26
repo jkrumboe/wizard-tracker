@@ -57,6 +57,9 @@ const GameInProgress = () => {
 
   const currentGameStats = calculateCurrentGameStats();
 
+  const totalCalls = currentRound.players.reduce((sum, player) => sum + (player.call || 0), 0);
+  // console.log("Total Calls:", totalCalls);
+
   // Add functionality to toggle player stats on row click
   const togglePlayerStats = (playerId) => {
     setSelectedPlayerId((prev) => (prev === playerId ? null : playerId));
@@ -70,10 +73,8 @@ const GameInProgress = () => {
           <span>
             Round {gameState.currentRound} of {gameState.maxRounds}
           </span>
-          <span className="cards-info">
-            {currentRound?.cards === 1
-              ? "1 Card"
-              : `${currentRound?.cards} Card's`}
+          <span className="total-calls">
+            Total Calls: {totalCalls} / {currentRound?.cards}
           </span>
         </div>
       </div>
@@ -137,7 +138,7 @@ const GameInProgress = () => {
                       min={0}
                       max={currentRound.cards + 1}
                       title={`${player.name}'s Tricks Made`}
-                      disabled={player.call === null} // Disable until Call is set
+                      disabled={player.call === null }
                     />
                   </td>
                   <td className={player.score > 0 ? "positive-score" : player.score < 0 ? "negative-score" : ""}>
