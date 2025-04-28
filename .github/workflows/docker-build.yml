@@ -9,7 +9,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     env:
-      VITE_API_URL: http://backend:5000/api
+      VITE_API_URL: https://backend.jkrumboe.dev/api
 
     steps:
       - name: Checkout repository
