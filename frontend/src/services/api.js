@@ -1,5 +1,5 @@
 // Update the API base URL to ensure it points to the correct backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5055/api"
+const API_BASE_URL = window._env_.VITE_API_URL || "https://backend.jkrumboe.dev/api"
 
 // Helper function for making API requests
 async function fetchAPI(endpoint, options = {}) {

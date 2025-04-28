@@ -12,4 +12,16 @@ RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
+
+# Copy build files
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copy the template
+COPY env-config.js.template /usr/share/nginx/html/env-config.js.template
+
+# Install envsubst
+RUN apk add --no-cache gettext
+
+# Replace placeholders with environment variables
+CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/env-config.js.template > /usr/share/nginx/html/env-config.js && exec nginx -g 'daemon off;'"]
+
