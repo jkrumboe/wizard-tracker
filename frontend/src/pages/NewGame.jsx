@@ -143,13 +143,7 @@ const NewGame = () => {
           )}
         </div>
 
-        <div className="setting-item">
-
-              <select value={gameState.mode} onChange={(e) => setMode(e.target.value)}>
-                <option value="Casual">Casual</option>
-                <option value="Ranked">Ranked</option>
-              </select>
-
+            <div className="setting-item">
               <div>
                 <span>Number of Rounds:</span>
                 <NumberPicker
@@ -160,6 +154,11 @@ const NewGame = () => {
                   title="Select Number of Rounds"
                 />
               </div>
+
+              <select value={gameState.mode} onChange={(e) => setMode(e.target.value)}>
+                <option value="Casual">Casual</option>
+                <option value="Ranked">Ranked</option>
+              </select>
             </div>
       </div>
 

@@ -302,7 +302,7 @@ const Profile = () => {
 
       <div className="profile-content">
         {/* Hide tabs and show both sections for desktop or iPad */}
-        <div className="card-tabs" style={{ display: window.innerWidth > 768 ? 'none' : 'block' }}>
+        <div className="card-tabs" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
           <button 
             className={`tab-button ${activeTab === 'performance' ? 'active' : ''}`} 
             onClick={() => setActiveTab('performance')}

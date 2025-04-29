@@ -86,9 +86,9 @@
     overflow-x: auto;
     white-space: nowrap;
     gap: 0.5rem;
-    margin: var(--spacing-md);
-    justify-content: center;
-    align-items: center;
+    margin: var(--spacing-xs);
+    /* justify-content: center;
+    align-items: center; */
   }
 
   .edit-tags-list {
@@ -217,6 +217,7 @@
   
   .search-input {
     width: 100%;
+    margin-top: var(--spacing-xs);
     padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
@@ -551,8 +552,8 @@
   }
 
   .player-name-tags {
-    display: flex;
-    gap: var(--spacing-xxl);
+    display: grid;
+    justify-content: center;
   }
 
 
@@ -576,7 +577,6 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
-    height: auto;
   }
   
   .stats-graph,
@@ -627,6 +627,8 @@
   
   .games-list {
     margin-top: var(--spacing-md);
+    max-height: 300px; /* Set a maximum height */
+    overflow-y: auto; /* Enable vertical scrolling */
   }
   
   .game-item {
@@ -1085,8 +1087,8 @@
   /* New Game Page */
   .new-game-container {
     max-width: 960px; /* Constrain the leaderboard width */
-    margin: var(--spacing-lg) auto;
-    padding: var(--spacing-lg);
+    /* margin: var(--spacing-lg) auto; */
+    padding: var(--spacing-md);
   }
 
   .leaderboard-container {
@@ -1209,7 +1211,7 @@
   }
   
   .setting-item {
-    display: flex;
+    display: flexbox;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
@@ -1220,6 +1222,10 @@
   .setting-item:last-child {
     border-bottom: none;
     margin-bottom: 0;
+  }
+
+  .select {
+    color: var(--primary-color) ;
   }
   
   .start-game-btn {
@@ -1346,7 +1352,7 @@
   }
   
   .score-table {
-    width: 100%;
+    width: 90%;
     border-collapse: collapse;
   }
   
@@ -1359,7 +1365,7 @@
   }
   
   .score-table td {
-    padding: var(--spacing-sm) var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-xs);
     text-align: center;
   }
   
@@ -1651,6 +1657,7 @@
   
     .profile-content {
       grid-template-columns: 1fr 1fr;
+      height: max-content;
     }
   
     .stats-summary {
@@ -1700,21 +1707,29 @@
     .menu-icon {
       display: none;
     }
-  
-    .profile-content {
-      height: auto;
+
+    .recent-games {
+      overflow: hidden;
     }
-  
-    .stats-graph{
-      height: 32vh;
+
+    .games-list {
+      overflow-y: scroll;
+      scrollbar-width: none; /* For Firefox */
     }
   
     .card-tabs {
       margin-top: var(--spacing-sm);
       margin-bottom: auto;
-      justify-content: top;
-      align-items: top;
+      justify-content: center;
+      align-items: center;
     }
+
+    .player-name-tags {
+      display: flex;
+      gap: var(--spacing-xxl);
+      justify-content: left;
+    }
+
   }
   
   @media (min-width: 992px) {
