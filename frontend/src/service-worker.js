@@ -1,6 +1,6 @@
 // Service Worker for Wizard Tracker PWA
 const CACHE_NAME = "wizard-tracker-v1"
-const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/icon-192x192.png", "/icons/icon-512x512.png"]
+const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/pwa-192x192.png", "/icons/pwa-512x512.png"]
 
 // Install event - cache assets
 self.addEventListener("install", (event) => {
