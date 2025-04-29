@@ -12,7 +12,7 @@ import GameInProgress from "./pages/GameInProgress"
 import Navbar from "./components/Navbar"
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
-// import { register } from "./serviceWorkerRegistration"
+import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
 
 function ProtectedRoute({ children, roles }) {
@@ -41,7 +41,7 @@ function ProtectedRoute({ children, roles }) {
 function App() {
   useEffect(() => {
     // Register service worker for PWA functionality
-    // register()
+    register()
   }, [])
 
   return (
