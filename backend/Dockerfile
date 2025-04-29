@@ -1,4 +1,4 @@
-FROM node:20-alpine-slim
+FROM node:23-alpine
 
 # Install bash for wait-for-it.sh
 RUN apk add --no-cache bash
