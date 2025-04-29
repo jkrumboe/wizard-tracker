@@ -140,10 +140,8 @@ const GameDetails = () => {
         </Link>
         <h1>Game Details</h1>
         
-        <div className="game-date">Finished: {formattedDate}</div>
-        <div className="game-date">Duration: {duration}</div>
-
-
+        <div className="game-date-detail">Finished: {formattedDate}</div>
+        <div className="game-date-detail">Duration: {duration}</div>
       </div>
 
       <div className="game-summary">

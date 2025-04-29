@@ -63,6 +63,9 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  overflow-y: scroll; /* Ensures consistent scrollbar behavior */
 }
 
 code {
@@ -81,9 +84,10 @@ a:hover {
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 960px;
   margin: 0 auto;
   padding: var(--spacing-md);
+  box-sizing: border-box; /* Ensure padding doesn't cause overflow */
 }
 
 h1,
@@ -386,7 +390,7 @@ button:disabled {
 
 .game-list {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr; /* Default to single column */
   gap: var(--spacing-md);
 }
 
@@ -401,10 +405,10 @@ button:disabled {
 
 
 
-/* Media queries for responsive design */
 @media (min-width: 576px) {
   .game-list {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr); /* Two columns for tablets */
+    gap: var(--spacing-lg); /* Increase spacing */
   }
 }
 
@@ -422,11 +426,13 @@ button:disabled {
     box-shadow: none;
     transform: translateY(0);
     opacity: 1;
+    display: none; /* Completely hide the nav-menu */
   }
 
   .nav-menu.active {
     transform: translateY(0); /* Drop down into view */
     opacity: 1;
+    display: flex; /* Show the nav-menu when active */
   }
 
   .nav-item {
@@ -445,7 +451,9 @@ button:disabled {
 
 @media (min-width: 992px) {
   .game-list {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr); /* Three columns for larger screens */
   }
 }
+
+
 

@@ -157,8 +157,20 @@
     color: var(--text-light);
     font-size: 0.9rem;
     margin-bottom: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    border-bottom: var(--border-color) solid 2px;
+    text-align: center;
   }
-  
+
+  .game-date-detail {
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 1.2rem;
+    margin-bottom: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    text-align: center;
+  }
+
   .game-winner {
     margin-top: var(--spacing-sm);
     font-weight: 700;
@@ -194,6 +206,8 @@
     font-size: var(--font-size);
     color: white;
     font-weight: bold;
+    position: absolute;
+    right: var(--spacing-sm);
   }
   
   .mode-badge.casual {
@@ -338,11 +352,6 @@
     color: var(--primary-light);
   }
   
-  .game-date {
-    color: var(--text-light);
-    margin-top: var(--spacing-sm);
-  }
-  
   .game-summary {
     display: grid;
     grid-template-columns: 1fr;
@@ -377,6 +386,18 @@
     width: 40px;
     height: 3px;
     background-color: var(--primary-color);
+  }
+
+  .round-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--card-background-alt);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-sm);
   }
   
   .winner-card {
@@ -523,15 +544,25 @@
   
   .player-info h1 {
     color: var(--primary-color);
-    margin-bottom: var(--spacing-md);
+    margin-bottom:0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+
+  .player-name-tags {
+    display: flex;
+    gap: var(--spacing-xxl);
+  }
+
+
   
-  .stats-summary {
+  /* .stats-summary {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-md);
     margin-top: var(--spacing-md);
-  }
+  } */
   
   .tags-container {
     display: flex;
@@ -746,7 +777,9 @@
   
   /* Stats Page */
   .stats-container {
-    padding: var(--spacing-md);
+    max-width: 960px;
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-lg);
   }
   
   .stats-header {
@@ -794,9 +827,10 @@
   
   .stats-summary {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr; /* Default to a single column */
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
+    margin-top: var(--spacing-md);
   }
   
   .chart-container {
@@ -828,7 +862,7 @@
   
   .table-header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
     padding: 0.75rem 0.5rem;
     background-color: var(--primary-color);
     color: var(--text-white);
@@ -840,7 +874,7 @@
   
   .table-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
     padding: 0.75rem 0.5rem;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
@@ -1048,7 +1082,16 @@
   
   /* New Game Page */
   .new-game-container {
+    max-width: 960px; /* Constrain the leaderboard width */
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-lg);
+  }
+
+  .leaderboard-container {
+    max-width: 960px; /* Constrain the leaderboard width */
     padding: var(--spacing-md);
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-lg);
   }
   
   .new-game-container h1 {
@@ -1057,8 +1100,7 @@
     color: var(--primary-color);
   }
   
-  .setup-section,
-  .settings-section {
+  .setup-section{
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
@@ -1066,16 +1108,14 @@
     box-shadow: var(--shadow);
   }
   
-  .setup-section h2,
-  .settings-section h2 {
+  .setup-section h2 {
     color: var(--primary-color);
     position: relative;
     padding-bottom: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
   }
   
-  .setup-section h2::after,
-  .settings-section h2::after {
+  .setup-section h2::after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -1367,11 +1407,13 @@
 
   /* Leaderboard Styles */
   .leaderboard-container {
+    max-width: 960px; /* Constrain the leaderboard width */
     padding: var(--spacing-md);
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
-    margin: 15vh var(--spacing-lg);
+    margin: var(--spacing-lg) auto;
+    padding: var(--spacing-lg);
   }
 
   .leaderboard-container h1 {
@@ -1386,6 +1428,8 @@
 
   .leaderboard-table {
     margin-top: var(--spacing-md);
+    justify-content: center;
+    align-items: center;
   }
 
   .leaderboard-header,
@@ -1584,14 +1628,23 @@
   }
   
   @media (min-width: 768px) {
+
+    .profile-container {
+      padding: var(--spacing-lg);
+      width: 80vw;
+      margin: auto;
+    }
     .profile-header {
       flex-direction: row;
       text-align: left;
       gap: var(--spacing-lg);
+      
     }
   
     .avatar {
       margin-bottom: 0;
+      width: 150px; /* Increase size for tablets */
+      height: 150px;
     }
   
     .profile-content {
@@ -1599,7 +1652,8 @@
     }
   
     .stats-summary {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr); /* Four columns for tablets and larger screens */
+      gap: var(--spacing-lg);
     }
   
     .game-summary {
@@ -1609,7 +1663,11 @@
   
   @media (min-width: 992px) {
     .stats-summary {
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .avatar {
+      width: 180px; /* Increase size for desktops */
+      height: 180px;
     }
   }
 

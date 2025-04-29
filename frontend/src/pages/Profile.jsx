@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
@@ -21,6 +21,7 @@ const Profile = () => {
   const [playerStats, setPlayerStats] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
   const [editing, setEditing] = useState(false);
+  const [hasEditAccess, setHasEditAccess] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedAvatar, setEditedAvatar] = useState('');
   // const [editedTags, setEditedTags] = useState([]);
@@ -32,13 +33,32 @@ const Profile = () => {
   // console.log("Player Stats:", playerStats)
 
 
+  const canEdit = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        console.log("Decoded Token:", decoded);
+        const editAccess = decoded.role >= 2 || decoded.player_id === player.id;
+        setHasEditAccess(editAccess);
+        console.log("Edit Access:", editAccess);
+        return editAccess;
+      } else {
+        console.error("No token found in localStorage.");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error decoding token:", err);
+      return false;
+    }
+  }, [player]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const playerData = await getPlayerById(id)
         const tagdata = await getTags()
         setDefaultTags(tagdata)
-        // console.log("Tags:", tagdata)
         
         setPlayer({
           ...playerData,
@@ -47,7 +67,7 @@ const Profile = () => {
 
         const history = await getPlayerGameHistory(id)
         setGameHistory(history)
-        
+        canEdit()
         setLoading(false)
       } catch (err) {
         console.error('Error fetching profile data:', err)
@@ -57,7 +77,7 @@ const Profile = () => {
     }
 
     fetchData()
-  }, [id])
+  }, [id, canEdit])
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -91,23 +111,6 @@ const Profile = () => {
     }
   }, [id]);
   
-
-  const canEdit = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const decoded = JSON.parse(atob(token.split(".")[1]));
-        const editAccess = decoded.role >= 2 || decoded.player_id === player.id;
-        return editAccess;
-      } else {
-        console.error("No token found in localStorage.");
-        return false;
-      }
-    } catch (err) {
-      console.error("Error decoding token:", err);
-      return false;
-    }
-  };
 
   const handleEditProfile = async () => {
     try {
@@ -256,7 +259,7 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        {canEdit() && (
+        {hasEditAccess && (
           <button
             onClick={() => setEditing(true)}
             className='edit-button'>
@@ -266,14 +269,16 @@ const Profile = () => {
 
         <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="avatar" />
         <div className="player-info">
-          <h1>{player?.name || "Unknown Player"}</h1>
-          <div className="tags-container">
-            {tags && tags.length > 0 && 
-              tags.map(tag => (
-                <span key={tag.id} className="tag">{tag.name}</span>
-              ))
-            }
-          </div>  
+            <div className="player-name-tags">
+              <h1>{player?.name || "Unknown Player"}</h1>
+              <div className="tags-container">
+                {tags && tags.length > 0 && 
+                  tags.map(tag => (
+                    <span key={tag.id} className="tag">{tag.name}</span>
+                  ))
+                }
+              </div>
+            </div>
           <div className="stats-summary">
             <StatCard 
               title="ELO" 

@@ -142,26 +142,25 @@ const NewGame = () => {
             </div>
           )}
         </div>
-      </div>
 
-      <div className="settings-section">
-        <h2>Game Settings</h2>
         <div className="setting-item">
 
-        <select value={gameState.mode} onChange={(e) => setMode(e.target.value)}>
-          <option value="Casual">Casual</option>
-          <option value="Ranked">Ranked</option>
-        </select>
+              <select value={gameState.mode} onChange={(e) => setMode(e.target.value)}>
+                <option value="Casual">Casual</option>
+                <option value="Ranked">Ranked</option>
+              </select>
 
-          <span>Number of Rounds:</span>
-          <NumberPicker
-            value={gameState.maxRounds}
-            onChange={handleMaxRoundsChange}
-            min={1}
-            max={20}
-            title="Select Number of Rounds"
-          />
-        </div>
+              <div>
+                <span>Number of Rounds:</span>
+                <NumberPicker
+                  value={gameState.maxRounds}
+                  onChange={handleMaxRoundsChange}
+                  min={1}
+                  max={20}
+                  title="Select Number of Rounds"
+                />
+              </div>
+            </div>
       </div>
 
       <button className="start-game-btn" disabled={gameState.players.length < 2} onClick={handleStartGame}>
