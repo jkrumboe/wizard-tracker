@@ -140,8 +140,8 @@ const GameDetails = () => {
         </Link>
         <h1>Game Details</h1>
         
-        <div className="game-date-detail">Finished: {formattedDate}</div>
-        <div className="game-date-detail">Duration: {duration}</div>
+        <div className=".game-date">Finished: {formattedDate}</div>
+        <div className=".game-date">Duration: {duration}</div>
       </div>
 
       <div className="game-summary">
@@ -162,22 +162,47 @@ const GameDetails = () => {
           )}
         </div>
 
-        <div className="card-tabs">
-          <button
-            className={`tab-button ${activeTab === 'finalResults' ? 'active' : ''}`}
-            onClick={() => setActiveTab('finalResults')}
-          >
-            Final Results
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'rounds' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rounds')}
-          >
-            Rounds
-          </button>
-        </div>
+        <div className="players-section">
+          <div className="card-tabs">
+            <button
+              className={`tab-button ${activeTab === 'finalResults' ? 'active' : ''}`}
+              onClick={() => setActiveTab('finalResults')}
+            >
+              Final Results
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'rounds' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rounds')}
+            >
+              Rounds
+            </button>            
+          </div>
 
-        {activeTab === 'finalResults' && (
+          
+
+                {activeTab === 'rounds' && (
+                <div className="rounds-section">
+                  <h2>Rounds</h2>
+                  {game.rounds.map((round, index) => (
+                    <div key={index} className="round-card">
+                      <h3>Round {index + 1}</h3>
+                        <div className="round-players">
+                          
+                          {round.players.map((player) => (
+                            <div key={player.id} className="round-player">
+                              <span className="name">{playerDetails[player.id]?.name || "Unknown"}</span>
+                              <span className="bid">Bid: {player.call}</span>
+                              <span className="made">Made: {player.made}</span>
+                              <span className="score">Score: {player.score}</span>
+                            </div>
+                          ))}
+                        </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+        </div> 
+        { (window.innerWidth > 768 || activeTab === 'finalResults') && (
           <div className="results-section">
             <h2>Final Results</h2>
             <div className="results-table">
@@ -219,29 +244,7 @@ const GameDetails = () => {
               ))}
             </div>
           </div>
-        )}
-
-        {activeTab === 'rounds' && (
-          <div className="rounds-section">
-            <h2>Rounds</h2>
-            {game.rounds.map((round, index) => (
-              <div key={index} className="round-card">
-                <h3>Round {index + 1}</h3>
-                  <div className="round-players">
-                    
-                    {round.players.map((player) => (
-                      <div key={player.id} className="round-player">
-                        <span className="name">{playerDetails[player.id]?.name || "Unknown"}</span>
-                        <span className="bid">Bid: {player.call}</span>
-                        <span className="made">Made: {player.made}</span>
-                        <span className="score">Score: {player.score}</span>
-                      </div>
-                    ))}
-                  </div>
-              </div>
-            ))}
-          </div>
-        )}
+        )}      
       </div>
     </div>
   );

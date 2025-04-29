@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
@@ -21,7 +21,6 @@ const Profile = () => {
   const [playerStats, setPlayerStats] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
   const [editing, setEditing] = useState(false);
-  const [hasEditAccess, setHasEditAccess] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedAvatar, setEditedAvatar] = useState('');
   // const [editedTags, setEditedTags] = useState([]);
@@ -33,14 +32,13 @@ const Profile = () => {
   // console.log("Player Stats:", playerStats)
 
 
-  const canEdit = useCallback(async () => {
+  const canEdit = useMemo(() => {
     try {
       const token = localStorage.getItem("token");
       if (token) {
         const decoded = JSON.parse(atob(token.split(".")[1]));
         console.log("Decoded Token:", decoded);
-        const editAccess = decoded.role >= 2 || decoded.player_id === player.id;
-        setHasEditAccess(editAccess);
+        const editAccess = decoded.role >= 2 || decoded.player_id === player?.id;
         console.log("Edit Access:", editAccess);
         return editAccess;
       } else {
@@ -51,58 +49,60 @@ const Profile = () => {
       console.error("Error decoding token:", err);
       return false;
     }
-  }, [player]);
+  }, [player?.id]);
+
+  
+  // setHasEditAccess(editAccess);
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const playerData = await getPlayerById(id)
-        const tagdata = await getTags()
-        setDefaultTags(tagdata)
-        
+        const playerData = await getPlayerById(id);
+        const tagdata = await getTags();
+        setDefaultTags(tagdata);
+  
         setPlayer({
           ...playerData,
           avatar: playerData.avatar || defaultAvatar,
         });
-
-        const history = await getPlayerGameHistory(id)
-        setGameHistory(history)
-        canEdit()
-        setLoading(false)
+  
+        const history = await getPlayerGameHistory(id);
+        setGameHistory(history);
+  
+        setLoading(false);
       } catch (err) {
-        console.error('Error fetching profile data:', err)
-        setError('Failed to load player profile')
-        setLoading(false)
+        console.error("Error fetching profile data:", err);
+        setError("Failed to load player profile");
+        setLoading(false);
       }
-    }
-
-    fetchData()
-  }, [id, canEdit])
-
+    };
+  
+    fetchData();
+  }, [id]);
+  
   useEffect(() => {
     const fetchPlayerStats = async () => {
       try {
-        const stats = await getPlayerStats(player.id)
-        setPlayerStats(stats)
+        const stats = await getPlayerStats(player.id);
+        setPlayerStats(stats);
       } catch (error) {
-        console.error("Failed to fetch player stats", error)
+        console.error("Failed to fetch player stats", error);
       }
-    }
-
+    };
+  
     if (player) {
-      fetchPlayerStats()
+      fetchPlayerStats();
     }
-  }, [player])
-
+  }, [player]);
+  
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const fetchedtags = await getTagsByPlayerId(id);
         setTags(fetchedtags);
-        setLoading(false);
       } catch (error) {
         console.error("Failed to fetch tags", error);
-        setLoading(false);
       }
     };
   
@@ -259,7 +259,7 @@ const Profile = () => {
   return (
     <div className="profile-container">
       <div className="profile-header">
-        {hasEditAccess && (
+        {canEdit && (
           <button
             onClick={() => setEditing(true)}
             className='edit-button'>
@@ -301,7 +301,8 @@ const Profile = () => {
       </div>
 
       <div className="profile-content">
-        <div className="card-tabs">
+        {/* Hide tabs and show both sections for desktop or iPad */}
+        <div className="card-tabs" style={{ display: window.innerWidth > 768 ? 'none' : 'block' }}>
           <button 
             className={`tab-button ${activeTab === 'performance' ? 'active' : ''}`} 
             onClick={() => setActiveTab('performance')}
@@ -316,54 +317,54 @@ const Profile = () => {
           </button>
         </div>
 
-          {activeTab === 'performance' && (
-            <div className="stats-graph">
-              <h2>Performance</h2>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={data}
-                    innerRadius={30}
-                    outerRadius={50}
-                    dataKey="value"
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="chart-legend">
-                <div className="legend-item">
-                  <span className="legend-color" style={{ backgroundColor: COLORS[0] }}></span>
-                  <span>Wins ({winRate}%)</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color" style={{ backgroundColor: COLORS[1] }}></span>
-                  <span>Losses ({lossRate}%)</span>
-                </div>
+        {(window.innerWidth > 768 || activeTab === 'performance') && (
+          <div className="stats-graph">
+            <h2>Performance</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={data}
+                  innerRadius={30}
+                  outerRadius={50}
+                  dataKey="value"
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="chart-legend">
+              <div className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: COLORS[0] }}></span>
+                <span>Wins ({winRate}%)</span>
               </div>
-              
-              <Link to={`/stats/${player.id}`} className="view-all-stats">
-                View Complete Stats History
-              </Link>
+              <div className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: COLORS[1] }}></span>
+                <span>Losses ({lossRate}%)</span>
+              </div>
             </div>
-          )}
+            
+            <Link to={`/stats/${player.id}`} className="view-all-stats">
+              View Complete Stats History
+            </Link>
+          </div>
+        )}
 
-          {activeTab === 'recentGames' && (
-            <div className="recent-games">
-              <h2>Recent Games</h2>
-              <div className="games-list">
-                {recentGames.length > 0 ? (
-                  recentGames.map(game => (
-                    <GameHistoryItem key={game.id} game={game} />
-                  ))
-                ) : (
-                  <div className="empty-message">No game history found</div>
-                )}
-              </div>
+        {(window.innerWidth > 768 || activeTab === 'recentGames') && (
+          <div className="recent-games">
+            <h2>Recent Games</h2>
+            <div className="games-list">
+              {recentGames.length > 0 ? (
+                recentGames.map(game => (
+                  <GameHistoryItem key={game.id} game={game} />
+                ))
+              ) : (
+                <div className="empty-message">No game history found</div>
+              )}
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   )}
