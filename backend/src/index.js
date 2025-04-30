@@ -5,6 +5,8 @@ import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import bcryptjs from 'bcryptjs';
+import { body, validationResult } from 'express-validator';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config()
 const app = express()
@@ -17,6 +19,13 @@ const db = new pg.Pool({
 
 // Secret key for JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+});
+
+app.use('/api/', limiter);
 
 // Middleware for verifying JWT and roles
 function verifyToken(req, res, next) {
@@ -61,7 +70,17 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Register a new standard user and create a player for that user
-app.post('/api/register', async (req, res) => {
+
+app.post('/api/register', [
+  body('username').isAlphanumeric().trim().escape(),
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 8 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { username, email, password } = req.body;
   try {
     // Create a new player
@@ -82,18 +101,18 @@ app.post('/api/register', async (req, res) => {
     const token = jwt.sign({ id: newUser.id, role: newUser.role_id, player_id: newUser.player_id }, JWT_SECRET, { expiresIn: '1h' });
     res.status(201).json({ token });
   } catch (err) {
-    console.error('Fehler bei der Registrierung:', err);
-  
+    console.error('Error during registration:', err);
+
     if (err.code === '23505') {
-      // Überprüfe, welche Einschränkung verletzt wurde
+      // Check which constraint was violated
       if (err.constraint === 'users_username_key') {
-        return res.status(409).json({ error: 'Benutzername bereits vergeben.' });
+        return res.status(409).json({ error: 'Username already taken.' });
       } else if (err.constraint === 'users_email_key') {
-        return res.status(409).json({ error: 'E-Mail-Adresse bereits registriert.' });
+        return res.status(409).json({ error: 'Email address already registered.' });
       }
     }
-  
-    res.status(500).json({ error: 'Interner Serverfehler.' });
+
+    res.status(500).json({ error: 'Internal server error.' });
   }
 });
 
