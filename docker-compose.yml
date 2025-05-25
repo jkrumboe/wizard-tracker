@@ -1,6 +1,9 @@
 services:
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:5055/api
     ports:
       - "8088:80"  # Host:Container
     depends_on:

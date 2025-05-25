@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
+import { useUser } from '../hooks/useUser'
 
 import { getPlayerById, getPlayerStats, updatePlayerProfile, updatePlayerTags, getTagsByPlayerId, getTags } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
@@ -12,6 +13,7 @@ import DOMPurify from 'dompurify';
 
 const Profile = () => {
   const { id } = useParams()
+  const { user, refreshPlayerData } = useUser()
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
   const [tags, setTags] = useState(null)
@@ -111,7 +113,6 @@ const Profile = () => {
     }
   }, [id]);
   
-
   const handleEditProfile = async () => {
     try {
       const sanitizedEditedName = DOMPurify.sanitize(editedName);
@@ -128,6 +129,11 @@ const Profile = () => {
       setEditedName('');
       setEditedAvatar('');
       setEditing(false);
+      
+      // Refresh navbar avatar if this is the current user's profile
+      if (user && user.player_id === player.id) {
+        await refreshPlayerData();
+      }
     } catch (err) {
       console.error("Error updating profile:", err);
     }

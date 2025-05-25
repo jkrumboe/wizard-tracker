@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useUser } from '../hooks/useUser';
 import "../styles/admin.css";
 
 const Login = () => {
@@ -9,8 +10,8 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const { setUser } = useUser();
   const navigate = useNavigate();
-
   const handleLogin = async () => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/login`, {
@@ -18,6 +19,8 @@ const Login = () => {
         password,
       });
       localStorage.setItem("token", response.data.token);
+      const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
+      setUser(decoded);
       setTimeout(() => {
           navigate("/");
           window.location.reload();
@@ -28,7 +31,6 @@ const Login = () => {
       setError("Invalid credentials");
     }
   };
-
   const handleRegister = async () => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/register`, {
@@ -38,6 +40,7 @@ const Login = () => {
       });
       localStorage.setItem("token", response.data.token);
       const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
+      setUser(decoded);
       setTimeout(() => {
         if (decoded.role === "3") {
           navigate("/admin");
