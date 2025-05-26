@@ -12,19 +12,54 @@ import cookieParser from 'cookie-parser';
 dotenv.config()
 const app = express()
 
+// Log environment info for debugging
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔧 Backend starting up...`);
+
 // Configure CORS for production security
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://wizard.jkrumboe.dev', 'https://jkrumboe.dev'] 
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8088'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Always allow the production domains, plus development domains for local testing
+    const allowedOrigins = [
+      'https://wizard.jkrumboe.dev',
+      'https://jkrumboe.dev',
+      'http://localhost:3000', 
+      'http://localhost:5173', 
+      'http://localhost:8088'
+    ];
+    
+    console.log(`CORS Check - NODE_ENV: ${process.env.NODE_ENV}, Origin: ${origin}, Allowed: ${allowedOrigins.includes(origin)}`);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.error(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
-  exposedHeaders: ['set-cookie']
+  exposedHeaders: ['set-cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }
 
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(cookieParser())
+
+// Additional CORS handling for preflight requests
+app.options('*', (req, res) => {
+  console.log(`OPTIONS request from origin: ${req.headers.origin}`);
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,Origin,X-Requested-With,Accept');
+  res.sendStatus(200);
+});
 
 const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
