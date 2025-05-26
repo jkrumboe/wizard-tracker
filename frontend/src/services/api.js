@@ -10,6 +10,7 @@ async function fetchAPI(endpoint, options = {}) {
         "Content-Type": "application/json",
         ...options.headers,
       },
+      credentials: 'include', // Include cookies for authentication
       ...options,
     })
 

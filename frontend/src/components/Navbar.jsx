@@ -1,16 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { useUser } from '../hooks/useUser'
+import authService from '../services/authService'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const { user, player, clearUserData } = useUser()
+const Navbar = () => {  const [isOpen, setIsOpen] = useState(false)
+  const { user, player } = useUser()
   const location = useLocation()
-  const navigate = useNavigate()
 
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -23,12 +22,8 @@ const Navbar = () => {
   const isActive = (path) => {
     return location.pathname === path ? "active" : ""
   }
-
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    clearUserData();
-    navigate("/login", { replace: true });
-    window.location.reload();
+    authService.logout();
   };
 
   // console.log("Player:", player); // Debugging line

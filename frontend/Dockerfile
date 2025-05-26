@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20 AS build
+FROM node:23-alpine AS build
 WORKDIR /app
 COPY . .
 ARG VITE_API_URL

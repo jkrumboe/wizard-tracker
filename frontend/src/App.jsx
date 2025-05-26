@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
 import { UserProvider } from "./contexts/UserContext"
+import authService from "./services/authService"
 
 function ProtectedRoute({ children, roles }) {
   const [userRole, setUserRole] = useState(null);
@@ -43,6 +44,9 @@ function App() {
   useEffect(() => {
     // Register service worker for PWA functionality
     register()
+    
+    // Initialize authentication service
+    authService.initialize()
   }, [])
   return (
     <Router>
