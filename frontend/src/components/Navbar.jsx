@@ -1,20 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { getPlayerById} from '../services/playerService'
+import { useState } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { useUser } from '../hooks/useUser'
+import authService from '../services/authService'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
-const Navbar = () => {
-  const [player, setPlayer] = useState(null)
-  const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState(null)
-  // const [loading, setLoading] = useState(true)
-  // const [error, setError] = useState(null)
+const Navbar = () => {  const [isOpen, setIsOpen] = useState(false)
+  const { user, player } = useUser()
   const location = useLocation()
-  const navigate = useNavigate()
-
 
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -22,49 +17,13 @@ const Navbar = () => {
 
   const closeMenu = () => {
     setIsOpen(false)
-
   }
 
   const isActive = (path) => {
     return location.pathname === path ? "active" : ""
   }
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      setUser(decoded);
-    } else {
-      console.log("No token found in localStorage.");
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!user?.player_id) return;
-  
-    const fetchData = async () => {
-      try {
-        const playerData = await getPlayerById(user.player_id);
-        if (playerData) {
-          setPlayer({
-            ...playerData,
-            avatar: playerData.avatar || defaultAvatar,
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching profile data:", err);
-      }
-    };
-  
-    fetchData();
-  }, [user]);
-  
-
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    navigate("/login", { replace: true });
-    window.location.reload();
+    authService.logout();
   };
 
   // console.log("Player:", player); // Debugging line

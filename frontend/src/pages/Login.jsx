@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useUser } from '../hooks/useUser';
+import authService from '../services/authService';
 import "../styles/admin.css";
 
 const Login = () => {
@@ -9,35 +10,41 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const { setUser } = useUser();
   const navigate = useNavigate();
-
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/login`, {
+      const response = await authService.login({
         username,
         password,
       });
-      localStorage.setItem("token", response.data.token);
+      
+      // Decode token and set user
+      const decoded = JSON.parse(atob(response.token.split(".")[1]));
+      setUser(decoded);
+      
       setTimeout(() => {
-          navigate("/");
-          window.location.reload();
-        
+        navigate("/");
+        window.location.reload();
       }, 0);
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid credentials");
+      setError(err.message || "Invalid credentials");
     }
   };
-
+  
   const handleRegister = async () => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/register`, {
+      const response = await authService.register({
         username,
         email,
         password,
       });
-      localStorage.setItem("token", response.data.token);
-      const decoded = JSON.parse(atob(response.data.token.split(".")[1]));
+      
+      // Decode token and set user
+      const decoded = JSON.parse(atob(response.token.split(".")[1]));
+      setUser(decoded);
+      
       setTimeout(() => {
         if (decoded.role === "3") {
           navigate("/admin");
@@ -48,7 +55,7 @@ const Login = () => {
       }, 0);
     } catch (err) {
       console.error("Registration error:", err);
-      setError("Registration failed");
+      setError(err.message || "Registration failed");
     }
   };
 

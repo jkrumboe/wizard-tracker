@@ -2,12 +2,12 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Docker Compose Up",
+            "label": "Docker Compose Up (No Cache, Remove Previous)",
             "type": "shell",
             "command": "cmd",
-            "args": ["/C", "docker compose up --build"],
+            "args": ["/C", "docker compose down && docker compose build --no-cache && docker compose up"],
             "options": {
-                "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}"
             },
             "isBackground": true,
             "problemMatcher": []

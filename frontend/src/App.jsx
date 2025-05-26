@@ -14,6 +14,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
+import { UserProvider } from "./contexts/UserContext"
+import authService from "./services/authService"
 
 function ProtectedRoute({ children, roles }) {
   const [userRole, setUserRole] = useState(null);
@@ -42,31 +44,35 @@ function App() {
   useEffect(() => {
     // Register service worker for PWA functionality
     register()
+    
+    // Initialize authentication service
+    authService.initialize()
   }, [])
-
   return (
     <Router>
-      <GameStateProvider>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/profile/:id" element={<Profile />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/stats/:id" element={<Stats />} />
-          <Route path="/new-game" element={<NewGame />} />
-          <Route path="/game/:id" element={<GameDetails />} />
-          <Route path="/game/current" element={<GameInProgress />} />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute roles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </GameStateProvider>
+      <UserProvider>
+        <GameStateProvider>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/profile/:id" element={<Profile />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/stats/:id" element={<Stats />} />
+            <Route path="/new-game" element={<NewGame />} />
+            <Route path="/game/:id" element={<GameDetails />} />
+            <Route path="/game/current" element={<GameInProgress />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </GameStateProvider>
+      </UserProvider>
     </Router>
   )
 }

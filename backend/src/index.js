@@ -7,29 +7,54 @@ import bcrypt from 'bcrypt';
 import bcryptjs from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 dotenv.config()
 const app = express()
-app.use(cors())
+
+// Configure CORS for production security
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://wizard.jkrumboe.dev', 'https://jkrumboe.dev'] 
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8088'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  exposedHeaders: ['set-cookie']
+}
+
+app.use(cors(corsOptions))
 app.use(express.json())
+app.use(cookieParser())
 
 const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
 })
 
 // Secret key for JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_change_in_production';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_change_in_production';
+
+// Token expiration times
+const ACCESS_TOKEN_EXPIRY = '15m'; // Short-lived access token
+const REFRESH_TOKEN_EXPIRY = '7d'; // Longer-lived refresh token
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 300, // Limit each IP to 100 requests per windowMs
 });
 
 app.use('/api/', limiter);
 
 // Middleware for verifying JWT and roles
 function verifyToken(req, res, next) {
-  const token = req.headers['authorization']?.split(' ')[1];
+  // Check for token in cookies first, then fallback to Authorization header
+  let token = req.cookies.accessToken;
+  
+  if (!token) {
+    const authHeader = req.headers['authorization'];
+    token = authHeader?.split(' ')[1];
+  }
+  
   if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
 
   try {
@@ -37,6 +62,9 @@ function verifyToken(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired.' });
+    }
     res.status(400).json({ error: 'Invalid token.' });
   }
 }
@@ -50,6 +78,40 @@ function authorizeRoles(roles) {
   };
 }
 
+// Helper function to generate tokens
+function generateTokens(user) {
+  const payload = { 
+    id: user.id, 
+    role: user.role_id || user.role, 
+    player_id: user.player_id 
+  };
+  
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+  
+  return { accessToken, refreshToken };
+}
+
+// Helper function to set secure cookies
+function setTokenCookies(res, accessToken, refreshToken) {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/'
+  };
+  
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000 // 15 minutes
+  });
+  
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+}
+
 // User login route
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
@@ -61,8 +123,24 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid username or password.' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role_id, player_id: user.player_id }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    const { accessToken, refreshToken } = generateTokens(user);
+    
+    // Set secure HTTP-only cookies
+    setTokenCookies(res, accessToken, refreshToken);
+    
+    // Also send token in response for backward compatibility
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      role: user.role_id,
+      player_id: user.player_id
+    };
+    
+    res.json({ 
+      token: accessToken, // For backward compatibility
+      user: userInfo,
+      message: 'Login successful'
+    });
   } catch (err) {
     console.error('Error during login:', err);
     res.status(500).json({ error: 'Internal server error.' });
@@ -95,11 +173,25 @@ app.post('/api/register', [
     const userResult = await db.query(
       'INSERT INTO users (username, email, password_hash, role_id, player_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [username, email, hashedPassword, 1, newPlayer.id]
-    );
-    const newUser = userResult.rows[0];
+    );    const newUser = userResult.rows[0];
 
-    const token = jwt.sign({ id: newUser.id, role: newUser.role_id, player_id: newUser.player_id }, JWT_SECRET, { expiresIn: '1h' });
-    res.status(201).json({ token });
+    const { accessToken, refreshToken } = generateTokens(newUser);
+    
+    // Set secure HTTP-only cookies
+    setTokenCookies(res, accessToken, refreshToken);
+    
+    const userInfo = {
+      id: newUser.id,
+      username: newUser.username,
+      role: newUser.role_id,
+      player_id: newUser.player_id
+    };
+    
+    res.status(201).json({ 
+      token: accessToken, // For backward compatibility
+      user: userInfo,
+      message: 'Registration successful'
+    });
   } catch (err) {
     console.error('Error during registration:', err);
 
@@ -114,6 +206,55 @@ app.post('/api/register', [
 
     res.status(500).json({ error: 'Internal server error.' });
   }
+});
+
+// Refresh token route
+app.post('/api/refresh', async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'No refresh token provided.' });
+  }
+  
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    
+    // Verify user still exists
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    const user = result.rows[0];
+    
+    if (!user) {
+      return res.status(401).json({ error: 'User not found.' });
+    }
+    
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user);
+    
+    // Set new secure cookies
+    setTokenCookies(res, accessToken, newRefreshToken);
+    
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      role: user.role_id,
+      player_id: user.player_id
+    };
+    
+    res.json({ 
+      token: accessToken,
+      user: userInfo,
+      message: 'Token refreshed successfully'
+    });
+  } catch (err) {
+    console.error('Error refreshing token:', err);
+    res.status(401).json({ error: 'Invalid refresh token.' });
+  }
+});
+
+// Logout route
+app.post('/api/logout', (req, res) => {
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+  res.json({ message: 'Logged out successfully' });
 });
 
 // Example protected route
