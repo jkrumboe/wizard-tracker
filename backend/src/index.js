@@ -12,6 +12,9 @@ import cookieParser from 'cookie-parser';
 dotenv.config()
 const app = express()
 
+// Trust proxy for proper IP detection (important for rate limiting and logging)
+app.set('trust proxy', 1);
+
 // Log environment info for debugging
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 console.log(`🔧 Backend starting up...`);
@@ -48,8 +51,18 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions))
-app.use(express.json())
+app.use(express.json({ limit: '10mb' })) // Limit JSON payload size
 app.use(cookieParser())
+
+// Security headers middleware
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.removeHeader('X-Powered-By');
+  next();
+});
 
 // Additional CORS handling for preflight requests
 app.options('*', (req, res) => {
@@ -113,6 +126,23 @@ function authorizeRoles(roles) {
   };
 }
 
+// Helper function for audit logging
+function auditLog(action, userId, details = {}, req = null) {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    action,
+    userId,
+    ip: req?.ip || req?.connection?.remoteAddress || 'unknown',
+    userAgent: req?.get('User-Agent') || 'unknown',
+    ...details
+  };
+  
+  console.log(`🔐 AUDIT: ${JSON.stringify(logEntry)}`);
+  
+  // In production, you might want to store this in a separate audit log table
+  // or send to a logging service like CloudWatch, Datadog, etc.
+}
+
 // Helper function to generate tokens
 function generateTokens(user) {
   const payload = { 
@@ -131,7 +161,7 @@ function generateTokens(user) {
 function setTokenCookies(res, accessToken, refreshToken) {
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Always use secure cookies (requires HTTPS)
     sameSite: 'strict',
     path: '/'
   };
@@ -147,14 +177,41 @@ function setTokenCookies(res, accessToken, refreshToken) {
   });
 }
 
+// Stricter rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: { error: 'Too many login attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // User login route
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, [
+  body('username').trim().escape().isLength({ min: 1, max: 50 }),
+  body('password').isLength({ min: 1 })
+], async (req, res) => {
+  // Validate input
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    auditLog('LOGIN_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
+    return res.status(400).json({ error: 'Invalid input data.' });
+  }
+
   const { username, password } = req.body;
+  
   try {
     const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
 
-    if (!user || !(await bcryptjs.compare(password, user.password_hash))) {
+    if (!user) {
+      auditLog('LOGIN_FAILED', null, { reason: 'user_not_found', username }, req);
+      return res.status(400).json({ error: 'Invalid username or password.' });
+    }
+
+    const isValidPassword = await bcryptjs.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      auditLog('LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
       return res.status(400).json({ error: 'Invalid username or password.' });
     }
 
@@ -163,7 +220,6 @@ app.post('/api/login', async (req, res) => {
     // Set secure HTTP-only cookies
     setTokenCookies(res, accessToken, refreshToken);
     
-    // Also send token in response for backward compatibility
     const userInfo = {
       id: user.id,
       username: user.username,
@@ -171,26 +227,28 @@ app.post('/api/login', async (req, res) => {
       player_id: user.player_id
     };
     
+    auditLog('LOGIN_SUCCESS', user.id, { username }, req);
+    
     res.json({ 
-      token: accessToken, // For backward compatibility
       user: userInfo,
       message: 'Login successful'
     });
   } catch (err) {
     console.error('Error during login:', err);
+    auditLog('LOGIN_ERROR', null, { reason: 'server_error', error: err.message }, req);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });
 
 // Register a new standard user and create a player for that user
-
-app.post('/api/register', [
-  body('username').isAlphanumeric().trim().escape(),
+app.post('/api/register', authLimiter, [
+  body('username').isAlphanumeric().trim().escape().isLength({ min: 3, max: 30 }),
   body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 8 }),
+  body('password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    auditLog('REGISTER_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -219,16 +277,17 @@ app.post('/api/register', [
       id: newUser.id,
       username: newUser.username,
       role: newUser.role_id,
-      player_id: newUser.player_id
-    };
+      player_id: newUser.player_id    };
+    
+    auditLog('REGISTER_SUCCESS', newUser.id, { username, email }, req);
     
     res.status(201).json({ 
-      token: accessToken, // For backward compatibility
       user: userInfo,
       message: 'Registration successful'
     });
   } catch (err) {
     console.error('Error during registration:', err);
+    auditLog('REGISTER_ERROR', null, { reason: 'server_error', error: err.message, username, email }, req);
 
     if (err.code === '23505') {
       // Check which constraint was violated
@@ -248,6 +307,7 @@ app.post('/api/refresh', async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   
   if (!refreshToken) {
+    auditLog('REFRESH_FAILED', null, { reason: 'no_refresh_token' }, req);
     return res.status(401).json({ error: 'No refresh token provided.' });
   }
   
@@ -259,6 +319,7 @@ app.post('/api/refresh', async (req, res) => {
     const user = result.rows[0];
     
     if (!user) {
+      auditLog('REFRESH_FAILED', decoded.id, { reason: 'user_not_found' }, req);
       return res.status(401).json({ error: 'User not found.' });
     }
     
@@ -274,19 +335,35 @@ app.post('/api/refresh', async (req, res) => {
       player_id: user.player_id
     };
     
+    auditLog('REFRESH_SUCCESS', user.id, { username: user.username }, req);
+    
     res.json({ 
-      token: accessToken,
       user: userInfo,
       message: 'Token refreshed successfully'
     });
   } catch (err) {
     console.error('Error refreshing token:', err);
+    auditLog('REFRESH_ERROR', null, { reason: 'invalid_token', error: err.message }, req);
     res.status(401).json({ error: 'Invalid refresh token.' });
   }
 });
 
 // Logout route
 app.post('/api/logout', (req, res) => {
+  // Try to get user info from token for audit logging
+  let userId = null;
+  try {
+    const token = req.cookies.accessToken;
+    if (token) {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      userId = decoded.id;
+    }
+  } catch (err) {
+    // Token might be expired or invalid, but we still want to clear cookies
+  }
+  
+  auditLog('LOGOUT', userId, {}, req);
+  
   res.clearCookie('accessToken');
   res.clearCookie('refreshToken');
   res.json({ message: 'Logged out successfully' });
