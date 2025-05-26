@@ -6,7 +6,6 @@ class AuthService {
     this.refreshTimer = null;
     this.isRefreshing = false;
   }
-
   // Login with secure cookies
   async login(credentials) {
     try {
@@ -26,7 +25,8 @@ class AuthService {
 
       const data = await response.json();
       
-      // Store token in localStorage for backward compatibility
+      // Note: Tokens are now in HTTP-only cookies, not in the response body
+      // Keep this for backward compatibility during transition
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
@@ -40,7 +40,6 @@ class AuthService {
       throw error;
     }
   }
-
   // Register with secure cookies
   async register(userData) {
     try {
@@ -60,7 +59,8 @@ class AuthService {
 
       const data = await response.json();
       
-      // Store token in localStorage for backward compatibility
+      // Note: Tokens are now in HTTP-only cookies, not in the response body
+      // Keep this for backward compatibility during transition
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
@@ -193,6 +193,77 @@ class AuthService {
   initialize() {
     if (this.isAuthenticated()) {
       this.scheduleTokenRefresh();
+    }
+  }
+
+  // Admin authentication methods
+  async adminLogin(credentials) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Admin login failed');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Admin login error:', error);
+      throw error;
+    }
+  }
+
+  async adminLogout() {
+    try {
+      await fetch(`${API_BASE_URL}/admin/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Admin logout error:', error);
+    } finally {
+      // Force page reload to clear any cached state
+      window.location.href = '/admin/login';
+    }
+  }
+
+  // Check if user is authenticated as admin (basic check - server will validate properly)
+  isAdminAuthenticated() {
+    // This is a basic client-side check
+    // The real authentication happens on the server with the HTTP-only cookie
+    // We'll rely on API calls to determine if admin is authenticated
+    return true; // Let the server handle the real validation
+  }
+
+  // Setup initial admin user (for first-time setup)
+  async setupAdmin() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/setup-admin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Admin setup failed');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Admin setup error:', error);
+      throw error;
     }
   }
 }

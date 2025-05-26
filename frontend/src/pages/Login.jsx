@@ -11,17 +11,15 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const { setUser } = useUser();
-  const navigate = useNavigate();
-  const handleLogin = async () => {
+  const navigate = useNavigate();  const handleLogin = async () => {
     try {
       const response = await authService.login({
         username,
         password,
       });
       
-      // Decode token and set user
-      const decoded = JSON.parse(atob(response.token.split(".")[1]));
-      setUser(decoded);
+      // Use the user info directly from the response
+      setUser(response.user);
       
       setTimeout(() => {
         navigate("/");
@@ -32,8 +30,7 @@ const Login = () => {
       setError(err.message || "Invalid credentials");
     }
   };
-  
-  const handleRegister = async () => {
+    const handleRegister = async () => {
     try {
       const response = await authService.register({
         username,
@@ -41,12 +38,11 @@ const Login = () => {
         password,
       });
       
-      // Decode token and set user
-      const decoded = JSON.parse(atob(response.token.split(".")[1]));
-      setUser(decoded);
+      // Use the user info directly from the response
+      setUser(response.user);
       
       setTimeout(() => {
-        if (decoded.role === "3") {
+        if (response.user.role === 3) {
           navigate("/admin");
         } else {
           navigate("/");
@@ -62,25 +58,25 @@ const Login = () => {
   return (
     <div className="login-page">
       <h1>{isRegistering ? "Register" : "Login"}</h1>
-      <form className="login-form" onSubmit={(e) => { e.preventDefault(); isRegistering ? handleRegister() : handleLogin(); }}>
-        <input
+      <form className="login-form" onSubmit={(e) => { e.preventDefault(); isRegistering ? handleRegister() : handleLogin(); }}>        <input
           type="text"
           placeholder="Username"
+          autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        {isRegistering && (
-          <input
+        {isRegistering && (          <input
             type="email"
             placeholder="Email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-        )}
-        <input
+        )}        <input
           type="password"
           placeholder="Password"
           className="password-input"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />

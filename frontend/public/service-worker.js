@@ -1,13 +1,28 @@
 // Service Worker for Wizard Tracker PWA
 const CACHE_NAME = "wizard-tracker-v1"
-const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/pwa-192x192.png", "/icons/pwa-512x512.png"]
+const urlsToCache = [
+  "/", 
+  "/index.html", 
+  "/manifest.json", 
+  "/icons/pwa-192x192-v2.png", 
+  "/icons/pwa-512x512-v2.png",
+  "/vite.svg"
+]
 
 // Install event - cache assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log("Opened cache")
-      return cache.addAll(urlsToCache)
+      // Cache files individually to handle failures gracefully
+      return Promise.allSettled(
+        urlsToCache.map(url => 
+          cache.add(url).catch(err => {
+            console.warn(`Failed to cache ${url}:`, err);
+            return null;
+          })
+        )
+      );
     }),
   )
 })

@@ -81,10 +81,12 @@ const db = new pg.Pool({
 // Secret key for JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_change_in_production';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_change_in_production';
+const JWT_ADMIN_SECRET = process.env.JWT_ADMIN_SECRET || 'your_admin_jwt_secret_change_in_production';
 
 // Token expiration times
 const ACCESS_TOKEN_EXPIRY = '15m'; // Short-lived access token
 const REFRESH_TOKEN_EXPIRY = '7d'; // Longer-lived refresh token
+const ADMIN_TOKEN_EXPIRY = '1h'; // Admin token expiry
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -228,8 +230,7 @@ app.post('/api/login', authLimiter, [
     };
     
     auditLog('LOGIN_SUCCESS', user.id, { username }, req);
-    
-    res.json({ 
+      res.json({ 
       user: userInfo,
       message: 'Login successful'
     });
@@ -280,9 +281,9 @@ app.post('/api/register', authLimiter, [
       player_id: newUser.player_id    };
     
     auditLog('REGISTER_SUCCESS', newUser.id, { username, email }, req);
-    
-    res.status(201).json({ 
+      res.status(201).json({ 
       user: userInfo,
+      token: accessToken, // Include for backward compatibility during transition
       message: 'Registration successful'
     });
   } catch (err) {
@@ -765,19 +766,192 @@ app.get('/api/players/:id/elo-history', async (req, res) => {
 });
 
 //=== Middleware for admin authentication ===//
-function adminAuth(req, res, next) {
-  const { username, password } = req.headers;
-  if (
-    username === process.env.ADMIN_USERNAME &&
-    password === process.env.ADMIN_PASSWORD
-  ) {
-    return next();
+
+// Admin login route
+app.post('/api/admin/login', authLimiter, [
+  body('username').trim().escape().isLength({ min: 1, max: 50 }),
+  body('password').isLength({ min: 1 })
+], async (req, res) => {
+  // Validate input
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    auditLog('ADMIN_LOGIN_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
+    return res.status(400).json({ error: 'Invalid input data.' });
   }
-  res.status(403).json({ error: "Unauthorized access" });
+
+  const { username, password } = req.body;
+  
+  try {
+    // Look for admin user in the users table with admin role
+    const result = await db.query(`
+      SELECT u.*, r.name as role_name 
+      FROM users u 
+      JOIN roles r ON u.role_id = r.id 
+      WHERE u.username = $1 AND r.name = 'admin'
+    `, [username]);
+    
+    const user = result.rows[0];
+
+    if (!user) {
+      auditLog('ADMIN_LOGIN_FAILED', null, { reason: 'user_not_found', username }, req);
+      return res.status(401).json({ error: 'Invalid admin credentials.' });
+    }
+
+    const isValidPassword = await bcryptjs.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      auditLog('ADMIN_LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
+      return res.status(401).json({ error: 'Invalid admin credentials.' });
+    }
+
+    // Generate admin JWT token
+    const adminToken = jwt.sign(
+      { 
+        id: user.id,
+        username: user.username,
+        role: 'admin',
+        player_id: user.player_id
+      },
+      JWT_ADMIN_SECRET,
+      { expiresIn: ADMIN_TOKEN_EXPIRY }
+    );
+    
+    // Set secure HTTP-only cookie for admin token
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+      sameSite: 'strict',
+      path: '/api/admin',
+      maxAge: 60 * 60 * 1000 // 1 hour
+    };
+    
+    res.cookie('adminToken', adminToken, cookieOptions);
+    
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      role: 'admin'
+    };
+    
+    auditLog('ADMIN_LOGIN_SUCCESS', user.id, { username }, req);
+    res.json({ 
+      user: userInfo,
+      message: 'Admin login successful'
+    });
+  } catch (err) {
+    console.error('Error during admin login:', err);
+    auditLog('ADMIN_LOGIN_ERROR', null, { reason: 'server_error', error: err.message }, req);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Admin logout route
+app.post('/api/admin/logout', (req, res) => {
+  // Try to get user info from token for audit logging
+  let userId = null;
+  try {
+    const token = req.cookies.adminToken;
+    if (token) {
+      const decoded = jwt.verify(token, JWT_ADMIN_SECRET);
+      userId = decoded.id;
+    }
+  } catch (err) {
+    // Token might be expired or invalid, but we still want to clear cookies
+  }
+  
+  auditLog('ADMIN_LOGOUT', userId, {}, req);
+  
+  // Clear the admin token cookie
+  res.clearCookie('adminToken', { path: '/api/admin' });
+  res.json({ message: 'Admin logged out successfully' });
+});
+
+// Middleware for verifying admin JWT token
+function verifyAdminToken(req, res, next) {
+  const token = req.cookies.adminToken;
+  
+  if (!token) {
+    auditLog('ADMIN_ACCESS_DENIED', null, { reason: 'no_token', path: req.path }, req);
+    return res.status(401).json({ error: 'Admin authentication required.' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, JWT_ADMIN_SECRET);
+    
+    // Verify that the user has admin role
+    if (decoded.role !== 'admin') {
+      auditLog('ADMIN_ACCESS_DENIED', decoded.id, { reason: 'insufficient_role', role: decoded.role }, req);
+      return res.status(403).json({ error: 'Admin access required.' });
+    }
+    
+    // Attach admin info to request
+    req.admin = decoded;
+    auditLog('ADMIN_ACCESS_GRANTED', decoded.id, { username: decoded.username, path: req.path }, req);
+    next();
+  } catch (err) {
+    auditLog('ADMIN_ACCESS_DENIED', null, { reason: 'invalid_token', error: err.message }, req);
+    return res.status(401).json({ error: 'Invalid or expired admin token.' });
+  }
 }
 
-// Admin routes
-app.use("/api/admin", adminAuth);
+// Route to setup default admin user (for initial setup)
+app.post('/api/setup-admin', async (req, res) => {
+  try {
+    // Check if any admin users already exist
+    const existingAdmins = await db.query(`
+      SELECT COUNT(*) as count 
+      FROM users u 
+      JOIN roles r ON u.role_id = r.id 
+      WHERE r.name = 'admin'
+    `);
+    
+    if (existingAdmins.rows[0].count > 0) {
+      return res.status(409).json({ error: 'Admin users already exist. Use /api/admin/login to authenticate.' });
+    }
+
+    // Ensure admin role exists
+    await db.query(`
+      INSERT INTO roles (id, name) VALUES (2, 'admin') 
+      ON CONFLICT (id) DO NOTHING
+    `);
+
+    const username = process.env.ADMIN_USERNAME || 'admin';
+    const password = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const result = await db.query(
+      'INSERT INTO users (username, password_hash, role_id, email) VALUES ($1, $2, $3, $4) RETURNING id, username',
+      [username, hashedPassword, 2, 'admin@localhost']
+    );
+    
+    auditLog('ADMIN_SETUP', result.rows[0].id, { username }, req);
+    res.status(201).json({ 
+      message: 'Default admin user created successfully.',
+      username: result.rows[0].username
+    });
+  } catch (err) {
+    console.error('Error creating default admin user:', err);
+    res.status(500).json({ error: 'Failed to create default admin user.' });
+  }
+});
+
+// Legacy adminAuth function - DEPRECATED
+function adminAuth(req, res, next) {
+  // This is the old insecure method - redirect to new system
+  res.status(401).json({ 
+    error: "This authentication method is deprecated. Please use /api/admin/login to authenticate.",
+    redirectTo: "/api/admin/login"
+  });
+}
+
+// Admin routes - protected by verifyAdminToken middleware
+app.use("/api/admin", (req, res, next) => {
+  // Skip authentication for login, logout, and setup routes
+  if (req.path === '/login' || req.path === '/logout') {
+    return next();
+  }
+  return verifyAdminToken(req, res, next);
+});
 
 // Admin: Manage Players
 app.get("/api/admin/players", async (req, res) => {

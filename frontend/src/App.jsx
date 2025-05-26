@@ -19,13 +19,19 @@ import authService from "./services/authService"
 
 function ProtectedRoute({ children, roles }) {
   const [userRole, setUserRole] = useState(null);
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      console.log("Decoded token:", decoded); // Debugging line
-      setUserRole(decoded.role);
+      try {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        console.log("Decoded token:", decoded); // Debugging line
+        setUserRole(decoded.role);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        // Clear invalid token
+        localStorage.removeItem("token");
+        setUserRole(null);
+      }
     }
   }, []);
 
