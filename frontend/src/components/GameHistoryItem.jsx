@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { playerAPI } from "../services/api";
+import { getPlayerById } from "../services/playerService";
 
 const GameHistoryItem = ({ game }) => {
   const [playerDetails, setPlayerDetails] = useState({});
@@ -8,9 +8,9 @@ const GameHistoryItem = ({ game }) => {
   useEffect(() => {
     const fetchPlayerDetails = async () => {
       try {
-        if (game && game.players) {
-          const playerPromises = game.players.map((playerId) =>
-            playerAPI.getById(playerId)
+        if (game && game.player_ids) {
+          const playerPromises = game.player_ids.map((playerId) =>
+            getPlayerById(playerId)
           );
           const players = await Promise.all(playerPromises);
 
@@ -33,8 +33,8 @@ const GameHistoryItem = ({ game }) => {
 
   if (!game) return null;
 
-  const { id, date, players, winner } = game;
-  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+  const { id, created_at, player_ids, winner_id, game_mode, total_rounds } = game;
+  const formattedDate = new Date(created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -42,20 +42,18 @@ const GameHistoryItem = ({ game }) => {
     minute: "2-digit",
   });
 
-  // console.log("Game :", game);
-
   return (
     <div className="game-card">
 
       <div className="game-date">Finished: {formattedDate}</div>
-      <div className="game-rounds">Rounds: {game.rounds.length}</div>
+      <div className="game-rounds">Rounds: {total_rounds}</div>
       <div className="game-winner">
-        Winner: {playerDetails[winner]?.name || "Unknown"}
+        Winner: {playerDetails[winner_id]?.name || "Unknown"}
       </div>
       <div className="game-players">
         Players:{" "}
-        {Array.isArray(players)
-          ? players
+        {Array.isArray(player_ids)
+          ? player_ids
               .map(
                 (playerId) =>
                   playerDetails[playerId]?.name || "Unknown Player"
@@ -66,8 +64,8 @@ const GameHistoryItem = ({ game }) => {
       <Link to={`/game/${id}`} className="game-details">
         View Details
       </Link>
-      <span className={`mode-badge ${game.mode.toLowerCase()}`}>
-        {game.mode}
+      <span className={`mode-badge ${game_mode.toLowerCase()}`}>
+        {game_mode}
       </span>
 
     </div>

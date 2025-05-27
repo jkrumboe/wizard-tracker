@@ -21,16 +21,13 @@ const Login = () => {
       // Use the user info directly from the response
       setUser(response.user);
       
-      setTimeout(() => {
-        navigate("/");
-        window.location.reload();
-      }, 0);
+      // Instead of page reload, navigate directly
+      navigate("/");
     } catch (err) {
       console.error("Login error:", err);
       setError(err.message || "Invalid credentials");
     }
-  };
-    const handleRegister = async () => {
+  };    const handleRegister = async () => {
     try {
       const response = await authService.register({
         username,
@@ -41,14 +38,12 @@ const Login = () => {
       // Use the user info directly from the response
       setUser(response.user);
       
-      setTimeout(() => {
-        if (response.user.role === 3) {
-          navigate("/admin");
-        } else {
-          navigate("/");
-          window.location.reload();
-        }
-      }, 0);
+      // Navigate based on user role
+      if (response.user.role === 3) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error("Registration error:", err);
       setError(err.message || "Registration failed");

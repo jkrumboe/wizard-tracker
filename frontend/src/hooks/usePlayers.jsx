@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { getPlayers, getTags } from "../services/playerService"
+import { useState, useEffect, useCallback } from "react"
+import { getPlayers, getTags, createPlayer, updatePlayer, deletePlayer } from "../services/playerService"
 
 export function usePlayers() {
   const [players, setPlayers] = useState([])
@@ -9,26 +9,77 @@ export function usePlayers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    async function fetchPlayers() {
-      try {
-        setLoading(true)
-        const data = await getPlayers()
-        const tagdata = await getTags()
-        setTags(tagdata)
-        setPlayers(data)
-        setError(null)
-      } catch (err) {
-        console.error("Error fetching players:", err)
-        setError("Failed to load players")
-      } finally {
-        setLoading(false)
-      }
+  const fetchPlayers = useCallback(async () => {
+    try {
+      setLoading(true)
+      const [playersData, tagsData] = await Promise.all([
+        getPlayers(),
+        getTags()
+      ])
+      setPlayers(playersData)
+      setTags(tagsData)
+      setError(null)
+    } catch (err) {
+      console.error("Error fetching players:", err)
+      setError("Failed to load players")
+    } finally {
+      setLoading(false)
     }
-
-    fetchPlayers()
   }, [])
 
-  return { players, loading, error, tags }
+  useEffect(() => {
+    fetchPlayers()
+  }, [fetchPlayers])
+
+  const addPlayer = useCallback(async (playerData) => {
+    try {
+      const newPlayer = await createPlayer(playerData)
+      setPlayers(prev => [...prev, newPlayer])
+      return newPlayer
+    } catch (err) {
+      console.error("Error creating player:", err)
+      throw err
+    }
+  }, [])
+
+  const updatePlayerData = useCallback(async (playerId, playerData) => {
+    try {
+      const updatedPlayer = await updatePlayer(playerId, playerData)
+      setPlayers(prev => 
+        prev.map(player => 
+          player.id === playerId ? updatedPlayer : player
+        )
+      )
+      return updatedPlayer
+    } catch (err) {
+      console.error("Error updating player:", err)
+      throw err
+    }
+  }, [])
+
+  const removePlayer = useCallback(async (playerId) => {
+    try {
+      await deletePlayer(playerId)
+      setPlayers(prev => prev.filter(player => player.id !== playerId))
+    } catch (err) {
+      console.error("Error deleting player:", err)
+      throw err
+    }
+  }, [])
+
+  const refreshPlayers = useCallback(() => {
+    return fetchPlayers()
+  }, [fetchPlayers])
+
+  return { 
+    players, 
+    tags, 
+    loading, 
+    error, 
+    addPlayer, 
+    updatePlayerData, 
+    removePlayer, 
+    refreshPlayers 
+  }
 }
 

@@ -14,7 +14,6 @@ const GameDetails = () => {
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('finalResults')
-
   useEffect(() => {
     const fetchGameData = async () => {
       try {
@@ -22,9 +21,9 @@ const GameDetails = () => {
         const gameData = await getGameById(Number.parseInt(id))
         setGame(gameData)
 
-        // Fetch player details
-        const playerIds = Object.keys(gameData.scores)
-        const playerPromises = playerIds.map((playerId) => getPlayerById(Number.parseInt(playerId)))
+        // Fetch player details using new schema field names
+        const playerIds = gameData.player_ids || []
+        const playerPromises = playerIds.map((playerId) => getPlayerById(playerId))
         const players = await Promise.all(playerPromises)
 
         const playerMap = {}
@@ -53,9 +52,8 @@ const GameDetails = () => {
   if (error || !game) {
     return <div className="error">{error || "Game not found"}</div>
   }
-
   // Sort players by score (highest first)
-  const sortedPlayers = Object.entries(game.scores)
+  const sortedPlayers = Object.entries(game.final_scores || {})
     .map(([playerId, score]) => ({
       id: Number.parseInt(playerId),
       score,
@@ -64,15 +62,14 @@ const GameDetails = () => {
     .sort((a, b) => b.score - a.score)
 
   // Add detailed statistics for each player
-  // Add a null check for round.players in calculatePlayerStats
-  const calculatePlayerStats = (game) => {
-    if (!game.rounds || !Array.isArray(game.rounds)) {
+  function calculatePlayerStats(game) {
+    if (!game.round_data || !Array.isArray(game.round_data)) {
       return [];
     }
 
-    const stats = Object.entries(game.scores).map(([playerId]) => {
-      const playerRounds = game.rounds.map((round) => {
-        if (!round || !round.players) return null; // Ensure round and round.players are defined
+    const stats = Object.entries(game.final_scores || {}).map(([playerId]) => {
+      const playerRounds = game.round_data.map((round) => {
+        if (!round || !round.players) return null;
         return round.players.find((p) => p.id === Number(playerId));
       });
 
@@ -82,19 +79,19 @@ const GameDetails = () => {
       const overbids = playerRounds.filter((round) => round?.made > round?.call).length;
       const underbids = playerRounds.filter((round) => round?.made < round?.call).length;
       const totalPoints = playerRounds.reduce((sum, round) => sum + (round?.score || 0), 0);
-      const avgPoints = totalPoints / game.rounds.length;
-      const avgBid = totalBids / game.rounds.length;
-      const avgTricks = totalTricks / game.rounds.length;
+      const avgPoints = totalPoints / game.round_data.length;
+      const avgBid = totalBids / game.round_data.length;
+      const avgTricks = totalTricks / game.round_data.length;
       const avgDiff =
         playerRounds.reduce((sum, round) => sum + Math.abs((round?.made || 0) - (round?.call || 0)), 0) /
-        game.rounds.length;
+        game.round_data.length;
 
       return {
         id: Number(playerId),
         totalBids,
         totalTricks,
         correctBids,
-        bidAccuracy: ((correctBids / game.rounds.length) * 100).toFixed(2),
+        bidAccuracy: ((correctBids / game.round_data.length) * 100).toFixed(2),
         overbids,
         underbids,
         avgDiff: avgDiff.toFixed(2),
@@ -109,14 +106,13 @@ const GameDetails = () => {
 
     return stats;
   }
-
-  const playerStats = calculatePlayerStats(game)
+  const playerStats = calculatePlayerStats(game);
   // console.log("Game Stats:", playerStats)
   // console.log("Player Details:", playerDetails)
   // console.log("Game Data:", game)
   // console.log("Game Data Rounds:", game.rounds)
 
-  const formattedDate = new Date(game.date).toLocaleDateString("en-US", {
+  const formattedDate = new Date(game.created_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -124,8 +120,8 @@ const GameDetails = () => {
     minute: "2-digit",
   });
 
-  const duration = game.duration
-    ? `${Math.floor(game.duration / 1000 / 60 / 60)}h ${Math.floor((game.duration / 1000 / 60) % 60)}m ${(Math.floor(game.duration / 1000) % 60)}s`
+  const duration = game.duration_seconds
+    ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
     : "N/A";
 
   const togglePlayerStats = (playerId) => {
@@ -146,17 +142,16 @@ const GameDetails = () => {
 
       <div className="game-summary">
         <div className="winner-section">
-          <h2>Winner</h2>
-          {playerDetails[game.winner] && (
+          <h2>Winner</h2>          {playerDetails[game.winner_id] && (
             <div className="winner-card">
               <img
-                src={playerDetails[game.winner].avatar || defaultAvatar}
-                alt={playerDetails[game.winner].name}
+                src={playerDetails[game.winner_id].avatar || defaultAvatar}
+                alt={playerDetails[game.winner_id].name}
                 className="winner-avatar"
               />
               <div className="winner-info">
-                <h3>{playerDetails[game.winner].name}</h3>
-                <div className="winner-score">Score: {game.scores[game.winner]}</div>
+                <h3>{playerDetails[game.winner_id].name}</h3>
+                <div className="winner-score">Score: {game.final_scores[game.winner_id]}</div>
               </div>
             </div>
           )}
@@ -177,13 +172,10 @@ const GameDetails = () => {
               Rounds
             </button>            
           </div>
-
-          
-
                 {activeTab === 'rounds' && (
                 <div className="rounds-section">
                   <h2>Rounds</h2>
-                  {game.rounds.map((round, index) => (
+                  {game.round_data && game.round_data.map((round, index) => (
                     <div key={index} className="round-card">
                       <h3>Round {index + 1}</h3>
                         <div className="round-players">

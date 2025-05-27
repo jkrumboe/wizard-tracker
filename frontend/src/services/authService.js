@@ -1,5 +1,5 @@
 // Authentication service with secure cookie support and token refresh
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://backend.jkrumboe.dev/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5055/api";
 
 class AuthService {
   constructor() {
@@ -170,7 +170,6 @@ class AuthService {
       return false;
     }
   }
-
   // Get current user from token
   getCurrentUser() {
     const token = localStorage.getItem('token');
@@ -185,6 +184,29 @@ class AuthService {
       };
     } catch (error) {
       console.error('Error decoding token:', error);
+      return null;
+    }
+  }
+
+  // Check authentication status with server (using HTTP-only cookies)
+  async checkAuthStatus() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: 'GET',
+        credentials: 'include', // Include HTTP-only cookies
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.user;
+      } else if (response.status === 401) {
+        // Not authenticated
+        return null;
+      } else {
+        throw new Error('Failed to check authentication status');
+      }
+    } catch (error) {
+      console.error('Auth status check failed:', error);
       return null;
     }
   }

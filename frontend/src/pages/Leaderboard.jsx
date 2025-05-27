@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getPlayers, getPlayerStats } from '../services/playerService'
+import { getPlayers } from '../services/playerService'
 import defaultAvatar from "../assets/default-avatar.png";
 
 const Leaderboard = () => {
@@ -11,18 +11,12 @@ const Leaderboard = () => {
   const [filter, setFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const playersPerPage = 5
-
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
         const playerData = await getPlayers()
-        const playerStatsPromises = playerData.map(player => getPlayerStats(player.id))
-        const playerStats = await Promise.all(playerStatsPromises)
-        const playerDataWithStats = playerData.map((player, index) => ({
-          ...player,
-          ...playerStats[index],
-        }))
-        setPlayers(playerDataWithStats)
+        // Players now come with stats included from the new API
+        setPlayers(playerData)
         setLoading(false)
       } catch (error) {
         console.error('Error fetching players:', error)
@@ -31,7 +25,7 @@ const Leaderboard = () => {
     }
 
     fetchPlayers()
-  }, []) 
+  }, [])
 
   const handleSort = (field) => {
     if (sortBy === field) {

@@ -58,6 +58,15 @@ const Navbar = () => {  const [isOpen, setIsOpen] = useState(false)
           <Link to="/new-game" className={`nav-link ${isActive("/new-game")}`} onClick={closeMenu}>
             New Game
           </Link>
+        </li>        <li className="nav-item">
+          <Link to="/lobby" className={`nav-link ${isActive("/lobby")}`} onClick={closeMenu}>
+            Multiplayer Lobby
+          </Link>
+        </li>
+        <li className="nav-item">
+          <Link to="/test-multiplayer" className={`nav-link ${isActive("/test-multiplayer")}`} onClick={closeMenu}>
+            🧪 Test Multiplayer
+          </Link>
         </li>
         {user ? (
           <>

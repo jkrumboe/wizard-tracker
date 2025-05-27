@@ -4,7 +4,8 @@ import defaultAvatar from "../assets/default-avatar.png"
 const PlayerCard = ({ player, onClick, showStats = true }) => {
   if (!player) return null
 
-  const { id, name, avatar, elo, winRate, totalGames, tags } = player
+  const { id, name, avatar, elo, total_games, wins, tags } = player
+  const winRate = total_games > 0 ? Math.round((wins / total_games) * 100) : 0
 
   // If onClick is provided, render as a clickable card, otherwise as a link
   const CardWrapper = onClick ? "div" : Link
@@ -31,7 +32,7 @@ const PlayerCard = ({ player, onClick, showStats = true }) => {
               </div>
               <div className="stat">
                 <span className="stat-label">Games</span>
-                <span className="stat-value">{totalGames}</span>
+                <span className="stat-value">{total_games}</span>
               </div>
             </div>
           )}
@@ -39,8 +40,8 @@ const PlayerCard = ({ player, onClick, showStats = true }) => {
           {tags && tags.length > 0 && (
             <div className="player-tags">
               {tags.map((tag) => (
-                <span key={tag} className="tag">
-                  {tag}
+                <span key={tag.id || tag} className="tag">
+                  {tag.name || tag}
                 </span>
               ))}
             </div>

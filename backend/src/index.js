@@ -8,6 +8,12 @@ import bcryptjs from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import { Server } from 'colyseus';
+import { WebSocketTransport } from '@colyseus/ws-transport';
+import http from 'http';
+import { WizardGameRoom } from './rooms/WizardGameRoom.js';
+import { LobbyRoom } from './rooms/LobbyRoom.js';
+import dbAdapter from './db/dbAdapter.js';
 
 dotenv.config()
 const app = express()
@@ -201,9 +207,13 @@ app.post('/api/login', authLimiter, [
   }
 
   const { username, password } = req.body;
-  
-  try {
-    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    try {
+    const result = await db.query(`
+      SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, p.avatar, p.elo, p.win_rate, p.total_games
+      FROM users u 
+      LEFT JOIN players p ON u.id = p.user_id 
+      WHERE u.username = $1
+    `, [username]);
     const user = result.rows[0];
 
     if (!user) {
@@ -215,9 +225,7 @@ app.post('/api/login', authLimiter, [
     if (!isValidPassword) {
       auditLog('LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
       return res.status(400).json({ error: 'Invalid username or password.' });
-    }
-
-    const { accessToken, refreshToken } = generateTokens(user);
+    }    const { accessToken, refreshToken } = generateTokens(user);
     
     // Set secure HTTP-only cookies
     setTokenCookies(res, accessToken, refreshToken);
@@ -252,24 +260,27 @@ app.post('/api/register', authLimiter, [
     auditLog('REGISTER_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
     return res.status(400).json({ errors: errors.array() });
   }
-
   const { username, email, password } = req.body;
   try {
-    // Create a new player
+    // Hash the password and create a new user first
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userResult = await db.query(
+      'INSERT INTO users (username, email, password_hash, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [username, email, hashedPassword, 1]
+    );
+    const newUser = userResult.rows[0];
+
+    // Create a new player linked to the user
     const playerResult = await db.query(
-      'INSERT INTO players (name, avatar, elo, win_rate, total_games) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [username, null, 1000, 0, 0]
+      'INSERT INTO players (user_id, name, display_name, avatar, elo, win_rate, total_games) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [newUser.id, username, username, null, 1000, 0, 0]
     );
     const newPlayer = playerResult.rows[0];
 
-    // Hash the password and create a new user linked to the player
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const userResult = await db.query(
-      'INSERT INTO users (username, email, password_hash, role_id, player_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [username, email, hashedPassword, 1, newPlayer.id]
-    );    const newUser = userResult.rows[0];
-
-    const { accessToken, refreshToken } = generateTokens(newUser);
+    const { accessToken, refreshToken } = generateTokens({
+      ...newUser,
+      player_id: newPlayer.id
+    });
     
     // Set secure HTTP-only cookies
     setTokenCookies(res, accessToken, refreshToken);
@@ -278,7 +289,8 @@ app.post('/api/register', authLimiter, [
       id: newUser.id,
       username: newUser.username,
       role: newUser.role_id,
-      player_id: newUser.player_id    };
+      player_id: newPlayer.id
+    };
     
     auditLog('REGISTER_SUCCESS', newUser.id, { username, email }, req);
       res.status(201).json({ 
@@ -375,6 +387,112 @@ app.get('/api/protected', verifyToken, authorizeRoles(['admin']), (req, res) => 
   res.json({ message: 'This is a protected route for admins.' });
 });
 
+// User profile/me route - check authentication status
+app.get('/api/me', verifyToken, async (req, res) => {
+  try {
+    // Get full user info with player data from database
+    const result = await db.query(`
+      SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, 
+             p.avatar, p.elo, p.peak_elo, p.win_rate, p.total_games, 
+             p.total_wins, p.total_losses, p.current_streak, p.best_streak,
+             p.is_online, p.last_seen, p.preferences, p.stats
+      FROM users u
+      LEFT JOIN players p ON u.id = p.user_id
+      WHERE u.id = $1
+    `, [req.user.id]);
+    
+    const user = result.rows[0];
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role_id,
+      player_id: user.player_id,
+      player: user.player_id ? {
+        id: user.player_id,
+        name: user.player_name,
+        display_name: user.display_name,
+        avatar: user.avatar,
+        elo: user.elo,
+        peak_elo: user.peak_elo,
+        win_rate: user.win_rate,
+        total_games: user.total_games,
+        total_wins: user.total_wins,
+        total_losses: user.total_losses,
+        current_streak: user.current_streak,
+        best_streak: user.best_streak,
+        is_online: user.is_online,
+        last_seen: user.last_seen,
+        preferences: user.preferences,
+        stats: user.stats
+      } : null
+    };
+    
+    res.json({ user: userInfo });
+  } catch (err) {
+    console.error('Error fetching user info:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Profile endpoint (alias for /api/me for backward compatibility)
+app.get('/api/profile', verifyToken, async (req, res) => {
+  try {
+    // Get full user info with player data from database
+    const result = await db.query(`
+      SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, 
+             p.avatar, p.elo, p.peak_elo, p.win_rate, p.total_games, 
+             p.total_wins, p.total_losses, p.current_streak, p.best_streak,
+             p.is_online, p.last_seen, p.preferences, p.stats
+      FROM users u
+      LEFT JOIN players p ON u.id = p.user_id
+      WHERE u.id = $1
+    `, [req.user.id]);
+    
+    const user = result.rows[0];
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role_id,
+      player_id: user.player_id,
+      player: user.player_id ? {
+        id: user.player_id,
+        name: user.player_name,
+        display_name: user.display_name,
+        avatar: user.avatar,
+        elo: user.elo,
+        peak_elo: user.peak_elo,
+        win_rate: user.win_rate,
+        total_games: user.total_games,
+        total_wins: user.total_wins,
+        total_losses: user.total_losses,
+        current_streak: user.current_streak,
+        best_streak: user.best_streak,
+        is_online: user.is_online,
+        last_seen: user.last_seen,
+        preferences: user.preferences,
+        stats: user.stats
+      } : null
+    };
+    
+    res.json(userInfo);
+  } catch (err) {
+    console.error('Error fetching user profile:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // Testroute
 // app.get('/api/players', async (req, res) => {
 //   const result = await db.query('SELECT * FROM players')
@@ -430,81 +548,56 @@ app.get('/api/players/:id', async (req, res) => {
 })
 
 // Update a player
-app.put('/api/players/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, avatar, elo, winRate, totalGames, tags } = req.body;
-
-  // ✅ Validate types
-  if (typeof name !== 'string' || name.length > 50) {
-    return res.status(400).json({ error: 'Invalid name format' });
-  }
-
-  if (avatar && typeof avatar !== 'string') {
-    return res.status(400).json({ error: 'Invalid avatar format' });
-  }
-
+app.put('/api/players/:id', verifyToken, async (req, res) => {
   try {
-    const result = await db.query(
-      `UPDATE players
-       SET name = $1,
-           avatar = $2,
-           elo = $3,
-           win_rate = $4,
-           total_games = $5
-       WHERE id = $6
-       RETURNING *`,
-      [name, avatar, elo, winRate, totalGames, id]
-    );
+    const playerId = parseInt(req.params.id);
+    const { name, display_name, avatar } = req.body;
+    
+    // Check if user can edit this profile
+    const canEdit = req.user.role >= 2 || req.user.player_id === playerId;
+    if (!canEdit) {
+      return res.status(403).json({ error: 'Permission denied.' });
+    }
+
+    const result = await db.query(`
+      UPDATE players 
+      SET 
+        name = COALESCE($2, name),
+        display_name = COALESCE($3, display_name),
+        avatar = COALESCE($4, avatar),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING *
+    `, [playerId, name, display_name, avatar]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Player not found' });
+      return res.status(404).json({ error: 'Player not found.' });
     }
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error updating player:', err);
-    res.status(500).json({ error: 'Failed to update player' });
+    console.error('Error updating player profile:', err);
+    res.status(500).json({ error: 'Failed to update profile.' });
   }
 });
 
 // Update player tags
-app.put('/api/players/:id/tags', async (req, res) => {
-  const { id } = req.params;
-  const { tags } = req.body;
-
-  // Debugging: Log the incoming request parameters and body
-  // console.log('Incoming request to update player tags:', { id, tags });
-
-  if (!Array.isArray(tags)) {
-    console.error('Invalid tags format. Tags must be an array.');
-    return res.status(400).json({ error: 'Tags must be an array' });
-  }
-
+app.get('/api/players/:id/tags', async (req, res) => {
   try {
-    // Debugging: Log the deletion query
-    // console.log(`Deleting existing tags for player with ID: ${id}`);
-    await db.query('DELETE FROM player_tags WHERE player_id = $1', [id]);
+    const playerId = parseInt(req.params.id);
+    
+    const result = await db.query(`
+      SELECT t.id, t.name, t.color, t.description
+      FROM tags t
+      JOIN player_tags pt ON t.id = pt.tag_id
+      WHERE pt.player_id = $1
+      ORDER BY t.name
+    `, [playerId]);
 
-    // Debugging: Log the insertion process
-    // console.log(`Inserting new tags for player with ID: ${id}`);
-    const tagInsertPromises = tags.map(async (tag) => {
-      // console.log(`Inserting tag with ID: ${tag.id} for player ID: ${id}`);
-      const tagResult = await db.query(
-        'INSERT INTO player_tags (player_id, tag_id) VALUES ($1, $2) RETURNING *',
-        [id, tag.id]
-      );
-      // console.log('Inserted tag result:', tagResult.rows[0]);
-      return tagResult.rows[0];
-    });
-
-    const insertedTags = await Promise.all(tagInsertPromises);
-
-    // Debugging: Log the final response
-    // console.log('Player tags updated successfully:', insertedTags);
-    res.json({ message: 'Player tags updated successfully', tags: insertedTags });
+    res.json(result.rows);
   } catch (err) {
-    console.error('Error updating player tags:', err);
-    res.status(500).json({ error: 'Failed to update player tags' });
+    console.error('Error fetching player tags:', err);
+    res.status(500).json({ error: 'Failed to fetch player tags.' });
   }
 });
 
@@ -525,51 +618,92 @@ app.delete('/api/players/:id', async (req, res) => {
 })
 
 // Fetch recent games for a specific player
-app.get('/api/players/:id/games', async (req, res) => {
-  const { id } = req.params;
-  const limit = parseInt(req.query.limit);
-
+app.get('/api/players/:id/games', verifyToken, async (req, res) => {
   try {
-    let query = `
-      SELECT * FROM games
-      WHERE players @> $1::jsonb
-      ORDER BY date DESC
-    `;
-    const params = [JSON.stringify([parseInt(id)])];
+    const playerId = parseInt(req.params.id);
+    const limit = parseInt(req.query.limit) || 20;
+    
+    const result = await db.query(`
+      SELECT 
+        g.id,
+        g.created_at as date,
+        g.completed_at,
+        g.game_mode as mode,
+        g.status,
+        g.duration_seconds as duration,
+        gp.final_score as score,
+        gp.placement,
+        gp.elo_before,
+        gp.elo_after,
+        gp.elo_change,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', op.id,
+              'name', op.name,
+              'avatar', op.avatar,
+              'final_score', ogp.final_score,
+              'placement', ogp.placement
+            )
+            ORDER BY ogp.placement
+          ) FILTER (WHERE op.id IS NOT NULL AND op.id != $1), 
+          '[]'::json
+        ) as opponents,
+        winner.name as winner_name,
+        CASE WHEN gp.placement = 1 THEN true ELSE false END as won
+      FROM games g
+      JOIN game_participants gp ON g.id = gp.game_id
+      LEFT JOIN game_participants ogp ON g.id = ogp.game_id
+      LEFT JOIN players op ON ogp.player_id = op.id
+      LEFT JOIN players winner ON g.winner_id = winner.id
+      WHERE gp.player_id = $1 AND g.status = 'completed'
+      GROUP BY g.id, g.created_at, g.completed_at, g.game_mode, g.status, g.duration_seconds, 
+               gp.final_score, gp.placement, gp.elo_before, gp.elo_after, gp.elo_change, winner.name
+      ORDER BY g.created_at DESC
+      LIMIT $2
+    `, [playerId, limit]);
 
-    if (!isNaN(limit)) {
-      query += ' LIMIT $2';
-      params.push(limit);
-    }
-
-    const result = await db.query(query, params);
     res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching player games:', error);
-    res.status(500).json({ error: 'Failed to fetch player games' });
+  } catch (err) {
+    console.error('Error fetching player game history:', err);
+    res.status(500).json({ error: 'Failed to fetch game history.' });
   }
 });
 
 
 // Fix query for fetching stats for a player
-app.get('/api/players/:id/stats', async (req, res) => {
-  const { id } = req.params;
+app.get('/api/players/:id/stats', verifyToken, async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT 
-        COALESCE(SUM(CAST(scores->>$1 AS INT)), 0) AS total_points,
-        COUNT(*) AS total_games,
-        COALESCE(AVG(CAST(scores->>$1 AS INT)), 0) AS avg_points,
-        COUNT(CASE WHEN CAST(winner AS TEXT) = $1 THEN 1 END) AS wins
-      FROM games
-      WHERE players @> $2::jsonb`,
-      [id, JSON.stringify([parseInt(id)])]
-    );
+    const playerId = parseInt(req.params.id);
+    
+    const result = await db.query(`
+      SELECT 
+        p.total_games,
+        p.total_wins as wins,
+        p.total_losses as losses,
+        p.elo,
+        p.peak_elo,
+        p.win_rate,
+        p.current_streak,
+        p.best_streak,
+        COALESCE(SUM(gp.final_score), 0) as total_points,
+        COALESCE(AVG(gp.final_score), 0) as average_score,
+        COUNT(DISTINCT g.id) FILTER (WHERE g.status = 'completed') as completed_games
+      FROM players p
+      LEFT JOIN game_participants gp ON p.id = gp.player_id
+      LEFT JOIN games g ON gp.game_id = g.id
+      WHERE p.id = $1
+      GROUP BY p.id, p.total_games, p.total_wins, p.total_losses, p.elo, p.peak_elo, p.win_rate, p.current_streak, p.best_streak
+    `, [playerId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
+    }
 
     res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error fetching player stats:', error);
-    res.status(500).json({ error: 'Failed to fetch player stats' });
+  } catch (err) {
+    console.error('Error fetching player stats:', err);
+    res.status(500).json({ error: 'Failed to fetch player stats.' });
   }
 });
 
@@ -585,22 +719,75 @@ app.get('/api/tags', async (req, res) => {
   }
 })
 
-// Fetch tags by player ID
+// Get player tags - New for schema-v2
 app.get('/api/players/:id/tags', async (req, res) => {
-  const { id } = req.params;
   try {
-    const result = await db.query(
-      `SELECT t.id, t.name 
-       FROM tags t
-       INNER JOIN player_tags pt ON t.id = pt.tag_id
-       WHERE pt.player_id = $1`,
-      [id]
-    );
+    const playerId = parseInt(req.params.id);
+    
+    const result = await db.query(`
+      SELECT t.id, t.name, t.color, t.description
+      FROM tags t
+      JOIN player_tags pt ON t.id = pt.tag_id
+      WHERE pt.player_id = $1
+      ORDER BY t.name
+    `, [playerId]);
 
     res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching tags for player:', error);
-    res.status(500).json({ error: 'Failed to fetch tags for player' });
+  } catch (err) {
+    console.error('Error fetching player tags:', err);
+    res.status(500).json({ error: 'Failed to fetch player tags.' });
+  }
+});
+
+// Update player tags - New for schema-v2
+app.put('/api/players/:id/tags', verifyToken, async (req, res) => {
+  try {
+    const playerId = parseInt(req.params.id);
+    const { tags } = req.body;
+    
+    // Check if user can edit this profile
+    const canEdit = req.user.role >= 2 || req.user.player_id === playerId;
+    if (!canEdit) {
+      return res.status(403).json({ error: 'Permission denied.' });
+    }
+
+    // Begin transaction
+    await db.query('BEGIN');
+    
+    try {
+      // Remove existing tags
+      await db.query('DELETE FROM player_tags WHERE player_id = $1', [playerId]);
+      
+      // Add new tags
+      if (tags && tags.length > 0) {
+        const tagValues = tags.map((tag, index) => `($1, $${index + 2})`).join(', ');
+        const tagParams = [playerId, ...tags.map(tag => tag.id)];
+        
+        await db.query(`
+          INSERT INTO player_tags (player_id, tag_id) 
+          VALUES ${tagValues}
+        `, tagParams);
+      }
+      
+      await db.query('COMMIT');
+      
+      // Return updated tags
+      const result = await db.query(`
+        SELECT t.id, t.name, t.color, t.description
+        FROM tags t
+        JOIN player_tags pt ON t.id = pt.tag_id
+        WHERE pt.player_id = $1
+        ORDER BY t.name
+      `, [playerId]);
+      
+      res.json(result.rows);
+    } catch (err) {
+      await db.query('ROLLBACK');
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error updating player tags:', err);
+    res.status(500).json({ error: 'Failed to update player tags.' });
   }
 });
 
@@ -712,33 +899,122 @@ app.post('/api/games', async (req, res) => {
 
 // Get recent games
 app.get('/api/games/recent', async (req, res) => {
-  const limit = parseInt(req.query.limit) || 5;
   try {
-    const result = await db.query(
-      'SELECT * FROM games ORDER BY date DESC LIMIT $1',
-      [limit]
-    );
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const result = await db.query(`
+      SELECT 
+        g.id,
+        g.created_at as date,
+        g.game_mode as mode,
+        g.status,
+        g.duration_seconds as duration,
+        g.winner_id,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', p.id,
+              'name', p.name,
+              'avatar', p.avatar,
+              'final_score', gp.final_score,
+              'placement', gp.placement
+            )
+            ORDER BY gp.placement
+          ) FILTER (WHERE p.id IS NOT NULL), 
+          '[]'::json
+        ) as players,
+        winner.name as winner_name
+      FROM games g
+      LEFT JOIN game_participants gp ON g.id = gp.game_id
+      LEFT JOIN players p ON gp.player_id = p.id
+      LEFT JOIN players winner ON g.winner_id = winner.id
+      WHERE g.status = 'completed'
+      GROUP BY g.id, g.created_at, g.game_mode, g.status, g.duration_seconds, g.winner_id, winner.name
+      ORDER BY g.created_at DESC
+      LIMIT $1
+    `, [limit]);
+
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching recent games:', err);
-    res.status(500).json({ error: 'Failed to fetch recent games' });
+    res.status(500).json({ error: 'Failed to fetch recent games.' });
   }
 });
 
-// Get a game by ID
+// Get a game by ID - Updated for schema-v2
 app.get('/api/games/:id', async (req, res) => {
-  const { id } = req.params
+  const { id } = req.params;
   try {
-    const result = await db.query('SELECT * FROM games WHERE id = $1', [id])
+    const result = await db.query(`
+      SELECT 
+        g.id,
+        g.created_at as date,
+        g.completed_at,
+        g.game_mode as mode,
+        g.status,
+        g.duration_seconds as duration,
+        g.winner_id as winner,
+        COALESCE(
+          json_object_agg(
+            p.id, gp.final_score
+          ) FILTER (WHERE p.id IS NOT NULL),
+          '{}'::json
+        ) as scores,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', p.id,
+              'name', p.name,
+              'avatar', p.avatar,
+              'final_score', gp.final_score,
+              'placement', gp.placement
+            )
+            ORDER BY gp.placement
+          ) FILTER (WHERE p.id IS NOT NULL),
+          '[]'::json
+        ) as players,
+        -- Build rounds data from round_performances
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'round', gr.round_number,
+              'cards', gr.cards_dealt,
+              'players', (
+                SELECT json_agg(
+                  json_build_object(
+                    'id', rp.player_id,
+                    'call', rp.predicted_tricks,
+                    'made', rp.actual_tricks,
+                    'score', rp.points_scored
+                  )
+                  ORDER BY rp.player_id
+                )
+                FROM round_performances rp
+                WHERE rp.round_id = gr.id
+              )
+            )
+            ORDER BY gr.round_number
+          ) FILTER (WHERE gr.id IS NOT NULL),
+          '[]'::json
+        ) as rounds
+      FROM games g
+      LEFT JOIN game_participants gp ON g.id = gp.game_id
+      LEFT JOIN players p ON gp.player_id = p.id
+      LEFT JOIN game_rounds gr ON g.id = gr.game_id
+      WHERE g.id = $1
+      GROUP BY g.id, g.created_at, g.completed_at, g.game_mode, g.status, g.duration_seconds, g.winner_id
+    `, [id]);
+    
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Game not found' })
+      return res.status(404).json({ error: 'Game not found' });
     }
-    res.json(result.rows[0])
+    
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Failed to fetch game' })
+    console.error('Error fetching game by ID:', err);
+    res.status(500).json({ error: 'Failed to fetch game' });
   }
-})
+});
 
 //=== ELO History ===//
 
@@ -747,7 +1023,7 @@ app.get('/api/players/:id/elo-history', async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.query(
-      `SELECT id, game_id, old_elo, new_elo, change, timestamp
+      `SELECT id, game_id, old_elo, new_elo, elo_change as change, timestamp
        FROM elo_history
        WHERE player_id = $1
        ORDER BY timestamp DESC`,
@@ -991,28 +1267,215 @@ app.get("/api/admin/games", async (req, res) => {
   }
 });
 
-/* Add a default admin user for testing purposes
-app.post('/api/setup-default-admin', async (req, res) => {
-  const username = 'admin';
-  const password = 'admin123';
-  const role = 'admin';
+//=== MULTIPLAYER & COLYSEUS ROUTES ===//
 
+// Get active game rooms
+app.get('/api/rooms/active', async (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await db.query(
-      'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO NOTHING',
-      [username, hashedPassword]
-    );
-    res.status(201).json({ message: 'Default admin user created or already exists.' });
-  } catch (err) {
-    console.error('Error creating default admin user:', err);
-    res.status(500).json({ error: 'Failed to create default admin user.' });
+    const rooms = await dbAdapter.getActiveRooms();
+    res.json(rooms);
+  } catch (error) {
+    console.error('Error fetching active rooms:', error);
+    res.status(500).json({ error: 'Failed to fetch active rooms' });
   }
-});*/
+});
 
-// ...other admin routes for updating and deleting players/games...
+// Get room details by ID
+app.get('/api/rooms/:roomId', async (req, res) => {
+  const { roomId } = req.params;
+  
+  try {
+    const room = await dbAdapter.getRoomByColyseusId(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    res.json(room);
+  } catch (error) {
+    console.error('Error fetching room:', error);
+    res.status(500).json({ error: 'Failed to fetch room' });
+  }
+});
 
-// ...existing code...
+// Create a new game room (used by frontend before creating Colyseus room)
+app.post('/api/rooms', verifyToken, async (req, res) => {
+  const { roomName, maxPlayers, isPrivate, gameMode, settings, password } = req.body;
+  
+  try {
+    // Generate a temporary room ID that will be replaced by Colyseus
+    const tempRoomId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Hash password if provided for private rooms
+    let passwordHash = null;
+    if (isPrivate && password) {
+      passwordHash = await bcrypt.hash(password, 10);
+    }
+    
+    const roomData = await dbAdapter.createRoom({
+      colyseusRoomId: tempRoomId,
+      roomName: roomName || `${req.user.username}'s Game`,
+      hostPlayerId: req.user.player_id,
+      maxPlayers: maxPlayers || 4,
+      isPrivate: isPrivate || false,
+      gameMode: gameMode || 'ranked',
+      passwordHash: passwordHash,
+      settings: settings || {}
+    });
+    
+    res.status(201).json({
+      roomId: roomData.id,
+      tempColyseusId: tempRoomId,
+      message: 'Room created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating room:', error);
+    res.status(500).json({ error: 'Failed to create room' });
+  }
+});
+
+// Update room with actual Colyseus room ID
+app.put('/api/rooms/:roomId/colyseus', async (req, res) => {
+  const { roomId } = req.params;
+  const { colyseusRoomId } = req.body;
+  
+  try {
+    await dbAdapter.pool.query(
+      'UPDATE game_rooms SET colyseus_room_id = $1 WHERE id = $2',
+      [colyseusRoomId, roomId]
+    );
+    
+    res.json({ message: 'Room updated with Colyseus ID' });
+  } catch (error) {
+    console.error('Error updating room with Colyseus ID:', error);
+    res.status(500).json({ error: 'Failed to update room' });
+  }
+});
+
+// Join a room (mark player as participant)
+app.post('/api/rooms/:roomId/join', verifyToken, async (req, res) => {
+  const { roomId } = req.params;
+  
+  try {
+    await dbAdapter.addPlayerToRoom(roomId, req.user.player_id);
+    res.json({ message: 'Joined room successfully' });
+  } catch (error) {
+    console.error('Error joining room:', error);
+    res.status(500).json({ error: 'Failed to join room' });
+  }
+});
+
+// Leave a room
+app.post('/api/rooms/:roomId/leave', verifyToken, async (req, res) => {
+  const { roomId } = req.params;
+  
+  try {
+    await dbAdapter.playerLeftRoom(roomId, req.user.player_id);
+    res.json({ message: 'Left room successfully' });
+  } catch (error) {
+    console.error('Error leaving room:', error);
+    res.status(500).json({ error: 'Failed to leave room' });
+  }
+});
+
+// Get player's current session info
+app.get('/api/player/session', verifyToken, async (req, res) => {
+  try {
+    const result = await dbAdapter.pool.query(`
+      SELECT ps.*, p.name, p.elo, p.is_online
+      FROM player_sessions ps
+      JOIN players p ON ps.player_id = p.id
+      WHERE ps.player_id = $1 AND ps.is_active = true
+      ORDER BY ps.created_at DESC
+      LIMIT 1
+    `, [req.user.player_id]);
+    
+    res.json(result.rows[0] || null);
+  } catch (error) {
+    console.error('Error fetching player session:', error);
+    res.status(500).json({ error: 'Failed to fetch player session' });
+  }
+});
+
+// Update player online status
+app.post('/api/player/status', verifyToken, async (req, res) => {
+  const { isOnline } = req.body;
+  
+  try {
+    await dbAdapter.markPlayerOnline(req.user.player_id, isOnline);
+    res.json({ message: 'Player status updated' });
+  } catch (error) {
+    console.error('Error updating player status:', error);
+    res.status(500).json({ error: 'Failed to update player status' });
+  }
+});
+
+// Get game history for multiplayer games
+app.get('/api/games/multiplayer', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = parseInt(req.query.offset) || 0;
+  
+  try {
+    const result = await dbAdapter.pool.query(`
+      SELECT 
+        g.*,
+        gr.room_name,
+        p.name as winner_name,
+        COUNT(gp.id) as participant_count
+      FROM games g
+      LEFT JOIN game_rooms gr ON g.room_id = gr.id
+      LEFT JOIN players p ON g.winner_id = p.id
+      LEFT JOIN game_participants gp ON g.id = gp.game_id
+      WHERE g.room_id IS NOT NULL
+      GROUP BY g.id, gr.room_name, p.name
+      ORDER BY g.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching multiplayer games:', error);
+    res.status(500).json({ error: 'Failed to fetch multiplayer games' });
+  }
+});
+
+// Verify room password for private rooms
+app.post('/api/rooms/:roomId/verify-password', async (req, res) => {
+  const { roomId } = req.params;
+  const { password } = req.body;
+  
+  try {
+    // Get room password hash
+    const result = await dbAdapter.pool.query(
+      'SELECT password_hash, is_private FROM game_rooms WHERE id = $1 OR colyseus_room_id = $1',
+      [roomId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    const room = result.rows[0];
+    
+    if (!room.is_private) {
+      return res.json({ valid: true }); // Public room, no password needed
+    }
+    
+    if (!room.password_hash) {
+      return res.json({ valid: true }); // Private room but no password set
+    }
+    
+    if (!password) {
+      return res.status(400).json({ error: 'Password required' });
+    }
+    
+    const isValid = await bcrypt.compare(password, room.password_hash);
+    res.json({ valid: isValid });
+  } catch (error) {
+    console.error('Error verifying room password:', error);
+    res.status(500).json({ error: 'Failed to verify password' });
+  }
+});
+
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -1037,4 +1500,21 @@ connectWithRetry()
 
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT, '0.0.0.0', () => console.log(`Backend läuft auf Port ${PORT}`))
+
+// Create HTTP server and Colyseus game server
+const server = http.createServer(app);
+const gameServer = new Server({
+  transport: new WebSocketTransport({
+    server: server,
+  }),
+});
+
+// Define game rooms
+gameServer.define('wizard_game', WizardGameRoom);
+gameServer.define('lobby', LobbyRoom);
+
+// Start the server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Backend läuft auf Port ${PORT}`)
+  console.log(`🎮 Colyseus game server is ready!`)
+})

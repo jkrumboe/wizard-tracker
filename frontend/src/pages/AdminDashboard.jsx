@@ -23,7 +23,7 @@ const AdminDashboard = () => {
         setLoading(true);
         const playersData = await getPlayers();
         const gamesData = await getGames();
-        const totalScores = gamesData.reduce((sum, game) => sum + Object.values(game.scores || {}).reduce((a, b) => a + b, 0), 0);
+        const totalScores = gamesData.reduce((sum, game) => sum + Object.values(game.final_scores || {}).reduce((a, b) => a + b, 0), 0);
 
         setPlayers(playersData);
         setGames(gamesData);
@@ -173,10 +173,9 @@ const AdminDashboard = () => {
               </button>
             </div>
           </section><section className="games-section">
-            <h2>Games</h2>
-            <ul>
+            <h2>Games</h2>            <ul>
               {games.map((game) => (
-                <li key={game.id}>{game.date}</li>
+                <li key={game.id}>Game {game.id} - {new Date(game.created_at).toLocaleDateString()}</li>
               ))}
             </ul>
           </section></>

@@ -9,6 +9,9 @@ import Stats from "./pages/Stats"
 import NewGame from "./pages/NewGame"
 import GameDetails from "./pages/GameDetails"
 import GameInProgress from "./pages/GameInProgress"
+import Lobby from "./pages/Lobby"
+import MultiplayerGame from "./pages/MultiplayerGame"
+import TestMultiplayer from "./pages/TestMultiplayer"
 import Navbar from "./components/Navbar"
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
@@ -59,14 +62,16 @@ function App() {
       <UserProvider>
         <GameStateProvider>
           <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
+          <Routes>            <Route path="/" element={<Home />} />
             <Route path="/profile/:id" element={<Profile />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/stats/:id" element={<Stats />} />
             <Route path="/new-game" element={<NewGame />} />
             <Route path="/game/:id" element={<GameDetails />} />
-            <Route path="/game/current" element={<GameInProgress />} />
+            <Route path="/game/current" element={<GameInProgress />} />            <Route path="/lobby" element={<Lobby />} />
+            <Route path="/multiplayer/:roomId" element={<MultiplayerGame />} />
+            <Route path="/multiplayer/new" element={<MultiplayerGame />} />
+            <Route path="/test-multiplayer" element={<TestMultiplayer />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/admin"

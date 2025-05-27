@@ -154,7 +154,6 @@ export function GameStateProvider({ children }) {
       return prevState
     })
   }, [])
-
   // Finish the game and save results
   const finishGame = useCallback(async () => {
     try {
@@ -163,7 +162,7 @@ export function GameStateProvider({ children }) {
       const finalScores = {};
       let winnerId = null;
       let maxScore = Number.NEGATIVE_INFINITY;
-      const duration = new Date() - new Date(gameState.referenceDate); // Calculate duration
+      const duration = Math.floor((new Date() - new Date(gameState.referenceDate)) / 1000); // Duration in seconds
 
       lastRound.players.forEach((player) => {
         finalScores[player.id] = player.totalScore;
@@ -174,16 +173,16 @@ export function GameStateProvider({ children }) {
       });
 
       const gameData = {
-        date: new Date().toISOString(),
-        players: gameState.players.map((p) => p.id),
-        winner: winnerId,
-        scores: finalScores,
-        rounds: gameState.roundData,
-        duration,
-        mode: gameState.mode || "Ranked",
+        player_ids: gameState.players.map((p) => p.id),
+        winner_id: winnerId,
+        final_scores: finalScores,
+        round_data: gameState.roundData,
+        duration_seconds: duration,
+        game_mode: gameState.mode || "Ranked",
+        total_rounds: gameState.maxRounds,
       };
 
-      // Save game data
+      // Save game data using new schema API
       await createGame(gameData);
 
       setGameState((prevState) => ({

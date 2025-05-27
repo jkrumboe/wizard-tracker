@@ -1,6 +1,5 @@
-import { playerAPI } from "./api";
-
-// Getters 
+// Enhanced player service for new database schema with user-player separation
+import { playerAPI, tagsAPI } from "./api";
 
 //=== Get ALL ===//
 
@@ -11,7 +10,7 @@ export async function getPlayers() {
 
 // Get all tags
 export async function getTags() {
-  return playerAPI.getTags();
+  return tagsAPI.getAll();
 }
 
 //=== Get by ID ===//
@@ -21,49 +20,95 @@ export async function getPlayerById(id) {
   return playerAPI.getById(id);
 }
 
-// Add a function to get player stats
+// Get player stats (enhanced for new schema)
 export async function getPlayerStats(id) {
   return playerAPI.getStats(id);
 }
 
+// Get player game history (enhanced for new schema)
+export async function getPlayerGames(id, limit = 20) {
+  return playerAPI.getGames(id, limit);
+}
+
 // Get tags by player ID
-export async function getTagsByPlayerId(id){
-  return await playerAPI.getTagsById(id);
-};
+export async function getTagsByPlayerId(id) {
+  return playerAPI.getTags(id);
+}
 
 // Get Elo history for a player
 export async function getEloHistory(id) {
-  return await playerAPI.getElo(id);
+  return playerAPI.getEloHistory(id);
 }
 
 //=== Get by Tag ===//
 
 // Get players by tag
 export async function searchPlayersByTag(tag) {
-  return await playerAPI.getbyTag(tag);
-
+  return playerAPI.getByTag(tag);
 }
 
 //=== Creators ===//
 
-// Create a new player
+// Create a new player (admin only)
 export async function createPlayer(playerData) {
   return playerAPI.create(playerData);
 }
 
-//=== Updateds ===//
+//=== Updates ===//
 
 // Update player
 export async function updatePlayer(id, playerData) {
   return playerAPI.update(id, playerData);
 }
 
-// Update player profile
+// Update player profile (enhanced for new schema)
 export async function updatePlayerProfile(playerData) {
-  return playerAPI.update(playerData.id, playerData);
+  try {
+    const response = await playerAPI.update(playerData.id, {
+      name: playerData.name,
+      display_name: playerData.display_name || playerData.name,
+      avatar: playerData.avatar
+    });
+    return response;
+  } catch (error) {
+    console.error('Failed to update player profile:', error);
+    throw error;
+  }
 }
 
 // Update player tags
 export async function updatePlayerTags(playerId, tags) {
-  return playerAPI.updateTags(playerId, { tags });
+  try {
+    const response = await playerAPI.updateTags(playerId, { tags });
+    return response;
+  } catch (error) {
+    console.error('Failed to update player tags:', error);
+    throw error;
+  }
 }
+
+//=== Deletes ===//
+
+// Delete player (admin only)
+export async function deletePlayer(id) {
+  return playerAPI.delete(id);
+}
+
+// Export default for backward compatibility
+export default {
+  getPlayers,
+  getTags,
+  getPlayerById,
+  getPlayerStats,
+  getPlayerGames,
+  getTagsByPlayerId,
+  getEloHistory,
+  searchPlayersByTag,
+  createPlayer,
+  updatePlayer,
+  updatePlayerProfile,
+  updatePlayerTags,
+  deletePlayer
+};
+
+

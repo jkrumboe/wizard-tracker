@@ -224,20 +224,18 @@ const Stats = () => {
         </div>
         <div className="table-body">
           {filteredHistory().slice(0, 5).map(game => (
-            <div key={game.id} className="table-row">
-              <div className="date-col">{
-                new Date(game.date).toLocaleDateString("en-US", {
+            <div key={game.id} className="table-row">              <div className="date-col">{
+                new Date(game.created_at).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "2-digit",
                   day: "2-digit",
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
+              </div><div className="position-col">
+                {Object.keys(game.final_scores).sort((a, b) => game.final_scores[b] - game.final_scores[a]).indexOf(player.id.toString()) + 1}
               </div>
-              <div className="position-col">
-                {Object.keys(game.scores).sort((a, b) => game.scores[b] - game.scores[a]).indexOf(player.id.toString()) + 1}
-              </div>
-              <div className="score-col">{game.scores[player.id]}</div>
+              <div className="score-col">{game.final_scores[player.id]}</div>
               <div className="elo-col">{player.elo}</div>
             </div>
           ))}

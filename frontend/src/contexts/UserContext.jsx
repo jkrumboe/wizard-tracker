@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useCallback } from 'react'
 import { getPlayerById } from '../services/playerService'
+import authService from '../services/authService'
 import defaultAvatar from '../assets/default-avatar.png'
 
 export const UserContext = createContext()
@@ -8,20 +9,37 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null)
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
-
-  // Initialize user from token
+  // Initialize user from HTTP-only cookies by checking with server
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (token) {
+    const checkAuthenticationStatus = async () => {
       try {
-        const decoded = JSON.parse(atob(token.split(".")[1]))
-        setUser(decoded)
-      } catch (err) {
-        console.error("Error decoding token:", err)
-        localStorage.removeItem("token")
+        // First check if there's a token in localStorage (backward compatibility)
+        const token = localStorage.getItem("token")
+        if (token) {
+          try {
+            const decoded = JSON.parse(atob(token.split(".")[1]))
+            setUser(decoded)
+            setLoading(false)
+            return
+          } catch (err) {
+            console.error("Error decoding localStorage token:", err)
+            localStorage.removeItem("token")
+          }
+        }
+
+        // Check authentication status with server (using HTTP-only cookies)
+        const userFromServer = await authService.checkAuthStatus()
+        if (userFromServer) {
+          setUser(userFromServer)
+        }
+      } catch (error) {
+        console.error("Error checking authentication status:", error)
+      } finally {
+        setLoading(false)
       }
     }
-    setLoading(false)
+
+    checkAuthenticationStatus()
   }, [])
 
   // Fetch player data when user is set
@@ -69,13 +87,29 @@ export function UserProvider({ children }) {
   const updatePlayerData = useCallback((updatedPlayer) => {
     setPlayer(updatedPlayer)
   }, [])
+  // Function to refresh authentication status from server
+  const refreshAuthStatus = useCallback(async () => {
+    try {
+      const userFromServer = await authService.checkAuthStatus()
+      if (userFromServer) {
+        setUser(userFromServer)
+        return userFromServer
+      } else {
+        setUser(null)
+        return null
+      }
+    } catch (error) {
+      console.error("Error refreshing auth status:", error)
+      setUser(null)
+      return null
+    }
+  }, [])
 
   // Function to clear user data (for logout)
   const clearUserData = useCallback(() => {
     setUser(null)
     setPlayer(null)
   }, [])
-
   const value = {
     user,
     player,
@@ -83,7 +117,8 @@ export function UserProvider({ children }) {
     refreshPlayerData,
     updatePlayerData,
     clearUserData,
-    setUser
+    setUser,
+    refreshAuthStatus
   }
 
   return (
