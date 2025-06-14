@@ -209,9 +209,20 @@ app.post('/api/login', authLimiter, [
   const { username, password } = req.body;
     try {
     const result = await db.query(`
-      SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, p.avatar, p.elo, p.win_rate, p.total_games
-      FROM users u 
-      LEFT JOIN players p ON u.id = p.user_id 
+      SELECT
+        u.id,
+        u.username,
+        u.password_hash,
+        u.role_id,
+        p.id as player_id,
+        p.name as player_name,
+        p.display_name,
+        p.avatar,
+        p.elo,
+        p.win_rate,
+        p.total_games
+      FROM users u
+      LEFT JOIN players p ON u.id = p.user_id
       WHERE u.username = $1
     `, [username]);
     const user = result.rows[0];
@@ -225,7 +236,12 @@ app.post('/api/login', authLimiter, [
     if (!isValidPassword) {
       auditLog('LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
       return res.status(400).json({ error: 'Invalid username or password.' });
-    }    const { accessToken, refreshToken } = generateTokens(user);
+    }
+
+    // Remove password hash before using the user object elsewhere
+    delete user.password_hash;
+
+    const { accessToken, refreshToken } = generateTokens(user);
     
     // Set secure HTTP-only cookies
     setTokenCookies(res, accessToken, refreshToken);
@@ -328,7 +344,13 @@ app.post('/api/refresh', async (req, res) => {
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
     
     // Verify user still exists
-    const result = await db.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    const result = await db.query(
+      `SELECT u.id, u.username, u.role_id, p.id as player_id
+       FROM users u
+       LEFT JOIN players p ON u.id = p.user_id
+       WHERE u.id = $1`,
+       [decoded.id]
+    );
     const user = result.rows[0];
     
     if (!user) {
@@ -392,10 +414,27 @@ app.get('/api/me', verifyToken, async (req, res) => {
   try {
     // Get full user info with player data from database
     const result = await db.query(`
-      SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, 
-             p.avatar, p.elo, p.peak_elo, p.win_rate, p.total_games, 
-             p.total_wins, p.total_losses, p.current_streak, p.best_streak,
-             p.is_online, p.last_seen, p.preferences, p.stats
+      SELECT
+        u.id,
+        u.username,
+        u.email,
+        u.role_id,
+        p.id as player_id,
+        p.name as player_name,
+        p.display_name,
+        p.avatar,
+        p.elo,
+        p.peak_elo,
+        p.win_rate,
+        p.total_games,
+        p.total_wins,
+        p.total_losses,
+        p.current_streak,
+        p.best_streak,
+        p.is_online,
+        p.last_seen,
+        p.preferences,
+        p.stats
       FROM users u
       LEFT JOIN players p ON u.id = p.user_id
       WHERE u.id = $1
@@ -445,10 +484,27 @@ app.get('/api/profile', verifyToken, async (req, res) => {
   try {
     // Get full user info with player data from database
     const result = await db.query(`
-      SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, 
-             p.avatar, p.elo, p.peak_elo, p.win_rate, p.total_games, 
-             p.total_wins, p.total_losses, p.current_streak, p.best_streak,
-             p.is_online, p.last_seen, p.preferences, p.stats
+      SELECT
+        u.id,
+        u.username,
+        u.email,
+        u.role_id,
+        p.id as player_id,
+        p.name as player_name,
+        p.display_name,
+        p.avatar,
+        p.elo,
+        p.peak_elo,
+        p.win_rate,
+        p.total_games,
+        p.total_wins,
+        p.total_losses,
+        p.current_streak,
+        p.best_streak,
+        p.is_online,
+        p.last_seen,
+        p.preferences,
+        p.stats
       FROM users u
       LEFT JOIN players p ON u.id = p.user_id
       WHERE u.id = $1
@@ -1060,9 +1116,15 @@ app.post('/api/admin/login', authLimiter, [
   try {
     // Look for admin user in the users table with admin role
     const result = await db.query(`
-      SELECT u.*, r.name as role_name 
-      FROM users u 
-      JOIN roles r ON u.role_id = r.id 
+      SELECT
+        u.id,
+        u.username,
+        u.password_hash,
+        r.name as role_name,
+        p.id as player_id
+      FROM users u
+      JOIN roles r ON u.role_id = r.id
+      LEFT JOIN players p ON u.id = p.user_id
       WHERE u.username = $1 AND r.name = 'admin'
     `, [username]);
     
@@ -1078,6 +1140,9 @@ app.post('/api/admin/login', authLimiter, [
       auditLog('ADMIN_LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
       return res.status(401).json({ error: 'Invalid admin credentials.' });
     }
+
+    // Remove password hash before generating the token
+    delete user.password_hash;
 
     // Generate admin JWT token
     const adminToken = jwt.sign(
