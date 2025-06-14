@@ -6,32 +6,50 @@ const NumberPicker = ({ value, onChange, min = 0, max = 10, title = "Select a nu
   const [isOpen, setIsOpen] = useState(false)
   const [currentValue, setCurrentValue] = useState(value || 0)
   const modalRef = useRef(null)
+  const buttonRef = useRef(null)
+  const isClosingRef = useRef(false)
 
-  // Reset to initial value when modal opens
+  // Update currentValue only when value prop changes and modal is closed
   useEffect(() => {
-    if (isOpen) {
-      setCurrentValue(value)
+    if (!isOpen && !isClosingRef.current) {
+      setCurrentValue(value || 0)
     }
-  }, [isOpen, value])
+  }, [value, isOpen])
 
   // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
+      // Don't close if we're already closing
+      if (isClosingRef.current) return
+      
+      if (modalRef.current && !modalRef.current.contains(event.target) && 
+          buttonRef.current && !buttonRef.current.contains(event.target)) {
+        isClosingRef.current = true
         setIsOpen(false)
+        setTimeout(() => {
+          isClosingRef.current = false
+        }, 100)
       }
     }
 
     // Close on ESC key
     const handleEscKey = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !isClosingRef.current) {
+        isClosingRef.current = true
         setIsOpen(false)
+        setTimeout(() => {
+          isClosingRef.current = false
+        }, 100)
       }
     }
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
-      document.addEventListener("keydown", handleEscKey)
+      // Use setTimeout to avoid immediate closing
+      setTimeout(() => {
+        document.addEventListener("mousedown", handleClickOutside)
+        document.addEventListener("keydown", handleEscKey)
+      }, 50)
+      
       // Lock body scroll when popup is open
       document.body.style.overflow = 'hidden'
     } else {
@@ -48,6 +66,15 @@ const NumberPicker = ({ value, onChange, min = 0, max = 10, title = "Select a nu
     }
   }, [isOpen])
 
+  const handleOpenModal = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isClosingRef.current) return
+    
+    setCurrentValue(value || 0) // Reset to current value when opening
+    setIsOpen(true)
+  }
   const increment = (step) => {
     setCurrentValue(prev => {
       const newValue = prev + step
@@ -58,23 +85,51 @@ const NumberPicker = ({ value, onChange, min = 0, max = 10, title = "Select a nu
   const reset = () => {
     setCurrentValue(min)
   }
+  const handleConfirm = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isClosingRef.current) return
+    
+    isClosingRef.current = true
+    onChange(currentValue)
+    setIsOpen(false)
+    
+    setTimeout(() => {
+      isClosingRef.current = false
+    }, 100)
+  }
+
+  const handleCloseModal = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isClosingRef.current) return
+    
+    isClosingRef.current = true
+    setIsOpen(false)
+    
+    setTimeout(() => {
+      isClosingRef.current = false
+    }, 100)
+  }
 
   return (
     <div className="number-picker">
       <button
+        ref={buttonRef}
         className="number-display"
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpenModal}
         aria-label={`Current value: ${value}. Click to change.`}
+        type="button"
       >
         {value}
-      </button>
-
-      {isOpen && (
-        <div className="number-picker-modal-overlay">
-          <div className="number-picker-modal" ref={modalRef}>
+      </button>      {isOpen && (
+        <div className="number-picker-modal-overlay" onClick={handleCloseModal}>
+          <div className="number-picker-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
             <div className="number-picker-header">
               <h3>{title}</h3>
-              <button className="close-button" onClick={() => setIsOpen(false)} aria-label="Close">
+              <button className="close-button" onClick={handleCloseModal} aria-label="Close">
                 ×
               </button>
             </div>
@@ -112,14 +167,9 @@ const NumberPicker = ({ value, onChange, min = 0, max = 10, title = "Select a nu
               >
                 Reset
               </button>
-            </div>
-
-            <button
+            </div>            <button
               className="confirm-button"
-              onClick={() => {
-                onChange(currentValue)
-                setIsOpen(false)
-              }}
+              onClick={handleConfirm}
             >
               Set Value
             </button>

@@ -1272,6 +1272,9 @@ app.get("/api/admin/games", async (req, res) => {
 // Get active game rooms
 app.get('/api/rooms/active', async (req, res) => {
   try {
+    // Clean up stale rooms first
+    await dbAdapter.cleanupStaleRooms();
+    
     const rooms = await dbAdapter.getActiveRooms();
     res.json(rooms);
   } catch (error) {
@@ -1280,12 +1283,21 @@ app.get('/api/rooms/active', async (req, res) => {
   }
 });
 
-// Get room details by ID
+// Get room details by ID (supports both database UUID and Colyseus room ID)
 app.get('/api/rooms/:roomId', async (req, res) => {
   const { roomId } = req.params;
   
   try {
-    const room = await dbAdapter.getRoomByColyseusId(roomId);
+    let room = null;
+    
+    // Check if it's a database UUID (36 characters with dashes)
+    if (roomId.length === 36 && roomId.includes('-')) {
+      room = await dbAdapter.getRoomById(roomId);
+    } else {
+      // Assume it's a Colyseus room ID
+      room = await dbAdapter.getRoomByColyseusId(roomId);
+    }
+    
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }

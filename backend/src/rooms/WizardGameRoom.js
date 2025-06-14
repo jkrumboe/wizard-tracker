@@ -42,6 +42,10 @@ export class GameState extends Schema {
     this.hostId = null;
     this.isPublic = true;
     this.maxPlayers = 6;
+    this.phase = "waiting";
+    this.playerOrder = new ArraySchema();
+    this.dealerIndex = 0;
+    this.currentCallIndex = 0;
   }
 }
 
@@ -56,6 +60,10 @@ type("string")(GameState.prototype, "hostId");
 type("boolean")(GameState.prototype, "isPublic");
 type("number")(GameState.prototype, "maxPlayers");
 type("string")(GameState.prototype, "roomName");
+type("string")(GameState.prototype, "phase");
+type(["string"])(GameState.prototype, "playerOrder");
+type("number")(GameState.prototype, "dealerIndex");
+type("number")(GameState.prototype, "currentCallIndex");
 
 export class WizardGameRoom extends Room {
   maxClients = 6;
@@ -73,9 +81,26 @@ export class WizardGameRoom extends Room {
     this.state.maxPlayers = options.maxPlayers || 4;
     this.state.roomName = options.roomName || `Game ${this.roomId.slice(0, 6)}`;
     this.state.hostId = options.hostId || null;
-    
     // Update maxClients based on maxPlayers
     this.maxClients = this.state.maxPlayers;
+    
+    // Set room metadata for discovery
+    this.setMetadata({
+      roomName: this.state.roomName,
+      hostName: options.hostName || "Unknown",
+      maxPlayers: this.state.maxPlayers,
+      currentPlayers: 0,
+      mode: this.state.mode,
+      maxRounds: this.state.maxRounds,
+      gameStarted: false,
+      isPublic: this.state.isPublic,
+      createdAt: new Date().toISOString()
+    });
+    
+    // Set room as private if needed (this affects matchMaker.query results)
+    if (!this.state.isPublic) {
+      this.setPrivate(true);
+    }
     
     // Update existing database room with Colyseus room ID if dbRoomId provided
     if (this.dbRoomId) {
@@ -131,10 +156,15 @@ export class WizardGameRoom extends Room {
 
     this.onMessage("makeCall", (client, data) => {
       this.handlePlayerCall(client.sessionId, data.call);
+    });    this.onMessage("makeTricks", (client, data) => {
+      this.handlePlayerTricks(client.sessionId, data.tricks);
     });
 
-    this.onMessage("makeTricks", (client, data) => {
-      this.handlePlayerTricks(client.sessionId, data.tricks);
+    this.onMessage("randomizePlayerOrder", (client) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && player.isHost && !this.state.gameStarted) {
+        this.randomizePlayerOrder();
+      }
     });
 
     this.onMessage("nextRound", (client) => {
@@ -214,6 +244,12 @@ export class WizardGameRoom extends Room {
 
     this.state.players.set(client.sessionId, player);
 
+    // Update room metadata with current player count
+    this.setMetadata({
+      ...this.metadata,
+      currentPlayers: this.state.players.size
+    });
+
     // Add player to database room
     if (this.dbRoomId && options.playerId) {
       try {
@@ -242,14 +278,19 @@ export class WizardGameRoom extends Room {
     if (this.emptyRoomTimeout) {
       clearTimeout(this.emptyRoomTimeout);
       this.emptyRoomTimeout = null;
-    }
-
-    // Send welcome message
+    }    // Send welcome message
     client.send("welcome", {
       roomId: this.roomId,
       roomName: this.state.roomName,
       isHost: player.isHost
     });
+
+    // Broadcast to other players that someone joined
+    this.broadcast("playerJoined", {
+      playerId: player.playerId,
+      playerName: player.name,
+      sessionId: client.sessionId
+    }, { except: client });
   }
 
   async onLeave(client, consented) {
@@ -271,10 +312,23 @@ export class WizardGameRoom extends Room {
       } catch (error) {
         console.error('❌ Failed to update player leave in database:', error);
       }
-    }
-    
-    // Remove player from state
+    }      // Remove player from state
     this.state.players.delete(client.sessionId);
+
+    // Update room metadata with current player count
+    this.setMetadata({
+      ...this.metadata,
+      currentPlayers: this.state.players.size
+    });
+
+    // Broadcast to remaining players that someone left
+    if (leavingPlayer) {
+      this.broadcast("playerLeft", {
+        playerId: leavingPlayer.playerId,
+        playerName: leavingPlayer.name,
+        sessionId: client.sessionId
+      });
+    }
 
     // Transfer host if needed
     if (leavingPlayer && leavingPlayer.isHost && this.state.players.size > 0) {
@@ -290,14 +344,31 @@ export class WizardGameRoom extends Room {
     if (this.state.players.size === 0) {
       this.emptyRoomTimeout = setTimeout(() => {
         this.disconnect();
-      }, 10 * 60 * 1000);
+      }, 5 * 60 * 1000); // 5 mins
     }
-  }
-  async startGame() {
+  }  async startGame() {
     if (this.state.gameStarted) return;
-    
     console.log(`Starting game in room ${this.roomId}`);
     this.state.gameStarted = true;
+    this.state.phase = "calling";
+    
+    // Initialize player order if not already set
+    if (this.state.playerOrder.length === 0) {
+      this.state.playerOrder.clear();
+      Array.from(this.state.players.keys()).forEach(sessionId => {
+        this.state.playerOrder.push(sessionId);
+      });
+    }
+    
+    // Set dealer index and current call index
+    this.state.dealerIndex = 0;
+    this.state.currentCallIndex = (this.state.dealerIndex + 1) % this.state.playerOrder.length;
+    
+    // Update room metadata to reflect game started
+    this.setMetadata({
+      ...this.metadata,
+      gameStarted: true
+    });
     
     // Create game record in database
     if (this.dbRoomId) {
@@ -334,7 +405,8 @@ export class WizardGameRoom extends Room {
     // Broadcast game started
     this.broadcast("gameStarted", {
       maxRounds: this.state.maxRounds,
-      mode: this.state.mode
+      mode: this.state.mode,
+      phase: this.state.phase,
     });
   }
 
@@ -366,16 +438,33 @@ export class WizardGameRoom extends Room {
       this.state.rounds.push(round);
     }
   }
-
   handlePlayerCall(sessionId, call) {
-    if (!this.state.gameStarted || this.state.gameFinished) return;
+    if (!this.state.gameStarted || this.state.gameFinished || this.state.phase !== "calling") return;
+    
+    // Check if it's this player's turn to call
+    const currentPlayerSessionId = this.state.playerOrder[this.state.currentCallIndex];
+    if (sessionId !== currentPlayerSessionId) {
+      console.log(`Player ${sessionId} tried to call out of turn. Current turn: ${currentPlayerSessionId}`);
+      return;
+    }
     
     const currentRound = this.state.rounds[this.state.currentRound - 1];
     if (!currentRound) return;
     
     const player = currentRound.players.find(p => p.sessionId === sessionId);
-    if (player) {
+    if (player && player.call === null) {
       player.call = Math.max(0, Math.min(call, currentRound.cards));
+      
+      // Move to next player's turn
+      this.state.currentCallIndex = (this.state.currentCallIndex + 1) % this.state.playerOrder.length;
+      
+      // Check if all players have made their calls
+      const allPlayersCalled = currentRound.players.every(p => p.call !== null);
+      if (allPlayersCalled) {
+        this.state.phase = "playing";
+        this.state.currentCallIndex = 0; // Reset for potential future use
+        this.broadcast("phaseChanged", { phase: "playing" });
+      }
     }
   }
 
@@ -407,14 +496,46 @@ export class WizardGameRoom extends Room {
       player.totalScore = totalScore;
     }
   }
-
   nextRound() {
     if (this.state.currentRound < this.state.maxRounds) {
       this.state.currentRound++;
+      this.state.phase = "calling";
+      
+      // Rotate dealer for next round
+      this.state.dealerIndex = (this.state.dealerIndex + 1) % this.state.playerOrder.length;
+      
+      // Set current call index to the player after the dealer
+      this.state.currentCallIndex = (this.state.dealerIndex + 1) % this.state.playerOrder.length;
+      
       this.broadcast("roundChanged", { newRound: this.state.currentRound });
     } else {
       this.finishGame();
     }
+  }
+
+  randomizePlayerOrder() {
+    if (this.state.gameStarted) return;
+    
+    // Convert players to array and shuffle
+    const playerSessionIds = Array.from(this.state.players.keys());
+    for (let i = playerSessionIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [playerSessionIds[i], playerSessionIds[j]] = [playerSessionIds[j], playerSessionIds[i]];
+    }
+    
+    // Update player order
+    this.state.playerOrder.clear();
+    playerSessionIds.forEach(sessionId => {
+      this.state.playerOrder.push(sessionId);
+    });
+    
+    // Reset dealer index
+    this.state.dealerIndex = 0;
+    
+    this.broadcast("playerOrderRandomized", { 
+      playerOrder: Array.from(this.state.playerOrder),
+      dealerIndex: this.state.dealerIndex
+    });
   }
 
   async finishGame() {

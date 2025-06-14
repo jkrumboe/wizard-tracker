@@ -177,7 +177,7 @@ const TestMultiplayer = () => {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1>🎮 Multiplayer System Test</h1>
+      <h1>Multiplayer System Test</h1>
       
       <div style={{ marginBottom: '20px' }}>
         <button 

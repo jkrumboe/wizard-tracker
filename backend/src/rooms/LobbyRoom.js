@@ -1,4 +1,4 @@
-import { Room } from 'colyseus';
+import { Room, matchMaker } from 'colyseus';
 import { MapSchema, Schema, type, ArraySchema } from '@colyseus/schema';
 import dbAdapter from '../db/dbAdapter.js';
 
@@ -195,11 +195,9 @@ export class LobbyRoom extends Room {
 
           this.state.availableRooms.set(room.room_id, roomInfo);
         }
-      }
-
-      // Also get current Colyseus rooms for real-time data
+      }      // Also get current Colyseus rooms for real-time data
       try {
-        const colyseusRooms = await this.presence.getRoomListings("wizard_game");
+        const colyseusRooms = await matchMaker.query({ name: "wizard_game" });
         
         for (const room of colyseusRooms) {
           if (room.metadata && room.metadata.isPublic) {
@@ -225,9 +223,10 @@ export class LobbyRoom extends Room {
               this.state.availableRooms.set(room.roomId, roomInfo);
             }
           }
-        }
-      } catch (colyseusError) {
+        }} catch (colyseusError) {
         console.error('Error getting Colyseus room listings:', colyseusError);
+        console.log('Continuing with database rooms only');
+        // We'll continue with just the database rooms in this case
       }
 
       // Broadcast room list update to all clients

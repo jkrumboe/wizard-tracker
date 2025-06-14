@@ -63,11 +63,11 @@ const Navbar = () => {  const [isOpen, setIsOpen] = useState(false)
             Multiplayer Lobby
           </Link>
         </li>
-        <li className="nav-item">
+        {/* <li className="nav-item">
           <Link to="/test-multiplayer" className={`nav-link ${isActive("/test-multiplayer")}`} onClick={closeMenu}>
             🧪 Test Multiplayer
           </Link>
-        </li>
+        </li> */}
         {user ? (
           <>
           <li className="nav-item">

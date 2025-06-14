@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "colyseus.js": "^0.16.17"
+    "colyseus.js": "^0.16.17",
+    "node-fetch": "^3.3.2"
   }
 }

@@ -113,6 +113,40 @@ class DatabaseAdapter {
       throw error;
     }
   }
+    async getRoomById(roomId) {
+    try {
+      const result = await this.pool.query(
+        'SELECT * FROM game_rooms WHERE id = $1',
+        [roomId]
+      );
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ Error getting room by ID:', error);
+      throw error;
+    }
+  }
+  
+  async cleanupStaleRooms() {
+    try {
+      // Mark rooms as abandoned if they haven't been updated recently
+      // and have status 'waiting' but no active Colyseus connection
+      const result = await this.pool.query(`
+        UPDATE game_rooms 
+        SET status = 'abandoned', ended_at = NOW()
+        WHERE status = 'waiting' 
+        AND created_at < NOW() - INTERVAL '1 hour'
+        AND colyseus_room_id IS NOT NULL
+        RETURNING id, room_name, colyseus_room_id
+      `);
+      
+      console.log(`🧹 Cleaned up ${result.rowCount} stale rooms`);
+      return result.rows;
+    } catch (error) {
+      console.error('❌ Error cleaning up stale rooms:', error);
+      throw error;
+    }
+  }
   
   // Player session management
   async addPlayerToRoom(roomId, playerId, isHost = false, seatPosition = null) {

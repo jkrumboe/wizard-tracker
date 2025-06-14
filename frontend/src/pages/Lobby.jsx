@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import colyseusService from '../services/colyseusClient';
+import { roomAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import './Lobby.css';
+import '../styles/Lobby.css';
 
 const Lobby = () => {
   const navigate = useNavigate();
@@ -18,9 +19,10 @@ const Lobby = () => {
     maxPlayers: 4,
     gameMode: 'classic',
     isPrivate: false,
-    password: '',
-    gameName: ''
-  });  const initializeLobby = useCallback(async () => {
+    password: ''
+  });
+  
+  const initializeLobby = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -29,18 +31,11 @@ const Lobby = () => {
       colyseusService.setPlayerData({
         id: user.player_id,
         name: user.username
-      });
-
-      // Fetch active rooms from database
+      });      // Fetch active rooms from database
       const fetchActiveRooms = async () => {
         try {
-          const response = await fetch('/api/rooms/active', {
-            credentials: 'include'
-          });
-          if (response.ok) {
-            const rooms = await response.json();
-            setAvailableRooms(rooms);
-          }
+          const rooms = await roomAPI.getActive();
+          setAvailableRooms(rooms);
         } catch (error) {
           console.error('Failed to fetch active rooms:', error);
         }
@@ -101,20 +96,26 @@ const Lobby = () => {
       colyseusService.leaveLobby();
     };
   }, [user, navigate, initializeLobby]);
+  
   const handleCreateGame = async () => {
     try {
-      setError(null);
-      const settings = {
+      setError(null);      const settings = {
         ...gameSettings,
-        roomName: gameSettings.gameName || `${user.username}'s Game`,
-        hostId: user.player_id,
+        roomName: `${user.username}'s Game`,
+        hostId: String(user.player_id),
         hostName: user.username
       };      // Create game room directly
       const room = await colyseusService.createGameRoomWithTracking(settings);
       
-      if (room) {
-        console.log('Room created successfully, navigating...');
+      if (room && room.sessionId) {
+        console.log('Room created successfully, navigating to:', room.sessionId);
+        
+        // Wait a bit to ensure room is fully ready and DB is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         navigate(`/multiplayer/${room.sessionId}`);
+      } else {
+        throw new Error('Room was not properly created or missing session ID');
       }
       
       setShowCreateModal(false);
@@ -123,6 +124,7 @@ const Lobby = () => {
       setError('Failed to create game: ' + error.message);
     }
   };
+    
   const handleJoinGame = async (roomId, hasPassword = false) => {
     try {
       setError(null);
@@ -141,28 +143,33 @@ const Lobby = () => {
       }
     } catch (error) {
       console.error('Failed to join game:', error);
-      setError('Failed to join game: ' + error.message);
+      
+      // If it's a "room no longer available" error, refresh the room list
+      if (error.message && (error.message.includes('no longer available') || error.message.includes('not found'))) {
+        console.log('🔄 Refreshing room list due to stale room...');
+        refreshRooms();
+        setError('This room is no longer available. The room list has been refreshed.');
+      } else {
+        setError('Failed to join game: ' + error.message);
+      }
     }
   };
 
-  const handleQuickJoin = async () => {
-    try {
-      await colyseusService.quickJoinGame();
-      // Navigation will be handled by the game room connection
-    } catch (error) {
-      console.error('Quick join failed:', error);
-      setError('No available games to join. Try creating one!');
-    }
-  };
+  // Uncomment if you want to implement quick join functionality
+  // const handleQuickJoin = async () => {
+  //   try {
+  //     await colyseusService.quickJoinGame();
+  //     // Navigation will be handled by the game room connection
+  //   } catch (error) {
+  //     console.error('Quick join failed:', error);
+  //     setError('No available games to join. Try creating one!');
+  //   }
+  // };
+    
   const refreshRooms = async () => {
     try {
-      const response = await fetch('/api/rooms/active', {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const rooms = await response.json();
-        setAvailableRooms(rooms);
-      }
+      const rooms = await roomAPI.getActive();
+      setAvailableRooms(rooms);
     } catch (error) {
       console.error('Failed to refresh rooms:', error);
       setError('Failed to refresh rooms');
@@ -197,13 +204,12 @@ const Lobby = () => {
   return (
     <div className="lobby-container">
       <header className="lobby-header">
-        <h1>Wizard Tracker - Multiplayer Lobby</h1>
         <div className="lobby-stats">
           <span className="online-count">
-            👥 {onlinePlayers.length} players online
+            {typeof onlinePlayers.length === 'number' ? onlinePlayers.length : 0} Players Online
           </span>
           <span className="room-count">
-            🎮 {availableRooms.length} games available
+            {typeof availableRooms.length === 'number' ? availableRooms.length : 0} Games Available
           </span>
         </div>
       </header>
@@ -214,19 +220,7 @@ const Lobby = () => {
             className="create-game-btn primary-button"
             onClick={() => setShowCreateModal(true)}
           >
-            🎯 Create New Game
-          </button>
-          <button 
-            className="quick-join-btn secondary-button"
-            onClick={handleQuickJoin}
-          >
-            ⚡ Quick Join
-          </button>
-          <button 
-            className="refresh-btn tertiary-button"
-            onClick={refreshRooms}
-          >
-            🔄 Refresh
+            Create New Game
           </button>
         </div>
 
@@ -235,38 +229,36 @@ const Lobby = () => {
             <h2>Available Games</h2>
             {availableRooms.length === 0 ? (
               <div className="empty-state">
-                <p>No games available. Why not create one?</p>
+                <p>No Games Available. Why Not Create One?</p>
               </div>
-            ) : (
-              <div className="rooms-list">
+            ) : (              <div className="rooms-list">
                 {availableRooms.map((room) => (
-                  <div key={room.roomId} className="room-card">
+                  <div key={room.room_id || room.roomId} className="room-card">
                     <div className="room-info">
                       <h3 className="room-name">
-                        {room.name || `${room.hostName}'s Game`}
-                        {room.isPrivate && <span className="private-indicator">🔒</span>}
+                        {(room.room_name || room.name || `${room.host_name || room.hostName}'s Game`).replace(/\b\w/g, c => c.toUpperCase())}
+                        {room.is_private && <span className="private-indicator">🔒</span>}
                       </h3>
                       <div className="room-details">
                         <span className="player-count">
-                          👥 {room.playerCount}/{room.maxPlayers}
+                          {(room.current_players || room.playerCount || 0)}/{room.max_players || room.maxPlayers || 0}
                         </span>
                         <span className="game-mode">
-                          🎮 {room.gameMode}
+                          {(room.game_mode || room.gameMode || '').replace(/\b\w/g, c => c.toUpperCase())}
                         </span>
                         <span className="room-status">
-                          {room.status === 'waiting' ? '⏳ Waiting' : 
-                           room.status === 'playing' ? '🎯 In Progress' : '✅ Ready'}
+                          {room.status === 'waiting' ? 'Waiting' : 
+                           room.status === 'playing' ? 'In Progress' : 'Ready'}
                         </span>
                       </div>
-                      <p className="host-name">Host: {room.hostName}</p>
                     </div>
                     <div className="room-actions">
                       <button
                         className="join-room-btn"
-                        onClick={() => handleJoinGame(room.roomId, room.isPrivate)}
-                        disabled={room.playerCount >= room.maxPlayers || room.status === 'playing'}
+                        onClick={() => handleJoinGame(room.room_id || room.roomId, room.is_private || room.isPrivate)}
+                        disabled={((room.current_players || room.playerCount || 0) >= (room.max_players || room.maxPlayers || 0)) || room.status === 'playing'}
                       >
-                        {room.playerCount >= room.maxPlayers ? 'Full' : 'Join'}
+                        {((room.current_players || room.playerCount || 0) >= (room.max_players || room.maxPlayers || 0)) ? 'Full' : 'Join'}
                       </button>
                     </div>
                   </div>
@@ -276,15 +268,14 @@ const Lobby = () => {
           </section>
 
           <section className="online-players">
-            <h2>Online Players</h2>
-            <div className="players-list">
-              {onlinePlayers.map((player) => (
-                <div key={player.playerId} className="player-item">
-                  <span className="player-name">{player.playerName}</span>
+            <h2>Online Players</h2>            <div className="players-list">
+              {onlinePlayers.map((player, index) => (
+                <div key={`player-${player.playerId || player.id || index}-${player.sessionId || ''}`} className="player-item">
+                  <span className="player-name">{(player.playerName || player.name || '').replace(/\b\w/g, c => c.toUpperCase())}</span>
                   <span className={`player-status ${player.status}`}>
-                    {player.status === 'browsing' ? '👀 Browsing' :
-                     player.status === 'in_game' ? '🎮 In Game' :
-                     player.status === 'creating' ? '🛠️ Creating' : '⭐ Ready'}
+                    {player.status === 'browsing' ? 'Browsing' :
+                     player.status === 'in_game' ? 'In Game' :
+                     player.status === 'creating' ? 'Creating' : 'Ready'}
                   </span>
                 </div>
               ))}
@@ -300,18 +291,21 @@ const Lobby = () => {
             <h2>Create New Game</h2>
             <form onSubmit={(e) => { e.preventDefault(); handleCreateGame(); }}>
               <div className="form-group">
-                <label htmlFor="gameName">Game Name (optional)</label>
-                <input
-                  type="text"
-                  id="gameName"
-                  value={gameSettings.gameName}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, gameName: e.target.value }))}
-                  placeholder="Enter a name for your game"
-                />
+                {/* <label htmlFor="gameMode">Game Mode</label> */}
+                <select
+                  id="gameMode"
+                  value={gameSettings.gameMode}
+                  onChange={(e) => setGameSettings(prev => ({ ...prev, gameMode: e.target.value }))}
+                >
+                  <option value="classic">Classic</option>
+                  <option value="ranked">Ranked</option>
+                  <option value="quick">Quick Game</option>
+                  <option value="tournament">Tournament</option>
+                </select>
               </div>
 
               <div className="form-group">
-                <label htmlFor="maxPlayers">Max Players</label>
+                {/* <label htmlFor="maxPlayers">Player Count</label> */}
                 <select
                   id="maxPlayers"
                   value={gameSettings.maxPlayers}
@@ -322,19 +316,6 @@ const Lobby = () => {
                   <option value={4}>4 Players</option>
                   <option value={5}>5 Players</option>
                   <option value={6}>6 Players</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="gameMode">Game Mode</label>
-                <select
-                  id="gameMode"
-                  value={gameSettings.gameMode}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, gameMode: e.target.value }))}
-                >
-                  <option value="classic">Classic</option>
-                  <option value="quick">Quick Game</option>
-                  <option value="tournament">Tournament</option>
                 </select>
               </div>
 
@@ -357,7 +338,7 @@ const Lobby = () => {
                     id="password"
                     value={gameSettings.password}
                     onChange={(e) => setGameSettings(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Enter password for private game"
+                    placeholder="Enter Password For Private Game"
                     required
                   />
                 </div>
