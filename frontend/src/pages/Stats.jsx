@@ -71,16 +71,29 @@ const Stats = () => {
 
   const getPerformanceStats = () => {
     const history = filteredHistory()
-    if (!history.length) return { games: 0 }
-    
+
+    if (!history.length) {
+      return {
+        games: 0,
+        wins: 0,
+        winRate: 0,
+        avgScore: 0,
+        currentElo: player.elo,
+        eloChange: 0,
+      }
+    }
+
     const wins = history.map(game => game.winner === player.id).filter(Boolean).length
     const totalGames = history.length
     const winRate = Math.round((wins / totalGames) * 100)
-    const avgScore = Math.round(history.reduce((sum, game) => sum + (game.scores[player.id] || 0), 0) / totalGames)
-    
+    const avgScore = Math.round(
+      history.reduce((sum, game) => sum + (game.scores[player.id] || 0), 0) /
+        totalGames
+    )
+
     // Calculate ELO change
     const latestGame = eloHistory[0] // History is sorted newest first
-    const eloChange = latestGame.new_elo - latestGame.old_elo
+    const eloChange = latestGame ? latestGame.new_elo - latestGame.old_elo : 0
 
     // console.log("latestGame", latestGame)
     // console.log("eloChange", eloChange)
