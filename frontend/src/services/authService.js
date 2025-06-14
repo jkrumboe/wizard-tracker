@@ -6,16 +6,26 @@ class AuthService {
     this.refreshTimer = null;
     this.isRefreshing = false;
   }
+
+  // Hash a password using SHA-256 so the plaintext is never sent over the network
+  async hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
   // Login with secure cookies
   async login(credentials) {
     try {
+      const hashed = await this.hashPassword(credentials.password);
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ ...credentials, password: hashed }),
       });
 
       if (!response.ok) {
@@ -43,13 +53,14 @@ class AuthService {
   // Register with secure cookies
   async register(userData) {
     try {
+      const hashed = await this.hashPassword(userData.password);
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify(userData),
+        body: JSON.stringify({ ...userData, password: hashed }),
       });
 
       if (!response.ok) {
@@ -221,13 +232,14 @@ class AuthService {
   // Admin authentication methods
   async adminLogin(credentials) {
     try {
+      const hashed = await this.hashPassword(credentials.password);
       const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ ...credentials, password: hashed }),
       });
 
       if (!response.ok) {

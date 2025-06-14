@@ -206,7 +206,7 @@ app.post('/api/login', authLimiter, [
     return res.status(400).json({ error: 'Invalid input data.' });
   }
 
-  const { username, password } = req.body;
+  const { username, password } = req.body; // password is a SHA-256 hash from client
     try {
     const result = await db.query(`
       SELECT
@@ -276,9 +276,9 @@ app.post('/api/register', authLimiter, [
     auditLog('REGISTER_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
     return res.status(400).json({ errors: errors.array() });
   }
-  const { username, email, password } = req.body;
+  const { username, email, password } = req.body; // password is a SHA-256 hash from client
   try {
-    // Hash the password and create a new user first
+    // Hash the client-provided hash again before storing
     const hashedPassword = await bcrypt.hash(password, 10);
     const userResult = await db.query(
       'INSERT INTO users (username, email, password_hash, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -1111,7 +1111,7 @@ app.post('/api/admin/login', authLimiter, [
     return res.status(400).json({ error: 'Invalid input data.' });
   }
 
-  const { username, password } = req.body;
+  const { username, password } = req.body; // password is a SHA-256 hash from client
   
   try {
     // Look for admin user in the users table with admin role
