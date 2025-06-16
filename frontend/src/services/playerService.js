@@ -36,9 +36,9 @@ export async function getTagsByPlayerId(id) {
 }
 
 // Get Elo history for a player
-export async function getEloHistory(id) {
-  return playerAPI.getEloHistory(id);
-}
+// export async function getEloHistory(id) {
+//   return playerAPI.getEloHistory(id);
+// }
 
 //=== Get by Tag ===//
 
@@ -102,7 +102,7 @@ export default {
   getPlayerStats,
   getPlayerGames,
   getTagsByPlayerId,
-  getEloHistory,
+  // getEloHistory,
   searchPlayersByTag,
   createPlayer,
   updatePlayer,

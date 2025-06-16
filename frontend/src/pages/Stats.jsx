@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import StatCard from '../components/StatCard'
-import { getPlayerById, getEloHistory } from '../services/playerService'
+import { getPlayerById } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 
 const Stats = () => {
   const { id } = useParams()
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
-  const [eloHistory, setEloHistory] = useState([]);
+  const [eloHistory] = useState([]);
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('all')
   const [error, setError] = useState(null)
@@ -30,19 +30,6 @@ const Stats = () => {
         setLoading(false)
       }
     }
-    const fetchEloHistory = async () => {
-      try {
-        const elodata = await getEloHistory(id);
-        console.log("eloHistory", elodata)
-        setEloHistory(elodata);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEloHistory();
     fetchData()
   }, [id])
 
@@ -69,47 +56,6 @@ const Stats = () => {
     return gameHistory.filter(game => new Date(game.date) >= cutoffDate)
   }
 
-  const getPerformanceStats = () => {
-    const history = filteredHistory()
-
-    if (!history.length) {
-      return {
-        games: 0,
-        wins: 0,
-        winRate: 0,
-        avgScore: 0,
-        currentElo: player.elo,
-        eloChange: 0,
-      }
-    }
-
-    const wins = history.map(game => game.winner === player.id).filter(Boolean).length
-    const totalGames = history.length
-    const winRate = Math.round((wins / totalGames) * 100)
-    const avgScore = Math.round(
-      history.reduce((sum, game) => sum + (game.scores[player.id] || 0), 0) /
-        totalGames
-    )
-
-    // Calculate ELO change
-    const latestGame = eloHistory[0] // History is sorted newest first
-    const eloChange = latestGame ? latestGame.new_elo - latestGame.old_elo : 0
-
-    // console.log("latestGame", latestGame)
-    // console.log("eloChange", eloChange)
-    // const eloChange = oldestGame && newestGame ? newestGame.elo - oldestGame.elo : 0
-    
-    return {
-      games: totalGames,
-      wins,
-      winRate,
-      avgScore,
-      currentElo: player.elo,
-      eloChange
-    }
-  }
-
-  
 
   if (loading) {
     return <div className="loading">Loading statistics...</div>
@@ -119,7 +65,6 @@ const Stats = () => {
     return <div className="error">{error || 'Player not found'}</div>
   }
 
-  const stats = getPerformanceStats()
 
   const chartData = [...eloHistory]
   .reverse()
@@ -132,13 +77,18 @@ const Stats = () => {
     elo: entry.new_elo,
   }));
 
-  console.log("filteredHistory scores", filteredHistory().map(game => game))
+  // console.log("filteredHistory scores", filteredHistory().map(game => game))
+
+  console.debug("player", player)
+
+
+
 
   return (
     <div className="stats-container">
       <div className="stats-header">
         <Link to={`/profile/${player.id}`} className="back-link">← Back to Profile</Link>
-        <h1>{player.name}'s Performance History</h1>
+        <h1>{player.display_name}'s Performance History</h1>
       </div>
 
       <div className="time-range-filter">
@@ -171,20 +121,20 @@ const Stats = () => {
       <div className="stats-summary">
         <StatCard
           title="Games Played"
-          value={stats.games}
+          value={player.total_games}
         />
         <StatCard
           title="Win Rate"
-          value={`${stats.winRate}%`}
+          value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
         />
         <StatCard
           title="Current ELO"
-          value={stats.currentElo}
-          change={stats.eloChange}
+          value={player.elo}
+          // change={}
         />
         <StatCard
-          title="Avg Score"
-          value={stats.avgScore}
+          title="Current Streak"
+          value={player.current_streak}
         />
       </div>
 
@@ -237,7 +187,8 @@ const Stats = () => {
         </div>
         <div className="table-body">
           {filteredHistory().slice(0, 5).map(game => (
-            <div key={game.id} className="table-row">              <div className="date-col">{
+            <div key={game.id} className="table-row">              
+              <div className="date-col">{
                 new Date(game.created_at).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "2-digit",
@@ -245,11 +196,12 @@ const Stats = () => {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-              </div><div className="position-col">
+              </div>
+              <div className="position-col">
                 {Object.keys(game.final_scores).sort((a, b) => game.final_scores[b] - game.final_scores[a]).indexOf(player.id.toString()) + 1}
               </div>
               <div className="score-col">{game.final_scores[player.id]}</div>
-              <div className="elo-col">{player.elo}</div>
+              <div className="elo-col">{Number(player.elo).toFixed(2)}</div>
             </div>
           ))}
         </div>
