@@ -491,7 +491,6 @@
 
 .player-row:hover {
   background-color: var(--card-background-light);
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
