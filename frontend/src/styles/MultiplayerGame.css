@@ -1,6 +1,6 @@
 .game-container {
   max-width: 1400px;
-  margin: 0 auto;
+  margin: var(--spacing-lg) auto;
   padding: var(--spacing-lg);
   background-color: var(--background-color);
   min-height: 90vh;
@@ -153,7 +153,7 @@
 .game-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xxl);
+  /* gap: var(--spacing-lg); */
 }
 
 .game-status {
@@ -204,16 +204,17 @@
 .players-section {
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
   box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
+  gap: var(--spacing-lg);
 }
 
 .players-section h3 {
   margin-top: 0;
   margin-bottom: var(--spacing-lg);
   text-align: center;
-  font-size: 1.5em;
+  font-size: 2.5em;
   color: var(--primary-light);
   font-weight: 600;
   position: relative;
@@ -237,35 +238,34 @@
   gap: var(--spacing-lg);
 }
 
-.player-card {
-  background-color: var(--card-background-alt);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  border: 2px solid var(--border-color);
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
-}
-
 .player-card.current-player {
   border-color: var(--accent-color);
   background-color: var(--card-background-light);
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 3px rgba(251, 191, 36, 0.1);
 }
 
 .player-card:hover {
-  background-color: var(--card-background-light);
+  background-color: var(--card-background-alt);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
 
 .player-info h4 {
   margin: 0 0 var(--spacing-sm) 0;
-  font-size: 1.2em;
+  font-size: 1.6em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.badges {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  color: var(--text-color);
-  font-weight: 600;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-xs);
 }
 
 .host-badge {
@@ -280,7 +280,7 @@
 }
 
 .ready-status {
-  display: block; /* Make it take up the full width */
+  display: block; 
   text-align: center; /* Center the text */
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-full);
@@ -291,15 +291,15 @@
 }
 
 .ready-status.ready {
-  background-color: var(--success-color);
+  background-color: var(--ready-color);
   color: var(--text-white);
-  border-color: var(--success-color);
+  border-color: transparent;
 }
 
 .ready-status.not-ready {
-  background-color: var(--warning-color);
+  background-color: var(--not-ready-color);
   color: var(--text-white);
-  border-color: var(--warning-color);
+  border-color: transparent;
 }
 
 .player-game-info {
@@ -323,9 +323,7 @@
 }
 
 .player-actions {
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--border-color);
+  padding-top: var(--spacing-sm);
 }
 
 .game-actions-section {
@@ -538,7 +536,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  align-items: flex-start;
+  /* align-items: flex-start; */
+
 }
 
 .player-name {
@@ -561,18 +560,14 @@
 
 .you-badge,
 .host-badge {
-  background: linear-gradient(135deg, var(--accent-color) 0%, #f59e0b 100%);
-  color: var(--text-white);
+  /* background: linear-gradient(135deg, var(--accent-color) 0%, #f59e0b 100%); */
+  color: var(--primary-color);
   padding: 2px 8px;
   border-radius: var(--radius-full);
   font-size: 0.75em;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.host-badge {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
 }
 
 .dealer-badge {
@@ -857,7 +852,8 @@
   }
   
   .players-grid {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-md);
   }
 
@@ -872,7 +868,8 @@
     width: 100%;
     max-width: 300px;
   }
-    /* Enhanced mobile score table styling */
+
+  /* Enhanced mobile score table styling */
   .score-table {
     font-size: 0.9em;
     margin: 0 -var(--spacing-sm);
@@ -960,7 +957,7 @@
   }
   
   .game-stats {
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: var(--spacing-sm);
     text-align: center;
   }
@@ -975,12 +972,6 @@
 @media (max-width: 480px) {
   .game-header h1 {
     font-size: 1.5em;
-  }
-  
-  .game-stats {
-    font-size: 1em;
-    flex-direction: column;
-    gap: var(--spacing-xs);
   }
   
   .game-stats span {
@@ -1058,10 +1049,6 @@
     min-height: 44px;
     font-size: 1.3em;
     padding: var(--spacing-sm);
-  }
-  
-  .player-info h4 {
-    font-size: 1.1em;
   }
   
   .ready-button {

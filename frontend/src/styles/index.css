@@ -14,6 +14,8 @@
   --primary-light: #93c5fd;
   --secondary-color: #a78bfa;
   --accent-color: #fbbf24;
+  --not-ready-color: #da3c3c;
+  --ready-color: #26da44;
 
   /* Status colors adjusted for dark theme */
   --success-color: #34d399;

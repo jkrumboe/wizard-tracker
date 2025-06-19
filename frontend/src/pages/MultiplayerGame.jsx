@@ -88,17 +88,23 @@ const MultiplayerGame = () => {
       // Listen for game events
       room.onMessage('gameStarted', (message) => {
         console.log('Game started!', message);
-      });      room.onMessage('roundStarted', (message) => {
+      });
+      
+      room.onMessage('roundStarted', (message) => {
         console.log('New round started:', message);
       });
 
       room.onMessage('gameEnded', (message) => {
         console.log('Game ended:', message);
         // Could show final scores modal here
-      });      room.onMessage('hostChanged', (message) => {
+      });
+      
+      room.onMessage('hostChanged', (message) => {
         console.log('New host assigned:', message);
         // We'll update host status in the state change handler
-      });      // Listen for player join/leave events
+      });
+      
+      // Listen for player join/leave events
       room.onMessage('playerJoined', (message) => {
         console.log('🎉 Player joined:', message.playerName);
         console.log('📊 Join event details:', message);
@@ -144,13 +150,14 @@ const MultiplayerGame = () => {
           phase: message.phase,
         }));
       });
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to connect to game:', error);
       setError('Failed to connect to game: ' + error.message);
       setIsConnecting(false);
       connectionAttemptRef.current = false;
     }
-  }, [roomId, user]); // Removed isConnected and isConnecting to prevent circular dependencies
+  }, [roomId, user]);
 
   useEffect(() => {
     if (!user) {
@@ -171,7 +178,9 @@ const MultiplayerGame = () => {
           setError('Failed to connect to game: ' + error.message);
         }
       }
-    };    initializeConnection();
+    };
+    
+    initializeConnection();
     
     return () => {
       isMounted = false;
@@ -195,10 +204,6 @@ const MultiplayerGame = () => {
   const handlePlayerReady = () => {
     const newReadyState = !currentPlayer?.isReady; // Toggle the ready state
     colyseusService.setPlayerReady(newReadyState);
-  };  const handleStartGame = () => {
-    if (isHost) {
-      colyseusService.startGame();
-    }
   };
 
   const handleLeaveGame = () => {
@@ -234,17 +239,16 @@ const MultiplayerGame = () => {
       </div>
     );
   }
-    // Even if gameState is null, show the game room with minimal information for the creator
+
+  // Show a dedicated "Waiting for Game State" page if gameState is null
   if (!gameState) {
-    // Show a simplified game UI for the host who created the game
     return (
-      <div className="game-container">
+      <div className="game-container waiting-for-gamestate">
         <header className="game-header">
           <div className="game-info">
             <div className="game-stats">
-              <span>Phase: waiting</span>
-              <span>Players: 1</span>
               <span>Room: {roomId}</span>
+              <span>Status: Awaiting Game State...</span>
             </div>
           </div>
           <div className="game-actions">
@@ -253,40 +257,38 @@ const MultiplayerGame = () => {
             </button>
           </div>
         </header>
-
         <div className="game-content">
-          <div className="game-status">
-            <div className="waiting-phase">
-              <h2>Game Created</h2>
-              <p>Waiting for players to join your game room...</p>
-              <p className="invite-note">Share the room ID with friends to invite them</p>
+          <div className="waiting-gamestate-status">
+            <div className="waiting-animation">
+              <div className="spinner large"></div>
             </div>
-          </div>
-          
-          <div className="players-section">
-            <h3>Players</h3>
-            <div className="players-grid">
-              <div className="player-card current-player">
-                <div className="player-info">
-                  <h4>
-                    {user.username}
-                    <span className="host-badge">👑</span>
-                    <span className="you-badge">(You)</span>
-                  </h4>
-                  <div className="player-status">
-                    <span className="ready-status not-ready">Host</span>
-                  </div>
-                </div>
-                <div className="player-actions">
-                  <p className="waiting-for-players">Waiting for more players to join...</p>
-                </div>
-              </div>
+            <h2>Setting Up Game Room...</h2>
+            <p>
+              We're waiting for the game server to provide the initial game state.<br />
+              This can take a few seconds, especially if you just created the room.
+            </p>
+            <p>
+              <strong>What to do?</strong>
+              <ul>
+                <li>If you just created this room, please wait for other players to join.</li>
+                <li>If this takes too long, try refreshing or leaving and rejoining the room.</li>
+              </ul>
+            </p>
+            <div className="waiting-actions">
+              <button onClick={connectToGame} className="retry-button">
+                Retry Connection
+              </button>
+              <button onClick={handleLeaveGame} className="back-button">
+                Back to Lobby
+              </button>
             </div>
           </div>
         </div>
       </div>
     );
-  }  // Use the pre-converted players array if available, fallback to conversion
+  }
+  
+  // Use the pre-converted players array if available, fallback to conversion
   const players = gameState.playersArray || Array.from(gameState.players.values());
   console.log('🎭 Rendering with players:', players.map(p => p.name));
   
@@ -325,14 +327,9 @@ const MultiplayerGame = () => {
             <span>Phase: {phase}</span>
             <span>Players: {players.length}</span>
           </div>
-        </div>        <div className="game-actions">
-          <button onClick={handleLeaveGame} className="leave-button">
-            🚪 Leave Game
-          </button>
         </div>
-      </header>      <div className="game-content">
-        {/* Game Status */}
-        <div className="game-status">          {phase === 'waiting' && (
+
+        {phase === 'waiting' && (
             <div className="waiting-phase">
               <h2>Waiting for Players</h2>
               <p>Waiting for all players to be ready...</p>
@@ -345,19 +342,24 @@ const MultiplayerGame = () => {
                   >
                     🎲 Randomize Player Order
                   </button>
-                  <button 
-                    onClick={handleStartGame}
-                    className="start-game-button"
-                    disabled={players.some(p => !p.isReady)}
-                  >
-                    Start Game
-                  </button>
                 </div>
               )}
             </div>
           )}
+        
+        <div className="game-actions">
+          <button onClick={handleLeaveGame} className="leave-button">
+            🚪 Leave Game
+          </button>
+        </div>
+      </header>
 
-          {phase === 'calling' && (
+      <div className="game-content">
+        {/* Game Status */}
+
+        {phase != 'waiting' && (
+        <div className="game-status">
+           {phase === 'calling' && (
             <div className="calling-phase">
               <div className="round-header">
                 <h2>Round {currentRound} - Calling Phase</h2>
@@ -367,7 +369,9 @@ const MultiplayerGame = () => {
                     Total Calls: {totalCalls} / {currentRound}
                   </span>
                 </div>
-              </div>                {/* Game Table with updated layout */}
+              </div>
+              
+              {/* Game Table with updated layout */}
               <div className="game-table">
                 <table className="score-table">
                   <thead>
@@ -510,7 +514,10 @@ const MultiplayerGame = () => {
               <p>Final scores have been calculated.</p>
             </div>
           )}
-        </div>        {/* Players List - Only show in waiting phase */}
+        </div>
+        )}
+        
+        {/* Players List - Only show in waiting phase */}
         {phase === 'waiting' && (
           <div className="players-section">
             <h3>Players</h3>
@@ -525,19 +532,20 @@ const MultiplayerGame = () => {
                   >
                     <div className="player-info">
                       <h4>
-                        {player.playerName}
-                        {player.isHost && <span className="host-badge">👑</span>}
-                        {isCurrentPlayer && <span className="you-badge">(You)</span>}
+                        {player.name}
+                        <div className="badges">
+                          {player.isHost && <span className="host-badge">HOST</span>}
+                          {/* {isCurrentPlayer && <span className="you-badge">(You)</span>} */}
+                        </div>
                       </h4>
+                      
+                      {!isCurrentPlayer && (
                       <div className="player-status">
                         <span className={`ready-status ${player.isReady ? 'ready' : 'not-ready'}`}>
                           {player.isReady ? 'Ready' : 'Not Ready'}
                         </span>
                       </div>
-                    </div>
-                    
-                    <div className="player-game-info">
-                      <div className="score">Total Score: {player.totalScore || 0}</div>
+                      )}
                     </div>
                     
                     {/* Ready button for waiting phase */}
@@ -547,7 +555,7 @@ const MultiplayerGame = () => {
                           onClick={handlePlayerReady}
                           className={`ready-button ${currentPlayer?.isReady ? 'ready' : 'not-ready'}`}
                         >
-                          {currentPlayer?.isReady ? 'Unready' : 'Set Ready'}
+                          {currentPlayer?.isReady ? 'Unready' : 'Ready'}
                         </button>
                       </div>
                     )}
@@ -556,7 +564,9 @@ const MultiplayerGame = () => {
               })}
             </div>
           </div>
-        )}        {/* Scores Table - Show complete game history */}
+        )}
+        
+        {/* Scores Table - Show complete game history */}
         {gameState.rounds && gameState.rounds.length > 0 && phase !== 'waiting' && (
           <div className="scores-section">
             <h3>Game History</h3>

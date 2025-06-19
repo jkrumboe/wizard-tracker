@@ -137,7 +137,7 @@ const Leaderboard = () => {
                   </Link>
                 </div>
                 <div className="elo-col">{player.elo}</div>
-                <div className="winrate-col">{((player.wins / player.total_games)  * 100).toFixed(2)}%</div>
+                <div className="winrate-col">{player.win_rate}%</div>
                 <div className="games-col">{player.total_games}</div>
               </div>
             ) : (
