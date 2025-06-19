@@ -43,10 +43,6 @@
     box-shadow: var(--shadow-sm);
   }
   
-  .player-info {
-    flex: 1;
-  }
-  
   .player-name {
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
@@ -524,7 +520,7 @@
     text-align: center;
     margin-bottom: var(--spacing-lg);
     background-color: var(--card-background);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
   }
@@ -538,10 +534,11 @@
     border: 4px solid var(--primary-color);
     box-shadow: var(--shadow);
   }
-  
+
   .player-info {
-    width: 100%;
+    justify-content: center;
   }
+
   
   .player-info h1 {
     color: var(--primary-color);
@@ -554,6 +551,8 @@
   .player-name-tags {
     display: grid;
     justify-content: center;
+    align-items: center;
+    margin: 0 auto;
   }
 
 
@@ -788,7 +787,7 @@
   
   .stats-header {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     margin-bottom: var(--spacing-lg);
     background-color: var(--card-background);
     padding: var(--spacing-lg);
@@ -797,6 +796,7 @@
   }
   
   .stats-header h1 {
+    margin-left: 5rem;
     color: var(--primary-color);
   }
   
@@ -1094,13 +1094,6 @@
     max-width: 960px; /* Constrain the leaderboard width */
     /* margin: var(--spacing-lg) auto; */
     padding: var(--spacing-md);
-  }
-
-  .leaderboard-container {
-    max-width: 960px; /* Constrain the leaderboard width */
-    padding: var(--spacing-md);
-    margin: var(--spacing-lg) auto;
-    padding: var(--spacing-lg);
   }
   
   .new-game-container h1 {
@@ -1420,11 +1413,9 @@
 
   /* Leaderboard Styles */
   .leaderboard-container {
-    max-width: 960px; /* Constrain the leaderboard width */
-    padding: var(--spacing-md);
-    background-color: var(--card-background);
+    max-width: min(100vw, 960px);
+    width: 100%;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
     margin: var(--spacing-lg) auto;
     padding: var(--spacing-lg);
   }

@@ -53,7 +53,7 @@ export const playerAPI = {
   getById: (id) => fetchAPI(`/players/${id}`),
   getStats: (id) => fetchAPI(`/players/${id}/stats`),
   getGames: (id, limit = 20) => fetchAPI(`/players/${id}/games?limit=${limit}`),
-  getEloHistory: (id) => fetchAPI(`/players/${id}/elo-history`),
+  // getEloHistory: (id) => fetchAPI(`/players/${id}/elo-history`),
   getTags: (id) => fetchAPI(`/players/${id}/tags`),
   getByTag: (tag) => fetchAPI(`/players/search/${tag}`),
   create: (data) => fetchAPI("/players", { method: "POST", body: JSON.stringify(data) }),

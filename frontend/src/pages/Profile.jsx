@@ -112,8 +112,8 @@ const handleEditProfile = async () => {
     
     // Update context and refresh navbar avatar if this is the current user's profile
     if (user && user.player_id === player.id) {
-      updatePlayerData(updatedPlayer); // Update context immediately
-      await refreshPlayerData(); // Also refresh from server to ensure consistency
+      updatePlayerData(updatedPlayer); 
+      await refreshPlayerData(); 
     }
   } catch (err) {
     console.error("Error updating profile:", err);
@@ -128,22 +128,12 @@ if (error || !player) {
   return <div className="error">{error || 'Player not found'}</div>
 }
   const recentGames = gameHistory.slice(0, 3);
-let winRate = 0;
-let lossRate = 0;
-let totalGames = 1;
-
-if (playerStats) {
-  winRate = playerStats.total_games > 0
-    ? Math.round((playerStats.wins / playerStats.total_games) * 100)
-    : 0;
-  lossRate = Math.round(100 - winRate);
-  totalGames = playerStats.total_games || 1;
-}
 
 const data = [
-  { name: 'Wins', value: winRate },
-  { name: 'Losses', value: lossRate }
+  { name: 'Wins', value: player.total_wins },
+  { name: 'Losses', value: player.total_losses }
 ]
+
 const COLORS = [
   '#1DBF73',
     '#FF5C5C'
@@ -164,6 +154,9 @@ const toggleTag = (tag) => {
     setTags([...tags, tag]);
   }
 };
+
+console.debug("Player Data:", player);
+console.debug("Data:", data);
 
 if (editing) {
   return (
@@ -255,7 +248,7 @@ if (editing) {
       <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="avatar" />
       <div className="player-info">
           <div className="player-name-tags">
-            <h1>{player?.name || "Unknown Player"}</h1>
+            <h1>{player?.display_name || "Unknown Player"}</h1>
             <div className="tags-container">
               {tags && tags.length > 0 && 
                 tags.map(tag => (
@@ -271,11 +264,11 @@ if (editing) {
           />
           <StatCard 
             title="Games" 
-            value={totalGames}
+            value={player.total_games}
           />
           <StatCard 
             title="Win Rate" 
-            value={`${winRate}%`}
+            value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
           />
           <StatCard 
             title="Total Points"
@@ -322,11 +315,11 @@ if (editing) {
           <div className="chart-legend">
             <div className="legend-item">
               <span className="legend-color" style={{ backgroundColor: COLORS[0] }}></span>
-              <span>Wins ({winRate}%)</span>
+              <span>Wins ({player.total_wins})</span>
             </div>
             <div className="legend-item">
               <span className="legend-color" style={{ backgroundColor: COLORS[1] }}></span>
-              <span>Losses ({lossRate}%)</span>
+              <span>Losses ({player.total_losses})</span>
             </div>
           </div>
           
