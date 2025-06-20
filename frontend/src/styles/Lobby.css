@@ -350,8 +350,8 @@
 
 .players-list {
   display: flex;
-  flex-direction: column;
   gap: var(--spacing-sm);
+  justify-content: center;
 }
 
 .player-item {

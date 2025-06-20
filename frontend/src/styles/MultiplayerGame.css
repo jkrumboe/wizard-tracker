@@ -348,12 +348,9 @@
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  letter-spacing: 1px;
   box-shadow: var(--shadow);
   display: block;
-  margin-left: auto;
-  margin-right: auto;
-  width: 80%; /* Center the button */
+  margin: auto;
 }
 
 .ready-button.ready {
@@ -445,7 +442,6 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: linear-gradient(180deg, var(--card-background-light) 0%, var(--card-background) 100%);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
@@ -456,13 +452,14 @@
 .score-table td {
   padding: var(--spacing-lg) var(--spacing-md);
   text-align: center;
-  border-bottom: 1px solid var(--border-color);
+  /* border-bottom: 1px solid var(--border-color); TODO: Maybe let this in*/
   transition: all 0.3s ease;
   position: relative;
+  vertical-align: middle;
 }
 
 .score-table th {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  /* background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); */
   font-weight: 700;
   color: var(--text-white);
   font-size: 1.1em;
@@ -496,17 +493,6 @@
   border-bottom: none;
 }
 
-.player-row.current-player {
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1) 0%, var(--card-background-light) 100%);
-  border-left: 4px solid var(--accent-color);
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
-}
-
-.player-row.current-player:hover {
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.15) 0%, var(--card-background-light) 100%);
-  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.3);
-}
-
 .player-row.player-turn {
   background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, var(--card-background-light) 100%);
   border-left: 4px solid var(--primary-color);
@@ -526,18 +512,9 @@
   }
 }
 
-.player-cell {
-  text-align: left !important;
-  min-width: 200px;
-  padding: var(--spacing-lg) var(--spacing-md);
-}
-
 .player-info {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
-  /* align-items: flex-start; */
-
 }
 
 .player-name {
@@ -633,6 +610,8 @@
   min-width: 80px;
   position: relative;
   text-align: center;
+  display: table-cell;
+  vertical-align: middle;
 }
 
 .score-cell {
@@ -673,25 +652,22 @@
 .score-value,
 .total-value {
   font-weight: 700;
-  font-size: 1.2em;
+  font-size: 1.5em;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
-  display: inline-block;
-  min-width: 40px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
   transition: all 0.3s ease;
+  font-family: Arial;
 }
 
-.call-value {
+.call-value,
+.made-value {
   color: var(--primary-color);
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.made-value {
-  color: var(--accent-color);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border: 2px solid rgba(59, 130, 246, 0.2);
 }
 
 .positive-score {
@@ -870,12 +846,6 @@
   }
 
   /* Enhanced mobile score table styling */
-  .score-table {
-    font-size: 0.9em;
-    margin: 0 -var(--spacing-sm);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-  }
   
   .score-table th,
   .score-table td {
@@ -911,9 +881,19 @@
   .made-value,
   .score-value,
   .total-value {
-    font-size: 1em;
     padding: var(--spacing-xs) var(--spacing-sm);
-    min-width: 30px;
+  }
+  .call-value,
+  .made-value {
+    padding: 0;
+    font-size: 1.5rem;
+    min-width: 48px;
+    min-height: 48px;
+    font-weight: 700;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
   }
   
   .total-value {
@@ -1016,13 +996,9 @@
     font-size: 0.65em;
     padding: 1px 4px;
   }
-  
-  .call-value,
-  .made-value,
+
   .score-value {
-    font-size: 0.9em;
-    padding: 2px 4px;
-    min-width: 25px;
+    border: 1px solid var(--border-color);
   }
   
   .total-value {
@@ -1033,9 +1009,7 @@
   /* Improve touch targets */
   .number-display {
     min-height: 48px;
-    min-width: 50px;
-    font-size: 1em;
-    font-weight: 800;
+    min-width: 48px;
   }
   
   .call-section,
@@ -1258,6 +1232,15 @@
 }
 
 /* Override for player cell which can be wider */
-.player-cell {
-  width: 40%;
+
+.scores-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }

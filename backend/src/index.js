@@ -40,7 +40,7 @@ const corsOptions = {
       'http://localhost:8088'
     ];
     
-    console.log(`CORS Check - NODE_ENV: ${process.env.NODE_ENV}, Origin: ${origin}, Allowed: ${allowedOrigins.includes(origin)}`);
+    console.log(`CORS Check, Origin: ${origin}, Allowed: ${allowedOrigins.includes(origin)}`);
     
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);

@@ -111,7 +111,9 @@ class ColyseusService {
       console.error('❌ Failed to create game room:', error);
       throw error;
     }
-  }  async joinGameRoom(roomId, password = null) {
+  }
+  
+  async joinGameRoom(roomId, password = null) {
     try {
       // First check if roomId is a database ID or Colyseus room ID
       let colyseusRoomId = roomId;
@@ -221,17 +223,31 @@ class ColyseusService {
       this.lobbyRoom.send(type, data);
     }
   }
+
   // Game-specific actions
   setPlayerReady(ready = true) {
     this.sendMessage('playerReady', { ready });
   }
 
-  makeCall(call) {
-    this.sendMessage('makeCall', { call });
+  makeCall(call, playerId = null, bypassTurnOrder = false) {
+    // Use provided playerId or fallback to this.playerData?.id
+    const formattedData = {
+      playerId: playerId || this.playerData?.id,
+      call: call?.call !== undefined ? call.call : call,
+      bypassTurnOrder: bypassTurnOrder // Add flag for host to bypass turn order
+    };
+    console.log("Making call:", formattedData);
+    this.sendMessage("makeCall", formattedData);
   }
+  
+  makeTricks(tricks, playerId = null, bypassTurnOrder = true) {
+    const formattedData = {
+      playerId: playerId || this.playerData?.id,
+      tricks: tricks?.tricks !== undefined ? tricks.tricks : tricks,
+      bypassTurnOrder: bypassTurnOrder // Always bypass turn order for tricks
+    };
 
-  makeTricks(tricks) {
-    this.sendMessage('makeTricks', { tricks });
+    this.sendMessage("makeTricks", formattedData );
   }
 
   updateGameSettings(settings) {
@@ -317,7 +333,9 @@ class ColyseusService {
     }
     
     return null;
-  }  // Enhanced room methods with reconnection tracking
+  }
+  
+  // Enhanced room methods with reconnection tracking
   async createGameRoomWithTracking(settings = {}) {
     const room = await this.createGameRoom(settings);
     if (room) {
@@ -335,6 +353,7 @@ class ColyseusService {
     }
     return room;
   }
+  
   async joinLobbyWithTracking() {
     const lobby = await this.joinLobby();
     if (lobby) {

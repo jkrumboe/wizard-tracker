@@ -231,7 +231,9 @@ const Lobby = () => {
               <div className="empty-state">
                 <p>No Games Available. Why Not Create One?</p>
               </div>
-            ) : (              <div className="rooms-list">
+            ) : (
+              
+              <div className="rooms-list">
                 {availableRooms.map((room) => (
                   <div key={room.room_id || room.roomId} className="room-card">
                     <div className="room-info">
@@ -268,15 +270,16 @@ const Lobby = () => {
           </section>
 
           <section className="online-players">
-            <h2>Online Players</h2>            <div className="players-list">
+            <h2>Online Players</h2>            
+            <div className="players-list">
               {onlinePlayers.map((player, index) => (
                 <div key={`player-${player.playerId || player.id || index}-${player.sessionId || ''}`} className="player-item">
                   <span className="player-name">{(player.playerName || player.name || '').replace(/\b\w/g, c => c.toUpperCase())}</span>
-                  <span className={`player-status ${player.status}`}>
+                  {/* <span className={`player-status ${player.status}`}>
                     {player.status === 'browsing' ? 'Browsing' :
                      player.status === 'in_game' ? 'In Game' :
                      player.status === 'creating' ? 'Creating' : 'Ready'}
-                  </span>
+                  </span> */}
                 </div>
               ))}
             </div>

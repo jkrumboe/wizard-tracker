@@ -249,6 +249,7 @@ if (editing) {
       <div className="player-info">
           <div className="player-name-tags">
             <h1>{player?.display_name || "Unknown Player"}</h1>
+            {tags && tags.length > 0 &&
             <div className="tags-container">
               {tags && tags.length > 0 && 
                 tags.map(tag => (
@@ -256,6 +257,7 @@ if (editing) {
                 ))
               }
             </div>
+      }
           </div>
         <div className="stats-summary">
           <StatCard 
@@ -270,10 +272,10 @@ if (editing) {
             title="Win Rate" 
             value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
           />
-          <StatCard 
+          {/* <StatCard 
             title="Total Points"
             value={playerStats ? playerStats.total_points : 0}
-          />
+          /> */}
         </div>
       </div>
     </div>

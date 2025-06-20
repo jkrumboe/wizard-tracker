@@ -200,7 +200,7 @@ class AuthService {
         const data = await response.json();
         return data.user;
       } else if (response.status === 401) {
-        // Not authenticated
+          // console.warn('User is not authenticated');
         return null;
       } else {
         throw new Error('Failed to check authentication status');

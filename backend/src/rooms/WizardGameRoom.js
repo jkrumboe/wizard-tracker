@@ -16,6 +16,10 @@ type("string")(Player.prototype, "avatar");
 type("number")(Player.prototype, "elo");
 type("boolean")(Player.prototype, "isReady");
 type("boolean")(Player.prototype, "isHost");
+type("number")(Player.prototype, "call");
+type("number")(Player.prototype, "made");
+type("number")(Player.prototype, "score");
+type("number")(Player.prototype, "totalScore");
 
 // Round data for the game
 export class RoundData extends Schema {
@@ -68,7 +72,7 @@ type("number")(GameState.prototype, "currentCallIndex");
 export class WizardGameRoom extends Room {
   maxClients = 6;
   async onCreate(options) {
-    console.log("WizardGameRoom created!", options);
+    console.debug("WizardGameRoom created!", options);
     
     this.setState(new GameState());
     this.dbRoomId = options.dbRoomId || null;
@@ -109,7 +113,7 @@ export class WizardGameRoom extends Room {
           'UPDATE game_rooms SET colyseus_room_id = $1, status = $2 WHERE id = $3',
           [this.roomId, 'waiting', this.dbRoomId]
         );
-        console.log(`✅ Updated database room ${this.dbRoomId} with Colyseus ID: ${this.roomId}`);
+        console.debug(`✅ Updated database room ${this.dbRoomId} with Colyseus ID: ${this.roomId}`);
       } catch (error) {
         console.error('❌ Failed to update room in database:', error);
       }    } else {
@@ -132,7 +136,7 @@ export class WizardGameRoom extends Room {
         });
         
         this.dbRoomId = roomData.id;
-        console.log(`✅ Created new room in database with ID: ${this.dbRoomId}`);
+        console.debug(`✅ Created new room in database with ID: ${this.dbRoomId}`);
       } catch (error) {
         console.error('❌ Failed to create room in database:', error);
       }
@@ -153,11 +157,16 @@ export class WizardGameRoom extends Room {
         }
       }
     });
-
+    
     this.onMessage("makeCall", (client, data) => {
-      this.handlePlayerCall(client.sessionId, data.call);
-    });    this.onMessage("makeTricks", (client, data) => {
-      this.handlePlayerTricks(client.sessionId, data.tricks);
+      console.debug(`!!!Player ${client.sessionId} made tricks:`, data.call, "ID:", data.playerId, "Bypass:", data.bypassTurnOrder);
+      // console.debug("Client", client)
+      this.handlePlayerCall(client.sessionId, data.call, data.playerId, data.bypassTurnOrder);
+    });
+    
+    this.onMessage("makeTricks", (client, data) => {
+      console.debug(`!!!Player ${client.sessionId} made tricks:`, data.tricks, "ID:", data.playerId, "Bypass:", data.bypassTurnOrder);
+      this.handlePlayerTricks(client.sessionId, data.tricks, data.playerId, data.bypassTurnOrder);
     });
 
     this.onMessage("randomizePlayerOrder", (client) => {
@@ -194,8 +203,10 @@ export class WizardGameRoom extends Room {
         this.disconnect();
       }
     }, 10 * 60 * 1000);
-  }  async onJoin(client, options) {
-    console.log(`Player ${client.sessionId} attempting to join room ${this.roomId}`);
+  }
+  
+  async onJoin(client, options) {
+    console.debug(`Player ${client.sessionId} attempting to join room ${this.roomId}`);
     
     // If this is a private room, verify password
     if (this.dbRoomId && options.password !== undefined) {
@@ -268,7 +279,7 @@ export class WizardGameRoom extends Room {
         // Mark player as online
         await dbAdapter.markPlayerOnline(options.playerId, true);
         
-        console.log(`✅ Player ${options.playerId} added to database room`);
+        console.debug(`✅ Player ${options.playerId} added to database room`);
       } catch (error) {
         console.error('❌ Failed to add player to database room:', error);
       }
@@ -294,7 +305,7 @@ export class WizardGameRoom extends Room {
   }
 
   async onLeave(client, consented) {
-    console.log(`Player ${client.sessionId} left room ${this.roomId}`);
+    console.debug(`Player ${client.sessionId} left room ${this.roomId}`);
     
     const leavingPlayer = this.state.players.get(client.sessionId);
     
@@ -308,7 +319,7 @@ export class WizardGameRoom extends Room {
           currentPlayers: this.state.players.size - 1
         });
         
-        console.log(`✅ Player ${leavingPlayer.playerId} marked as left in database`);
+        console.debug(`✅ Player ${leavingPlayer.playerId} marked as left in database`);
       } catch (error) {
         console.error('❌ Failed to update player leave in database:', error);
       }
@@ -346,9 +357,11 @@ export class WizardGameRoom extends Room {
         this.disconnect();
       }, 5 * 60 * 1000); // 5 mins
     }
-  }  async startGame() {
+  }
+  
+  async startGame() {
     if (this.state.gameStarted) return;
-    console.log(`Starting game in room ${this.roomId}`);
+    console.debug(`Starting game in room ${this.roomId}`);
     this.state.gameStarted = true;
     this.state.phase = "calling";
     
@@ -393,7 +406,7 @@ export class WizardGameRoom extends Room {
           startedAt: new Date()
         });
         
-        console.log(`✅ Game created in database with ID: ${this.dbGameId}`);
+        console.debug(`✅ Game created in database with ID: ${this.dbGameId}`);
       } catch (error) {
         console.error('❌ Failed to create game in database:', error);
       }
@@ -438,25 +451,60 @@ export class WizardGameRoom extends Room {
       this.state.rounds.push(round);
     }
   }
-  handlePlayerCall(sessionId, call) {
+
+  handlePlayerCall(sessionId, call, playerId, bypassTurnOrder = false) {
     if (!this.state.gameStarted || this.state.gameFinished || this.state.phase !== "calling") return;
     
-    // Check if it's this player's turn to call
+    // Check if it's a host player (who can call for any player)
+    const requestingPlayer = this.state.players.get(sessionId);
+    const isHost = requestingPlayer && requestingPlayer.isHost;
+    
+    // Check if it's this player's turn to call (unless host with bypass flag)
     const currentPlayerSessionId = this.state.playerOrder[this.state.currentCallIndex];
-    if (sessionId !== currentPlayerSessionId) {
-      console.log(`Player ${sessionId} tried to call out of turn. Current turn: ${currentPlayerSessionId}`);
+    if (!bypassTurnOrder && !isHost && sessionId !== currentPlayerSessionId) {
+      console.debug(`Player ${sessionId} tried to call out of turn. Current turn: ${currentPlayerSessionId}`);
       return;
     }
     
     const currentRound = this.state.rounds[this.state.currentRound - 1];
     if (!currentRound) return;
+      // Find the player whose call is being made
+    // If host is making a call for someone else, use the provided playerId
+    let player;
+    if (playerId && playerId !== requestingPlayer.playerId) {
+      // Host is making a call for another player
+      player = currentRound.players.find(p => p.playerId == playerId);    } else {
+      // Player is making their own call
+      player = currentRound.players.find(p => p.sessionId === sessionId);
+    }
     
-    const player = currentRound.players.find(p => p.sessionId === sessionId);
-    if (player && player.call === null) {
-      player.call = Math.max(0, Math.min(call, currentRound.cards));
+    if (!player) {
+      console.debug(`Could not find player with playerId ${playerId} or sessionId ${sessionId} in the current round`);
+      return;
+    }
+    
+    // Player found, proceed with call
+    player.call = Math.max(0, Math.min(call, currentRound.cards));
       
-      // Move to next player's turn
-      this.state.currentCallIndex = (this.state.currentCallIndex + 1) % this.state.playerOrder.length;
+    // Update the player's state in the main players collection too
+    // This ensures all clients see the call value
+    const mainPlayerState = this.state.players.get(player.sessionId);
+      if (mainPlayerState) {
+        mainPlayerState.call = player.call;
+        
+        // Broadcast the call update to all clients
+        this.broadcast('callUpdated', {
+          playerId: player.playerId,
+          sessionId: player.sessionId,
+          call: player.call
+        });
+      }
+      
+      // Only advance turn if this was the current player's turn
+      if (sessionId === currentPlayerSessionId) {
+        // Move to next player's turn
+        this.state.currentCallIndex = (this.state.currentCallIndex + 1) % this.state.playerOrder.length;
+      }
       
       // Check if all players have made their calls
       const allPlayersCalled = currentRound.players.every(p => p.call !== null);
@@ -466,17 +514,56 @@ export class WizardGameRoom extends Room {
         this.broadcast("phaseChanged", { phase: "playing" });
       }
     }
-  }
+  
 
-  handlePlayerTricks(sessionId, tricks) {
+  handlePlayerTricks(sessionId, tricks, playerId, bypassTurnOrder = false) {
     if (!this.state.gameStarted || this.state.gameFinished) return;
+    
+    // Check if it's a host player (who can enter tricks for any player)
+    const requestingPlayer = this.state.players.get(sessionId);
+    const isHost = requestingPlayer && requestingPlayer.isHost;
+    
+    // Only allow hosts to enter tricks for other players
+    if (!isHost && playerId && playerId !== requestingPlayer.playerId) {
+      console.debug(`Player ${sessionId} tried to enter tricks for another player without host permissions`);
+      return;
+    }
     
     const currentRound = this.state.rounds[this.state.currentRound - 1];
     if (!currentRound) return;
     
-    const player = currentRound.players.find(p => p.sessionId === sessionId);
-    if (player && player.call !== null) {
+    // Find the player whose tricks are being recorded
+    let player;
+    if (playerId && isHost) {
+      // Host is entering tricks for a specific player
+      player = currentRound.players.find(p => p.playerId == playerId);    } else {
+      // Player is entering their own tricks
+      player = currentRound.players.find(p => p.sessionId === sessionId);
+    }
+    
+    if (!player) {
+      console.debug(`Could not find player with playerId ${playerId} or sessionId ${sessionId} in the current round for tricks`);
+      return;
+    }
+      
+    if (player.call !== null) {
       player.made = Math.max(0, Math.min(tricks, currentRound.cards));
+      
+      // Update the player's state in the main players collection too
+      // This ensures all clients see the made/tricks value
+      const mainPlayerState = this.state.players.get(player.sessionId);
+      if (mainPlayerState) {
+        mainPlayerState.made = player.made;
+        // For legacy frontend compatibility
+        mainPlayerState.tricks = player.made;
+        
+        // Broadcast the tricks update to all clients
+        this.broadcast('tricksUpdated', {
+          playerId: player.playerId,
+          sessionId: player.sessionId,
+          made: player.made
+        });
+      }
       
       // Calculate score
       if (player.call === player.made) {
@@ -496,6 +583,7 @@ export class WizardGameRoom extends Room {
       player.totalScore = totalScore;
     }
   }
+
   nextRound() {
     if (this.state.currentRound < this.state.maxRounds) {
       this.state.currentRound++;
@@ -555,11 +643,11 @@ export class WizardGameRoom extends Room {
     // TODO: Save game to database
     // This would integrate with your existing game saving logic
     
-    console.log(`Game finished in room ${this.roomId}`, results);
+    console.debug(`Game finished in room ${this.roomId}`, results);
   }
 
   onDispose() {
-    console.log(`WizardGameRoom ${this.roomId} disposed`);
+    console.debug(`WizardGameRoom ${this.roomId} disposed`);
     if (this.emptyRoomTimeout) {
       clearTimeout(this.emptyRoomTimeout);
     }

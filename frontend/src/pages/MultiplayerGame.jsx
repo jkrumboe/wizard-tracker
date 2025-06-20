@@ -141,14 +141,69 @@ const MultiplayerGame = () => {
         if (code !== 1000) { // Not a normal close
           setError('Disconnected from game');
         }
-      });
-
-      room.onMessage('phaseChanged', (message) => {
+      });      room.onMessage('phaseChanged', (message) => {
         console.log('🔄 Phase changed:', message.phase);
         setGameState((prevState) => ({
           ...prevState,
           phase: message.phase,
         }));
+      });
+        // Add listeners for call and tricks updates
+      room.onMessage('callUpdated', (message) => {
+        try {
+          console.log('📞 Call updated:', message);
+          if (!message || !message.sessionId) {
+            console.warn('Invalid callUpdated message received:', message);
+            return;
+          }
+          
+          setGameState((prevState) => {
+            if (!prevState || !prevState.players) return prevState;
+            
+            // Use sessionId to find player (most reliable)
+            const player = prevState.playersArray?.find(p => p.sessionId === message.sessionId) || 
+                          Array.from(prevState.players.values()).find(p => p.sessionId === message.sessionId);
+                          
+            if (player) {
+              console.log(`Updating call for player ${player.name} to ${message.call}`);
+              player.call = message.call;
+            } else {
+              console.warn(`Could not find player with sessionId ${message.sessionId} to update call`);
+            }
+            
+            return { ...prevState };
+          });
+        } catch (error) {
+          console.error('Error handling callUpdated message:', error);
+        }
+      });
+        room.onMessage('tricksUpdated', (message) => {
+        try {
+          console.log('🃏 Tricks updated:', message);
+          if (!message || !message.sessionId) {
+            console.warn('Invalid tricksUpdated message received:', message);
+            return;
+          }
+          
+          setGameState((prevState) => {
+            if (!prevState || !prevState.players) return prevState;
+            
+            // Use sessionId to find player (most reliable)
+            const player = prevState.playersArray?.find(p => p.sessionId === message.sessionId) || 
+                          Array.from(prevState.players.values()).find(p => p.sessionId === message.sessionId);
+                          
+            if (player) {
+              console.log(`Updating tricks for player ${player.name} to ${message.made}`);
+              player.made = message.made;
+            } else {
+              console.warn(`Could not find player with sessionId ${message.sessionId} to update tricks`);
+            }
+            
+            return { ...prevState };
+          });
+        } catch (error) {
+          console.error('Error handling tricksUpdated message:', error);
+        }
       });
     }
     catch (error) {
@@ -317,6 +372,8 @@ const MultiplayerGame = () => {
   console.log('🔍 Player order:', playerOrder);
   console.log('🔍 Current call index:', currentCallIndex);
   console.log('🔍 Current turn player:', currentTurnPlayer?.name);
+  console.log("orderedPlayers", orderedPlayers);
+  // Moving this useEffect higher up in the component to avoid conditional hook calling
 
   return (
     <div className="game-container">
@@ -356,7 +413,6 @@ const MultiplayerGame = () => {
 
       <div className="game-content">
         {/* Game Status */}
-
         {phase != 'waiting' && (
         <div className="game-status">
            {phase === 'calling' && (
@@ -386,42 +442,40 @@ const MultiplayerGame = () => {
                     {orderedPlayers.map((player, orderIndex) => {
                       const isCurrentPlayer = player.playerId === user.player_id;
                       const isDealer = orderIndex === dealerIndex;
-                      const isPlayerTurn = phase === 'calling' && player.sessionId === currentTurnSessionId;
-                      const hasCall = player.call !== null && player.call !== undefined;
-                      const canPlayerCall = isCurrentPlayer && isPlayerTurn && !hasCall;
+                      const isCurrentUserHost = isHost; // Is the current user the host?
                       
                       return (
-                        <tr key={player.playerId} className={`player-row ${isCurrentPlayer ? 'current-player' : ''} ${isPlayerTurn ? 'player-turn' : ''}`}>
+                        <tr key={player.sessionId || player.playerId} className={`player-row ${isCurrentPlayer ? 'current-player' : ''}`}>
                           <td className="player-cell">
-                            <div className="player-info">
                               <span className="player-name">
                                 {player.name || player.playerName}
-                                {isCurrentPlayer && <span className="you-badge">(You)</span>}
-                                {player.isHost && <span className="host-badge">👑</span>}
+                                {player.isHost && <span className="host-badge">HOST</span>}
                               </span>
                               <div className="player-badges">
                                 {isDealer && <span className="dealer-badge">🃏 Dealer</span>}
-                                {isPlayerTurn && <span className="turn-indicator">→ Your turn to call</span>}
                               </div>
-                            </div>
                           </td>
                           <td className="call-cell">
-                            {canPlayerCall ? (
+                            {isCurrentUserHost ? (
                               <NumberPicker
                                 value={player.call || 0}
-                                onChange={(call) => colyseusService.makeCall(call)}
+                                onChange={(call) => {
+                                  // Add bypass turn order flag for host calls
+                                  colyseusService.makeCall(call, player.playerId, true);
+                                }}
                                 min={0}
                                 max={currentRound}
-                                title={`Round ${currentRound} - Make your call`}
+                                title={`Round ${currentRound} - Make call for ${player.name || player.playerName}`}
                               />
-                            ) : (
-                              <span className="call-value">
+                            ) : (                              <span className="call-value">
                                 {player.call !== undefined && player.call !== null ? player.call : '-'}
                               </span>
                             )}
                           </td>
                           <td className="made-cell">
-                            <span className="made-value">-</span>
+                            <span className="made-value">
+                              {player.made !== undefined && player.made !== null ? player.made : '-'}
+                            </span>
                           </td>
                           <td className="score-cell">
                             <div className="score-container">
@@ -455,12 +509,11 @@ const MultiplayerGame = () => {
                       <th>Score</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {orderedPlayers.map((player, orderIndex) => {
+                <tbody>
+                  {orderedPlayers.map((player, orderIndex) => {
                       const isCurrentPlayer = player.playerId === user.player_id;
                       const isDealer = orderIndex === dealerIndex;
-                      const canPlayerReport = isCurrentPlayer && !player.hasTricks;
-                      
+                      const isCurrentUserHost = isHost; // Is the current user the host?
                       return (
                         <tr key={player.playerId} className={`player-row ${isCurrentPlayer ? 'current-player' : ''}`}>
                           <td className="player-cell">
@@ -471,23 +524,19 @@ const MultiplayerGame = () => {
                                 {isCurrentPlayer && <span className="you-badge">(You)</span>}
                                 {player.isHost && <span className="host-badge">👑</span>}
                               </span>
-                            </div>
-                          </td>
+                            </div>                          </td>
                           <td className="call-cell">
                             <span className="call-value">{player.call}</span>
-                          </td>
-                          <td className="made-cell">
-                            {canPlayerReport ? (
-                              <NumberPicker
-                                value={player.made || 0}
-                                onChange={(tricks) => colyseusService.makeTricks(tricks)}
+                          </td>                          <td className="made-cell">
+                            {isCurrentUserHost ? (
+                              <NumberPicker                                value={player.made || 0}
+                                onChange={(tricks) => colyseusService.makeTricks(tricks, player.playerId, true)}
                                 min={0}
                                 max={currentRound}
-                                title={`Round ${currentRound} - Report your tricks`}
+                                title={`Round ${currentRound} - Report tricks for ${player.name || player.playerName}`}
                               />
                             ) : (
-                              <span className="made-value">
-                                {player.made !== undefined && player.made !== null ? player.made : '-'}
+                              <span className="made-value">                                {player.made !== undefined && player.made !== null ? player.made : '-'}
                               </span>
                             )}
                           </td>
@@ -570,7 +619,7 @@ const MultiplayerGame = () => {
         {gameState.rounds && gameState.rounds.length > 0 && phase !== 'waiting' && (
           <div className="scores-section">
             <h3>Game History</h3>
-            <div className="scores-table">
+            <div className="score-table">
               <table>
                 <thead>
                   <tr>
@@ -585,9 +634,9 @@ const MultiplayerGame = () => {
                     <tr key={round.roundNumber}>
                       <td>Round {round.roundNumber}</td>
                       {players.map(player => {
-                        const playerCall = round.calls?.get?.(player.playerId) ?? '-';
-                        const playerTricks = round.tricks?.get?.(player.playerId) ?? '-';
-                        const playerScore = round.scores?.get?.(player.playerId) ?? '-';
+                        const playerCall = round.calls?.get?.(player.playerId) ?? '';
+                        const playerTricks = round.tricks?.get?.(player.playerId) ?? '';
+                        const playerScore = round.scores?.get?.(player.playerId) ?? '';
                         
                         return (
                           <td key={player.playerId}>
