@@ -55,23 +55,11 @@
     margin-bottom: var(--spacing-md);
   }
   
-  /* .player-list {
-    list-style: none;
-    margin-bottom: var(--spacing-lg);
-  } */
-  
-  .player-item button {
-    margin-left: var(--spacing-sm);
-  }
-  
   /* === Add/Edit Player Form === */
   .add-player-form {
     background-color: var(--card-background-alt);
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-  }
-  
   .add-player-form input {
     width: 100%;
     padding: var(--spacing-sm);
@@ -110,7 +98,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 900vh;
+    height: 90vh;
     background-color: var(--background-color);
   }
 

@@ -16,25 +16,13 @@ export function GameStateProvider({ children }) {
 
   // Add a player to the game
   const addPlayer = useCallback((index) => {
-    console.log("Adding player:", index)
-    console.log("Gamestate",gameState)
     const player = {id: index, name: "Player" + index}
 
     setGameState((prevState) => ({
       ...prevState,
       players: [...prevState.players, player],
     }))
-    console.log("Game state after adding player use State:", gameState)
-  }, [gameState])
-
-  // const setPlayerName = useCallback((player)=> {
-  //   console.log("called setPlayerName with player:", player)
-  //   setGameState((prevState) => ({
-  //     ...prevState,
-  //     players: [...prevState.players, player],
-  //   }))
-  //   console.log("Game state after changing name:", gameState)
-  // })
+  }, [])
 
   // Remove a player from the game
   const removePlayer = useCallback((playerId) => {
