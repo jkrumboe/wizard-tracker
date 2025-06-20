@@ -142,7 +142,8 @@ const GameDetails = () => {
 
       <div className="game-summary">
         <div className="winner-section">
-          <h2>Winner</h2>          {playerDetails[game.winner_id] && (
+          <h2>Winner</h2>
+          {playerDetails[game.winner_id] && (
             <div className="winner-card">
               <img
                 src={playerDetails[game.winner_id].avatar || defaultAvatar}

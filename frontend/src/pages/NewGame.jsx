@@ -2,67 +2,31 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { usePlayers } from "../hooks/usePlayers"
 import { useGameStateContext } from "../hooks/useGameState"
-import { searchPlayersByTag } from "../services/playerService"
-import SearchBar from "../components/SearchBar"
 import NumberPicker from "../components/NumberPicker"
-import defaultAvatar from "../assets/default-avatar.png";
 
-const NewGame = () => {
-  const navigate = useNavigate()
-  const { players, loading, tags } = usePlayers()
-  const { gameState, addPlayer, removePlayer, startGame, setMaxRounds, setMode } = useGameStateContext()
+const NewGame = () => {  const navigate = useNavigate()
+  // const { players, loading } = usePlayers()
+  const { gameState, addPlayer, removePlayer, updatePlayerName, startGame, setMaxRounds, setMode } = useGameStateContext()
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filteredPlayers, setFilteredPlayers] = useState([])
-  const [showSearch, setShowSearch] = useState(false)
+  const [index, setIndex] = useState(1)
 
-  useEffect(() => {
-    setSearchQuery(""); // Clear the search query
-    setFilteredPlayers([]); // Clear the filtered players
-    setShowSearch(false); // Hide the search results
-  }, [gameState.gameFinished]); // Trigger reset when the game is finished
-
-  useEffect(() => {
-    if (players.length > 0) {
-      const filtered = players.filter(
-        (player) =>
-          !gameState.players.some((p) => p.id === player.id) &&
-          (player.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-      setFilteredPlayers(filtered)
-    }
-  }, [players, tags, searchQuery, gameState.players])
-
-  const handleTagClick = async (tag) => {
-    if(tag === searchQuery) {
-      setSearchQuery("")
-      setShowSearch(false)
-      return
-    }
-    setSearchQuery(tag)
-    setShowSearch(true)
-    try {
-      const data = await searchPlayersByTag(tag)
-      setFilteredPlayers(data)
-    } catch (error) {
-      console.error("Error fetching players by tag:", error)
-    }
+  const handleAddPlayer = () => {
+    setIndex(index + 1)
+    console.log("Index inside handleAddPlayer", index)
+    gameState.players.push({ id: index, name: `Player ${index}` })
+    console.log(gameState.players)
+    // addPlayer(index) 
   }
 
-  const handleSearch = (query) => {
-    setSearchQuery(query)
-    setShowSearch(query.length > 0)
-  }
-
-  const handleAddPlayer = (player) => {
-    addPlayer(player)
-    setSearchQuery("")
-    setShowSearch(false)
+  const handlePlayerNameChange = (playerId, e) => {
+    const newName = e.target.value
+    updatePlayerName(playerId, newName)
   }
 
   const handleRemovePlayer = (playerId) => {
+    setIndex(index - 1)
+
     removePlayer(playerId)
   }
 
@@ -76,91 +40,54 @@ const NewGame = () => {
   }
 
   // console.log("Players:", players)
-  // console.log("Tags:", tags)
-  // console.log("Filtered Players:", filteredPlayers)
+  console.log("index", index)
 
-  if (loading) {
-    return <div className="loading">Loading players...</div>
-  }
+  // if (loading) {
+  //   return <div className="loading">Loading players...</div>
+  // }
 
   return (
     <div className="new-game-container">
       <h1>New Game</h1>
 
       <div className="setup-section">
-        <h2>Select Players</h2>
-        <div className="tags-list">
-          {tags
-            .filter(tag => !tag.name.startsWith("Top "))
-            .filter(tag => !tag.name.includes("Ranked"))
-            .filter(tag => !tag.name.includes("Casual"))
-            .map(tag => (
-              <span key={tag.id} className="tag" onClick={() => handleTagClick(tag.name)}>
-                {tag.name}
-              </span>
-          ))}
-        </div>
+        <h2>Add Players</h2>
 
-        <div className="player-search">
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="Search players..."
-            value={searchQuery}
-          />
-          {showSearch && filteredPlayers.length > 0 && (
-            <div className="search-results">
-              {filteredPlayers.map((player) => (
-                <div key={player.id} className="player-result" onClick={() => handleAddPlayer(player)}>
-                  <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
-                  <span>{player.name}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {showSearch && filteredPlayers.length === 0 && (
-            <div className="search-results">
-              <div className="no-results">No players found</div>
-            </div>
-          )}
-        </div>
-
+        {/*Adding Players*/}
         <div className="selected-players">
-          <h3>Selected Players ({gameState.players.length})</h3>
-          {gameState.players.length === 0 ? (
-            <div className="no-players">No players selected yet</div>
-          ) : (
-            <div className="player-list">
-              {gameState.players.map((player) => (
-                <div key={player.id} className="player-item">
-                  <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
-                  <span>{player.name}</span>
-                  <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+
+          <div className="player-list">
+            {gameState.players.map((player) => (
+              <div key={player.id} className="player-item">
+                <span>{player.id}</span>
+                <input 
+                  className="inputPlayerName" 
+                  value={player.name} 
+                  inputMode="text" 
+                  onChange={(e) => handlePlayerNameChange(player.id, e)}
+                />
+                <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
-            <div className="setting-item">
-              <div>
-                <span>Number of Rounds:</span>
-                <NumberPicker
-                  value={gameState.maxRounds}
-                  onChange={handleMaxRoundsChange}
-                  min={1}
-                  max={20}
-                  title="Select Number of Rounds"
-                />
-              </div>
-
-              <select value={gameState.mode} onChange={(e) => setMode(e.target.value)}>
-                <option value="Casual">Casual</option>
-                <option value="Ranked">Ranked</option>
-              </select>
-            </div>
-      </div>
+        <button className="addPlayer" onClick={handleAddPlayer}>
+          +
+        </button>
+        <div className="setting-item">
+            <span>Number of Rounds:</span>
+            <NumberPicker
+              value={gameState.maxRounds}
+              onChange={handleMaxRoundsChange}
+              min={1}
+              max={20}
+              title="Select Number of Rounds"
+            />
+        </div>
+    </div>
 
       <button className="start-game-btn" disabled={gameState.players.length < 2} onClick={handleStartGame}>
         Start Game

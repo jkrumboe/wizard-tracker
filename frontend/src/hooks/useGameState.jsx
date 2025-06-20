@@ -15,12 +15,26 @@ export function GameStateProvider({ children }) {
   })
 
   // Add a player to the game
-  const addPlayer = useCallback((player) => {
+  const addPlayer = useCallback((index) => {
+    console.log("Adding player:", index)
+    console.log("Gamestate",gameState)
+    const player = {id: index, name: "Player" + index}
+
     setGameState((prevState) => ({
       ...prevState,
       players: [...prevState.players, player],
     }))
-  }, [])
+    console.log("Game state after adding player use State:", gameState)
+  }, [gameState])
+
+  // const setPlayerName = useCallback((player)=> {
+  //   console.log("called setPlayerName with player:", player)
+  //   setGameState((prevState) => ({
+  //     ...prevState,
+  //     players: [...prevState.players, player],
+  //   }))
+  //   console.log("Game state after changing name:", gameState)
+  // })
 
   // Remove a player from the game
   const removePlayer = useCallback((playerId) => {
@@ -28,6 +42,20 @@ export function GameStateProvider({ children }) {
       ...prevState,
       players: prevState.players.filter((p) => p.id !== playerId),
     }))
+  }, [])
+
+  // Update player's name
+  const updatePlayerName = useCallback((playerId, newName) => {
+    setGameState((prevState) => {
+      const updatedPlayers = prevState.players.map(player => 
+        player.id === playerId ? { ...player, name: newName } : player
+      );
+      
+      return {
+        ...prevState,
+        players: updatedPlayers,
+      };
+    });
   }, [])
 
   // Start a new game
@@ -236,6 +264,7 @@ export function GameStateProvider({ children }) {
         resetGame,
         setMaxRounds,
         setMode,
+        updatePlayerName,
       }}
     >
       {children}
