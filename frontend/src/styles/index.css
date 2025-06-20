@@ -227,6 +227,18 @@ button:disabled {
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* Main container for content with spacing for fixed navigation */
+.main-container {
+  padding-top: 70px; /* Space for top navbar */
+  padding-bottom: 70px; /* Space for bottom navbar */
+  min-height: 100vh;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
 /* Navbar styles */
 .navbar {
   background-color: var(--card-background);

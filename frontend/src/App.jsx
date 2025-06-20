@@ -49,39 +49,44 @@ function ProtectedRoute({ children, roles }) {
   return children;
 }
 
-function App() {
-  useEffect(() => {
+function App() {  useEffect(() => {
     // Register service worker for PWA functionality
     register()
     
     // Initialize authentication service
     authService.initialize()
-  }, [])
+  }, []);
+  
   return (
     <Router>
       <UserProvider>
         <GameStateProvider>
           <Navbar />
-          <Routes>            <Route path="/" element={<Home />} />
-            <Route path="/profile/:id" element={<Profile />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/stats/:id" element={<Stats />} />
-            <Route path="/new-game" element={<NewGame />} />
-            <Route path="/game/:id" element={<GameDetails />} />
-            <Route path="/game/current" element={<GameInProgress />} />            <Route path="/lobby" element={<Lobby />} />
-            <Route path="/multiplayer/:roomId" element={<MultiplayerGame />} />
-            <Route path="/multiplayer/new" element={<MultiplayerGame />} />
-            {/* <Route path="/test-multiplayer" element={<TestMultiplayer />} /> */}
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute roles={["admin"]}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <div className="main-container">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile/:id" element={<Profile />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/stats/:id" element={<Stats />} />
+              <Route path="/new-game" element={<NewGame />} />
+              <Route path="/game/:id" element={<GameDetails />} />
+              <Route path="/game/current" element={<GameInProgress />} />
+              <Route path="/lobby" element={<Lobby />} />
+              <Route path="/multiplayer/:roomId" element={<MultiplayerGame />} />
+              <Route path="/multiplayer/new" element={<MultiplayerGame />} />
+              {/* <Route path="/test-multiplayer" element={<TestMultiplayer />} /> */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/settings" element={<Home />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </div>
         </GameStateProvider>
       </UserProvider>
     </Router>

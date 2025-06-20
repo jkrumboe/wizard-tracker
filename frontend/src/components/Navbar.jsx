@@ -1,97 +1,58 @@
 "use client"
 
-import { useState } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { useLocation } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useUser } from '../hooks/useUser'
-import authService from '../services/authService'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
-const Navbar = () => {  const [isOpen, setIsOpen] = useState(false)
+const Navbar = () => {
   const { user, player } = useUser()
   const location = useLocation()
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen)
-  }
-
-  const closeMenu = () => {
-    setIsOpen(false)
-  }
-
   const isActive = (path) => {
-    return location.pathname === path ? "active" : ""
+    if (typeof path === 'string') {
+      return location.pathname === path ? "active" : ""
+    } else if (Array.isArray(path)) {
+      return path.some(p => location.pathname.startsWith(p)) ? "active" : ""
+    }
+    return ""
   }
-  const handleLogout = () => {
-    authService.logout();
-  };
-
-  // console.log("Player:", player); // Debugging line
 
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo" onClick={closeMenu}>
+    <>
+      <div className="top-navbar">
+        <Link to="/" className="navbar-logo">
           Wizard Tracker
-        </Link>       
-
-        <div className="profile-icon" onClick={toggleMenu}>
+        </Link>
+        
+        <Link to={user ? `/profile/${user?.player_id}` : "/login"} className="profile-icon">
           <img
             src={player?.avatar || defaultAvatar}
             alt="Profile"
             className="profile-avatar"
           />
-        </div>
+        </Link>
       </div>
-      <ul className={`nav-menu ${isOpen ? "active" : ""}`}>
-        <li className="nav-item">
-          <Link to="/" className={`nav-link ${isActive("/")}`} onClick={closeMenu}>
-            Home
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link to="/leaderboard" className={`nav-link ${isActive("/leaderboard")}`} onClick={closeMenu}>
-            Leaderboard
-          </Link>
-        </li>
-        <li className="nav-item">
-          <Link to="/new-game" className={`nav-link ${isActive("/new-game")}`} onClick={closeMenu}>
-            New Game
-          </Link>
-        </li>        <li className="nav-item">
-          <Link to="/lobby" className={`nav-link ${isActive("/lobby")}`} onClick={closeMenu}>
-            Multiplayer Lobby
-          </Link>
-        </li>
-        {/* <li className="nav-item">
-          <Link to="/test-multiplayer" className={`nav-link ${isActive("/test-multiplayer")}`} onClick={closeMenu}>
-            🧪 Test Multiplayer
-          </Link>
-        </li> */}
-        {user ? (
-          <>
-          <li className="nav-item">
-            <Link to={`/profile/${user?.player_id}`} className={`nav-link ${isActive("/profile")}`} onClick={closeMenu}>
-              Profile
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link className="nav-link" id="logout" onClick={handleLogout}>
-              Logout
-            </Link>
-          </li>
-            </>
-        ) : (
-          <li className="nav-item">
-            <Link to="/login" className={`nav-link ${isActive("/login")}`} onClick={closeMenu}>
-              Login
-            </Link>
-          </li>
-        )}
-      </ul>
-    </nav>
-  )
-}
+      
+      <nav className="bottom-navbar">
+        <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard")}`}>
+          <div className="nav-icon">🏆</div>
+          <span>Leaderboard</span>
+        </Link>
+        
+        <Link to="/new-game" className={`bottom-nav-item ${isActive(["/new-game", "/game", "/lobby", "/multiplayer"])}`}>
+          <div className="nav-icon">🎮</div>
+          <span>Play</span>
+        </Link>
+        
+        <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
+          <div className="nav-icon">⚙️</div>
+          <span>Settings</span>
+        </Link>
+      </nav>
+    </>
+  );
+};
 
-export default Navbar
-
+export default Navbar;
