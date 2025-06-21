@@ -315,13 +315,6 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.round-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  font-size: 0.9em;
-}
-
 .player-actions {
   padding-top: var(--spacing-sm);
 }
@@ -484,33 +477,33 @@
   position: relative;
 }
 
-.player-row:hover {
+/* .player-row:hover {
   background-color: var(--card-background-light);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+} */
 
 .player-row:last-child td {
   border-bottom: none;
 }
 
-.player-row.player-turn {
+/* .player-row.player-turn {
   background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, var(--card-background-light) 100%);
   border-left: 4px solid var(--primary-color);
   animation: gentle-pulse 3s ease-in-out infinite;
-}
+} */
 
-.player-row.player-turn:hover {
+/* .player-row.player-turn:hover {
   background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, var(--card-background-light) 100%);
-}
+} */
 
-@keyframes gentle-pulse {
+/* @keyframes gentle-pulse {
   0%, 100% {
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
   }
   50% {
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
   }
-}
+} */
 
 .player-info {
   display: flex;
@@ -670,18 +663,6 @@
   border: 2px solid rgba(59, 130, 246, 0.2);
 }
 
-.positive-score {
-  color: var(--success-color);
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-.negative-score {
-  color: var(--error-color);
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
 /* Score container to display round points and total points together */
 .score-container {
   display: flex;
@@ -744,6 +725,7 @@
   border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
   font-weight: 500;
+  font-size: 1rem;
 }
 
 .total-calls {
@@ -1008,8 +990,8 @@
   
   /* Improve touch targets */
   .number-display {
-    min-height: 48px;
-    min-width: 48px;
+    min-height: 42px;
+    min-width: 42px;
   }
   
   .call-section,

@@ -3,8 +3,9 @@
   margin: 0 auto;
   padding: var(--spacing-lg);
   background-color: var(--background-color);
-  min-height: 90vh;
+  min-height: 80vh;
   color: var(--text-color);
+  margin-top: 2vh;
 }
 
 .lobby-header {
@@ -101,7 +102,7 @@
   display: flex;
   justify-content: center;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  /* margin-bottom: var(--spacing-lg); */
   flex-wrap: wrap;
 }
 
@@ -155,7 +156,7 @@
 .lobby-sections {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--spacing-xxl);
+  gap: var(--spacing-xl);
   margin-top: var(--spacing-lg);
 }
 

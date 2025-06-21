@@ -5,7 +5,6 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import NumberPicker from "../components/NumberPicker"
-import defaultAvatar from "../assets/default-avatar.png";
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -36,14 +35,26 @@ const GameInProgress = () => {
   // Add a section to display stats for the current game
   const calculateCurrentGameStats = () => {
     const currentPlayers = currentRound?.players || [];
+    const allRoundsData = gameState.roundData.slice(0, currentRoundIndex + 1);
 
     return currentPlayers.map((player) => {
-      const totalBids = currentRoundIndex + 1; // Total rounds so far
-      const totalTricks = currentRoundIndex + 1; // Total rounds so far
-
-      const bidAccuracy = ((player.call === player.made ? 1 : 0) / totalBids) * 100;
-      const avgBid = player.call / totalBids;
-      const avgTricks = player.made / totalTricks;
+      let correctBids = 0;
+      let totalBids = 0;
+      let totalTricks = 0;
+      
+      allRoundsData.forEach(round => {
+        const roundPlayer = round.players.find(p => p.id === player.id);
+        if (roundPlayer && roundPlayer.call !== null && roundPlayer.made !== null) {
+          totalBids += roundPlayer.call;
+          totalTricks += roundPlayer.made;
+          if (roundPlayer.call === roundPlayer.made) correctBids++;
+        }
+      });
+      
+      const roundsPlayed = allRoundsData.length;
+      const bidAccuracy = roundsPlayed > 0 ? (correctBids / roundsPlayed) * 100 : 0;
+      const avgBid = roundsPlayed > 0 ? totalBids / roundsPlayed : 0;
+      const avgTricks = roundsPlayed > 0 ? totalTricks / roundsPlayed : 0;
 
       return {
         id: player.id,
@@ -54,7 +65,6 @@ const GameInProgress = () => {
       };
     });
   };
-
   const currentGameStats = calculateCurrentGameStats();
 
   const totalCalls = currentRound.players.reduce((sum, player) => sum + (player.call || 0), 0);
@@ -82,9 +92,7 @@ const GameInProgress = () => {
       <div className="round-navigation">
         <button className="nav-btn" onClick={previousRound} disabled={isFirstRound}>
           Previous Round
-        </button>
-        <div className="round-display">Round {gameState.currentRound}</div>
-        <button className="nav-btn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
+        </button><button className="nav-btn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
           Next Round
         </button>
       </div>
@@ -109,35 +117,49 @@ const GameInProgress = () => {
                     if (!e.target.closest(".number-picker")) {
                       togglePlayerStats(player.id);
                     }
-                  }}
-                >
-                  <td className="player-cell">
-                    {player.name}
-                  </td>
-                  <td>
-                    <NumberPicker
-                      value={player.call !== null ? player.call : 0}
-                      onChange={(value) => updateCall(player.id, value)}
-                      min={0}
-                      max={currentRound.cards + 1}
-                      title={`${player.name}'s Call`}
-                    />
-                  </td>
-                  <td>
-                    <NumberPicker
-                      value={player.made !== null ? player.made : 0}
-                      onChange={(value) => updateMade(player.id, value)}
-                      min={0}
-                      max={currentRound.cards + 1}
-                      title={`${player.name}'s Tricks Made`}
-                      disabled={player.call === null }
-                    />
-                  </td>
-                  <td className={player.score > 0 ? "positive-score" : player.score < 0 ? "negative-score" : ""}>
-                    {player.totalScore !== null ? player.totalScore : "-"}
-                    {player.score !== null ? player.score : "-"}
-                  </td>
-                  {/* <td>{player.totalScore !== null ? player.totalScore : "-"}</td> */}
+                  }}>
+                    <td className="player-cell">
+                      {player.name}
+                      </td>
+                      <td>
+                      <NumberPicker
+                        value={player.call !== null ? player.call : 0}
+                        onChange={(value) => updateCall(player.id, value)}
+                        min={0}
+                        max={currentRound.cards + 1}
+                        title={`${player.name}'s Call`}
+                      />
+                      </td>
+                      <td>
+                      <NumberPicker
+                        value={player.made !== null ? player.made : 0}
+                        onChange={(value) => updateMade(player.id, value)}
+                        min={0}
+                        max={currentRound.cards + 1}
+                        title={`${player.name}'s Tricks Made`}
+                        disabled={player.call === null }
+                      />
+                      </td>
+                      <td>
+                      <div className="score">
+                        {player.totalScore !== null ? (
+                        <span className="total-score">{player.totalScore}</span>
+                        ) : (
+                        "-"
+                        )}
+                        {player.score !== null && player.score !== 0 && (
+                        <span
+                          className={
+                          player.score > 0
+                            ? "round-score positive"
+                            : "round-score negative"
+                          }
+                        >
+                          {player.score > 0 ? `+${player.score}` : player.score}
+                        </span>
+                        )}
+                      </div>
+                    </td>
                 </tr>
                 {selectedPlayerId === player.id && (
                   <tr className="player-stats-row">

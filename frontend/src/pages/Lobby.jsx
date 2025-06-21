@@ -203,27 +203,7 @@ const Lobby = () => {
 
   return (
     <div className="lobby-container">
-      <header className="lobby-header">
-        <div className="lobby-stats">
-          <span className="online-count">
-            {typeof onlinePlayers.length === 'number' ? onlinePlayers.length : 0} Players Online
-          </span>
-          <span className="room-count">
-            {typeof availableRooms.length === 'number' ? availableRooms.length : 0} Games Available
-          </span>
-        </div>
-      </header>
-
       <div className="lobby-content">
-        <div className="lobby-actions">
-          <button 
-            className="create-game-btn primary-button"
-            onClick={() => setShowCreateModal(true)}
-          >
-            Create New Game
-          </button>
-        </div>
-
         <div className="lobby-sections">
           <section className="available-rooms">
             <h2>Available Games</h2>
@@ -232,7 +212,6 @@ const Lobby = () => {
                 <p>No Games Available. Why Not Create One?</p>
               </div>
             ) : (
-              
               <div className="rooms-list">
                 {availableRooms.map((room) => (
                   <div key={room.room_id || room.roomId} className="room-card">
@@ -267,7 +246,17 @@ const Lobby = () => {
                 ))}
               </div>
             )}
+            
           </section>
+          
+          <div className="lobby-actions">
+          <button 
+            className="create-game-btn primary-button"
+            onClick={() => setShowCreateModal(true)}
+          >
+            Create New Game
+          </button>
+        </div>
 
           <section className="online-players">
             <h2>Online Players</h2>            
