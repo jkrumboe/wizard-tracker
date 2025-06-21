@@ -51,7 +51,7 @@ const Home = () => {
       <div className="action-buttons">
         <Link to="/new-game" className="btn btn-primary">New Game</Link>
         <Link to="/lobby" className="btn btn-primary">Multiplayer Lobby</Link>
-        <Link to="/leaderboard" className="btn btn-secondary">Leaderboard</Link>      </div>
+      </div>
       
       <section className="recent-games">
         <h2>Recent Games</h2>
