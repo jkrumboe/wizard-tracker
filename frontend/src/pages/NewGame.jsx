@@ -1,22 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import NumberPicker from "../components/NumberPicker"
 
-const NewGame = () => {  const navigate = useNavigate()
+const NewGame = () => {
+  
+  const navigate = useNavigate()
   // const { players, loading } = usePlayers()
-  const { gameState, addPlayer, removePlayer, updatePlayerName, startGame, setMaxRounds, setMode } = useGameStateContext()
+  const { gameState, addPlayer, removePlayer, updatePlayerName, startGame, setMaxRounds } = useGameStateContext()
 
   const [index, setIndex] = useState(1)
 
   const handleAddPlayer = () => {
     setIndex(index + 1)
-    console.log("Index inside handleAddPlayer", index)
-    gameState.players.push({ id: index, name: `Player ${index}` })
-    console.log(gameState.players)
-    // addPlayer(index) 
+    addPlayer(index) 
   }
 
   const handlePlayerNameChange = (playerId, e) => {
@@ -26,7 +25,6 @@ const NewGame = () => {  const navigate = useNavigate()
 
   const handleRemovePlayer = (playerId) => {
     setIndex(index - 1)
-
     removePlayer(playerId)
   }
 
@@ -38,9 +36,6 @@ const NewGame = () => {  const navigate = useNavigate()
   const handleMaxRoundsChange = (value) => {
     setMaxRounds(value)
   }
-
-  // console.log("Players:", players)
-  console.log("index", index)
 
   // if (loading) {
   //   return <div className="loading">Loading players...</div>
@@ -77,6 +72,7 @@ const NewGame = () => {  const navigate = useNavigate()
         <button className="addPlayer" onClick={handleAddPlayer}>
           +
         </button>
+        
         <div className="setting-item">
             <span>Number of Rounds:</span>
             <NumberPicker
@@ -92,8 +88,8 @@ const NewGame = () => {  const navigate = useNavigate()
       <button className="start-game-btn" disabled={gameState.players.length < 2} onClick={handleStartGame}>
         Start Game
       </button>
-      {gameState.players.length < 2 && (
-        <div className="error-message">At least 2 players are required to start a game</div>
+      {gameState.players.length < 3 && (
+        <div className="error-message">At least 3 players are required to start a game</div>
       )}
     </div>
   )

@@ -16,8 +16,7 @@ export function GameStateProvider({ children }) {
 
   // Add a player to the game
   const addPlayer = useCallback((index) => {
-    const player = {id: index, name: "Player" + index}
-
+    const player = {id: index, name: "Player " + index}
     setGameState((prevState) => ({
       ...prevState,
       players: [...prevState.players, player],

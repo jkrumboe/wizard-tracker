@@ -97,7 +97,6 @@ const GameInProgress = () => {
               <th>Call</th>
               <th>Made</th>
               <th>Score</th>
-              <th>Total</th>
             </tr>
           </thead>
           {/* Modify the player row to include stats and handle click events */}
@@ -113,13 +112,6 @@ const GameInProgress = () => {
                   }}
                 >
                   <td className="player-cell">
-                    <img
-                      src={
-                        gameState.players.find((p) => p.id === player.id)?.avatar || defaultAvatar
-                      }
-                      alt={player.name}
-                      className="player-avatar"
-                    />
                     {player.name}
                   </td>
                   <td>
@@ -142,9 +134,10 @@ const GameInProgress = () => {
                     />
                   </td>
                   <td className={player.score > 0 ? "positive-score" : player.score < 0 ? "negative-score" : ""}>
+                    {player.totalScore !== null ? player.totalScore : "-"}
                     {player.score !== null ? player.score : "-"}
                   </td>
-                  <td>{player.totalScore !== null ? player.totalScore : "-"}</td>
+                  {/* <td>{player.totalScore !== null ? player.totalScore : "-"}</td> */}
                 </tr>
                 {selectedPlayerId === player.id && (
                   <tr className="player-stats-row">
