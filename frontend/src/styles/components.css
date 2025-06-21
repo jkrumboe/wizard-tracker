@@ -35,9 +35,9 @@
   
   .player-name {
     font-weight: 700;
-    margin-bottom: var(--spacing-sm);
-    color: var(--primary-light);
+    color: var(--text-color);
     font-size: 1.1rem;
+    align-items: center;
   }
   
   .stat {
@@ -1237,8 +1237,9 @@
     border: 1px solid var(--border-color);
     font-weight: 600;
     gap: var(--spacing-sm);
-    width: 80%;
   }
+
+
   
   .player-item span {
     min-width: 30px;
@@ -1591,13 +1592,6 @@
     height: 40px;
     border-radius: var(--radius-full);
     border: 2px solid var(--primary-light);
-  }
-
-  .player-name {
-    font-weight: 600;
-    align-items: center;
-    color: var(--text-color);
-    margin-bottom: 0; /* Reset any default margin */
   }
 
   .sorted {
