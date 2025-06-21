@@ -14,30 +14,48 @@ const GameDetails = () => {
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('finalResults')
+  
   useEffect(() => {
     const fetchGameData = async () => {
       try {
         setLoading(true)
-        const gameData = await getGameById(Number.parseInt(id))
+        const gameData = await getGameById(id)
+        
+        if (!gameData) {
+          throw new Error("Game not found")
+        }
+        
         setGame(gameData)
 
-        // Fetch player details using new schema field names
-        const playerIds = gameData.player_ids || []
-        const playerPromises = playerIds.map((playerId) => getPlayerById(playerId))
-        const players = await Promise.all(playerPromises)
+        // Handle player details differently based on game type
+        let playerMap = {}
 
-        const playerMap = {}
-        players.forEach((player) => {
-          if (player) {
-            playerMap[player.id] = player
-          }
-        })
+        // For local games, player data is already included in the game object
+        if (gameData.is_local && gameData.players) {
+          gameData.players.forEach((player) => {
+            if (player) {
+              playerMap[player.id] = player
+            }
+          })
+        } 
+        // For server games, fetch player details from the API
+        else {
+          const playerIds = gameData.player_ids || []
+          const playerPromises = playerIds.map((playerId) => getPlayerById(playerId))
+          const players = await Promise.all(playerPromises)
+          
+          players.forEach((player) => {
+            if (player) {
+              playerMap[player.id] = player
+            }
+          })
+        }
 
         setPlayerDetails(playerMap)
         setLoading(false)
       } catch (err) {
         console.error("Error fetching game details:", err)
-        setError("Failed to load game details")
+        setError("Failed to load game details: " + err.message)
         setLoading(false)
       }
     }
@@ -52,6 +70,7 @@ const GameDetails = () => {
   if (error || !game) {
     return <div className="error">{error || "Game not found"}</div>
   }
+  
   // Sort players by score (highest first)
   const sortedPlayers = Object.entries(game.final_scores || {})
     .map(([playerId, score]) => ({
@@ -107,10 +126,6 @@ const GameDetails = () => {
     return stats;
   }
   const playerStats = calculatePlayerStats(game);
-  // console.log("Game Stats:", playerStats)
-  // console.log("Player Details:", playerDetails)
-  // console.log("Game Data:", game)
-  // console.log("Game Data Rounds:", game.rounds)
 
   const formattedDate = new Date(game.created_at).toLocaleDateString("en-US", {
     year: "numeric",
@@ -134,10 +149,10 @@ const GameDetails = () => {
         <Link to="/" className="back-link">
           ← Back to Home
         </Link>
-        <h1>Game Details</h1>
+        <h1>Game Details {game.is_local && <span className="mode-badge local">Local</span>}</h1>
         
-        <div className=".game-date">Finished: {formattedDate}</div>
-        <div className=".game-date">Duration: {duration}</div>
+        <div className="game-date">Finished: {formattedDate}</div>
+        <div className="game-date">Duration: {duration}</div>
       </div>
 
       <div className="game-summary">
@@ -208,10 +223,17 @@ const GameDetails = () => {
                 <div key={player.id} className="results-row">
                   <div className="rank-col">{index + 1}</div>
                   <div className="player-col">
-                    <Link to={`/profile/${player.id}`} className="player-link">
-                      <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
-                      <span>{player.name}</span>
-                    </Link>
+                    {game.is_local ? (
+                      <div className="player-info">
+                        <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
+                        <span>{player.name}</span>
+                      </div>
+                    ) : (
+                      <Link to={`/profile/${player.id}`} className="player-link">
+                        <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
+                        <span>{player.name}</span>
+                      </Link>
+                    )}
                   </div>
                   <div className="score-col">{player.score}</div>
                   <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>

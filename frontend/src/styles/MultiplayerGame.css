@@ -475,35 +475,12 @@
   cursor: pointer;
   background-color: var(--card-background);
   position: relative;
+  padding: var(--spacing-md);
 }
-
-/* .player-row:hover {
-  background-color: var(--card-background-light);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-} */
 
 .player-row:last-child td {
   border-bottom: none;
 }
-
-/* .player-row.player-turn {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, var(--card-background-light) 100%);
-  border-left: 4px solid var(--primary-color);
-  animation: gentle-pulse 3s ease-in-out infinite;
-} */
-
-/* .player-row.player-turn:hover {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, var(--card-background-light) 100%);
-} */
-
-/* @keyframes gentle-pulse {
-  0%, 100% {
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
-  }
-  50% {
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-  }
-} */
 
 .player-info {
   display: flex;

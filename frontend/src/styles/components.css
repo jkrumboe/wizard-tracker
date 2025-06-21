@@ -265,6 +265,20 @@
     background-color: var(--primary-color);
   }
   
+  .mode-badge.local {
+    background-color: var(--success-color);
+  }
+  
+  /* Game Details page local badge */
+  .game-details-header .mode-badge.local {
+    position: relative;
+    display: inline-block;
+    margin-left: var(--spacing-md);
+    vertical-align: middle;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+  }
+  
   
   /* SearchBar Component */
   .search-bar {
@@ -624,6 +638,7 @@
   
   .stats-graph,
   .recent-games {
+    margin-top: var(--spacing-lg);
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
@@ -1430,7 +1445,6 @@
   }
   
   .score-table td {
-    padding: var(--spacing-xs) var(--spacing-xs);
     text-align: center;
   }
   
@@ -1471,7 +1485,6 @@
   
   .round-score {
     font-size: 0.8em;
-    margin-right: var(--spacing-sm);
   }
   
   .finish-btn {

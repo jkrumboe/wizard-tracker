@@ -4,11 +4,20 @@ import { getPlayerById } from "../services/playerService";
 
 const GameHistoryItem = ({ game }) => {
   const [playerDetails, setPlayerDetails] = useState({});
-
+  
   useEffect(() => {
     const fetchPlayerDetails = async () => {
       try {
-        if (game && game.player_ids) {
+        // If it's a local game with full player data already included
+        if (game && game.is_local && game.players) {
+          const playerMap = {};
+          game.players.forEach((player) => {
+            playerMap[player.id] = player;
+          });
+          setPlayerDetails(playerMap);
+        } 
+        // Otherwise fetch from the server for online games
+        else if (game && game.player_ids) {
           const playerPromises = game.player_ids.map((playerId) =>
             getPlayerById(playerId)
           );
@@ -44,7 +53,6 @@ const GameHistoryItem = ({ game }) => {
 
   return (
     <div className="game-card">
-
       <div className="game-date">Finished: {formattedDate}</div>
       <div className="game-rounds">Rounds: {total_rounds}</div>
       <div className="game-winner">
@@ -52,22 +60,23 @@ const GameHistoryItem = ({ game }) => {
       </div>
       <div className="game-players">
         Players:{" "}
-        {Array.isArray(player_ids)
-          ? player_ids
-              .map(
-                (playerId) =>
-                  playerDetails[playerId]?.name || "Unknown Player"
-              )
-              .join(", ")
-          : "No players"}
+        {game.is_local && game.players
+          ? game.players.map(player => player.name || "Unknown Player").join(", ")
+          : Array.isArray(player_ids)
+            ? player_ids
+                .map(
+                  (playerId) =>
+                    playerDetails[playerId]?.name || "Unknown Player"
+                )
+                .join(", ")
+            : "No players"}
       </div>
       <Link to={`/game/${id}`} className="game-details">
         View Details
       </Link>
-      <span className={`mode-badge ${game_mode.toLowerCase()}`}>
-        {game_mode}
+      <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>
+        {game_mode || 'Local'}
       </span>
-
     </div>
   );
 };

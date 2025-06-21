@@ -75,6 +75,8 @@ const GameInProgress = () => {
     setSelectedPlayerId((prev) => (prev === playerId ? null : playerId));
   };
 
+  console.log("Current Round:", currentRound);
+
   return (
     <div className="game-in-progress">
       <div className="game-header">
@@ -140,13 +142,10 @@ const GameInProgress = () => {
                         disabled={player.call === null }
                       />
                       </td>
-                      <td>
-                      <div className="score">
-                        {player.totalScore !== null ? (
-                        <span className="total-score">{player.totalScore}</span>
-                        ) : (
-                        "-"
-                        )}
+                      <td>                      <div className="score">
+                        <span className="total-score">
+                          {player.totalScore !== null ? player.totalScore : 0}
+                        </span>
                         {player.score !== null && player.score !== 0 && (
                         <span
                           className={

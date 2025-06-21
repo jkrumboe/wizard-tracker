@@ -1,17 +1,18 @@
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { createGame } from "../services/gameService"
 
+const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
 
-export function GameStateProvider({ children }) {
-  const [gameState, setGameState] = useState({
+export function GameStateProvider({ children }) {  const [gameState, setGameState] = useState({
     players: [],
     currentRound: 1,
     maxRounds: 10,
     roundData: [],
     gameStarted: false,
     gameFinished: false,
-    mode: "Ranked",
+    mode: "Local", // Default to Local mode
+    isLocal: true,  // Flag to indicate local game
   })
 
   // Add a player to the game
@@ -44,14 +45,12 @@ export function GameStateProvider({ children }) {
       };
     });
   }, [])
-
   // Start a new game
   const startGame = useCallback(() => {
   if (gameState.players.length < 2) return;
 
   const referenceDate = new Date();
   const initialRoundData = [];
-
   for (let i = 1; i <= gameState.maxRounds; i++) {
     initialRoundData.push({
       round: i,
@@ -62,7 +61,7 @@ export function GameStateProvider({ children }) {
         call: null,
         made: null,
         score: null,
-        totalScore: i === 1 ? 0 : null,
+        totalScore: 0, // Initialize all rounds to start with 0
       })),
     });
   }
@@ -73,6 +72,8 @@ export function GameStateProvider({ children }) {
     gameStarted: true,
     gameFinished: false, // Reset gameFinished
     referenceDate,
+    isLocal: true, // Ensure this is set for local games
+    mode: "Local", // Set the game mode to Local
   }));
 }, [gameState.players, gameState.maxRounds]);
 
@@ -124,11 +125,11 @@ export function GameStateProvider({ children }) {
           } else {
             // -10 points per difference
             player.score = -10 * Math.abs(player.call - player.made)
-          }
-
-          // Calculate total score
+          }          // Calculate total score
           const prevRound = roundIndex > 0 ? newRoundData[roundIndex - 1] : null
-          const prevScore = prevRound ? prevRound.players[playerIndex].totalScore : 0
+          const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
+            ? prevRound.players[playerIndex].totalScore 
+            : 0
           player.totalScore = prevScore + player.score
         }
 
@@ -143,13 +144,41 @@ export function GameStateProvider({ children }) {
       }
     })
   }, [])
-
   // Navigate to next round
   const nextRound = useCallback(() => {
     setGameState((prevState) => {
       if (prevState.currentRound < prevState.maxRounds) {
+        // Get the current round index and data
+        const currentRoundIndex = prevState.currentRound - 1;
+        const currentRoundData = prevState.roundData[currentRoundIndex];
+        const nextRoundIndex = currentRoundIndex + 1;
+        const newRoundData = [...prevState.roundData];
+        const nextRoundData = {...newRoundData[nextRoundIndex]};
+        
+        // Update the totalScore for each player in the next round
+        if (nextRoundData && nextRoundData.players) {
+          const nextRoundPlayers = [...nextRoundData.players];
+          
+          nextRoundPlayers.forEach((player) => {
+            // Find the corresponding player in the current round
+            const currentRoundPlayer = currentRoundData.players.find(p => p.id === player.id);
+            
+            // If we have a valid totalScore from the current round, copy it to the next round
+            if (currentRoundPlayer && currentRoundPlayer.totalScore !== null) {
+              player.totalScore = currentRoundPlayer.totalScore;
+            } else if (currentRoundIndex === 0) {
+              // If this is the first round and somehow the totalScore is not set
+              player.totalScore = 0;
+            }
+          });
+          
+          nextRoundData.players = nextRoundPlayers;
+          newRoundData[nextRoundIndex] = nextRoundData;
+        }
+
         return {
           ...prevState,
+          roundData: newRoundData,
           currentRound: prevState.currentRound + 1,
         }
       }
@@ -168,7 +197,26 @@ export function GameStateProvider({ children }) {
       }
       return prevState
     })
-  }, [])
+  }, [])  // Load local games from localStorage
+  const loadLocalGames = useCallback(() => {
+    try {
+      const storedGames = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      return storedGames ? JSON.parse(storedGames) : [];
+    } catch (error) {
+      console.error("Error loading local games:", error);
+      return [];
+    }
+  }, []);
+
+  // Save local games to localStorage
+  const saveLocalGames = useCallback((games) => {
+    try {
+      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
+    } catch (error) {
+      console.error("Error saving local games:", error);
+    }
+  }, []);
+
   // Finish the game and save results
   const finishGame = useCallback(async () => {
     try {
@@ -188,17 +236,29 @@ export function GameStateProvider({ children }) {
       });
 
       const gameData = {
+        id: Date.now().toString(), // Generate a local ID
+        created_at: new Date().toISOString(),
         player_ids: gameState.players.map((p) => p.id),
+        players: gameState.players, // Store the full player data for local games
         winner_id: winnerId,
         final_scores: finalScores,
         round_data: gameState.roundData,
         duration_seconds: duration,
-        game_mode: gameState.mode || "Ranked",
+        game_mode: gameState.mode || "Local",
         total_rounds: gameState.maxRounds,
+        is_local: true
       };
 
-      // Save game data using new schema API
-      await createGame(gameData);
+      // Check if it's a local game or should be saved to the database
+      if (gameState.mode === "Local" || gameState.isLocal) {
+        // Save game to local storage
+        const localGames = loadLocalGames();
+        localGames.push(gameData);
+        saveLocalGames(localGames);
+      } else {
+        // Save game data to database using API
+        await createGame(gameData);
+      }
 
       setGameState((prevState) => ({
         ...prevState,
@@ -210,8 +270,7 @@ export function GameStateProvider({ children }) {
       console.error("Error saving game:", error);
       return false;
     }
-  }, [gameState]);
-
+  }, [gameState, loadLocalGames, saveLocalGames]);
   // Reset game state
   const resetGame = useCallback(() => {
     setGameState({
@@ -221,20 +280,34 @@ export function GameStateProvider({ children }) {
       roundData: [],
       gameStarted: false,
       gameFinished: false,
-      mode: "Ranked",
+      mode: "Local",
+      isLocal: true,
     })
   }, [])
 
   const setMaxRounds = (rounds) => {
     setGameState((prev) => ({ ...prev, maxRounds: rounds }))
   }
-
   const setMode = (mode) => {
     setGameState((prevState) => ({
       ...prevState,
       mode,
+      isLocal: mode === "Local", // Update the isLocal flag based on the mode
     }));
   };
+
+  // Function to get local games
+  const getLocalGames = useCallback(() => {
+    return loadLocalGames();
+  }, [loadLocalGames]);
+
+  // Function to remove a local game from storage
+  const removeLocalGame = useCallback((gameId) => {
+    const games = loadLocalGames();
+    const updatedGames = games.filter(game => game.id !== gameId);
+    saveLocalGames(updatedGames);
+    return updatedGames;
+  }, [loadLocalGames, saveLocalGames]);
 
   return (
     <GameStateContext.Provider
@@ -252,6 +325,8 @@ export function GameStateProvider({ children }) {
         setMaxRounds,
         setMode,
         updatePlayerName,
+        getLocalGames,
+        removeLocalGame,
       }}
     >
       {children}
