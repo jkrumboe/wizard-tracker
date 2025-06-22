@@ -52,15 +52,16 @@ const Home = () => {
         <Link to="/new-game" className="btn btn-primary">New Game</Link>
         <Link to="/lobby" className="btn btn-primary">Multiplayer Lobby</Link>
       </div>
-      
-      <section className="recent-games">
+        <section className="recent-games">
         <h2>Recent Games</h2>
         {loading ? (
-          <div className="loading">Loading games...</div>
+          <div className="loading-container">
+            <div className="loading">Loading games...</div>
+          </div>
         ) : (
           <div className="game-list">
             {recentGames.length > 0 || recentLocalGames.length > 0 ? (
-              <>
+              <div className="game-history">
                 {/* Combine and sort all games by date */}
                 {[...recentGames, ...recentLocalGames]
                   .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -69,7 +70,7 @@ const Home = () => {
                     <GameHistoryItem key={game.id} game={game} />
                   ))
                 }
-              </>
+              </div>
             ) : (
               <div className="empty-message">No games found</div>
             )}

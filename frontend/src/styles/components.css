@@ -185,10 +185,10 @@
     background-color: var(--card-background-light);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow);
     transition: transform 0.3s, box-shadow 0.3s;
-    border: 1px solid var(--border-color);
+    border: 3px solid var(--border-color);
     position: relative;
     overflow: hidden;
   }
@@ -214,6 +214,10 @@
     margin-top: var(--spacing-sm);
     font-size: 0.9rem;
     color: var(--text-color);
+  }
+
+  .game-info {
+    padding: var(--spacing-sm);
   }
   
   .game-details {
@@ -1990,4 +1994,124 @@
     margin-bottom: var(--spacing-lg);
   }
 }
+
+ 
+  /* Home page - Recent Games section */
+.recent-games {
+  margin-top: var(--spacing-md);
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow);
+  /* Height constraints to avoid reaching bottom nav */
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: calc(var(--spacing-lg) + 60px); /* Space above bottom nav */
+}
+
+.recent-games h2 {
+  color: var(--primary-color);
+  position: relative;
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  flex-shrink: 0; /* Prevent the header from shrinking */
+}
+
+.recent-games h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background-color: var(--primary-color);
+}
+
+/* Game list container */
+.game-list {
+  flex: 1;
+  min-height: 0; /* Important for flex child scrolling */
+  overflow: hidden; /* Hide overflow but let children scroll */
+}
+
+/* Make the game-history div scrollable */
+.game-history {
+  overflow-y: auto; /* Enable vertical scrolling */
+  max-height: 100%; /* Take up all available space */
+  padding-right: var(--spacing-sm); /* Space for scrollbar */
+  height: 100%;
+}
+
+/* Scrollbar styling for game-history */
+.game-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.game-history::-webkit-scrollbar-track {
+  background: var(--card-background-alt);
+  border-radius: var(--radius-md);
+}
+
+.game-history::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+}
+
+.game-history::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Empty message styling */
+.empty-message {
+  text-align: center;
+  color: var(--text-light);
+  padding: var(--spacing-md) 0;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .recent-games {
+    max-height: 55vh; /* Slightly smaller on mobile */
+    margin-bottom: calc(var(--spacing-md) + 70px); /* More space above nav bar */
+    padding: var(--spacing-md); /* Less padding */
+  }
+  
+  .game-card {
+    padding: 0; 
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .home-header {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .home-header h1 {
+    font-size: 1.5rem; /* Smaller header on mobile */
+  }
+  
+  .action-buttons {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  /* Make sure bottom nav doesn't overlap content */
+  .container {
+    /* height: calc(100% - 1600px); */
+    padding-bottom: 70px;
+  }
+}
+
+.loading-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading {
+  color: var(--text-light);
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
 

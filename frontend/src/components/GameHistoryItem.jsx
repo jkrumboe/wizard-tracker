@@ -53,30 +53,32 @@ const GameHistoryItem = ({ game }) => {
 
   return (
     <div className="game-card">
-      <div className="game-date">Finished: {formattedDate}</div>
-      <div className="game-rounds">Rounds: {total_rounds}</div>
-      <div className="game-winner">
-        Winner: {playerDetails[winner_id]?.name || "Unknown"}
+      <div className="game-date">Finished: {formattedDate} | Rounds: {total_rounds}</div>
+      {/* <div className="game-rounds"></div> */}
+      <div className="game-info">
+        <div className="game-winner">
+          Winner: {playerDetails[winner_id]?.name || "Unknown"}
+        </div>
+        <div className="game-players">
+          Players:{" "}
+          {game.is_local && game.players
+            ? game.players.map(player => player.name || "Unknown Player").join(", ")
+            : Array.isArray(player_ids)
+              ? player_ids
+                  .map(
+                    (playerId) =>
+                      playerDetails[playerId]?.name || "Unknown Player"
+                  )
+                  .join(", ")
+              : "No players"}
+        </div>
+        <Link to={`/game/${id}`} className="game-details">
+          View Details
+        </Link>
+        <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>
+          {game_mode || 'Local'}
+        </span>
       </div>
-      <div className="game-players">
-        Players:{" "}
-        {game.is_local && game.players
-          ? game.players.map(player => player.name || "Unknown Player").join(", ")
-          : Array.isArray(player_ids)
-            ? player_ids
-                .map(
-                  (playerId) =>
-                    playerDetails[playerId]?.name || "Unknown Player"
-                )
-                .join(", ")
-            : "No players"}
-      </div>
-      <Link to={`/game/${id}`} className="game-details">
-        View Details
-      </Link>
-      <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>
-        {game_mode || 'Local'}
-      </span>
     </div>
   );
 };

@@ -88,6 +88,7 @@ a:hover {
 .container {
   width: 100%;
   max-width: 960px;
+  max-height: calc(90vh - 60px);
   margin: 0 auto;
   padding: var(--spacing-md);
   box-sizing: border-box; /* Ensure padding doesn't cause overflow */
