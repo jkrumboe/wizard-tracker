@@ -40,9 +40,8 @@ const Home = () => {
 
     fetchGames()
   }, [])
-
   return (
-    <div className="container">
+    <div className="home-container">
       <header className="home-header">
         <h1>Wizard Tracker</h1>
         <p>Track your Wizard card game stats and performance</p>
