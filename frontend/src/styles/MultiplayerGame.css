@@ -471,7 +471,7 @@
 }
 
 .player-row {
-  transition: all 0.3s ease;
+  /* transition: all 0.3s ease; */
   cursor: pointer;
   background-color: var(--card-background);
   position: relative;
@@ -1052,9 +1052,9 @@
 }
 
 /* Advanced animations and transitions */
-.score-table tbody tr {
+/* .score-table tbody tr {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+} */
 
 .score-table tbody tr:hover .call-value,
 .score-table tbody tr:hover .made-value,
@@ -1068,7 +1068,7 @@
   transform: scale(0.95);
 }
 
-.player-row.player-turn .call-cell {
+/* .player-row.player-turn .call-cell {
   position: relative;
 }
 
@@ -1083,7 +1083,7 @@
   border-radius: 2px;
   transform: translateY(-50%);
   animation: slide-in 0.5s ease-out;
-}
+} */
 
 @keyframes slide-in {
   from {

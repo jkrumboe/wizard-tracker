@@ -1788,7 +1788,7 @@
 
     .games-list {
       overflow-y: scroll;
-      scrollbar-width: none; /* For Firefox */
+      scrollbar-width: none;
     }
   
     .card-tabs {
@@ -2008,7 +2008,6 @@
   max-height: calc(70vh - var(--bottom-nav-height));
   display: flex;
   flex-direction: column;
-  margin-bottom: calc(var(--spacing-lg) + var(--bottom-nav-height)); /* Space above bottom nav */
 }
 
 .recent-games h2 {
@@ -2016,7 +2015,7 @@
   position: relative;
   padding-bottom: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
-  flex-shrink: 0; /* Prevent the header from shrinking */
+  flex-shrink: 0;
 }
 
 .recent-games h2::after {
@@ -2032,15 +2031,15 @@
 /* Game list container */
 .game-list {
   flex: 1;
-  min-height: 0; /* Important for flex child scrolling */
-  overflow: hidden; /* Hide overflow but let children scroll */
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Make the game-history div scrollable */
 .game-history {
-  overflow-y: auto; /* Enable vertical scrolling */
-  max-height: 100%; /* Take up all available space */
-  padding-right: var(--spacing-sm); /* Space for scrollbar */
+  overflow-y: auto;
+  max-height: 100%;
+  padding-right: var(--spacing-sm);
   height: 100%;
 }
 
@@ -2073,9 +2072,8 @@
 /* Mobile-specific adjustments */
 @media (max-width: 768px) {
   .recent-games {
-    max-height: calc(65vh - var(--bottom-nav-height)); /* Slightly smaller on mobile */
-    margin-bottom: calc(var(--spacing-md) + var(--bottom-nav-height) + 10px); /* More space above nav bar */
-    padding: var(--spacing-md); /* Less padding */
+    max-height: calc(65vh - var(--bottom-nav-height)); 
+    padding: var(--spacing-md); 
   }
   
   .game-card {
@@ -2088,15 +2086,11 @@
   }
   
   .home-header h1 {
-    font-size: 1.5rem; /* Smaller header on mobile */
+    font-size: 1.5rem;
   }
   
   .action-buttons {
     margin-bottom: var(--spacing-sm);
-  }
-  /* Make sure bottom nav doesn't overlap content in home page */
-  .home-container {
-    padding-bottom: calc(var(--bottom-nav-height) + 10px);
   }
 }
 
@@ -2119,7 +2113,6 @@
   flex-direction: column;
   max-width: 960px;
   margin: 0 auto;
-  padding-bottom: var(--bottom-nav-height); /* Base padding for all screen sizes */
 }
 
 
