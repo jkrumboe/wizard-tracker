@@ -16,7 +16,7 @@ const Lobby = () => {
 
   // Game creation form state
   const [gameSettings, setGameSettings] = useState({
-    maxPlayers: 4,
+    maxPlayers: 3,
     gameMode: 'classic',
     isPrivate: false,
     password: ''

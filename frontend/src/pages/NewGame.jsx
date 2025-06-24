@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import NumberPicker from "../components/NumberPicker"
@@ -12,6 +12,16 @@ const NewGame = () => {
   const { gameState, addPlayer, removePlayer, updatePlayerName, startGame, setMaxRounds } = useGameStateContext()
 
   const [index, setIndex] = useState(1)
+  
+  // Calculate the recommended number of rounds based on player count
+  useEffect(() => {
+    const playerCount = gameState.players.length;
+    if (playerCount >= 3) {
+      // Standard rule: 60 cards divided by number of players
+      const recommendedRounds = Math.floor(60 / playerCount);
+      setMaxRounds(recommendedRounds);
+    }
+  }, [gameState.players.length, setMaxRounds]);
 
   const handleAddPlayer = () => {
     setIndex(index + 1)
@@ -32,10 +42,19 @@ const NewGame = () => {
     startGame()
     navigate("/game/current")
   }
-
+  
   const handleMaxRoundsChange = (value) => {
     setMaxRounds(value)
   }
+
+  // Calculate the recommended and maximum rounds
+  const calculateMaxPossibleRounds = () => {
+    const playerCount = gameState.players.length;
+    if (playerCount < 3) return 20; // Default max
+    return Math.floor(60 / playerCount);
+  };
+
+  const recommendedRounds = calculateMaxPossibleRounds();
 
   // if (loading) {
   //   return <div className="loading">Loading players...</div>
@@ -79,8 +98,8 @@ const NewGame = () => {
               value={gameState.maxRounds}
               onChange={handleMaxRoundsChange}
               min={1}
-              max={20}
-              title="Select Number of Rounds"
+              max={recommendedRounds}
+              title={`Select Number of Rounds (Recommended: ${recommendedRounds})`}
             />
         </div>
     </div>
