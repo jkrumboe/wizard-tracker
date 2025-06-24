@@ -23,7 +23,7 @@ The easiest way to get started is using Docker Compose:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/wizard-tracker.git
+git clone https://github.com/jkrumboe/wizard-tracker.git
 cd wizard-tracker
 
 # Start all services (database, backend, frontend)
