@@ -23,7 +23,7 @@ The easiest way to get started is using Docker Compose:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/wizard-tracker.git
+git clone https://github.com/jkrumboe/wizard-tracker.git
 cd wizard-tracker
 
 # Start all services (database, backend, frontend)
@@ -53,17 +53,17 @@ npm run dev
 
 ## 📚 Documentation
 
-Full documentation is available in our [Wiki](https://github.com/yourusername/wizard-tracker/wiki).
+Full documentation is available in our [Wiki](https://github.com/jkrumboe/wizard-tracker/wiki).
 
 Key documentation pages:
-- [Getting Started](https://github.com/yourusername/wizard-tracker/wiki/Getting-Started)
-- [Architecture Overview](https://github.com/yourusername/wizard-tracker/wiki/Architecture-Overview)
-- [API Structure](https://github.com/yourusername/wizard-tracker/wiki/API-Structure)
-- [How to Contribute](https://github.com/yourusername/wizard-tracker/wiki/How-to-Contribute)
+- [Getting Started](https://github.com/jkrumboe/wizard-tracker/wiki/Getting-Started)
+- [Architecture Overview](https://github.com/jkrumboe/wizard-tracker/wiki/Architecture-Overview)
+- [API Structure](https://github.com/jkrumboe/wizard-tracker/wiki/API-Structure)
+- [How to Contribute](https://github.com/jkrumboe/wizard-tracker/wiki/How-to-Contribute)
 
 ## 🛠️ Development
 
-For local development, see the [Development Guide](https://github.com/yourusername/wizard-tracker/wiki/Development-Guide).
+For local development, see the [Development Guide](https://github.com/jkrumboe/wizard-tracker/wiki/Development-Guide).
 
 ## 👥 Contributing
 

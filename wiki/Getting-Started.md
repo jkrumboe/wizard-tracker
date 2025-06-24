@@ -17,7 +17,7 @@ The simplest way to get Wizard Tracker running is with Docker Compose:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/wizard-tracker.git
+   git clone https://github.com/jkrumboe/wizard-tracker.git
    cd wizard-tracker
    ```
 

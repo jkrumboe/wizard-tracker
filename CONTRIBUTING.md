@@ -60,7 +60,7 @@ This section guides you through submitting an enhancement suggestion, including 
 1. Fork the repository
 2. Clone your fork locally
    ```bash
-   git clone https://github.com/yourusername/wizard-tracker.git
+   git clone https://github.com/jkrumboe/wizard-tracker.git
    cd wizard-tracker
    ```
 
