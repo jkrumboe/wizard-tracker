@@ -26,6 +26,8 @@ services:
       - "5055:5000"  # Host:Container
     environment:
       - DATABASE_URL=postgres://wizard:geheim@db:5432/wizard_db
+    env_file:
+      - ./backend/.env
     depends_on:
       - db
 

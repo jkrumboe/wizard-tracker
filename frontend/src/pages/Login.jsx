@@ -24,7 +24,8 @@ const Login = () => {
       // Instead of page reload, navigate directly
       navigate("/");
     } catch (err) {
-      console.error("Login error:", err);
+      // Log only that an error occurred, not the error details which might contain sensitive info
+      console.error("Login failed");
       setError(err.message || "Invalid credentials");
     }
   };    const handleRegister = async () => {
@@ -45,7 +46,8 @@ const Login = () => {
         navigate("/");
       }
     } catch (err) {
-      console.error("Registration error:", err);
+      // Log only that an error occurred, not the error details which might contain sensitive info
+      console.error("Registration failed");
       setError(err.message || "Registration failed");
     }
   };

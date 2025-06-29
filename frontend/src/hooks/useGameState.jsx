@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useCallback } from "react"
 import { createGame } from "../services/gameService"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
@@ -7,7 +7,7 @@ const GameStateContext = createContext()
 export function GameStateProvider({ children }) {  const [gameState, setGameState] = useState({
     players: [],
     currentRound: 1,
-    maxRounds: 10,
+    maxRounds: 20,
     roundData: [],
     gameStarted: false,
     gameFinished: false,
@@ -276,7 +276,7 @@ export function GameStateProvider({ children }) {  const [gameState, setGameStat
     setGameState({
       players: [],
       currentRound: 1,
-      maxRounds: 10,
+      maxRounds: 20,
       roundData: [],
       gameStarted: false,
       gameFinished: false,

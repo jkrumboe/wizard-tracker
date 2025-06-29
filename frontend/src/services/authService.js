@@ -5,17 +5,19 @@ class AuthService {
   constructor() {
     this.refreshTimer = null;
     this.isRefreshing = false;
-  }
-  // Login with secure cookies
+  }  // Login with secure cookies
   async login(credentials) {
     try {
+      // Create a shallow copy to avoid modifying the original credentials object
+      const safeCredentials = { ...credentials };
+      
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(safeCredentials),
       });
 
       if (!response.ok) {
@@ -36,20 +38,23 @@ class AuthService {
       
       return data;
     } catch (error) {
-      console.error('Login error:', error);
+      // Avoid logging the actual error which might contain credentials
+      console.error('Login error occurred');
       throw error;
     }
-  }
-  // Register with secure cookies
+  }  // Register with secure cookies
   async register(userData) {
     try {
+      // Create a shallow copy to avoid modifying the original userData object
+      const safeUserData = { ...userData };
+      
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify(userData),
+        body: JSON.stringify(safeUserData),
       });
 
       if (!response.ok) {
@@ -68,9 +73,9 @@ class AuthService {
       // Set up automatic token refresh
       this.scheduleTokenRefresh();
       
-      return data;
-    } catch (error) {
-      console.error('Registration error:', error);
+      return data;    } catch (error) {
+      // Avoid logging the actual error which might contain credentials
+      console.error('Registration error occurred');
       throw error;
     }
   }
@@ -217,17 +222,19 @@ class AuthService {
       this.scheduleTokenRefresh();
     }
   }
-
   // Admin authentication methods
   async adminLogin(credentials) {
     try {
+      // Create a shallow copy to avoid modifying the original credentials object
+      const safeCredentials = { ...credentials };
+      
       const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(safeCredentials),
       });
 
       if (!response.ok) {
@@ -238,7 +245,8 @@ class AuthService {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Admin login error:', error);
+      // Avoid logging the actual error which might contain credentials
+      console.error('Admin login error occurred');
       throw error;
     }
   }

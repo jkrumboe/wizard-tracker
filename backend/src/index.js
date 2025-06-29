@@ -3,14 +3,14 @@ import cors from 'cors'
 import pg from 'pg'
 import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import bcryptjs from 'bcryptjs';
-import { body, validationResult } from 'express-validator';
+// import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';import { body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { Server } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import http from 'http';
+import crypto from 'crypto';
 import { WizardGameRoom } from './rooms/WizardGameRoom.js';
 import { LobbyRoom } from './rooms/LobbyRoom.js';
 import dbAdapter from './db/dbAdapter.js';
@@ -85,12 +85,18 @@ const db = new pg.Pool({
 })
 
 // Secret key for JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_change_in_production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your_refresh_secret_change_in_production';
-const JWT_ADMIN_SECRET = process.env.JWT_ADMIN_SECRET || 'your_admin_jwt_secret_change_in_production';
+// Secret key for JWT
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const JWT_ADMIN_SECRET = process.env.JWT_ADMIN_SECRET;
 
-// Token expiration times
-const ACCESS_TOKEN_EXPIRY = '15m'; // Short-lived access token
+if (!JWT_SECRET || !JWT_REFRESH_SECRET || !JWT_ADMIN_SECRET) {
+  console.error(
+    '❌ JWT secrets are not configured. ' +
+    'Set JWT_SECRET, JWT_REFRESH_SECRET, and JWT_ADMIN_SECRET environment variables.'
+  );
+  process.exit(1);
+}const ACCESS_TOKEN_EXPIRY = '15m'; // Short-lived access token
 const REFRESH_TOKEN_EXPIRY = '7d'; // Longer-lived refresh token
 const ADMIN_TOKEN_EXPIRY = '1h'; // Admin token expiry
 
@@ -202,12 +208,17 @@ app.post('/api/login', authLimiter, [
   // Validate input
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    auditLog('LOGIN_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
+    auditLog('LOGIN_FAILED', null, { reason: 'validation_error' }, req);
     return res.status(400).json({ error: 'Invalid input data.' });
   }
 
-  const { username, password } = req.body;
-    try {
+  try {
+    // Extract credentials but don't log them
+    const { username, password } = req.body;
+    
+    // Delete password from req.body to prevent it from appearing in logs
+    delete req.body.password;
+    
     const result = await db.query(`
       SELECT u.*, p.id as player_id, p.name as player_name, p.display_name, p.avatar, p.elo, p.win_rate, p.total_games
       FROM users u 
@@ -217,15 +228,18 @@ app.post('/api/login', authLimiter, [
     const user = result.rows[0];
 
     if (!user) {
-      auditLog('LOGIN_FAILED', null, { reason: 'user_not_found', username }, req);
+      auditLog('LOGIN_FAILED', null, { reason: 'user_not_found' }, req);
       return res.status(400).json({ error: 'Invalid username or password.' });
     }
 
     const isValidPassword = await bcryptjs.compare(password, user.password_hash);
+
     if (!isValidPassword) {
-      auditLog('LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
+      auditLog('LOGIN_FAILED', user.id, { reason: 'invalid_credentials' }, req);
       return res.status(400).json({ error: 'Invalid username or password.' });
-    }    const { accessToken, refreshToken } = generateTokens(user);
+    }
+    
+    const { accessToken, refreshToken } = generateTokens(user);
     
     // Set secure HTTP-only cookies
     setTokenCookies(res, accessToken, refreshToken);
@@ -257,10 +271,15 @@ app.post('/api/register', authLimiter, [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    auditLog('REGISTER_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
+    auditLog('REGISTER_FAILED', null, { reason: 'validation_error' }, req);
     return res.status(400).json({ errors: errors.array() });
   }
+  
+  // Extract credentials but don't log them
   const { username, email, password } = req.body;
+  
+  // Delete password from req.body to prevent it from appearing in logs
+  delete req.body.password;
   try {
     // Hash the password and create a new user first
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -580,27 +599,6 @@ app.put('/api/players/:id', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to update profile.' });
   }
 });
-
-// Update player tags
-app.get('/api/players/:id/tags', async (req, res) => {
-  try {
-    const playerId = parseInt(req.params.id);
-    
-    const result = await db.query(`
-      SELECT t.id, t.name, t.color, t.description
-      FROM tags t
-      JOIN player_tags pt ON t.id = pt.tag_id
-      WHERE pt.player_id = $1
-      ORDER BY t.name
-    `, [playerId]);
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching player tags:', err);
-    res.status(500).json({ error: 'Failed to fetch player tags.' });
-  }
-});
-
 
 // Delete a player
 app.delete('/api/players/:id', async (req, res) => {
@@ -1051,13 +1049,17 @@ app.post('/api/admin/login', authLimiter, [
   // Validate input
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    auditLog('ADMIN_LOGIN_FAILED', null, { reason: 'validation_error', errors: errors.array() }, req);
+    auditLog('ADMIN_LOGIN_FAILED', null, { reason: 'validation_error' }, req);
     return res.status(400).json({ error: 'Invalid input data.' });
   }
-
-  const { username, password } = req.body;
   
   try {
+    // Extract credentials but don't log them
+    const { username, password } = req.body;
+    
+    // Delete password from req.body to prevent it from appearing in logs
+    delete req.body.password;
+    
     // Look for admin user in the users table with admin role
     const result = await db.query(`
       SELECT u.*, r.name as role_name 
@@ -1069,13 +1071,13 @@ app.post('/api/admin/login', authLimiter, [
     const user = result.rows[0];
 
     if (!user) {
-      auditLog('ADMIN_LOGIN_FAILED', null, { reason: 'user_not_found', username }, req);
+      auditLog('ADMIN_LOGIN_FAILED', null, { reason: 'invalid_credentials' }, req);
       return res.status(401).json({ error: 'Invalid admin credentials.' });
     }
 
     const isValidPassword = await bcryptjs.compare(password, user.password_hash);
     if (!isValidPassword) {
-      auditLog('ADMIN_LOGIN_FAILED', user.id, { reason: 'invalid_password', username }, req);
+      auditLog('ADMIN_LOGIN_FAILED', user.id, { reason: 'invalid_credentials' }, req);
       return res.status(401).json({ error: 'Invalid admin credentials.' });
     }
 
@@ -1182,29 +1184,42 @@ app.post('/api/setup-admin', async (req, res) => {
     
     if (existingAdmins.rows[0].count > 0) {
       return res.status(409).json({ error: 'Admin users already exist. Use /api/admin/login to authenticate.' });
-    }
-
-    // Ensure admin role exists
+    }    // Ensure admin role exists
     await db.query(`
       INSERT INTO roles (id, name) VALUES (2, 'admin') 
       ON CONFLICT (id) DO NOTHING
     `);
 
+    // Use environment variable if present or generate a secure random username and password
     const username = process.env.ADMIN_USERNAME || 'admin';
-    const password = process.env.ADMIN_PASSWORD || 'admin123';
     
+    // Generate a secure random password if not provided in environment
+    const password = process.env.ADMIN_PASSWORD || generateSecurePassword();
+    
+    // Do not display the generated password on the server console for security reasons
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await db.query(
       'INSERT INTO users (username, password_hash, role_id, email) VALUES ($1, $2, $3, $4) RETURNING id, username',
       [username, hashedPassword, 2, 'admin@localhost']
     );
-    
     auditLog('ADMIN_SETUP', result.rows[0].id, { username }, req);
-    res.status(201).json({ 
-      message: 'Default admin user created successfully.',
-      username: result.rows[0].username
-    });
+    
+    // Respond with the generated password only in the HTTP response if it was generated
+    if (!process.env.ADMIN_PASSWORD) {
+      res.status(201).json({ 
+        message: 'Admin user created successfully with a generated secure password. This password is shown ONLY ONCE in this response. Store it securely.',
+        username: result.rows[0].username,
+        password: password,
+        passwordGenerated: true
+      });
+    } else {
+      res.status(201).json({ 
+        message: 'Admin user created successfully with the provided credentials.',
+        username: result.rows[0].username,
+        passwordGenerated: false
+      });
+    }
   } catch (err) {
     console.error('Error creating default admin user:', err);
     res.status(500).json({ error: 'Failed to create default admin user.' });
@@ -1491,42 +1506,90 @@ app.post('/api/rooms/:roomId/verify-password', async (req, res) => {
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
+// Define an async function to start the server
+async function startServer() {
+  try {
+    // Wait for database connection before starting server
+    await connectWithRetry();
+    
+    const PORT = process.env.PORT || 5000;
+
+    // Create HTTP server and Colyseus game server
+    const server = http.createServer(app);
+    const gameServer = new Server({
+      transport: new WebSocketTransport({
+        server: server,
+      }),
+    });
+
+    // Define game rooms
+    gameServer.define('wizard_game', WizardGameRoom);
+    gameServer.define('lobby', LobbyRoom);
+
+    // Start the server
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Backend läuft auf Port ${PORT}`);
+      console.log(`🎮 Colyseus game server is ready!`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Connect to the database with retry mechanism
 async function connectWithRetry(retries = 20, delay = 1000) {
   for (let i = 1; i <= retries; i++) {
     try {
-      await pool.connect()
-      console.log('✅ Connected to PostgreSQL DB')
-      break
+      await pool.connect();
+      console.log('✅ Connected to PostgreSQL DB');
+      return; // Successfully connected
     } catch (err) {
-      if (err.code === '57P03') {
-        console.log(`🕐 DB starting up... retrying (${i}/${retries})`)
-        await new Promise(res => setTimeout(res, delay))
+      if (err.code === '57P03' || err.code === 'ECONNREFUSED') {
+        console.log(`🕐 DB starting up... retrying (${i}/${retries})`);
+        await new Promise(res => setTimeout(res, delay));
       } else {
-        console.error('❌ DB connection error:', err)
-        process.exit(1)
+        console.error('❌ DB connection error:', err);
+        throw err; // Propagate the error to be handled by startServer
       }
     }
   }
+  throw new Error('Failed to connect to database after maximum retries');
 }
-connectWithRetry()
-
-
-const PORT = process.env.PORT || 5000
-
-// Create HTTP server and Colyseus game server
-const server = http.createServer(app);
-const gameServer = new Server({
-  transport: new WebSocketTransport({
-    server: server,
-  }),
-});
-
-// Define game rooms
-gameServer.define('wizard_game', WizardGameRoom);
-gameServer.define('lobby', LobbyRoom);
 
 // Start the server
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend läuft auf Port ${PORT}`)
-  console.log(`🎮 Colyseus game server is ready!`)
-})
+startServer().catch(err => {
+  console.error('❌ Server startup failed:', err);
+  process.exit(1);
+});
+
+// Helper function to generate a secure random password
+function generateSecurePassword(length = 16) {
+  // Define character sets for password
+  const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+  const numberChars = '0123456789';
+  const specialChars = '!@#$%^&*()-_=+[]{}|;:,.<>?';
+  
+  // Combine all character sets
+  const allChars = uppercaseChars + lowercaseChars + numberChars + specialChars;
+  
+  // Generate random bytes
+  const randomBytes = crypto.randomBytes(length);
+  
+  // Ensure password has at least one character from each required set
+  let password = 
+    uppercaseChars[crypto.randomInt(0, uppercaseChars.length)] +
+    lowercaseChars[crypto.randomInt(0, lowercaseChars.length)] +
+    numberChars[crypto.randomInt(0, numberChars.length)] +
+    specialChars[crypto.randomInt(0, specialChars.length)];
+  
+  // Fill the rest with random characters
+  for (let i = 4; i < length; i++) {
+    const randomIndex = randomBytes[i] % allChars.length;
+    password += allChars[randomIndex];
+  }
+  
+  // Shuffle the password characters
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+}

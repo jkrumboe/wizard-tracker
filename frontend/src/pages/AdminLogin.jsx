@@ -31,7 +31,6 @@ const AdminLogin = () => {
       }
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -42,6 +41,8 @@ const AdminLogin = () => {
       navigate('/admin');
     } catch (error) {
       setError(error.message);
+      // Don't log the error object which might contain or reference credentials
+      console.error('Admin login failed');
     } finally {
       setLoading(false);
     }
