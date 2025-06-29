@@ -1,12 +1,31 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import GameHistoryItem from '../components/GameHistoryItem'
+import LoadGameDialog from '../components/LoadGameDialog'
 import { getRecentGames, getRecentLocalGames } from '../services/gameService'
+import { useGameStateContext } from '../hooks/useGameState'
 
 const Home = () => {
+  const navigate = useNavigate()
+  const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [recentGames, setRecentGames] = useState([])
   const [recentLocalGames, setRecentLocalGames] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showLoadDialog, setShowLoadDialog] = useState(false)
+  
+  const handleLoadGame = async (gameId) => {
+    try {
+      const success = await loadSavedGame(gameId)
+      if (success) {
+        setShowLoadDialog(false)
+        navigate("/game-in-progress")
+      }
+      return success
+    } catch (error) {
+      console.error('Failed to load game:', error)
+      return false
+    }
+  }
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -49,6 +68,12 @@ const Home = () => {
 
       <div className="action-buttons">
         <Link to="/new-game" className="btn btn-primary">New Game</Link>
+        <button 
+          onClick={() => setShowLoadDialog(true)}
+          className="btn btn-secondary"
+        >
+          Load Saved Game
+        </button>
         <Link to="/lobby" className="btn btn-primary">Multiplayer Lobby</Link>
       </div>
         <section className="recent-games">
@@ -76,6 +101,14 @@ const Home = () => {
           </div>
         )}
       </section>
+
+      {/* Load Game Dialog */}
+      <LoadGameDialog
+        isOpen={showLoadDialog}
+        onClose={() => setShowLoadDialog(false)}
+        onLoadGame={handleLoadGame}
+        getSavedGames={getSavedGames}
+      />
     </div>
   )
 }

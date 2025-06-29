@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useCallback } from "react"
 import { createGame } from "../services/gameService"
+import { LocalGameStorage } from "../services/localGameStorage"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
 
-export function GameStateProvider({ children }) {  const [gameState, setGameState] = useState({
+export function GameStateProvider({ children }) {
+  const [gameState, setGameState] = useState({
     players: [],
     currentRound: 1,
     maxRounds: 20,
@@ -13,6 +15,9 @@ export function GameStateProvider({ children }) {  const [gameState, setGameStat
     gameFinished: false,
     mode: "Local", // Default to Local mode
     isLocal: true,  // Flag to indicate local game
+    gameId: null,   // Current game ID for saving
+    isPaused: false, // Track if game is paused
+    gameName: null,  // Custom game name
   })
 
   // Add a player to the game
@@ -310,6 +315,175 @@ export function GameStateProvider({ children }) {  const [gameState, setGameStat
     return updatedGames;
   }, [loadLocalGames, saveLocalGames]);
 
+  // Save the current game
+  const saveGame = useCallback((customName = null) => {
+    try {
+      const gameId = LocalGameStorage.saveGame(gameState, customName);
+      setGameState(prevState => ({
+        ...prevState,
+        gameId,
+        gameName: customName || prevState.gameName
+      }));
+      return { success: true, gameId };
+    } catch (error) {
+      console.error("Error saving game:", error);
+      return { success: false, error: error.message };
+    }
+  }, [gameState]);
+
+  // Auto-save the current game (for continuous saving during gameplay)
+  const autoSaveGame = useCallback(() => {
+    if (gameState.gameId && gameState.gameStarted && !gameState.gameFinished) {
+      try {
+        LocalGameStorage.autoSaveGame(gameState, gameState.gameId);
+      } catch (error) {
+        console.error("Error auto-saving game:", error);
+      }
+    }
+  }, [gameState]);
+
+  // Pause the current game
+  const pauseGame = useCallback((customName = null) => {
+    try {
+      let gameId = gameState.gameId;
+      
+      // If no gameId exists, create a new save
+      if (!gameId) {
+        gameId = LocalGameStorage.saveGame(gameState, customName);
+      } else {
+        // Update existing save
+        LocalGameStorage.autoSaveGame(gameState, gameId);
+        if (customName) {
+          LocalGameStorage.updateGameMetadata(gameId, { name: customName });
+        }
+      }
+
+      setGameState(prevState => ({
+        ...prevState,
+        isPaused: true,
+        gameId,
+        gameName: customName || prevState.gameName
+      }));
+
+      return { success: true, gameId };
+    } catch (error) {
+      console.error("Error pausing game:", error);
+      return { success: false, error: error.message };
+    }
+  }, [gameState]);
+
+  // Resume a paused game
+  const resumeGame = useCallback((gameId) => {
+    try {
+      const loadedGameState = LocalGameStorage.loadGame(gameId);
+      if (loadedGameState) {
+        setGameState({
+          ...loadedGameState,
+          isPaused: false,
+          gameId
+        });
+        return { success: true };
+      } else {
+        return { success: false, error: "Game not found" };
+      }
+    } catch (error) {
+      console.error("Error resuming game:", error);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  // Load a saved game (different from resume - this replaces current state)
+  const loadSavedGame = useCallback((gameId) => {
+    try {
+      const loadedGameState = LocalGameStorage.loadGame(gameId);
+      if (loadedGameState) {
+        setGameState({
+          ...loadedGameState,
+          gameId
+        });
+        return { success: true };
+      } else {
+        return { success: false, error: "Game not found" };
+      }
+    } catch (error) {
+      console.error("Error loading saved game:", error);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  // Get all saved games
+  const getSavedGames = useCallback(() => {
+    try {
+      return LocalGameStorage.getSavedGamesList();
+    } catch (error) {
+      console.error("Error getting saved games:", error);
+      return [];
+    }
+  }, []);
+
+  // Delete a saved game
+  const deleteSavedGame = useCallback((gameId) => {
+    try {
+      LocalGameStorage.deleteGame(gameId);
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting saved game:", error);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  // Leave the current game (with option to save)
+  const leaveGame = useCallback((shouldSave = true, customName = null) => {
+    try {
+      if (shouldSave && gameState.gameStarted && !gameState.gameFinished) {
+        const saveResult = saveGame(customName);
+        if (!saveResult.success) {
+          return saveResult;
+        }
+      }
+
+      // Reset to initial state
+      setGameState({
+        players: [],
+        currentRound: 1,
+        maxRounds: 20,
+        roundData: [],
+        gameStarted: false,
+        gameFinished: false,
+        mode: "Local",
+        isLocal: true,
+        gameId: null,
+        isPaused: false,
+        gameName: null,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error leaving game:", error);
+      return { success: false, error: error.message };
+    }
+  }, [gameState, saveGame]);
+
+  // Check if current game has unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    return gameState.gameStarted && !gameState.gameFinished && !gameState.gameId;
+  }, [gameState]);
+
+  // Set custom game name
+  const setGameName = useCallback((name) => {
+    setGameState(prevState => ({
+      ...prevState,
+      gameName: name
+    }));
+  }, []);
+
+  // Auto-save effect - save game state periodically during active gameplay
+  const enableAutoSave = useCallback(() => {
+    if (gameState.gameStarted && !gameState.gameFinished && !gameState.isPaused) {
+      autoSaveGame();
+    }
+  }, [gameState.gameStarted, gameState.gameFinished, gameState.isPaused, autoSaveGame]);
+
   return (
     <GameStateContext.Provider
       value={{
@@ -328,6 +502,17 @@ export function GameStateProvider({ children }) {  const [gameState, setGameStat
         updatePlayerName,
         getLocalGames,
         removeLocalGame,
+        saveGame,
+        autoSaveGame,
+        pauseGame,
+        resumeGame,
+        loadSavedGame,
+        getSavedGames,
+        deleteSavedGame,
+        leaveGame,
+        hasUnsavedChanges,
+        setGameName,
+        enableAutoSave,
       }}
     >
       {children}

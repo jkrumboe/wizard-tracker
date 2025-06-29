@@ -1,15 +1,52 @@
 "use client"
 
 import React from "react";
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
+import SaveGameDialog from "../components/SaveGameDialog"
+import LoadGameDialog from "../components/LoadGameDialog"
+import { SaveIcon, PauseIcon, MenuIcon } from "../components/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
-  const { gameState, updateCall, updateMade, nextRound, previousRound, finishGame, resetGame } = useGameStateContext()
+  const { 
+    gameState, 
+    updateCall, 
+    updateMade, 
+    nextRound, 
+    previousRound, 
+    finishGame, 
+    resetGame,
+    saveGame,
+    pauseGame,
+    leaveGame,
+    loadSavedGame,
+    getSavedGames
+  } = useGameStateContext()
+  
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [showLoadDialog, setShowLoadDialog] = useState(false)
+  const [showGameMenu, setShowGameMenu] = useState(false)
+  const menuRef = useRef(null)
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowGameMenu(false)
+      }
+    }
+
+    if (showGameMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showGameMenu])
 
   const handleFinishGame = async () => {
     const success = await finishGame()
@@ -17,6 +54,68 @@ const GameInProgress = () => {
       resetGame(); 
       navigate("/")
     }
+  }
+
+  const handleSaveGame = async (gameName) => {
+    try {
+      const success = await saveGame(gameName)
+      if (success) {
+        setShowSaveDialog(false)
+        // Show success message or toast
+      }
+      return success
+    } catch (error) {
+      console.error('Failed to save game:', error)
+      return false
+    }
+  }
+
+  const handlePauseGame = async (gameName) => {
+    try {
+      const success = await pauseGame(gameName)
+      if (success) {
+        setShowSaveDialog(false)
+        resetGame()
+        navigate("/", { state: { message: "Game paused successfully!" } })
+      }
+      return success
+    } catch (error) {
+      console.error('Failed to pause game:', error)
+      return false
+    }
+  }
+
+  const handleLeaveGame = async () => {
+    try {
+      const success = await leaveGame()
+      if (success) {
+        setShowSaveDialog(false)
+        resetGame()
+        navigate("/", { state: { message: "Game left successfully!" } })
+      }
+      return success
+    } catch (error) {
+      console.error('Failed to leave game:', error)
+      return false
+    }
+  }
+
+  const handleLoadGame = async (gameId) => {
+    try {
+      const success = await loadSavedGame(gameId)
+      if (success) {
+        setShowLoadDialog(false)
+        // Game state will be updated automatically
+      }
+      return success
+    } catch (error) {
+      console.error('Failed to load game:', error)
+      return false
+    }
+  }
+
+  const toggleGameMenu = () => {
+    setShowGameMenu(!showGameMenu)
   }
 
   if (!gameState.gameStarted) {
@@ -79,14 +178,57 @@ const GameInProgress = () => {
   return (
     <div className="game-in-progress">
       <div className="game-header">
-        <h1>Wizard Game</h1>
-        <div className="round-info">
-          <span>
-            Round {gameState.currentRound} of {gameState.maxRounds}
-          </span>
-          <span className="total-calls">
-            Total Calls: {totalCalls} / {currentRound?.cards}
-          </span>
+        <div className="game-title-section">
+          <h1>{gameState.gameName || "Wizard Game"}</h1>
+          <div className="round-info">
+            <span>
+              Round {gameState.currentRound} of {gameState.maxRounds}
+            </span>
+            <span className="total-calls">
+              Total Calls: {totalCalls} / {currentRound?.cards}
+            </span>
+          </div>
+        </div>
+        
+        <div className="game-controls" ref={menuRef}>
+          <button 
+            className="game-control-btn"
+            onClick={() => setShowSaveDialog(true)}
+            title="Save Game"
+          >
+            <SaveIcon />
+          </button>
+          <button 
+            className="game-control-btn"
+            onClick={() => setShowSaveDialog(true)}
+            title="Pause Game"
+          >
+            <PauseIcon />
+          </button>
+          <button 
+            className={`game-control-btn menu-btn ${showGameMenu ? 'active' : ''}`}
+            onClick={toggleGameMenu}
+            title="Game Menu"
+          >
+            <MenuIcon />
+          </button>
+          
+          {showGameMenu && (
+            <div className="game-menu-dropdown">
+              <button onClick={() => setShowLoadDialog(true)}>
+                Load Game
+              </button>
+              <button onClick={() => setShowSaveDialog(true)}>
+                Save & Continue
+              </button>
+              <button onClick={() => setShowSaveDialog(true)}>
+                Pause Game
+              </button>
+              <button onClick={() => setShowSaveDialog(true)} className="leave-btn">
+                Leave Game
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -186,6 +328,26 @@ const GameInProgress = () => {
           Finish Game
         </button>
       )}
+
+      {/* Save Game Dialog */}
+      <SaveGameDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        onSave={handleSaveGame}
+        onPause={handlePauseGame}
+        onLeave={handleLeaveGame}
+        gameState={gameState}
+        showPauseOption={true}
+        showLeaveOption={true}
+      />
+
+      {/* Load Game Dialog */}
+      <LoadGameDialog
+        isOpen={showLoadDialog}
+        onClose={() => setShowLoadDialog(false)}
+        onLoadGame={handleLoadGame}
+        getSavedGames={getSavedGames}
+      />
     </div>
   )
 }
