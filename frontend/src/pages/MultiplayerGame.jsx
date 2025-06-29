@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import colyseusService from '../services/colyseusClient';
 import { useAuth } from '../hooks/useAuth';
-import NumberPicker from '../components/NumberPicker';
 import '../styles/MultiplayerGame.css';
 
 const MultiplayerGame = () => {
@@ -308,7 +307,7 @@ const MultiplayerGame = () => {
           </div>
           <div className="game-actions">
             <button onClick={handleLeaveGame} className="leave-button">
-              🚪 Leave Game
+              Leave Game
             </button>
           </div>
         </header>
@@ -406,7 +405,7 @@ const MultiplayerGame = () => {
         
         <div className="game-actions">
           <button onClick={handleLeaveGame} className="leave-button">
-            🚪 Leave Game
+            Leave Game
           </button>
         </div>
       </header>
@@ -457,11 +456,13 @@ const MultiplayerGame = () => {
                           </td>
                           <td className="call-cell">
                             {isCurrentUserHost ? (
-                              <NumberPicker
+                              <input
+                                type="number"
+                                className="rounds-input"
                                 value={player.call || 0}
-                                onChange={(call) => {
+                                onChange={(e) => {
                                   // Add bypass turn order flag for host calls
-                                  colyseusService.makeCall(call, player.playerId, true);
+                                  colyseusService.makeCall(parseInt(e.target.value) || 0, player.playerId, true);
                                 }}
                                 min={0}
                                 max={currentRound}
@@ -529,8 +530,11 @@ const MultiplayerGame = () => {
                             <span className="call-value">{player.call}</span>
                           </td>                          <td className="made-cell">
                             {isCurrentUserHost ? (
-                              <NumberPicker                                value={player.made || 0}
-                                onChange={(tricks) => colyseusService.makeTricks(tricks, player.playerId, true)}
+                              <input
+                                type="number"
+                                className="rounds-input"
+                                value={player.made || 0}
+                                onChange={(e) => colyseusService.makeTricks(parseInt(e.target.value) || 0, player.playerId, true)}
                                 min={0}
                                 max={currentRound}
                                 title={`Round ${currentRound} - Report tricks for ${player.name || player.playerName}`}
