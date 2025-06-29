@@ -1897,9 +1897,10 @@
 }
 
 .profile-icon {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   border-radius: var(--radius-full);
+  border: 2px solid var(--primary-color);
   overflow: hidden;
   cursor: pointer;
   display: flex;
