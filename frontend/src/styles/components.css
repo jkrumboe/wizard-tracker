@@ -1833,9 +1833,10 @@
   
     .card-tabs {
       margin-top: var(--spacing-sm);
-      margin-bottom: auto;
+      margin-bottom: var(--spacing-lg);
       justify-content: center;
       align-items: center;
+      
     }
 
     .player-name-tags {
@@ -1862,6 +1863,8 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+
 }
 
 .tab-button {
@@ -2600,4 +2603,151 @@
   }
 }
 
+/* Game Stats Styles */
+.game-stats-container {
+  padding: var(--spacing-lg);
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--spacing-lg);
+}
 
+.game-stats-container h2 {
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.stats-description {
+  text-align: center;
+  color: var(--text-light);
+  margin-bottom: var(--spacing-lg);
+  font-style: italic;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.player-stat-card {
+  background-color: var(--card-background-alt);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  border: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
+}
+
+.player-stat-card:hover {
+  border-color: var(--primary-light);
+}
+
+.player-stat-name {
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+  font-size: 1.25rem;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.stat-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.stat-section:last-child {
+  margin-bottom: 0;
+}
+
+.stat-section h4 {
+  color: var(--text-color);
+  margin-bottom: var(--spacing-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--card-background);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary-color);
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.stat-label {
+  flex: 1;
+  color: var(--text-color);
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-right: var(--spacing-sm);
+  min-width: 60px;
+  text-align: right;
+  color: var(--text-color);
+}
+
+.stat-value.highlight {
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.stat-value.positive {
+  color: var(--success-color);
+}
+
+.stat-value.negative {
+  color: var(--error-color);
+}
+
+.stat-explanation {
+  color: var(--text-light);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-left: auto;
+  text-align: right;
+  max-width: 140px;
+}
+
+/* Mobile responsive adjustments for stats */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .stat-value {
+    margin-right: 0;
+    text-align: left;
+  }
+  
+  .stat-explanation {
+    margin-left: 0;
+    text-align: left;
+    max-width: none;
+  }
+  
+  .player-stat-card {
+    padding: var(--spacing-md);
+  }
+}
