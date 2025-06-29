@@ -285,16 +285,17 @@ export function GameStateProvider({ children }) {  const [gameState, setGameStat
     })
   }, [])
 
-  const setMaxRounds = (rounds) => {
+  const setMaxRounds = useCallback((rounds) => {
     setGameState((prev) => ({ ...prev, maxRounds: rounds }))
-  }
-  const setMode = (mode) => {
+  }, []);
+  
+  const setMode = useCallback((mode) => {
     setGameState((prevState) => ({
       ...prevState,
       mode,
       isLocal: mode === "Local", // Update the isLocal flag based on the mode
     }));
-  };
+  }, []);
 
   // Function to get local games
   const getLocalGames = useCallback(() => {

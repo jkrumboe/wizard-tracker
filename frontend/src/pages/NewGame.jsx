@@ -19,9 +19,12 @@ const NewGame = () => {
     if (playerCount >= 3) {
       // Standard rule: 60 cards divided by number of players
       const recommendedRounds = Math.floor(60 / playerCount);
-      setMaxRounds(recommendedRounds);
+      // Only update if it's different to avoid unnecessary renders
+      if (gameState.maxRounds !== recommendedRounds) {
+        setMaxRounds(recommendedRounds);
+      }
     }
-  }, [gameState.players.length, setMaxRounds]);
+  }, [gameState.players.length, gameState.maxRounds, setMaxRounds]);
 
   const handleAddPlayer = () => {
     setIndex(index + 1)
@@ -47,14 +50,10 @@ const NewGame = () => {
     setMaxRounds(value)
   }
 
-  // Calculate the recommended and maximum rounds
-  const calculateMaxPossibleRounds = () => {
-    const playerCount = gameState.players.length;
-    if (playerCount < 3) return 20; // Default max
-    return Math.floor(60 / playerCount);
-  };
-
-  const recommendedRounds = calculateMaxPossibleRounds();
+  // Calculate the recommended rounds once (memoized)
+  const recommendedRounds = gameState.players.length >= 3 
+    ? Math.floor(60 / gameState.players.length)
+    : 20; // Default max
 
   // if (loading) {
   //   return <div className="loading">Loading players...</div>
