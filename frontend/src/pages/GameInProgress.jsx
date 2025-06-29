@@ -180,6 +180,47 @@ const GameInProgress = () => {
       <div className="game-header">
         <div className="game-title-section">
           <h1>{gameState.gameName || "Wizard Game"}</h1>
+          <div className="game-controls" ref={menuRef}>
+            <button 
+              className="game-control-btn"
+              onClick={() => setShowSaveDialog(true)}
+              title="Save Game"
+            >
+              <SaveIcon />
+            </button>
+            <button 
+              className="game-control-btn"
+              onClick={() => setShowSaveDialog(true)}
+              title="Pause Game"
+            >
+              <PauseIcon />
+            </button>
+            <button 
+              className={`game-control-btn menu-btn ${showGameMenu ? 'active' : ''}`}
+              onClick={toggleGameMenu}
+              title="Game Menu"
+            >
+              <MenuIcon />
+            </button>
+            
+            {showGameMenu && (
+              <div className="game-menu-dropdown">
+                <button onClick={() => setShowLoadDialog(true)}>
+                  Load Game
+                </button>
+                <button onClick={() => setShowSaveDialog(true)}>
+                  Save & Continue
+                </button>
+                <button onClick={() => setShowSaveDialog(true)}>
+                  Pause Game
+                </button>
+                <button onClick={() => setShowSaveDialog(true)} className="leave-btn">
+                  Leave Game
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="round-info">
             <span>
               Round {gameState.currentRound} of {gameState.maxRounds}
@@ -188,47 +229,6 @@ const GameInProgress = () => {
               Total Calls: {totalCalls} / {currentRound?.cards}
             </span>
           </div>
-        </div>
-        
-        <div className="game-controls" ref={menuRef}>
-          <button 
-            className="game-control-btn"
-            onClick={() => setShowSaveDialog(true)}
-            title="Save Game"
-          >
-            <SaveIcon />
-          </button>
-          <button 
-            className="game-control-btn"
-            onClick={() => setShowSaveDialog(true)}
-            title="Pause Game"
-          >
-            <PauseIcon />
-          </button>
-          <button 
-            className={`game-control-btn menu-btn ${showGameMenu ? 'active' : ''}`}
-            onClick={toggleGameMenu}
-            title="Game Menu"
-          >
-            <MenuIcon />
-          </button>
-          
-          {showGameMenu && (
-            <div className="game-menu-dropdown">
-              <button onClick={() => setShowLoadDialog(true)}>
-                Load Game
-              </button>
-              <button onClick={() => setShowSaveDialog(true)}>
-                Save & Continue
-              </button>
-              <button onClick={() => setShowSaveDialog(true)}>
-                Pause Game
-              </button>
-              <button onClick={() => setShowSaveDialog(true)} className="leave-btn">
-                Leave Game
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

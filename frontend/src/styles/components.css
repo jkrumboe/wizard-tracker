@@ -2204,7 +2204,8 @@
 
 /* Game Controls and Menu Styles */
 .game-title-section {
-  flex: 1;
+  display: grid;
+  /* flex: 1; */
 }
 
 .game-controls {

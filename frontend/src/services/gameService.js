@@ -49,7 +49,9 @@ export async function updateGame(id, gameData) {
 export function getLocalGames() {
   try {
     const storedGames = localStorage.getItem("wizardTracker_localGames");
-    return storedGames ? JSON.parse(storedGames) : [];
+    const games = storedGames ? JSON.parse(storedGames) : [];
+    // Ensure we always return an array
+    return Array.isArray(games) ? games : [];
   } catch (error) {
     console.error("Error loading local games:", error);
     return [];
@@ -59,6 +61,11 @@ export function getLocalGames() {
 // Get recent local games
 export function getRecentLocalGames(limit = 10) {
   const games = getLocalGames();
+  // Ensure games is an array
+  if (!Array.isArray(games)) {
+    console.warn('getLocalGames did not return an array:', games);
+    return [];
+  }
   // Sort by creation date (newest first)
   const sortedGames = games.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   // Return only the requested number of games

@@ -118,7 +118,7 @@ const LoadGameDialog = ({
                       disabled={loading}
                       title="Load Game"
                     >
-                      <PlayIcon size={16} />
+                      <PlayIcon size={26} />
                     </button>
                     {onDeleteGame && (
                       <button

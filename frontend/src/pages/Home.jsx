@@ -18,7 +18,7 @@ const Home = () => {
       const success = await loadSavedGame(gameId)
       if (success) {
         setShowLoadDialog(false)
-        navigate("/game-in-progress")
+        navigate("/game/current")
       }
       return success
     } catch (error) {
@@ -34,16 +34,16 @@ const Home = () => {
         const localGames = getRecentLocalGames(4) // This is synchronous
         
         // Ensure all games have proper date formatting for sorting
-        const formattedServerGames = serverGames.map(game => ({
+        const formattedServerGames = Array.isArray(serverGames) ? serverGames.map(game => ({
           ...game,
           created_at: game.created_at || new Date().toISOString()
-        }))
+        })) : [];
         
         // Local games should already have created_at, but let's make sure
-        const formattedLocalGames = localGames.map(game => ({
+        const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
           ...game,
           created_at: game.created_at || new Date().toISOString()
-        }))
+        })) : [];
         
         setRecentGames(formattedServerGames)
         setRecentLocalGames(formattedLocalGames)
@@ -51,8 +51,17 @@ const Home = () => {
       } catch (error) {
         console.error('Error fetching games:', error)
         // Even if there's an error with server games, still show local games
-        const localGames = getRecentLocalGames(4)
-        setRecentLocalGames(localGames)
+        try {
+          const localGames = getRecentLocalGames(4)
+          const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
+            ...game,
+            created_at: game.created_at || new Date().toISOString()
+          })) : [];
+          setRecentLocalGames(formattedLocalGames)
+        } catch (localError) {
+          console.error('Error fetching local games:', localError)
+          setRecentLocalGames([])
+        }
         setLoading(false)
       }
     }
