@@ -1242,8 +1242,6 @@
     font-weight: 600;
     gap: var(--spacing-sm);
   }
-
-
   
   .player-item span {
     min-width: 30px;
@@ -1267,17 +1265,42 @@
   }
   
   .setting-item {
-    justify-content: space-between;
+    display: flex;
     align-items: center;
     padding: var(--spacing-sm) 0;
-    justify-items: center;
+    margin-top: var(--spacing-md);
   }
 
+  .setting-item label {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-right: var(--spacing-md);
+  }
+  
   .setting-item span {
     font-size: 1.3rem;
     font-weight: 600;
     color: var(--text-color);
     margin-right: var(--spacing-md);
+  }
+  
+  .setting-item input[type="number"] {
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 1.2rem;
+    width: 3.5rem;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  
+  .setting-item input[type="number"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
   }
 
   .select {
@@ -2123,6 +2146,43 @@
   max-width: 960px;
   margin: 0 auto;
 }
+
+/* Game table input styles */
+  .score-table input[type="number"] {
+    width: 50px;
+    text-align: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  
+  .score-table input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+  }
+  
+  .score-table input[type="number"]:disabled {
+    background-color: var(--disabled-background);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  /* Hide spinner buttons in number inputs for browsers */
+  .score-table input[type="number"]::-webkit-inner-spin-button, 
+  .score-table input[type="number"]::-webkit-outer-spin-button { 
+    opacity: 1;
+    height: 20px;
+  }
+  
+  .rounds-input {
+    width: 50px;
+    text-align: center;
+  }
 
 
 

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
-import NumberPicker from "../components/NumberPicker"
 
 const NewGame = () => {
   
@@ -47,7 +46,9 @@ const NewGame = () => {
   }
   
   const handleMaxRoundsChange = (value) => {
-    setMaxRounds(value)
+    // Ensure the value is between 1 and recommendedRounds
+    const validValue = Math.max(1, Math.min(value, recommendedRounds));
+    setMaxRounds(validValue);
   }
 
   // Calculate the recommended rounds once (memoized)
@@ -92,13 +93,15 @@ const NewGame = () => {
         </button>
         
         <div className="setting-item">
-            <span>Number of Rounds:</span>
-            <NumberPicker
+            <label htmlFor="rounds-input">Number of Rounds:</label>
+            <input
+              id="rounds-input"
+              type="number"
               value={gameState.maxRounds}
-              onChange={handleMaxRoundsChange}
+              onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 1)}
               min={1}
               max={recommendedRounds}
-              title={`Select Number of Rounds (Recommended: ${recommendedRounds})`}
+              title={`Enter Number of Rounds (Recommended: ${recommendedRounds})`}
             />
         </div>
     </div>

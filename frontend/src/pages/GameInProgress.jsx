@@ -4,7 +4,6 @@ import React from "react";
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
-import NumberPicker from "../components/NumberPicker"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -116,7 +115,8 @@ const GameInProgress = () => {
                 <tr
                   className="player-row"
                   onClick={(e) => {
-                    if (!e.target.closest(".number-picker")) {
+                    // Don't toggle stats if they clicked on an input
+                    if (e.target.tagName !== 'INPUT') {
                       togglePlayerStats(player.id);
                     }
                   }}>
@@ -124,23 +124,27 @@ const GameInProgress = () => {
                       {player.name}
                       </td>
                       <td>
-                      <NumberPicker
-                        value={player.call !== null ? player.call : 0}
-                        onChange={(value) => updateCall(player.id, value)}
-                        min={0}
-                        max={currentRound.cards + 1}
-                        title={`${player.name}'s Call`}
-                      />
+                        <input
+                          type="number"
+                          className="rounds-input"
+                          value={player.call !== null ? player.call : 0}
+                          onChange={(e) => updateCall(player.id, parseInt(e.target.value) || 0)}
+                          min={0}
+                          max={currentRound.cards}
+                          title={`${player.name}'s Call`}
+                        />
                       </td>
                       <td>
-                      <NumberPicker
-                        value={player.made !== null ? player.made : 0}
-                        onChange={(value) => updateMade(player.id, value)}
-                        min={0}
-                        max={currentRound.cards + 1}
-                        title={`${player.name}'s Tricks Made`}
-                        disabled={player.call === null }
-                      />
+                        <input
+                          type="number"
+                          className="rounds-input"
+                          value={player.made !== null ? player.made : 0}
+                          onChange={(e) => updateMade(player.id, parseInt(e.target.value) || 0)}
+                          min={0}
+                          max={currentRound.cards}
+                          title={`${player.name}'s Tricks Made`}
+                          disabled={player.call === null}
+                        />
                       </td>
                       <td>                      <div className="score">
                         <span className="total-score">

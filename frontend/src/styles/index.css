@@ -32,6 +32,8 @@
   --card-background: #111827;
   --card-background-light: #161F2E;
   --card-background-alt: #1a202c;
+  --disabled-background: #2d3748;
+  --input-background: #374151;
 
   /* Border and shadow */
   --border-color: #374151;
@@ -432,7 +434,6 @@ button:disabled {
 }
 
 .inputPlayerName {
-  width: 100%;
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
