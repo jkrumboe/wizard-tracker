@@ -3,6 +3,7 @@
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { useUser } from '../hooks/useUser'
+import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from './Icon'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
@@ -37,27 +38,37 @@ const Navbar = () => {
       
       <nav className="bottom-navbar">
         <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard")}`}>
-          <div className="nav-icon">🏆</div>
+          <div className="nav-icon">
+            <TrophyIcon size={20} />
+          </div>
           <span>Leaderboard</span>
         </Link>
         
         <Link to="/new-game" className={`bottom-nav-item ${isActive(["/new-game", "/game"])}`}>
-          <div className="nav-icon">🎮</div>
+          <div className="nav-icon">
+            <GamepadIcon size={20} />
+          </div>
           <span>Local Game</span>
         </Link>
 
         <Link to="/" className={`bottom-nav-item ${isActive("/")}`}>
-          <div className="nav-icon">🏠</div>
+          <div className="nav-icon">
+            <HomeIcon size={20} />
+          </div>
           <span>Home</span>
         </Link>
 
         <Link to="/lobby" className={`bottom-nav-item ${isActive(["/lobby", "/multiplayer"])}`}>
-          <div className="nav-icon">🌐</div>
+          <div className="nav-icon">
+            <UsersIcon size={20} />
+          </div>
           <span>Multiplayer</span>
         </Link>
         
         <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
-          <div className="nav-icon">⚙️</div>
+          <div className="nav-icon">
+            <SettingsIcon size={20} />
+          </div>
           <span>Settings</span>
         </Link>
       </nav>

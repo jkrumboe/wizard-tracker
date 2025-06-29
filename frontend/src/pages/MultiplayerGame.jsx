@@ -459,16 +459,17 @@ const MultiplayerGame = () => {
                               <input
                                 type="number"
                                 className="rounds-input"
-                                value={player.call || 0}
+                                value={player.call !== null ? player.call : 0}
                                 onChange={(e) => {
                                   // Add bypass turn order flag for host calls
                                   colyseusService.makeCall(parseInt(e.target.value) || 0, player.playerId, true);
                                 }}
                                 min={0}
                                 max={currentRound}
-                                title={`Round ${currentRound} - Make call for ${player.name || player.playerName}`}
+                                title={`${player.name}'s Call`}
                               />
-                            ) : (                              <span className="call-value">
+                            ) : (                              
+                              <span className="call-value">
                                 {player.call !== undefined && player.call !== null ? player.call : '-'}
                               </span>
                             )}
@@ -479,9 +480,21 @@ const MultiplayerGame = () => {
                             </span>
                           </td>
                           <td className="score-cell">
-                            <div className="score-container">
-                              <span className="score-value">-</span>
-                              <span className="total-value">{player.totalScore || 0} pts</span>
+                            <div className="score">
+                              <span className="total-score">
+                                {player.totalScore !== null ? player.totalScore : 0}
+                              </span>
+                              {player.roundScore !== null && player.roundScore !== undefined && player.roundScore !== 0 && (
+                              <span
+                                className={
+                                player.roundScore > 0
+                                  ? "round-score positive"
+                                  : "round-score negative"
+                                }
+                              >
+                                {player.roundScore > 0 ? `+${player.roundScore}` : player.roundScore}
+                              </span>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -527,29 +540,57 @@ const MultiplayerGame = () => {
                               </span>
                             </div>                          </td>
                           <td className="call-cell">
-                            <span className="call-value">{player.call}</span>
+                            {isCurrentUserHost || isCurrentPlayer ? (
+                              <input
+                                type="number"
+                                className="rounds-input"
+                                value={player.call !== null ? player.call : 0}
+                                onChange={(e) => {
+                                  // Allow host to update calls during playing phase too
+                                  // Also allow players to update their own calls
+                                  colyseusService.makeCall(parseInt(e.target.value) || 0, player.playerId, true);
+                                }}
+                                min={0}
+                                max={currentRound}
+                                title={`${player.name}'s Call`}
+                              />
+                            ) : (
+                              <span className="call-value">{player.call !== null ? player.call : '-'}</span>
+                            )}
                           </td>                          <td className="made-cell">
                             {isCurrentUserHost ? (
                               <input
                                 type="number"
                                 className="rounds-input"
-                                value={player.made || 0}
+                                value={player.made !== null ? player.made : 0}
                                 onChange={(e) => colyseusService.makeTricks(parseInt(e.target.value) || 0, player.playerId, true)}
                                 min={0}
                                 max={currentRound}
-                                title={`Round ${currentRound} - Report tricks for ${player.name || player.playerName}`}
+                                title={`${player.name}'s Tricks Made`}
+                                disabled={player.call === null}
                               />
                             ) : (
-                              <span className="made-value">                                {player.made !== undefined && player.made !== null ? player.made : '-'}
+                              <span className="made-value">
+                                {player.made !== undefined && player.made !== null ? player.made : '-'}
                               </span>
                             )}
                           </td>
                           <td className="score-cell">
-                            <div className="score-container">
-                              <span className={`score-value ${player.roundScore > 0 ? 'positive-score' : player.roundScore < 0 ? 'negative-score' : ''}`}>
-                                {player.roundScore !== undefined ? player.roundScore : '-'}
+                            <div className="score">
+                              <span className="total-score">
+                                {player.totalScore !== null ? player.totalScore : 0}
                               </span>
-                              <span className="total-value">{player.totalScore || 0} pts</span>
+                              {player.roundScore !== null && player.roundScore !== undefined && player.roundScore !== 0 && (
+                              <span
+                                className={
+                                player.roundScore > 0
+                                  ? "round-score positive"
+                                  : "round-score negative"
+                                }
+                              >
+                                {player.roundScore > 0 ? `+${player.roundScore}` : player.roundScore}
+                              </span>
+                              )}
                             </div>
                           </td>
                         </tr>

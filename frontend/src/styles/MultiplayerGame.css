@@ -19,6 +19,16 @@
   border: 1px solid var(--border-color);
 }
 
+/* Compact variant for round headers with minimal styling */
+.game-header.compact {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  margin-bottom: var(--spacing-lg);
+  box-shadow: none;
+  border: none;
+}
+
 .game-info h1 {
   margin: 0 0 var(--spacing-sm) 0;
   font-size: 2em;
@@ -313,6 +323,15 @@
   font-weight: 600;
   color: var(--accent-color);
   margin-bottom: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.total-score {
+  font-weight: 700;
+  font-size: 1.2em;
+  color: var(--text-color);
 }
 
 .player-actions {
@@ -437,16 +456,16 @@
   border-spacing: 0;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
 }
 
 .score-table th,
 .score-table td {
-  padding: var(--spacing-lg) var(--spacing-md);
+  padding: var(--spacing-md);
   text-align: center;
-  /* border-bottom: 1px solid var(--border-color); TODO: Maybe let this in*/
-  transition: all 0.3s ease;
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.2s ease;
   position: relative;
   vertical-align: middle;
 }
@@ -476,10 +495,19 @@
   background-color: var(--card-background);
   position: relative;
   padding: var(--spacing-md);
+  transition: background-color 0.2s;
 }
 
 .player-row:last-child td {
   border-bottom: none;
+}
+
+.player-row:hover {
+  background-color: var(--card-background-alt);
+}
+
+.player-row.current-player {
+  background-color: rgba(96, 165, 250, 0.1);
 }
 
 .player-info {
@@ -690,9 +718,11 @@
 .round-info {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xs);
   font-size: 1.1em;
   margin-bottom: var(--spacing-md);
+  flex-direction: column;
+  align-items: center;
 }
 
 .round-info span {
@@ -786,459 +816,102 @@
   height: 20px;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .game-container {
-    padding: var(--spacing-sm);
-  }
-  
-  .game-header {
-    flex-direction: column;
-    gap: var(--spacing-md);
-    text-align: center;
-  }
-  
-  .game-stats {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  /* Responsive table layout */
-  .score-table {
-    font-size: 0.9em;
-  }
-  
-  .player-cell {
-    min-width: 120px;
-  }
-  
-  .call-cell,
-  .made-cell {
-    min-width: 60px;
-  }
-  
-  .score-cell {
-    min-width: 80px;
-  }
-  
-  .score-container .total-value {
-    font-size: 0.8em;
-  }
-  
-  .players-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-  }
-
-  
-  .input-group {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .call-input,
-  .tricks-input {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  /* Enhanced mobile score table styling */
-  
-  .score-table th,
-  .score-table td {
-    padding: var(--spacing-sm) var(--spacing-xs);
-  }
-  
-  .score-table th {
-    font-size: 0.9em;
-    letter-spacing: 0.3px;
-  }
-  
-  .player-cell {
-    min-width: 120px;
-    padding: var(--spacing-md) var(--spacing-sm);
-  }
-  
-  .player-name {
-    font-size: 1em;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-xs);
-  }
-  
-  .player-badges {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: var(--spacing-xs);
-    margin-top: var(--spacing-xs);
-  }
-  
-  .call-value,
-  .made-value,
-  .score-value,
-  .total-value {
-    padding: var(--spacing-xs) var(--spacing-sm);
-  }
-  .call-value,
-  .made-value {
-    padding: 0;
-    font-size: 1.5rem;
-    min-width: 48px;
-    min-height: 48px;
-    font-weight: 700;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto;
-  }
-  
-  .total-value {
-    font-size: 1.1em;
-  }
-  
-  .dealer-badge,
-  .you-badge,
-  .host-badge,
-  .turn-indicator {
-    font-size: 0.7em;
-    padding: 2px 6px;
-  }
-  
-  .turn-indicator::before {
-    display: none; /* Hide arrow on mobile for space */
-  }
-  
-  /* Improve NumberPicker button on mobile */
-  .number-display {
-    min-height: 44px;
-    min-width: 60px;
-    font-size: 1.1em;
-    font-weight: 700;
-  }
-  
-  .round-info {
-    gap: var(--spacing-md);
-  }
-  
-  .call-section,
-  .tricks-section {
-    padding: var(--spacing-md);
-    min-height: 48px; /* Larger touch target on mobile */
-  }
-  
-  .inline-number-input {
-    width: 70px;
-    min-height: 40px;
-    font-size: 1.2em;
-  }
-  
-  .game-stats {
-    /* flex-direction: column; */
-    gap: var(--spacing-sm);
-    text-align: center;
-  }
-  
-  .game-header {
-    flex-direction: column;
-    gap: var(--spacing-md);
-    text-align: center;
-  }
+/* Update the rounds-input class to match GameInProgress */
+.rounds-input {
+  width: 60px;
+  text-align: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--input-background);
+  color: var(--text-color);
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  margin: 0 auto;
+  display: block;
 }
 
-@media (max-width: 480px) {
-  .game-header h1 {
-    font-size: 1.5em;
-  }
-  
-  .game-stats span {
-    padding: var(--spacing-xs) var(--spacing-sm);
-  }
-  
-  .player-card {
-    padding: var(--spacing-md);
-  }
-  
-  /* Ultra-compact score table for small screens */
-  .score-table {
-    font-size: 0.8em;
-  }
-  
-  .score-table th {
-    padding: var(--spacing-xs) 4px;
-    font-size: 0.8em;
-  }
-  
-  .score-table td {
-    padding: var(--spacing-sm) 4px;
-  }
-  
-  .player-cell {
-    min-width: 100px;
-    padding: var(--spacing-sm) 4px;
-  }
-  
-  .player-name {
-    font-size: 0.9em;
-  }
-  
-  .player-badges {
-    margin-top: 2px;
-  }
-  
-  .dealer-badge,
-  .you-badge,
-  .host-badge,
-  .turn-indicator {
-    font-size: 0.65em;
-    padding: 1px 4px;
-  }
-
-  .score-value {
-    border: 1px solid var(--border-color);
-  }
-  
-  .total-value {
-    font-size: 1em;
-    font-weight: 800;
-  }
-  
-  /* Improve touch targets */
-  .number-display {
-    min-height: 42px;
-    min-width: 42px;
-  }
-  
-  .call-section,
-  .tricks-section {
-    padding: var(--spacing-lg);
-    min-height: 52px; /* Even larger touch targets on small screens */
-  }
-  
-  .inline-number-input {
-    width: 80px;
-    min-height: 44px;
-    font-size: 1.3em;
-    padding: var(--spacing-sm);
-  }
-  
-  .ready-button {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 1.1em;
-  }
-}
-
-/* Fast input submission feedback */
-.inline-number-input:valid {
-  border-color: var(--success-color);
-}
-
-.inline-number-input:invalid {
-  border-color: var(--error-color);
-}
-
-/* Highlight when input is needed */
-.current-player .call-section:has(.inline-number-input),
-.current-player .tricks-section:has(.inline-number-input) {
-  box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
-  border-color: var(--accent-color);
-}
-
-/* Additional visual feedback for active input */
-.current-player .call-section,
-.current-player .tricks-section {
+.rounds-input:focus {
+  outline: none;
   border-color: var(--primary-color);
-  background-color: var(--card-background-light);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
 }
 
-.current-player .inline-number-input {
-  animation: pulse-border 2s infinite;
+.rounds-input:disabled {
+  background-color: var(--disabled-background);
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-@keyframes pulse-border {
-  0%, 100% {
-    border-color: var(--primary-color);
-  }
-  50% {
-    border-color: var(--accent-color);
-  }
+/* Round score styling to match GameInProgress */
+.round-score {
+  font-size: 0.85em;
+  font-weight: 600;
+  margin-left: var(--spacing-xs);
 }
 
-.invite-note {
+.round-score.positive {
+  color: var(--success-color);
+}
+
+.round-score.negative {
+  color: var(--error-color);
+}
+
+.positive-score {
+  color: var(--success-color);
+}
+
+.negative-score {
+  color: var(--error-color);
+}
+
+/* Player stats row styling */
+.player-stats-row {
+  background-color: var(--card-background-alt);
   font-size: 0.9em;
-  color: var(--accent-color);
-  margin-top: var(--spacing-md);
-  font-weight: 500;
 }
 
-.waiting-for-players {
-  color: var(--text-muted);
-  font-style: italic;
-  margin-top: var(--spacing-md);
-  font-size: 0.9em;
+.player-stats-game {
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  gap: var(--spacing-lg);
+  justify-content: center;
 }
 
-/* Pulse animation for the waiting text */
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+.player-stats-game p {
+  margin: 0;
 }
 
-.waiting-phase p {
-  animation: pulse 2s infinite ease-in-out;
-}
-
-/* Advanced animations and transitions */
-/* .score-table tbody tr {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-} */
-
-.score-table tbody tr:hover .call-value,
-.score-table tbody tr:hover .made-value,
-.score-table tbody tr:hover .score-value,
-.score-table tbody tr:hover .total-value {
-  transform: scale(1.05);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-}
-
-.number-display:active {
-  transform: scale(0.95);
-}
-
-/* .player-row.player-turn .call-cell {
-  position: relative;
-}
-
-.player-row.player-turn .call-cell::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: -8px;
-  width: 4px;
-  height: 60%;
-  background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
-  border-radius: 2px;
-  transform: translateY(-50%);
-  animation: slide-in 0.5s ease-out;
-} */
-
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(-50%) translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-  }
-}
-
-/* Smooth transitions for value changes */
-.call-value,
-.made-value,
-.score-value,
-.total-value {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.call-value:not(:empty),
-.made-value:not(:empty),
-.score-value:not(:empty) {
-  animation: value-appear 0.5s ease-out;
-}
-
-@keyframes value-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Enhanced focus states for accessibility */
-.number-display:focus-visible {
-  outline: 3px solid var(--accent-color);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.2);
-}
-
-/* Loading state animations */
-.call-value[data-loading="true"],
-.made-value[data-loading="true"] {
-  animation: pulse-loading 1.5s ease-in-out infinite;
-  background: linear-gradient(90deg, 
-    var(--card-background-alt) 25%, 
-    var(--card-background-light) 50%, 
-    var(--card-background-alt) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-@keyframes pulse-loading {
-  0%, 100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.score-container {
+/* Match player-cell styling with GameInProgress */
+.player-cell {
+  font-weight: 600;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.score-container .score-value {
-  font-size: 1.3em;
-  font-weight: 700;
-  min-width: 40px;
   text-align: center;
 }
 
-.score-container .total-value {
-  font-size: 0.9em;
-  font-weight: 600;
-  color: var(--text-color);
-  background: linear-gradient(135deg, var(--card-background-alt) 0%, var(--card-background-light) 100%);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
-  padding: 2px 8px;
-  text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Make table cells have equal width */
-.score-table th,
-.score-table td {
-  width: 25%;
-}
-
-/* Override for player cell which can be wider */
-
-.scores-section {
+.round-navigation {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  margin-bottom: var(--spacing-xl);
   gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background-color: var(--card-background);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
+}
+
+.nav-btn {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn:disabled {
+  background-color: var(--border-color);
+  cursor: not-allowed;
+  opacity: 0.6;
 }

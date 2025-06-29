@@ -1236,7 +1236,7 @@
     padding: var(--spacing-sm);
     background-color: var(--card-background-alt);
     border-radius: var(--radius-md);
-    margin: 0 auto;
+    margin: 0;
     margin-bottom: var(--spacing-sm);
     border: 1px solid var(--border-color);
     font-weight: 600;

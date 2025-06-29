@@ -16,6 +16,34 @@
     margin-bottom: var(--spacing-xl);
   }
   
+  /* === Icon Styling === */
+  .stat-item h3,
+  .player-management h2,
+  .stats-section h2,
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  
+  .search-container {
+    position: relative;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .search-container svg {
+    position: absolute;
+    left: var(--spacing-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none;
+  }
+  
+  .search-container input {
+    padding-left: calc(var(--spacing-sm) * 2 + 16px); /* space for icon */
+  }
+  
   /* === Stats Section === */
   .stats-section {
     margin-bottom: var(--spacing-xl);
@@ -60,6 +88,8 @@
     background-color: var(--card-background-alt);
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
+  }
+  
   .add-player-form input {
     width: 100%;
     padding: var(--spacing-sm);

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getPlayers, createPlayer, updatePlayer } from "../services/playerService";
 import { getGames } from "../services/gameService";
 import { authService } from "../services/authService";
+import { LogOutIcon, UsersIcon, GamepadIcon, BarChartIcon, SearchIcon, PlusIcon, EditIcon, TrashIcon } from "../components/Icon";
 import "../styles/admin.css";
 
 const AdminDashboard = () => {
@@ -77,6 +78,7 @@ const AdminDashboard = () => {
       <div className="admin-header">
         <h1>🔧 Admin Dashboard</h1>
         <button onClick={handleLogout} className="logout-btn">
+          <LogOutIcon size={16} />
           Logout
         </button>
       </div>
@@ -92,29 +94,32 @@ const AdminDashboard = () => {
       {!loading && !error && (
 
       <><section className="stats-section">
-          <h2>App Statistics</h2>
+          <h2><BarChartIcon size={20} /> App Statistics</h2>
           <div className="stats-grid">
             <div className="stat-item">
-              <h3>Total Players</h3>
+              <h3><UsersIcon size={16} /> Total Players</h3>
               <p>{stats.totalPlayers}</p>
             </div>
             <div className="stat-item">
-              <h3>Total Games</h3>
+              <h3><GamepadIcon size={16} /> Total Games</h3>
               <p>{stats.totalGames}</p>
             </div>
             <div className="stat-item">
-              <h3>Total Scores</h3>
+              <h3><BarChartIcon size={16} /> Total Scores</h3>
               <p>{stats.totalScores}</p>
             </div>
           </div>
-        </section><section className="player-management">
-            <h2>Player Management</h2>
-            <input
-              type="text"
-              placeholder="Search players..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input" />
+        </section>        <section className="player-management">
+            <h2><UsersIcon size={20} /> Player Management</h2>
+            <div className="search-container">
+              <SearchIcon size={16} />
+              <input
+                type="text"
+                placeholder="Search players..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input" />
+            </div>
             <ul className="player-list">
               {filteredPlayers.map((player) => (
                 <li key={player.id} className="player-item" onClick={() => setSelectedPlayer(player)}>

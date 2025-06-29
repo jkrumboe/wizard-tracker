@@ -205,6 +205,27 @@ const Lobby = () => {
     <div className="lobby-container">
       <div className="lobby-content">
         <div className="lobby-sections">
+
+          <section className="online-players">
+            <h2>Online Players</h2>            
+            <div className="players-list">
+              {onlinePlayers.map((player, index) => (
+                <div key={`player-${player.playerId || player.id || index}-${player.sessionId || ''}`} className="player-item">
+                  <span className="player-name">{(player.playerName || player.name || '').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="lobby-actions">
+            <button 
+              className="create-game-btn primary-button"
+              onClick={() => setShowCreateModal(true)}
+            >
+              Create New Game
+            </button>
+          </div>
+
           <section className="available-rooms">
             <h2>Available Games</h2>
             {availableRooms.length === 0 ? (
@@ -247,32 +268,7 @@ const Lobby = () => {
               </div>
             )}
             
-          </section>
-          
-          <div className="lobby-actions">
-          <button 
-            className="create-game-btn primary-button"
-            onClick={() => setShowCreateModal(true)}
-          >
-            Create New Game
-          </button>
-        </div>
-
-          <section className="online-players">
-            <h2>Online Players</h2>            
-            <div className="players-list">
-              {onlinePlayers.map((player, index) => (
-                <div key={`player-${player.playerId || player.id || index}-${player.sessionId || ''}`} className="player-item">
-                  <span className="player-name">{(player.playerName || player.name || '').replace(/\b\w/g, c => c.toUpperCase())}</span>
-                  {/* <span className={`player-status ${player.status}`}>
-                    {player.status === 'browsing' ? 'Browsing' :
-                     player.status === 'in_game' ? 'In Game' :
-                     player.status === 'creating' ? 'Creating' : 'Ready'}
-                  </span> */}
-                </div>
-              ))}
-            </div>
-          </section>
+          </section> 
         </div>
       </div>
 
