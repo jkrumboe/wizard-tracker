@@ -59,7 +59,11 @@
   --radius-xl: 1rem;
   --radius-full: 9999px;
 
-  font-size: 16px;
+  --font-size: 16px;
+  --font-size-sm: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-xxl: 24px;
 }
 
 body {
@@ -241,8 +245,8 @@ button:disabled {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding-left: var(--spacing-xl);
-  padding-right: var(--spacing-xl);
+  padding-left: var(--spacing-lg);
+  padding-right: var(--spacing-lg);
 }
 
 /* Navbar styles */

@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import SaveGameDialog from "../components/SaveGameDialog"
 import LoadGameDialog from "../components/LoadGameDialog"
-import { SaveIcon, PauseIcon, MenuIcon } from "../components/Icon"
+import { SaveIcon, PauseIcon, MenuIcon, StatIcon, BarChartIcon } from "../components/Icon"
+import { ArrowLeftIcon, ArrowRight } from "lucide-react";
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -206,126 +207,65 @@ const GameInProgress = () => {
 
   const totalCalls = currentRound.players.reduce((sum, player) => sum + (player.call || 0), 0);
 
-  console.log("Current Round:", currentRound);
+  // Returns the forbidden call value for the last player, or null if not applicable
+  const lastPlayerCantCall = () => {
+    if (!currentRound) return 0;
+    const players = currentRound.players;
+    // Find players who have not made a call yet
+    const uncalledPlayers = players.filter(p => p.call === null);
+    // Only restrict the last player to call
+    if (uncalledPlayers.length !== 1) return 0;
+    // The forbidden call is the value that would make totalCalls == currentRound.cards
+    const forbiddenCall = currentRound.cards - totalCalls;
+    // Only restrict if forbiddenCall is within valid range
+    if (forbiddenCall >= 0 && forbiddenCall <= currentRound.cards) {
+      return `not ${forbiddenCall}`;
+    }
+    return 0;
+  };
 
   return (
     <div className="game-in-progress">
-      <div className="game-header">
-        <div className="game-title-section">
-          <h1>{gameState.gameName || "Wizard Game"}</h1>
-          <div className="game-controls" ref={menuRef}>
-            <button 
-              className="game-control-btn"
-              onClick={() => setShowSaveDialog(true)}
-              title="Save Game"
-            >
-              <SaveIcon />
-            </button>
-            <button 
-              className="game-control-btn"
-              onClick={() => setShowSaveDialog(true)}
-              title="Pause Game"
-            >
-              <PauseIcon />
-            </button>
-            <button 
-              className={`game-control-btn menu-btn ${showGameMenu ? 'active' : ''}`}
-              onClick={toggleGameMenu}
-              title="Game Menu"
-            >
-              <MenuIcon />
-            </button>
-            
-            {showGameMenu && (
-              <div className="game-menu-dropdown">
-                <button onClick={() => setShowLoadDialog(true)}>
-                  Load Game
-                </button>
-                <button onClick={() => setShowSaveDialog(true)}>
-                  Save & Continue
-                </button>
-                <button onClick={() => setShowSaveDialog(true)}>
-                  Pause Game
-                </button>
-                <button onClick={() => setShowSaveDialog(true)} className="leave-btn">
-                  Leave Game
-                </button>
-              </div>
-            )}
-          </div>
 
-          <div className="round-info">
+      <div className="round-info">
             <span>
-              Round {gameState.currentRound} of {gameState.maxRounds}
+              Round {parseInt(gameState.currentRound, 10)} of {parseInt(gameState.maxRounds, 10)}
             </span>
             <span className="total-calls">
-              Total Calls: {totalCalls} / {currentRound?.cards}
+              Calls: {totalCalls} |  {(currentRound?.cards - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
             </span>
-          </div>
-
-           <div className="round-navigation">
-            <button className="nav-btn" onClick={previousRound} disabled={isFirstRound}>
-              Previous Round
-            </button>
-            <button className="nav-btn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
-              Next Round
-            </button>
-          </div>
         </div>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="card-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'game' ? 'active' : ''}`}
-          onClick={() => setActiveTab('game')}
-        >
-          Game Board
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
-        >
-          Player Stats
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'game' && (
-        <div className="tab-panel">
-
-          <div className="player-scores">
-            <table className="score-table">
-              <thead>
-                <tr>
-                  <th>Player</th>
-                  <th>Call</th>
-                  <th>Made</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-              <tbody>
+        {activeTab === 'game' && (
+          <div className="tab-panel">
+            <div className="player-scores">
+              <table className="score-table">
+                <tbody>
                 {currentRound?.players.map((player) => (
                   <tr key={player.id} className="player-row">
                     <td className="player-cell">
                       {player.name}
                     </td>
                     <td>
+                      <span>Called</span>
                       <input
                         type="number"
                         className="rounds-input"
-                        value={player.call !== null ? player.call : 0}
-                        onChange={(e) => updateCall(player.id, parseInt(e.target.value) || 0)}
+                        value={player.call !== null ? player.call : ''}
+                        placeholder="0"
+                        onChange={(e) => updateCall(player.id, parseInt(e.target.value) || '')}
                         min={0}
                         max={currentRound.cards}
                         title={`${player.name}'s Call`}
                       />
                     </td>
                     <td>
+                      <span>Made</span>
                       <input
                         type="number"
                         className="rounds-input"
-                        value={player.made !== null ? player.made : 0}
+                        value={player.made !== null ? player.made : ''}
+                        placeholder="0"
                         onChange={(e) => updateMade(player.id, parseInt(e.target.value) || 0)}
                         min={0}
                         max={currentRound.cards}
@@ -334,6 +274,8 @@ const GameInProgress = () => {
                       />
                     </td>
                     <td>
+                      <span>Score</span>
+
                       <div className="score">
                         <span className="total-score">
                           {player.totalScore !== null ? player.totalScore : 0}
@@ -341,9 +283,9 @@ const GameInProgress = () => {
                         {player.score !== null && player.score !== 0 && (
                           <span
                             className={
-                              player.score > 0
-                                ? "round-score positive"
-                                : "round-score negative"
+                          player.score > 0
+                            ? "round-score positive"
+                            : "round-score negative"
                             }
                           >
                             {player.score > 0 ? `+${player.score}` : player.score}
@@ -353,107 +295,164 @@ const GameInProgress = () => {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
+
+            {isLastRound && isRoundComplete && (
+          <button className="finish-btn" onClick={handleFinishGame}>
+            Finish Game
+          </button>
+            )}
           </div>
+        )}
 
-          {isLastRound && isRoundComplete && (
-            <button className="finish-btn" onClick={handleFinishGame}>
-              Finish Game
-            </button>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'stats' && (
-        <div className="tab-panel">
-          <div className="game-stats-container">
-            <h2>Player Statistics</h2>
-            <p className="stats-description">
-              Detailed performance analysis for this game through Round {gameState.currentRound}
-            </p>
+        {activeTab === 'stats' && (
+          <div className="tab-panel">
+            <div className="game-stats-container">
+          <h2>Player Statistics</h2>
+          <p className="stats-description">
+            Detailed performance analysis for this game through Round {gameState.currentRound}
+          </p>
+          
+          <div className="stats-grid">
+            {detailedStats.map((playerStats) => (
+              <div key={playerStats.id} className="player-stat-card">
+            <h3 className="player-stat-name">{playerStats.name}</h3>
             
-            <div className="stats-grid">
-              {detailedStats.map((playerStats) => (
-                <div key={playerStats.id} className="player-stat-card">
-                  <h3 className="player-stat-name">{playerStats.name}</h3>
-                  
-                  <div className="stat-section">
-                    <h4>Bidding Performance</h4>
-                    <div className="stat-row">
-                      <span className="stat-label">Bid Accuracy:</span>
-                      <span className="stat-value highlight">{playerStats.bidAccuracy}%</span>
-                      <span className="stat-explanation">
-                        ({playerStats.correctBids}/{playerStats.roundsPlayed} perfect bids)
-                      </span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Bidding Style:</span>
-                      <span className="stat-value">{playerStats.biddingTendency}</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Avg. Bid:</span>
-                      <span className="stat-value">{playerStats.avgBid}</span>
-                      <span className="stat-explanation">tricks per round</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Avg. Made:</span>
-                      <span className="stat-value">{playerStats.avgTricks}</span>
-                      <span className="stat-explanation">tricks per round</span>
-                    </div>
-                  </div>
+            <div className="stat-section">
+              <h4>
+                <StatIcon style={{ marginRight: 4 }} />
+                Bidding Performance
+              </h4>
+              <div className="stat-row">
+                <span className="stat-label">Bid Accuracy:</span>
+                <span className="stat-value highlight">{playerStats.bidAccuracy}%</span>
+                <span className="stat-explanation">
+              ({playerStats.correctBids}/{playerStats.roundsPlayed} perfect bids)
+                </span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Bidding Style:</span>
+                <span className="stat-value">{playerStats.biddingTendency}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Avg. Bid:</span>
+                <span className="stat-value">{playerStats.avgBid}</span>
+                <span className="stat-explanation">tricks per round</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Avg. Made:</span>
+                <span className="stat-value">{playerStats.avgTricks}</span>
+                <span className="stat-explanation">tricks per round</span>
+              </div>
+            </div>
 
-                  <div className="stat-section">
-                    <h4>Scoring Performance</h4>
-                    <div className="stat-row">
-                      <span className="stat-label">Total Points:</span>
-                      <span className="stat-value highlight">{playerStats.totalPoints}</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Avg. Points/Round:</span>
-                      <span className="stat-value">{playerStats.avgPointsPerRound}</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Best Round:</span>
-                      <span className="stat-value positive">{playerStats.bestRound}</span>
-                      <span className="stat-explanation">points</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Worst Round:</span>
-                      <span className="stat-value negative">{playerStats.worstRound}</span>
-                      <span className="stat-explanation">points</span>
-                    </div>
-                  </div>
+            <div className="stat-section">
+              <h4>
+                <SaveIcon style={{ marginRight: 4 }} />
+                Scoring Performance
+              </h4>
+              <div className="stat-row">
+                <span className="stat-label">Total Points:</span>
+                <span className="stat-value highlight">{playerStats.totalPoints}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Avg. Points/Round:</span>
+                <span className="stat-value">{playerStats.avgPointsPerRound}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Best Round:</span>
+                <span className="stat-value positive">{playerStats.bestRound}</span>
+                <span className="stat-explanation">points</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Worst Round:</span>
+                <span className="stat-value negative">{playerStats.worstRound}</span>
+                <span className="stat-explanation">points</span>
+              </div>
+            </div>
 
-                  <div className="stat-section">
-                    <h4>Consistency</h4>
-                    <div className="stat-row">
-                      <span className="stat-label">Perfect Rounds:</span>
-                      <span className="stat-value">{playerStats.perfectRounds}</span>
-                      <span className="stat-explanation">bid = tricks made</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Best Streak:</span>
-                      <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
-                      <span className="stat-explanation">consecutive perfect bids</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Over-bids:</span>
-                      <span className="stat-value">{playerStats.overBids}</span>
-                      <span className="stat-explanation">made more than bid</span>
-                    </div>
-                    <div className="stat-row">
-                      <span className="stat-label">Under-bids:</span>
-                      <span className="stat-value">{playerStats.underBids}</span>
-                      <span className="stat-explanation">made less than bid</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="stat-section">
+              <h4>
+                <PauseIcon style={{ marginRight: 4 }} />
+                Consistency
+              </h4>
+              <div className="stat-row">
+                <span className="stat-label">Perfect Rounds:</span>
+                <span className="stat-value">{playerStats.perfectRounds}</span>
+                <span className="stat-explanation">bid = tricks made</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Best Streak:</span>
+                <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
+                <span className="stat-explanation">consecutive perfect bids</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Over-bids:</span>
+                <span className="stat-value">{playerStats.overBids}</span>
+                <span className="stat-explanation">made more than bid</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Under-bids:</span>
+                <span className="stat-value">{playerStats.underBids}</span>
+                <span className="stat-explanation">made less than bid</span>
+              </div>
+            </div>
+              </div>
+            ))}
+          </div>
             </div>
           </div>
+        )}
+
+      {/* Top Section with Controls */}
+       <div className="game-bottom-section">
+        {/* Toggle Button for Game Board / Player Stats */}
+        <div className="toggle-section">
+          <button
+            className="game-control-btn"
+            onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
+          >
+            {activeTab === 'game' ? <BarChartIcon size={27} /> : <MenuIcon size={27} />}
+          </button>
         </div>
-      )}
+
+        <div className="game-controls" ref={menuRef}>
+          <button 
+            className={`game-control-btn menu-btn ${showGameMenu ? 'active' : ''}`}
+            onClick={toggleGameMenu}
+            title="Game Menu"
+          >
+            <MenuIcon size={27} />
+          </button>
+          
+          {showGameMenu && (
+            <div className="game-menu-dropdown">
+              <button onClick={() => setShowLoadDialog(true)}>
+                Load Game
+              </button>
+              <button onClick={() => setShowSaveDialog(true)}>
+                Save & Continue
+              </button>
+              <button onClick={() => setShowSaveDialog(true)}>
+                Pause Game
+              </button>
+              <button onClick={() => setShowSaveDialog(true)} className="leave-btn">
+                Leave Game
+              </button>
+            </div>
+          )}
+        </div>
+
+        <button className="nav-btn" id="prevRoundBtn" onClick={previousRound} disabled={isFirstRound}>
+            <ArrowLeftIcon />
+        </button>
+
+        <button className="nav-btn" id="nextRoundBtn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
+          <ArrowRight />
+        </button>
+      </div> 
 
       {/* Save Game Dialog */}
       <SaveGameDialog

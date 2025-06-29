@@ -59,3 +59,5 @@ export const ArrowRightIcon = (props) => <Icon name="ArrowRight" {...props} />;
 export const SaveIcon = (props) => <Icon name="Save" {...props} />;
 export const PauseIcon = (props) => <Icon name="Pause" {...props} />;
 export const PlayIcon = (props) => <Icon name="Play" {...props} />;
+export const StatIcon = (props) => <Icon name="BarChart2" {...props} />;
+

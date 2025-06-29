@@ -471,7 +471,6 @@
 }
 
 .score-table th {
-  /* background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); */
   font-weight: 700;
   color: var(--text-white);
   font-size: 1.1em;
@@ -490,7 +489,6 @@
 }
 
 .player-row {
-  /* transition: all 0.3s ease; */
   cursor: pointer;
   background-color: var(--card-background);
   position: relative;
@@ -718,21 +716,22 @@
 .round-info {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-md);
   font-size: 1.1em;
-  margin-bottom: var(--spacing-md);
-  flex-direction: column;
   align-items: center;
+  margin-bottom: var(--spacing-md);
 }
 
 .round-info span {
+  text-align: center;
   background-color: var(--card-background-alt);
   color: var(--text-color);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 1em;
+  border-radius: var(--radius-sm);
+  width: 100%;
 }
 
 .total-calls {
@@ -884,13 +883,13 @@
 }
 
 /* Match player-cell styling with GameInProgress */
-.player-cell {
+/* .player-cell {
   font-weight: 600;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-}
+} */
 
 .round-navigation {
   display: flex;
