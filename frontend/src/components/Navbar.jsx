@@ -46,6 +46,11 @@ const Navbar = () => {
           <span>Local Game</span>
         </Link>
 
+        <Link to="/" className={`bottom-nav-item ${isActive("/")}`}>
+          <div className="nav-icon">🏠</div>
+          <span>Home</span>
+        </Link>
+
         <Link to="/lobby" className={`bottom-nav-item ${isActive(["/lobby", "/multiplayer"])}`}>
           <div className="nav-icon">🌐</div>
           <span>Multiplayer</span>
