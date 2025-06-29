@@ -369,7 +369,7 @@ button:disabled {
 /* Home Page */
 .home-header {
   text-align: center;
-  /* margin: var(--spacing-xl) auto; */
+  margin-top: var(--spacing-xl);
   background-color: var(--card-background);
   padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
