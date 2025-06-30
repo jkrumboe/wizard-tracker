@@ -1,0 +1,146 @@
+/* Wizard Scorecard Styles */
+.wizard-scorecard {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border-radius: 10px;
+  background-color: #1e293b;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.scorecard-table th, 
+.scorecard-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border: 1px solid #2d3748;
+}
+
+.player-header {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.player-header-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.round-header {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 11;
+  width: 60px;
+}
+
+.round-number {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 9;
+}
+
+.player-round-cell {
+  background-color: #334155;
+  transition: background-color 0.2s;
+}
+
+.player-round-cell:hover {
+  background-color: #3e4c67;
+}
+
+.player-round-data {
+    display: grid;
+    grid-template-rows: auto auto;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.1rem ;
+}
+
+.player-round-data > :nth-child(1) {
+    grid-row: 1;
+    grid-column: 1;
+}
+
+.player-round-data > :nth-child(2) {
+    grid-row: 1;
+    grid-column: 2;
+}
+
+.player-round-data > :nth-child(3) {
+    grid-row: 2;
+    grid-column: 1 / span 2;
+}
+
+.round-bid ,
+.round-made ,
+.round-score {
+  color: #f8fafc;
+  font-weight: 600 ;
+  font-size: 1rem;
+}
+
+.round-bid ,
+.round-score {
+  font-size: 1.2rem;
+}
+
+.total-row {
+  background-color: var(--background-color-dark);
+  font-weight: 700;
+}
+
+.total-label {
+  background-color: var(--background-color-dark);
+  color: #e2e8f0;
+  position: sticky;
+  left: 0;
+  z-index: 9;
+}
+
+.total-score {
+  color: #f8fafc;
+  font-size: 1.1rem;
+}
+
+/* Add color coding for correct/incorrect bids */
+.correct-bid {
+  color: #10b981; /* green for correct bids */
+}
+
+.under-bid {
+  color: #f59e0b; /* amber for under bids */
+}
+
+.over-bid {
+  color: #ef4444; /* red for over bids */
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .player-round-data {
+    font-size: 0.8rem;
+  }
+  
+  .scorecard-table th, 
+  .scorecard-table td {
+    padding: 0.5rem;
+  }
+}

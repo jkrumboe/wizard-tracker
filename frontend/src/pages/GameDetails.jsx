@@ -8,6 +8,7 @@ import { ArrowLeftIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
 import PerformanceMetric from "../components/PerformanceMetric"
 import defaultAvatar from "../assets/default-avatar.png" 
 import "../styles/performanceMetrics.css"
+import "../styles/scorecard.css"
 
 const GameDetails = () => {
   const { id } = useParams()
@@ -192,24 +193,64 @@ const GameDetails = () => {
       <div className="game-summary">
         {activeTab === 'rounds' && (
           <div className="rounds-section">
-            <h2>Rounds</h2>
-            {game.round_data && game.round_data.map((round, index) => (
-              <div key={index} className="round-card">
-                <h3>Round {index + 1}</h3>
-                <div className="round-players">
-                  {round.players.map((player) => (
-                    <div key={player.id} className="round-player">
-                      <span className="name">{playerDetails[player.id]?.name || "Unknown"}</span>
-                      <p>
-                        <span className="bid">Bid: {player.call}</span>
-                        <span className="made">Made: {player.made}</span>
-                        <span className="score">Score: {player.score}</span>
-                      </p>
-                    </div>
+            <h2>Scorecard</h2>
+            <div className="wizard-scorecard">
+              <table className="scorecard-table">
+                <thead>
+                  <tr>
+                    <th className="round-header">Round</th>
+                    {sortedPlayers.map(player => (
+                      <th key={player.id} className="player-header">
+                        <div className="player-header-name">{player.name}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {game.round_data && game.round_data.map((round, index) => (
+                    <tr key={index} className="round-row">
+                      <td className="round-number">{index + 1}</td>
+                      {sortedPlayers.map(player => {
+                        const playerRound = round.players.find(p => p.id === player.id);
+                        
+                        // Determine bid status for color-coding
+                        let bidStatusClass = '';
+                        if (playerRound) {
+                          if (playerRound.call === playerRound.made) {
+                            bidStatusClass = 'correct-bid';
+                          } else if (playerRound.made > playerRound.call) {
+                            bidStatusClass = 'over-bid';
+                          } else {
+                            bidStatusClass = 'under-bid';
+                          }
+                        }
+                        
+                        return (
+                          <td key={player.id} className="player-round-cell">
+                            {playerRound && (
+                              <div className="player-round-data">
+                                <div className="round-score">{playerRound.score}</div>
+
+                                <div className="round-bid">{playerRound.call}</div>
+                                <div className={`round-made ${bidStatusClass}`}>Made: {playerRound.made}</div>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   ))}
-                </div>
-              </div>
-            ))}
+                  <tr className="total-row">
+                    <td className="total-label">Total</td>
+                    {sortedPlayers.map(player => (
+                      <td key={player.id} className="total-score">
+                        {player.score}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
