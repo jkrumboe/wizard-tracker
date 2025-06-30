@@ -4,7 +4,10 @@ import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { getGameById } from "../services/gameService"
 import { getPlayerById } from "../services/playerService"
+import { ArrowLeftIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
+import PerformanceMetric from "../components/PerformanceMetric"
 import defaultAvatar from "../assets/default-avatar.png" 
+import "../styles/performanceMetrics.css"
 
 const GameDetails = () => {
   const { id } = useParams()
@@ -13,7 +16,7 @@ const GameDetails = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
-  const [activeTab, setActiveTab] = useState('finalResults')
+  const [activeTab, setActiveTab] = useState('stats')
   
   useEffect(() => {
     const fetchGameData = async () => {
@@ -147,85 +150,56 @@ const GameDetails = () => {
     <div className="game-details-container">
       <div className="game-details-header">
         <Link to="/" className="back-link">
-          ← Back to Home
+          <ArrowLeftIcon className="back-icon" />
         </Link>
         <h1>Game Details {game.is_local && <span className="mode-badge local">Local</span>}</h1>
-        
         <div className="game-date">Finished: {formattedDate}</div>
         <div className="game-date">Duration: {duration}</div>
+        <div className="game-winner">Winner: {playerDetails[game.winner_id].name}</div>
+        {/* Toggle Button for Game Board / Player Stats */}
+        <div className="toggle-section">
+          <button
+            className="game-control-btn"
+            id="game-toggle-details"
+            onClick={() => setActiveTab(activeTab === 'rounds' ? 'stats' : 'rounds')}
+          >
+            {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <GamepadIcon size={22} />}
+          </button>
+        </div>
       </div>
 
       <div className="game-summary">
-        <div className="winner-section">
-          <h2>Winner</h2>
-          {playerDetails[game.winner_id] && (
-            <div className="winner-card">
-              <img
-                src={playerDetails[game.winner_id].avatar || defaultAvatar}
-                alt={playerDetails[game.winner_id].name}
-                className="winner-avatar"
-              />
-              <div className="winner-info">
-                <h3>{playerDetails[game.winner_id].name}</h3>
-                <div className="winner-score">Score: {game.final_scores[game.winner_id]}</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="players-section">
-          <div className="card-tabs">
-            <button
-              className={`tab-button ${activeTab === 'finalResults' ? 'active' : ''}`}
-              onClick={() => setActiveTab('finalResults')}
-            >
-              Final Results
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'rounds' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rounds')}
-            >
-              Rounds
-            </button>            
-          </div>
-                {activeTab === 'rounds' && (
-                <div className="rounds-section">
-                  <h2>Rounds</h2>
-                  {game.round_data && game.round_data.map((round, index) => (
-                    <div key={index} className="round-card">
-                      <h3>Round {index + 1}</h3>
-                        <div className="round-players">
-                          
-                          {round.players.map((player) => (
-                            <div key={player.id} className="round-player">
-                              <span className="name">{playerDetails[player.id]?.name || "Unknown"}</span>
-                              <span className="bid">Bid: {player.call}</span>
-                              <span className="made">Made: {player.made}</span>
-                              <span className="score">Score: {player.score}</span>
-                            </div>
-                          ))}
-                        </div>
+        {activeTab === 'rounds' && (
+          <div className="rounds-section">
+            <h2>Rounds</h2>
+            {game.round_data && game.round_data.map((round, index) => (
+              <div key={index} className="round-card">
+                <h3>Round {index + 1}</h3>
+                <div className="round-players">
+                  {round.players.map((player) => (
+                    <div key={player.id} className="round-player">
+                      <span className="name">{playerDetails[player.id]?.name || "Unknown"}</span>
+                      <span className="bid">Bid: {player.call}</span>
+                      <span className="made">Made: {player.made}</span>
+                      <span className="score">Score: {player.score}</span>
                     </div>
                   ))}
                 </div>
-              )}
-        </div> 
-        { (window.innerWidth > 768 || activeTab === 'finalResults') && (
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(window.innerWidth > 768 || activeTab === 'stats') && (
           <div className="results-section">
             <h2>Final Results</h2>
             <div className="results-table">
-              <div className="results-header">
-                <div className="rank-col">Rank</div>
-                <div className="player-col">Player</div>
-                <div className="score-col">Score</div>
-              </div>
               {sortedPlayers.map((player, index) => (
                 <div key={player.id} className="results-row">
                   <div className="rank-col">{index + 1}</div>
                   <div className="player-col">
                     {game.is_local ? (
                       <div className="player-info">
-                        <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
                         <span>{player.name}</span>
                       </div>
                     ) : (
@@ -241,25 +215,66 @@ const GameDetails = () => {
                   </button>
                   {selectedPlayerId === player.id && (
                     <div className="advanced-stats">
-                      <h3>Advanced Stats</h3>
-                      <p>Total Bids: {playerStats.find((stat) => stat.id === player.id)?.totalBids}</p>
-                      <p>Total Tricks: {playerStats.find((stat) => stat.id === player.id)?.totalTricks}</p>
-                      <p>Correct Bids: {playerStats.find((stat) => stat.id === player.id)?.correctBids}</p>
-                      <p>Bid Accuracy: {playerStats.find((stat) => stat.id === player.id)?.bidAccuracy}%</p>
-                      <p>Overbids: {playerStats.find((stat) => stat.id === player.id)?.overbids}</p>
-                      <p>Underbids: {playerStats.find((stat) => stat.id === player.id)?.underbids}</p>
-                      <p>Average Difference: {playerStats.find((stat) => stat.id === player.id)?.avgDiff}</p>
-                      <p>Total Points: {playerStats.find((stat) => stat.id === player.id)?.totalPoints}</p>
-                      <p>Average Points: {playerStats.find((stat) => stat.id === player.id)?.avgPoints}</p>
-                      <p>Highest Score: {playerStats.find((stat) => stat.id === player.id)?.highestScore}</p>
-                      <p>Lowest Score: {playerStats.find((stat) => stat.id === player.id)?.lowestScore}</p>
+                      <h3>Performance Metrics</h3>
+                      
+                      <div className="stats-section">
+                        <div className="stats-section-title">Game Performance</div>
+                        <div className="stats-cards" id="game-performance">
+                          <p>Total Points: <span>{playerStats.find((stat) => stat.id === player.id)?.totalPoints} </span></p>
+                          <p>Highest Round: <span>{playerStats.find((stat) => stat.id === player.id)?.highestScore}</span></p>
+                          <p>Correct Bids: <span>{playerStats.find((stat) => stat.id === player.id)?.correctBids}</span></p>
+                          <p>Tricks Won: <span>{playerStats.find((stat) => stat.id === player.id)?.totalTricks}</span></p>
+                        </div>
+                      </div>
+
+                      <div className="stats-section">
+                        <div className="stats-section-title">Bidding Precision</div>
+                        <div className="stats-cards">
+                          <PerformanceMetric 
+                            label="Average Score" 
+                            value={playerStats.find((stat) => stat.id === player.id)?.avgPoints} 
+                            target={30} 
+                            isAboveTarget={false}
+                          />
+                          <PerformanceMetric 
+                            label="Bid Accuracy" 
+                            value={playerStats.find((stat) => stat.id === player.id)?.bidAccuracy + "%"} 
+                            target={80} 
+                            isAboveTarget={false}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="stats-section">
+                        <div className="stats-section-title">Bidding Style</div>
+                        <div className="stats-cards">
+                          <PerformanceMetric 
+                            label="Overbid Ratio" 
+                            value={playerStats.find((stat) => stat.id === player.id)?.overbids} 
+                            target={5} 
+                            isAboveTarget={true}
+                          />
+                          <PerformanceMetric 
+                            label="Underbid Ratio" 
+                            value={playerStats.find((stat) => stat.id === player.id)?.underbids} 
+                            target={5} 
+                            isAboveTarget={true}
+                          />
+                          <PerformanceMetric 
+                            label="Average Deviation" 
+                            value={playerStats.find((stat) => stat.id === player.id)?.avgDiff} 
+                            target={0.8} 
+                            isAboveTarget={true}
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               ))}
             </div>
           </div>
-        )}      
+        )}
       </div>
     </div>
   );

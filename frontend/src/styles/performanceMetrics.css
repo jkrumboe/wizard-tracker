@@ -1,0 +1,136 @@
+/* Game Performance*/
+
+#game-performance {
+  display: grid;
+  margin-top: var(--spacing-sm);
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+}
+
+#game-performance p {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-background);
+  border-radius: 10px;
+  padding: var(--spacing-xs);
+  margin: var(--spacing-xs);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Performance Metrics Styling */
+.performance-metric {
+  padding: 0.2rem 0;
+  border-radius: 8px;
+  background-color: rgba(30, 41, 59, 0.8);
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.metric-label {
+  color: #cbd5e1;
+}
+
+.metric-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.trend-icon {
+  margin-left: 5px;
+  font-size: 1rem;
+}
+
+.metric-bar-container {
+  height: 8px;
+  background-color: #334155;
+  border-radius: 4px;
+  overflow: visible; /* Changed to visible to show the target marker */
+  margin-bottom: 0.5rem;
+  position: relative; /* Added position relative for absolute positioning of target marker */
+}
+
+.target-marker {
+  position: absolute;
+  top: -3px; /* Extends above the bar */
+  height: 14px; /* Taller than the bar for visibility */
+  width: 2px; /* Width of the marker line */
+  background-color: #f8fafc; /* Light color for contrast */
+  z-index: 2; /* Ensure it's above the bar */
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+}
+
+.metric-bar {
+  height: 100%;
+  border-radius: 4px;
+  position: relative; /* For z-index stacking */
+  z-index: 1;
+}
+
+.metric-bar.above-target {
+  background-color: #10b981; /* Green for good */
+}
+
+.metric-bar.below-target {
+  background-color: #ef4444; /* Red for needs improvement */
+}
+
+.metric-footer {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.target-label {
+  margin-bottom: 0.25rem;
+}
+
+.metric-description {
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.advanced-stats {
+  background-color: var(--background-color);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.advanced-stats h3 {
+  margin-top: 0;
+  color: #e2e8f0;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.stats-section {
+  margin-bottom: 1rem;
+}
+
+.stats-section-title {
+  font-size: 1.1rem;
+  color: var(--text-white);
+  font-weight: 500;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+}

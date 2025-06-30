@@ -45,9 +45,6 @@
   }
   
   /* === Stats Section === */
-  .stats-section {
-    margin-bottom: var(--spacing-xl);
-  }
   
   .stats-grid {
     display: grid;
@@ -259,17 +256,6 @@
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--border-color);
-}
-
-.back-link {
-  color: var(--text-light);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s;
-}
-
-.back-link:hover {
-  color: var(--primary-color);
 }
 
 /* === Admin Header === */

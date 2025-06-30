@@ -196,9 +196,7 @@
   .game-date {
     font-weight: 500;
     color: var(--text-light);
-    font-size: 0.9rem;
-    margin-bottom: var(--spacing-sm);
-    margin-top: var(--spacing-sm);
+    font-size: 1rem;
     border-bottom: var(--border-color) solid 2px;
     text-align: center;
   }
@@ -208,6 +206,8 @@
     font-weight: 700;
     color: var(--accent-color);
     font-size: 1.1rem;
+    justify-content: center;
+    text-align: center;
   }
   
   .game-players {
@@ -256,6 +256,9 @@
   
   .mode-badge.local {
     background-color: var(--success-color);
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    right: auto;
   }
   
   /* Game Details page local badge */
@@ -265,7 +268,7 @@
     margin-left: var(--spacing-md);
     vertical-align: middle;
     font-size: 0.8rem;
-    padding: 3px 8px;
+    padding: var(--spacing-sm);
   }
   
   
@@ -383,16 +386,26 @@
   }
   
   .game-details-header {
+    display: grid;
+    /* flex-direction: column; */
     margin-bottom: var(--spacing-lg);
     background-color: var(--card-background);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
+  }
+
+  .game-details-header h1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-bottom: 0;
   }
   
   .back-link {
     display: inline-block;
-    margin-bottom: var(--spacing-md);
+    /* margin-bottom: var(--spacing-md); */
     color: var(--primary-color);
     font-weight: 500;
     transition: color 0.2s;
@@ -413,12 +426,8 @@
   .rounds-section {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     box-shadow: var(--shadow);
-  }
-
-   .rounds-section {
-    margin-top: var(--spacing-xl);
   }
   
   .winner-section h2,
@@ -427,7 +436,7 @@
     color: var(--primary-color);
     position: relative;
     padding-bottom: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 0;
   }
   
   .winner-section h2::after,
@@ -444,9 +453,10 @@
 
   .round-card {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-sm);
     background-color: var(--card-background-alt);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
@@ -458,7 +468,7 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
     padding: var(--spacing-md);
     background-color: rgba(53, 99, 233, 0.05);
     border-radius: var(--radius-lg);
@@ -504,7 +514,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px;
+    padding: var(--spacing-md);
     border-bottom: 1px solid #ddd;
     flex-wrap: wrap;
   }
@@ -1408,7 +1418,7 @@
   
   /* Game in progress */
   .game-in-progress {
-    padding: var(--spacing-md);
+    padding: var(--spacing-md) 0;
   }
   
   .game-header {
@@ -1593,7 +1603,7 @@
     width: 100%;
     border-radius: var(--radius-lg);
     margin: var(--spacing-lg) auto;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-lg) 0;
   }
 
   .leaderboard-container h1 {
@@ -1712,25 +1722,37 @@
 
   /* Styling for the Advanced Stats section */
   .advanced-stats {
-    background-color: var(--card-background);
+    /* background-color: var(--card-background); */
     flex-basis: 100%;
-    margin-top: 10px;
+    /* margin-top: 10px;
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
   }
 
-  .advanced-stats h3 {
+  /* .advanced-stats h3 {
     margin-bottom: 10px;
     font-size: 16px;
     color: var(--text-color);
-  }
+  } */
 
   .advanced-stats p {
     margin: 5px 0;
     font-size: 14px;
     color: var(--text-color);
+  }
+
+  .bid-stats {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-sm);
+  }
+
+  .score-stats {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-sm);
   }
   
   /* Styling for the Player Statistics section */
@@ -2295,6 +2317,14 @@
   padding: var(--spacing-sm);
 }
 
+#game-toggle-details {
+  position: absolute;
+  top: 10vh;
+  right: var(--spacing-xxl);
+  padding: var(--spacing-sm);
+  margin: var(--spacing-sm);
+}
+
 #prevRoundBtn {
   padding: var(--spacing-sm) var(--spacing-lg);
 }
@@ -2332,53 +2362,6 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-}
-
-.menu-btn.active {
-  background-color: var(--primary-dark);
-}
-
-.game-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  min-width: 160px;
-  overflow: hidden;
-  margin-top: var(--spacing-xs);
-}
-
-.game-menu-dropdown button {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  color: var(--text-color);
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.game-menu-dropdown button:last-child {
-  border-bottom: none;
-}
-
-.game-menu-dropdown button:hover {
-  background-color: var(--card-background-alt);
-}
-
-.game-menu-dropdown button.leave-btn {
-  color: var(--error-color);
-}
-
-.game-menu-dropdown button.leave-btn:hover {
-  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Dialog Overlay and Modal Styles */
@@ -2721,6 +2704,8 @@
 }
 
 .player-stat-card {
+  display: flex;
+  flex-direction: column;
   background-color: var(--card-background-alt);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);

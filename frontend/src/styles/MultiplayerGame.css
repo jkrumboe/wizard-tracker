@@ -511,6 +511,7 @@
 .player-info {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .player-name {
