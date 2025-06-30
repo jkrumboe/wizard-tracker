@@ -439,14 +439,18 @@
   }
   
   .winner-section,
-  .results-section,
-  .rounds-section {
+  .results-section {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
     box-shadow: var(--shadow);
   }
+
   
+  .rounds-section {
+    padding: 0;
+  }
+
   .winner-section h2,
   .results-section h2,
   .rounds-section h2 {

@@ -193,7 +193,6 @@ const GameDetails = () => {
       <div className="game-summary">
         {activeTab === 'rounds' && (
           <div className="rounds-section">
-            <h2>Scorecard</h2>
             <div className="wizard-scorecard">
               <table className="scorecard-table">
                 <thead>
