@@ -31,7 +31,7 @@ const Navbar = () => {
           <img
             src={player?.avatar || defaultAvatar}
             alt="Profile"
-            className="profile-avatar"
+            className="navbar-avatar"
           />
         </Link>
       </div>

@@ -342,10 +342,7 @@
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
     transition: transform 0.3s;
-  }
-  
-  .stat-card:hover {
-    transform: translateY(-2px);
+    width: 30%;
   }
   
   .stat-title {
@@ -570,7 +567,7 @@
   
   /* Profile Page */
   .profile-container {
-    padding: var(--spacing-md);
+    margin-top: 10vh;
   }  
   
   .profile-header {
@@ -588,6 +585,20 @@
   .avatar {
     width: 120px;
     height: 120px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    margin-bottom: var(--spacing-md);
+    border: 4px solid var(--primary-color);
+    box-shadow: var(--shadow);
+  }
+
+  .profile-avatar {
+    width: 150px;
+    height: 150px;
+    position: absolute;
+    top: 10vh;
+    left: 50%;
+    transform: translateX(-50%);
     border-radius: var(--radius-full);
     object-fit: cover;
     margin-bottom: var(--spacing-md);
@@ -621,16 +632,19 @@
   
   .profile-content {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md);
+    background-color: var(--card-background);
+    padding: 10vh var(--spacing-md) 0;
+    border-radius: var(--radius-lg);
   }
   
   .stats-graph,
   .recent-games {
-    margin-top: var(--spacing-lg);
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow);
     overflow: hidden;
   }
@@ -708,19 +722,22 @@
     position: relative;
   }
 
-  .profile-header .edit-button {
+  .edit-button {
     background-color: var(--primary-color);
     color: var(--text-white);
     border: none;
-    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    font-weight: 600;
-    font-size: 1.1rem;
-    padding: var(--spacing-sm) var(--spacing-md);
-    margin-top: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+    top: 20vh;
+    right: var(--spacing-xxl);
     position: absolute;
-    top: var(--spacing-xs);
-    right: var(--spacing-md);
+    padding: var(--spacing-sm);
   }
 
   .profile-edit-container {
@@ -880,8 +897,8 @@
   .stats-summary {
     display: flex;
     gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-    margin-top: var(--spacing-md);
+    flex-direction: row;
+    justify-content: center;
   }
   
   .chart-container {
@@ -1775,7 +1792,6 @@
   @media (min-width: 768px) {
 
     .profile-container {
-      padding: var(--spacing-lg);
       width: 80vw;
       margin: auto;
     }
@@ -1793,13 +1809,12 @@
     }
   
     .profile-content {
-      grid-template-columns: 1fr 1fr;
+      /* grid-template-columns: 1fr 1fr; */
       height: max-content;
     }
   
     .stats-summary {
       display: grid;
-      grid-template-columns: repeat(4, 1fr); /* Four columns for tablets and larger screens */
       gap: var(--spacing-md);
     }
   
@@ -1951,7 +1966,7 @@
   justify-content: center;
 }
 
-.profile-avatar {
+.navbar-avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2066,7 +2081,6 @@
  
   /* Home page - Recent Games section */
 .recent-games {
-  margin-top: var(--spacing-md);
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
@@ -2157,7 +2171,7 @@
   }
   
   .action-buttons {
-    margin-bottom: var(--spacing-sm);
+    margin: var(--spacing-lg);
   }
 
   .form-group {
@@ -2259,10 +2273,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* width: 5rem;
-  height: 44px; */
   transition: all 0.2s ease;
   font-size: 1.2rem;
+}
+
+#toggle-button-profile {
+  top: 20vh;
+  left: var(--spacing-xxl);
+  position: absolute;
+  padding: var(--spacing-sm);
 }
 
 #prevRoundBtn {
@@ -2766,7 +2785,7 @@
   
   .stat-value {
     margin-right: 0;
-    text-align: left;
+    text-align: center;
   }
   
   .stat-explanation {

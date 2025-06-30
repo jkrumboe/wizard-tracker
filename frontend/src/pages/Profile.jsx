@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
 import { useUser } from '../hooks/useUser'
+import { SaveIcon, PauseIcon, MenuIcon, StatIcon, EditIcon, CalendarIcon } from "../components/Icon"
 
 import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
@@ -236,16 +237,17 @@ if (editing) {
   }else{
   return (
   <div className="profile-container">
-    <div className="profile-header">
+     <div className="profile-content">
       {canEdit && (
         <button
           onClick={() => setEditing(true)}
           className='edit-button'>
-          Edit
+          <EditIcon size={30} />
         </button>
       )}
 
-      <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="avatar" />
+      <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="profile-avatar" />
+      
       <div className="player-info">
           <div className="player-name-tags">
             <h1>{player?.display_name || "Unknown Player"}</h1>
@@ -257,7 +259,7 @@ if (editing) {
                 ))
               }
             </div>
-      }
+            }
           </div>
         <div className="stats-summary">
           <StatCard 
@@ -272,35 +274,25 @@ if (editing) {
             title="Win Rate" 
             value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
           />
-          {/* <StatCard 
-            title="Total Points"
-            value={playerStats ? playerStats.total_points : 0}
-          /> */}
         </div>
       </div>
-    </div>
 
-    <div className="profile-content">
-      {/* Hide tabs and show both sections for desktop or iPad */}
-      <div className="card-tabs" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
-        <button 
-          className={`tab-button ${activeTab === 'performance' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('performance')}
+   
+      {/* Toggle button for mobile/tablet */}
+      <div className="toggle-section" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
+        <button
+          className="game-control-btn"
+          onClick={() => setActiveTab(activeTab === 'recentGames' ? 'performance' : 'recentGames')}
+          id='toggle-button-profile'
         >
-          Performance
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'recentGames' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('recentGames')}
-        >
-          Recent Games
+          {activeTab === 'recentGames' ? <StatIcon size={30} /> : <CalendarIcon size={30} />}
         </button>
       </div>
 
       {(window.innerWidth > 768 || activeTab === 'performance') && (
         <div className="stats-graph">
           <h2>Performance</h2>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={100}>
             <PieChart>
               <Pie
                 data={data}
@@ -343,7 +335,8 @@ if (editing) {
               <div className="empty-message">No game history found</div>
             )}
           </div>
-        </div>        )}
+        </div>
+      )}
     </div>
   </div>
   )
