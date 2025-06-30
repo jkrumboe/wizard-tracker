@@ -17,6 +17,25 @@ const GameDetails = () => {
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('stats')
+  const [windowWidth, setWindowWidth] = useState(() => {
+    // Safely handle window access for SSR
+    return typeof window !== 'undefined' ? window.innerWidth : 1200
+  })
+  
+  // Handle window resize events
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth)
+    }
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize)
+    
+    // Clean up on unmount
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
   
   useEffect(() => {
     const fetchGameData = async () => {
@@ -152,20 +171,22 @@ const GameDetails = () => {
         <Link to="/" className="back-link">
           <ArrowLeftIcon className="back-icon" />
         </Link>
-        <h1>Game Details {game.is_local && <span className="mode-badge local">Local</span>}</h1>
+        <h1 id="header-game-detail-badge">Game Details {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
         <div className="game-date">Finished: {formattedDate}</div>
         <div className="game-date">Duration: {duration}</div>
-        <div className="game-winner">Winner: {playerDetails[game.winner_id].name}</div>
-        {/* Toggle Button for Game Board / Player Stats */}
+        <div className="game-winner">
+          Winner: {playerDetails[game.winner_id]?.name || 'Unknown'}
         <div className="toggle-section">
           <button
             className="game-control-btn"
             id="game-toggle-details"
             onClick={() => setActiveTab(activeTab === 'rounds' ? 'stats' : 'rounds')}
+            aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
+            aria-pressed={activeTab === 'stats'}
           >
             {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <GamepadIcon size={22} />}
           </button>
-        </div>
+        </div>        </div>
       </div>
 
       <div className="game-summary">
@@ -179,9 +200,11 @@ const GameDetails = () => {
                   {round.players.map((player) => (
                     <div key={player.id} className="round-player">
                       <span className="name">{playerDetails[player.id]?.name || "Unknown"}</span>
-                      <span className="bid">Bid: {player.call}</span>
-                      <span className="made">Made: {player.made}</span>
-                      <span className="score">Score: {player.score}</span>
+                      <p>
+                        <span className="bid">Bid: {player.call}</span>
+                        <span className="made">Made: {player.made}</span>
+                        <span className="score">Score: {player.score}</span>
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -190,7 +213,7 @@ const GameDetails = () => {
           </div>
         )}
 
-        {(window.innerWidth > 768 || activeTab === 'stats') && (
+        {(windowWidth > 768 || activeTab === 'stats') && (
           <div className="results-section">
             <h2>Final Results</h2>
             <div className="results-table">
@@ -213,63 +236,66 @@ const GameDetails = () => {
                   <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
                     Adv. Stats
                   </button>
-                  {selectedPlayerId === player.id && (
-                    <div className="advanced-stats">
-                      <h3>Performance Metrics</h3>
-                      
-                      <div className="stats-section">
-                        <div className="stats-section-title">Game Performance</div>
-                        <div className="stats-cards" id="game-performance">
-                          <p>Total Points: <span>{playerStats.find((stat) => stat.id === player.id)?.totalPoints} </span></p>
-                          <p>Highest Round: <span>{playerStats.find((stat) => stat.id === player.id)?.highestScore}</span></p>
-                          <p>Correct Bids: <span>{playerStats.find((stat) => stat.id === player.id)?.correctBids}</span></p>
-                          <p>Tricks Won: <span>{playerStats.find((stat) => stat.id === player.id)?.totalTricks}</span></p>
+                  {selectedPlayerId === player.id && (() => {
+                    // Find player stats once and store in variable for efficient access
+                    const playerStat = playerStats.find((stat) => stat.id === player.id);
+                    
+                    return (
+                      <div className="advanced-stats">                      
+                        <div className="stats-section">
+                          <div className="stats-section-title">Game Performance</div>
+                          <div className="stats-cards" id="game-performance">
+                            <p>Total Points: <span>{playerStat?.totalPoints}</span></p>
+                            <p>Highest Round: <span>{playerStat?.highestScore}</span></p>
+                            <p>Correct Bids: <span>{playerStat?.correctBids}</span></p>
+                            <p>Tricks Won: <span>{playerStat?.totalTricks}</span></p>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="stats-section">
-                        <div className="stats-section-title">Bidding Precision</div>
-                        <div className="stats-cards">
-                          <PerformanceMetric 
-                            label="Average Score" 
-                            value={playerStats.find((stat) => stat.id === player.id)?.avgPoints} 
-                            target={30} 
-                            isAboveTarget={false}
-                          />
-                          <PerformanceMetric 
-                            label="Bid Accuracy" 
-                            value={playerStats.find((stat) => stat.id === player.id)?.bidAccuracy + "%"} 
-                            target={80} 
-                            isAboveTarget={false}
-                          />
+                        <div className="stats-section">
+                          <div className="stats-section-title">Bidding Precision</div>
+                          <div className="stats-cards">
+                            <PerformanceMetric 
+                              label="Average Score" 
+                              value={playerStat?.avgPoints} 
+                              target={30} 
+                              isAboveTarget={false}
+                            />
+                            <PerformanceMetric 
+                              label="Bid Accuracy" 
+                              value={playerStat?.bidAccuracy + "%"} 
+                              target={80} 
+                              isAboveTarget={false}
+                            />
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="stats-section">
-                        <div className="stats-section-title">Bidding Style</div>
-                        <div className="stats-cards">
-                          <PerformanceMetric 
-                            label="Overbid Ratio" 
-                            value={playerStats.find((stat) => stat.id === player.id)?.overbids} 
-                            target={5} 
-                            isAboveTarget={true}
-                          />
-                          <PerformanceMetric 
-                            label="Underbid Ratio" 
-                            value={playerStats.find((stat) => stat.id === player.id)?.underbids} 
-                            target={5} 
-                            isAboveTarget={true}
-                          />
-                          <PerformanceMetric 
-                            label="Average Deviation" 
-                            value={playerStats.find((stat) => stat.id === player.id)?.avgDiff} 
-                            target={0.8} 
-                            isAboveTarget={true}
-                          />
+                        <div className="stats-section">
+                          <div className="stats-section-title">Bidding Style</div>
+                          <div className="stats-cards">
+                            <PerformanceMetric 
+                              label="Overbid Ratio" 
+                              value={playerStat?.overbids} 
+                              target={5} 
+                              isAboveTarget={true}
+                            />
+                            <PerformanceMetric 
+                              label="Underbid Ratio" 
+                              value={playerStat?.underbids} 
+                              target={5} 
+                              isAboveTarget={true}
+                            />
+                            <PerformanceMetric 
+                              label="Average Deviation" 
+                              value={playerStat?.avgDiff} 
+                              target={0.8} 
+                              isAboveTarget={true}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ))}
             </div>

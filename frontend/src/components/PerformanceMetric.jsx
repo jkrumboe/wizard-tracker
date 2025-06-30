@@ -7,19 +7,39 @@ const PerformanceMetric = ({ label, value, target, isAboveTarget, targetLine }) 
   const showTargetLine = targetLine !== undefined ? targetLine : true;
 
   // Calculate percentage for the progress bar (capped at 100%)
-  let percentage = Math.min(Math.round((value / target) * 100), 100);
-  
-  // For metrics where lower is better, invert the percentage calculation
-  if (isAboveTarget) {
-    percentage = Math.min(Math.round((1 - (value / (target * 2))) * 100), 100);
-  }
-  
+  let percentage;
+  if (target <= 0) {
+    percentage = 0; // Handle edge case
+  } else if (isAboveTarget) {
+    // For metrics where lower is better
+    const maxValue = target * 2;
+    percentage = Math.max(
+      0,
+      Math.min(Math.round((1 - value / maxValue) * 100), 100)
+    );
+  } else {
+    // For metrics where higher is better
+    percentage = Math.min(Math.round((value / target) * 100), 100);
+  }  
   // Calculate target position for the marker
-  // For metrics where higher is better, target position is simply the percentage of target
-  // For metrics where lower is better, the target position is relative to max scale (target*2)
-  const targetPosition = isAboveTarget ? 
-    Math.min(Math.round((target / (value > target ? value * 1.5 : target * 2)) * 100), 100) :
-    Math.min(Math.round((target / (target * 1.5)) * 100), 100);
+  let targetPosition;
+  if (isAboveTarget) {
+    // For metrics where lower is better
+    // Determine the scale maximum based on current value
+    const scaleMaximum = value > target ? value * 1.5 : target * 2;
+    // Calculate what percentage the target is of the maximum scale
+    const targetPercentage = (target / scaleMaximum) * 100;
+    // Ensure the percentage doesn't exceed 100%
+    targetPosition = Math.min(Math.round(targetPercentage), 100);
+  } else {
+    // For metrics where higher is better
+    // Use a consistent scale that's 1.5x the target for better visualization
+    const scaleMaximum = target * 1.5;
+    // Calculate what percentage the target is of the maximum scale
+    const targetPercentage = (target / scaleMaximum) * 100;
+    // Ensure the percentage doesn't exceed 100%
+    targetPosition = Math.min(Math.round(targetPercentage), 100);
+  }
 
   return (
     <div className="performance-metric">
