@@ -29,7 +29,6 @@ const Leaderboard = () => {
 
   const handleSort = (field) => {
     if (sortBy === field) {
- 
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortBy(field)

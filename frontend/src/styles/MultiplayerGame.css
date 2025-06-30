@@ -777,8 +777,8 @@
 }
 
 /* Styles for number inputs in game table */
-.call-cell input[type="number"],
-.made-cell input[type="number"] {
+.call-cell input[type="tel"],
+.made-cell input[type="tel"] {
   width: 60px;
   text-align: center;
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -792,25 +792,25 @@
   display: block;
 }
 
-.call-cell input[type="number"]:focus,
-.made-cell input[type="number"]:focus {
+.call-cell input[type="tel"]:focus,
+.made-cell input[type="tel"]:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
 }
 
-.call-cell input[type="number"]:disabled,
-.made-cell input[type="number"]:disabled {
+.call-cell input[type="tel"]:disabled,
+.made-cell input[type="tel"]:disabled {
   background-color: var(--disabled-background);
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* Spinner buttons for number inputs */
-.call-cell input[type="number"]::-webkit-inner-spin-button, 
-.call-cell input[type="number"]::-webkit-outer-spin-button,
-.made-cell input[type="number"]::-webkit-inner-spin-button, 
-.made-cell input[type="number"]::-webkit-outer-spin-button { 
+.call-cell input[type="tel"]::-webkit-inner-spin-button, 
+.call-cell input[type="tel"]::-webkit-outer-spin-button,
+.made-cell input[type="tel"]::-webkit-inner-spin-button, 
+.made-cell input[type="tel"]::-webkit-outer-spin-button { 
   opacity: 1;
   height: 20px;
 }

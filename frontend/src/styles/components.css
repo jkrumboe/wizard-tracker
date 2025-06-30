@@ -34,7 +34,7 @@
   }
   
   .player-name {
-    font-weight: 700;
+    font-weight: 400 !important;
     color: var(--text-color);
     font-size: 1.1rem;
     align-items: center;
@@ -1305,7 +1305,7 @@
     margin-right: var(--spacing-md);
   }
   
-  .setting-item input[type="number"] {
+  .setting-item input[type="tel"] {
     padding: var(--spacing-sm);
     border-radius: var(--radius-md);
     border: 2px solid var(--border-color);
@@ -1317,7 +1317,7 @@
     transition: border-color 0.3s;
   }
   
-  .setting-item input[type="number"]:focus {
+  .setting-item input[type="tel"]:focus {
     border-color: var(--primary-color);
     outline: none;
     box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
@@ -2188,11 +2188,11 @@
   display: flex;
   flex-direction: column;
   max-width: 960px;
-  margin: 0 auto;
+  margin: var(--spacing-xl) auto;
 }
 
 /* Game table input styles */
-  .score-table input[type="number"] {
+  .score-table input[type="tel"] {
     width: 50px;
     text-align: center;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -2204,21 +2204,21 @@
     transition: border-color 0.3s, box-shadow 0.3s;
   }
   
-  .score-table input[type="number"]:focus {
+  .score-table input[type="tel"]:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
   }
   
-  .score-table input[type="number"]:disabled {
+  .score-table input[type="tel"]:disabled {
     background-color: var(--disabled-background);
     opacity: 0.6;
     cursor: not-allowed;
   }
   
   /* Hide spinner buttons in number inputs for browsers */
-  .score-table input[type="number"]::-webkit-inner-spin-button, 
-  .score-table input[type="number"]::-webkit-outer-spin-button { 
+  .score-table input[type="tel"]::-webkit-inner-spin-button, 
+  .score-table input[type="tel"]::-webkit-outer-spin-button { 
     opacity: 1;
     height: 20px;
   }
