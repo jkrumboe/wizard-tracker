@@ -4,8 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '../components/GameHistoryItem'
 import StatCard from '../components/StatCard'
 import { useUser } from '../hooks/useUser'
-import { SaveIcon, PauseIcon, MenuIcon, StatIcon, EditIcon, CalendarIcon } from "../components/Icon"
-
+import { StatIcon, EditIcon, CalendarIcon } from "../components/Icon"
 import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 import defaultAvatar from "../assets/default-avatar.png";
@@ -21,7 +20,7 @@ const Profile = () => {
   const [defaultTags, setDefaultTags] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [playerStats, setPlayerStats] = useState(null)
+  // const [playerStats, setPlayerStats] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
   const [editing, setEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -52,14 +51,14 @@ useEffect(() => {
         avatar: playerData.avatar || defaultAvatar,
       });
 
-      // Set player stats from the player data (new schema includes stats)
-      if (playerData.total_games !== undefined) {
-        setPlayerStats({
-          total_games: playerData.total_games,
-          wins: playerData.wins,
-          total_points: playerData.total_points || 0
-        });
-      }
+      // // Set player stats from the player data (new schema includes stats)
+      // if (playerData.total_games !== undefined) {
+      //   setPlayerStats({
+      //     total_games: playerData.total_games,
+      //     wins: playerData.wins,
+      //     total_points: playerData.total_points || 0
+      //   });
+      // }
 
       const history = await getPlayerGameHistory(id);
       setGameHistory(history);

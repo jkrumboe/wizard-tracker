@@ -11,23 +11,31 @@ const NewGame = () => {
   const { gameState, addPlayer, removePlayer, updatePlayerName, startGame, setMaxRounds } = useGameStateContext()
 
   const [index, setIndex] = useState(1)
+  const [manualRounds, setManualRounds] = useState(false)
   
   // Calculate the recommended number of rounds based on player count
   useEffect(() => {
-    const playerCount = gameState.players.length;
-    if (playerCount >= 3) {
-      // Standard rule: 60 cards divided by number of players
-      const recommendedRounds = Math.floor(60 / playerCount);
-      // Only update if it's different to avoid unnecessary renders
-      if (gameState.maxRounds !== recommendedRounds) {
-        setMaxRounds(recommendedRounds);
+    // Only auto-adjust rounds if manual mode is not enabled
+    if (!manualRounds) {
+      const playerCount = gameState.players.length;
+      if (playerCount >= 3) {
+        // Standard rule: 60 cards divided by number of players
+        const recommendedRounds = Math.floor(60 / playerCount);
+        // Only update if it's different to avoid unnecessary renders
+        if (gameState.maxRounds !== recommendedRounds) {
+          setMaxRounds(recommendedRounds);
+        }
       }
     }
-  }, [gameState.players.length, gameState.maxRounds, setMaxRounds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.players.length, setMaxRounds, manualRounds]);
 
   const handleAddPlayer = () => {
     setIndex(index + 1)
-    addPlayer(index) 
+    addPlayer(index)
+    
+    // Don't auto-adjust rounds when in manual mode
+    // This way manually selected rounds will be preserved when adding players
   }
 
   const handlePlayerNameChange = (playerId, e) => {
@@ -38,6 +46,9 @@ const NewGame = () => {
   const handleRemovePlayer = (playerId) => {
     setIndex(index - 1)
     removePlayer(playerId)
+    
+    // Don't auto-adjust rounds when in manual mode
+    // This way manually selected rounds will be preserved when removing players
   }
 
   const handleStartGame = () => {
@@ -46,8 +57,11 @@ const NewGame = () => {
   }
   
   const handleMaxRoundsChange = (value) => {
-    // Ensure the value is between 1 and recommendedRounds
-    const validValue = Math.max(1, Math.min(value, recommendedRounds));
+    // If the user manually changes the value, enable manual rounds mode
+    setManualRounds(true);
+    
+    // Ensure the value is between 1 and 60 (the maximum possible)
+    const validValue = Math.max(1, Math.min(value, 60));
     setMaxRounds(validValue);
   }
 
@@ -92,19 +106,45 @@ const NewGame = () => {
           +
         </button>
         
-        <div className="setting-item">
-            <label htmlFor="rounds-input">Number of Rounds:</label>
-            <input
-              id="rounds-input"
-              type="tel"
-              value={gameState.maxRounds}
-              onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 1)}
-              min={1}
-              max={recommendedRounds}
-              title={`Enter Number of Rounds (Recommended: ${recommendedRounds})`}
-              inputMode="numeric"
-              pattern="[0-9]*"
-            />
+        <div className="settings-group">
+          <div className="setting-item">
+            <div className="setting-content">
+              <div id="rounds">
+                <label htmlFor="rounds-input">Number of Rounds:</label>
+                <input
+                  id="rounds-input"
+                  type="tel"
+                  value={gameState.maxRounds}
+                  onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 1)}
+                  min={1}
+                  max={manualRounds ? 60 : recommendedRounds}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+              </div>
+
+              <div className="toggle-container">
+                <label className="toggle-label">
+                  <span className="toggle-text">Don't auto adjust rounds:</span>
+                  <br />
+                </label>
+
+                <label className="toggle-label" id="manual-rounds-toggle">
+                  <input
+                    type="checkbox"
+                    checked={manualRounds}
+                    onChange={() => setManualRounds(!manualRounds)}
+                  />
+                {manualRounds && (
+                  <div className="rounds-hint">
+                    Recommended: {recommendedRounds} rounds
+                  </div>
+                )}
+                </label>
+              </div>
+              
+            </div>
+          </div>
         </div>
     </div>
 
