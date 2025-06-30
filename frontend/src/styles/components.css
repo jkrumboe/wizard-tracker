@@ -202,7 +202,6 @@
   }
 
   .game-winner {
-    margin-top: var(--spacing-sm);
     font-weight: 700;
     color: var(--accent-color);
     font-size: 1.1rem;
@@ -211,18 +210,21 @@
   }
   
   .game-players {
-    margin-top: var(--spacing-sm);
     font-size: 0.9rem;
     color: var(--text-color);
   }
 
   .game-info {
     padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-sm);
   }
   
   .game-details {
     display: inline-block;
-    margin-top: var(--spacing-md);
     color: var(--primary-color);
     font-weight: 500;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -237,28 +239,15 @@
 
   .mode-badge {
     padding: var(--spacing-xs) var(--spacing-md);
-    margin: var(--spacing-md);
+    background-color: var(--primary-color);
     border-radius: 12px;
     font-size: var(--font-size);
     color: white;
     font-weight: bold;
-    position: absolute;
-    right: var(--spacing-sm);
   }
   
   .mode-badge.casual {
     background-color: var(--secondary-color);
-  }
-  
-  .mode-badge.ranked {
-    background-color: var(--primary-color);
-  }
-  
-  .mode-badge.local {
-    background-color: var(--primary-color);
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    right: auto;
   }
 
   #header-game-detail-badge {
@@ -279,15 +268,28 @@
   }
   
   /* Game Details page local badge */
-  .game-details-header .mode-badge.local {
+  .game-details-header .mode-badge.local#game-detail-badge {
     position: relative;
     display: inline-block;
     margin-left: var(--spacing-md);
     vertical-align: middle;
     font-size: 0.8rem;
     padding: var(--spacing-sm);
+    background-color: var(--primary-color);
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    right: auto;
   }
   
+
+  /* Game History */
+
+  .bottom-game-history {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: var(--spacing-xxl);
+  }
   
   /* SearchBar Component */
   .search-bar {
@@ -1218,9 +1220,8 @@
   
   /* New Game Page */
   .new-game-container {
+    margin: var(--spacing-md) 0;
     max-width: 960px; /* Constrain the leaderboard width */
-    /* margin: var(--spacing-lg) auto; */
-    padding: var(--spacing-md);
   }
   
   .new-game-container h1 {
@@ -1235,7 +1236,6 @@
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow);
-    
   }
   
   .setup-section h2 {
@@ -1302,14 +1302,14 @@
   
   .selected-players {
     /* margin-top: var(--spacing-lg); */
-    max-height: 250px;
+    max-height: 190px;
     overflow-y: auto;
   }
 
   .player-list {
     margin-top: var(--spacing-xs);
     margin-bottom: var(--spacing-sm);
-    min-height: 180px;
+    min-height: 150px;
     border-radius: var(--radius-lg);
     width: 100%;
   }
@@ -2217,11 +2217,12 @@
   
   .game-card {
     padding: 0; 
+    margin: 0 var(--spacing-sm);
     margin-bottom: var(--spacing-md);
   }
   
   .home-header {
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
   }
   
   .home-header h1 {

@@ -26,6 +26,7 @@ const Home = () => {
       return false
     }
   }
+
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -68,6 +69,7 @@ const Home = () => {
 
     fetchGames()
   }, [])
+
   return (
     <div className="home-container">
       <header className="home-header">
@@ -75,7 +77,7 @@ const Home = () => {
         <p>Track your Wizard card game stats and performance</p>
       </header>
 
-      <div className="action-buttons">
+      {/* <div className="action-buttons">
         <Link to="/new-game" className="btn btn-primary">New Game</Link>
         <button 
           onClick={() => setShowLoadDialog(true)}
@@ -84,8 +86,9 @@ const Home = () => {
           Load Saved Game
         </button>
         <Link to="/lobby" className="btn btn-primary">Multiplayer Lobby</Link>
-      </div>
-        <section className="recent-games">
+      </div> */}
+
+      <section className="recent-games">
         <h2>Recent Games</h2>
         {loading ? (
           <div className="loading-container">
