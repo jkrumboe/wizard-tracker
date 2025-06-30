@@ -1,12 +1,13 @@
 "use client"
 
 import React from "react";
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import SaveGameDialog from "../components/SaveGameDialog"
 import LoadGameDialog from "../components/LoadGameDialog"
-import { SaveIcon, PauseIcon, MenuIcon, StatIcon, BarChartIcon } from "../components/Icon"
+import GameMenuModal from "../components/GameMenuModal"
+import { SaveIcon, PauseIcon, MenuIcon, StatIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
 import { ArrowLeftIcon, ArrowRight } from "lucide-react";
 
 const GameInProgress = () => {
@@ -29,25 +30,9 @@ const GameInProgress = () => {
   const [activeTab, setActiveTab] = useState('game')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
-  const [showGameMenu, setShowGameMenu] = useState(false)
-  const menuRef = useRef(null)
+  const [showGameMenuModal, setShowGameMenuModal] = useState(false)
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowGameMenu(false)
-      }
-    }
-
-    if (showGameMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showGameMenu])
+  // We don't need the click outside handler for a modal, removing this useEffect
 
   const handleFinishGame = async () => {
     const success = await finishGame()
@@ -116,7 +101,7 @@ const GameInProgress = () => {
   }
 
   const toggleGameMenu = () => {
-    setShowGameMenu(!showGameMenu)
+    setShowGameMenuModal(true)
   }
 
   if (!gameState.gameStarted) {
@@ -315,9 +300,6 @@ const GameInProgress = () => {
           <div className="tab-panel">
             <div className="game-stats-container">
           <h2>Player Statistics</h2>
-          <p className="stats-description">
-            Detailed performance analysis for this game through Round {gameState.currentRound}
-          </p>
           
           <div className="stats-grid">
             {detailedStats.map((playerStats) => (
@@ -418,35 +400,18 @@ const GameInProgress = () => {
             className="game-control-btn"
             onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
           >
-            {activeTab === 'game' ? <BarChartIcon size={27} /> : <MenuIcon size={27} />}
+            {activeTab === 'game' ? <BarChartIcon size={27} /> : <GamepadIcon size={27} />}
           </button>
         </div>
 
-        <div className="game-controls" ref={menuRef}>
+        <div className="game-controls">
           <button 
-            className={`game-control-btn menu-btn ${showGameMenu ? 'active' : ''}`}
+            className="game-control-btn menu-btn"
             onClick={toggleGameMenu}
             title="Game Menu"
           >
             <MenuIcon size={27} />
           </button>
-          
-          {showGameMenu && (
-            <div className="game-menu-dropdown">
-              <button onClick={() => setShowLoadDialog(true)}>
-                Load Game
-              </button>
-              <button onClick={() => setShowSaveDialog(true)}>
-                Save & Continue
-              </button>
-              <button onClick={() => setShowSaveDialog(true)}>
-                Pause Game
-              </button>
-              <button onClick={() => setShowSaveDialog(true)} className="leave-btn">
-                Leave Game
-              </button>
-            </div>
-          )}
         </div>
 
         <button className="nav-btn" id="prevRoundBtn" onClick={previousRound} disabled={isFirstRound}>
@@ -476,6 +441,28 @@ const GameInProgress = () => {
         onClose={() => setShowLoadDialog(false)}
         onLoadGame={handleLoadGame}
         getSavedGames={getSavedGames}
+      />
+
+      {/* Game Menu Modal */}
+      <GameMenuModal
+        isOpen={showGameMenuModal}
+        onClose={() => setShowGameMenuModal(false)}
+        onLoadGame={() => {
+          setShowGameMenuModal(false);
+          setShowLoadDialog(true);
+        }}
+        onSaveGame={() => {
+          setShowGameMenuModal(false);
+          setShowSaveDialog(true);
+        }}
+        onPauseGame={() => {
+          setShowGameMenuModal(false);
+          setShowSaveDialog(true); // Open save dialog with pause intent
+        }}
+        onLeaveGame={() => {
+          setShowGameMenuModal(false);
+          setShowSaveDialog(true); // Open save dialog with leave intent
+        }}
       />
     </div>
   )

@@ -2728,10 +2728,6 @@
   transition: border-color 0.3s ease;
 }
 
-.player-stat-card:hover {
-  border-color: var(--primary-light);
-}
-
 .player-stat-name {
   color: var(--primary-color);
   margin-bottom: var(--spacing-md);

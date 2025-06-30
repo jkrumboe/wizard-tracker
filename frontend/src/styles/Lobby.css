@@ -403,15 +403,16 @@
 }
 
 .modal-content {
-  background-color: var(--card-background);
+  /* background-color: var(--card-background); */
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   max-width: 500px;
   width: 80%;
   max-height: 80dvh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
+  margin: 0 auto;
+  /* box-shadow: var(--shadow-lg); */
+  /* border: 1px solid var(--border-color); */
 }
 
 .modal-content h2 {
