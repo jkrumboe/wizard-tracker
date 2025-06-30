@@ -96,12 +96,14 @@ const NewGame = () => {
             <label htmlFor="rounds-input">Number of Rounds:</label>
             <input
               id="rounds-input"
-              type="number"
+              type="tel"
               value={gameState.maxRounds}
               onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 1)}
               min={1}
               max={recommendedRounds}
               title={`Enter Number of Rounds (Recommended: ${recommendedRounds})`}
+              inputMode="numeric"
+              pattern="[0-9]*"
             />
         </div>
     </div>

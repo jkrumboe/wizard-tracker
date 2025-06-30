@@ -249,7 +249,7 @@ const GameInProgress = () => {
                     <td>
                       <span>Called</span>
                       <input
-                        type="number"
+                        type="tel"
                         className="rounds-input"
                         value={player.call !== null ? player.call : ''}
                         placeholder="0"
@@ -257,12 +257,14 @@ const GameInProgress = () => {
                         min={0}
                         max={currentRound.cards}
                         title={`${player.name}'s Call`}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                       />
                     </td>
                     <td>
                       <span>Made</span>
                       <input
-                        type="number"
+                        type="tel"
                         className="rounds-input"
                         value={player.made !== null ? player.made : ''}
                         placeholder="0"
@@ -271,6 +273,8 @@ const GameInProgress = () => {
                         max={currentRound.cards}
                         title={`${player.name}'s Tricks Made`}
                         disabled={player.call === null}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                       />
                     </td>
                     <td>

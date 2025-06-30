@@ -3,7 +3,7 @@ import cors from 'cors'
 import pg from 'pg'
 import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken';
-// import bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import bcryptjs from 'bcryptjs';import { body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';

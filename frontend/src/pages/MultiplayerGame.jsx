@@ -457,7 +457,7 @@ const MultiplayerGame = () => {
                           <td className="call-cell">
                             {isCurrentUserHost ? (
                               <input
-                                type="number"
+                                type="tel"
                                 className="rounds-input"
                                 value={player.call !== null ? player.call : 0}
                                 onChange={(e) => {
@@ -542,7 +542,7 @@ const MultiplayerGame = () => {
                           <td className="call-cell">
                             {isCurrentUserHost || isCurrentPlayer ? (
                               <input
-                                type="number"
+                                type="tel"
                                 className="rounds-input"
                                 value={player.call !== null ? player.call : 0}
                                 onChange={(e) => {
@@ -560,7 +560,7 @@ const MultiplayerGame = () => {
                           </td>                          <td className="made-cell">
                             {isCurrentUserHost ? (
                               <input
-                                type="number"
+                                type="tel"
                                 className="rounds-input"
                                 value={player.made !== null ? player.made : 0}
                                 onChange={(e) => colyseusService.makeTricks(parseInt(e.target.value) || 0, player.playerId, true)}

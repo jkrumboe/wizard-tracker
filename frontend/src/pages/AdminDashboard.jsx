@@ -167,7 +167,7 @@ const AdminDashboard = () => {
                   ? setSelectedPlayer({ ...selectedPlayer, avatar: e.target.value })
                   : setNewPlayer({ ...newPlayer, avatar: e.target.value })} />
               <input
-                type="number"
+                type="tel"
                 placeholder="ELO"
                 value={selectedPlayer ? selectedPlayer.elo : newPlayer.elo}
                 onChange={(e) => selectedPlayer
