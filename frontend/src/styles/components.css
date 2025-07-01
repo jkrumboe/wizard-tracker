@@ -264,7 +264,7 @@
     margin: var(--spacing-xs) 0;
     width: 30%;
     text-align: center;
-    padding: var(--spacing-xs)
+    padding: var(--spacing-xs);
   }
   
   /* Game Details page local badge */
@@ -274,7 +274,6 @@
     margin-left: var(--spacing-md);
     vertical-align: middle;
     font-size: 0.8rem;
-    padding: var(--spacing-sm);
     background-color: var(--primary-color);
     margin-left: 0 !important;
     margin-right: 0 !important;
@@ -283,7 +282,6 @@
   
 
   /* Game History */
-
   .bottom-game-history {
     display: flex;
     flex-direction: row;
@@ -2343,12 +2341,14 @@
   padding: var(--spacing-sm);
 }
 
+.game-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 #game-toggle-details {
-  position: absolute;
-  top: var(--header-toggle-top, 10vh);
-  right: var(--header-toggle-right, var(--spacing-xxl));
   padding: var(--spacing-sm);
-  margin: var(--spacing-sm);
 }
 
 #prevRoundBtn {

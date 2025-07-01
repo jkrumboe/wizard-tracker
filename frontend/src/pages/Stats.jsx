@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import StatCard from '../components/StatCard'
+import PageTransition from '../components/PageTransition'
 import { getPlayerById } from '../services/playerService'
 import { getPlayerGameHistory } from '../services/gameService'
 
@@ -57,12 +58,12 @@ const Stats = () => {
   }
 
 
-  if (loading) {
-    return <div className="loading">Loading statistics...</div>
-  }
-
   if (error || !player) {
-    return <div className="error">{error || 'Player not found'}</div>
+    return (
+      <PageTransition isLoading={false}>
+        <div className="error">{error || 'Player not found'}</div>
+      </PageTransition>
+    )
   }
 
 
@@ -85,6 +86,7 @@ const Stats = () => {
 
 
   return (
+    <PageTransition isLoading={loading} loadingTitle="Loading Statistics..." loadingSubtitle="Analyzing player performance data">
     <div className="stats-container">
       <div className="stats-header">
         <Link to={`/profile/${player.id}`} className="back-link">← Back to Profile</Link>
@@ -207,6 +209,7 @@ const Stats = () => {
         </div>
       </div>
     </div>
+    </PageTransition>
   )
 }
 

@@ -1,7 +1,7 @@
 /* Wizard Scorecard Styles */
 .wizard-scorecard {
   overflow-x: auto;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background-color: var(--card-background);
   box-shadow: var(--shadow);
 }
@@ -10,7 +10,6 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -98,7 +97,7 @@
 
 .round-bid ,
 .round-score {
-  font-size: 1.2rem;
+  font-size: 1.2rem !important;
 }
 
 .total-row {

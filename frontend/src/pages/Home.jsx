@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import GameHistoryItem from '../components/GameHistoryItem'
 import LoadGameDialog from '../components/LoadGameDialog'
+import PageTransition from '../components/PageTransition'
 import { getRecentGames, getRecentLocalGames } from '../services/gameService'
 import { useGameStateContext } from '../hooks/useGameState'
 
@@ -10,7 +11,10 @@ const Home = () => {
   const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [recentGames, setRecentGames] = useState([])
   const [recentLocalGames, setRecentLocalGames] = useState([])
-  const [loading, setLoading] = useState(true)
+  
+  // Only show loading on initial app load, not on subsequent navigations
+  const isInitialLoad = !sessionStorage.getItem('appLoaded')
+  const [loading, setLoading] = useState(isInitialLoad)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   
   const handleLoadGame = async (gameId) => {
@@ -49,6 +53,9 @@ const Home = () => {
         setRecentGames(formattedServerGames)
         setRecentLocalGames(formattedLocalGames)
         setLoading(false)
+        
+        // Mark that the app has been loaded in this session
+        sessionStorage.setItem('appLoaded', 'true')
       } catch (error) {
         console.error('Error fetching games:', error)
         // Even if there's an error with server games, still show local games
@@ -64,6 +71,9 @@ const Home = () => {
           setRecentLocalGames([])
         }
         setLoading(false)
+        
+        // Mark that the app has been loaded in this session even if there's an error
+        sessionStorage.setItem('appLoaded', 'true')
       }
     }
 
@@ -71,30 +81,25 @@ const Home = () => {
   }, [])
 
   return (
-    <div className="home-container">
-      <header className="home-header">
-        <h1>Wizard Tracker</h1>
-        <p>Track your Wizard card game stats and performance</p>
-      </header>
+    <PageTransition
+      isLoading={loading}
+      loadingTitle="Welcome!"
+      loadingSubtitle={
+        <>
+          The home base for tracking your Wizard games.
+          <br />
+          View stats, history, and more!
+        </>
+      }
+    >
+      <div className="home-container">
+        <header className="home-header">
+          <h1>Wizard Tracker</h1>
+          <p>Track your Wizard card game stats and performance</p>
+        </header>
 
-      {/* <div className="action-buttons">
-        <Link to="/new-game" className="btn btn-primary">New Game</Link>
-        <button 
-          onClick={() => setShowLoadDialog(true)}
-          className="btn btn-secondary"
-        >
-          Load Saved Game
-        </button>
-        <Link to="/lobby" className="btn btn-primary">Multiplayer Lobby</Link>
-      </div> */}
-
-      <section className="recent-games">
-        <h2>Recent Games</h2>
-        {loading ? (
-          <div className="loading-container">
-            <div className="loading">Loading games...</div>
-          </div>
-        ) : (
+        <section className="recent-games">
+          <h2>Recent Games</h2>
           <div className="game-list">
             {recentGames.length > 0 || recentLocalGames.length > 0 ? (
               <div className="game-history">
@@ -111,17 +116,17 @@ const Home = () => {
               <div className="empty-message">No games found</div>
             )}
           </div>
-        )}
-      </section>
+        </section>
 
-      {/* Load Game Dialog */}
-      <LoadGameDialog
-        isOpen={showLoadDialog}
-        onClose={() => setShowLoadDialog(false)}
-        onLoadGame={handleLoadGame}
-        getSavedGames={getSavedGames}
-      />
-    </div>
+        {/* Load Game Dialog */}
+        <LoadGameDialog
+          isOpen={showLoadDialog}
+          onClose={() => setShowLoadDialog(false)}
+          onLoadGame={handleLoadGame}
+          getSavedGames={getSavedGames}
+        />
+      </div>
+    </PageTransition>
   )
 }
 
