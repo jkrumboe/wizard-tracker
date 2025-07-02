@@ -57,7 +57,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xxl);
+  gap: var(--spacing-xl);
   position: relative;
   z-index: 2;
 }
@@ -68,7 +68,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
 }
 
 .wizard-hat-loader {
@@ -137,6 +137,13 @@
   box-shadow: 0 0 10px var(--accent-color);
 }
 
+/* Different colored sparkles for more magic */
+.sparkle-1 { background: #ffae33; box-shadow: 0 0 10px #ffae33; }
+.sparkle-2 { background: #60a5fa; box-shadow: 0 0 10px #60a5fa; }
+.sparkle-3 { background: #34d399; box-shadow: 0 0 10px #34d399; }
+.sparkle-6 { background: #f472b6; box-shadow: 0 0 10px #f472b6; }
+.sparkle-7 { background: #c084fc; box-shadow: 0 0 10px #c084fc; }
+
 .sparkle::before {
   content: '';
   position: absolute;
@@ -149,11 +156,150 @@
   animation: sparkleGlow 1.5s ease-in-out infinite alternate;
 }
 
-.sparkle-1 { top: 10px; left: 50px; animation-delay: 0s; }
-.sparkle-2 { top: 30px; left: 20px; animation-delay: 0.4s; }
-.sparkle-3 { top: 30px; right: 20px; animation-delay: 0.8s; }
-.sparkle-4 { top: 60px; left: 35px; animation-delay: 1.2s; }
-.sparkle-5 { top: 60px; right: 35px; animation-delay: 1.6s; }
+@keyframes sparkleFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Add variant animations for different sparkles */
+.sparkle-1 { animation-name: sparkleFloat1; }
+.sparkle-3 { animation-name: sparkleFloat2; }
+.sparkle-5 { animation-name: sparkleFloat3; }
+.sparkle-7 { animation-name: sparkleFloat4; }
+
+@keyframes sparkleFloat1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-8px, -12px) scale(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes sparkleFloat2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(8px, -10px) scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes sparkleFloat3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  33% {
+    transform: translate(-5px, -5px) scale(1.1);
+    opacity: 1;
+  }
+  66% {
+    transform: translate(5px, -8px) scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+@keyframes sparkleFloat4 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  33% {
+    transform: translate(8px, -6px) scale(1.1);
+    opacity: 1;
+  }
+  66% {
+    transform: translate(4px, -12px) scale(1.3);
+    opacity: 0.9;
+  }
+}
+
+@keyframes sparkleGlow {
+  0% {
+    box-shadow: 0 0 5px var(--accent-color);
+    opacity: 0.5;
+  }
+  100% {
+    box-shadow: 0 0 15px var(--accent-color), 0 0 30px var(--accent-light);
+    opacity: 0.9;
+  }
+}
+
+@keyframes cardFloat1 {
+  0%, 100% {
+    transform: translateY(0) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(-5deg);
+  }
+}
+
+@keyframes cardFloat2 {
+  0%, 100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(8deg);
+  }
+}
+
+@keyframes cardFloat3 {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-7deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: translateX(-50%) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-50%) rotate(3deg);
+  }
+  75% {
+    transform: translateX(-50%) rotate(-3deg);
+  }
+}
+
+@keyframes overlayPulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.sparkle-1 { top: -5px; left: 60px; animation-delay: 0s; width: 10px; height: 10px; }
+.sparkle-2 { top: 15px; left: 20px; animation-delay: 0.4s; width: 7px; height: 7px; }
+.sparkle-3 { top: 10px; right: 25px; animation-delay: 0.8s; width: 9px; height: 9px; }
+.sparkle-4 { top: 40px; left: 30px; animation-delay: 1.2s; width: 6px; height: 6px; }
+.sparkle-5 { top: 35px; right: 30px; animation-delay: 1.6s; width: 8px; height: 8px; }
+.sparkle-6 { bottom: 20px; left: 45px; animation-delay: 0.6s; width: 7px; height: 7px; }
+.sparkle-7 { bottom: 25px; right: 45px; animation-delay: 1.0s; width: 9px; height: 9px; }
 
 /* Floating Cards */
 .floating-cards {
@@ -215,7 +361,6 @@
 /* Magic Progress Bar */
 .magic-progress {
   width: 200px;
-  margin-top: var(--spacing-lg);
 }
 
 .progress-track {

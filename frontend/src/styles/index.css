@@ -421,7 +421,6 @@ button:disabled {
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   color: var(--text-light);
-  box-shadow: var(--shadow);
 }
 
 .addPlayer {

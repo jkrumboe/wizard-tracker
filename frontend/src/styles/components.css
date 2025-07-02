@@ -640,10 +640,10 @@
   }
 
   .profile-avatar {
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
     position: absolute;
-    top: 10vh;
+    top: -5vh;
     left: 50%;
     transform: translateX(-50%);
     border-radius: var(--radius-full);
@@ -694,6 +694,7 @@
     margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow);
     overflow: hidden;
+    min-height: 280px;
   }
   
   .stats-graph h2,
@@ -781,8 +782,8 @@
     justify-content: center;
     transition: all 0.2s ease;
     font-size: 1.2rem;
-    top: 20vh;
-    right: var(--spacing-xxl);
+    top: 2vh;
+    right: var(--spacing-xl);
     position: absolute;
     padding: var(--spacing-sm);
   }
@@ -2170,6 +2171,8 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Make the game-history div scrollable */
@@ -2204,6 +2207,8 @@
   text-align: center;
   color: var(--text-light);
   padding: var(--spacing-md) 0;
+  font-size: 1.4rem;
+  font-weight: 500;
 }
 
 /* Mobile-specific adjustments */
@@ -2335,8 +2340,8 @@
 }
 
 #toggle-button-profile {
-  top: 20vh;
-  left: var(--spacing-xxl);
+  top: 2vh;
+  left: var(--spacing-xl);
   position: absolute;
   padding: var(--spacing-sm);
 }

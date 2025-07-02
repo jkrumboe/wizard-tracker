@@ -86,7 +86,7 @@ const Leaderboard = () => {
   return (
       <PageTransition 
         isLoading={loading} 
-        loadingTitle="Loading the Leaderboard" 
+        loadingTitle="Loading Leaderboard data..." 
         loadingSubtitle="Please wait while we gather the latest player stats."
       >
       <div className="leaderboard-container">

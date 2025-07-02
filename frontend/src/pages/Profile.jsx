@@ -122,12 +122,12 @@ const handleEditProfile = async () => {
   }
 };
 
-if (loading) {
-  return <div className="loading">Loading player profile...</div>
-}
-
 if (error || !player) {
-  return <div className="error">{error || 'Player not found'}</div>
+  return (
+    <PageTransition isLoading={false}>
+      <div className="error">{error || 'Player not found'}</div>
+    </PageTransition>
+  )
 }
   const recentGames = gameHistory.slice(0, 3);
 
@@ -237,109 +237,115 @@ if (editing) {
   );
   }else{
   return (
-  <div className="profile-container">
-     <div className="profile-content">
-      {canEdit && (
-        <button
-          onClick={() => setEditing(true)}
-          className='edit-button'>
-          <EditIcon size={30} />
-        </button>
-      )}
+  <PageTransition 
+    isLoading={loading} 
+    loadingTitle="Loading Profile..." 
+    loadingSubtitle="Fetching player data and game history"
+  >
+    <div className="profile-container">
+      <div className="profile-content">
+        {canEdit && (
+          <button
+            onClick={() => setEditing(true)}
+            className='edit-button'>
+            <EditIcon size={30} />
+          </button>
+        )}
 
-      <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="profile-avatar" />
+        <img src={player?.avatar || defaultAvatar} alt={player?.name || "Default Avatar"} className="profile-avatar" />
       
-      <div className="player-info">
-          <div className="player-name-tags">
-            <h1>{player?.display_name || "Unknown Player"}</h1>
-            {tags && tags.length > 0 &&
-            <div className="tags-container">
-              {tags && tags.length > 0 && 
-                tags.map(tag => (
-                  <span key={tag.id} className="tag">{tag.name}</span>
-                ))
+        <div className="player-info">
+            <div className="player-name-tags">
+              <h1>{player?.display_name || "Unknown Player"}</h1>
+              {tags && tags.length > 0 &&
+              <div className="tags-container">
+                {tags && tags.length > 0 && 
+                  tags.map(tag => (
+                    <span key={tag.id} className="tag">{tag.name}</span>
+                  ))
+                }
+              </div>
               }
             </div>
-            }
+          <div className="stats-summary">
+            <StatCard 
+              title="ELO" 
+              value={player.elo}
+            />
+            <StatCard 
+              title="Games" 
+              value={player.total_games}
+            />
+            <StatCard 
+              title="Win Rate" 
+              value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
+            />
           </div>
-        <div className="stats-summary">
-          <StatCard 
-            title="ELO" 
-            value={player.elo}
-          />
-          <StatCard 
-            title="Games" 
-            value={player.total_games}
-          />
-          <StatCard 
-            title="Win Rate" 
-            value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
-          />
         </div>
-      </div>
 
    
-      {/* Toggle button for mobile/tablet */}
-      <div className="toggle-section" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
-        <button
-          className="game-control-btn"
-          onClick={() => setActiveTab(activeTab === 'recentGames' ? 'performance' : 'recentGames')}
-          id='toggle-button-profile'
-        >
-          {activeTab === 'recentGames' ? <StatIcon size={30} /> : <CalendarIcon size={30} />}
-        </button>
+        {/* Toggle button for mobile/tablet */}
+        <div className="toggle-section" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
+          <button
+            className="game-control-btn"
+            onClick={() => setActiveTab(activeTab === 'recentGames' ? 'performance' : 'recentGames')}
+            id='toggle-button-profile'
+          >
+            {activeTab === 'recentGames' ? <StatIcon size={30} /> : <CalendarIcon size={30} />}
+          </button>
+        </div>
+
+        {(window.innerWidth > 768 || activeTab === 'performance') && (
+          <div className="stats-graph">
+            <h2>Performance</h2>
+            <ResponsiveContainer width="100%" height={100}>
+              <PieChart>
+                <Pie
+                  data={data}
+                  innerRadius={30}
+                  outerRadius={50}
+                  dataKey="value"
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="chart-legend">
+              <div className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: COLORS[0] }}></span>
+                <span>Wins ({player.total_wins})</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: COLORS[1] }}></span>
+                <span>Losses ({player.total_losses})</span>
+              </div>
+            </div>
+            
+            <Link to={`/stats/${player.id}`} className="view-all-stats">
+              View Complete Stats History
+            </Link>
+          </div>
+        )}
+
+        {(window.innerWidth > 768 || activeTab === 'recentGames') && (
+          <div className="recent-games">
+            <h2>Recent Games</h2>
+            <div className="games-list">
+              {recentGames.length > 0 ? (
+                recentGames.map(game => (
+                  <GameHistoryItem key={game.id} game={game} />
+                ))
+              ) : (
+                <div className="empty-message">No game history found</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-
-      {(window.innerWidth > 768 || activeTab === 'performance') && (
-        <div className="stats-graph">
-          <h2>Performance</h2>
-          <ResponsiveContainer width="100%" height={100}>
-            <PieChart>
-              <Pie
-                data={data}
-                innerRadius={30}
-                outerRadius={50}
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="chart-legend">
-            <div className="legend-item">
-              <span className="legend-color" style={{ backgroundColor: COLORS[0] }}></span>
-              <span>Wins ({player.total_wins})</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{ backgroundColor: COLORS[1] }}></span>
-              <span>Losses ({player.total_losses})</span>
-            </div>
-          </div>
-          
-          <Link to={`/stats/${player.id}`} className="view-all-stats">
-            View Complete Stats History
-          </Link>
-        </div>
-      )}
-
-      {(window.innerWidth > 768 || activeTab === 'recentGames') && (
-        <div className="recent-games">
-          <h2>Recent Games</h2>
-          <div className="games-list">
-            {recentGames.length > 0 ? (
-              recentGames.map(game => (
-                <GameHistoryItem key={game.id} game={game} />
-              ))
-            ) : (
-              <div className="empty-message">No game history found</div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
-  </div>
+  </PageTransition>
   )
 }
 }
