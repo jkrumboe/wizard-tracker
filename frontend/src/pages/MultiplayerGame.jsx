@@ -375,7 +375,7 @@ const MultiplayerGame = () => {
   // Moving this useEffect higher up in the component to avoid conditional hook calling
 
   return (
-    <div className="game-container">
+    <div className={`game-container players-${players.length} ${players.length > 3 ? 'many-players' : ''}`}>
       <header className="game-header">
         <div className="game-info">
           <div className="game-stats">

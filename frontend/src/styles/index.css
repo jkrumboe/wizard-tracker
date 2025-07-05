@@ -440,7 +440,7 @@ button:disabled {
   background-color: var(--card-background);
   color: var(--text-color);
   font-size: 1rem;
-  width: 100%;
+  width: 50%;
 }
 
 

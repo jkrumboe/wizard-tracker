@@ -18,7 +18,7 @@ const NewGame = () => {
     // Only auto-adjust rounds if manual mode is not enabled
     if (!manualRounds) {
       const playerCount = gameState.players.length;
-      if (playerCount >= 3) {
+      if (playerCount >= 2 && playerCount <= 6) {
         // Standard rule: 60 cards divided by number of players
         const recommendedRounds = Math.floor(60 / playerCount);
         // Only update if it's different to avoid unnecessary renders
@@ -61,12 +61,12 @@ const NewGame = () => {
     setManualRounds(true);
     
     // Ensure the value is between 1 and 60 (the maximum possible)
-    const validValue = Math.max(1, Math.min(value, 60));
+    const validValue = Math.max(1, Math.min(value, 20));
     setMaxRounds(validValue);
   }
 
   // Calculate the recommended rounds once (memoized)
-  const recommendedRounds = gameState.players.length >= 3 
+  const recommendedRounds = gameState.players.length >= 2 && gameState.players.length <= 6 
     ? Math.floor(60 / gameState.players.length)
     : 20; // Default max
 
@@ -75,7 +75,7 @@ const NewGame = () => {
   // }
 
   return (
-    <div className="new-game-container">
+    <div className={`new-game-container players-${gameState.players.length}`}>
       <h1>New Game</h1>
 
       <div className="setup-section">
@@ -117,7 +117,7 @@ const NewGame = () => {
                   value={gameState.maxRounds}
                   onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 1)}
                   min={1}
-                  max={manualRounds ? 60 : recommendedRounds}
+                  max={manualRounds ? 20 : recommendedRounds}
                   inputMode="numeric"
                   pattern="[0-9]*"
                 />
@@ -148,11 +148,14 @@ const NewGame = () => {
         </div>
     </div>
 
-      <button className="start-game-btn" disabled={gameState.players.length < 2} onClick={handleStartGame}>
+      <button className="start-game-btn" disabled={gameState.players.length < 2 || gameState.players.length > 6} onClick={handleStartGame}>
         Start Game
       </button>
       {gameState.players.length < 3 && (
-        <div className="error-message">At least 3 players are required to start a game</div>
+        <div className="error-message">At least 3 players are recommended for a standard game</div>
+      )}
+      {gameState.players.length > 6 && (
+        <div className="error-message">Maximum of 6 players are supported</div>
       )}
     </div>
   )

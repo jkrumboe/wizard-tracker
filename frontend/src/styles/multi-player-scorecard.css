@@ -1,0 +1,64 @@
+/* Multi-player scorecard styles */
+
+/* Base style for player name columns - responsive based on player count */
+.wizard-scorecard[data-player-count="2"] .player-header-name,
+.wizard-scorecard[data-player-count="3"] .player-header-name {
+  max-width: 120px;
+}
+
+.wizard-scorecard[data-player-count="4"] .player-header-name {
+  max-width: 100px;
+}
+
+.wizard-scorecard[data-player-count="5"] .player-header-name {
+  max-width: 90px;
+}
+
+.wizard-scorecard[data-player-count="6"] .player-header-name {
+  max-width: 80px;
+  font-size: 0.9rem;
+}
+
+/* Adjustments for score cells based on player count */
+.players-5 .player-round-data,
+.players-6 .player-round-data {
+  font-size: 0.85rem;
+}
+
+.players-6 .round-bid,
+.players-6 .round-made,
+.players-6 .round-score {
+  font-size: 0.9rem !important;
+}
+
+/* Make scorecards more compact for more players */
+.many-players .scorecard-table th, 
+.many-players .scorecard-table td {
+  padding: 0.6rem;
+}
+
+.many-players .player-round-data {
+  gap: 0;
+}
+
+/* Add a scroll indicator for horizontally scrollable tables */
+.many-players .wizard-scorecard::after {
+  content: "⟷";
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  color: var(--text-light);
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+/* Special styles for mobile with many players */
+@media (max-width: 768px) {
+  .many-players .player-round-data {
+    align-items: center;
+  }
+  
+  .many-players .scorecard-table {
+    font-size: 0.8rem;
+  }
+}

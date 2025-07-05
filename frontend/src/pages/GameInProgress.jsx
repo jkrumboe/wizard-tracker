@@ -199,7 +199,7 @@ const GameInProgress = () => {
     // Find players who have not made a call yet
     const uncalledPlayers = players.filter(p => p.call === null);
     // Only restrict the last player to call
-    if (uncalledPlayers.length !== 1) return 0;
+    if (uncalledPlayers.length !== 1) return "not 0";
     // The forbidden call is the value that would make totalCalls == currentRound.cards
     const forbiddenCall = currentRound.cards - totalCalls;
     // Only restrict if forbiddenCall is within valid range
@@ -210,190 +210,185 @@ const GameInProgress = () => {
   };
 
   return (
-    <div className="game-in-progress">
-
+    <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
-            <span>
-              Round {parseInt(gameState.currentRound, 10)} of {parseInt(gameState.maxRounds, 10)}
-            </span>
-            <span className="total-calls">
-              Calls: {totalCalls} |  {(currentRound?.cards - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
-            </span>
-        </div>
+        <span>
+          Round {parseInt(gameState.currentRound, 10)} of {parseInt(gameState.maxRounds, 10)}
+        </span>
+        <span className="total-calls">
+          Calls: {totalCalls} |  {(currentRound?.cards - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
+        </span>
+      </div>  
 
-        {activeTab === 'game' && (
-          <div className="tab-panel">
-            <div className="player-scores">
-              <table className="score-table">
-                <tbody>
-                {currentRound?.players.map((player) => (
-                  <tr key={player.id} className="player-row">
-                    <td className="player-cell">
-                      {player.name}
-                    </td>
-                    <td>
-                      <span>Called</span>
-                      <input
-                        type="tel"
-                        className="rounds-input"
-                        value={player.call !== null ? player.call : ''}
-                        placeholder="0"
-                        onChange={(e) => updateCall(player.id, parseInt(e.target.value) || '')}
-                        min={0}
-                        max={currentRound.cards}
-                        title={`${player.name}'s Call`}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
-                    </td>
-                    <td>
-                      <span>Made</span>
-                      <input
-                        type="tel"
-                        className="rounds-input"
-                        value={player.made !== null ? player.made : ''}
-                        placeholder="0"
-                        onChange={(e) => updateMade(player.id, parseInt(e.target.value) || 0)}
-                        min={0}
-                        max={currentRound.cards}
-                        title={`${player.name}'s Tricks Made`}
-                        disabled={player.call === null}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
-                    </td>
-                    <td>
-                      <span>Score</span>
+      {isLastRound && isRoundComplete && (
+        <button className="finish-btn" onClick={handleFinishGame}>
+          Finish Game
+        </button>
+      )}
 
-                      <div className="score">
-                        <span className="total-score">
-                          {player.totalScore !== null ? player.totalScore : 0}
+      {activeTab === 'game' && (
+        <div className="tab-panel">
+          <div className="player-scores">
+            <table className="score-table">
+              <tbody>
+              {currentRound?.players.map((player) => (
+                <tr key={player.id} className="player-row">
+                  <td className="player-cell">
+                    {player.name}
+                  </td>
+                  <td>
+                    <input
+                      type="tel"
+                      className="rounds-input"
+                      value={player.call !== null ? player.call : ''}
+                      placeholder="0"
+                      onChange={(e) => updateCall(player.id, parseInt(e.target.value) || '')}
+                      min={0}
+                      max={currentRound.cards}
+                      title={`${player.name}'s Call`}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="tel"
+                      className="rounds-input"
+                      value={player.made !== null ? player.made : ''}
+                      placeholder="0"
+                      onChange={(e) => updateMade(player.id, parseInt(e.target.value) || 0)}
+                      min={0}
+                      max={currentRound.cards}
+                      title={`${player.name}'s Tricks Made`}
+                      disabled={player.call === null}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                  </td>
+                  <td>
+                    <div className="score">
+                      <span className="total-score">
+                        {player.totalScore !== null ? player.totalScore : 0}
+                      </span>
+                      {player.score !== null && player.score !== 0 && (
+                        <span
+                          className={
+                        player.score > 0
+                          ? "round-score positive"
+                          : "round-score negative"
+                          }
+                        >
+                          {player.score > 0 ? `+${player.score}` : player.score}
                         </span>
-                        {player.score !== null && player.score !== 0 && (
-                          <span
-                            className={
-                          player.score > 0
-                            ? "round-score positive"
-                            : "round-score negative"
-                            }
-                          >
-                            {player.score > 0 ? `+${player.score}` : player.score}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-
-            {isLastRound && isRoundComplete && (
-          <button className="finish-btn" onClick={handleFinishGame}>
-            Finish Game
-          </button>
-            )}
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'stats' && (
-          <div className="tab-panel">
-            <div className="game-stats-container">
-          <h2>Player Statistics</h2>
+      {activeTab === 'stats' && (
+        <div className="tab-panel">
+          <div className="game-stats-container">
+            <h2>Player Statistics</h2>
           
-          <div className="stats-grid">
-            {detailedStats.map((playerStats) => (
-              <div key={playerStats.id} className="player-stat-card">
-            <h3 className="player-stat-name">{playerStats.name}</h3>
-            
-            <div className="stat-section">
-              <h4>
-                <StatIcon style={{ marginRight: 4 }} />
-                Bidding Performance
-              </h4>
-              <div className="stat-row">
-                <span className="stat-label">Bid Accuracy:</span>
-                <span className="stat-value highlight">{playerStats.bidAccuracy}%</span>
-                <span className="stat-explanation">
-              ({playerStats.correctBids}/{playerStats.roundsPlayed} perfect bids)
-                </span>
+            <div className="stats-grid">
+              {detailedStats.map((playerStats) => (
+                <div key={playerStats.id} className="player-stat-card">
+              <h3 className="player-stat-name">{playerStats.name}</h3>
+              
+              <div className="stat-section">
+                <h4>
+                  <StatIcon style={{ marginRight: 4 }} />
+                  Bidding Performance
+                </h4>
+                <div className="stat-row">
+                  <span className="stat-label">Bid Accuracy:</span>
+                  <span className="stat-value highlight">{playerStats.bidAccuracy}%</span>
+                  <span className="stat-explanation">
+                ({playerStats.correctBids}/{playerStats.roundsPlayed} perfect bids)
+                  </span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Bidding Style:</span>
+                  <span className="stat-value">{playerStats.biddingTendency}</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Avg. Bid:</span>
+                  <span className="stat-value">{playerStats.avgBid}</span>
+                  <span className="stat-explanation">tricks per round</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Avg. Made:</span>
+                  <span className="stat-value">{playerStats.avgTricks}</span>
+                  <span className="stat-explanation">tricks per round</span>
+                </div>
               </div>
-              <div className="stat-row">
-                <span className="stat-label">Bidding Style:</span>
-                <span className="stat-value">{playerStats.biddingTendency}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Avg. Bid:</span>
-                <span className="stat-value">{playerStats.avgBid}</span>
-                <span className="stat-explanation">tricks per round</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Avg. Made:</span>
-                <span className="stat-value">{playerStats.avgTricks}</span>
-                <span className="stat-explanation">tricks per round</span>
-              </div>
-            </div>
 
-            <div className="stat-section">
-              <h4>
-                <SaveIcon style={{ marginRight: 4 }} />
-                Scoring Performance
-              </h4>
-              <div className="stat-row">
-                <span className="stat-label">Total Points:</span>
-                <span className="stat-value highlight">{playerStats.totalPoints}</span>
+              <div className="stat-section">
+                <h4>
+                  <SaveIcon style={{ marginRight: 4 }} />
+                  Scoring Performance
+                </h4>
+                <div className="stat-row">
+                  <span className="stat-label">Total Points:</span>
+                  <span className="stat-value highlight">{playerStats.totalPoints}</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Avg. Points/Round:</span>
+                  <span className="stat-value">{playerStats.avgPointsPerRound}</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Best Round:</span>
+                  <span className="stat-value positive">{playerStats.bestRound}</span>
+                  <span className="stat-explanation">points</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Worst Round:</span>
+                  <span className="stat-value negative">{playerStats.worstRound}</span>
+                  <span className="stat-explanation">points</span>
+                </div>
               </div>
-              <div className="stat-row">
-                <span className="stat-label">Avg. Points/Round:</span>
-                <span className="stat-value">{playerStats.avgPointsPerRound}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Best Round:</span>
-                <span className="stat-value positive">{playerStats.bestRound}</span>
-                <span className="stat-explanation">points</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Worst Round:</span>
-                <span className="stat-value negative">{playerStats.worstRound}</span>
-                <span className="stat-explanation">points</span>
-              </div>
-            </div>
 
-            <div className="stat-section">
-              <h4>
-                <PauseIcon style={{ marginRight: 4 }} />
-                Consistency
-              </h4>
-              <div className="stat-row">
-                <span className="stat-label">Perfect Rounds:</span>
-                <span className="stat-value">{playerStats.perfectRounds}</span>
-                <span className="stat-explanation">bid = tricks made</span>
+              <div className="stat-section">
+                <h4>
+                  <PauseIcon style={{ marginRight: 4 }} />
+                  Consistency
+                </h4>
+                <div className="stat-row">
+                  <span className="stat-label">Perfect Rounds:</span>
+                  <span className="stat-value">{playerStats.perfectRounds}</span>
+                  <span className="stat-explanation">bid = tricks made</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Best Streak:</span>
+                  <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
+                  <span className="stat-explanation">consecutive perfect bids</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Over-bids:</span>
+                  <span className="stat-value">{playerStats.overBids}</span>
+                  <span className="stat-explanation">made more than bid</span>
+                </div>
+                <div className="stat-row">
+                  <span className="stat-label">Under-bids:</span>
+                  <span className="stat-value">{playerStats.underBids}</span>
+                  <span className="stat-explanation">made less than bid</span>
+                </div>
               </div>
-              <div className="stat-row">
-                <span className="stat-label">Best Streak:</span>
-                <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
-                <span className="stat-explanation">consecutive perfect bids</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Over-bids:</span>
-                <span className="stat-value">{playerStats.overBids}</span>
-                <span className="stat-explanation">made more than bid</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Under-bids:</span>
-                <span className="stat-value">{playerStats.underBids}</span>
-                <span className="stat-explanation">made less than bid</span>
-              </div>
+                </div>
+              ))}
             </div>
-              </div>
-            ))}
           </div>
-            </div>
-          </div>
-        )}
+        </div>
+      )}
 
-      {/* Top Section with Controls */}
-       <div className="game-bottom-section">
+        {/* Top Section with Controls */}
+      <div className="game-bottom-section">
         {/* Toggle Button for Game Board / Player Stats */}
         <div className="toggle-section">
           <button

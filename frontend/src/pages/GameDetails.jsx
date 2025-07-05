@@ -199,11 +199,11 @@ const GameDetails = () => {
         <div className="game-summary">
           {activeTab === 'rounds' && (
             <div className="rounds-section">
-              <div className="wizard-scorecard">
+              <div className={`wizard-scorecard ${sortedPlayers.length > 3 ? 'many-players' : ''}`} data-player-count={sortedPlayers.length}>
                 <table className="scorecard-table">
                   <thead>
                     <tr>
-                      <th className="round-header">Round</th>
+                      <th className="round-header sticky-cell">Round</th>
                       {sortedPlayers.map(player => (
                         <th key={player.id} className="player-header">
                           <div className="player-header-name">{player.name}</div>
@@ -214,7 +214,7 @@ const GameDetails = () => {
                   <tbody>
                     {game.round_data && game.round_data.map((round, index) => (
                       <tr key={index} className="round-row">
-                        <td className="round-number">{index + 1}</td>
+                        <td className="round-number sticky-cell">{index + 1}</td>
                         {sortedPlayers.map(player => {
                           const playerRound = round.players.find(p => p.id === player.id);
                           
@@ -236,7 +236,7 @@ const GameDetails = () => {
                                 <div className="player-round-data">
                                 <div className="round-score">{playerRound.score}</div>
                                 <div className="round-bid">{playerRound.call}</div>
-                                <div className={`round-made ${bidStatusClass}`}>Made: {playerRound.made}</div>
+                                <div className={`round-made ${bidStatusClass}`}>{playerRound.made}</div>
                               </div>
                               )}
                             </td>
@@ -245,7 +245,7 @@ const GameDetails = () => {
                       </tr>
                     ))}
                     <tr className="total-row">
-                      <td className="total-label">Total</td>
+                      <td className="total-label sticky-cell">Total</td>
                       {sortedPlayers.map(player => (
                         <td key={player.id} className="total-score">
                           {player.score}

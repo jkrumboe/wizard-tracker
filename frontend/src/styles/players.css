@@ -1,0 +1,85 @@
+/* Additional player styling for supporting 2-6 players */
+.player-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two players side by side */
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+    max-height: 350px;
+    width: 100%;
+    overflow-y: auto;
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background-color: var(--card-background-alt);
+    border-radius: var(--radius-lg);
+    margin: 0;
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    gap: var(--spacing-sm);
+    width: 100%; /* Full width of grid cell */
+    max-height: 3rem;
+}
+
+.player-item span {
+    min-width: 30px;
+    text-align: center;
+  }
+
+.inputPlayerName {
+    flex: 1;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-light);
+}
+
+.addPlayer {
+  display: block;
+  width: 40px;
+  height: 40px;
+  line-height: 36px;
+  text-align: center;
+  font-size: 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  margin: 10px auto;
+  transition: all 0.2s;
+}
+
+.addPlayer:hover {
+  transform: scale(1.1);
+  background-color: var(--primary-dark);
+}
+
+/* Responsive styling for different player counts */
+@media (min-width: 768px) {
+  /* For larger screens, optimize the layout */
+  .selected-players {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+}
+
+/* Styling for the scorecard when 4-6 players */
+@media (max-width: 1024px) {
+  .wizard-scorecard {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  
+  .player-header-name {
+    max-width: 80px; /* Make player header names more compact */
+  }
+  
+  .player-round-data {
+    font-size: 0.85rem; /* Slightly smaller font for more players */
+  }
+}

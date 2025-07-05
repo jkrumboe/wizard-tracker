@@ -1,16 +1,18 @@
 /* Wizard Scorecard Styles */
 .wizard-scorecard {
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
   background-color: var(--card-background);
   box-shadow: var(--shadow);
+  overflow-x: auto;
+  position: relative;
+  /* Improve scrolling experience */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-light) var(--card-background);
 }
 
 .scorecard-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  overflow: hidden;
+  width: 98%;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .scorecard-table th, 
@@ -36,6 +38,14 @@
   max-width: 120px;
 }
 
+/* Adjust for 4-6 players */
+@media (min-width: 4) {
+  .player-header-name {
+    max-width: 90px; /* Smaller for more players */
+    font-size: 0.9rem;
+  }
+}
+
 .round-header {
   background-color: var(--card-background);
   color: var(--text-color);
@@ -43,23 +53,45 @@
   position: sticky;
   top: 0;
   left: 0;
-  z-index: 11;
+  z-index: 101; /* Higher than round-number to stay on top */
   width: 60px;
-}
+  box-shadow: none;
+  /* Ensure the background fills the entire cell */
+  isolation: isolate;}
 
 .round-number {
-  background-color: var(--card-background-dark);
+  background-color: var(--card-background-alt);
   color: var(--text-color);
   font-weight: 600;
+  font-size: 1.1rem;
   position: sticky;
   left: 0;
-  z-index: 9;
+  z-index: 100; /* Increased to ensure it's above all other rows/columns */
+  /* Fix the background to stay with the content */
+  box-shadow: none;
+  /* Ensure the background fills the entire cell */
+  isolation: isolate;
 }
 
 .player-round-cell {
   background-color: var(--card-background-alt);
+  padding-left: 0 !important;
+  padding-right: 0 !important;
   transition: background-color 0.2s;
+  position: relative;
+  z-index: 1; /* Ensure it stacks correctly */
 }
+
+/* Add a subtle visual separator for the first column */
+/* .round-number::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 1px;
+  background-color: var(--border-color);
+} */
 
 .player-round-cell:hover {
   background-color: var(--input-background);
@@ -97,7 +129,8 @@
 
 .round-bid ,
 .round-score {
-  font-size: 1.2rem !important;
+  font-size: 1rem !important;
+  height: 21px;
 }
 
 .total-row {
@@ -111,6 +144,11 @@
   position: sticky;
   left: 0;
   z-index: 9;
+  /* Fix the background to stay with the content */
+  box-shadow: none;
+  /* Ensure the background fills the entire cell */
+  isolation: isolate;
+  border-right: 2px solid var(--primary-color);
 }
 
 .total-score {
@@ -124,11 +162,51 @@
 }
 
 .under-bid {
-  color: var(--warning-color); /* amber for under bids */
+  color: var(--error-color); /* amber for under bids */
 }
 
 .over-bid {
   color: var(--error-color); /* red for over bids */
+}
+
+/* Fix for sticky columns with proper background */
+.round-row:nth-child(odd) .round-number {
+  background-color: var(--card-background-alt);
+}
+
+.round-row:nth-child(even) .round-number {
+  background-color: var(--card-background);
+}
+
+/* Fix for WebKit browsers (Chrome, Safari, etc.) */
+.sticky-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  /* background-color: var(--border-color); */
+  z-index: 11;
+}
+
+/* Special corner case - top left cell */
+.round-header {
+  background-color: var(--card-background) !important;
+}
+
+/* Common styles for all sticky cells */
+.sticky-cell {
+  position: sticky;
+  left: 0;
+  /* Remove box shadows in favor of a consistent border */
+  box-shadow: none !important;
+  /* Apply a consistent right border that stays with the cell */
+  border-right: 2px solid var(--border-color) !important;
+  z-index: 11;
+  /* Critical fix: ensure the border stays with the cell */
+  background-clip: padding-box;
+  -webkit-background-clip: padding-box;
 }
 
 /* Responsive adjustments */
@@ -140,5 +218,10 @@
   .scorecard-table th, 
   .scorecard-table td {
     padding: 0.5rem;
+  }
+  
+  /* Ensure sticky columns look correct on mobile */
+  .round-number, .round-header, .total-label {
+    width: 40px;
   }
 }

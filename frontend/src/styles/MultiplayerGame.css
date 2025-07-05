@@ -318,16 +318,6 @@
   border-top: 1px solid var(--border-color);
 }
 
-.score {
-  font-size: 1.1em;
-  font-weight: 600;
-  color: var(--accent-color);
-  margin-bottom: var(--spacing-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .total-score {
   font-weight: 700;
   font-size: 1.2em;
@@ -492,7 +482,7 @@
   cursor: pointer;
   background-color: var(--card-background);
   position: relative;
-  padding: var(--spacing-md);
+  padding: var(--spacing-md) 0;
   transition: background-color 0.2s;
 }
 
@@ -845,7 +835,7 @@
 
 /* Round score styling to match GameInProgress */
 .round-score {
-  font-size: 0.85em;
+  font-size: 0.5em;
   font-weight: 600;
   margin-left: var(--spacing-xs);
 }
@@ -882,15 +872,6 @@
 .player-stats-game p {
   margin: 0;
 }
-
-/* Match player-cell styling with GameInProgress */
-/* .player-cell {
-  font-weight: 600;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-} */
 
 .round-navigation {
   display: flex;

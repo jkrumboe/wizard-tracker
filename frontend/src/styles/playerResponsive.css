@@ -1,0 +1,84 @@
+/* Responsive styles for multi-player support (2-6 players) */
+
+/* Player cards when 4-6 players */
+.player-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+/* Specific optimizations for 4 players */
+.players-4 .player-card {
+  font-size: 0.95em;
+}
+
+/* Specific optimizations for 5 players */
+.players-5 .player-card {
+  font-size: 0.9em;
+}
+
+/* Specific optimizations for 6 players */
+.players-6 .player-card {
+  font-size: 0.85em;
+  padding: var(--spacing-sm);
+}
+
+.players-6 .player-avatar {
+  width: 60px;
+  height: 60px;
+}
+
+/* Adjust the scorecard table for many players */
+.many-players .scorecard-table {
+  font-size: 0.85rem;
+}
+
+.many-players .round-bid,
+.many-players .round-made,
+.many-players .round-score {
+  font-size: 0.95rem;
+}
+
+/* Add responsive class handling in the scorecard */
+@media (max-width: 768px) {
+  .player-cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  
+  .player-avatar {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* Make sure the game page adapts to player count */
+.game-container {
+  padding: var(--spacing-md);
+}
+
+/* Make sure the player round cells adapt for more players */
+.player-round-cell {
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Apply dynamic player count classes */
+.wizard-game[data-players="4"] .scorecard-table,
+.wizard-game[data-players="5"] .scorecard-table,
+.wizard-game[data-players="6"] .scorecard-table {
+  font-size: 0.85rem;
+}
+
+/* Make scroll bars visible on player-heavy tables */
+.wizard-scorecard::-webkit-scrollbar {
+  height: 6px;
+  width: 8px;
+}
+
+.wizard-scorecard::-webkit-scrollbar-thumb {
+  background-color: var(--border-light);
+  border-radius: 4px;
+}
+
+.wizard-scorecard::-webkit-scrollbar-track {
+  background-color: var(--card-background);
+}

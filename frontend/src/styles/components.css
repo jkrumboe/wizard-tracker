@@ -399,7 +399,7 @@
   
   /* Game Details Page */
   .game-details-container {
-    padding: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-sm);
   }
   
   .game-details-header {
@@ -432,12 +432,6 @@
     color: var(--primary-light);
   }
   
-  .game-summary {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-  
   .winner-section,
   .results-section {
     background-color: var(--card-background);
@@ -449,6 +443,8 @@
   
   .rounds-section {
     padding: 0;
+    width: 99%;
+    border: 1px solid var(--border-color);
   }
 
   .winner-section h2,
@@ -1304,32 +1300,6 @@
     max-height: 190px;
     overflow-y: auto;
   }
-
-  .player-list {
-    margin-top: var(--spacing-xs);
-    margin-bottom: var(--spacing-sm);
-    min-height: 150px;
-    border-radius: var(--radius-lg);
-    width: 100%;
-  }
-
-  .player-item {
-    display: flex;
-    align-items: center;
-    padding: var(--spacing-sm);
-    background-color: var(--card-background-alt);
-    border-radius: var(--radius-md);
-    margin: 0;
-    margin-bottom: var(--spacing-sm);
-    border: 1px solid var(--border-color);
-    font-weight: 600;
-    gap: var(--spacing-sm);
-  }
-  
-  .player-item span {
-    min-width: 30px;
-    text-align: center;
-  }
   
   .remove-btn {
     margin-left: auto;
@@ -1555,14 +1525,14 @@
 
   .score-table th,
   .score-table td {
-    padding:var(--spacing-md);
+    padding: var(--spacing-md);
     text-align: center;
     border-bottom: 1px solid var(--primary-color);
     transition: all 0.2s ease;
     position: relative;
     vertical-align: middle;
   }
-
+  
   .score-table th {
     font-weight: 700;
     color: var(--text-white);
@@ -1585,7 +1555,7 @@
     font-size: var(--font-size-xl) !important;
     align-items: center;
     padding-right: 0 !important;
-    padding-left: var(--size) !important;
+    padding-left: var(--spacing-md) !important;
   }
   
   
@@ -1596,10 +1566,13 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    font-weight: 600;
+    font-weight: 400;
     margin: 0 auto;
-    color: var(--text-color)
+    color: var(--text-color);
+    height: 22px;
   }
+
+
 
   .positive-score {
     color: var(--success-color);
@@ -2278,6 +2251,9 @@
     color: var(--text-color);
     font-size: 1rem;
     transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
   }
   
   .score-table input[type="tel"]:focus {
@@ -2290,6 +2266,8 @@
     background-color: var(--disabled-background);
     opacity: 0.6;
     cursor: not-allowed;
+    border: 1px solid var(--border-color);
+    box-shadow: none;
   }
   
   /* Hide spinner buttons in number inputs for browsers */
@@ -2315,7 +2293,7 @@
   right: 0;
   bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
   z-index: 100;
-  padding: var(--spacing-md);
+  padding: 0 var(--spacing-md);
 }
 
 .game-controls {
