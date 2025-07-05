@@ -188,17 +188,17 @@
     margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow);
     transition: transform 0.3s, box-shadow 0.3s;
-    border: 3px solid var(--border-color);
+    border: 3px solid var(--primary-color);
     position: relative;
     overflow: hidden;
   }
   
   .game-date {
     font-weight: 500;
-    color: var(--text-light);
     font-size: 1rem;
-    border-bottom: var(--border-color) solid 2px;
+    border-bottom: var(--primary-color) solid 2px;
     text-align: center;
+    padding: var(--spacing-xs);
   }
 
   .game-winner {
@@ -285,8 +285,9 @@
   .bottom-game-history {
     display: flex;
     flex-direction: row;
+    width: 100%;
     justify-content: space-between;
-    gap: var(--spacing-xxl);
+    margin-top: var(--spacing-sm);
   }
   
   /* SearchBar Component */
@@ -2150,9 +2151,9 @@
 
 /* Make the game-history div scrollable */
 .game-history {
+  margin-top: var(--spacing-md);
   overflow-y: auto;
   max-height: 100%;
-  padding-right: var(--spacing-sm);
   height: 100%;
 }
 
