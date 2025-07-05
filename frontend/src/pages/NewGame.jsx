@@ -60,8 +60,8 @@ const NewGame = () => {
     // If the user manually changes the value, enable manual rounds mode
     setManualRounds(true);
     
-    // Ensure the value is between 1 and 60 (the maximum possible)
-    const validValue = Math.max(1, Math.min(value, 20));
+    // Ensure the value is between 1 and 20 (the maximum possible)
+    const validValue = Math.max(0, Math.min(value, 20));
     setMaxRounds(validValue);
   }
 
@@ -115,7 +115,7 @@ const NewGame = () => {
                   id="rounds-input"
                   type="tel"
                   value={gameState.maxRounds}
-                  onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 1)}
+                  onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
                   min={1}
                   max={manualRounds ? 20 : recommendedRounds}
                   inputMode="numeric"
