@@ -29,6 +29,7 @@ const Navbar = () => {
           Wizard Tracker
         </Link>
         
+        {isOnline && (
         <Link to={user ? `/profile/${user?.player_id}` : "/login"} className="profile-icon">
           <img
             src={player?.avatar || defaultAvatar}
@@ -36,6 +37,7 @@ const Navbar = () => {
             className="navbar-avatar"
           />
         </Link>
+        )}
       </div>
       
       <nav className="bottom-navbar">

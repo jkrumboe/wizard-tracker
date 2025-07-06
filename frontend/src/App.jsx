@@ -93,8 +93,11 @@ function App() {  useEffect(() => {
                     <MultiplayerGame />
                   </OnlineProtectedRoute>
                 } />
-                {/* <Route path="/test-multiplayer" element={<TestMultiplayer />} /> */}
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element= {
+                  <OnlineProtectedRoute>
+                    <Login />
+                  </OnlineProtectedRoute>
+                }/>
                 <Route path="/settings" element={<Home />} />
               <Route
                 path="/admin"
