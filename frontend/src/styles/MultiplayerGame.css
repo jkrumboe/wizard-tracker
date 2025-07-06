@@ -706,11 +706,12 @@
 
 .round-info {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--spacing-md);
   font-size: 1.1em;
   align-items: center;
   margin-bottom: var(--spacing-md);
+  padding: 0 var(--spacing-md);
 }
 
 .round-info span {
@@ -891,8 +892,36 @@
   transition: all 0.2s;
 }
 
-.nav-btn:disabled {
-  background-color: var(--border-color);
-  cursor: not-allowed;
-  opacity: 0.6;
+/* Action buttons in game header */
+.action-button {
+  border: none;
+  background-color: var(--primary);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+.pause-button {
+  background-color: var(--danger);
+}
+
+.pause-button:hover {
+  background-color: var(--danger-dark);
 }

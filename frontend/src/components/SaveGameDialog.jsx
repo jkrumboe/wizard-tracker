@@ -10,10 +10,11 @@ const SaveGameDialog = ({
   gameState,
   showPauseOption = true,
   showLeaveOption = true,
+  initialOption = 'save',
   title = "Save Game"
 }) => {
-  const [gameName, setGameName] = useState(gameState.gameName || '');
-  const [saveOption, setSaveOption] = useState('save'); // 'save', 'pause', 'leave'
+  const [gameName, setGameName] = useState(gameState?.gameName || '');
+  const [saveOption, setSaveOption] = useState(initialOption); // 'save', 'pause', 'leave'
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;

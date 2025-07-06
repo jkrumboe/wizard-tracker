@@ -31,7 +31,6 @@ const Home = () => {
 
   useEffect(() => {
     const fetchGames = async () => {
-      console.log('Home: Starting to fetch games, setting loading=true');
       setLoading(true); // Ensure loading is true at the start
       
       try {
@@ -56,7 +55,6 @@ const Home = () => {
         
         setRecentGames(formattedServerGames)
         setRecentLocalGames(formattedLocalGames)
-        console.log('Home: Fetched games successfully, setting loading=false');
         setLoading(false)
       } catch (error) {
         console.error('Error fetching games:', error)
@@ -79,11 +77,6 @@ const Home = () => {
 
     fetchGames()
   }, [])
-
-  // Log the loading state whenever it changes
-  useEffect(() => {
-    console.log('Home component loading state:', loading);
-  }, [loading]);
 
   return (
     <PageTransition

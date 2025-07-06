@@ -7,6 +7,7 @@ import { useGameStateContext } from "../hooks/useGameState"
 import SaveGameDialog from "../components/SaveGameDialog"
 import LoadGameDialog from "../components/LoadGameDialog"
 import GameMenuModal from "../components/GameMenuModal"
+import PauseConfirmationModal from "../components/PauseConfirmationModal"
 import { SaveIcon, PauseIcon, MenuIcon, StatIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
 import { ArrowLeftIcon, ArrowRight } from "lucide-react";
 
@@ -31,6 +32,7 @@ const GameInProgress = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [showGameMenuModal, setShowGameMenuModal] = useState(false)
+  const [showPauseModal, setShowPauseModal] = useState(false)
 
   // We don't need the click outside handler for a modal, removing this useEffect
 
@@ -56,18 +58,34 @@ const GameInProgress = () => {
     }
   }
 
+  // Function to show the pause confirmation modal
+  const showPauseConfirmation = () => {
+    setShowPauseModal(true);
+    // Close any other open modals
+    setShowGameMenuModal(false);
+  }
+
+  // Function to actually pause the game
   const handlePauseGame = async (gameName) => {
     try {
-      const success = await pauseGame(gameName)
-      if (success) {
-        setShowSaveDialog(false)
-        resetGame()
-        navigate("/", { state: { message: "Game paused successfully!" } })
+      // Explicitly set a default name if none is provided
+      const gameNameToUse = gameName || `Paused Game - Round ${gameState.currentRound}/${gameState.maxRounds}`;
+      const result = await pauseGame(gameNameToUse);
+      
+      if (result && result.success) {
+        // Close all modals
+        setShowSaveDialog(false);
+        setShowPauseModal(false);
+        
+        // First reset the game state to prevent issues
+        resetGame();
+        // Then navigate home with a success message
+        navigate("/", { state: { message: "Game paused successfully!" } });
       }
-      return success
+      return result;
     } catch (error) {
-      console.error('Failed to pause game:', error)
-      return false
+      console.error('Failed to pause game:', error);
+      return { success: false, error: error.message };
     }
   }
 
@@ -98,10 +116,6 @@ const GameInProgress = () => {
       console.error('Failed to load game:', error)
       return false
     }
-  }
-
-  const toggleGameMenu = () => {
-    setShowGameMenuModal(true)
   }
 
   if (!gameState.gameStarted) {
@@ -272,7 +286,7 @@ const GameInProgress = () => {
                       </span>
                       {player.score !== null && player.score !== 0 && (
                         <span
-                          className={
+                        className={
                         player.score > 0
                           ? "round-score positive"
                           : "round-score negative"
@@ -401,11 +415,11 @@ const GameInProgress = () => {
 
         <div className="game-controls">
           <button 
-            className="game-control-btn menu-btn"
-            onClick={toggleGameMenu}
-            title="Game Menu"
+            className="game-control-btn pause-btn"
+            onClick={() => showPauseConfirmation()}
+            title="Pause Game"
           >
-            <MenuIcon size={27} />
+            <PauseIcon size={27} />
           </button>
         </div>
 
@@ -428,6 +442,7 @@ const GameInProgress = () => {
         gameState={gameState}
         showPauseOption={true}
         showLeaveOption={true}
+        initialOption='pause' // Default to pause option since that's what users will likely want
       />
 
       {/* Load Game Dialog */}
@@ -449,15 +464,26 @@ const GameInProgress = () => {
         onSaveGame={() => {
           setShowGameMenuModal(false);
           setShowSaveDialog(true);
+          // Just save, don't set initialOption
         }}
         onPauseGame={() => {
           setShowGameMenuModal(false);
-          setShowSaveDialog(true); // Open save dialog with pause intent
+          // Show pause confirmation dialog
+          showPauseConfirmation();
         }}
         onLeaveGame={() => {
           setShowGameMenuModal(false);
-          setShowSaveDialog(true); // Open save dialog with leave intent
+          handleLeaveGame();
         }}
+      />
+      
+      {/* Pause Confirmation Modal */}
+      <PauseConfirmationModal
+        isOpen={showPauseModal}
+        onClose={() => setShowPauseModal(false)}
+        onConfirm={handlePauseGame}
+        currentRound={gameState.currentRound}
+        maxRounds={gameState.maxRounds}
       />
     </div>
   )

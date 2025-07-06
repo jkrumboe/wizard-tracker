@@ -10,103 +10,34 @@ const PageTransition = ({
   appOpenThreshold = 30 * 60 * 1000, // 30 minutes in milliseconds
   storageKey = 'appLastUsed' // Customizable localStorage key
 }) => {
-  // Debug logging at component start
-  console.log('PageTransition: Component mounted/updated with props', { 
-    isLoading, 
-    showOnAppOpen, 
-    appOpenThreshold,
-    storageKey
-  });
-
-  // Check if this should be treated as an "app open" based on time since last use
-  const shouldShowOnAppOpen = () => {
-    if (!showOnAppOpen) {
-      console.log('PageTransition: Not using app open logic, always show');
-      return true; // Always show if not using app open logic
-    }
-    
-    const lastUsed = localStorage.getItem(storageKey);
-    const now = Date.now();
-    
-    console.log('PageTransition: Checking app open logic', {
-      storageKey,
-      lastUsed,
-      now,
-      threshold: appOpenThreshold
-    });
-    
-    if (!lastUsed) {
-      console.log('PageTransition: First time using the app');
-      return true;
-    }
-    
-    const timeSinceLastUse = now - parseInt(lastUsed);
-    const shouldShow = timeSinceLastUse > appOpenThreshold;
-    
-    console.log('PageTransition: Time check', {
-      timeSinceLastUse,
-      thresholdMinutes: appOpenThreshold / (60 * 1000),
-      shouldShow
-    });
-    
-    return shouldShow;
-  };
-  
-  const shouldShowLoading = isLoading && shouldShowOnAppOpen();
-  
-  console.log('PageTransition: Final decision', {
-    isLoading,
-    shouldShowOnAppOpen: shouldShowOnAppOpen(),
-    shouldShowLoading
-  });
-  
-  // Force to read initial values directly from props
-  console.log('PageTransition: Setting initial state', { isLoading, shouldShowOnAppOpen: shouldShowOnAppOpen(), shouldShowLoading });
 
   const [showContent, setShowContent] = useState(!isLoading);
   const [internalLoading, setInternalLoading] = useState(isLoading);
   const [animationPhase, setAnimationPhase] = useState('enter');
 
   useEffect(() => {
-    console.log('PageTransition: Effect triggered with isLoading =', isLoading);
     
     // Check if this should be treated as an "app open" for this effect run
     const checkAppOpen = () => {
       if (!showOnAppOpen) {
-        console.log('PageTransition: Not using app open logic, always show');
         return true; // Always show if not using app open logic
       }
       
       const lastUsed = localStorage.getItem(storageKey);
       const now = Date.now();
       
-      console.log('PageTransition: Checking app open logic within effect', {
-        storageKey,
-        lastUsed,
-        now,
-        threshold: appOpenThreshold
-      });
-      
       if (!lastUsed) {
-        console.log('PageTransition: First time using the app');
         return true;
       }
       
       const timeSinceLastUse = now - parseInt(lastUsed);
-      const shouldShow = timeSinceLastUse > appOpenThreshold;
-      
-      console.log('PageTransition: Time check within effect', {
-        timeSinceLastUse,
-        thresholdMinutes: appOpenThreshold / (60 * 1000),
-        shouldShow
-      });
+      const shouldShow = timeSinceLastUse > appOpenThreshold;;
       
       return shouldShow;
     };
     
     // Always show loading when component first mounts with isLoading=true
     if (isLoading) {
-      console.log('PageTransition: Loading started');
       setShowContent(false);
       setInternalLoading(true);
       setAnimationPhase('enter');
@@ -115,11 +46,9 @@ const PageTransition = ({
     
     // If loading is complete
     if (!isLoading) {
-      console.log('PageTransition: Loading completed');
       
       // Only show transition if this is an app open situation OR we're not using app open logic
       if (!showOnAppOpen || checkAppOpen()) {
-        console.log('PageTransition: Will show exit animation');
         
         // Start exit animation
         const timer = setTimeout(() => {
@@ -141,7 +70,6 @@ const PageTransition = ({
         return () => clearTimeout(timer);
       } else {
         // Skip transition - immediately show content
-        console.log('PageTransition: Skipping transition animation');
         setInternalLoading(false);
         setShowContent(true);
         

@@ -5,6 +5,17 @@ import { LocalGameStorage } from "../services/localGameStorage"
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
 
+// List of real names to use for random player names
+const PLAYER_NAMES = [
+  "Alex", "Bailey", "Charlie", "Dana", "Eli", "Frankie", "Gray", "Harper",
+  "Isa", "Jordan", "Kai", "Lee", "Morgan", "Nico", "Ollie", "Parker",
+  "Quinn", "Reese", "Sage", "Taylor", "Viv", "Winter", "Yuri", "Zoe",
+  "Avery", "Blake", "Casey", "Drew", "Ellis", "Finley", "Greer", "Hayden",
+  "Indigo", "Jules", "Kelsey", "Lennox", "Marley", "Nova", "Oakley", "Phoenix",
+  "River", "Skyler", "Tatum", "Utah", "Val", "Wren", "Xen", "Yael",
+  "Robin", "Jamie", "Riley", "Emery", "Ash", "Shawn", "Jesse", "Kendall"
+]
+
 export function GameStateProvider({ children }) {
   const [gameState, setGameState] = useState({
     players: [],
@@ -21,12 +32,39 @@ export function GameStateProvider({ children }) {
   })
 
   // Add a player to the game
-  const addPlayer = useCallback((index) => {
-    const player = {id: index, name: "Player " + index}
-    setGameState((prevState) => ({
-      ...prevState,
-      players: [...prevState.players, player],
-    }))
+  const addPlayer = useCallback(() => {
+    setGameState((prevState) => {
+      // Generate a unique ID based on timestamp and random number
+      const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
+      
+      // Get currently used names in the game
+      const usedNames = prevState.players.map(player => player.name);
+      
+      // Filter out names that are already in use
+      const availableNames = PLAYER_NAMES.filter(name => !usedNames.includes(name));
+      
+      // If we're out of unique names (unlikely but possible), add a number to an existing name
+      let randomName;
+      if (availableNames.length === 0) {
+        // Take a random name and add a number to it
+        randomName = PLAYER_NAMES[Math.floor(Math.random() * PLAYER_NAMES.length)] + 
+          (Math.floor(Math.random() * 100) + 1);
+      } else {
+        // Select a random name from the available names
+        randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
+      }
+
+      const player = { id: uniqueId, name: randomName };
+      
+      // Debug log
+      console.log("Adding player:", player);
+      console.log("Current players:", prevState.players);
+      
+      return {
+        ...prevState,
+        players: [...prevState.players, player],
+      };
+    });
   }, [])
 
   // Remove a player from the game
@@ -202,25 +240,7 @@ export function GameStateProvider({ children }) {
       }
       return prevState
     })
-  }, [])  // Load local games from localStorage
-  const loadLocalGames = useCallback(() => {
-    try {
-      const storedGames = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
-      return storedGames ? JSON.parse(storedGames) : [];
-    } catch (error) {
-      console.error("Error loading local games:", error);
-      return [];
-    }
-  }, []);
-
-  // Save local games to localStorage
-  const saveLocalGames = useCallback((games) => {
-    try {
-      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
-    } catch (error) {
-      console.error("Error saving local games:", error);
-    }
-  }, []);
+  }, [])
 
   // Finish the game and save results
   const finishGame = useCallback(async () => {
@@ -256,10 +276,20 @@ export function GameStateProvider({ children }) {
 
       // Check if it's a local game or should be saved to the database
       if (gameState.mode === "Local" || gameState.isLocal) {
-        // Save game to local storage
-        const localGames = loadLocalGames();
-        localGames.push(gameData);
-        saveLocalGames(localGames);
+        // Save game to local storage using LocalGameStorage service instead of direct localStorage access
+        // This ensures compatibility with our new storage format
+        const gameToSave = {
+          ...gameState,
+          gameFinished: true, // Mark the game as finished
+          isPaused: false,    // Make sure it's not marked as paused
+          winner_id: winnerId,
+          final_scores: finalScores,
+          player_ids: gameState.players.map((p) => p.id),
+          created_at: new Date().toISOString(),
+          duration_seconds: duration,
+          total_rounds: gameState.maxRounds,
+        };
+        LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
       } else {
         // Save game data to database using API
         await createGame(gameData);
@@ -275,7 +305,7 @@ export function GameStateProvider({ children }) {
       console.error("Error saving game:", error);
       return false;
     }
-  }, [gameState, loadLocalGames, saveLocalGames]);
+  }, [gameState]);
   // Reset game state
   const resetGame = useCallback(() => {
     setGameState({
@@ -302,23 +332,21 @@ export function GameStateProvider({ children }) {
     }));
   }, []);
 
-  // Function to get local games
+  // Function to get local games - use LocalGameStorage instead
   const getLocalGames = useCallback(() => {
-    return loadLocalGames();
-  }, [loadLocalGames]);
+    return LocalGameStorage.getSavedGamesList();
+  }, []);
 
-  // Function to remove a local game from storage
+  // Function to remove a local game from storage - use LocalGameStorage instead
   const removeLocalGame = useCallback((gameId) => {
-    const games = loadLocalGames();
-    const updatedGames = games.filter(game => game.id !== gameId);
-    saveLocalGames(updatedGames);
-    return updatedGames;
-  }, [loadLocalGames, saveLocalGames]);
+    LocalGameStorage.deleteGame(gameId);
+    return LocalGameStorage.getSavedGamesList();
+  }, []);
 
   // Save the current game
-  const saveGame = useCallback((customName = null) => {
+  const saveGame = useCallback((customName = null, isPaused = true) => {
     try {
-      const gameId = LocalGameStorage.saveGame(gameState, customName);
+      const gameId = LocalGameStorage.saveGame(gameState, customName, isPaused);
       setGameState(prevState => ({
         ...prevState,
         gameId,
@@ -349,7 +377,7 @@ export function GameStateProvider({ children }) {
       
       // If no gameId exists, create a new save
       if (!gameId) {
-        gameId = LocalGameStorage.saveGame(gameState, customName);
+        gameId = LocalGameStorage.saveGame(gameState, customName, true); // Set isPaused to true
       } else {
         // Update existing save
         LocalGameStorage.autoSaveGame(gameState, gameId);

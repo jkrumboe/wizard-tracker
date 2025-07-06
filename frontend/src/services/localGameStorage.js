@@ -10,29 +10,124 @@ export class LocalGameStorage {
    * Save a game to local storage
    * @param {Object} gameState - The current game state
    * @param {string} gameName - Optional custom name for the game
+   * @param {boolean} isPaused - Whether this is a paused game (true) or a finished game (false)
    * @returns {string} - The game ID
    */
-  static saveGame(gameState, gameName = null) {
-    const games = this.getAllSavedGames();
-    const gameId = this.generateGameId();
+  static saveGame(gameState, gameName = null, isPaused = true) {
     const timestamp = new Date().toISOString();
+    const gameId = this.generateGameId();
     
-    const savedGame = {
-      id: gameId,
-      name: gameName || `Game ${gameState.currentRound}/${gameState.maxRounds}`,
-      gameState: { ...gameState },
-      savedAt: timestamp,
-      lastPlayed: timestamp,
-      playerCount: gameState.players.length,
-      roundsCompleted: gameState.currentRound - 1,
-      totalRounds: gameState.maxRounds,
-      mode: gameState.mode || "Local"
-    };
+    try {
+      // Create a new saved game object
+      const gameStateCopy = { 
+        ...gameState,
+        isPaused: isPaused,
+        gameFinished: !isPaused  // If it's not paused, it's finished
+      };
+      
+      // Generate an appropriate name based on game state
+      let defaultName;
+      if (isPaused) {
+        defaultName = `Paused Game - Round ${gameState.currentRound}/${gameState.maxRounds}`;
+      } else {
+        defaultName = `Finished Game - ${new Date().toLocaleDateString()}`;
+      }
+      
+      // Extract data for finished games to make it accessible at the top level
+      const topLevelData = {};
+      if (!isPaused) {
+        // This is a finished game, extract important data to top level for compatibility
+        topLevelData.winner_id = gameState.winner_id;
+        topLevelData.final_scores = gameState.final_scores;
+        topLevelData.created_at = gameState.created_at || timestamp;
+        topLevelData.player_ids = gameState.player_ids || 
+                                (gameState.players ? gameState.players.map(p => p.id) : []);
+        topLevelData.round_data = gameState.roundData;
+        topLevelData.total_rounds = gameState.maxRounds || gameState.totalRounds;
+        topLevelData.duration_seconds = gameState.duration_seconds;
+        topLevelData.is_local = true;
+      }
+      
+      const savedGame = {
+        id: gameId,
+        name: gameName || defaultName,
+        gameState: gameStateCopy,
+        savedAt: timestamp,
+        lastPlayed: timestamp,
+        playerCount: gameState.players ? gameState.players.length : 0,
+        roundsCompleted: gameState.currentRound ? gameState.currentRound - 1 : 0,
+        totalRounds: gameState.maxRounds || 0,
+        mode: gameState.mode || "Local",
+        isPaused: isPaused,
+        gameFinished: !isPaused, // If it's not paused, it's finished
+        ...topLevelData // Add extracted data for finished games
+      };
+    
+      
+      // Get existing storage
+      const existingStored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      
+      if (!existingStored) {
+        // No existing data, create new
+        const newStorage = {};
+        newStorage[gameId] = savedGame;
+        localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(newStorage));
+      } else {
+        // Parse existing data
+        const existingData = JSON.parse(existingStored);
+        
+        if (Array.isArray(existingData)) {
+          
+          // Create new object format
+          const newStorage = {};
+          
+          // Add existing games
+          existingData.forEach(game => {
+            if (game.id) {
+              newStorage[game.id] = {
+                id: game.id,
+                name: game.name || `Game from ${new Date(game.created_at).toLocaleDateString()}`,
+                gameState: {
+                  players: game.players,
+                  currentRound: game.round_data ? game.round_data.length : 1,
+                  maxRounds: game.total_rounds,
+                  roundData: game.round_data || [],
+                  gameStarted: true,
+                  gameFinished: true,
+                  mode: game.game_mode || "Local",
+                  isLocal: true
+                },
+                savedAt: game.created_at,
+                lastPlayed: game.created_at,
+                playerCount: game.players.length,
+                roundsCompleted: game.total_rounds - 1,
+                totalRounds: game.total_rounds,
+                mode: game.game_mode || "Local",
+                gameFinished: true,
+                isPaused: false
+              };
+            }
+          });
+          
+          // Add new game
+          newStorage[gameId] = savedGame;
+          
+          // Save back to storage
+          localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(newStorage));
+          
+        } else {
+          // It's already in object format
+          existingData[gameId] = savedGame;
+          localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(existingData));
+        }
+      }
 
-    games[gameId] = savedGame;
-    localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
-    
-    return gameId;
+      this.debugStorage();
+      return gameId;
+    } catch (error) {
+      console.error("Error saving game:", error);
+      throw error;
+    }
   }
 
   /**
@@ -73,7 +168,46 @@ export class LocalGameStorage {
   static getAllSavedGames() {
     try {
       const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {};
+      
+      // Check if the stored data is an array (old format from finishGame)
+      if (stored) {
+        const parsedData = JSON.parse(stored);
+        
+        // Convert array to object format if needed
+        if (Array.isArray(parsedData)) {
+          const games = {};
+          parsedData.forEach(game => {
+            if (game.id) {
+              games[game.id] = {
+                id: game.id,
+                name: `Game from ${new Date(game.created_at).toLocaleDateString()}`,
+                gameState: {
+                  players: game.players,
+                  currentRound: 1,
+                  maxRounds: game.total_rounds,
+                  roundData: game.round_data,
+                  gameStarted: true,
+                  gameFinished: true, // This is a finished game
+                  mode: game.game_mode || "Local",
+                  isLocal: true
+                },
+                savedAt: game.created_at,
+                lastPlayed: game.created_at,
+                playerCount: game.players.length,
+                roundsCompleted: game.total_rounds,
+                totalRounds: game.total_rounds,
+                mode: game.game_mode || "Local",
+                gameFinished: true
+              };
+            }
+          });
+          return games;
+        }
+        
+        return parsedData;
+      }
+      
+      return {};
     } catch (error) {
       console.error("Error loading saved games:", error);
       return {};
@@ -85,20 +219,88 @@ export class LocalGameStorage {
    * @returns {Array} - Array of saved game metadata
    */
   static getSavedGamesList() {
-    const games = this.getAllSavedGames();
-    return Object.values(games)
-      .sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed))
-      .map(game => ({
-        id: game.id,
-        name: game.name,
-        savedAt: game.savedAt,
-        lastPlayed: game.lastPlayed,
-        playerCount: game.playerCount,
-        roundsCompleted: game.roundsCompleted,
-        totalRounds: game.totalRounds,
-        mode: game.mode,
-        players: game.gameState.players.map(p => p.name)
-      }));
+    try {
+      this.debugStorage();
+      
+      // Try to directly get the raw data to check format
+      const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      
+      if (!stored) {
+        return [];
+      }
+      
+      const parsedData = JSON.parse(stored);
+      let gamesList = [];
+      
+      // Direct array format (old format from finishGame)
+      if (Array.isArray(parsedData)) {
+        
+        gamesList = parsedData
+          .filter(game => game && game.id) // Ensure valid games only
+          .map(game => ({
+            id: game.id,
+            name: game.name || `Game from ${new Date(game.created_at || game.lastPlayed).toLocaleDateString()}`,
+            savedAt: game.created_at || game.savedAt || new Date().toISOString(),
+            lastPlayed: game.created_at || game.lastPlayed || new Date().toISOString(),
+            playerCount: (game.players && game.players.length) || 0,
+            roundsCompleted: game.total_rounds - 1 || game.roundsCompleted || 0,
+            totalRounds: game.total_rounds || game.totalRounds || 0,
+            mode: game.game_mode || game.mode || "Local",
+            players: game.players ? game.players.map(p => p.name) : [],
+            isPaused: false, // Finished games from the array format are not paused
+            gameFinished: true // Array format games are always finished
+          }));
+          
+      } else if (typeof parsedData === 'object' && parsedData !== null) {
+        // Object format (new format from LocalGameStorage)
+        
+        gamesList = Object.values(parsedData)
+          .filter(game => game && game.id) // Ensure valid games only
+          .map(game => {
+            // Make sure we have all the required properties, even if they're null
+            const gameData = {
+              id: game.id,
+              name: game.name || `Game from ${new Date(game.savedAt || game.lastPlayed).toLocaleDateString()}`,
+              savedAt: game.savedAt || new Date().toISOString(),
+              lastPlayed: game.lastPlayed || new Date().toISOString(),
+              playerCount: game.playerCount || (game.gameState && game.gameState.players && game.gameState.players.length) || 0,
+              roundsCompleted: game.roundsCompleted || (game.gameState && game.gameState.currentRound - 1) || 0,
+              totalRounds: game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0,
+              mode: game.mode || (game.gameState && game.gameState.mode) || "Local",
+              players: (game.gameState && game.gameState.players) ? game.gameState.players.map(p => p.name) : [],
+              isPaused: game.isPaused || (game.gameState && game.gameState.isPaused) || false,
+              gameFinished: game.gameFinished || (game.gameState && game.gameState.gameFinished) || false
+            };
+            
+            // For finished games, add more data for compatibility with GameHistoryItem
+            if (gameData.gameFinished) {
+              gameData.created_at = game.created_at || game.savedAt || new Date().toISOString();
+              gameData.winner_id = game.winner_id || (game.gameState && game.gameState.winner_id);
+              gameData.player_ids = game.player_ids || (game.gameState && game.gameState.player_ids) || 
+                                   (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || [];
+              gameData.round_data = game.round_data || (game.gameState && game.gameState.roundData);
+              gameData.final_scores = game.final_scores || (game.gameState && game.gameState.final_scores);
+              gameData.total_rounds = game.total_rounds || game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0;
+              gameData.duration_seconds = game.duration_seconds || (game.gameState && game.gameState.duration_seconds);
+              gameData.is_local = true;
+              gameData.game_mode = game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local";
+              
+              // Include the gameState for access to player data
+              gameData.gameState = game.gameState;
+            }
+            
+            return gameData;
+          });
+      }
+      
+      // Sort by last played date
+      gamesList.sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
+      
+      return gamesList;
+    } catch (error) {
+      console.error("Error getting saved games list:", error);
+      return [];
+    }
   }
 
   /**
@@ -191,6 +393,41 @@ export class LocalGameStorage {
     } catch (error) {
       console.error("Error importing games:", error);
       return false;
+    }
+  }
+
+  /**
+   * Debug the storage state
+   * Call this to debug issues with local storage
+   */
+  static debugStorage() {
+    try {
+      const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      
+      if (!stored) {
+        console.error("DEBUG: No games found in storage");
+        return;
+      }
+      
+      const parsedData = JSON.parse(stored);
+      
+      if (Array.isArray(parsedData)) {
+        console.debug("DEBUG: Sample game:", parsedData[0] ? { 
+          id: parsedData[0].id,
+          created_at: parsedData[0].created_at,
+          is_finished: !!parsedData[0].gameFinished
+        } : "None");
+      } else {
+        const firstKey = Object.keys(parsedData)[0];
+        console.debug("DEBUG: Sample game:", firstKey ? {
+          id: parsedData[firstKey].id,
+          savedAt: parsedData[firstKey].savedAt,
+          isPaused: parsedData[firstKey].isPaused,
+          gameFinished: parsedData[firstKey].gameFinished
+        } : "None");
+      }
+    } catch (error) {
+      console.error("DEBUG: Error inspecting storage:", error);
     }
   }
 }

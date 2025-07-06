@@ -1,18 +1,70 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
+import { LocalGameStorage } from "../services/localGameStorage"
 
 const NewGame = () => {
   
   const navigate = useNavigate()
   // const { players, loading } = usePlayers()
-  const { gameState, addPlayer, removePlayer, updatePlayerName, startGame, setMaxRounds } = useGameStateContext()
+  const { 
+    gameState, 
+    addPlayer, 
+    removePlayer, 
+    updatePlayerName, 
+    startGame, 
+    setMaxRounds, 
+    getSavedGames, 
+    resumeGame, 
+    deleteSavedGame 
+  } = useGameStateContext()
 
-  const [index, setIndex] = useState(1)
+  // No longer need index since we generate unique IDs in addPlayer
   const [manualRounds, setManualRounds] = useState(false)
+  // Always default to the new-game tab, never auto-switch
+  const [activeTab, setActiveTab] = useState('new-game')
+  const [pausedGames, setPausedGames] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
   
+  // Function to load paused games
+  const loadPausedGames = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Debug local storage
+      LocalGameStorage.debugStorage();
+      
+      // Get all saved games
+      const games = await getSavedGames();
+      
+      // Filter to only include games that are not finished and are marked as paused
+      const paused = games.filter(game => 
+        !game.gameFinished && game.isPaused === true
+      );
+      
+      setPausedGames(paused);
+    
+      // We want the new-game tab to always be the default
+    } catch (error) {
+      console.error("Error loading paused games:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getSavedGames]);
+    
+  // Load paused games only when the component mounts (first render)
+  useEffect(() => {
+    loadPausedGames();
+  }, [loadPausedGames]);
+  
+  // Also refresh when activeTab changes to 'paused-games'
+  useEffect(() => {
+    if (activeTab === 'paused-games') {
+      loadPausedGames();
+    }
+  }, [activeTab, loadPausedGames]);
+
   // Calculate the recommended number of rounds based on player count
   useEffect(() => {
     // Only auto-adjust rounds if manual mode is not enabled
@@ -31,8 +83,8 @@ const NewGame = () => {
   }, [gameState.players.length, setMaxRounds, manualRounds]);
 
   const handleAddPlayer = () => {
-    setIndex(index + 1)
-    addPlayer(index)
+    // Call addPlayer without any arguments as it now generates unique IDs internally
+    addPlayer()
     
     // Don't auto-adjust rounds when in manual mode
     // This way manually selected rounds will be preserved when adding players
@@ -44,7 +96,6 @@ const NewGame = () => {
   }
 
   const handleRemovePlayer = (playerId) => {
-    setIndex(index - 1)
     removePlayer(playerId)
     
     // Don't auto-adjust rounds when in manual mode
@@ -55,107 +106,225 @@ const NewGame = () => {
     startGame()
     navigate("/game/current")
   }
+
+  // Handle loading a saved game
+  const handleLoadGame = async (gameId) => {
+    try {
+      const result = await resumeGame(gameId);
+      if (result && result.success) {
+        navigate("/game/current");
+        return { success: true };
+      } else {
+        return { 
+          success: false, 
+          error: result && result.error ? result.error : "Failed to load game"
+        };
+      }
+    } catch (error) {
+      console.error("Error loading game:", error);
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
+  }
+
+  // Handle deleting a saved game
+  const handleDeleteGame = async (gameId) => {
+    try {
+      const result = await deleteSavedGame(gameId);
+      if (result && result.success) {
+        setPausedGames(prevGames => prevGames.filter(game => game.id !== gameId));
+        return { success: true };
+      } else {
+        return { 
+          success: false, 
+          error: result && result.error ? result.error : "Failed to delete game"
+        };
+      }
+    } catch (error) {
+      console.error("Error deleting game:", error);
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
+  }
   
   const handleMaxRoundsChange = (value) => {
     // If the user manually changes the value, enable manual rounds mode
     setManualRounds(true);
     
-    // Ensure the value is between 1 and 20 (the maximum possible)
+    // Ensure the value is between 0 and 20 (the maximum possible)
     const validValue = Math.max(0, Math.min(value, 20));
     setMaxRounds(validValue);
   }
 
   // Calculate the recommended rounds once (memoized)
-  const recommendedRounds = gameState.players.length >= 2 && gameState.players.length <= 6 
+  const recommendedRounds = gameState.players.length > 2 && gameState.players.length <= 6 
     ? Math.floor(60 / gameState.players.length)
     : 20; // Default max
 
-  // if (loading) {
-  //   return <div className="loading">Loading players...</div>
-  // }
-
   return (
-    <div className={`new-game-container players-${gameState.players.length}`}>
-      <h1>New Game</h1>
+    <div className="new-game-container">
+      {activeTab === 'new-game' && (
+        <div className={`tab-panel players-${gameState.players.length}`}>
+          <div className="setup-section">
+            <div className="tab-controls">
+              <button 
+                className={`tab-button ${activeTab === 'new-game' ? 'active' : ''}`}
+                onClick={() => setActiveTab('new-game')}
+              >
+                New Game
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'paused-games' ? 'active' : ''}`}
+                onClick={() => setActiveTab('paused-games')}
+              >
+                Paused Games
+              </button>
+            </div>
 
-      <div className="setup-section">
-        <h2>Add Players</h2>
-
-        {/*Adding Players*/}
-        <div className="selected-players">
-
-          <div className="player-list">
-            {gameState.players.map((player) => (
-              <div key={player.id} className="player-item">
-                <span>{player.id}</span>
-                <input 
-                  className="inputPlayerName" 
-                  value={player.name} 
-                  inputMode="text" 
-                  onChange={(e) => handlePlayerNameChange(player.id, e)}
-                />
-                <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <button className="addPlayer" onClick={handleAddPlayer}>
-          +
-        </button>
-        
-        <div className="settings-group">
-          <div className="setting-item">
-            <div className="setting-content">
-              <div id="rounds">
-                <label htmlFor="rounds-input">Number of Rounds:</label>
-                <input
-                  id="rounds-input"
-                  type="tel"
-                  value={gameState.maxRounds}
-                  onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
-                  min={1}
-                  max={manualRounds ? 20 : recommendedRounds}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-              </div>
-
-              <div className="toggle-container">
-                <label className="toggle-label">
-                  <span className="toggle-text">Don't auto adjust rounds:</span>
-                  <br />
-                </label>
-
-                <label className="toggle-label" id="manual-rounds-toggle">
-                  <input
-                    type="checkbox"
-                    checked={manualRounds}
-                    onChange={() => setManualRounds(!manualRounds)}
-                  />
-                {manualRounds && (
-                  <div className="rounds-hint">
-                    Recommended: {recommendedRounds} rounds
+            {/*Adding Players*/}
+            <div className="selected-players">
+              <div className="player-list">
+                {gameState.players.map((player, index) => (
+                  <div key={player.id} className="player-item">
+                    <span>{index + 1}</span>
+                    <input 
+                      className="inputPlayerName" 
+                      value={player.name} 
+                      inputMode="text" 
+                      onChange={(e) => handlePlayerNameChange(player.id, e)}
+                    />
+                    <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
+                      ×
+                    </button>
                   </div>
-                )}
-                </label>
+                ))}
               </div>
-              
+            </div>
+
+            <button className="addPlayer" onClick={handleAddPlayer}>
+              +
+            </button>
+            
+            <div className="settings-group">
+              <div className="setting-item">
+                <div className="setting-content">
+                  <div id="rounds">
+                    <label htmlFor="rounds-input">Number of Rounds:</label>
+                    <input
+                      id="rounds-input"
+                      type="tel"
+                      value={gameState.maxRounds}
+                      onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
+                      min={1}
+                      max={manualRounds ? 20 : recommendedRounds}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                  </div>
+
+                  <div className="toggle-container">
+                    <label className="toggle-label">
+                      <span className="toggle-text">Don't auto adjust rounds:</span>
+                    </label>
+
+                    <label className="toggle-label" id="manual-rounds-toggle">
+                      <input
+                        type="checkbox"
+                        checked={manualRounds}
+                        onChange={() => setManualRounds(!manualRounds)}
+                      />
+                    {manualRounds && (
+                      <div className="rounds-hint">
+                        Recommended: {recommendedRounds} rounds
+                      </div>
+                    )}
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-    </div>
 
-      <button className="start-game-btn" disabled={gameState.players.length < 2 || gameState.players.length > 6} onClick={handleStartGame}>
-        Start Game
-      </button>
-      {gameState.players.length < 3 && (
-        <div className="error-message">At least 3 players are recommended for a standard game</div>
+          <button 
+            className="start-game-btn" 
+            disabled={gameState.players.length < 2 || gameState.players.length > 6} 
+            onClick={handleStartGame}
+          >
+            Start Game
+          </button>
+          
+          {gameState.players.length < 3 && (
+            <div className="error-message">At least 3 players are recommended for a standard game</div>
+          )}
+          
+          {gameState.players.length > 6 && (
+            <div className="error-message">Maximum of 6 players are supported</div>
+          )}
+        </div>
       )}
-      {gameState.players.length > 6 && (
-        <div className="error-message">Maximum of 6 players are supported</div>
+
+      {activeTab === 'paused-games' && (
+        <div className="tab-panel">
+          <div className="paused-games-section">
+            <div className="tab-controls">
+              <button 
+                className={`tab-button ${activeTab === 'new-game' ? 'active' : ''}`}
+                onClick={() => setActiveTab('new-game')}
+              >
+                New Game
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'paused-games' ? 'active' : ''}`}
+                onClick={() => setActiveTab('paused-games')}
+              >
+                Paused Games
+              </button>
+            </div>
+            
+            {isLoading ? (
+              <div className="loading-container">
+                <p>Loading paused games...</p>
+              </div>
+            ) : pausedGames.length === 0 ? (
+              <div className="empty-paused-games">
+                <p>No paused games found</p>
+                <p>When you pause a game, it will appear here</p>
+              </div>
+            ) : (
+              <div className="paused-games-list">
+                {pausedGames.map(game => (
+                  <div key={game.id} className="paused-game-item">
+                    <div className="game-info">
+                      <h3>{game.name || `Game from ${new Date(game.lastPlayed).toLocaleDateString()}`}</h3>
+                      <div className="game-details">
+                        <span>{game.players && game.players.join(', ')}</span>
+                        <span>Round {game.roundsCompleted + 1}/{game.totalRounds}</span>
+                      </div>
+                    </div>
+                    <div className="game-actions">
+                      <button 
+                        className="resume-btn" 
+                        onClick={() => handleLoadGame(game.id)}
+                      >
+                        Resume
+                      </button>
+                      <button 
+                        className="delete-btn" 
+                        onClick={() => handleDeleteGame(game.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )

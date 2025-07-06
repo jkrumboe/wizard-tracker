@@ -188,7 +188,7 @@
     margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow);
     transition: transform 0.3s, box-shadow 0.3s;
-    border: 3px solid var(--primary-color);
+    border: 2px solid var(--primary-color);
     position: relative;
     overflow: hidden;
   }
@@ -686,7 +686,6 @@
   .recent-games {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow);
@@ -1216,7 +1215,7 @@
   
   /* New Game Page */
   .new-game-container {
-    margin: var(--spacing-md) 0;
+    margin: var(--spacing-xxl) 0;
     max-width: 960px; /* Constrain the leaderboard width */
   }
   
@@ -1229,7 +1228,7 @@
   .setup-section{
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow);
   }
@@ -1298,7 +1297,9 @@
   
   .selected-players {
     /* margin-top: var(--spacing-lg); */
-    max-height: 190px;
+    max-height: 330px;
+    justify-content: center;
+    align-items: center;
     overflow-y: auto;
   }
   
@@ -2008,9 +2009,135 @@
   width: 100%;
 }
 
+.tab-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 15%;
+  width: 70%;
+  height: 3px;
+  background-color: var(--primary-color);
+  border-radius: var(--radius-sm);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  margin-left: var(--spacing-xs);
+}
+
 .tab-panel {
   animation: fadeIn 0.3s ease-in;
   width: 100%;
+}
+
+/* Paused Games List */
+.paused-games-section {
+  margin-top: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  background-color: var(--card-background);
+}
+
+.paused-games-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.paused-game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--card-background);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s;
+}
+
+.paused-game-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.game-info {
+  flex: 1;
+}
+
+.game-info h3 {
+  font-size: 1.1rem;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-color);
+}
+
+.game-details {
+  display: flex;
+  gap: var(--spacing-md);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.game-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.resume-btn, .delete-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resume-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.resume-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+.delete-btn {
+  background-color: transparent;
+  color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+}
+
+.delete-btn:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.empty-paused-games {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+  color: var(--text-muted);
+}
+
+.loading-container {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+  color: var(--text-muted);
 }
 
 @keyframes fadeIn {
@@ -2278,9 +2405,24 @@
     height: 20px;
   }
   
+  #rounds {
+    justify-items: center;
+    align-items: center;
+  }
+
   .rounds-input {
     width: 50px;
     text-align: center;
+  }
+
+  #rounds-input {
+    text-align: center;
+    margin: auto;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    transition: border-color 0.3s, box-shadow 0.3s;
   }
 
 /* Game Controls and Menu Styles */
@@ -2288,13 +2430,14 @@
 .game-bottom-section {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   position: fixed;
   left: 0;
   right: 0;
   bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
   z-index: 100;
   padding: 0 var(--spacing-md);
+  gap: var(--spacing-md);
 }
 
 .game-controls {
