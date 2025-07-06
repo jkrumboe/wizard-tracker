@@ -43,24 +43,26 @@ return false;
 useEffect(() => {
   const fetchData = async () => {
     try {
+      // Fetch player data first - this is the most critical
       const playerData = await getPlayerById(id);
-      const tagdata = await getTags();
-      setDefaultTags(tagdata);
+      if (!playerData) {
+        throw new Error("Player not found");
+      }
+      
+      // Try to fetch tags, but don't fail if they're not available
+      try {
+        const tagdata = await getTags();
+        setDefaultTags(Array.isArray(tagdata) ? tagdata : []);
+      } catch (tagError) {
+        console.error("Error fetching tags:", tagError);
+        setDefaultTags([]);  // Use empty array as fallback
+      }
 
       // Player data should include stats with new schema
       setPlayer({
         ...playerData,
         avatar: playerData.avatar || defaultAvatar,
       });
-
-      // // Set player stats from the player data (new schema includes stats)
-      // if (playerData.total_games !== undefined) {
-      //   setPlayerStats({
-      //     total_games: playerData.total_games,
-      //     wins: playerData.wins,
-      //     total_points: playerData.total_points || 0
-      //   });
-      // }
 
       const history = await getPlayerGameHistory(id);
       setGameHistory(history);
@@ -80,9 +82,12 @@ useEffect(() => {
   const fetchTags = async () => {
     try {
       const fetchedtags = await getTagsByPlayerId(id);
-      setTags(fetchedtags);
+      // If fetched tags is null, undefined or not an array, initialize as empty array
+      setTags(Array.isArray(fetchedtags) ? fetchedtags : []);
     } catch (error) {
       console.error("Failed to fetch tags", error);
+      // On error, set tags to empty array instead of leaving it undefined
+      setTags([]);
     }
   };
 
@@ -122,6 +127,8 @@ const handleEditProfile = async () => {
   }
 };
 
+// Only show error if we have an explicit error message or if player is null
+// Don't fail if tags or other minor data is missing
 if (error || !player) {
   return (
     <PageTransition isLoading={false}>
@@ -132,8 +139,8 @@ if (error || !player) {
   const recentGames = gameHistory.slice(0, 3);
 
 const data = [
-  { name: 'Wins', value: player.total_wins },
-  { name: 'Losses', value: player.total_losses }
+  { name: 'Wins', value: player.total_wins || 0 },
+  { name: 'Losses', value: player.total_losses || 0 }
 ]
 
 const COLORS = [
@@ -143,17 +150,15 @@ const COLORS = [
 
 // Add functionality to toggle tags for adding or removing
 const toggleTag = (tag) => {
-  if (!tags) {
-    setTags([tag]);
-    return;
-  }
+  // Ensure tags is always an array
+  const currentTags = Array.isArray(tags) ? tags : [];
   
-  if (tags.some((t) => t.name === tag.name)) {
+  if (currentTags.some((t) => t.name === tag.name)) {
     // If the tag is already active, mark it for removal
-    setTags(tags.filter((t) => t.name !== tag.name));
+    setTags(currentTags.filter((t) => t.name !== tag.name));
   } else {
     // If the tag is not active, mark it for adding
-    setTags([...tags, tag]);
+    setTags([...currentTags, tag]);
   }
 };
 
@@ -216,16 +221,15 @@ if (editing) {
         onChange={(e) => setEditedName(e.target.value)}
         placeholder="Edit username"
         />        <div className="edit-tags-list">
-          {defaultTags
-          .filter(tag => !tag.name.startsWith("Top "))
+          {Array.isArray(defaultTags) && defaultTags
+          .filter(tag => tag && tag.name && !tag.name.startsWith("Top "))
           .map(tag => (
           <span 
-            key={tag.id} 
-            className={`tag ${tags && tags.some(t => t.name === tag.name) ? 'active-tag' : ''}`} 
+            key={tag.id || tag.name} 
+            className={`tag ${Array.isArray(tags) && tags.some(t => t && t.name === tag.name) ? 'active-tag' : ''}`} 
             onClick={() => toggleTag(tag)}>
             {tag.name}
           </span>
-          
           ))}
         </div>  
             
@@ -256,29 +260,32 @@ if (editing) {
       
         <div className="player-info">
             <div className="player-name-tags">
-              <h1>{player?.display_name || "Unknown Player"}</h1>
-              {tags && tags.length > 0 &&
+              <h1>{player?.display_name || player?.name || "Unknown Player"}</h1>
+              {/* Only show tags container if we have tags */}
+              {Array.isArray(tags) && tags.length > 0 &&
               <div className="tags-container">
-                {tags && tags.length > 0 && 
-                  tags.map(tag => (
-                    <span key={tag.id} className="tag">{tag.name}</span>
-                  ))
-                }
+                {tags.map(tag => (
+                  <span key={tag.id || tag.name} className="tag">{tag.name}</span>
+                ))}
               </div>
               }
             </div>
           <div className="stats-summary">
             <StatCard 
               title="ELO" 
-              value={player.elo}
+              value={player.elo || 0}
             />
             <StatCard 
               title="Games" 
-              value={player.total_games}
+              value={player.total_games || 0}
             />
             <StatCard 
               title="Win Rate" 
-              value={`${player.total_losses === 0 ? '0' : ((player.total_wins / player.total_losses) * 100).toFixed(2)}%`}
+              value={
+                player.total_games ? 
+                `${((player.total_wins || 0) / Math.max(1, player.total_games) * 100).toFixed(2)}%` 
+                : '0%'
+              }
             />
           </div>
         </div>
