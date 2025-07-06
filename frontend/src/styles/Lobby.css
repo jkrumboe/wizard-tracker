@@ -64,21 +64,6 @@
   100% { transform: rotate(360deg); }
 }
 
-.error-message {
-  text-align: center;
-  background-color: var(--card-background);
-  border: 2px solid var(--error-color);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  margin: var(--spacing-lg) 0;
-  box-shadow: var(--shadow);
-}
-
-.error-message h3 {
-  color: var(--error-color);
-  margin-bottom: var(--spacing-md);
-}
-
 .retry-button {
   background-color: var(--error-color);
   color: var(--text-white);

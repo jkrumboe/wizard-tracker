@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { getPlayers, createPlayer, updatePlayer } from "../services/playerService";
 import { getGames } from "../services/gameService";
 import { authService } from "../services/authService";
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { LogOutIcon, UsersIcon, GamepadIcon, BarChartIcon, SearchIcon, PlusIcon, EditIcon, TrashIcon } from "../components/Icon";
 import "../styles/admin.css";
+import "../styles/offline-notification.css";
 
 const AdminDashboard = () => {
   const [players, setPlayers] = useState([]);
@@ -16,6 +18,7 @@ const AdminDashboard = () => {
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { isOnline, lastUpdated } = useOnlineStatus();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,6 +84,15 @@ const AdminDashboard = () => {
           <LogOutIcon size={16} />
           Logout
         </button>
+      </div>
+      
+      {/* Online Status Banner */}
+      <div className={`online-status-banner ${isOnline ? 'online' : 'offline'}`}>
+        <div className="status-indicator"></div>
+        <div className="status-text">
+          <strong>Server Status:</strong> {isOnline ? 'ONLINE' : 'OFFLINE'} 
+          {lastUpdated && <span className="status-time">Last updated: {new Date(lastUpdated).toLocaleString()}</span>}
+        </div>
       </div>
 
       {loading && (

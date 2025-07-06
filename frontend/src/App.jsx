@@ -13,11 +13,13 @@ import Lobby from "./pages/Lobby"
 import MultiplayerGame from "./pages/MultiplayerGame"
 // import TestMultiplayer from "./pages/TestMultiplayer"
 import Navbar from "./components/Navbar"
+import OnlineProtectedRoute from "./components/OnlineProtectedRoute"
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
 import { UserProvider } from "./contexts/UserContext"
+import { OnlineStatusProvider } from "./contexts/OnlineStatusContext"
 import authService from "./services/authService"
 
 function ProtectedRoute({ children, roles }) {
@@ -60,23 +62,40 @@ function App() {  useEffect(() => {
   return (
     <Router>
       <UserProvider>
-        <GameStateProvider>
-          <Navbar />
-          <div className="main-container">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/profile/:id" element={<Profile />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/stats/:id" element={<Stats />} />
-              <Route path="/new-game" element={<NewGame />} />
-              <Route path="/game/:id" element={<GameDetails />} />
-              <Route path="/game/current" element={<GameInProgress />} />
-              <Route path="/lobby" element={<Lobby />} />
-              <Route path="/multiplayer/:roomId" element={<MultiplayerGame />} />
-              <Route path="/multiplayer/new" element={<MultiplayerGame />} />
-              {/* <Route path="/test-multiplayer" element={<TestMultiplayer />} /> */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/settings" element={<Home />} />
+        <OnlineStatusProvider>
+          <GameStateProvider>
+            <Navbar />
+            <div className="main-container">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/profile/:id" element={<Profile />} />
+                <Route path="/leaderboard" element={
+                  <OnlineProtectedRoute>
+                    <Leaderboard />
+                  </OnlineProtectedRoute>
+                } />
+                <Route path="/stats/:id" element={<Stats />} />
+                <Route path="/new-game" element={<NewGame />} />
+                <Route path="/game/:id" element={<GameDetails />} />
+                <Route path="/game/current" element={<GameInProgress />} />
+                <Route path="/lobby" element={
+                  <OnlineProtectedRoute>
+                    <Lobby />
+                  </OnlineProtectedRoute>
+                } />
+                <Route path="/multiplayer/:roomId" element={
+                  <OnlineProtectedRoute>
+                    <MultiplayerGame />
+                  </OnlineProtectedRoute>
+                } />
+                <Route path="/multiplayer/new" element={
+                  <OnlineProtectedRoute>
+                    <MultiplayerGame />
+                  </OnlineProtectedRoute>
+                } />
+                {/* <Route path="/test-multiplayer" element={<TestMultiplayer />} /> */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/settings" element={<Home />} />
               <Route
                 path="/admin"
                 element={
@@ -88,6 +107,7 @@ function App() {  useEffect(() => {
             </Routes>
           </div>
         </GameStateProvider>
+        </OnlineStatusProvider>
       </UserProvider>
     </Router>
   )

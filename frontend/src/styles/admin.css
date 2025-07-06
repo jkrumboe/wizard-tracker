@@ -241,16 +241,6 @@
   cursor: not-allowed;
 }
 
-.error-message {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  text-align: center;
-}
-
 .login-footer {
   text-align: center;
   margin-top: var(--spacing-lg);

@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '../components/GameHistoryItem'
 import LoadGameDialog from '../components/LoadGameDialog'
 import PageTransition from '../components/PageTransition'
 import { getRecentGames, getRecentLocalGames } from '../services/gameService'
 import { useGameStateContext } from '../hooks/useGameState'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import "../styles/pageTransition.css"
+import "../styles/offline-notification.css"
 
 const Home = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { isOnline } = useOnlineStatus()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [recentGames, setRecentGames] = useState([])
   const [recentLocalGames, setRecentLocalGames] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
+  const [offlineMessage, setOfflineMessage] = useState('')
   
   const handleLoadGame = async (gameId) => {
     try {
@@ -29,17 +34,34 @@ const Home = () => {
     }
   }
 
+  // Check for offline mode redirect
+  useEffect(() => {
+    if (location.state?.offlineRedirect) {
+      setOfflineMessage(location.state.message || 'Online features are currently unavailable');
+      
+      // Clear the message after 5 seconds
+      const timer = setTimeout(() => {
+        setOfflineMessage('');
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
+
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true); // Ensure loading is true at the start
       
       try {
-        // Artificial delay to ensure transition is visible for testing
-        // await new Promise(resolve => setTimeout(resolve, 1000));
+        let serverGames = [];
+        // Only fetch server games when online
+        if (isOnline) {
+          // Fetch server games
+          serverGames = await getRecentGames(4);
+        }
         
-        // Fetch both server games and local games
-        const serverGames = await getRecentGames(4) // Increased limit since we're combining
-        const localGames = getRecentLocalGames(4) // This is synchronous
+        // Always fetch local games
+        const localGames = getRecentLocalGames(4); // This is synchronous
         
         // Ensure all games have proper date formatting for sorting
         const formattedServerGames = Array.isArray(serverGames) ? serverGames.map(game => ({
@@ -76,7 +98,16 @@ const Home = () => {
     }
 
     fetchGames()
-  }, [])
+  }, [isOnline])
+
+  // Check for offline message from navigation state
+  useEffect(() => {
+    if (location.state?.offlineMessage) {
+      setOfflineMessage(location.state.offlineMessage);
+      // Clear the state to avoid showing the message after navigating away and back
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   return (
     <PageTransition
@@ -98,6 +129,12 @@ const Home = () => {
           <h1>Wizard Tracker</h1>
           <p>Track your Wizard card game stats and performance</p>
         </header>
+
+        {offlineMessage && (
+          <div className="offline-notification">
+            <div className="offline-message">{offlineMessage}</div>
+          </div>
+        )}
 
         <section className="recent-games">
           <h2>Recent Games</h2>

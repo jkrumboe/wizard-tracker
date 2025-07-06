@@ -26,8 +26,13 @@ services:
       - "5055:5000"  # Host:Container
     environment:
       - DATABASE_URL=postgres://wizard:geheim@db:5432/wizard_db
+      - START_OFFLINE=true  # Start in offline mode by default
     env_file:
       - ./backend/.env
+    volumes:
+      - ./backend/config:/app/config:delegated  # Persist config files outside the container with delegated permission
+      # This creates a volume that persists between container restarts but is mounted at the correct path
+    command: npm run start  # Could change to start:offline if needed
     depends_on:
       - db
 

@@ -2,6 +2,9 @@
 // Update the API base URL to ensure it points to the correct backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5055/api"
 
+// Import the online check utility
+import { addOnlineChecksToAPI } from '../utils/onlineCheck';
+
 // Helper function for making API requests
 export async function fetchAPI(endpoint, options = {}) {
   try {
@@ -47,8 +50,18 @@ export const adminAPI = {
   getGames: () => fetchAPI("/admin/games"),
 }
 
-// Player-related API calls (enhanced for new schema)
-export const playerAPI = {
+// Game API
+const baseGameAPI = {
+  getAll: () => fetchAPI("/games"),
+  getById: (id) => fetchAPI(`/games/${id}`),
+  getRecent: (limit = 5) => fetchAPI(`/games/recent?limit=${limit}`),
+  getMultiplayer: (limit = 10, offset = 0) => fetchAPI(`/games/multiplayer?limit=${limit}&offset=${offset}`),
+  create: (data) => fetchAPI("/games", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => fetchAPI(`/games/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+}
+
+// Player API
+const basePlayerAPI = {
   getAll: () => fetchAPI("/players"),
   getById: (id) => fetchAPI(`/players/${id}`),
   getStats: (id) => fetchAPI(`/players/${id}/stats`),
@@ -62,23 +75,8 @@ export const playerAPI = {
   delete: (id) => fetchAPI(`/players/${id}`, { method: "DELETE" }),
 }
 
-// Tags API calls
-export const tagsAPI = {
-  getAll: () => fetchAPI("/tags"),
-}
-
-// Game-related API calls (enhanced for new schema)
-export const gameAPI = {
-  getAll: () => fetchAPI("/games"),
-  getById: (id) => fetchAPI(`/games/${id}`),
-  getRecent: (limit = 5) => fetchAPI(`/games/recent?limit=${limit}`),
-  getMultiplayer: (limit = 10, offset = 0) => fetchAPI(`/games/multiplayer?limit=${limit}&offset=${offset}`),
-  create: (data) => fetchAPI("/games", { method: "POST", body: JSON.stringify(data) }),
-  update: (id, data) => fetchAPI(`/games/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-}
-
-// Room/Multiplayer API calls (new for schema-v2)
-export const roomAPI = {
+// Room API for multiplayer
+const baseRoomAPI = {
   getActive: () => fetchAPI("/rooms/active"),
   getById: (id) => fetchAPI(`/rooms/${id}`),
   create: (data) => fetchAPI("/rooms", { method: "POST", body: JSON.stringify(data) }),
@@ -90,22 +88,37 @@ export const roomAPI = {
   }),
 }
 
-// Player session API calls (new for schema-v2)
-export const sessionAPI = {
-  getCurrent: () => fetchAPI("/player/session"),
-  updateStatus: (isOnline) => fetchAPI("/player/status", { 
-    method: "POST", 
-    body: JSON.stringify({ isOnline }) 
-  }),
-}
+// Wrap APIs with online checks
+// These functions should work in offline mode
+const offlineGameAPIs = ['getLocalGames', 'getLocalGameById', 'saveLocalGame', 'removeLocalGame'];
+const offlinePlayerAPIs = ['getLocalPlayers', 'getLocalPlayerById'];
+const offlineRoomAPIs = [];
 
-// Leaderboard API calls
-export const leaderboardAPI = {
+// Apply online checks to APIs
+export const gameAPI = addOnlineChecksToAPI(baseGameAPI, offlineGameAPIs);
+export const playerAPI = addOnlineChecksToAPI(basePlayerAPI, offlinePlayerAPIs);
+export const roomAPI = addOnlineChecksToAPI(baseRoomAPI, offlineRoomAPIs);
+
+// Tags API
+const baseTagsAPI = {
+  getAll: () => fetchAPI("/tags"),
+  getById: (id) => fetchAPI(`/tags/${id}`),
+  create: (data) => fetchAPI("/tags", { method: "POST", body: JSON.stringify(data) }),
+  update: (id, data) => fetchAPI(`/tags/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  delete: (id) => fetchAPI(`/tags/${id}`, { method: "DELETE" }),
+};
+
+export const tagsAPI = addOnlineChecksToAPI(baseTagsAPI, []);
+
+// Leaderboard API calls (all require online mode)
+const baseLeaderboardAPI = {
   get: (category = 'overall') => fetchAPI(`/leaderboard/${category}`),
   getEloRanking: () => fetchAPI("/leaderboard/elo"),
   getWinRateRanking: () => fetchAPI("/leaderboard/winrate"),
   getByCategory: (category) => fetchAPI(`/leaderboard/${category}`),
-}
+};
+
+export const leaderboardAPI = addOnlineChecksToAPI(baseLeaderboardAPI, []);
 
 // Statistics API calls
 export const statsAPI = {

@@ -258,7 +258,7 @@ const NewGame = () => {
           </button>
           
           {gameState.players.length < 3 && (
-            <div className="error-message">At least 3 players are recommended for a standard game</div>
+            <div className="error-message">At least 3 players are needed to start a game</div>
           )}
           
           {gameState.players.length > 6 && (

@@ -133,6 +133,10 @@
     color: var(--error-color);
     margin-top: var(--spacing-sm);
     text-align: center;
+    padding: var(--spacing-sm);
+    background-color: var(--card-background);
+    border: 2px solid var(--error-color);
+    border-radius: var(--radius-lg);
   }
 
   /* Tags */
@@ -1215,7 +1219,7 @@
   
   /* New Game Page */
   .new-game-container {
-    margin: var(--spacing-xxl) 0;
+    margin: var(--spacing-xl) 0;
     max-width: 960px; /* Constrain the leaderboard width */
   }
   
@@ -1391,12 +1395,6 @@
     background-color: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: var(--shadow);
-  }
-  
-  .error-message {
-    padding: var(--spacing-md);
-    color: var(--error-color);
-    text-align: center;
   }
 
   /* Dropdown Styling */

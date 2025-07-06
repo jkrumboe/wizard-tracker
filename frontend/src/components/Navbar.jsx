@@ -3,12 +3,14 @@
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { useUser } from '../hooks/useUser'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from './Icon'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
 const Navbar = () => {
   const { user, player } = useUser()
+  const { isOnline } = useOnlineStatus()
   const location = useLocation()
 
   const isActive = (path) => {
@@ -37,12 +39,14 @@ const Navbar = () => {
       </div>
       
       <nav className="bottom-navbar">
-        <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard")}`}>
-          <div className="nav-icon">
-            <TrophyIcon size={20} />
-          </div>
-          <span>Leaderboard</span>
-        </Link>
+        {isOnline && (
+          <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard")}`}>
+            <div className="nav-icon">
+              <TrophyIcon size={20} />
+            </div>
+            <span>Leaderboard</span>
+          </Link>
+        )}
         
         <Link to="/new-game" className={`bottom-nav-item ${isActive(["/new-game", "/game"])}`}>
           <div className="nav-icon">
@@ -58,12 +62,14 @@ const Navbar = () => {
           <span>Home</span>
         </Link>
 
-        <Link to="/lobby" className={`bottom-nav-item ${isActive(["/lobby", "/multiplayer"])}`}>
-          <div className="nav-icon">
-            <UsersIcon size={20} />
-          </div>
-          <span>Multiplayer</span>
-        </Link>
+        {isOnline && (
+          <Link to="/lobby" className={`bottom-nav-item ${isActive(["/lobby", "/multiplayer"])}`}>
+            <div className="nav-icon">
+              <UsersIcon size={20} />
+            </div>
+            <span>Multiplayer</span>
+          </Link>
+        )}
         
         <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
           <div className="nav-icon">

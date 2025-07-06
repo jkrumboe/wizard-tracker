@@ -14,9 +14,15 @@ import crypto from 'crypto';
 import { WizardGameRoom } from './rooms/WizardGameRoom.js';
 import { LobbyRoom } from './rooms/LobbyRoom.js';
 import dbAdapter from './db/dbAdapter.js';
+import { setOnlineStatus } from './config/online-mode.js';
 
 dotenv.config()
 const app = express()
+
+// Set online mode based on environment variable, default to offline
+const startOffline = process.env.START_OFFLINE !== 'false';
+setOnlineStatus(!startOffline, startOffline ? 'Server startup - default to offline mode' : 'Server startup - online mode enabled');
+console.log(`🔌 Online features: ${startOffline ? 'DISABLED' : 'ENABLED'} by default`);
 
 // Trust proxy for proper IP detection (important for rate limiting and logging)
 app.set('trust proxy', 1);
@@ -68,6 +74,23 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.removeHeader('X-Powered-By');
   next();
+});
+
+// Import and apply online mode middleware
+// Fixed import path for middleware
+import { requireOnlineMode, getOnlineStatusInfo } from './middleware/online-mode-middleware.js';
+app.use(requireOnlineMode);
+
+// Add status endpoint to check online status
+app.get('/api/online/status', (req, res) => {
+  const status = getOnlineStatusInfo();
+  res.json({
+    online: status.online,
+    lastUpdated: status.lastUpdated,
+    message: status.online ? 
+      'All features are available' : 
+      'Online features are disabled. Only local features are available.'
+  });
 });
 
 // Additional CORS handling for preflight requests

@@ -51,6 +51,30 @@ npm install
 npm run dev
 ```
 
+## 🔌 Online/Offline Mode
+
+Wizard Tracker supports an offline mode that disables all online features (multiplayer, leaderboards, etc.) while still allowing local gameplay. This feature is useful during maintenance or for users who want to use the application in a completely offline environment.
+
+### Toggle Online/Offline Mode (Admin Only)
+
+```bash
+# Check current status
+docker exec -it wizard-tracker-backend-1 node src/online-cli.js status
+
+# Turn off online features (using root user to avoid permission issues)
+docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js off "Maintenance mode"
+
+# Turn on online features (using root user to avoid permission issues)
+docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js on "Maintenance complete"
+```
+
+For Windows users, you can use the included test script:
+```
+test-online-mode.bat [on|off|status]
+```
+
+See [Admin Commands](wiki/Admin-Commands.md) for more details.
+
 ## 📚 Documentation
 
 Full documentation is available in our [Wiki](https://github.com/jkrumboe/wizard-tracker/wiki).

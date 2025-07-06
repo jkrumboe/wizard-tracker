@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
+    "start:offline": "node -e \"require('./src/config/online-mode.js').setOnlineStatus(false, 'Server started in offline mode')\" && node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
