@@ -74,7 +74,7 @@
   color: var(--text-color);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   font-size: 1.1rem;
   font-weight: 500;
   cursor: pointer;

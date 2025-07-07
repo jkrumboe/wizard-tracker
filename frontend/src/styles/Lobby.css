@@ -468,7 +468,8 @@
 .modal-actions {
   display: flex;
   justify-content: space-between;
-  margin: var(--spacing-md) var(--spacing-lg);
+  width: 100%;
+  margin: var(--spacing-md) 0;
   margin-bottom: 0;
 }
 

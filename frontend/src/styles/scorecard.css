@@ -60,7 +60,7 @@
   isolation: isolate;}
 
 .round-number {
-  background-color: var(--card-background-alt);
+  background-color: var(--card-background);
   color: var(--text-color);
   font-weight: 600;
   font-size: 1.1rem;
@@ -74,24 +74,13 @@
 }
 
 .player-round-cell {
-  background-color: var(--card-background-alt);
+  background-color: var(--card-background-alt) ;
   padding-left: 0 !important;
   padding-right: 0 !important;
   transition: background-color 0.2s;
   position: relative;
   z-index: 1; /* Ensure it stacks correctly */
 }
-
-/* Add a subtle visual separator for the first column */
-/* .round-number::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 100%;
-  width: 1px;
-  background-color: var(--border-color);
-} */
 
 .player-round-cell:hover {
   background-color: var(--input-background);
@@ -167,15 +156,6 @@
 
 .over-bid {
   color: var(--error-color); /* red for over bids */
-}
-
-/* Fix for sticky columns with proper background */
-.round-row:nth-child(odd) .round-number {
-  background-color: var(--card-background-alt);
-}
-
-.round-row:nth-child(even) .round-number {
-  background-color: var(--card-background);
 }
 
 /* Fix for WebKit browsers (Chrome, Safari, etc.) */
