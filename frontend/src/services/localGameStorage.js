@@ -14,8 +14,16 @@ export class LocalGameStorage {
    * @returns {string} - The game ID
    */
   static saveGame(gameState, gameName = null, isPaused = true) {
+    // Check if this is a finished game that was previously paused
+    let gameId = gameState.gameId;
+    const isFinishedPausedGame = !isPaused && gameId && this.gameExists(gameId);
+    
+    // If it's not an update to an existing paused game, generate a new ID
+    if (!isFinishedPausedGame) {
+      gameId = this.generateGameId();
+    }
+    
     const timestamp = new Date().toISOString();
-    const gameId = this.generateGameId();
     
     try {
       // Create a new saved game object
@@ -117,12 +125,17 @@ export class LocalGameStorage {
           
         } else {
           // It's already in object format
+          // If this is a previously paused game that's now finished, remove the old entry if it has a different ID
+          if (!isPaused && gameState.gameId && gameState.gameId !== gameId && existingData[gameState.gameId]) {
+            delete existingData[gameState.gameId];
+          }
+          
           existingData[gameId] = savedGame;
           localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(existingData));
         }
       }
 
-      this.debugStorage();
+      // this.debugStorage();
       return gameId;
     } catch (error) {
       console.error("Error saving game:", error);
@@ -140,6 +153,9 @@ export class LocalGameStorage {
     const savedGame = games[gameId];
     
     if (savedGame) {
+      console.log("Loading game:", savedGame);
+      
+
       // Update last played timestamp
       savedGame.lastPlayed = new Date().toISOString();
       games[gameId] = savedGame;
@@ -184,7 +200,7 @@ export class LocalGameStorage {
                 gameState: {
                   players: game.players,
                   currentRound: 1,
-                  maxRounds: game.total_rounds,
+                  maxRounds: game.maxRounds,
                   roundData: game.round_data,
                   gameStarted: true,
                   gameFinished: true, // This is a finished game
@@ -220,7 +236,7 @@ export class LocalGameStorage {
    */
   static getSavedGamesList() {
     try {
-      this.debugStorage();
+      // this.debugStorage();
       
       // Try to directly get the raw data to check format
       const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
@@ -334,9 +350,28 @@ export class LocalGameStorage {
   static autoSaveGame(gameState, gameId) {
     const games = this.getAllSavedGames();
     if (games[gameId]) {
+      // Update the game state
       games[gameId].gameState = { ...gameState };
       games[gameId].lastPlayed = new Date().toISOString();
       games[gameId].roundsCompleted = gameState.currentRound - 1;
+      
+      // If the game has transitioned from paused to finished, update metadata
+      if (gameState.gameFinished && games[gameId].isPaused) {
+        games[gameId].isPaused = false;
+        games[gameId].gameFinished = true;
+        games[gameId].name = `Finished Game - ${new Date().toLocaleDateString()}`;
+        
+        // Add finished game metadata
+        if (gameState.winner_id) games[gameId].winner_id = gameState.winner_id;
+        if (gameState.final_scores) games[gameId].final_scores = gameState.final_scores;
+        if (gameState.player_ids) games[gameId].player_ids = gameState.player_ids;
+        if (gameState.roundData) games[gameId].round_data = gameState.roundData;
+        games[gameId].total_rounds = gameState.maxRounds || gameState.totalRounds;
+        games[gameId].duration_seconds = gameState.duration_seconds;
+        games[gameId].is_local = true;
+        games[gameId].created_at = gameState.created_at || new Date().toISOString();
+      }
+      
       localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
     }
   }
@@ -400,34 +435,34 @@ export class LocalGameStorage {
    * Debug the storage state
    * Call this to debug issues with local storage
    */
-  static debugStorage() {
-    try {
-      const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+  // static debugStorage() {
+  //   try {
+  //     const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
       
-      if (!stored) {
-        console.error("DEBUG: No games found in storage");
-        return;
-      }
+  //     if (!stored) {
+  //       console.error("DEBUG: No games found in storage");
+  //       return;
+  //     }
       
-      const parsedData = JSON.parse(stored);
+  //     const parsedData = JSON.parse(stored);
       
-      if (Array.isArray(parsedData)) {
-        console.debug("DEBUG: Sample game:", parsedData[0] ? { 
-          id: parsedData[0].id,
-          created_at: parsedData[0].created_at,
-          is_finished: !!parsedData[0].gameFinished
-        } : "None");
-      } else {
-        const firstKey = Object.keys(parsedData)[0];
-        console.debug("DEBUG: Sample game:", firstKey ? {
-          id: parsedData[firstKey].id,
-          savedAt: parsedData[firstKey].savedAt,
-          isPaused: parsedData[firstKey].isPaused,
-          gameFinished: parsedData[firstKey].gameFinished
-        } : "None");
-      }
-    } catch (error) {
-      console.error("DEBUG: Error inspecting storage:", error);
-    }
-  }
+  //     if (Array.isArray(parsedData)) {
+  //       console.debug("DEBUG: Sample game:", parsedData[0] ? { 
+  //         id: parsedData[0].id,
+  //         created_at: parsedData[0].created_at,
+  //         is_finished: !!parsedData[0].gameFinished
+  //       } : "None");
+  //     } else {
+  //       const firstKey = Object.keys(parsedData)[0];
+  //       console.debug("DEBUG: Sample game:", firstKey ? {
+  //         id: parsedData[firstKey].id,
+  //         savedAt: parsedData[firstKey].savedAt,
+  //         isPaused: parsedData[firstKey].isPaused,
+  //         gameFinished: parsedData[firstKey].gameFinished
+  //       } : "None");
+  //     }
+  //   } catch (error) {
+  //     console.error("DEBUG: Error inspecting storage:", error);
+  //   }
+  // }
 }

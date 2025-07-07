@@ -22,7 +22,6 @@ const NewGame = () => {
   } = useGameStateContext()
 
   // No longer need index since we generate unique IDs in addPlayer
-  const [manualRounds, setManualRounds] = useState(false)
   // Always default to the new-game tab, never auto-switch
   const [activeTab, setActiveTab] = useState('new-game')
   const [pausedGames, setPausedGames] = useState([])
@@ -33,7 +32,7 @@ const NewGame = () => {
     setIsLoading(true);
     try {
       // Debug local storage
-      LocalGameStorage.debugStorage();
+      // LocalGameStorage.debugStorage();
       
       // Get all saved games
       const games = await getSavedGames();
@@ -65,29 +64,9 @@ const NewGame = () => {
     }
   }, [activeTab, loadPausedGames]);
 
-  // Calculate the recommended number of rounds based on player count
-  useEffect(() => {
-    // Only auto-adjust rounds if manual mode is not enabled
-    if (!manualRounds) {
-      const playerCount = gameState.players.length;
-      if (playerCount >= 2 && playerCount <= 6) {
-        // Standard rule: 60 cards divided by number of players
-        const recommendedRounds = Math.floor(60 / playerCount);
-        // Only update if it's different to avoid unnecessary renders
-        if (gameState.maxRounds !== recommendedRounds) {
-          setMaxRounds(recommendedRounds);
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.players.length, setMaxRounds, manualRounds]);
-
   const handleAddPlayer = () => {
     // Call addPlayer without any arguments as it now generates unique IDs internally
     addPlayer()
-    
-    // Don't auto-adjust rounds when in manual mode
-    // This way manually selected rounds will be preserved when adding players
   }
 
   const handlePlayerNameChange = (playerId, e) => {
@@ -97,9 +76,6 @@ const NewGame = () => {
 
   const handleRemovePlayer = (playerId) => {
     removePlayer(playerId)
-    
-    // Don't auto-adjust rounds when in manual mode
-    // This way manually selected rounds will be preserved when removing players
   }
 
   const handleStartGame = () => {
@@ -151,10 +127,7 @@ const NewGame = () => {
     }
   }
   
-  const handleMaxRoundsChange = (value) => {
-    // If the user manually changes the value, enable manual rounds mode
-    setManualRounds(true);
-    
+  const handleMaxRoundsChange = (value) => {    
     // Ensure the value is between 0 and 20 (the maximum possible)
     const validValue = Math.max(0, Math.min(value, 20));
     setMaxRounds(validValue);
@@ -220,29 +193,13 @@ const NewGame = () => {
                       value={gameState.maxRounds}
                       onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
                       min={1}
-                      max={manualRounds ? 20 : recommendedRounds}
+                      max={recommendedRounds ? recommendedRounds : 20}
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
                   </div>
-
-                  <div className="toggle-container">
-                    <label className="toggle-label">
-                      <span className="toggle-text">Don't auto adjust rounds:</span>
-                    </label>
-
-                    <label className="toggle-label" id="manual-rounds-toggle">
-                      <input
-                        type="checkbox"
-                        checked={manualRounds}
-                        onChange={() => setManualRounds(!manualRounds)}
-                      />
-                    {manualRounds && (
-                      <div className="rounds-hint">
+                  <div className="rounds-hint">
                         Recommended: {recommendedRounds} rounds
-                      </div>
-                    )}
-                    </label>
                   </div>
                 </div>
               </div>

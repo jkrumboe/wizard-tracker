@@ -227,7 +227,7 @@ const GameInProgress = () => {
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
         <span>
-          Round {parseInt(gameState.currentRound, 10)} of {parseInt(gameState.maxRounds, 10)}
+          Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
         </span>
         <span className="total-calls">
           Calls: {totalCalls} |  {(currentRound?.cards - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
