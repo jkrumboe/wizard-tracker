@@ -461,7 +461,7 @@
     margin-bottom: 0;
   }
   
-  .winner-section h2::after,
+  /* .winner-section h2::after,
   .results-section h2::after,
   .rounds-section h2::after {
     content: "";
@@ -471,7 +471,7 @@
     width: 40px;
     height: 3px;
     background-color: var(--primary-color);
-  }
+  } */
 
   .round-card {
     display: flex;
@@ -704,7 +704,7 @@
     padding-bottom: var(--spacing-sm);
   }
   
-  .stats-graph h2::after,
+  /* .stats-graph h2::after,
   .recent-games h2::after {
     content: "";
     position: absolute;
@@ -713,7 +713,7 @@
     width: 40px;
     height: 3px;
     background-color: var(--primary-color);
-  }
+  } */
   
   .chart-legend {
     display: flex;
@@ -1219,8 +1219,13 @@
   
   /* New Game Page */
   .new-game-container {
-    margin: var(--spacing-xl) 0;
-    max-width: 960px; /* Constrain the leaderboard width */
+    margin-top: var(--spacing-xl);
+    max-width: 960px; /* Constrain the width */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - var(--spacing-xl));
   }
   
   .new-game-container h1 {
@@ -1244,7 +1249,7 @@
     margin-bottom: var(--spacing-md);
   }
   
-  .setup-section h2::after {
+  /* .setup-section h2::after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -1252,7 +1257,7 @@
     width: 40px;
     height: 3px;
     background-color: var(--primary-color);
-  }
+  } */
   
   .player-search {
     position: relative;
@@ -1940,6 +1945,7 @@
   background-color: transparent;
   border: none;
   padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-light);
@@ -2014,17 +2020,6 @@
   padding-bottom: var(--spacing-xs);
 }
 
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 15%;
-  width: 70%;
-  height: 3px;
-  background-color: var(--primary-color);
-  border-radius: var(--radius-sm);
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -2039,8 +2034,11 @@
 }
 
 .tab-panel {
-  animation: fadeIn 0.3s ease-in;
   width: 100%;
+  overflow-y: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;;
 }
 
 /* Paused Games List */
@@ -2056,23 +2054,21 @@
   flex-direction: column;
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
+  justify-content: center;
+  align-items: center;
 }
 
 .paused-game-item {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--card-background);
+  background-color: var(--card-background-alt);
   border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  border: 1px solid var(--border-color);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   transition: all 0.3s;
-}
-
-.paused-game-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
 }
 
 .game-info {
@@ -2092,14 +2088,10 @@
   font-size: 0.9rem;
 }
 
-.game-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
 .resume-btn, .delete-btn {
-  padding: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-lg);
   border-radius: var(--radius-sm);
+  border: 2px solid var(--border-color);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -2117,13 +2109,8 @@
 
 .delete-btn {
   background-color: transparent;
-  color: var(--danger-color);
-  border: 1px solid var(--danger-color);
-}
-
-.delete-btn:hover {
-  background-color: var(--danger-color);
-  color: white;
+  border: 2px solid var(--error-color);
+  color: var(--error-color);
 }
 
 .empty-paused-games {
@@ -2160,7 +2147,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: var(--top-nav-height);
   box-shadow: var(--shadow);
   z-index: 100;
 }
@@ -2255,7 +2242,7 @@
   flex-shrink: 0;
 }
 
-.recent-games h2::after {
+/* .recent-games h2::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -2263,7 +2250,7 @@
   width: 40px;
   height: 3px;
   background-color: var(--primary-color);
-}
+} */
 
 /* Game list container */
 .game-list {

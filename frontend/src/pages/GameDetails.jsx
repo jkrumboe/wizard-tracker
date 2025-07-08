@@ -160,9 +160,9 @@ const GameDetails = () => {
     minute: "2-digit",
   });
 
-  const duration = game.duration_seconds
-    ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
-    : "N/A";
+  // const duration = game.duration_seconds
+  //   ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
+  //   : "N/A";
 
   return (
     <PageTransition 
@@ -190,7 +190,7 @@ const GameDetails = () => {
           </div>
           <h1 id="header-game-detail-badge">Game Details {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
           <div className="game-date">Finished: {formattedDate}</div>
-          <div className="game-date">Duration: {duration}</div>
+          {/* <div className="game-date">Duration: {duration}</div> */}
           <div className="game-winner">
             Winner: {playerDetails[game.winner_id]?.name || 'Unknown'}
           </div>

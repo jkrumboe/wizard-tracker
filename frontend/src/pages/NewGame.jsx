@@ -25,11 +25,9 @@ const NewGame = () => {
   // Always default to the new-game tab, never auto-switch
   const [activeTab, setActiveTab] = useState('new-game')
   const [pausedGames, setPausedGames] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
   
   // Function to load paused games
   const loadPausedGames = useCallback(async () => {
-    setIsLoading(true);
     try {
       // Debug local storage
       // LocalGameStorage.debugStorage();
@@ -47,8 +45,6 @@ const NewGame = () => {
       // We want the new-game tab to always be the default
     } catch (error) {
       console.error("Error loading paused games:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, [getSavedGames]);
     
@@ -137,6 +133,19 @@ const NewGame = () => {
   const recommendedRounds = gameState.players.length > 2 && gameState.players.length <= 6 
     ? Math.floor(60 / gameState.players.length)
     : 20; // Default max
+
+  const normalizeDate = (date) => {
+    if (!date) return "Unknown Date";
+    const d = new Date(date);
+    return d.toLocaleString("en-US", {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   return (
     <div className="new-game-container">
@@ -242,11 +251,8 @@ const NewGame = () => {
               </button>
             </div>
             
-            {isLoading ? (
-              <div className="loading-container">
-                <p>Loading paused games...</p>
-              </div>
-            ) : pausedGames.length === 0 ? (
+            
+            { pausedGames.length === 0 ? (
               <div className="empty-paused-games">
                 <p>No paused games found</p>
                 <p>When you pause a game, it will appear here</p>
@@ -255,14 +261,21 @@ const NewGame = () => {
               <div className="paused-games-list">
                 {pausedGames.map(game => (
                   <div key={game.id} className="paused-game-item">
+                    <div className="game-date">
+                      <span>Paused on: {normalizeDate(game.lastPlayed)}</span>
+                    </div>
+                    <div className="game-mode-rounds">
+                      <span>Mode: {game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local"} | <span>Round {game.roundsCompleted + 1}/{game.totalRounds}</span></span>
+                    </div>
                     <div className="game-info">
-                      <h3>{game.name || `Game from ${new Date(game.lastPlayed).toLocaleDateString()}`}</h3>
-                      <div className="game-details">
+                       <div className="paused-game-details" >
+                        <label>Players: </label>
                         <span>{game.players && game.players.join(', ')}</span>
-                        <span>Round {game.roundsCompleted + 1}/{game.totalRounds}</span>
+                        
                       </div>
                     </div>
-                    <div className="game-actions">
+                    
+                    <div className="game-actions" >
                       <button 
                         className="resume-btn" 
                         onClick={() => handleLoadGame(game.id)}

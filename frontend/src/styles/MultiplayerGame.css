@@ -53,7 +53,9 @@
 
 .game-actions {
   display: flex;
-  gap: var(--spacing-md);
+  width: 100%;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
 }
 
 .settings-button,
