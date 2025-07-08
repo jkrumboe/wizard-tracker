@@ -34,7 +34,6 @@ const canEdit = useMemo(() => {
 // Remove localStorage token check - use the user context instead
 if (user && player) {
   const editAccess = user.role >= 2 || user.player_id === player.id;
-  console.log("Edit Access:", editAccess);
   return editAccess;
 }
 return false;

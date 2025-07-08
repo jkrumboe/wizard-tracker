@@ -153,9 +153,6 @@ export class LocalGameStorage {
     const savedGame = games[gameId];
     
     if (savedGame) {
-      console.log("Loading game:", savedGame);
-      
-
       // Update last played timestamp
       savedGame.lastPlayed = new Date().toISOString();
       games[gameId] = savedGame;

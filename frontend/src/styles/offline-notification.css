@@ -56,8 +56,8 @@
 }
 
 .online-status-banner.online .status-indicator {
-  background-color: #00a000;
-  box-shadow: 0 0 5px #00a000;
+  background-color: var(--ready-color);
+  box-shadow: 0 0 5px var(--ready-color);
 }
 
 .online-status-banner.offline .status-indicator {
@@ -98,7 +98,7 @@
 
 .system-status-indicator.online {
   background-color: rgba(0, 128, 0, 0.1);
-  border: 1px solid #00a000;
+  border: 1px solid var(--ready-color);
   color: #006000;
 }
 
@@ -116,8 +116,8 @@
 }
 
 .system-status-indicator.online .status-dot {
-  background-color: #00a000;
-  box-shadow: 0 0 3px #00a000;
+  background-color: var(--ready-color);
+  box-shadow: 0 0 3px var(--ready-color);
 }
 
 .system-status-indicator.offline .status-dot {

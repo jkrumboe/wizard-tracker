@@ -174,6 +174,23 @@ h3 {
   font-size: 1.25rem;
 }
 
+h2 {
+  position: relative;
+  padding-bottom: var(--spacing-sm);
+}
+
+h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background-color: var(--primary-color);
+  background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+  border-radius: 2px;
+}
+
 /* Buttons */
 
 button,
@@ -194,7 +211,7 @@ button:disabled {
 
 .btn-primary {
   background-color: var(--primary-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -220,7 +237,7 @@ html:not([data-theme="dark"]) .btn-primary:hover:not(:disabled) {
 
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--primary-light);
-  color: var(--text-white);
+  color: var(--text-color);
   border-color: var(--primary-light);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
@@ -228,12 +245,12 @@ html:not([data-theme="dark"]) .btn-primary:hover:not(:disabled) {
 
 html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   background-color: var(--primary-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .btn-accent {
   background-color: var(--accent-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .btn-accent:hover:not(:disabled) {
@@ -244,22 +261,22 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 .btn-success {
   background-color: var(--success-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: #0da271;
+  background-color: var(--not-ready-color);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
 
 .btn-error {
   background-color: var(--error-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .btn-error:hover:not(:disabled) {
-  background-color: #dc2626;
+  background-color: var(--ready-color);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
@@ -268,7 +285,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 .cancle-button {
   background-color: var(--error-color);
-  color: var(--text-white);
+  color: var(--text-color);
   border: none;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
@@ -342,7 +359,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 }
 
 .navbar-logo {
-  color: var(--text-white);
+  color: var(--text-color);
   font-weight: bold;
   font-size: 1.5rem;
 }
@@ -357,7 +374,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   position: relative;
   width: 24px;
   height: 2px;
-  background-color: var(--text-white);
+  background-color: var(--text-color);
   transition: all 0.3s;
 }
 
@@ -367,7 +384,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   position: absolute;
   width: 24px;
   height: 2px;
-  background-color: var(--text-white);
+  background-color: var(--text-color);
   transition: all 0.3s;
 }
 
@@ -425,7 +442,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   text-decoration: none;
   padding: 0 var(--spacing-md);
   height: 100%;
-  color: var(--text-white);
+  color: var(--text-color);
   position: relative;
 }
 
@@ -461,23 +478,6 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   justify-content: center;
   gap: var(--spacing-md);
   /* margin: var(--spacing-lg) 0 0; */
-}
-
-.recent-games h2 {
-  padding-bottom: var(--spacing-sm);
-}
-
-.recent-games h2::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background-color: var(--primary-color);
-  background: linear-gradient(to right, var(--primary-color), var(--primary-light));
-  height: 4px;
-  border-radius: 2px;
 }
 
 /* Game list container */
@@ -524,7 +524,6 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 @media (min-width: 576px) {
   .game-list {
-    grid-template-columns: repeat(2, 1fr); /* Two columns for tablets */
     gap: var(--spacing-lg); /* Increase spacing */
   }
 }

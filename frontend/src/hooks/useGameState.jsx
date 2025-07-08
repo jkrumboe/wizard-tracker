@@ -56,10 +56,6 @@ export function GameStateProvider({ children }) {
 
       const player = { id: uniqueId, name: randomName };
       
-      // Debug log
-      console.log("Adding player:", player);
-      console.log("Current players:", prevState.players);
-      
       return {
         ...prevState,
         players: [...prevState.players, player],

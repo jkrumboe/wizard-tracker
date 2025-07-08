@@ -108,7 +108,6 @@ const Lobby = () => {
       const room = await colyseusService.createGameRoomWithTracking(settings);
       
       if (room && room.sessionId) {
-        console.log('Room created successfully, navigating to:', room.sessionId);
         
         // Wait a bit to ensure room is fully ready and DB is updated
         await new Promise(resolve => setTimeout(resolve, 500));

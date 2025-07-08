@@ -21,19 +21,18 @@
 /* Performance Metrics Styling */
 .performance-metric {
   padding: 0.2rem 0;
-  border-radius: 8px;
-  background-color: rgba(30, 41, 59, 0.8);
+  margin-bottom: var(--spacing-sm); /* Add extra space between metrics to accommodate labels */
 }
 
 .metric-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-xs);
   font-weight: 500;
 }
 
 .metric-label {
-  color: #cbd5e1;
+  color: var(--text-color);
 }
 
 .metric-value {
@@ -41,18 +40,19 @@
   font-size: 1.1rem;
 }
 
-.trend-icon {
+/* .trend-icon {
   margin-left: 5px;
   font-size: 1rem;
-}
+} */
 
 .metric-bar-container {
-  height: 8px;
-  background-color: #334155;
-  border-radius: 4px;
-  overflow: hidden; /* Changed to visible to show the target marker */
-  margin-bottom: 0.5rem;
+  height: 10px;
+  background-color: var(--background-color);
+  border-radius: var(--radius-sm);
+  overflow: visible; /* Changed to visible to show the target marker and labels */
+  margin-bottom: var(--spacing-sm); /* Increased to make room for target labels */
   position: relative; /* Added position relative for absolute positioning of target marker */
+  border: 1px solid var(--border-color); /* Subtle border for definition */
 }
 
 .target-marker {
@@ -60,25 +60,58 @@
   top: -3px; /* Extends above the bar */
   height: 14px; /* Taller than the bar for visibility */
   width: 2px; /* Width of the marker line */
-  background-color: #f8fafc; /* Light color for contrast */
+  background-color: var(--text-color); /* Light color for contrast */
   z-index: 2; /* Ensure it's above the bar */
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
+.target-value-label {
+  position: absolute;
+  top: 14px; /* Position below the bar */
+  transform: translateX(-50%); /* Center the label on the marker */
+  font-size: 0.7rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Additional styles for target position edge cases */
+.target-value-label-left-edge {
+  transform: translateX(0); /* Don't shift left when at start */
+  left: 0;
+}
+
+.target-value-label-right-edge {
+  transform: translateX(-100%); /* Shift all the way left when at end */
+  right: 0;
+}
+
+.target-marker.target-min {
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.target-marker.target-max {
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
 .metric-bar {
   height: 100%;
-  border-radius: 4px;
+  /* border-radius: var(--radius-sm); */
   position: relative; /* For z-index stacking */
   z-index: 1;
 }
 
 .metric-bar.above-target {
-  background-color: #10b981; /* Green for good */
+  background-color: var(--ready-color); /* Green for good */
 }
 
 .metric-bar.below-target {
-  background-color: #ef4444; /* Red for needs improvement */
+  background-color: var(--not-ready-color); /* Red for needs improvement */
 }
 
 .metric-footer {
@@ -102,13 +135,13 @@
   border-radius: 10px;
   padding: 1rem;
   margin-top: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .advanced-stats h3 {
   margin-top: 0;
-  color: #e2e8f0;
-  border-bottom: 1px solid #334155;
+  color: black;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -119,7 +152,7 @@
 
 .stats-section-title {
   font-size: 1.1rem;
-  color: var(--text-white);
+  color: var(--text-color);
   font-weight: 500;
   padding-bottom: var(--spacing-xs);
   border-bottom: 2px solid var(--border-color);
@@ -128,6 +161,124 @@
 .stats-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+}
+
+/* Bidding Style Card Styling */
+.bidding-style-card {
+  border-radius: 10px;
+  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bidding-style-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.bidding-style-value {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-bottom: var(--spacing-xs);
+  text-align: center;
+}
+
+.bidding-stats {
+  font-size: 0.85rem;
+  color: var(--text-secondary-color);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.bid-stat {
+  display: inline-flex;
+  align-items: center;
+}
+
+.bid-stat.correct {
+  color: var(--ready-color);
+}
+
+.bid-stat.over {
+  color: var(--not-ready-color);
+}
+
+.bid-stat.under {
+  color: #FF9800; /* Orange color for under bids */
+}
+
+.excellent-bidding {
+  color: #00C853; /* Bright green */
+}
+
+.good-bidding {
+  color: var(--ready-color); /* Regular green */
+}
+
+.okay-bidding {
+  color: #FFC107; /* Amber */
+}
+
+.poor-bidding {
+  color: #FF9800; /* Orange */
+}
+
+.bad-bidding {
+  color: var(--not-ready-color); /* Red */
+}
+
+.bidding-tendency {
+  display: block;
+  font-size: 0.8rem;
+  font-style: italic;
+  opacity: 0.8;
+  margin-top: -5px;
+}
+
+.metric-with-description {
+  background-color: var(--card-background);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.metric-with-description .metric-description {
+  font-size: 0.8rem;
+  color: var(--text-secondary-color);
+  margin-top: 0.5rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Bid Distribution Bar Styling */
+.bid-distribution-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.bid-segment {
+  height: 100%;
+}
+
+.correct-segment {
+  background-color: var(--ready-color);
+}
+
+.over-segment {
+  background-color: var(--not-ready-color);
+}
+
+.under-segment {
+  background-color: #FF9800; /* Orange color */
 }
 
 @media (max-width: 768px) {

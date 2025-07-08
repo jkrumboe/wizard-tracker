@@ -66,7 +66,7 @@
 
 .retry-button {
   background-color: var(--error-color);
-  color: var(--text-white);
+  color: var(--text-color);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -106,7 +106,7 @@
 
 .primary-button {
   background-color: var(--primary-dark);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .primary-button:hover {
@@ -117,7 +117,7 @@
 
 .secondary-button {
   background-color: var(--warning-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .secondary-button:hover {
@@ -308,7 +308,7 @@
 
 .join-room-btn {
   background-color: var(--primary-color);
-  color: var(--text-white);
+  color: var(--text-color);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-lg);
@@ -361,13 +361,13 @@
 
 .player-status.in_game {
   background-color: var(--success-color);
-  color: var(--text-white);
+  color: var(--text-color);
   border-color: var(--success-color);
 }
 
 .player-status.creating {
   background-color: var(--warning-color);
-  color: var(--text-white);
+  color: var(--text-color);
   border-color: var(--warning-color);
 }
 
@@ -499,7 +499,7 @@
 
 .create-button {
   background-color: var(--success-color);
-  color: var(--text-white);
+  color: var(--text-color);
 }
 
 .create-button:hover {

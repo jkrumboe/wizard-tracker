@@ -65,13 +65,14 @@ const GameHistoryItem = ({ game }) => {
   const game_mode = game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local";
   const total_rounds = game.total_rounds || game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0;
   
-  const formattedDate = new Date(created_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const formattedDate = new Date(created_at).toLocaleString("en-DE", {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
   
   // Helper function to determine winner from game state
   function determineWinner(gameState) {

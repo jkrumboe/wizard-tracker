@@ -13,6 +13,9 @@ import PageTransition from "../components/PageTransition"
 import "../styles/pageTransition.css"
 
 const GameDetails = () => {
+  // Helper function to compare IDs regardless of type (string vs number)
+  const compareIds = (id1, id2) => String(id1) === String(id2);
+  
   const { id } = useParams()
   const [game, setGame] = useState(null)
   const [playerDetails, setPlayerDetails] = useState({})
@@ -89,7 +92,10 @@ const GameDetails = () => {
   }, [id])
 
   const togglePlayerStats = (playerId) => {
-    setSelectedPlayerId((prev) => (prev === playerId ? null : playerId));
+    setSelectedPlayerId((prev) => {
+      const newValue = compareIds(prev, playerId) ? null : playerId;
+      return newValue;
+    });
   };
 
   if (error || !game) {
@@ -98,11 +104,16 @@ const GameDetails = () => {
 
   // Sort players by score (highest first)
   const sortedPlayers = Object.entries(game.final_scores || {})
-    .map(([playerId, score]) => ({
-      id: Number.parseInt(playerId),
-      score,
-      ...playerDetails[playerId],
-    }))
+    .map(([playerId, score]) => {
+      // Handle player IDs consistently - keep as string if it has scientific notation (e)
+      const normalizedId = playerId.includes("e") ? playerId : Number.parseInt(playerId);
+      
+      return {
+        id: normalizedId,
+        score,
+        ...playerDetails[playerId],
+      };
+    })
     .sort((a, b) => b.score - a.score)
 
   // Add detailed statistics for each player
@@ -111,31 +122,47 @@ const GameDetails = () => {
       return [];
     }
 
+    // Build stats for each player based on round_data
     const stats = Object.entries(game.final_scores || {}).map(([playerId]) => {
-      const playerRounds = game.round_data.map((round) => {
+      // Collect all rounds for this player
+      const playerRounds = (game.round_data || []).map((round) => {
         if (!round || !round.players) return null;
-        return round.players.find((p) => p.id === Number(playerId));
-      });
+        return round.players.find((p) => compareIds(p.id, playerId));
+      }).filter(Boolean);
 
-      const totalBids = playerRounds.reduce((sum, round) => sum + (round?.call || 0), 0);
-      const totalTricks = playerRounds.reduce((sum, round) => sum + (round?.made || 0), 0);
-      const correctBids = playerRounds.filter((round) => round?.call === round?.made).length;
-      const overbids = playerRounds.filter((round) => round?.made > round?.call).length;
-      const underbids = playerRounds.filter((round) => round?.made < round?.call).length;
-      const totalPoints = playerRounds.reduce((sum, round) => sum + (round?.score || 0), 0);
-      const avgPoints = totalPoints / game.round_data.length;
-      const avgBid = totalBids / game.round_data.length;
-      const avgTricks = totalTricks / game.round_data.length;
-      const avgDiff =
-        playerRounds.reduce((sum, round) => sum + Math.abs((round?.made || 0) - (round?.call || 0)), 0) /
-        game.round_data.length;
+      const totalRounds = playerRounds.length;
+      const totalPoints = playerRounds.reduce((sum, round) => sum + (round.score ?? 0), 0);
+      const highestScore = Math.max(...playerRounds.map((round) => round.score ?? 0));
+      const lowestScore = Math.min(...playerRounds.map((round) => round.score ?? 0));
+      const totalBids = playerRounds.reduce((sum, round) => sum + (round.call ?? 0), 0);
+      const totalTricks = playerRounds.reduce((sum, round) => sum + (round.made ?? 0), 0);
+      const correctBids = playerRounds.filter((round) => round.call === round.made).length;
+      const overbids = playerRounds.filter((round) => round.made > round.call).length;
+      const underbids = playerRounds.filter((round) => round.made < round.call).length;
+      const avgPoints = totalRounds ? (totalPoints / totalRounds) : 0;
+      const avgBid = totalRounds ? (totalBids / totalRounds) : 0;
+      const avgTricks = totalRounds ? (totalTricks / totalRounds) : 0;
+      const avgDiff = totalRounds
+      ? (
+        playerRounds.reduce(
+          (sum, round) => sum + Math.abs((round.made ?? 0) - (round.call ?? 0)),
+          0
+        ) / totalRounds
+        )
+      : 0;
+      const bidAccuracy = totalRounds ? ((correctBids / totalRounds) * 100) : 0;
 
+      // Ensure we're using the same ID format as in sortedPlayers
+      const normalizedId = typeof playerId === "string" ? 
+        (playerId.includes("e") ? playerId : Number(playerId)) : 
+        playerId;
+      
       return {
-        id: Number(playerId),
+        id: normalizedId,
         totalBids,
         totalTricks,
         correctBids,
-        bidAccuracy: ((correctBids / game.round_data.length) * 100).toFixed(2),
+        bidAccuracy: bidAccuracy.toFixed(2),
         overbids,
         underbids,
         avgDiff: avgDiff.toFixed(2),
@@ -143,8 +170,8 @@ const GameDetails = () => {
         avgPoints: avgPoints.toFixed(2),
         avgBid: avgBid.toFixed(2),
         avgTricks: avgTricks.toFixed(2),
-        highestScore: Math.max(...playerRounds.map((round) => round?.score || 0)),
-        lowestScore: Math.min(...playerRounds.map((round) => round?.score || 0)),
+        highestScore,
+        lowestScore,
       };
     });
 
@@ -152,12 +179,13 @@ const GameDetails = () => {
   }
   const playerStats = calculatePlayerStats(game);
 
-  const formattedDate = new Date(game.created_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+  const formattedDate = new Date(game.created_at).toLocaleDateString("en-DE", {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
   });
 
   // const duration = game.duration_seconds
@@ -216,7 +244,7 @@ const GameDetails = () => {
                       <tr key={index} className="round-row">
                         <td className="round-number sticky-cell">{index + 1}</td>
                         {sortedPlayers.map(player => {
-                          const playerRound = round.players.find(p => p.id === player.id);
+                          const playerRound = round.players.find(p => compareIds(p.id, player.id));
                           
                           // Determine bid status for color-coding
                           let bidStatusClass = '';
@@ -281,9 +309,23 @@ const GameDetails = () => {
                     <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
                       Adv. Stats
                     </button>
-                    {selectedPlayerId === player.id && (() => {
+                    {compareIds(selectedPlayerId, player.id) && (() => {
                       // Find player stats once and store in variable for efficient access
-                      const playerStat = playerStats.find((stat) => stat.id === player.id);
+                      // Convert IDs to strings for comparison to handle type mismatches
+                      const playerStat = playerStats.find((stats) => compareIds(stats.id, player.id));
+                      
+                      // If player stats are not found, show an error message
+                      if (!playerStat) {
+                        console.error(`Could not find stats for player ID: ${player.id}`);
+                        return (
+                          <div className="advanced-stats">
+                            <div className="stats-section">
+                              <div className="stats-section-title">Error</div>
+                              <p>Could not load player statistics. Please try again.</p>
+                            </div>
+                          </div>
+                        );
+                      }
                       
                       return (
                         <div className="advanced-stats">                      
@@ -303,38 +345,116 @@ const GameDetails = () => {
                               <PerformanceMetric 
                                 label="Average Score" 
                                 value={playerStat?.avgPoints} 
-                                target={30} 
-                                isAboveTarget={false}
+                                targetMin={20} 
+                                targetMax={30}
+                                isBadWhenAboveMax={false}
                               />
                               <PerformanceMetric 
                                 label="Bid Accuracy" 
-                                value={playerStat?.bidAccuracy + "%"} 
-                                target={80} 
-                                isAboveTarget={false}
+                                value={parseFloat(playerStat?.bidAccuracy || 0)} 
+                                targetMin={50} 
+                                targetMax={80}
+                                isPercentage={true}
+                                isBadWhenAboveMax={false} 
                               />
                             </div>
                           </div>
 
                           <div className="stats-section">
-                            <div className="stats-section-title">Bidding Style</div>
+                            <div className="stats-section-title">Bidding Tendency</div>
                             <div className="stats-cards">
-                              <PerformanceMetric 
-                                label="Overbid Ratio" 
-                                value={playerStat?.overbids} 
-                                target={5} 
-                                isAboveTarget={true}
-                              />
-                              <PerformanceMetric 
-                                label="Underbid Ratio" 
-                                value={playerStat?.underbids} 
-                                target={5} 
-                                isAboveTarget={true}
-                              />
+                              <div className="bidding-style-card">
+                                <div className="bidding-style-value">
+                                  {(() => {
+                                    const overbids = playerStat?.overbids || 0;
+                                    const underbids = playerStat?.underbids || 0;
+                                    const correctBids = playerStat?.correctBids || 0;
+                                    const totalBids = overbids + underbids + correctBids;
+                                    
+                                    if (totalBids === 0) return <span className="no-data">No Data</span>;
+                                    
+                                    // Calculate percentages
+                                    const correctBidPercent = totalBids > 0 ? (correctBids / totalBids) * 100 : 0;
+                                    const overBidPercent = totalBids > 0 ? (overbids / totalBids) * 100 : 0;
+                                    const underBidPercent = totalBids > 0 ? (underbids / totalBids) * 100 : 0;
+                                    
+                                    // Determine bidding quality based on correct bid percentage
+                                    let biddingQuality = '';
+                                    let biddingClass = '';
+                                    
+                                    if (correctBidPercent > 75) {
+                                      biddingQuality = 'Bidding Excellent';
+                                      biddingClass = 'excellent-bidding';
+                                    } else if (correctBidPercent >= 60) {
+                                      biddingQuality = 'Bidding Good';
+                                      biddingClass = 'good-bidding';
+                                    } else if (correctBidPercent >= 45) {
+                                      biddingQuality = 'Bidding Okay';
+                                      biddingClass = 'okay-bidding';
+                                    } else if (correctBidPercent >= 30) {
+                                      biddingQuality = 'Bidding Poorly';
+                                      biddingClass = 'poor-bidding';
+                                    } else {
+                                      biddingQuality = 'Bidding Badly';
+                                      biddingClass = 'bad-bidding';
+                                    }
+                                    
+                                    // Add bidding tendency descriptor
+                                    let biddingTendency = '';
+                                    if (overBidPercent > 25 && overBidPercent > underBidPercent) {
+                                      biddingTendency = ' (Tends to Overbid)';
+                                    } else if (underBidPercent > 25 && underBidPercent > overBidPercent) {
+                                      biddingTendency = ' (Tends to Underbid)';
+                                    } else if (overBidPercent === underBidPercent && overBidPercent > 15) {
+                                      biddingTendency = ' (Mixed Errors)';
+                                    }
+                                    
+                                    return (
+                                      <div>
+                                        <span className={biddingClass}>
+                                          {biddingQuality}
+                                        </span>
+                                        {biddingTendency && (
+                                          <span className="bidding-tendency">{biddingTendency}</span>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                                
+                                {/* Visual mini-progress bar for correct bids percentage */}
+                                {(() => {
+                                  const overbids = playerStat?.overbids || 0;
+                                  const underbids = playerStat?.underbids || 0;
+                                  const correctBids = playerStat?.correctBids || 0;
+                                  const totalBids = overbids + underbids + correctBids;
+                                  
+                                  const correctBidPercent = totalBids > 0 ? Math.round((correctBids / totalBids) * 100) : 0;
+                                  const overBidPercent = totalBids > 0 ? Math.round((overbids / totalBids) * 100) : 0;
+                                  const underBidPercent = totalBids > 0 ? Math.round((underbids / totalBids) * 100) : 0;
+                                  
+                                  return (
+                                    <div className="bid-distribution-bar">
+                                      <div className="bid-segment correct-segment" style={{ width: `${correctBidPercent}%` }}></div>
+                                      <div className="bid-segment over-segment" style={{ width: `${overBidPercent}%` }}></div>
+                                      <div className="bid-segment under-segment" style={{ width: `${underBidPercent}%` }}></div>
+                                    </div>
+                                  );
+                                })()}
+                                
+                                  <div className="bidding-stats">
+                                    <span className="bid-stat correct">{playerStat?.correctBids} correct</span> •
+                                    <span className="bid-stat over">{playerStat?.overbids} over</span> •
+                                    <span className="bid-stat under">{playerStat?.underbids} under</span>
+                                  </div>
+                              </div>
                               <PerformanceMetric 
                                 label="Average Deviation" 
                                 value={playerStat?.avgDiff} 
-                                target={0.8} 
-                                isAboveTarget={true}
+                                targetMin={0}
+                                targetMax={0.25}
+                                isBadWhenAboveMax={true} 
+
                               />
                             </div>
                           </div>

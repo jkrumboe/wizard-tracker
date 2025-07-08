@@ -11,7 +11,6 @@ import GameDetails from "./pages/GameDetails"
 import GameInProgress from "./pages/GameInProgress"
 import Lobby from "./pages/Lobby"
 import MultiplayerGame from "./pages/MultiplayerGame"
-// import TestMultiplayer from "./pages/TestMultiplayer"
 import Navbar from "./components/Navbar"
 import OnlineProtectedRoute from "./components/OnlineProtectedRoute"
 import AdminDashboard from "./pages/AdminDashboard";
@@ -31,7 +30,7 @@ function ProtectedRoute({ children, roles }) {
     if (token) {
       try {
         const decoded = JSON.parse(atob(token.split(".")[1]));
-        console.log("Decoded token:", decoded); // Debugging line
+        console.debug("Decoded token:", decoded); // Debugging line
         setUserRole(decoded.role);
       } catch (error) {
         console.error("Error decoding token:", error);

@@ -70,20 +70,13 @@ const Stats = () => {
   const chartData = [...eloHistory]
   .reverse()
   .map((entry) => ({
-    date: new Date(entry.timestamp).toLocaleDateString("en-US", {
+    date: new Date(entry.timestamp).toLocaleDateString("en-DE", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     }),
     elo: entry.new_elo,
   }));
-
-  // console.log("filteredHistory scores", filteredHistory().map(game => game))
-
-  console.debug("player", player)
-
-
-
 
   return (
     <PageTransition isLoading={loading} loadingTitle="Loading Statistics..." loadingSubtitle="Analyzing player performance data">
@@ -191,12 +184,13 @@ const Stats = () => {
           {filteredHistory().slice(0, 5).map(game => (
             <div key={game.id} className="table-row">              
               <div className="date-col">{
-                new Date(game.created_at).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
+                new Date(game.created_at).toLocaleDateString("en-DE", {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
                 })}
               </div>
               <div className="position-col">

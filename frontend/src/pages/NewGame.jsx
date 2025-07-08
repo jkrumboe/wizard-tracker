@@ -135,15 +135,15 @@ const NewGame = () => {
     : 20; // Default max
 
   const normalizeDate = (date) => {
-    if (!date) return "Unknown Date";
+    if (!date) return "Unbekanntes Datum";
     const d = new Date(date);
-    return d.toLocaleString("en-US", {
+    return d.toLocaleString("en-DE", {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: false
     });
   };
 
