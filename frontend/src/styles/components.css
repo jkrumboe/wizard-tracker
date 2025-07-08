@@ -246,7 +246,6 @@
     background-color: var(--primary-color);
     border-radius: 12px;
     font-size: var(--font-size);
-    color: white;
     font-weight: bold;
   }
   
@@ -858,7 +857,6 @@
     display: inline-block;
     padding: var(--spacing-sm) var(--spacing-md);
     background-color: var(--primary-color);
-    color: white;
     font-weight: bold;
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -1530,7 +1528,7 @@
 
   .score-table th,
   .score-table td {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     text-align: center;
     border-bottom: 1px solid var(--primary-color);
     transition: all 0.2s ease;
@@ -1721,7 +1719,6 @@
     flex: 0 0 auto;
     margin-left: 10px;
     background-color: #007bff;
-    color: white;
     border: none;
     border-radius: 4px;
     padding: 5px 10px;
@@ -2027,7 +2024,6 @@
   width: 20px;
   height: 20px;
   background-color: var(--primary-color);
-  color: white;
   border-radius: 50%;
   font-size: 0.8rem;
   margin-left: var(--spacing-xs);
@@ -2099,7 +2095,6 @@
 
 .resume-btn {
   background-color: var(--primary-color);
-  color: white;
   border: none;
 }
 
@@ -2251,15 +2246,6 @@
   height: 3px;
   background-color: var(--primary-color);
 } */
-
-/* Game list container */
-.game-list {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  justify-content: center;
-  align-items: center;
-}
 
 /* Make the game-history div scrollable */
 .game-history {

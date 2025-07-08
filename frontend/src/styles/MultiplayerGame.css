@@ -883,7 +883,6 @@
 .action-button {
   border: none;
   background-color: var(--primary);
-  color: white;
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);

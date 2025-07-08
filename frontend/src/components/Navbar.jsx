@@ -4,13 +4,16 @@ import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { useUser } from '../hooks/useUser'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
+// import { useTheme } from '../hooks/useTheme'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from './Icon'
+import ThemeToggle from './ThemeToggle'
 import defaultAvatar from "../assets/default-avatar.png"
 import "../styles/components.css"
 
 const Navbar = () => {
   const { user, player } = useUser()
   const { isOnline } = useOnlineStatus()
+  // const { theme } = useTheme()
   const location = useLocation()
 
   const isActive = (path) => {
@@ -29,15 +32,19 @@ const Navbar = () => {
           Wizard Tracker
         </Link>
         
-        {isOnline && (
-        <Link to={user ? `/profile/${user?.player_id}` : "/login"} className="profile-icon">
-          <img
-            src={player?.avatar || defaultAvatar}
-            alt="Profile"
-            className="navbar-avatar"
-          />
-        </Link>
-        )}
+        <div className="navbar-right">
+          <ThemeToggle />
+          
+          {isOnline && (
+          <Link to={user ? `/profile/${user?.player_id}` : "/login"} className="profile-icon">
+            <img
+              src={player?.avatar || defaultAvatar}
+              alt="Profile"
+              className="navbar-avatar"
+            />
+          </Link>
+          )}
+        </div>
       </div>
       
       <nav className="bottom-navbar">

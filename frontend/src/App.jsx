@@ -20,7 +20,9 @@ import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "./hooks/useGameState"
 import { UserProvider } from "./contexts/UserContext"
 import { OnlineStatusProvider } from "./contexts/OnlineStatusContext"
+import { ThemeProvider } from "./contexts/ThemeContext"
 import authService from "./services/authService"
+import "./styles/theme.css"
 
 function ProtectedRoute({ children, roles }) {
   const [userRole, setUserRole] = useState(null);
@@ -61,11 +63,12 @@ function App() {  useEffect(() => {
   
   return (
     <Router>
-      <UserProvider>
-        <OnlineStatusProvider>
-          <GameStateProvider>
-            <Navbar />
-            <div className="main-container">
+      <ThemeProvider>
+        <UserProvider>
+          <OnlineStatusProvider>
+            <GameStateProvider>
+              <Navbar />
+              <div className="main-container">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/profile/:id" element={<Profile />} />
@@ -107,11 +110,11 @@ function App() {  useEffect(() => {
                   </ProtectedRoute>
                 }
               />
-            </Routes>
-          </div>
-        </GameStateProvider>
-        </OnlineStatusProvider>
-      </UserProvider>
+            </Routes>            </div>
+            </GameStateProvider>
+          </OnlineStatusProvider>
+        </UserProvider>
+      </ThemeProvider>
     </Router>
   )
 }

@@ -84,12 +84,10 @@
 
 .modal-button.primary {
   background-color: var(--primary-color);
-  color: white;
 }
 
 .modal-button.secondary {
   background-color: var(--input-background);
-  color: white;
 }
 
 .modal-button:hover {
