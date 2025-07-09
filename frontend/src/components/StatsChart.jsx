@@ -214,8 +214,8 @@ const StatsChart = ({ playersData, roundData }) => {
       {
         label: 'Underbids',
         data: underbidsData,
-        backgroundColor: 'rgba(96, 165, 250, 0.7)', // Blue
-        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(212, 54, 54, 0.7)', // Red
+        borderColor: 'rgb(243, 10, 10)',
         borderWidth
       }
     ];
