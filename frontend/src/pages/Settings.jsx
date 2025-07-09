@@ -197,10 +197,22 @@ const Settings = () => {
                   <div className="game-info">
                     <div className="game-name">{game.name}</div>
                     <div className="game-details">
-                      <span className="game-date" >Last Played: {formatDate(game.lastPlayed)}</span>
-                      <span className={`game-status ${game.isPaused ? 'paused' : 'finished'}`}>
-                        {game.isPaused ? 'Paused' : 'Finished'}
-                      </span>
+                        <span className="game-date" >
+                            Last Played:
+                            <br />
+                            {formatDate(game.lastPlayed)}</span>
+                        <div className="game-status-container">
+                            <span className={`game-status ${game.isPaused ? 'paused' : 'finished'}`}>
+                            {game.isPaused ? 'Paused' : 'Finished'}
+                            </span>
+                            <button 
+                                className="delete-game-button" 
+                                onClick={() => handleDeleteGame(gameId)}
+                                aria-label="Delete game"
+                            >
+                                <TrashIcon size={18} />
+                            </button>
+                        </div>
                     </div>
                     {game.gameState?.players && (
                       <div className="game-players">
@@ -208,14 +220,8 @@ const Settings = () => {
                         {game.gameState.players.map(player => player.name).join(', ')}
                       </div>
                     )}
+                    
                   </div>
-                  <button 
-                    className="delete-game-button" 
-                    onClick={() => handleDeleteGame(gameId)}
-                    aria-label="Delete game"
-                  >
-                    <TrashIcon size={18} />
-                  </button>
                 </div>
               ))}
             </div>

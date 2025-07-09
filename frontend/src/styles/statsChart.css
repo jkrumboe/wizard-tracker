@@ -22,7 +22,7 @@
 
 .chart-select {
   background-color: var(--input-background);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color) !important;
   color: var(--text-color);
   border-radius: var(--radius-md);
   padding: 0.35rem 0.75rem;
@@ -31,8 +31,33 @@
 
 .player-toggles {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+.player-toggle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-sm) 0 var(--spacing-xs);
+}
+
+.show-all-btn {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: var(--radius-md);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.show-all-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
 }
 
 .player-toggle-buttons {
@@ -51,22 +76,21 @@
   color: var(--text-color);
 }
 
-.player-toggle-btn.active {
-  color: var(--text-white);
-}
-
-.player-toggle-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
 .chart-wrapper {
-  background-color: var(--background-color);
+  background-color: var(--card-background);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
-    padding: var(--spacing-xs);
+  padding: var(--spacing-xs);
   height: 300px;
   position: relative;
+}
+
+.focus-indicator {
+  color: var(--primary-color);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Responsive adjustments */
@@ -83,4 +107,30 @@
 /* Dark mode adjustments */
 html[data-theme="dark"] .player-toggle-btn:not(.active) {
   color: var(--text-color);
+}
+
+/* Dark mode adjustments for charts */
+html[data-theme="dark"] .chart-wrapper {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+html[data-theme="dark"] .chart-select {
+  background-color: var(--card-background);
+  color: var(--text-white);
+}
+
+html[data-theme="dark"] .show-all-btn {
+  background-color: var(--card-background);
+  color: var(--text-white);
+  border-color: var(--border-color);
+}
+
+html[data-theme="dark"] .show-all-btn:hover {
+  background-color: var(--primary-dark);
+  color: var(--text-white);
+}
+
+html[data-theme="dark"] .focus-indicator {
+  color: var(--primary-light);
 }

@@ -79,7 +79,7 @@
 
 /* Game stats container styling */
 .game-in-progress .game-stats-container {
-  margin-top: var(--spacing-lg);
+  /* margin-top: var(--spacing-lg); */
   /* padding: 0; */
   padding-top: var(--spacing-sm);
 }
@@ -135,6 +135,7 @@
 .game-in-progress .finish-btn {
   position: sticky;
   padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
   bottom: calc(var(--bottom-nav-height) + 60px);
   z-index: 99;
 }

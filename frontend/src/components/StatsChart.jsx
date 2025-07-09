@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -71,40 +71,79 @@ const StatsChart = ({ playersData, roundData }) => {
   const [selectedPlayers, setSelectedPlayers] = useState(
     playersData.map(player => player.id)
   );
+  // Track if we're in focus mode (single player)
+  const [focusMode, setFocusMode] = useState(false);
+  // Force re-render when theme changes
+  const [, setThemeChange] = useState(0);
 
-  // Toggle player visibility in chart
-  const togglePlayerVisibility = (playerId) => {
-    setSelectedPlayers(prev => {
-      if (prev.includes(playerId)) {
-        return prev.filter(id => id !== playerId);
-      } else {
-        return [...prev, playerId];
-      }
+  // Listen for theme changes
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          setThemeChange(prev => prev + 1); // Force re-render when theme changes
+        }
+      });
     });
+    
+    observer.observe(document.documentElement, { attributes: true });
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+  
+  // Focus on a player or show all players
+  const togglePlayerFocus = (playerId) => {
+    if (focusMode && selectedPlayers.length === 1 && selectedPlayers[0] === playerId) {
+      // If already focused on this player, show all players
+      setSelectedPlayers(playersData.map(player => player.id));
+      setFocusMode(false);
+    } else {
+      // Focus on this player only
+      setSelectedPlayers([playerId]);
+      setFocusMode(true);
+    }
   };
 
   const generatePointsProgressionData = () => {
+    if (!roundData || roundData.length === 0) {
+      console.log("No round data available for points progression chart");
+      return { labels: [], datasets: [] };
+    }
+    
     // Create round labels
     const labels = roundData.map((_, index) => `Round ${index + 1}`);
     
     // Generate datasets for each selected player
     const datasets = playersData
       .filter(player => selectedPlayers.includes(player.id))
-      .map((player, index) => {
+      .map((player) => {
+        // Get actual index of the player in the full playersData array (for consistent coloring)
+        const originalIndex = playersData.findIndex(p => String(p.id) === String(player.id));
+        
         // Collect points per round for this player
         const pointsData = roundData.map(round => {
-          const playerInRound = round.players.find(p => p.id === player.id);
+          // Use string comparison for safe comparison regardless of type (string/number)
+          const playerInRound = round.players.find(p => 
+            String(p.id) === String(player.id)
+          );
+          
           return playerInRound ? playerInRound.totalScore || 0 : null;
         });
 
+        // Enhance the visual for focused player
+        const isFocused = focusMode && selectedPlayers.length === 1 && String(selectedPlayers[0]) === String(player.id);
+        
         return {
           label: player.name,
           data: pointsData,
-          borderColor: getBorderColorForIndex(index),
-          backgroundColor: getColorForIndex(index),
+          borderColor: getBorderColorForIndex(originalIndex),
+          backgroundColor: getColorForIndex(originalIndex),
           tension: 0.3,
-          pointRadius: 4,
-          fill: false
+          pointRadius: isFocused ? 6 : 4,
+          borderWidth: isFocused ? 3 : 2,
+          fill: isFocused ? 0.1 : false
         };
       });
 
@@ -112,41 +151,50 @@ const StatsChart = ({ playersData, roundData }) => {
   };
 
   const generateBidAccuracyData = () => {
+    // Get selected players with their original indices
+    const selectedPlayersWithIndex = playersData
+      .map((player, index) => ({ player, index }))
+      .filter(item => selectedPlayers.includes(item.player.id));
+    
     // Create player name labels
-    const labels = playersData
-      .filter(player => selectedPlayers.includes(player.id))
-      .map(player => player.name);
+    const labels = selectedPlayersWithIndex.map(item => item.player.name);
     
     // Calculate bid accuracy for each player
-    const bidAccuracyData = playersData
-      .filter(player => selectedPlayers.includes(player.id))
-      .map(player => {
-        const correctBids = player.correctBids || 0;
-        const totalRounds = player.roundsPlayed || 0;
-        return totalRounds > 0 ? (correctBids / totalRounds) * 100 : 0;
-      });
+    const bidAccuracyData = selectedPlayersWithIndex.map(item => {
+      const player = item.player;
+      const correctBids = player.correctBids || 0;
+      const totalRounds = player.roundsPlayed || 0;
+      return totalRounds > 0 ? (correctBids / totalRounds) * 100 : 0;
+    });
+
+    // Get original indices for consistent colors
+    const originalIndices = selectedPlayersWithIndex.map(item => item.index);
 
     const datasets = [{
       label: 'Bid Accuracy (%)',
       data: bidAccuracyData,
-      backgroundColor: labels.map((_, index) => getColorForIndex(index)),
-      borderColor: labels.map((_, index) => getBorderColorForIndex(index)),
-      borderWidth: 1
+      backgroundColor: originalIndices.map(index => getColorForIndex(index)),
+      borderColor: originalIndices.map(index => getBorderColorForIndex(index)),
+      borderWidth: focusMode ? 2 : 1
     }];
 
     return { labels, datasets };
   };
 
   const generateBidDistributionData = () => {
-    // Only show for selected players
-    const filteredPlayers = playersData.filter(player => selectedPlayers.includes(player.id));
+    // Get selected players with their original indices
+    const selectedPlayersWithIndex = playersData
+      .map((player, index) => ({ player, index }))
+      .filter(item => selectedPlayers.includes(item.player.id));
     
     // Create player name labels
-    const labels = filteredPlayers.map(player => player.name);
+    const labels = selectedPlayersWithIndex.map(item => item.player.name);
     
-    const correctBidsData = filteredPlayers.map(player => player.correctBids || 0);
-    const overbidsData = filteredPlayers.map(player => player.overBids || 0);
-    const underbidsData = filteredPlayers.map(player => player.underBids || 0);
+    const correctBidsData = selectedPlayersWithIndex.map(item => item.player.correctBids || 0);
+    const overbidsData = selectedPlayersWithIndex.map(item => item.player.overBids || 0);
+    const underbidsData = selectedPlayersWithIndex.map(item => item.player.underBids || 0);
+    
+    const borderWidth = focusMode ? 2 : 1;
 
     const datasets = [
       {
@@ -154,21 +202,21 @@ const StatsChart = ({ playersData, roundData }) => {
         data: correctBidsData,
         backgroundColor: 'rgba(52, 211, 153, 0.7)', // Green
         borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 1
+        borderWidth
       },
       {
         label: 'Overbids',
         data: overbidsData,
         backgroundColor: 'rgba(249, 115, 22, 0.7)', // Orange
         borderColor: 'rgb(234, 88, 12)',
-        borderWidth: 1
+        borderWidth
       },
       {
         label: 'Underbids',
         data: underbidsData,
         backgroundColor: 'rgba(96, 165, 250, 0.7)', // Blue
         borderColor: 'rgb(59, 130, 246)',
-        borderWidth: 1
+        borderWidth
       }
     ];
 
@@ -176,29 +224,51 @@ const StatsChart = ({ playersData, roundData }) => {
   };
 
   const generatePointsPerRoundData = () => {
-    // Only show for one selected player or the first player if multiple are selected
-    const playerId = selectedPlayers.length > 0 ? selectedPlayers[0] : null;
-    if (!playerId) return { labels: [], datasets: [] };
-
-    const player = playersData.find(p => p.id === playerId);
-    if (!player) return { labels: [], datasets: [] };
-
+    if (!roundData || roundData.length === 0) {
+      console.log("No round data available for points per round chart");
+      return { labels: [], datasets: [] };
+    }
+    
     // Create round labels
     const labels = roundData.map((_, index) => `Round ${index + 1}`);
     
-    // Collect round scores for this player
-    const roundScores = roundData.map(round => {
-      const playerInRound = round.players.find(p => p.id === player.id);
-      return playerInRound && playerInRound.score !== undefined ? playerInRound.score : null;
-    });
+    // In focus mode, show only the focused player
+    // Otherwise, show all selected players
+    const playersToShow = focusMode ? 
+      selectedPlayers.slice(0, 1) : 
+      selectedPlayers;
+      
+    if (playersToShow.length === 0) {
+      return { labels: [], datasets: [] };
+    }
+    
+    // Generate a dataset for each player to show
+    const datasets = playersToShow.map(playerId => {
+      const player = playersData.find(p => String(p.id) === String(playerId));
+      if (!player) {
+        console.log(`Player with ID ${playerId} not found in playersData`);
+        return null;
+      }
+      
+      // Get original index for consistent colors
+      const originalIndex = playersData.findIndex(p => String(p.id) === String(player.id));
+      
+      // Collect round scores for this player
+      const roundScores = roundData.map(round => {
+        // Use string comparison for safe ID matching
+        const playerInRound = round.players.find(p => String(p.id) === String(player.id));
+        const score = playerInRound && playerInRound.score !== undefined ? playerInRound.score : null;
+        return score;
+      });
 
-    const datasets = [{
-      label: `${player.name}'s Points Per Round`,
-      data: roundScores,
-      backgroundColor: chartColors.blue,
-      borderColor: chartColorsBorders.blue,
-      borderWidth: 1
-    }];
+      return {
+        label: `${player.name}'s Points Per Round`,
+        data: roundScores,
+        backgroundColor: getColorForIndex(originalIndex),
+        borderColor: getBorderColorForIndex(originalIndex),
+        borderWidth: focusMode ? 2 : 1
+      };
+    }).filter(Boolean); // Filter out null datasets
 
     return { labels, datasets };
   };
@@ -221,6 +291,15 @@ const StatsChart = ({ playersData, roundData }) => {
 
   // Chart options
   const getChartOptions = () => {
+    // Determine if we're in dark mode by checking the HTML element's data-theme attribute
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    
+    // Use direct color values based on theme
+    const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
+    const borderColor = isDarkMode ? '#4b5563' : '#d1d5db';
+    const gridColor = isDarkMode ? 'rgba(75, 85, 99, 0.2)' : 'rgba(209, 213, 219, 0.5)';
+    const tooltipBackgroundColor = isDarkMode ? '#374151' : '#ffffff';
+    
     const baseOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -230,14 +309,14 @@ const StatsChart = ({ playersData, roundData }) => {
           labels: {
             usePointStyle: true,
             boxWidth: 10,
-            color: 'var(--text-color)'
+            color: textColor
           }
         },
         tooltip: {
-          backgroundColor: 'var(--card-background)',
-          titleColor: 'var(--text-color)',
-          bodyColor: 'var(--text-color)',
-          borderColor: 'var(--border-color)',
+          backgroundColor: tooltipBackgroundColor,
+          titleColor: textColor,
+          bodyColor: textColor,
+          borderColor: borderColor,
           borderWidth: 1,
           padding: 10,
           boxPadding: 5,
@@ -248,11 +327,11 @@ const StatsChart = ({ playersData, roundData }) => {
         y: {
           beginAtZero: true,
           grid: {
-            color: 'var(--border-light)',
+            color: gridColor,
             drawBorder: false
           },
           ticks: {
-            color: 'var(--text-color)'
+            color: textColor
           }
         },
         x: {
@@ -261,7 +340,7 @@ const StatsChart = ({ playersData, roundData }) => {
             drawBorder: false
           },
           ticks: {
-            color: 'var(--text-color)'
+            color: textColor
           }
         }
       }
@@ -277,7 +356,7 @@ const StatsChart = ({ playersData, roundData }) => {
             title: {
               display: true,
               text: 'Points Progression',
-              color: 'var(--text-color)',
+              color: textColor,
               font: { size: 16 }
             }
           }
@@ -290,7 +369,7 @@ const StatsChart = ({ playersData, roundData }) => {
             title: {
               display: true,
               text: 'Bid Accuracy',
-              color: 'var(--text-color)',
+              color: textColor,
               font: { size: 16 }
             }
           },
@@ -302,7 +381,7 @@ const StatsChart = ({ playersData, roundData }) => {
               title: {
                 display: true,
                 text: 'Accuracy (%)',
-                color: 'var(--text-color)'
+                color: textColor
               }
             }
           }
@@ -315,7 +394,7 @@ const StatsChart = ({ playersData, roundData }) => {
             title: {
               display: true,
               text: 'Bid Distribution',
-              color: 'var(--text-color)',
+              color: textColor,
               font: { size: 16 }
             }
           },
@@ -326,7 +405,7 @@ const StatsChart = ({ playersData, roundData }) => {
               title: {
                 display: true,
                 text: 'Number of Bids',
-                color: 'var(--text-color)'
+                color: textColor
               }
             }
           }
@@ -339,7 +418,7 @@ const StatsChart = ({ playersData, roundData }) => {
             title: {
               display: true,
               text: 'Points Per Round',
-              color: 'var(--text-color)',
+              color: textColor,
               font: { size: 16 }
             }
           },
@@ -401,19 +480,36 @@ const StatsChart = ({ playersData, roundData }) => {
         </div>
 
         <div className="player-toggles">
-            <label>Show Players:</label>
+            <div className="player-toggle-header">
+                <label>
+                    {focusMode ? 
+                        <span className="focus-indicator">Focused on Player</span> : 
+                        'Click a player to focus on their data'}
+                </label>
+                {focusMode && (
+                    <button 
+                        className="show-all-btn"
+                        onClick={() => {
+                            setSelectedPlayers(playersData.map(player => player.id));
+                            setFocusMode(false);
+                        }}
+                    >
+                        Show All Players
+                    </button>
+                )}
+            </div>
             <div className="player-toggle-buttons">
             {playersData.map((player, index) => (
                 <button
                 key={player.id}
-                className={`player-toggle-btn ${selectedPlayers.includes(player.id) ? 'active' : ''}`}
+                className={`player-toggle-btn ${selectedPlayers.includes(player.id) ? 'active' : ''} ${focusMode && selectedPlayers[0] === player.id ? 'focused' : ''}`}
                 style={{ 
                     borderColor: getBorderColorForIndex(index),
                     backgroundColor: selectedPlayers.includes(player.id) 
                     ? getColorForIndex(index) 
                     : 'transparent'
                 }}
-                onClick={() => togglePlayerVisibility(player.id)}
+                onClick={() => togglePlayerFocus(player.id)}
                 >
                 {player.name}
                 </button>

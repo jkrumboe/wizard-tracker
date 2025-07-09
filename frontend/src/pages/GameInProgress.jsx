@@ -200,7 +200,7 @@ const GameInProgress = () => {
         if (roundPlayer && roundPlayer.call !== null && roundPlayer.made !== null) {
           totalBids += roundPlayer.call;
           totalTricks += roundPlayer.made;
-          totalPoints += roundPlayer.totalScore || 0;
+          // Don't add totalScore here - we'll get it directly from the current player
           
           if (roundPlayer.call === roundPlayer.made) {
             correctBids++;
@@ -237,6 +237,10 @@ const GameInProgress = () => {
         }, 0) / roundsPlayed 
         : 0;
 
+      // Get the current player's total score from the current round data
+      // If there are no rounds yet, default to 0
+      const playerCurrentTotalScore = player.totalScore || 0;
+
       return {
         id: player.id,
         name: player.name,
@@ -247,7 +251,7 @@ const GameInProgress = () => {
         avgBid: avgBid.toFixed(1),
         avgTricks: avgTricks.toFixed(1),
         avgPointsPerRound: avgPointsPerRound.toFixed(1),
-        totalPoints,
+        totalPoints: playerCurrentTotalScore, // Use the player's current total score
         overBids,
         underBids,
         bestRound,
@@ -430,7 +434,7 @@ const GameInProgress = () => {
                       <div className="stats-section">
                         <div className="stats-section-title">Game Performance</div>
                         <div className="stats-cards" id="game-performance">
-                          <p>Total Points: <span>{Math.round(playerStats.totalPoints)}</span></p>
+                          <p>Total Points: <span>{playerStats.totalPoints}</span></p>
                           <p>Highest Round: <span>{Math.round(playerStats.bestRound)}</span></p>
                           <p>Correct Bids: <span>{Math.round(playerStats.correctBids)}</span></p>
                           <p>Total Tricks Won: <span>{Math.round(playerStats.totalTricks || playerStats.avgTricks * playerStats.roundsPlayed, 2)}</span></p>

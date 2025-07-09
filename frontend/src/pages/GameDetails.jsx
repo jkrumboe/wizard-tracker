@@ -198,11 +198,14 @@ const GameDetails = () => {
       return { playersData: [], roundData: [] };
     }
     
-    // Prepare player data
+    // Prepare player data with consistent ID format
     const playersData = playerStats.map(playerStat => {
+      // Ensure we're using the string version of ID for consistent lookup
+      const stringId = String(playerStat.id);
+      
       return {
-        id: playerStat.id,
-        name: playerDetails[playerStat.id]?.name || 'Unknown',
+        id: playerStat.id, // Keep the original ID format for StatsChart
+        name: playerDetails[stringId]?.name || 'Unknown',
         correctBids: playerStat.correctBids || 0,
         overBids: playerStat.overbids || 0,
         underBids: playerStat.underbids || 0,
@@ -231,6 +234,9 @@ const GameDetails = () => {
       
       return { ...round, players };
     });
+    
+    // Log data for debugging (will be removed in production)
+    console.log("Chart data prepared:", { playersData, roundData });
     
     return { playersData, roundData };
   };
@@ -351,7 +357,16 @@ const GameDetails = () => {
               {showChart ? (
                 <div className="chart-view-container">
                   {game.round_data && game.round_data.length > 0 ? (
-                    <StatsChart {...prepareChartData()} />
+                    (() => {
+                      const chartData = prepareChartData();
+                      if (!chartData.playersData || chartData.playersData.length === 0) {
+                        return <div className="no-chart-data">Error: Missing player data for chart visualization</div>;
+                      }
+                      if (!chartData.roundData || chartData.roundData.length === 0) {
+                        return <div className="no-chart-data">Error: Missing round data for chart visualization</div>;
+                      }
+                      return <StatsChart playersData={chartData.playersData} roundData={chartData.roundData} />;
+                    })()
                   ) : (
                     <div className="no-chart-data">No round data available for chart visualization</div>
                   )}
