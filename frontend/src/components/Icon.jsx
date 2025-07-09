@@ -61,4 +61,5 @@ export const PauseIcon = (props) => <Icon name="Pause" {...props} />;
 export const PlayIcon = (props) => <Icon name="Play" {...props} />;
 export const StatIcon = (props) => <Icon name="BarChart2" {...props} />;
 export const ChartLineIcon = (props) => <Icon name="LineChart" {...props} />;
+export const DownloadIcon = (props) => <Icon name="Download" {...props} />;
 

@@ -1,0 +1,360 @@
+/* Settings Page Styles */
+.settings-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: var(--spacing-lg);
+  animation: fadeIn 0.3s ease-in-out;
+  overflow-y: auto;
+  width: 100%;
+  min-height: 100%;
+  flex: 1;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  color: var(--primary-color);
+}
+
+.settings-header h1 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.settings-section {
+  background-color: var(--card-background);
+  border-radius: 12px;
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-light);
+}
+
+.settings-section h2 {
+  font-size: 1.3rem;
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  padding-bottom: var(--spacing-sm);
+}
+
+/* Theme Settings */
+.settings-option {
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.settings-option span {
+    font-size: 1.1rem;
+    margin: 0 var(--spacing-sm);
+}
+
+.checkbox-label, .radio-group {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.radio-group {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.option-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Storage Info */
+.storage-info {
+  display: flex;
+}
+
+.storage-metric {
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0;
+  flex-grow: 1;
+}
+
+.storage-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+/* Settings Actions */
+.settings-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.settings-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--background-light);
+  color: var(--text-color);
+}
+
+.settings-button:hover {
+  background-color: var(--background-hover);
+}
+
+.danger-button {
+  background-color: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger-color);
+}
+
+.danger-button:hover {
+  background-color: rgba(var(--danger-rgb), 0.2);
+}
+
+.refresh-button {
+  background-color: rgba(var(--info-rgb), 0.1);
+  color: var(--info-color);
+}
+
+.refresh-button:hover {
+  background-color: rgba(var(--info-rgb), 0.2);
+}
+
+.export-button {
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+}
+
+.export-button:hover {
+  background-color: rgba(var(--success-rgb), 0.2);
+}
+
+/* Games List */
+.games-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm);
+  border-radius: 8px;
+  background-color: var(--card-background-alt);
+  margin: var(--spacing-sm) var(--spacing-xs);
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+}
+
+.game-item:hover {
+  border-color: var(--border-color);
+  background-color: var(--background-hover);
+}
+
+.game-info {
+  flex-grow: 1;
+}
+
+.game-name {
+  font-weight: 500;
+}
+
+.game-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.game-players {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.game-status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.game-status.paused {
+  background-color: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning-color);
+}
+
+.game-status.finished {
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+}
+
+.delete-game-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 6px;
+  padding-right: 0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* Confirm Dialog */
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.confirm-dialog {
+  background-color: var(--card-background);
+  border-radius: 12px;
+  padding: var(--spacing-lg);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--card-shadow-lg);
+  animation: slideUp 0.3s ease-in-out;
+}
+
+.confirm-dialog h3 {
+  margin-top: 0;
+  color: var(--danger-color);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.confirm-button, .cancel-button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  margin: 0;
+}
+
+.cancel-button {
+  background-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.cancel-button:hover {
+  background-color: var(--background-hover);
+}
+
+.confirm-button.danger-button {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.confirm-button.danger-button:hover {
+  background-color: var(--danger-color-dark);
+}
+
+/* Message Notification */
+.settings-message {
+    position: fixed;
+    top: var(--spacing-md);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-lg);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.settings-message.success {
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(var(--success-rgb), 0.2);
+}
+
+.settings-message.error {
+  background-color: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(var(--danger-rgb), 0.2);
+}
+
+.settings-message.info {
+  background-color: rgba(var(--info-rgb));
+  color: var(--text-color);
+  border: 1px solid rgba(var(--info-rgb));
+}
+
+.no-games {
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: var(--spacing-md);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {    
+  .settings-actions {
+    flex-direction: column;
+  }
+  
+  .settings-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+}

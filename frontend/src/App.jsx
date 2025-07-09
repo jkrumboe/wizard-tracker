@@ -11,6 +11,7 @@ import GameDetails from "./pages/GameDetails"
 import GameInProgress from "./pages/GameInProgress"
 import Lobby from "./pages/Lobby"
 import MultiplayerGame from "./pages/MultiplayerGame"
+import Settings from "./pages/Settings"
 import Navbar from "./components/Navbar"
 import OnlineProtectedRoute from "./components/OnlineProtectedRoute"
 import AdminDashboard from "./pages/AdminDashboard";
@@ -100,7 +101,7 @@ function App() {  useEffect(() => {
                     <Login />
                   </OnlineProtectedRoute>
                 }/>
-                <Route path="/settings" element={<Home />} />
+                <Route path="/settings" element={<Settings />} />
               <Route
                 path="/admin"
                 element={

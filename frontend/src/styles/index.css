@@ -7,6 +7,11 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  overflow-y: auto;
+}
+
 :root {
   /* Common variables for both themes */
   --not-ready-color: #da3c3c;
@@ -26,8 +31,15 @@
   
   /* Status colors */
   --success-color: #34d399;
-  --error-color: #f87171;
+  --success-rgb: 52, 211, 153;
+  --danger-color: #f87171;
+  --danger-rgb: 248, 113, 113;
+  --danger-color-dark: #dc2626;
   --warning-color: #fbbf24;
+  --warning-rgb: 251, 191, 36;
+  --info-color: #0ea5e9;
+  --info-rgb: 14, 165, 233;
+  --error-color: #f87171;
   
   /* Text colors */
   --text-color: #2d3748;
@@ -58,6 +70,15 @@
   --accent-color: #fbbf24;
   
   /* Status colors */
+  --success-color: #4ade80;
+  --success-rgb: 74, 222, 128;
+  --danger-color: #f87171;
+  --danger-rgb: 248, 113, 113;
+  --danger-color-dark: #dc2626;
+  --warning-color: #facc15;
+  --warning-rgb: 250, 204, 21;
+  --info-color: #38bdf8;
+  --info-rgb: 56, 189, 248;
   --success-color: #34d399;
   --error-color: #f87171;
   --warning-color: #fbbf24;
@@ -321,12 +342,13 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 .main-container {
   padding-top: var(--top-nav-height); /* Space for top navbar */
   padding-bottom: var(--bottom-nav-height); /* Space for bottom navbar */
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding-left: var(--spacing-lg);
   padding-right: var(--spacing-lg);
+  overflow-y: auto; /* Enable scrolling on the main container */
   overflow-y: auto;
   display: flex;
   flex-direction: column;

@@ -195,7 +195,6 @@
   .game-date {
     font-weight: 500;
     font-size: 1rem;
-    border-bottom: var(--primary-color) solid 2px;
     text-align: center;
     padding: var(--spacing-xs);
     width: 100%;
@@ -662,13 +661,13 @@
     overflow-y: auto; /* Enable vertical scrolling */
   }
   
-  .game-item {
+  /* .game-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-sm) 0;
     border-bottom: 1px solid var(--border-color);
-  }
+  } */
   
   .view-all-stats {
     display: block;

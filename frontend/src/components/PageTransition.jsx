@@ -165,7 +165,7 @@ const PageTransition = ({
   }
 
   return (
-    <div className={`page-content ${showContent ? 'page-content-visible' : ''}`}>
+    <div className={`page-content ${showContent ? 'page-content-visible' : ''}`} style={{ overflowY: 'auto' }}>
       {children}
     </div>
   );
