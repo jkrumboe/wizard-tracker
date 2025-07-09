@@ -507,7 +507,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   margin: 0 10%;
   border: 3px dashed var(--primary-color);
   color: var(--primary-color);
-  font-size: 1.9rem;
+  font-size: 1.4rem;
   padding: 0;
 }
 

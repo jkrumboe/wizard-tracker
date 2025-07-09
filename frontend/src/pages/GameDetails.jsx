@@ -251,6 +251,7 @@ const GameDetails = () => {
             <Link to="/" className="back-link">
               <ArrowLeftIcon className="back-icon" />
             </Link>
+            <h1 id="header-game-detail-badge">Game Details </h1>
             <div className="toggle-section">
                 <button
                   className="game-control-btn"
@@ -263,7 +264,7 @@ const GameDetails = () => {
                 </button>
             </div>
           </div>
-          <h1 id="header-game-detail-badge">Game Details {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
+          <h1 id="header-game-detail-badge">{game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
           <div className="game-date">Finished: {formattedDate}</div>
           {/* <div className="game-date">Duration: {duration}</div> */}
           <div className="game-winner">
