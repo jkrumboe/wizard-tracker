@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# online-toggle.sh - A script to toggle online/offline mode in the Wizard Tracker app
+# online-toggle.sh - A script to toggle online/offline mode in the KeepWiz app
 
 # Ensure this script is only run inside the container
 if [ ! -f /.dockerenv ]; then

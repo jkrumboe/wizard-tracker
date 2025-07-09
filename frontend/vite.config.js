@@ -25,7 +25,7 @@ export default defineConfig({  server: {
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {
-        name: "Wizard Tracker",
+        name: "KeepWiz",
         short_name: "WizTracker",
         description: "Track your Wizard card game stats and performance",
         theme_color: "#4A90E2",

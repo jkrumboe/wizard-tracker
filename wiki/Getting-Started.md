@@ -1,6 +1,6 @@
-# Getting Started with Wizard Tracker
+# Getting Started with KeepWiz
 
-Welcome to Wizard Tracker! This guide will help you get the application up and running for both development and production use.
+Welcome to KeepWiz! This guide will help you get the application up and running for both development and production use.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ Before you begin, ensure you have the following installed:
 
 ## Quick Start with Docker Compose
 
-The simplest way to get Wizard Tracker running is with Docker Compose:
+The simplest way to get KeepWiz running is with Docker Compose:
 
 1. Clone the repository:
    ```bash

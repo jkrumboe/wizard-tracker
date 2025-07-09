@@ -1,5 +1,5 @@
-// Service Worker for Wizard Tracker PWA
-const CACHE_NAME = "wizard-tracker-v1"
+// Service Worker for KeepWiz PWA
+const CACHE_NAME = "keep-wiz-v1.0.0"
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/pwa-192x192.png", "/icons/pwa-512x512.png"]
 
 // Install event - cache assets

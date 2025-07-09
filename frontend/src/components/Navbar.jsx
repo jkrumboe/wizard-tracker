@@ -29,7 +29,7 @@ const Navbar = () => {
     <>
       <div className="top-navbar">
         <Link to="/" className="navbar-logo">
-          Wizard Tracker
+          KeepWiz
         </Link>
         
         <div className="navbar-right">

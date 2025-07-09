@@ -1,7 +1,7 @@
 @echo off
 REM test-online-mode.bat - A Windows script to test online/offline functionality
 
-echo === Wizard Tracker Online Mode Test Script ===
+echo === KeepWiz Online Mode Test Script ===
 echo.
 
 if "%1"=="on" (

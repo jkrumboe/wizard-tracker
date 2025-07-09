@@ -2,7 +2,7 @@
 
 ## Online/Offline Mode
 
-Wizard Tracker supports an "offline mode" where all online features (multiplayer, leaderboards, etc.) are disabled. This is useful for maintenance periods or for users who want to use the application in a completely offline environment.
+KeepWiz supports an "offline mode" where all online features (multiplayer, leaderboards, etc.) are disabled. This is useful for maintenance periods or for users who want to use the application in a completely offline environment.
 
 > **Note:** The application starts in offline mode by default for security reasons.
 

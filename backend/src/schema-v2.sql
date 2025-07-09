@@ -1,4 +1,4 @@
--- Enhanced Multiplayer Database Schema for Wizard Tracker with Colyseus
+-- Enhanced Multiplayer Database Schema for KeepWiz with Colyseus
 -- Optimized for real-time multiplayer gameplay and efficient data access
 
 -- Clear existing data (for development)

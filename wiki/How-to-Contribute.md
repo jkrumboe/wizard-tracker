@@ -1,6 +1,6 @@
 # How to Contribute
 
-We love your input! We want to make contributing to Wizard Tracker as easy and transparent as possible, whether it's:
+We love your input! We want to make contributing to KeepWiz as easy and transparent as possible, whether it's:
 
 - Reporting a bug
 - Discussing the current state of the code
@@ -50,7 +50,7 @@ When filing an issue, make sure to include:
 Feature requests are welcome! When suggesting a feature, please:
 
 - Explain the problem you're trying to solve
-- Explain why this feature would be useful to most Wizard Tracker users
+- Explain why this feature would be useful to most KeepWiz users
 - Be as specific as possible with your requirements
 - Include mockups or diagrams if applicable
 

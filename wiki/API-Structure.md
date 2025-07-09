@@ -1,6 +1,6 @@
 # API Structure
 
-This document outlines the backend API endpoints available in the Wizard Tracker application, their functionality, and usage examples.
+This document outlines the backend API endpoints available in the KeepWiz application, their functionality, and usage examples.
 
 ## Base URL
 

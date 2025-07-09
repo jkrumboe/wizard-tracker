@@ -1,4 +1,4 @@
-# Wizard Tracker
+# KeepWiz
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -53,7 +53,7 @@ npm run dev
 
 ## 🔌 Online/Offline Mode
 
-Wizard Tracker supports an offline mode that disables all online features (multiplayer, leaderboards, etc.) while still allowing local gameplay. This feature is useful during maintenance or for users who want to use the application in a completely offline environment.
+KeepWiz supports an offline mode that disables all online features (multiplayer, leaderboards, etc.) while still allowing local gameplay. This feature is useful during maintenance or for users who want to use the application in a completely offline environment.
 
 ### Toggle Online/Offline Mode (Admin Only)
 

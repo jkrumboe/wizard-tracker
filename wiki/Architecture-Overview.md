@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Wizard Tracker is built using a modern web application architecture, combining a React frontend with a Node.js backend and PostgreSQL database. This document provides a high-level overview of the system's components and their interactions.
+KeepWiz is built using a modern web application architecture, combining a React frontend with a Node.js backend and PostgreSQL database. This document provides a high-level overview of the system's components and their interactions.
 
 ## System Architecture
 

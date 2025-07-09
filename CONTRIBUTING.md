@@ -1,6 +1,6 @@
-# Contributing to Wizard Tracker
+# Contributing to KeepWiz
 
-First off, thank you for considering contributing to Wizard Tracker! It's people like you that make Wizard Tracker such a great tool.
+First off, thank you for considering contributing to KeepWiz! It's people like you that make KeepWiz such a great tool.
 
 ## Code of Conduct
 

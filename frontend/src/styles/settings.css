@@ -29,7 +29,6 @@
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
   box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-light);
 }
 
 .settings-section h2 {
