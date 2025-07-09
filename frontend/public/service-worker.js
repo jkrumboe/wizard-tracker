@@ -4,8 +4,7 @@ const urlsToCache = [
   "/", 
   "/index.html", 
   "/manifest.json", 
-  "/icons/pwa-192x192-v3.png", 
-  "/icons/pwa-512x512-v3.png",
+  "/icons/pwa-logo.png",
   "/vite.svg"
 ]
 
