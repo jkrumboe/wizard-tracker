@@ -701,7 +701,6 @@
   gap: var(--spacing-md);
   font-size: 1.1em;
   align-items: center;
-  margin-bottom: var(--spacing-md);
   padding: 0 var(--spacing-md);
 }
 
@@ -827,9 +826,11 @@
 
 /* Round score styling to match GameInProgress */
 .round-score {
+  position: relative;
+  top: -8px;
+  left: -2px;
   font-size: 0.5em;
   font-weight: 600;
-  margin-left: var(--spacing-xs);
 }
 
 .round-score.positive {

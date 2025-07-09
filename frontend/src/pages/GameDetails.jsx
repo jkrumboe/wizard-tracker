@@ -4,11 +4,14 @@ import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { getGameById } from "../services/gameService"
 import { getPlayerById } from "../services/playerService"
-import { ArrowLeftIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
+import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon } from "../components/Icon"
 import PerformanceMetric from "../components/PerformanceMetric"
+import StatsChart from "../components/StatsChart"
 import defaultAvatar from "../assets/default-avatar.png" 
 import "../styles/performanceMetrics.css"
 import "../styles/scorecard.css"
+import "../styles/statsChart.css"
+import "../styles/chartToggle.css"
 import PageTransition from "../components/PageTransition"
 import "../styles/pageTransition.css"
 
@@ -23,6 +26,7 @@ const GameDetails = () => {
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('stats')
+  const [showChart, setShowChart] = useState(false)
   const [windowWidth, setWindowWidth] = useState(() => {
     // Safely handle window access for SSR
     return typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -188,6 +192,49 @@ const GameDetails = () => {
     hour12: false
   });
 
+  // Prepare data for StatsChart component
+  const prepareChartData = () => {
+    if (!game || !game.round_data) {
+      return { playersData: [], roundData: [] };
+    }
+    
+    // Prepare player data
+    const playersData = playerStats.map(playerStat => {
+      return {
+        id: playerStat.id,
+        name: playerDetails[playerStat.id]?.name || 'Unknown',
+        correctBids: playerStat.correctBids || 0,
+        overBids: playerStat.overbids || 0,
+        underBids: playerStat.underbids || 0,
+        roundsPlayed: game.round_data.length || 0
+      };
+    });
+    
+    // Prepare round data with accumulated scores
+    const roundData = game.round_data.map((round, roundIndex) => {
+      // Calculate accumulated scores for each player up to this round
+      const players = round.players.map(player => {
+        // Find all rounds for this player up to the current round
+        const playerRounds = game.round_data
+          .slice(0, roundIndex + 1)
+          .map(r => r.players.find(p => compareIds(p.id, player.id)))
+          .filter(Boolean);
+          
+        // Calculate total score up to this round
+        const totalScore = playerRounds.reduce((sum, r) => sum + (r.score || 0), 0);
+        
+        return {
+          ...player,
+          totalScore
+        };
+      });
+      
+      return { ...round, players };
+    });
+    
+    return { playersData, roundData };
+  };
+
   // const duration = game.duration_seconds
   //   ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
   //   : "N/A";
@@ -288,27 +335,47 @@ const GameDetails = () => {
 
           {(windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">
-              <h2>Final Results</h2>
-              <div className="results-table">
-                {sortedPlayers.map((player, index) => (
-                  <div key={player.id} className="results-row">
-                    <div className="rank-col">{index + 1}</div>
-                    <div className="player-col">
-                      {game.is_local ? (
-                        <div className="player-info">
-                          <span>{player.name}</span>
-                        </div>
-                      ) : (
-                        <Link to={`/profile/${player.id}`} className="player-link">
-                          <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
-                          <span>{player.name}</span>
-                        </Link>
-                      )}
-                    </div>
-                    <div className="score-col">{player.score}</div>
-                    <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
-                      Adv. Stats
-                    </button>
+              <div className="results-header">
+                <h2>Final Results</h2>
+                <button 
+                  className={`chart-toggle-btn ${showChart ? 'active' : ''}`} 
+                  onClick={() => setShowChart(!showChart)}
+                  aria-label={showChart ? "Show table view" : "Show chart view"}
+                >
+                  {showChart ? "Table View" : "Chart View"}
+                  {showChart ? <GamepadIcon size={18} /> : <ChartLineIcon size={18} />}
+                </button>
+              </div>
+
+              {showChart ? (
+                <div className="chart-view-container">
+                  {game.round_data && game.round_data.length > 0 ? (
+                    <StatsChart {...prepareChartData()} />
+                  ) : (
+                    <div className="no-chart-data">No round data available for chart visualization</div>
+                  )}
+                </div>
+              ) : (
+                <div className="results-table">
+                  {sortedPlayers.map((player, index) => (
+                    <div key={player.id} className="results-row">
+                      <div className="rank-col">{index + 1}</div>
+                      <div className="player-col">
+                        {game.is_local ? (
+                          <div className="player-info">
+                            <span>{player.name}</span>
+                          </div>
+                        ) : (
+                          <Link to={`/profile/${player.id}`} className="player-link">
+                            <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
+                            <span>{player.name}</span>
+                          </Link>
+                        )}
+                      </div>
+                      <div className="score-col">{player.score}</div>
+                      <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
+                        Adv. Stats
+                      </button>
                     {compareIds(selectedPlayerId, player.id) && (() => {
                       // Find player stats once and store in variable for efficient access
                       // Convert IDs to strings for comparison to handle type mismatches
@@ -464,6 +531,7 @@ const GameDetails = () => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
           )}
         </div>

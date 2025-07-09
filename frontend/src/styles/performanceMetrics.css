@@ -281,6 +281,83 @@
   background-color: #FF9800; /* Orange color */
 }
 
+/* Additional Stats Styling */
+.additional-stats {
+  background-color: var(--card-background);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  gap: var(--spacing-xs);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  color: var(--text-secondary-color);
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.stat-value.highlight {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.stat-value.positive {
+  color: var(--ready-color);
+}
+
+.stat-value.negative {
+  color: var(--not-ready-color);
+}
+
+.stat-explanation {
+  color: var(--text-secondary-color);
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-left: auto;
+  text-align: right;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* Make the stat cards look more consistent in GameInProgress */
+.player-stat-card {
+  background-color: var(--background-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.player-stat-name {
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: var(--spacing-xs);
+}
+
 @media (max-width: 768px) {
   .stats-cards {
     grid-template-columns: 1fr;

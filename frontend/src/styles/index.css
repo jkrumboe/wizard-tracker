@@ -36,6 +36,7 @@
   
   /* Background colors */
   --background-color: #dde4eb;
+  --background-rgb: 221, 228, 235; /* RGB values for background color */
   --card-background: #f0f7ff;
   --card-background-light: #e2e8f0;
   --card-background-alt: #dce1e7;
@@ -68,6 +69,7 @@
   
   /* Background colors */
   --background-color: #1f2937;
+  --background-rgb: 31, 41, 55; /* RGB values for background color in dark mode */
   --card-background: #111827;
   --card-background-light: #161F2E;
   --card-background-alt: #1a202c;
@@ -205,7 +207,6 @@ button,
 }
 
 button:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
 }
 

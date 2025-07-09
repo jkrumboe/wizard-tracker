@@ -1,0 +1,45 @@
+/* Stats grid layout and styling */
+
+.game-stats-container {
+  padding: var(--spacing-md);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+/* Player stat card is the container for each player's stats */
+.player-stat-card {
+  background-color: var(--card-background-alt);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Style the stats section headers in the card */
+.player-stat-card .stats-section-title {
+  font-size: 0.95rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+/* These styles are now in gameInProgress.css */
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .game-stats-container {
+    padding: var(--spacing-sm);
+  }
+  
+  .game-in-progress {
+    padding-bottom: calc(var(--bottom-nav-height) + 100px); /* More space on mobile */
+  }
+}

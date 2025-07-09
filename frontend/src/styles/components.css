@@ -372,8 +372,7 @@
     font-weight: 700;
     font-size: 1.5rem;
     color: var(--primary-color);
-    padding: var(--spacing-sm);
-    padding-top: 0;
+    padding: 0;
   }
   
   .stat-change {
@@ -461,14 +460,7 @@
     border: 1px solid var(--border-color);
   }
   
-  .results-header {
-    display: grid;
-    grid-template-columns: 0.5fr 2fr 1fr;
-    padding: 0.75rem 0.5rem;
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    font-weight: 600;
-  }
+  
   
   .results-row {
     display: flex;
@@ -1495,8 +1487,6 @@
     height: 22px;
   }
 
-
-
   .positive-score {
     color: var(--success-color);
   }
@@ -1514,7 +1504,6 @@
     width: 100%;
     background-color: var(--success-color);
     color: var(--text-color);
-    padding: var(--spacing-md);
     border: none;
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -1690,6 +1679,8 @@
   
   .player-stats-grid {
     display: grid;
+    height: 100vh;
+    overflow-y: hidden;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--spacing-md);
   }
@@ -1968,10 +1959,11 @@
 
 .tab-panel {
   width: 100%;
-  overflow-y: hidden;
+  /* overflow-y: auto;  */
   flex: 1;
   display: flex;
-  flex-direction: column;;
+  flex-direction: column;
+  padding-bottom: calc(var(--spacing-xl) * 2); /* Extra padding at bottom for scroll area */
 }
 
 /* Paused Games List */
@@ -2322,6 +2314,7 @@
 
 /* Game Controls and Menu Styles */
 
+/* General .game-bottom-section styling for non-GameInProgress pages */
 .game-bottom-section {
   display: flex;
   align-items: center;
@@ -2331,7 +2324,7 @@
   right: 0;
   bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
   z-index: 100;
-  padding: 0 var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   gap: var(--spacing-md);
 }
 
@@ -2734,8 +2727,12 @@
 
 .game-stats-container h2 {
   color: var(--primary-color);
-  margin-bottom: var(--spacing-sm);
+  margin: 0;
   text-align: center;
+}
+
+.game-stats-container h2::after {
+  display: none;
 }
 
 .stats-description {
@@ -2794,8 +2791,7 @@
 .stat-row {
   display: flex;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
-  padding: var(--spacing-xs) 0;
+  padding: 0 var(--spacing-sm);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -2850,7 +2846,6 @@
   
   .stat-row {
     flex-direction: column;
-    align-items: flex-start;
     gap: var(--spacing-xs);
   }
   

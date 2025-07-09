@@ -9,7 +9,13 @@ import LoadGameDialog from "../components/LoadGameDialog"
 import GameMenuModal from "../components/GameMenuModal"
 import PauseConfirmationModal from "../components/PauseConfirmationModal"
 import { SaveIcon, PauseIcon, MenuIcon, StatIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
+import PerformanceMetric from "../components/PerformanceMetric"
+import "../styles/performanceMetrics.css"
+import "../styles/stats.css"
+import "../styles/gameInProgress.css"
+import "../styles/statsChart.css"
 import { ArrowLeftIcon, ArrowRight } from "lucide-react";
+import StatsChart from "../components/StatsChart";
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -33,6 +39,13 @@ const GameInProgress = () => {
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [showGameMenuModal, setShowGameMenuModal] = useState(false)
   const [showPauseModal, setShowPauseModal] = useState(false)
+  const [selectedPlayerId, setSelectedPlayerId] = useState(null)
+  const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
+  
+  // Function to toggle player stats visibility
+  const togglePlayerStats = (playerId) => {
+    setSelectedPlayerId(prev => prev === playerId ? null : playerId)
+  }
 
   // We don't need the click outside handler for a modal, removing this useEffect
 
@@ -180,6 +193,15 @@ const GameInProgress = () => {
       const avgBid = roundsPlayed > 0 ? totalBids / roundsPlayed : 0;
       const avgTricks = roundsPlayed > 0 ? totalTricks / roundsPlayed : 0;
       const avgPointsPerRound = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
+      const avgDiff = roundsPlayed > 0 ? 
+        allRoundsData.reduce((sum, round) => {
+          const roundPlayer = round.players.find(p => p.id === player.id);
+          if (roundPlayer && roundPlayer.call !== null && roundPlayer.made !== null) {
+            return sum + Math.abs(roundPlayer.made - roundPlayer.call);
+          }
+          return sum;
+        }, 0) / roundsPlayed 
+        : 0;
 
       return {
         id: player.id,
@@ -197,7 +219,7 @@ const GameInProgress = () => {
         bestRound,
         worstRound,
         maxConsecutiveCorrect,
-        biddingTendency: avgBid > avgTricks ? 'Over-bidder' : avgBid < avgTricks ? 'Under-bidder' : 'Accurate bidder'
+        avgDiff: avgDiff.toFixed(2)
       };
     });
   };
@@ -232,7 +254,7 @@ const GameInProgress = () => {
         <span className="total-calls">
           Calls: {totalCalls} |  {(currentRound?.cards - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
         </span>
-      </div>  
+      </div>
 
       {isLastRound && isRoundComplete && (
         <button className="finish-btn" onClick={handleFinishGame}>
@@ -309,99 +331,199 @@ const GameInProgress = () => {
         <div className="tab-panel">
           <div className="game-stats-container">
             <h2>Player Statistics</h2>
-          
-            <div className="stats-grid">
-              {detailedStats.map((playerStats) => (
-                <div key={playerStats.id} className="player-stat-card">
-              <h3 className="player-stat-name">{playerStats.name}</h3>
-              
-              <div className="stat-section">
-                <h4>
-                  <StatIcon style={{ marginRight: 4 }} />
-                  Bidding Performance
-                </h4>
-                <div className="stat-row">
-                  <span className="stat-label">Bid Accuracy:</span>
-                  <span className="stat-value highlight">{playerStats.bidAccuracy}%</span>
-                  <span className="stat-explanation">
-                ({playerStats.correctBids}/{playerStats.roundsPlayed} perfect bids)
-                  </span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Bidding Style:</span>
-                  <span className="stat-value">{playerStats.biddingTendency}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Avg. Bid:</span>
-                  <span className="stat-value">{playerStats.avgBid}</span>
-                  <span className="stat-explanation">tricks per round</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Avg. Made:</span>
-                  <span className="stat-value">{playerStats.avgTricks}</span>
-                  <span className="stat-explanation">tricks per round</span>
-                </div>
-              </div>
+            
+            <div className="stats-subtabs">
+              <button 
+                className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
+                onClick={() => setStatsSubTab('chart')}
+              >
+                Charts
+              </button>
+              <button 
+                className={`stats-subtab-btn ${statsSubTab === 'details' ? 'active' : ''}`}
+                onClick={() => setStatsSubTab('details')}
+              >
+                Player Details
+              </button>
+            </div>
+            
+            {statsSubTab === 'chart' ? (
+              <StatsChart 
+                playersData={detailedStats} 
+                roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
+              />
+            ) : (
+              <div className="results-table">
+              {detailedStats.map((playerStats, index) => (
+                <div key={playerStats.id} className="results-row">
+                  <div className="rank-col">{index + 1}</div>
+                  <div className="player-col">
+                    <div className="player-info">
+                      <span>{playerStats.name}</span>
+                    </div>
+                  </div>
+                  <div className="score-col">{playerStats.totalScore || 0}</div>
+                  <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
+                    {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
+                  </button>
+                  
+                  {selectedPlayerId === playerStats.id && (
+                    <div className="advanced-stats">
+                      <div className="stats-section">
+                        <div className="stats-section-title">Game Performance</div>
+                        <div className="stats-cards" id="game-performance">
+                          <p>Total Points: <span>{playerStats.totalPoints}</span></p>
+                          <p>Highest Round: <span>{playerStats.bestRound}</span></p>
+                          <p>Correct Bids: <span>{playerStats.correctBids}</span></p>
+                          <p>Tricks Won: <span>{playerStats.totalTricks || playerStats.avgTricks * playerStats.roundsPlayed}</span></p>
+                        </div>
+                      </div>
 
-              <div className="stat-section">
-                <h4>
-                  <SaveIcon style={{ marginRight: 4 }} />
-                  Scoring Performance
-                </h4>
-                <div className="stat-row">
-                  <span className="stat-label">Total Points:</span>
-                  <span className="stat-value highlight">{playerStats.totalPoints}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Avg. Points/Round:</span>
-                  <span className="stat-value">{playerStats.avgPointsPerRound}</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Best Round:</span>
-                  <span className="stat-value positive">{playerStats.bestRound}</span>
-                  <span className="stat-explanation">points</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Worst Round:</span>
-                  <span className="stat-value negative">{playerStats.worstRound}</span>
-                  <span className="stat-explanation">points</span>
-                </div>
-              </div>
+                      <div className="stats-section">
+                        <div className="stats-section-title">Bidding Precision</div>
+                        <div className="stats-cards">
+                          <PerformanceMetric 
+                            label="Average Score" 
+                            value={playerStats.avgPointsPerRound} 
+                            targetMin={20} 
+                            targetMax={30}
+                            isBadWhenAboveMax={false}
+                          />
+                          <PerformanceMetric 
+                            label="Bid Accuracy" 
+                            value={parseFloat(playerStats.bidAccuracy || 0)} 
+                            targetMin={50} 
+                            targetMax={80}
+                            isPercentage={true}
+                            isBadWhenAboveMax={false} 
+                          />
+                        </div>
+                      </div>
 
-              <div className="stat-section">
-                <h4>
-                  <PauseIcon style={{ marginRight: 4 }} />
-                  Consistency
-                </h4>
-                <div className="stat-row">
-                  <span className="stat-label">Perfect Rounds:</span>
-                  <span className="stat-value">{playerStats.perfectRounds}</span>
-                  <span className="stat-explanation">bid = tricks made</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Best Streak:</span>
-                  <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
-                  <span className="stat-explanation">consecutive perfect bids</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Over-bids:</span>
-                  <span className="stat-value">{playerStats.overBids}</span>
-                  <span className="stat-explanation">made more than bid</span>
-                </div>
-                <div className="stat-row">
-                  <span className="stat-label">Under-bids:</span>
-                  <span className="stat-value">{playerStats.underBids}</span>
-                  <span className="stat-explanation">made less than bid</span>
-                </div>
-              </div>
+                      <div className="stats-section">
+                        <div className="stats-section-title">Bidding Tendency</div>
+                        <div className="stats-cards">
+                          <div className="bidding-style-card">
+                            <div className="bidding-style-value">
+                              {(() => {
+                                const overbids = playerStats.overBids || 0;
+                                const underbids = playerStats.underBids || 0;
+                                const correctBids = playerStats.correctBids || 0;
+                                const totalBids = overbids + underbids + correctBids;
+                                
+                                if (totalBids === 0) return <span className="no-data">No Data</span>;
+                                
+                                // Calculate percentages
+                                const correctBidPercent = totalBids > 0 ? (correctBids / totalBids) * 100 : 0;
+                                const overBidPercent = totalBids > 0 ? (overbids / totalBids) * 100 : 0;
+                                const underBidPercent = totalBids > 0 ? (underbids / totalBids) * 100 : 0;
+                                
+                                // Determine bidding quality based on correct bid percentage
+                                let biddingQuality = '';
+                                let biddingClass = '';
+                                
+                                if (correctBidPercent > 75) {
+                                  biddingQuality = 'Bidding Excellent';
+                                  biddingClass = 'excellent-bidding';
+                                } else if (correctBidPercent >= 60) {
+                                  biddingQuality = 'Bidding Good';
+                                  biddingClass = 'good-bidding';
+                                } else if (correctBidPercent >= 45) {
+                                  biddingQuality = 'Bidding Okay';
+                                  biddingClass = 'okay-bidding';
+                                } else if (correctBidPercent >= 30) {
+                                  biddingQuality = 'Bidding Poorly';
+                                  biddingClass = 'poor-bidding';
+                                } else {
+                                  biddingQuality = 'Bidding Badly';
+                                  biddingClass = 'bad-bidding';
+                                }
+                                
+                                // Add bidding tendency descriptor
+                                let biddingTendency = '';
+                                if (overBidPercent > 25 && overBidPercent > underBidPercent) {
+                                  biddingTendency = ' (Tends to Overbid)';
+                                } else if (underBidPercent > 25 && underBidPercent > overBidPercent) {
+                                  biddingTendency = ' (Tends to Underbid)';
+                                } else if (overBidPercent === underBidPercent && overBidPercent > 15) {
+                                  biddingTendency = ' (Mixed Errors)';
+                                }
+                                
+                                return (
+                                  <div>
+                                    <span className={biddingClass}>
+                                      {biddingQuality}
+                                    </span>
+                                    {biddingTendency && (
+                                      <span className="bidding-tendency">{biddingTendency}</span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            
+                            {/* Visual mini-progress bar for correct bids percentage */}
+                            {(() => {
+                              const overbids = playerStats.overBids || 0;
+                              const underbids = playerStats.underBids || 0;
+                              const correctBids = playerStats.correctBids || 0;
+                              const totalBids = overbids + underbids + correctBids;
+                              
+                              const correctBidPercent = totalBids > 0 ? Math.round((correctBids / totalBids) * 100) : 0;
+                              const overBidPercent = totalBids > 0 ? Math.round((overbids / totalBids) * 100) : 0;
+                              const underBidPercent = totalBids > 0 ? Math.round((underbids / totalBids) * 100) : 0;
+                              
+                              return (
+                                <div className="bid-distribution-bar">
+                                  <div className="bid-segment correct-segment" style={{ width: `${correctBidPercent}%` }}></div>
+                                  <div className="bid-segment over-segment" style={{ width: `${overBidPercent}%` }}></div>
+                                  <div className="bid-segment under-segment" style={{ width: `${underBidPercent}%` }}></div>
+                                </div>
+                              );
+                            })()}
+                            
+                            <div className="bidding-stats">
+                              <span className="bid-stat correct">{playerStats.correctBids} correct</span> •
+                              <span className="bid-stat over">{playerStats.overBids} over</span> •
+                              <span className="bid-stat under">{playerStats.underBids} under</span>
+                            </div>
+                          </div>
+                          <PerformanceMetric 
+                            label="Average Deviation" 
+                            value={playerStats.avgDiff} 
+                            targetMin={0}
+                            targetMax={0.25}
+                            isBadWhenAboveMax={true}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="stats-section">
+                        <div className="stats-section-title">Additional Stats</div>
+                        <div className="stats-cards">
+                          <div className="additional-stats">
+                            <div className="stat-row">
+                              <span className="stat-label">Best Bidding Streak:</span>
+                              <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
+                            </div>
+                            <div className="stat-row">
+                              <span className="stat-label">Worst Round:</span>
+                              <span className="stat-value negative">{playerStats.worstRound}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+            )}
           </div>
         </div>
       )}
 
-        {/* Top Section with Controls */}
+      {/* Top Section with Controls */}
       <div className="game-bottom-section">
         {/* Toggle Button for Game Board / Player Stats */}
         <div className="toggle-section">

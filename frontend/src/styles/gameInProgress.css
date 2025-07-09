@@ -1,0 +1,176 @@
+/* Game in Progress - Specific Styles */
+
+.game-in-progress {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Take full viewport height */
+  max-height: calc(100vh - var(--top-nav-height)); /* Account for top and bottom navs */
+  position: relative;
+  overflow: hidden; /* Hide overflow on container */
+}
+
+/* Make the tab panels scrollable */
+.game-in-progress .tab-panel {
+  flex: 1;
+  overflow-y: auto; 
+  padding-bottom: calc(60px + var(--spacing-xl)); /* Extra padding at bottom for the fixed controls */
+}
+
+/* Results table styling */
+.game-in-progress .results-table {
+  width: 100%;
+  margin-top: var(--spacing-md);
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.game-in-progress .results-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.game-in-progress .results-row:nth-child(even) {
+  background-color: var(--card-background-alt);
+}
+
+.game-in-progress .results-row:last-child {
+  border-bottom: none;
+}
+
+.game-in-progress .rank-col {
+  font-weight: bold;
+  font-size: 1.2rem;
+  width: 30px;
+  text-align: center;
+}
+
+.game-in-progress .player-col {
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.game-in-progress .score-col {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin: 0 var(--spacing-md);
+}
+
+.game-in-progress .adv-stats-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Fixed position for the round info at the top */
+.game-in-progress .round-info {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Game stats container styling */
+.game-in-progress .game-stats-container {
+  padding: var(--spacing-md);
+}
+
+.game-in-progress .game-stats-container h2 {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+}
+
+/* Stats Subtabs styling */
+.game-in-progress .stats-subtabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-xl);
+}
+
+.game-in-progress .stats-subtab-btn {
+  background-color: var(--card-background-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-color);
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.game-in-progress .stats-subtab-btn.active {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border-color: var(--primary-dark);
+}
+
+.game-in-progress .stats-subtab-btn:hover:not(.active) {
+  background-color: var(--card-background);
+}
+
+/* Fixed bottom controls with translucent background */
+.game-in-progress .game-bottom-section {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
+  z-index: 100;
+  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure finish button stays visible */
+.game-in-progress .finish-btn {
+  position: sticky;
+  padding: var(--spacing-sm);
+  bottom: calc(var(--bottom-nav-height) + 60px);
+  z-index: 99;
+}
+
+/* Player info styling */
+.game-in-progress .player-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.game-in-progress .stats-section {
+  margin-bottom: var(--spacing-md);
+}
+
+.game-in-progress .stats-section-title {
+  font-size: 0.95rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 4px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .game-in-progress .tab-panel {
+    padding-bottom: calc(60px + var(--spacing-xl) * 1.5);
+  }
+  
+  .game-in-progress .results-row {
+    padding: var(--spacing-sm);
+  }
+  
+  .game-in-progress .advanced-stats {
+    padding: var(--spacing-sm);
+  }
+  
+  .game-in-progress .stats-cards {
+    gap: var(--spacing-sm);
+  }
+}
