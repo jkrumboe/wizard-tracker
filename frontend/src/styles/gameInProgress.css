@@ -79,7 +79,9 @@
 
 /* Game stats container styling */
 .game-in-progress .game-stats-container {
-  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding: 0;
+  padding-top: var(--spacing-sm);
 }
 
 .game-in-progress .game-stats-container h2 {
@@ -154,6 +156,11 @@
   opacity: 0.8;
   border-bottom: 1px solid var(--border-light);
   padding-bottom: 4px;
+}
+
+/* Styling for the made tricks input and tooltip */
+.made-input-container {
+  position: relative;
 }
 
 /* Mobile responsiveness */

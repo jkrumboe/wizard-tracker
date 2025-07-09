@@ -84,7 +84,57 @@ export function GameStateProvider({ children }) {
       };
     });
   }, [])
-  // Start a new game
+    // Helper function to recalculate all scores after a round update
+  const recalculateScores = useCallback((roundData, changedRoundIndex) => {
+    const updatedRoundData = [...roundData];
+    
+    // Get the players from the first round to iterate through each player
+    const players = updatedRoundData[0].players.map(p => p.id);
+    
+    // Update scores for each player starting from the changed round
+    for (let roundIdx = changedRoundIndex; roundIdx < updatedRoundData.length; roundIdx++) {
+      const currentRound = updatedRoundData[roundIdx];
+      
+      for (let playerId of players) {
+        const playerIndex = currentRound.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) continue; // Skip if player not found
+        
+        const player = currentRound.players[playerIndex];
+        
+        // Recalculate score for this round if possible
+        if (player.call !== null && player.made !== null) {
+          if (player.call === player.made) {
+            player.score = 20 + player.made * 10;
+          } else {
+            player.score = -10 * Math.abs(player.call - player.made);
+          }
+          
+          // Calculate total score based on previous round or 0 if first round
+          const prevRoundIdx = roundIdx - 1;
+          const prevScore = prevRoundIdx >= 0 && updatedRoundData[prevRoundIdx].players[playerIndex].totalScore !== null 
+            ? updatedRoundData[prevRoundIdx].players[playerIndex].totalScore 
+            : 0;
+            
+          player.totalScore = prevScore + player.score;
+        }
+        
+        // If this round has no score data but there are future rounds with scores,
+        // we need to propagate the last known total score
+        if ((player.score === null || player.totalScore === null) && roundIdx > 0) {
+          const prevRound = updatedRoundData[roundIdx - 1];
+          const prevPlayerIndex = prevRound.players.findIndex(p => p.id === playerId);
+          
+          if (prevPlayerIndex !== -1 && prevRound.players[prevPlayerIndex].totalScore !== null) {
+            player.totalScore = prevRound.players[prevPlayerIndex].totalScore;
+          }
+        }
+      }
+    }
+    
+    return updatedRoundData;
+  }, []);
+
+// Start a new game
   const startGame = useCallback(() => {
   if (gameState.players.length < 2) return;
 
@@ -126,13 +176,39 @@ export function GameStateProvider({ children }) {
 
       if (playerIndex !== -1) {
         const updatedPlayers = [...currentRound.players]
-        updatedPlayers[playerIndex] = {
-          ...updatedPlayers[playerIndex],
-          call: Math.max(0, Math.min(call, currentRound.cards)),
+        const player = { ...updatedPlayers[playerIndex] };
+        const validCall = Math.max(0, Math.min(call, currentRound.cards));
+        
+        player.call = validCall;
+        
+        // If player has made values already entered, recalculate score for this round
+        if (player.made !== null) {
+          if (player.call === player.made) {
+            player.score = 20 + player.made * 10;
+          } else {
+            player.score = -10 * Math.abs(player.call - player.made);
+          }
+          
+          // Update total score
+          const prevRound = roundIndex > 0 ? newRoundData[roundIndex - 1] : null;
+          const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
+            ? prevRound.players[playerIndex].totalScore 
+            : 0;
+            
+          player.totalScore = prevScore + player.score;
         }
 
-        currentRound.players = updatedPlayers
-        newRoundData[roundIndex] = currentRound
+        updatedPlayers[playerIndex] = player;
+        currentRound.players = updatedPlayers;
+        newRoundData[roundIndex] = currentRound;
+        
+        // Recalculate all following rounds to update scores
+        const recalculatedRoundData = recalculateScores(newRoundData, roundIndex);
+
+        return {
+          ...prevState,
+          roundData: recalculatedRoundData,
+        }
       }
 
       return {
@@ -140,59 +216,86 @@ export function GameStateProvider({ children }) {
         roundData: newRoundData,
       }
     })
-  }, [])
+  }, [recalculateScores])
 
   // Update player's tricks made for current round
   const updateMade = useCallback((playerId, made) => {
     setGameState((prevState) => {
-      const roundIndex = prevState.currentRound - 1
-      const newRoundData = [...prevState.roundData]
-      const currentRound = { ...newRoundData[roundIndex] }
-      const playerIndex = currentRound.players.findIndex((p) => p.id === playerId)
+      const roundIndex = prevState.currentRound - 1;
+      const newRoundData = [...prevState.roundData];
+      const currentRound = { ...newRoundData[roundIndex] };
+      const playerIndex = currentRound.players.findIndex((p) => p.id === playerId);
 
       if (playerIndex !== -1) {
-        const updatedPlayers = [...currentRound.players]
-        const player = { ...updatedPlayers[playerIndex] }
+        const updatedPlayers = [...currentRound.players];
+        const player = { ...updatedPlayers[playerIndex] };
 
-        player.made = Math.max(0, Math.min(made, currentRound.cards))
+        // Calculate total tricks made by other players
+        const totalMadeByOthers = updatedPlayers.reduce((sum, p, idx) => {
+          // Skip the current player and players who haven't set 'made' yet
+          return idx !== playerIndex && p.made !== null ? sum + p.made : sum;
+        }, 0);
 
-        // Calculate score
-        if (player.call !== null && player.made !== null) {
-          if (player.call === player.made) {
-            // 20 points + 10 points per trick
-            player.score = 20 + player.made * 10
-          } else {
-            // -10 points per difference
-            player.score = -10 * Math.abs(player.call - player.made)
-          }          // Calculate total score
-          const prevRound = roundIndex > 0 ? newRoundData[roundIndex - 1] : null
-          const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
-            ? prevRound.players[playerIndex].totalScore 
-            : 0
-          player.totalScore = prevScore + player.score
+        // Enforce maximum made tricks based on available tricks
+        const maxAvailableTricks = currentRound.cards - totalMadeByOthers;
+        const validMade = Math.max(0, Math.min(made, maxAvailableTricks));
+
+        player.made = validMade;
+
+        // Always calculate score if made is set, even if call isn't set yet
+        // This allows scores to be calculated when made values are entered early
+        if (player.made !== null) {
+          if (player.call !== null) {
+            if (player.call === player.made) {
+              // 20 points + 10 points per trick
+              player.score = 20 + player.made * 10;
+            } else {
+              // -10 points per difference
+              player.score = -10 * Math.abs(player.call - player.made);
+            }
+            
+            // Calculate total score
+            const prevRound = roundIndex > 0 ? newRoundData[roundIndex - 1] : null;
+            const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
+              ? prevRound.players[playerIndex].totalScore 
+              : 0;
+            player.totalScore = prevScore + player.score;
+          } 
+          // If call isn't set yet, we'll defer score calculation until call is set
         }
 
-        updatedPlayers[playerIndex] = player
-        currentRound.players = updatedPlayers
-        newRoundData[roundIndex] = currentRound
+        updatedPlayers[playerIndex] = player;
+        currentRound.players = updatedPlayers;
+        newRoundData[roundIndex] = currentRound;
+        
+        // Recalculate all following rounds to update scores
+        const recalculatedRoundData = recalculateScores(newRoundData, roundIndex);
+
+        return {
+          ...prevState,
+          roundData: recalculatedRoundData,
+        };
       }
 
       return {
         ...prevState,
         roundData: newRoundData,
-      }
-    })
-  }, [])
+      };
+    });
+  }, [recalculateScores])
+
   // Navigate to next round
   const nextRound = useCallback(() => {
     setGameState((prevState) => {
       if (prevState.currentRound < prevState.maxRounds) {
+        // First recalculate all scores to ensure they're accurate
+        const updatedRoundData = recalculateScores([...prevState.roundData], 0);
+        
         // Get the current round index and data
         const currentRoundIndex = prevState.currentRound - 1;
-        const currentRoundData = prevState.roundData[currentRoundIndex];
+        const currentRoundData = updatedRoundData[currentRoundIndex];
         const nextRoundIndex = currentRoundIndex + 1;
-        const newRoundData = [...prevState.roundData];
-        const nextRoundData = {...newRoundData[nextRoundIndex]};
+        const nextRoundData = {...updatedRoundData[nextRoundIndex]};
         
         // Update the totalScore for each player in the next round
         if (nextRoundData && nextRoundData.players) {
@@ -212,31 +315,35 @@ export function GameStateProvider({ children }) {
           });
           
           nextRoundData.players = nextRoundPlayers;
-          newRoundData[nextRoundIndex] = nextRoundData;
+          updatedRoundData[nextRoundIndex] = nextRoundData;
         }
 
         return {
           ...prevState,
-          roundData: newRoundData,
+          roundData: updatedRoundData,
           currentRound: prevState.currentRound + 1,
         }
       }
       return prevState
     })
-  }, [])
+  }, [recalculateScores])
 
   // Navigate to previous round
   const previousRound = useCallback(() => {
     setGameState((prevState) => {
       if (prevState.currentRound > 1) {
+        // Ensure scores are up to date when navigating between rounds
+        const roundData = recalculateScores(prevState.roundData, 0);
+        
         return {
           ...prevState,
+          roundData,
           currentRound: prevState.currentRound - 1,
         }
       }
       return prevState
     })
-  }, [])
+  }, [recalculateScores])
 
   // Finish the game and save results
   const finishGame = useCallback(async () => {

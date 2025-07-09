@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react";
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import SaveGameDialog from "../components/SaveGameDialog"
@@ -130,6 +130,40 @@ const GameInProgress = () => {
       return false
     }
   }
+
+  // Auto-set made values to 0 if no tricks are available
+  useEffect(() => {
+    if (!gameState.roundData || !gameState.roundData.length) return;
+    
+    const currentRound = gameState.roundData[gameState.currentRound - 1];
+    if (!currentRound) return;
+    
+    // Use a small delay to avoid infinite loops
+    const timer = setTimeout(() => {
+      // Process each player
+      
+      currentRound.players.forEach(player => {
+        // Skip if player already has a made value
+        if (player.made !== null) return;
+        
+        // Calculate total tricks made by other players
+        const totalMadeByOthers = currentRound.players.reduce((sum, p) => {
+          return p.id !== player.id && p.made !== null ? sum + p.made : sum;
+        }, 0);
+
+        // Calculate maximum available tricks for this player
+        const maxAvailableTricks = currentRound.cards - totalMadeByOthers;
+        
+        // If no tricks are available, set made to 0
+        if (maxAvailableTricks === 0) {
+          // Auto-set to zero
+          updateMade(player.id, 0);
+        }
+      });
+    }, 100); // Small delay to avoid render conflicts
+    
+    return () => clearTimeout(timer);
+  }, [gameState.roundData, gameState.currentRound, updateMade]);
 
   if (!gameState.gameStarted) {
     return null
@@ -287,19 +321,43 @@ const GameInProgress = () => {
                     />
                   </td>
                   <td>
-                    <input
-                      type="tel"
-                      className="rounds-input"
-                      value={player.made !== null ? player.made : ''}
-                      placeholder="0"
-                      onChange={(e) => updateMade(player.id, parseInt(e.target.value) || 0)}
-                      min={0}
-                      max={currentRound.cards}
-                      title={`${player.name}'s Tricks Made`}
-                      disabled={player.call === null}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                    />
+                    {(() => {
+                      // Calculate total tricks made by other players
+                      const totalMadeByOthers = currentRound.players.reduce((sum, p) => {
+                        // Skip the current player and players who haven't set 'made' yet
+                        return p.id !== player.id && p.made !== null ? sum + p.made : sum;
+                      }, 0);
+
+                      // Calculate maximum available tricks for this player
+                      const maxAvailableTricks = currentRound.cards - totalMadeByOthers;
+                      
+                      // If no tricks are available, directly set the value to 0
+                      if (maxAvailableTricks === 0 && player.made === null) {
+                        // Auto-set the value to 0 if there are no available tricks
+                        updateMade(player.id, 0);
+                      }
+                      
+                      return (
+                        <div className="made-input-container">
+                          <input
+                            type="tel"
+                            className="rounds-input"
+                            value={player.made !== null ? player.made : ''}
+                            placeholder="0"
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 0;
+                              updateMade(player.id, value);
+                            }}
+                            min={0}
+                            max={maxAvailableTricks}
+                            title={`${player.name}'s Tricks Made (Max: ${maxAvailableTricks})`}
+                            disabled={player.call === null || maxAvailableTricks === 0}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                          />
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td>
                     <div className="score">

@@ -39,9 +39,9 @@ self.addEventListener("fetch", (event) => {
   )
 })
 
-// navigator.serviceWorker.addEventListener("controllerchange", () => {
-//   alert("A new version is available. Please refresh the page.");
-// });
+navigator.serviceWorker.addEventListener("controllerchange", () => {
+  alert("A new version is available. Please refresh the page.");
+});
 
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {

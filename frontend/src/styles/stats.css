@@ -1,9 +1,4 @@
 /* Stats grid layout and styling */
-
-.game-stats-container {
-  padding: var(--spacing-md);
-}
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
