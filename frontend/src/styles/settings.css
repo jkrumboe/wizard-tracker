@@ -26,7 +26,7 @@
 .settings-section {
   background-color: var(--card-background);
   border-radius: 12px;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   margin-bottom: var(--spacing-xl);
   box-shadow: var(--card-shadow);
 }
@@ -41,12 +41,13 @@
 
 /* Theme Settings */
 .settings-option {
+    padding: 0 var(--spacing-md);
   margin-bottom: var(--spacing-md);
   gap: var(--spacing-md);
 }
 
 .settings-option span {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin: 0 var(--spacing-sm);
 }
 
@@ -81,7 +82,7 @@
 }
 
 .storage-metric {
-  padding: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -99,7 +100,7 @@
 /* Settings Actions */
 .settings-actions {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
@@ -352,8 +353,9 @@
   }
 
   .radio-group {
-    flex-direction: column;
-    gap: var(--spacing-md);
+    flex-direction: row;
+    justify-content: space-between;
+    /* margin: 0 var(--spacing-md); */
     align-items: flex-start;
   }
 }

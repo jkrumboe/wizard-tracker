@@ -11,6 +11,7 @@
 
 .scorecard-table {
   width: 100%;
+   table-layout: fixed; /* Force equal column widths */
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -29,17 +30,21 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 70px; /* Fixed width for all player headers */
+  min-width: 70px; /* Ensure minimum width */
+  max-width: 70px; /* Ensure maximum width */
 }
 
 .player-header-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  width: 100%; /* Use full width of the parent header */
 }
 
-/* Adjust for 4-6 players */
-@media (min-width: 4) {
+/* Adjust for 4-6 players - corrected media query */
+@media (min-width: 768px) {
+  /* No width adjustments - we want consistent widths */
   .player-header-name {
     max-width: 90px; /* Smaller for more players */
     font-size: 0.9rem;
@@ -54,10 +59,11 @@
   top: 0;
   left: 0;
   z-index: 101; /* Higher than round-number to stay on top */
-  width: 60px;
+  width: 80px;
   box-shadow: none;
   /* Ensure the background fills the entire cell */
-  isolation: isolate;}
+  isolation: isolate;
+}
 
 .round-number {
   background-color: var(--card-background);
@@ -80,6 +86,9 @@
   transition: background-color 0.2s;
   position: relative;
   z-index: 1; /* Ensure it stacks correctly */
+  width: 120px; /* Match player header width */
+  min-width: 120px;
+  max-width: 120px;
 }
 
 .player-round-cell:hover {
@@ -197,11 +206,11 @@
   
   .scorecard-table th, 
   .scorecard-table td {
-    padding: 0.5rem;
+    padding:var(--spacing-sm);
   }
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 40px;
+    width: 60px;
   }
 }

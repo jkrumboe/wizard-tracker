@@ -400,10 +400,10 @@ const GameDetails = () => {
                           <div className="stats-section">
                             <div className="stats-section-title">Game Performance</div>
                             <div className="stats-cards" id="game-performance">
-                              <p>Total Points: <span>{playerStat?.totalPoints}</span></p>
-                              <p>Highest Round: <span>{playerStat?.highestScore}</span></p>
-                              <p>Correct Bids: <span>{playerStat?.correctBids}</span></p>
-                              <p>Tricks Won: <span>{playerStat?.totalTricks}</span></p>
+                              <p>Total Points: <span>{Math.round(playerStat?.totalPoints)}</span></p>
+                              <p>Highest Round: <span>{Math.round(playerStat?.highestScore)}</span></p>
+                              <p>Correct Bids: <span>{Math.round(playerStat?.correctBids)}</span></p>
+                              <p>Tricks Won: <span>{Math.round(playerStat?.totalTricks)}</span></p>
                             </div>
                           </div>
 
@@ -412,14 +412,14 @@ const GameDetails = () => {
                             <div className="stats-cards">
                               <PerformanceMetric 
                                 label="Average Score" 
-                                value={playerStat?.avgPoints} 
+                                value={Math.round(playerStat?.avgPoints)} 
                                 targetMin={20} 
                                 targetMax={30}
                                 isBadWhenAboveMax={false}
                               />
                               <PerformanceMetric 
                                 label="Bid Accuracy" 
-                                value={parseFloat(playerStat?.bidAccuracy || 0)} 
+                                value={Math.round(parseFloat(playerStat?.bidAccuracy || 0))} 
                                 targetMin={50} 
                                 targetMax={80}
                                 isPercentage={true}
@@ -511,18 +511,17 @@ const GameDetails = () => {
                                 })()}
                                 
                                   <div className="bidding-stats">
-                                    <span className="bid-stat correct">{playerStat?.correctBids} correct</span> •
-                                    <span className="bid-stat over">{playerStat?.overbids} over</span> •
-                                    <span className="bid-stat under">{playerStat?.underbids} under</span>
+                                    <span className="bid-stat correct">{Math.round(playerStat?.correctBids)} correct</span> •
+                                    <span className="bid-stat over">{Math.round(playerStat?.overbids)} over</span> •
+                                    <span className="bid-stat under">{Math.round(playerStat?.underbids)} under</span>
                                   </div>
                               </div>
                               <PerformanceMetric 
                                 label="Average Deviation" 
-                                value={playerStat?.avgDiff} 
+                                value={Math.round(playerStat?.avgDiff * 100) / 100} 
                                 targetMin={0}
                                 targetMax={0.25}
                                 isBadWhenAboveMax={true} 
-
                               />
                             </div>
                           </div>

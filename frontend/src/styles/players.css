@@ -53,8 +53,11 @@
     max-width: 100%;
   }
   
-  .player-header-name {
-    max-width: 80px; /* Make player header names more compact */
+  /* Maintain consistent widths even on smaller screens */
+  .player-header, .player-round-cell {
+    width: 70px !important; 
+    min-width: 70px !important;
+    max-width: 70px !important;
   }
   
   .player-round-data {

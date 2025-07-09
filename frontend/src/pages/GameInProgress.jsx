@@ -430,10 +430,10 @@ const GameInProgress = () => {
                       <div className="stats-section">
                         <div className="stats-section-title">Game Performance</div>
                         <div className="stats-cards" id="game-performance">
-                          <p>Total Points: <span>{playerStats.totalPoints}</span></p>
-                          <p>Highest Round: <span>{playerStats.bestRound}</span></p>
-                          <p>Correct Bids: <span>{playerStats.correctBids}</span></p>
-                          <p>Tricks Won: <span>{playerStats.totalTricks || playerStats.avgTricks * playerStats.roundsPlayed}</span></p>
+                          <p>Total Points: <span>{Math.round(playerStats.totalPoints)}</span></p>
+                          <p>Highest Round: <span>{Math.round(playerStats.bestRound)}</span></p>
+                          <p>Correct Bids: <span>{Math.round(playerStats.correctBids)}</span></p>
+                          <p>Total Tricks Won: <span>{Math.round(playerStats.totalTricks || playerStats.avgTricks * playerStats.roundsPlayed, 2)}</span></p>
                         </div>
                       </div>
 

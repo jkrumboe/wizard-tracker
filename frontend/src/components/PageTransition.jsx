@@ -156,7 +156,7 @@ const PageTransition = ({
           </div>
           
           <div className="loading-text">
-            <h2 className="loading-title">{loadingTitle}</h2>
+            <h3 className="loading-title">{loadingTitle}</h3>
             <p className="loading-subtitle">{loadingSubtitle}</p>
           </div>
         </div>

@@ -36,6 +36,7 @@
 .many-players .round-bid,
 .many-players .round-made,
 .many-players .round-score {
+  position: static;
   font-size: 0.95rem;
 }
 
