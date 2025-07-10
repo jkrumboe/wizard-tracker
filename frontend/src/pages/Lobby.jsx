@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import colyseusService from '../services/colyseusClient';
 import { roomAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import CreateGameModal from '../components/CreateGameModal';
 import '../styles/Lobby.css';
+import '../styles/modal.css';
 
 const Lobby = () => {
   const navigate = useNavigate();
@@ -272,77 +274,13 @@ const Lobby = () => {
       </div>
 
       {/* Create Game Modal */}
-      {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Create New Game</h2>
-            <form onSubmit={(e) => { e.preventDefault(); handleCreateGame(); }}>
-              <div className="form-group">
-                {/* <label htmlFor="gameMode">Game Mode</label> */}
-                <select
-                  id="gameMode"
-                  value={gameSettings.gameMode}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, gameMode: e.target.value }))}
-                >
-                  <option value="classic">Classic</option>
-                  <option value="ranked">Ranked</option>
-                  <option value="quick">Quick Game</option>
-                  <option value="tournament">Tournament</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                {/* <label htmlFor="maxPlayers">Player Count</label> */}
-                <select
-                  id="maxPlayers"
-                  value={gameSettings.maxPlayers}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) }))}
-                >
-                  <option value={2}>2 Players</option>
-                  <option value={3}>3 Players</option>
-                  <option value={4}>4 Players</option>
-                  <option value={5}>5 Players</option>
-                  <option value={6}>6 Players</option>
-                </select>
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={gameSettings.isPrivate}
-                    onChange={(e) => setGameSettings(prev => ({ ...prev, isPrivate: e.target.checked }))}
-                  />
-                  Private Game
-                </label>
-              </div>
-
-              {gameSettings.isPrivate && (
-                <div className="form-group">
-                  <label htmlFor="password">Password</label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={gameSettings.password}
-                    onChange={(e) => setGameSettings(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Enter Password For Private Game"
-                    required
-                  />
-                </div>
-              )}
-
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="cancel-button">
-                  Cancel
-                </button>
-                <button type="submit" className="create-button">
-                  Create Game
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateGameModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateGame}
+        gameSettings={gameSettings}
+        onSettingsChange={setGameSettings}
+      />
     </div>
   );
 };

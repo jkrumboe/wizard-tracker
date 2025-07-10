@@ -11,6 +11,7 @@ class ColyseusService {
     this.currentRoom = null;
     this.lobbyRoom = null;
     this.playerData = null;
+    this.currentSessionId = null; // Track the current session ID for player identification
   }
 
   setPlayerData(player) {
@@ -28,8 +29,29 @@ class ColyseusService {
         console.log('Room list updated:', data);
         // This can be used to update the UI when rooms are created/destroyed
       });
+      
+      // Add handlers for all lobby messages
+      this.lobbyRoom.onMessage('lobbyJoined', (data) => {
+        console.log('✅ Lobby joined confirmation:', data);
+        // Handle any lobby joined specific logic here
+      });
+      
+      this.lobbyRoom.onMessage('roomCreated', (data) => {
+        console.log('✅ Room created confirmation:', data);
+        // This will be triggered after a room is created successfully
+      });
+      
+      this.lobbyRoom.onMessage('roomJoined', (data) => {
+        console.log('✅ Room joined confirmation:', data);
+        // This will be triggered after joining a room successfully
+      });
+      
+      this.lobbyRoom.onMessage('error', (data) => {
+        console.error('❌ Lobby error:', data.message);
+        // Handle any error messages from the lobby
+      });
 
-      console.log('✅ Joined lobby room:', this.lobbyRoom.sessionId);
+      // console.log('✅ Joined lobby room:', this.lobbyRoom.sessionId);
       return this.lobbyRoom;
     } catch (error) {
       console.error('❌ Failed to join lobby:', error);
@@ -38,13 +60,14 @@ class ColyseusService {
   }
 
   async createGameRoom(settings = {}) {
-    try {      const defaultSettings = {
-        maxPlayers: 4,
-        gameMode: 'classic',
-        isPrivate: false,
-        hostId: String(this.playerData?.id),
-        hostName: this.playerData?.name || 'Anonymous'
-      };
+    try {
+        const defaultSettings = {
+          maxPlayers: 4,
+          gameMode: 'classic',
+          isPrivate: false,
+          hostId: String(this.playerData?.id),
+          hostName: this.playerData?.name || 'Anonymous'
+        };
 
       const gameSettings = { ...defaultSettings, ...settings };
       
@@ -83,15 +106,26 @@ class ColyseusService {
         colyseusOptions.password = gameSettings.password;
       }      this.currentRoom = await this.client.create('wizard_game', colyseusOptions);
       
+      // Store the session ID for later reference
+      if (this.currentRoom) {
+        this.currentSessionId = this.currentRoom.sessionId;
+        console.log('✅ Created room with session ID:', this.currentSessionId);
+      }
+      
       // Wait for initial state to be received before considering room ready
       await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('Room creation timeout'));
         }, 10000); // 10 second timeout
         
-        const initialStateHandler = () => {
+        // Set a flag to detect if the state was received
+        const initialStateHandler = (state) => {
           clearTimeout(timeout);
           this.currentRoom.onStateChange.remove(initialStateHandler);
+          
+          // Ensure the state contains the player
+          console.log('Initial state received:', state);
+          
           resolve();
         };
         this.currentRoom.onStateChange(initialStateHandler);
@@ -106,6 +140,10 @@ class ColyseusService {
       });
       
       console.log('✅ Created game room:', this.currentRoom.sessionId, 'with DB ID:', roomData.roomId);
+      
+      // Don't leave lobby immediately after creating a game room
+      // Let the application manage the lifecycle (we'll leave when navigating away or when explicitly called)
+      
       return this.currentRoom;
     } catch (error) {
       console.error('❌ Failed to create game room:', error);
@@ -149,6 +187,52 @@ class ColyseusService {
       try {
         this.currentRoom = await this.client.joinById(colyseusRoomId, joinOptions);
         console.log('✅ Joined game room:', this.currentRoom.sessionId);
+        
+        // Store the session ID for player identification
+        if (this.currentRoom) {
+          this.currentSessionId = this.currentRoom.sessionId;
+          console.log('🔑 Stored session ID for player identification:', this.currentSessionId);
+        }
+        
+        // Set up message handlers when joining the room
+        this.currentRoom.onMessage('welcome', (message) => {
+          console.log('✅ Received welcome message in client:', message);
+        });
+        
+        // Wait for initial state to be received before returning the room
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Room join state timeout'));
+          }, 5000);
+          
+          // Only resolve once we have the state
+          const initialStateHandler = (state) => {
+            // Improved check - we'll accept the state if it exists, even if players is empty/undefined
+            // This helps with rooms that are just being initialized
+            if (state) {
+              console.log('✅ Initial state received when joining:', state);
+              clearTimeout(timeout);
+              this.currentRoom.onStateChange.remove(initialStateHandler);
+              resolve();
+            }
+          };
+          
+          // Check if we already have state - accept any state, not just those with players
+          if (this.currentRoom.state) {
+            console.log('✅ Room already has state:', this.currentRoom.state);
+            clearTimeout(timeout);
+            resolve();
+          } else {
+            this.currentRoom.onStateChange(initialStateHandler);
+          }
+          
+          // Handle errors
+          this.currentRoom.onError((code, message) => {
+            clearTimeout(timeout);
+            reject(new Error(`Room join failed: ${message}`));
+          });
+        });
+        
         return this.currentRoom;
       } catch (colyseusError) {
         // Check if it's a "room not found" error from Colyseus
@@ -214,7 +298,14 @@ class ColyseusService {
   // Helper methods for common room actions
   sendMessage(type, data = {}) {
     if (this.currentRoom) {
-      this.currentRoom.send(type, data);
+      try {
+        console.log(`📤 Sending message "${type}" with data:`, data);
+        this.currentRoom.send(type, data);
+      } catch (error) {
+        console.error(`❌ Failed to send message "${type}":`, error);
+      }
+    } else {
+      console.warn(`⚠️ Attempted to send "${type}" message, but no active room connection`);
     }
   }
 
@@ -247,7 +338,16 @@ class ColyseusService {
       bypassTurnOrder: bypassTurnOrder // Always bypass turn order for tricks
     };
 
-    this.sendMessage("makeTricks", formattedData );
+    this.sendMessage("makeTricks", formattedData);
+  }
+  
+  reportTricks(tricks, playerId = null) {
+    const formattedData = {
+      playerId: playerId || this.playerData?.id,
+      made: tricks
+    };
+    
+    this.sendMessage("reportTricks", formattedData);
   }
 
   updateGameSettings(settings) {
@@ -260,6 +360,14 @@ class ColyseusService {
 
   startGame() {
     this.sendMessage('startGame');
+  }
+  
+  endRound() {
+    this.sendMessage('endRound');
+  }
+  
+  nextRound() {
+    this.sendMessage('nextRound');
   }
 
   // Lobby-specific actions

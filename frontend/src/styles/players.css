@@ -12,14 +12,13 @@
 .player-item {
     display: flex;
     align-items: center;
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
     background-color: var(--card-background-alt);
     border-radius: var(--radius-lg);
     margin: 0;
     border: 1px solid var(--border-color);
     font-weight: 600;
     gap: var(--spacing-sm);
-    width: 100%; /* Full width of grid cell */
     max-height: 3rem;
 }
 
