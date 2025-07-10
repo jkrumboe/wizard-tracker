@@ -1,5 +1,5 @@
 {
-  "online": false,
-  "lastUpdated": "2025-07-10T08:47:03.423Z",
-  "reason": "Server startup - default to offline mode"
+  "online": true,
+  "lastUpdated": "2025-07-10T10:35:20.809Z",
+  "reason": "Manual update"
 }

@@ -1068,14 +1068,12 @@
 }
 
 .confirm-button {
-  width: 100%;
   background-color: var(--primary-color);
   color: var(--text-color);
   border: none;
   padding: 0.75rem;
   border-radius: var(--radius-md);
   font-weight: 600;
-  margin-top: var(--spacing-md);
   cursor: pointer;
   transition: all 0.2s;
 }

@@ -217,9 +217,6 @@ const Settings = () => {
                         >
                           <TrashIcon size={25} />
                         </button>
-                        {/* <span className={`mode-badge ${game.gameState?.game_mode?.toLowerCase() || 'local'}`}>
-                          {game.gameState?.game_mode || 'Local'}
-                        </span> */}
                       </div>
                     </div>
                   </div>
