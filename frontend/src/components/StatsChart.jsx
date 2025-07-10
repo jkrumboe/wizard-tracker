@@ -113,7 +113,7 @@ const StatsChart = ({ playersData, roundData }) => {
     }
     
     // Create round labels
-    const labels = roundData.map((_, index) => `Round ${index + 1}`);
+    const labels = roundData.map((_, index) => `${index + 1}`);
     
     // Generate datasets for each selected player
     const datasets = playersData
@@ -305,12 +305,7 @@ const StatsChart = ({ playersData, roundData }) => {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            boxWidth: 10,
-            color: textColor
-          }
+          display: false, // Hide the legend since colors are shown in buttons below
         },
         tooltip: {
           backgroundColor: tooltipBackgroundColor,
@@ -326,21 +321,68 @@ const StatsChart = ({ playersData, roundData }) => {
       scales: {
         y: {
           beginAtZero: true,
+          border: {
+            display: true,
+            color: borderColor,
+            width: 2
+          },
           grid: {
-            color: gridColor,
-            drawBorder: false
+            color: (context) => {
+              if (context.tick && context.tick.value === 0) {
+                // Make the zero line more prominent
+                return isDarkMode ? '#d1d5db' : '#4b5563';
+              }
+              return gridColor;
+            },
+            lineWidth: (context) => {
+              if (context.tick && context.tick.value === 0) {
+                return 1.5; // Thicker zero line
+              }
+              return 1.2;
+            },
+            drawBorder: true, // Don't draw border around the entire chart
+            drawTicks: true,
+            z: 1 // Ensure grid lines are drawn above the datasets
           },
           ticks: {
-            color: textColor
+            color: textColor,
+            font: {
+              weight: '500',
+              size: 12
+            },
+            major: {
+              enabled: true
+            }
           }
         },
         x: {
+          border: {
+            display: false
+          },
           grid: {
-            display: false,
-            drawBorder: false
+            display: true,
+            color: (context) => {
+              // Highlight the zero value on the x-axis if needed
+              if (context.tick && context.tick.value === 0) {
+                return isDarkMode ? '#4b5563' : '#d1d5db';
+              }
+              return gridColor;
+            },
+            lineWidth: (context) => {
+              if (context.tick && context.tick.value === 0) {
+                return 2; // Thicker zero line
+              }
+              return 1.2;
+            },
+            drawBorder: true,
+            drawTicks: true
           },
           ticks: {
-            color: textColor
+            color: textColor,
+            font: {
+              weight: '500',
+              size: 12
+            }
           }
         }
       }
@@ -357,10 +399,28 @@ const StatsChart = ({ playersData, roundData }) => {
               display: true,
               text: 'Points Progression',
               color: textColor,
-              font: { size: 16 }
+              font: { size: 18, weight: 'bold' }
+            }
+          },
+          scales: {
+            ...baseOptions.scales,
+            y: {
+              ...baseOptions.scales.y,
+              title: {
+                ...baseOptions.scales.y.title,
+                text: 'Total Points'
+              }
+            },
+            x: {
+              ...baseOptions.scales.x,
+              title: {
+                ...baseOptions.scales.x.title,
+                text: 'Round'
+              }
             }
           }
         };
+
       case CHART_TYPES.BID_ACCURACY:
         return {
           ...baseOptions,
@@ -370,7 +430,7 @@ const StatsChart = ({ playersData, roundData }) => {
               display: true,
               text: 'Bid Accuracy',
               color: textColor,
-              font: { size: 16 }
+              font: { size: 18, weight: 'bold' }
             }
           },
           scales: {
@@ -381,11 +441,23 @@ const StatsChart = ({ playersData, roundData }) => {
               title: {
                 display: true,
                 text: 'Accuracy (%)',
-                color: textColor
+                color: textColor,
+                font: {
+                  weight: 'bold',
+                  size: 14
+                }
+              }
+            },
+            x: {
+              ...baseOptions.scales.x,
+              title: {
+                ...baseOptions.scales.x.title,
+                text: 'Players'
               }
             }
           }
         };
+
       case CHART_TYPES.BID_DISTRIBUTION:
         return {
           ...baseOptions,
@@ -395,7 +467,7 @@ const StatsChart = ({ playersData, roundData }) => {
               display: true,
               text: 'Bid Distribution',
               color: textColor,
-              font: { size: 16 }
+              font: { size: 18, weight: 'bold' }
             }
           },
           scales: {
@@ -405,11 +477,27 @@ const StatsChart = ({ playersData, roundData }) => {
               title: {
                 display: true,
                 text: 'Number of Bids',
-                color: textColor
+                color: textColor,
+                font: {
+                  weight: 'bold',
+                  size: 14
+                }
+              },
+              grid: {
+                ...baseOptions.scales.y.grid,
+                display: true
+              }
+            },
+            x: {
+              ...baseOptions.scales.x,
+              title: {
+                ...baseOptions.scales.x.title,
+                text: 'Players'
               }
             }
           }
         };
+
       case CHART_TYPES.POINTS_PER_ROUND:
         return {
           ...baseOptions,
@@ -419,17 +507,23 @@ const StatsChart = ({ playersData, roundData }) => {
               display: true,
               text: 'Points Per Round',
               color: textColor,
-              font: { size: 16 }
+              font: { size: 18, weight: 'bold' }
             }
           },
           scales: {
             ...baseOptions.scales,
             y: {
               ...baseOptions.scales.y,
+              grid: {
+                ...baseOptions.scales.y.grid,
+                display: true
+              }
+            },
+            x: {
+              ...baseOptions.scales.x,
               title: {
-                display: true,
-                text: 'Points',
-                color: 'var(--text-color)'
+                ...baseOptions.scales.x.title,
+                text: 'Round'
               }
             }
           }
@@ -460,9 +554,9 @@ const StatsChart = ({ playersData, roundData }) => {
 
     return (
     <div className="stats-chart-container">
-        <div className="chart-wrapper">
-            {renderChart()}
-        </div>
+        <div className="chart-wrapper chart-shadow no-bottom-border">
+            <div className="zero-line-indicator"></div>
+            {renderChart()}</div>
 
         <div className="chart-controls">
         <div className="chart-type-selector">

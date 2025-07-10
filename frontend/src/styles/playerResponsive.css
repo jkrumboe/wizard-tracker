@@ -40,6 +40,14 @@
   font-size: 0.95rem;
 }
 
+.round-row .round-score {
+  position: static;
+}
+
+.player-round-cell {
+  padding: var(--spacing-xs) !important;
+}
+
 /* Add responsive class handling in the scorecard */
 @media (max-width: 768px) {
   .player-cards-container {
