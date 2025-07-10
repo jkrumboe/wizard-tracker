@@ -193,34 +193,35 @@ const Settings = () => {
           {Object.keys(savedGames).length > 0 ? (
             <div className="games-list">
               {Object.entries(savedGames).map(([gameId, game]) => (
-                <div key={gameId} className="game-item">
+                <div key={gameId} className="game-card">
+                  <div className="game-date">
+                    {game.isPaused ? 'Paused' : 'Finished'}: {formatDate(game.lastPlayed)} | 
+                    Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}
+                  </div>
                   <div className="game-info">
-                    <div className="game-name">{game.name}</div>
-                    <div className="game-details">
-                        <span className="game-date" >
-                            Last Played:
-                            <br />
-                            {formatDate(game.lastPlayed)}</span>
-                        <div className="game-status-container">
-                            <span className={`game-status ${game.isPaused ? 'paused' : 'finished'}`}>
-                            {game.isPaused ? 'Paused' : 'Finished'}
-                            </span>
-                            <button 
-                                className="delete-game-button" 
-                                onClick={() => handleDeleteGame(gameId)}
-                                aria-label="Delete game"
-                            >
-                                <TrashIcon size={18} />
-                            </button>
-                        </div>
+                    <div className="game-winner">
+                      Winner: {game.gameState?.winner_name || game.gameState?.players?.find(p => p.id === game.gameState?.winner_id)?.name || "Unknown"}
                     </div>
-                    {game.gameState?.players && (
-                      <div className="game-players">
-                        <span>Players: </span>
-                        {game.gameState.players.map(player => player.name).join(', ')}
+                    <div className="game-players">
+                      Players:{" "}
+                      {game.gameState?.players 
+                        ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                        : "No players"}
+                    </div>
+                    <div className="bottom-game-history">
+                      <div className="game-actions">
+                        <button 
+                          className="delete-game-button" 
+                          onClick={() => handleDeleteGame(gameId)}
+                          aria-label="Delete game"
+                        >
+                          <TrashIcon size={25} />
+                        </button>
+                        {/* <span className={`mode-badge ${game.gameState?.game_mode?.toLowerCase() || 'local'}`}>
+                          {game.gameState?.game_mode || 'Local'}
+                        </span> */}
                       </div>
-                    )}
-                    
+                    </div>
                   </div>
                 </div>
               ))}

@@ -195,7 +195,6 @@
     transition: transform 0.3s, box-shadow 0.3s;
     border: 2px solid var(--primary-color);
     position: relative;
-    overflow: hidden;
   }
   
   .game-date {
@@ -212,11 +211,6 @@
     font-size: 1.1rem;
     justify-content: center;
     text-align: center;
-  }
-  
-  .game-players {
-    font-size: 0.9rem;
-    color: var(--text-color);
   }
 
   .game-info {

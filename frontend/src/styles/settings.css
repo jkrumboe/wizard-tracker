@@ -180,37 +180,13 @@
   font-weight: 500;
 }
 
-/* .game-details {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-} */
-
-.settings-section .game-details {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.settings-section .game-date {
-    font-weight: 500;
-    font-size: 0.9rem;
-    text-align: center;
-    padding: var(--spacing-xs);
-    width: 50%;
-}
-
 .game-players {
   font-size: 0.85rem;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 100%;
+  max-width: 80%;
 }
 
 .game-status {
@@ -229,17 +205,26 @@
   color: var(--success-color);
 }
 
+
+
 .delete-game-button {
   background: transparent;
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
-  padding: 6px;
+  padding: 0 6px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+}
+
+.settings-section  .game-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }
 
 /* Confirm Dialog */
