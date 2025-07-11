@@ -1,10 +1,10 @@
 /* Game Performance*/
 
 #game-performance {
-  display: grid;
+  display: flex;
   margin-top: var(--spacing-sm);
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, auto);
+  /* grid-template-columns: repeat(2, 1fr); */
+  /* grid-template-rows: repeat(2, auto); */
 }
 
 #game-performance p {

@@ -184,7 +184,7 @@ const GameInProgress = () => {
       let perfectRounds = 0;
       let overBids = 0;
       let underBids = 0;
-      let totalPoints = 0;
+
       let bestRound = 0;
       let worstRound = 0;
       let consecutiveCorrect = 0;
@@ -221,7 +221,11 @@ const GameInProgress = () => {
       const bidAccuracy = roundsPlayed > 0 ? (correctBids / roundsPlayed) * 100 : 0;
       const avgBid = roundsPlayed > 0 ? totalBids / roundsPlayed : 0;
       const avgTricks = roundsPlayed > 0 ? totalTricks / roundsPlayed : 0;
-      const avgPointsPerRound = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
+      
+      // Get the current player's total score from the current round data
+      const playerCurrentTotalScore = player.totalScore || 0;
+      const avgPoints = roundsPlayed > 0 ? playerCurrentTotalScore / roundsPlayed : 0;
+      console.log("Player:", player.name, "Total Points:", playerCurrentTotalScore, "Rounds Played:", roundsPlayed, "Avg Points:", avgPoints);
       const avgDiff = roundsPlayed > 0 ? 
         allRoundsData.reduce((sum, round) => {
           const roundPlayer = round.players.find(p => p.id === player.id);
@@ -232,10 +236,6 @@ const GameInProgress = () => {
         }, 0) / roundsPlayed 
         : 0;
 
-      // Get the current player's total score from the current round data
-      // If there are no rounds yet, default to 0
-      const playerCurrentTotalScore = player.totalScore || 0;
-
       return {
         id: player.id,
         name: player.name,
@@ -245,7 +245,7 @@ const GameInProgress = () => {
         bidAccuracy: bidAccuracy.toFixed(1),
         avgBid: avgBid.toFixed(1),
         avgTricks: avgTricks.toFixed(1),
-        avgPointsPerRound: avgPointsPerRound.toFixed(1),
+        avgPoints: avgPoints.toFixed(1),
         totalPoints: playerCurrentTotalScore, // Use the player's current total score
         overBids,
         underBids,
@@ -305,6 +305,8 @@ const GameInProgress = () => {
   };
 
   const { dealer, caller } = getDealerAndCaller();
+
+  // console.log("detailedStats", detailedStats);
 
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
@@ -452,28 +454,42 @@ const GameInProgress = () => {
                       <div className="stats-section">
                         <div className="stats-section-title">Game Performance</div>
                         <div className="stats-cards" id="game-performance">
-                          <p>Total Points: <span>{playerStats.totalPoints}</span></p>
+                          {/* <p>Total Points: <span>{playerStats.totalPoints}</span></p> */}
                           <p>Highest Round: <span>{Math.round(playerStats.bestRound)}</span></p>
                           <p>Correct Bids: <span>{Math.round(playerStats.correctBids)}</span></p>
                           <p>Total Tricks Won: <span>{Math.round(playerStats.totalTricks || playerStats.avgTricks * playerStats.roundsPlayed, 2)}</span></p>
                         </div>
                       </div>
-
+                      <div className="stats-section">
+                        <div className="stats-section-title">Additional Stats</div>
+                        <div className="stats-cards">
+                          <div className="additional-stats">
+                            <div className="stat-row">
+                              <span className="stat-label">Best Bidding Streak:</span>
+                              <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
+                            </div>
+                            <div className="stat-row">
+                              <span className="stat-label">Worst Round:</span>
+                              <span className="stat-value negative">{playerStats.worstRound}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       <div className="stats-section">
                         <div className="stats-section-title">Bidding Precision</div>
                         <div className="stats-cards">
                           <PerformanceMetric 
                             label="Average Score" 
-                            value={playerStats.avgPointsPerRound} 
-                            targetMin={20} 
-                            targetMax={30}
+                            value={playerStats.avgPoints} 
+                            targetMin={10} 
+                            targetMax={20}
                             isBadWhenAboveMax={false}
                           />
                           <PerformanceMetric 
                             label="Bid Accuracy" 
                             value={parseFloat(playerStats.bidAccuracy || 0)} 
-                            targetMin={50} 
-                            targetMax={80}
+                            targetMin={40} 
+                            targetMax={75}
                             isPercentage={true}
                             isBadWhenAboveMax={false} 
                           />
@@ -575,22 +591,6 @@ const GameInProgress = () => {
                             targetMax={0.25}
                             isBadWhenAboveMax={true}
                           />
-                        </div>
-                      </div>
-                      
-                      <div className="stats-section">
-                        <div className="stats-section-title">Additional Stats</div>
-                        <div className="stats-cards">
-                          <div className="additional-stats">
-                            <div className="stat-row">
-                              <span className="stat-label">Best Bidding Streak:</span>
-                              <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
-                            </div>
-                            <div className="stat-row">
-                              <span className="stat-label">Worst Round:</span>
-                              <span className="stat-value negative">{playerStats.worstRound}</span>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>

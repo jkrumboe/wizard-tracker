@@ -427,7 +427,7 @@ const GameDetails = () => {
                             <div className="stats-cards">
                               <PerformanceMetric 
                                 label="Average Score" 
-                                value={Math.round(playerStat?.avgPoints)} 
+                                value={Math.round(parseFloat(playerStat?.avgPoints || 0))} 
                                 targetMin={20} 
                                 targetMax={30}
                                 isBadWhenAboveMax={false}
@@ -533,7 +533,7 @@ const GameDetails = () => {
                               </div>
                               <PerformanceMetric 
                                 label="Average Deviation" 
-                                value={Math.round(playerStat?.avgDiff * 100) / 100} 
+                                value={Math.round(parseFloat(playerStat?.avgDiff || 0) * 100) / 100} 
                                 targetMin={0}
                                 targetMax={0.25}
                                 isBadWhenAboveMax={true} 
