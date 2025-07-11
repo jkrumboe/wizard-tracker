@@ -442,7 +442,7 @@ const GameInProgress = () => {
                       <span>{playerStats.name}</span>
                     </div>
                   </div>
-                  <div className="score-col">{playerStats.totalScore || 0}</div>
+                  <div className="score-col">{playerStats.totalPoints || 0}</div>
                   <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
                     {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
                   </button>
