@@ -19,9 +19,9 @@
   transition: all 0.2s ease;
 }
 
-.chart-toggle-btn:hover {
+/* .chart-toggle-btn:hover {
   background-color: var(--button-hover);
-}
+} */
 
 .chart-toggle-btn.active {
   background-color: var(--primary-color);

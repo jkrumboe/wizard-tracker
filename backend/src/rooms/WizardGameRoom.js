@@ -484,7 +484,7 @@ export class WizardGameRoom extends Room {
     }
     
     // Player found, proceed with call
-    player.call = Math.max(0, Math.min(call, currentRound.cards));
+    player.call = Math.max(0, Math.min(call, currentRound.round));
       
     // Update the player's state in the main players collection too
     // This ensures all clients see the call value
@@ -547,7 +547,7 @@ export class WizardGameRoom extends Room {
     }
       
     if (player.call !== null) {
-      player.made = Math.max(0, Math.min(tricks, currentRound.cards));
+      player.made = Math.max(0, Math.min(tricks, currentRound.round));
       
       // Update the player's state in the main players collection too
       // This ensures all clients see the made/tricks value

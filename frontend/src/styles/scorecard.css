@@ -127,8 +127,9 @@
 
 .round-bid ,
 .round-score {
-  font-size: 1rem !important;
-  height: 21px;
+  justify-content: center;
+  align-items: center;
+  height: 16px;
 }
 
 .total-row {
@@ -150,7 +151,9 @@
 }
 
 .total-score {
+  height: 24px;
   color: var(--text-color);
+  font-weight: bold;
   font-size: 1.1rem;
 }
 

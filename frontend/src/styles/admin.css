@@ -172,10 +172,6 @@
   transition: background-color 0.2s;
 }
 
-.setup-btn:hover:not(:disabled) {
-  background: var(--secondary-color-dark);
-}
-
 .setup-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

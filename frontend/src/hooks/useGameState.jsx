@@ -177,7 +177,7 @@ export function GameStateProvider({ children }) {
       if (playerIndex !== -1) {
         const updatedPlayers = [...currentRound.players]
         const player = { ...updatedPlayers[playerIndex] };
-        const validCall = Math.max(0, Math.min(call, currentRound.cards));
+        const validCall = Math.max(0, Math.min(call, currentRound.round));
         
         player.call = validCall;
         
@@ -230,15 +230,10 @@ export function GameStateProvider({ children }) {
         const updatedPlayers = [...currentRound.players];
         const player = { ...updatedPlayers[playerIndex] };
 
-        // Calculate total tricks made by other players
-        const totalMadeByOthers = updatedPlayers.reduce((sum, p, idx) => {
-          // Skip the current player and players who haven't set 'made' yet
-          return idx !== playerIndex && p.made !== null ? sum + p.made : sum;
-        }, 0);
-
-        // Enforce maximum made tricks based on available tricks
-        const maxAvailableTricks = currentRound.cards - totalMadeByOthers;
-        const validMade = Math.max(0, Math.min(made, maxAvailableTricks));
+        // In Wizard, each player can make between 0 and the total number of cards in the round
+        // The constraint is that the total of all players' made tricks should equal the round cards
+        // but individual players aren't limited by what others have made
+        const validMade = Math.max(0, Math.min(made, currentRound.round));
 
         player.made = validMade;
 

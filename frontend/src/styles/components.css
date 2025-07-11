@@ -680,9 +680,9 @@
     transition: background-color 0.2s;
   }
   
-  .view-all-stats:hover {
+  /* .view-all-stats:hover {
     background-color: rgba(53, 99, 233, 0.2);
-  }
+  } */
 
   /* Profile Edit */
 
@@ -1437,7 +1437,7 @@
 
   .score-table th,
   .score-table td {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
     text-align: center;
     border-bottom: 1px solid var(--primary-color);
     transition: all 0.2s ease;
@@ -1455,6 +1455,15 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
+  .score-table td {
+    color: var(--text-color);
+    font-size: 1.1em;
+    font-weight: 500;
+    padding: 0.55rem 0;
+    height: 100%;
+    min-height: 47px;
+  }
+
   .score-table th:first-child {
     border-top-left-radius: var(--radius-lg);
   }
@@ -1466,10 +1475,18 @@
   .player-cell {
     font-size: var(--font-size-xl) !important;
     align-items: center;
+    width: 30%;
+    max-width: 30%;
     padding-right: 0 !important;
     padding-left: var(--spacing-md) !important;
   }
   
+  .score-cell {
+    width: 20%;
+    max-width: 20%;
+    padding: 0 !important;
+    align-items: center !important;
+  }
   
   .score,
   .negative-score,
@@ -1479,9 +1496,8 @@
     justify-content: center;
     flex-direction: column;
     font-weight: 400;
-    margin: 0 auto;
+    /* margin: 0 auto; */
     color: var(--text-color);
-    height: 22px;
   }
 
   .positive-score {

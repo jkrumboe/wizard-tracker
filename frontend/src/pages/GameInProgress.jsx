@@ -131,7 +131,7 @@ const GameInProgress = () => {
     }
   }
 
-  // Auto-set made values to 0 if no tricks are available
+  // Auto-set made values to 0 if all tricks are allocated and player hasn't made any tricks
   useEffect(() => {
     if (!gameState.roundData || !gameState.roundData.length) return;
     
@@ -140,26 +140,20 @@ const GameInProgress = () => {
     
     // Use a small delay to avoid infinite loops
     const timer = setTimeout(() => {
-      // Process each player
-      
-      currentRound.players.forEach(player => {
-        // Skip if player already has a made value
-        if (player.made !== null) return;
-        
-        // Calculate total tricks made by other players
-        const totalMadeByOthers = currentRound.players.reduce((sum, p) => {
-          return p.id !== player.id && p.made !== null ? sum + p.made : sum;
-        }, 0);
+      // Calculate total tricks already allocated by other players who have entered their made values
+      const totalMadeByOthers = currentRound.players.reduce((sum, p) => {
+        return p.made !== null ? sum + p.made : sum;
+      }, 0);
 
-        // Calculate maximum available tricks for this player
-        const maxAvailableTricks = currentRound.cards - totalMadeByOthers;
-        
-        // If no tricks are available, set made to 0
-        if (maxAvailableTricks === 0) {
-          // Auto-set to zero
-          updateMade(player.id, 0);
-        }
-      });
+      // If all tricks are allocated (total made equals round cards)
+      if (totalMadeByOthers === currentRound.round) {
+        // Set remaining players who haven't entered made values to 0
+        currentRound.players.forEach(player => {
+          if (player.made === null) {
+            updateMade(player.id, 0);
+          }
+        });
+      }
     }, 100); // Small delay to avoid render conflicts
     
     return () => clearTimeout(timer);
@@ -171,6 +165,7 @@ const GameInProgress = () => {
 
   const currentRoundIndex = gameState.currentRound - 1
   const currentRound = gameState.roundData[currentRoundIndex]
+  console.log("Current Round Data:", currentRound)
   const isLastRound = gameState.currentRound === gameState.maxRounds
   const isFirstRound = gameState.currentRound === 1
 
@@ -265,6 +260,11 @@ const GameInProgress = () => {
   const detailedStats = calculateDetailedGameStats();
 
   const totalCalls = currentRound.players.reduce((sum, player) => sum + (player.call || 0), 0);
+  
+  // Check if all made values are entered and total correctly
+  const allMadeEntered = currentRound.players.every(player => player.made !== null);
+  const totalMade = currentRound.players.reduce((sum, player) => sum + (player.made || 0), 0);
+  const madeValuesCorrect = allMadeEntered && totalMade === currentRound.round;
 
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
@@ -274,14 +274,37 @@ const GameInProgress = () => {
     const uncalledPlayers = players.filter(p => p.call === null);
     // Only restrict the last player to call
     if (uncalledPlayers.length !== 1) return "not 0";
-    // The forbidden call is the value that would make totalCalls == currentRound.cards
-    const forbiddenCall = currentRound.cards - totalCalls;
+    // The forbidden call is the value that would make totalCalls == currentRound.round
+    const forbiddenCall = currentRound.round - totalCalls;
     // Only restrict if forbiddenCall is within valid range
-    if (forbiddenCall >= 0 && forbiddenCall <= currentRound.cards) {
+    if (forbiddenCall >= 0 && forbiddenCall <= currentRound.round) {
       return `not ${forbiddenCall}`;
     }
     return 0;
   };
+
+  // Calculate dealer and caller for the current round
+  const getDealerAndCaller = () => {
+    if (!currentRound || !currentRound.players || currentRound.players.length === 0) {
+      return { dealer: null, caller: null };
+    }
+    
+    const players = currentRound.players;
+    const playerCount = players.length;
+    const roundIndex = gameState.currentRound - 1; // 0-based index
+    
+    // Dealer rotates each round (starts with first player in round 1)
+    const dealerIndex = roundIndex % playerCount;
+    // Caller is the next player after dealer (wraps around)
+    const callerIndex = (dealerIndex + 1) % playerCount;
+    
+    return {
+      dealer: players[dealerIndex],
+      caller: players[callerIndex]
+    };
+  };
+
+  const { dealer, caller } = getDealerAndCaller();
 
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
@@ -290,7 +313,7 @@ const GameInProgress = () => {
           Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
         </span>
         <span className="total-calls">
-          Calls: {totalCalls} |  {(currentRound?.cards - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
+          Calls: {totalCalls} |  {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
         </span>
       </div>
 
@@ -306,9 +329,13 @@ const GameInProgress = () => {
             <table className="score-table">
               <tbody>
               {currentRound?.players.map((player) => (
-                <tr key={player.id} className="player-row">
+                <tr key={player.id} className={`player-row ${player.id === dealer?.id ? 'dealer' : ''} ${player.id === caller?.id ? 'caller' : ''}`}>
                   <td className="player-cell">
-                    {player.name}
+                    <div className="player-name-container">
+                      <span className="player-name">{player.name}</span>
+                      {player.id === dealer?.id && <span className="role-badge dealer-badge">D</span>}
+                      {player.id === caller?.id && <span className="role-badge caller-badge">C</span>}
+                    </div>
                   </td>
                   <td>
                     <input
@@ -318,7 +345,7 @@ const GameInProgress = () => {
                       placeholder="0"
                       onChange={(e) => updateCall(player.id, parseInt(e.target.value) || '')}
                       min={0}
-                      max={currentRound.cards}
+                      max={currentRound.round}
                       title={`${player.name}'s Call`}
                       inputMode="numeric"
                       pattern="[0-9]*"
@@ -326,26 +353,17 @@ const GameInProgress = () => {
                   </td>
                   <td>
                     {(() => {
-                      // Calculate total tricks made by other players
-                      const totalMadeByOthers = currentRound.players.reduce((sum, p) => {
-                        // Skip the current player and players who haven't set 'made' yet
-                        return p.id !== player.id && p.made !== null ? sum + p.made : sum;
-                      }, 0);
-
-                      // Calculate maximum available tricks for this player
-                      const maxAvailableTricks = currentRound.cards - totalMadeByOthers;
-                      
-                      // If no tricks are available, directly set the value to 0
-                      if (maxAvailableTricks === 0 && player.made === null) {
-                        // Auto-set the value to 0 if there are no available tricks
-                        updateMade(player.id, 0);
-                      }
+                      // In Wizard, each player can make 0 to the total cards in the round
+                      // The total made by all players should equal the round, but individual 
+                      // players aren't constrained by others' made values
+                      const maxPossibleTricks = currentRound.round;
+                      console.log("Max Possible Tricks:", maxPossibleTricks);
                       
                       return (
                         <div className="made-input-container">
                           <input
                             type="tel"
-                            className="rounds-input"
+                            className={`rounds-input ${madeValuesCorrect ? 'made-correct' : ''}`}
                             value={player.made !== null ? player.made : ''}
                             placeholder="0"
                             onChange={(e) => {
@@ -353,9 +371,9 @@ const GameInProgress = () => {
                               updateMade(player.id, value);
                             }}
                             min={0}
-                            max={maxAvailableTricks}
-                            title={`${player.name}'s Tricks Made (Max: ${maxAvailableTricks})`}
-                            disabled={player.call === null || maxAvailableTricks === 0}
+                            max={maxPossibleTricks}
+                            title={`${player.name}'s Tricks Made (Max: ${maxPossibleTricks})`}
+                            disabled={player.call === null}
                             inputMode="numeric"
                             pattern="[0-9]*"
                           />
@@ -363,7 +381,7 @@ const GameInProgress = () => {
                       );
                     })()}
                   </td>
-                  <td>
+                  <td className="score-cell">
                     <div className="score">
                       <span className="total-score">
                         {player.totalScore !== null ? player.totalScore : 0}
@@ -376,7 +394,7 @@ const GameInProgress = () => {
                           : "round-score negative"
                           }
                         >
-                          {player.score > 0 ? `+${player.score}` : player.score}
+                        ({player.score > 0 ? `+${player.score}` : player.score})
                         </span>
                       )}
                     </div>

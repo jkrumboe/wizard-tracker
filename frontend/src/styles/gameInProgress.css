@@ -1,5 +1,70 @@
 /* Game in Progress - Specific Styles */
 
+/* Dealer and Caller styling */
+.player-name-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-xs);
+  max-width: 100%;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--text-color);
+  flex-shrink: 0; /* Prevent badges from shrinking */
+}
+
+.dealer-badge {
+  background-color: var(--primary-color);
+}
+
+.caller-badge {
+  background-color: var(--secondary-color);
+}
+
+/* Fix table column widths to prevent jumpiness */
+.game-in-progress .score-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.game-in-progress .score-table td {
+  overflow: hidden;
+  min-height: 62px;
+  height: 62px; /* Ensure consistent height for all rows */
+}
+
+/* Fixed column widths */
+.game-in-progress .score-table td:nth-child(1) {
+  width: 40%; /* Player name column */
+}
+
+.game-in-progress .score-table td:nth-child(2) {
+  width: 20%; /* Call input column */
+}
+
+.game-in-progress .score-table td:nth-child(3) {
+  width: 20%; /* Made input column */
+}
+
+.game-in-progress .score-table td:nth-child(4) {
+  width: 20%; /* Score column */
+  align-content: center;
+}
+
+/* Ensure player name container fits properly */
+.game-in-progress .player-name-container {
+  width: 100%;
+}
+
 .game-in-progress {
   display: flex;
   flex-direction: column;
@@ -163,6 +228,35 @@
 .made-input-container {
   position: relative;
 }
+
+/* Highlight made inputs when all tricks are correctly allocated */
+.rounds-input.made-correct {
+  /* background-color: var(--success-color) !important; */
+  border-color: var(--success-color) !important;
+  border-width: 2px !important;
+}
+
+/* .rounds-input.made-correct::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+} */
+
+/* Total made validation styles */
+/* .total-made {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.total-made.correct {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.total-made.incorrect {
+  background-color: var(--warning-color);
+  color: var(--text-color);
+} */
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
