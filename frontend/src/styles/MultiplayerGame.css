@@ -73,9 +73,9 @@
   transition: background-color 0.2s ease;
 }
 
-.game-container .adv-stats-btn:hover {
+/* .game-container .adv-stats-btn:hover {
   background-color: var(--primary-dark);
-}
+} */
 
 /* Fixed position for the round info at the top */
 .game-container .round-info {

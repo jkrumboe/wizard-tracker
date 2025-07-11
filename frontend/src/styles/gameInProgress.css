@@ -128,9 +128,9 @@
   margin: 0 var(--spacing-md);
 }
 
-.game-in-progress .adv-stats-btn:hover {
+/* .game-in-progress .adv-stats-btn:hover {
   background-color: var(--primary-dark);
-}
+} */
 
 /* Fixed position for the round info at the top */
 .game-in-progress .round-info {
