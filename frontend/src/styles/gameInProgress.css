@@ -13,13 +13,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-size: 0.7rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  padding: 3px var(--spacing-sm) ;
   font-weight: bold;
   color: var(--text-color);
   flex-shrink: 0; /* Prevent badges from shrinking */
+  margin-right: var(--spacing-xs);
 }
 
 .dealer-badge {
@@ -44,19 +44,19 @@
 
 /* Fixed column widths */
 .game-in-progress .score-table td:nth-child(1) {
-  width: 40%; /* Player name column */
+  width: 50%; /* Player name column */
 }
 
 .game-in-progress .score-table td:nth-child(2) {
-  width: 20%; /* Call input column */
+  width: 15%; /* Call input column */
 }
 
 .game-in-progress .score-table td:nth-child(3) {
-  width: 20%; /* Made input column */
+  width: 15%; /* Made input column */
 }
 
 .game-in-progress .score-table td:nth-child(4) {
-  width: 20%; /* Score column */
+  width: 10%; /* Score column */
   align-content: center;
 }
 

@@ -333,8 +333,8 @@ const GameInProgress = () => {
                   <td className="player-cell">
                     <div className="player-name-container">
                       <span className="player-name">{player.name}</span>
-                      {player.id === dealer?.id && <span className="role-badge dealer-badge">D</span>}
-                      {player.id === caller?.id && <span className="role-badge caller-badge">C</span>}
+                      {player.id === dealer?.id && <span className="role-badge dealer-badge">Dealer</span>}
+                      {player.id === caller?.id && <span className="role-badge caller-badge">Caller</span>}
                     </div>
                   </td>
                   <td>
