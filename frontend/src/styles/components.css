@@ -1508,10 +1508,6 @@
     color: var(--error-color);
   }
   
-  .round-score {
-    font-size: 0.8em;
-  }
-  
   .finish-btn {
     display: block;
     width: 100%;
