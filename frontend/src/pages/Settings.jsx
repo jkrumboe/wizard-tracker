@@ -131,26 +131,22 @@ const Settings = () => {
 
           {!useSystemTheme && (
             <div className="settings-option">
-              <label className="radio-group">
-                <div className="radio-option">
-                  <input 
-                    type="radio" 
-                    name="theme" 
-                    checked={theme === 'light'} 
-                    onChange={() => theme === 'dark' && toggleTheme()} 
-                  />
-                  <span>Light Mode</span>
-                </div>
-                <div className="radio-option">
-                  <input 
-                    type="radio" 
-                    name="theme" 
-                    checked={theme === 'dark'} 
-                    onChange={() => theme === 'light' && toggleTheme()} 
-                  />
-                  <span>Dark Mode</span>
-                </div>
-              </label>
+              <div className="theme-button-group">
+                <button 
+                  type="button"
+                  className={`tab-button ${theme === 'light' ? 'active' : ''}`}
+                  onClick={() => theme === 'dark' && toggleTheme()}
+                >
+                  Light Mode
+                </button>
+                <button 
+                  type="button"
+                  className={`tab-button ${theme === 'dark' ? 'active' : ''}`}
+                  onClick={() => theme === 'light' && toggleTheme()}
+                >
+                  Dark Mode
+                </button>
+              </div>
             </div>
           )}
         </div>

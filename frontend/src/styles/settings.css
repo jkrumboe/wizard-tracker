@@ -41,8 +41,8 @@
 
 /* Theme Settings */
 .settings-option {
-    padding: 0 var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  padding: 0 ;
+  /* margin-bottom: var(--spacing-md); */
   gap: var(--spacing-md);
 }
 
@@ -51,16 +51,65 @@
     margin: 0 var(--spacing-sm);
 }
 
-.checkbox-label, .radio-group {
+.checkbox-label {
   display: flex;
+  padding-left: var(--spacing-sm);
   align-items: center;
   font-weight: 500;
   cursor: pointer;
 }
 
-.radio-group {
+/* Theme Button Group */
+.theme-button-group {
   display: flex;
-  gap: var(--spacing-xl);
+  margin-top: var(--spacing-sm);
+  /* gap: var(--spacing-sm); */
+}
+
+.theme-button {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-color);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.theme-button:hover {
+  background-color: var(--card-background);
+  transform: translateY(-1px);
+}
+
+.theme-button:hover::before {
+  left: 100%;
+}
+
+.theme-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(53, 99, 233, 0.3);
+  transform: translateY(-1px);
+}
+
+.theme-button.active::before {
+  display: none;
 }
 
 .radio-option {
@@ -298,11 +347,11 @@
 
 /* Message Notification */
 .settings-message {
-    position: fixed;
-    top: var(--spacing-md);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
+  position: fixed;
+  top: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
   padding: var(--spacing-md);
   border-radius: 8px;
   margin-bottom: var(--spacing-lg);
@@ -356,10 +405,12 @@
     justify-content: center;
   }
 
-  .radio-group {
-    flex-direction: row;
-    justify-content: space-between;
-    /* margin: 0 var(--spacing-md); */
-    align-items: flex-start;
+  .theme-button-group {
+    gap: var(--spacing-xs);
+  }
+  
+  .theme-button {
+    padding: var(--spacing-sm);
+    font-size: 0.9rem;
   }
 }

@@ -1136,12 +1136,12 @@
   
   /* New Game Page */
   .new-game-container {
-    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-xl);
     max-width: 960px; /* Constrain the width */
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow-y: hidden;
     max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - var(--spacing-xl));
   }
   
@@ -1225,14 +1225,10 @@
     border: none;
     color: var(--error-color);
     cursor: pointer;
-    font-size: 1rem;
-    padding: var(--spacing-xs);
+    font-size: 1.7rem;
+    padding: 0;
     border-radius: var(--radius-full);
     transition: background-color 0.2s;
-  }
-  
-  .remove-btn:hover {
-    background-color: rgba(239, 68, 68, 0.1);
   }
   
   .setting-item {
@@ -1883,7 +1879,7 @@
   background-color: transparent;
   border: none;
   padding: var(--spacing-sm);
-  border: 2px solid var(--border-color);
+  background: var(--background-color);
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-light);
@@ -1981,10 +1977,13 @@
 
 /* Paused Games List */
 .paused-games-section {
-  margin-top: var(--spacing-lg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
   background-color: var(--card-background);
+  max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - 120px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .paused-games-list {
@@ -1992,8 +1991,36 @@
   flex-direction: column;
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
+  overflow-y: auto;
+  max-height: calc(60vh - var(--spacing-xl));
+  padding-right: var(--spacing-xs);
+}
+
+/* Scrollbar styling for paused games list */
+.paused-games-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.paused-games-list::-webkit-scrollbar-track {
+  background: var(--card-background-alt);
+  border-radius: var(--radius-md);
+}
+
+.paused-games-list::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+}
+
+.paused-games-list::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Firefox scrollbar */
+.paused-games-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-light) var(--card-background-alt);
 }
 
 .paused-game-item {
@@ -2243,6 +2270,22 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+  }
+}
+
+/* Mobile responsiveness for paused games */
+@media (max-width: 768px) {
+  .paused-games-section {
+    max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - 100px);
+  }
+  
+  .paused-games-list {
+    max-height: calc(55vh - var(--spacing-lg));
+    padding-right: var(--spacing-xs);
+  }
+  
+  .paused-game-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 }
 
@@ -2561,8 +2604,663 @@
 
 .radio-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: var(--spacing-sm);
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radio-option:hover {
+  background-color: var(--card-background-alt);
+}
+
+.radio-option.selected {
+  background-color: rgba(53, 99, 233, 0.1);
+  border-color: var(--primary-color);
+}
+
+.radio-option input[type="radio"] {
+  margin: 0;
+  width: auto;
+}
+
+.radio-option-content {
+  flex: 1;
+}
+
+.radio-option-title {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.radio-option-description {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+/* Saved Games List */
+.saved-games-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--card-background-alt);
+}
+
+.saved-game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saved-game-item:last-child {
+  border-bottom: none;
+}
+
+.saved-game-item:hover {
+  background-color: var(--card-background);
+}
+
+.saved-game-item.selected {
+  background-color: rgba(53, 99, 233, 0.1);
+  border-color: var(--primary-color);
+}
+
+.saved-game-info {
+  flex: 1;
+}
+
+.saved-game-name {
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.saved-game-details {
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.saved-game-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s;
+  color: var(--text-light);
+}
+
+.icon-btn:hover {
+  background-color: var(--card-background-alt);
+  color: var(--text-color);
+}
+
+.icon-btn.danger {
+  color: var(--error-color);
+}
+
+.icon-btn.danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.empty-saved-games {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-light);
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Mobile responsiveness for paused games */
+@media (max-width: 768px) {
+  .paused-games-section {
+    max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - 100px);
+  }
+  
+  .paused-games-list {
+    max-height: calc(55vh - var(--spacing-lg));
+    padding-right: var(--spacing-xs);
+  }
+  
+  .paused-game-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+/* Navigation Bar Styles */
+.top-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--card-background);
+  padding: 0.75rem 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--top-nav-height);
+  box-shadow: var(--shadow);
+  z-index: 100;
+}
+
+.navbar-logo {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.bottom-navbar {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--card-background);
+  border-top: 1px solid var(--border-color);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--bottom-nav-height);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm);
+  color: var(--text-light);
+  text-decoration: none;
+  flex: 1;
+  transition: color 0.3s;
+}
+
+.bottom-nav-item.active {
+  color: var(--primary-color);
+}
+
+.bottom-nav-item .nav-icon {
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.bottom-nav-item span {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Media query to adjust navbar size on smaller screens */
+@media (max-width: 768px) {
+  .bottom-nav-item {
+    padding: var(--spacing-xs);
+  }
+  
+  .bottom-nav-item .nav-icon {
+    font-size: 1.3rem;
+  }
+  
+  .bottom-nav-item span {
+    font-size: 0.7rem;
+  }
+}
+
+/* Media query for desktop */
+@media (min-width: 769px) {
+  .tab-panel {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+ 
+  /* Home page - Recent Games section */
+.recent-games {
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow);
+  /* Height constraints to avoid reaching bottom nav */
+  max-height: calc(70vh - var(--bottom-nav-height));
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-games h2 {
+  color: var(--primary-color);
+  position: relative;
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+/* Make the game-history div scrollable */
+.game-history {
+  margin-top: var(--spacing-md);
+  overflow-y: auto;
+  max-height: 100%;
+  height: 100%;
+}
+
+/* Scrollbar styling for game-history */
+.game-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.game-history::-webkit-scrollbar-track {
+  background: var(--card-background-alt);
+  border-radius: var(--radius-md);
+}
+
+.game-history::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+}
+
+.game-history::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Empty message styling */
+.empty-message {
+  text-align: center;
+  color: var(--text-light);
+  padding: var(--spacing-md) 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .recent-games {
+    max-height: calc(65vh - var(--bottom-nav-height)); 
+    padding: var(--spacing-md); 
+  }
+  
+  .game-card {
+    padding: 0; 
+    margin: 0 var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .home-header {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .home-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .action-buttons {
+    margin: var(--spacing-lg);
+  }
+
+  .form-group {
+    margin: 0 auto 1rem auto;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Mobile responsiveness for paused games */
+@media (max-width: 768px) {
+  .paused-games-section {
+    max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - 100px);
+  }
+  
+  .paused-games-list {
+    max-height: calc(55vh - var(--spacing-lg));
+    padding-right: var(--spacing-xs);
+  }
+  
+  .paused-game-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+.loading-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading {
+  color: var(--text-light);
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+/* Home specific container to handle bottom navigation spacing */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 960px;
+  margin: var(--spacing-xl) auto;
+}
+
+/* Game table input styles */
+  .score-table input[type="tel"] {
+    width: 50px;
+    text-align: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+  }
+  
+  .score-table input[type="tel"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+  }
+  
+  .score-table input[type="tel"]:disabled {
+    background-color: var(--disabled-background);
+    opacity: 0.6;
+    cursor: not-allowed;
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+  }
+  
+  /* Hide spinner buttons in number inputs for browsers */
+  .score-table input[type="tel"]::-webkit-inner-spin-button, 
+  .score-table input[type="tel"]::-webkit-outer-spin-button { 
+    opacity: 1;
+    height: 20px;
+  }
+  
+  #rounds {
+    justify-items: center;
+    align-items: center;
+  }
+
+  .rounds-input {
+    width: 50px;
+    text-align: center;
+  }
+
+  #rounds-input {
+    text-align: center;
+    margin: auto;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+/* Game Controls and Menu Styles */
+
+/* General .game-bottom-section styling for non-GameInProgress pages */
+.game-bottom-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
+  z-index: 100;
+  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.game-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.game-control-btn {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+}
+
+#toggle-button-profile {
+  top: 12vh;
+  left: var(--spacing-xl);
+  position: absolute;
+  padding: var(--spacing-sm);
+}
+
+.game-header-top {
+  position: relative;
+  /* top: 100%; */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#game-toggle-details {
+  padding: var(--spacing-sm);
+}
+
+#prevRoundBtn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+#nextRoundBtn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+.toggle-text {
+  color: var(--text-color);
+  font-weight: 400;
+  font-size: 1rem !important;
+}
+
+.toggle-container {
+  display: flex;
+  margin-top: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  flex-direction: column;
+}
+
+.toggle-container input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+#manual-rounds-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+/* Dialog Overlay and Modal Styles */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.dialog-modal {
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  width: 90%;
+  max-width: 500px;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.3s ease;
+  border: 1px solid var(--border-color);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dialog-header h2 {
+  margin: 0;
+  color: var(--primary-color);
+}
+
+.dialog-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-full);
+  transition: all 0.2s;
+}
+
+.dialog-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.dialog-content {
+  margin-bottom: var(--spacing-lg);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+.dialog-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.dialog-btn.primary {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+}
+
+.dialog-btn.primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.dialog-btn.secondary {
+  background-color: var(--card-background-alt);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.dialog-btn.secondary:hover {
+  background-color: var(--border-color);
+}
+
+.dialog-btn.danger {
+  background-color: var(--error-color);
+  color: var(--text-color);
+}
+
+.dialog-btn.danger:hover {
+  background-color: var(--error-dark, #dc2626);
+}
+
+.dialog-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form Elements in Dialogs */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.form-group input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--card-background-alt);
+  color: var(--text-color);
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.2);
 }
 
 .radio-option {
