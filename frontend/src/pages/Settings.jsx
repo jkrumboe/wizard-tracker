@@ -199,9 +199,14 @@ const Settings = () => {
                     Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}
                   </div>
                   <div className="game-info">
-                    <div className="game-winner">
-                      Winner: {game.gameState?.winner_name || game.gameState?.players?.find(p => p.id === game.gameState?.winner_id)?.name || "Unknown"}
-                    </div>
+                    {(() => {
+                      const winnerName = game.gameState?.winner_name || game.gameState?.players?.find(p => p.id === game.gameState?.winner_id)?.name;
+                      return winnerName ? (
+                        <div className="game-winner">
+                          Winner: {winnerName}
+                        </div>
+                      ) : null;
+                    })()}
                     <div className="game-players">
                       Players:{" "}
                       {game.gameState?.players 

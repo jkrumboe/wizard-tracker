@@ -48,15 +48,15 @@
 }
 
 .game-in-progress .score-table td:nth-child(2) {
-  width: 15%; /* Call input column */
+  width: 17%; /* Call input column */
 }
 
 .game-in-progress .score-table td:nth-child(3) {
-  width: 15%; /* Made input column */
+  width: 17%; /* Made input column */
 }
 
 .game-in-progress .score-table td:nth-child(4) {
-  width: 10%; /* Score column */
+  width: 16%; /* Score column */
   align-content: center;
 }
 
@@ -131,10 +131,6 @@
 /* .game-in-progress .adv-stats-btn:hover {
   background-color: var(--primary-dark);
 } */
-
-.game-in-progress .rounds-section {
-  margin-top: var(--spacing-md);
-}
 
 /* Fixed position for the round info at the top */
 .game-in-progress .round-info {

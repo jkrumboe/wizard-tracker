@@ -14,7 +14,6 @@ import "../styles/performanceMetrics.css"
 import "../styles/stats.css"
 import "../styles/gameInProgress.css"
 import "../styles/statsChart.css"
-import "../styles/scorecard.css"
 import { ArrowLeftIcon, ArrowRight } from "lucide-react";
 import StatsChart from "../components/StatsChart";
 
@@ -41,7 +40,7 @@ const GameInProgress = () => {
   const [showGameMenuModal, setShowGameMenuModal] = useState(false)
   const [showPauseModal, setShowPauseModal] = useState(false)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
-  const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart', 'details', or 'table'
+  const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
   
   // Function to toggle player stats visibility
   const togglePlayerStats = (playerId) => {
@@ -428,12 +427,6 @@ const GameInProgress = () => {
               >
                 Player Details
               </button>
-              <button 
-                className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
-                onClick={() => setStatsSubTab('table')}
-              >
-                Score Table
-              </button>
             </div>
             
             {statsSubTab === 'chart' ? (
@@ -441,65 +434,6 @@ const GameInProgress = () => {
                 playersData={detailedStats} 
                 roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
               />
-            ) : statsSubTab === 'table' ? (
-              <div className="rounds-section">
-                <div className={`wizard-scorecard ${gameState.players.length > 3 ? 'many-players' : ''}`} data-player-count={gameState.players.length}>
-                  <table className="scorecard-table">
-                    <thead>
-                      <tr>
-                        <th className="round-header sticky-cell">Round</th>
-                        {currentRound?.players.map(player => (
-                          <th key={player.id} className="player-header">
-                            <div className="player-header-name">{player.name}</div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {gameState.roundData.slice(0, currentRoundIndex + 1).map((round, index) => (
-                        <tr key={index} className="round-row">
-                          <td className="round-number sticky-cell">{index + 1}</td>
-                          {currentRound?.players.map(player => {
-                            const playerRound = round.players.find(p => p.id === player.id);
-                            
-                            // Determine bid status for color-coding
-                            let bidStatusClass = '';
-                            if (playerRound && playerRound.call !== null && playerRound.made !== null) {
-                              if (playerRound.call === playerRound.made) {
-                                bidStatusClass = 'correct-bid';
-                              } else if (playerRound.made > playerRound.call) {
-                                bidStatusClass = 'over-bid';
-                              } else {
-                                bidStatusClass = 'under-bid';
-                              }
-                            }
-                            
-                            return (
-                              <td key={player.id} className="player-round-cell">
-                                {playerRound && (
-                                  <div className="player-round-data">
-                                    <div className="round-score">{playerRound.score !== null ? playerRound.score : '-'}</div>
-                                    <div className="round-bid">{playerRound.call !== null ? playerRound.call : '-'}</div>
-                                    <div className={`round-made ${bidStatusClass}`}>{playerRound.made !== null ? playerRound.made : '-'}</div>
-                                  </div>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                      <tr className="total-row">
-                        <td className="total-label sticky-cell">Total</td>
-                        {currentRound?.players.map(player => (
-                          <td key={player.id} className="total-score">
-                            {player.totalScore || 0}
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             ) : (
               <div className="results-table">
               {detailedStats.map((playerStats, index) => (
