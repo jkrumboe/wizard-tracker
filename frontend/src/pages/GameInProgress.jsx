@@ -165,7 +165,6 @@ const GameInProgress = () => {
 
   const currentRoundIndex = gameState.currentRound - 1
   const currentRound = gameState.roundData[currentRoundIndex]
-  console.log("Current Round Data:", currentRound)
   const isLastRound = gameState.currentRound === gameState.maxRounds
   const isFirstRound = gameState.currentRound === 1
 
@@ -225,7 +224,6 @@ const GameInProgress = () => {
       // Get the current player's total score from the current round data
       const playerCurrentTotalScore = player.totalScore || 0;
       const avgPoints = roundsPlayed > 0 ? playerCurrentTotalScore / roundsPlayed : 0;
-      console.log("Player:", player.name, "Total Points:", playerCurrentTotalScore, "Rounds Played:", roundsPlayed, "Avg Points:", avgPoints);
       const avgDiff = roundsPlayed > 0 ? 
         allRoundsData.reduce((sum, round) => {
           const roundPlayer = round.players.find(p => p.id === player.id);
@@ -306,8 +304,6 @@ const GameInProgress = () => {
 
   const { dealer, caller } = getDealerAndCaller();
 
-  // console.log("detailedStats", detailedStats);
-
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
@@ -359,7 +355,6 @@ const GameInProgress = () => {
                       // The total made by all players should equal the round, but individual 
                       // players aren't constrained by others' made values
                       const maxPossibleTricks = currentRound.round;
-                      console.log("Max Possible Tricks:", maxPossibleTricks);
                       
                       return (
                         <div className="made-input-container">

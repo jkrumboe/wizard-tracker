@@ -25,6 +25,9 @@ const NewGame = () => {
   // Always default to the new-game tab, never auto-switch
   const [activeTab, setActiveTab] = useState('new-game')
   const [pausedGames, setPausedGames] = useState([])
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [gameToDelete, setGameToDelete] = useState(null)
+  const [message, setMessage] = useState({ text: '', type: '' })
   
   // Function to load paused games
   const loadPausedGames = useCallback(async () => {
@@ -101,27 +104,46 @@ const NewGame = () => {
     }
   }
 
-  // Handle deleting a saved game
-  const handleDeleteGame = async (gameId) => {
-    try {
-      const result = await deleteSavedGame(gameId);
-      if (result && result.success) {
-        setPausedGames(prevGames => prevGames.filter(game => game.id !== gameId));
-        return { success: true };
-      } else {
-        return { 
-          success: false, 
-          error: result && result.error ? result.error : "Failed to delete game"
-        };
+  // Handle showing delete confirmation dialog
+  const handleDeleteGame = (gameId) => {
+    setGameToDelete(gameId);
+    setShowConfirmDialog(true);
+  };
+
+  // Handle confirming the delete action
+  const handleConfirmDelete = async () => {
+    if (gameToDelete) {
+      try {
+        const result = await deleteSavedGame(gameToDelete);
+        if (result && result.success) {
+          setPausedGames(prevGames => prevGames.filter(game => game.id !== gameToDelete));
+          setMessage({ text: 'Game deleted successfully.', type: 'success' });
+        } else {
+          setMessage({ 
+            text: result && result.error ? result.error : "Failed to delete game", 
+            type: 'error' 
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting game:", error);
+        setMessage({ text: error.message, type: 'error' });
       }
-    } catch (error) {
-      console.error("Error deleting game:", error);
-      return { 
-        success: false, 
-        error: error.message 
-      };
     }
-  }
+    setShowConfirmDialog(false);
+    setGameToDelete(null);
+  };
+
+  const clearMessage = () => {
+    setTimeout(() => {
+      setMessage({ text: '', type: '' });
+    }, 3000);
+  };
+
+  useEffect(() => {
+    if (message.text) {
+      clearMessage();
+    }
+  }, [message]);
   
   const handleMaxRoundsChange = (value) => {    
     // Ensure the value is between 0 and 20 (the maximum possible)
@@ -149,6 +171,12 @@ const NewGame = () => {
 
   return (
     <div className="new-game-container">
+      {/* {message.text && (
+        <div className={`settings-message ${message.type}`}>
+          {message.text}
+        </div>
+      )} */}
+
       {activeTab === 'new-game' && (
         <div className={`tab-panel players-${gameState.players.length}`}>
           <div className="setup-section">
@@ -296,6 +324,32 @@ const NewGame = () => {
           </div>
         </div>
       )}
+
+      {showConfirmDialog && (
+        <div className="confirm-dialog-overlay">
+          <div className="confirm-dialog">
+            <h3>Delete Game?</h3>
+            <p>
+              Are you sure you want to delete this game? This action cannot be undone.
+            </p>
+            <div className="confirm-actions">
+              <button 
+                className="cancel-button" 
+                onClick={() => setShowConfirmDialog(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-button danger-button" 
+                onClick={handleConfirmDelete}
+              >
+                Delete Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

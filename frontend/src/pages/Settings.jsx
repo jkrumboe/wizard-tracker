@@ -107,11 +107,11 @@ const Settings = () => {
   return (
     <PageTransition>
       <div className="settings-container">
-        {message.text && (
+        {/* {message.text && (
           <div className={`settings-message ${message.type}`}>
             {message.text}
           </div>
-        )}
+        )} */}
 
         <div className="settings-section">
           <h2>Theme Settings</h2>
