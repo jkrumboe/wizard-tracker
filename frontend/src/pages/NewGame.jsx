@@ -18,7 +18,8 @@ const NewGame = () => {
     setMaxRounds, 
     getSavedGames, 
     resumeGame, 
-    deleteSavedGame 
+    deleteSavedGame,
+    resetGame 
   } = useGameStateContext()
 
   // No longer need index since we generate unique IDs in addPlayer
@@ -55,6 +56,11 @@ const NewGame = () => {
   useEffect(() => {
     loadPausedGames();
   }, [loadPausedGames]);
+  
+  // Reset game state when entering the new game page to ensure a clean state
+  useEffect(() => {
+    resetGame();
+  }, [resetGame]);
   
   // Also refresh when activeTab changes to 'paused-games'
   useEffect(() => {

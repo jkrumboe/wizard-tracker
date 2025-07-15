@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { createGame } from "../services/gameService"
 import { LocalGameStorage } from "../services/localGameStorage"
 
@@ -30,6 +30,94 @@ export function GameStateProvider({ children }) {
     isPaused: false, // Track if game is paused
     gameName: null,  // Custom game name
   })
+
+  // Restore current game only when specifically accessing /game/current
+  useEffect(() => {
+    const restoreCurrentGame = () => {
+      try {
+        // Only restore if we're on the game current route
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/game/current') {
+          return;
+        }
+
+        const games = LocalGameStorage.getAllSavedGames();
+        const gameEntries = Object.entries(games);
+        
+        // Find the most recently saved active (paused) game
+        // Exclude auto-saves and only restore explicitly saved games
+        const activeGame = gameEntries
+          .filter(([, game]) => 
+            game.isPaused && 
+            game.gameState && 
+            game.gameState.gameStarted &&
+            game.name && 
+            !game.name.includes('Auto-save') && 
+            !game.name.includes('Current Game (Auto-save)')
+          )
+          .sort(([,a], [,b]) => new Date(b.lastPlayed || b.dateCreated) - new Date(a.lastPlayed || a.dateCreated))[0];
+        
+        if (activeGame) {
+          const [gameId, gameData] = activeGame;
+          const restoredGameState = {
+            ...gameData.gameState,
+            gameId: gameId,
+            isPaused: false, // Resume the game
+          };
+          
+          setGameState(restoredGameState);
+          console.log('Restored current game:', gameId);
+        }
+      } catch (error) {
+        console.error('Error restoring current game:', error);
+      }
+    };
+
+    // Clean up old auto-saves when app starts
+    const cleanupAutoSaves = () => {
+      try {
+        const games = LocalGameStorage.getAllSavedGames();
+        const autoSaveIds = Object.entries(games)
+          .filter(([, game]) => 
+            game.name && 
+            (game.name.includes('Auto-save') || game.name.includes('Current Game (Auto-save)'))
+          )
+          .map(([id]) => id);
+
+        autoSaveIds.forEach(id => {
+          try {
+            LocalGameStorage.deleteGame(id);
+          } catch (error) {
+            console.warn('Could not delete auto-save:', id, error);
+          }
+        });
+
+        if (autoSaveIds.length > 0) {
+          console.log('Cleaned up', autoSaveIds.length, 'auto-saved games');
+        }
+      } catch (error) {
+        console.warn('Error during auto-save cleanup:', error);
+      }
+    };
+
+    cleanupAutoSaves();
+    restoreCurrentGame();
+  }, []); // Run only once on mount
+
+  // Auto-save during gameplay when state changes
+  useEffect(() => {
+    if (gameState.gameStarted && !gameState.gameFinished && !gameState.isPaused && gameState.gameId) {
+      const timeoutId = setTimeout(() => {
+        try {
+          LocalGameStorage.autoSaveGame(gameState, gameState.gameId);
+        } catch (error) {
+          console.error('Error auto-saving game:', error);
+        }
+      }, 1000); // Debounce auto-saves by 1 second
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [gameState]);
 
   // Add a player to the game
   const addPlayer = useCallback(() => {
@@ -155,16 +243,24 @@ export function GameStateProvider({ children }) {
     });
   }
 
-  setGameState((prevState) => ({
-    ...prevState,
+  const newGameState = {
+    ...gameState,
     roundData: initialRoundData,
     gameStarted: true,
     gameFinished: false, // Reset gameFinished
     referenceDate,
     isLocal: true, // Ensure this is set for local games
     mode: "Local", // Set the game mode to Local
-  }));
-}, [gameState.players, gameState.maxRounds]);
+  };
+
+  // Create an initial auto-save for the new game
+  const gameId = LocalGameStorage.saveGame(newGameState, 'Current Game (Auto-save)', true);
+  
+  setGameState({
+    ...newGameState,
+    gameId: gameId,
+  });
+}, [gameState]);
 
   // Update player's call for current round
   const updateCall = useCallback((playerId, call) => {
@@ -565,6 +661,13 @@ export function GameStateProvider({ children }) {
         const saveResult = saveGame(customName);
         if (!saveResult.success) {
           return saveResult;
+        }
+      } else if (!shouldSave && gameState.gameId) {
+        // If not saving and there's an auto-saved game, delete it
+        try {
+          LocalGameStorage.deleteGame(gameState.gameId);
+        } catch (error) {
+          console.warn('Could not delete auto-saved game:', error);
         }
       }
 
