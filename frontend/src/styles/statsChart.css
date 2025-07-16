@@ -63,7 +63,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .player-toggle-btn {
@@ -81,14 +81,8 @@
 } 
 
 .player-toggle-btn.focused {
-  box-shadow: 0 0 0 2px var(--primary-color);
-  transform: scale(1.1);
+  transform: scale(1.2);
   z-index: 1;
-}
-
-.player-toggle-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
 } 
 
 .chart-wrapper {

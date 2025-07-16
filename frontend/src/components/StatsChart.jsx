@@ -297,7 +297,7 @@ const StatsChart = ({ playersData, roundData }) => {
     // Use direct color values based on theme
     const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
     const borderColor = isDarkMode ? '#4b5563' : '#d1d5db';
-    const gridColor = isDarkMode ? 'rgba(75, 85, 99, 0.2)' : 'rgba(209, 213, 219, 0.5)';
+    const gridColor = isDarkMode ? 'rgba(202, 214, 231, 0.2)' : 'rgba(144, 147, 151, 0.5)';
     const tooltipBackgroundColor = isDarkMode ? '#374151' : '#ffffff';
     
     const baseOptions = {
@@ -305,7 +305,19 @@ const StatsChart = ({ playersData, roundData }) => {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: false, // Hide the legend since colors are shown in buttons below
+          display: chartType === CHART_TYPES.BID_DISTRIBUTION, // Show legend only for bid distribution
+          position: 'top',
+          align: 'center',
+          labels: {
+            color: textColor,
+            font: {
+              size: 12,
+              weight: '500'
+            },
+            padding: 20,
+            usePointStyle: true,
+            pointStyle: 'rect'
+          }
         },
         tooltip: {
           backgroundColor: tooltipBackgroundColor,
@@ -468,6 +480,13 @@ const StatsChart = ({ playersData, roundData }) => {
               text: 'Bid Distribution',
               color: textColor,
               font: { size: 18, weight: 'bold' }
+            },
+            legend: {
+              ...baseOptions.plugins.legend,
+              labels: {
+                ...baseOptions.plugins.legend.labels,
+                padding: 5 // Reduce padding to bring legend closer to title
+              }
             }
           },
           scales: {
@@ -569,7 +588,6 @@ const StatsChart = ({ playersData, roundData }) => {
             <option value={CHART_TYPES.POINTS_PROGRESSION}>Points Progression</option>
             <option value={CHART_TYPES.BID_ACCURACY}>Bid Accuracy</option>
             <option value={CHART_TYPES.BID_DISTRIBUTION}>Bid Distribution</option>
-            <option value={CHART_TYPES.POINTS_PER_ROUND}>Points Per Round</option>
             </select>
         </div>
 
