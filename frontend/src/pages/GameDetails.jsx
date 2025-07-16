@@ -466,19 +466,19 @@ const GameDetails = () => {
                                     let biddingClass = '';
                                     
                                     if (correctBidPercent > 75) {
-                                      biddingQuality = 'Bidding Excellent';
+                                      biddingQuality = 'Bidding: Excellent';
                                       biddingClass = 'excellent-bidding';
                                     } else if (correctBidPercent >= 60) {
-                                      biddingQuality = 'Bidding Good';
+                                      biddingQuality = 'Bidding: Good';
                                       biddingClass = 'good-bidding';
                                     } else if (correctBidPercent >= 45) {
-                                      biddingQuality = 'Bidding Okay';
+                                      biddingQuality = 'Bidding: Okay';
                                       biddingClass = 'okay-bidding';
                                     } else if (correctBidPercent >= 30) {
-                                      biddingQuality = 'Bidding Poorly';
+                                      biddingQuality = 'Bidding: Poorly';
                                       biddingClass = 'poor-bidding';
                                     } else {
-                                      biddingQuality = 'Bidding Badly';
+                                      biddingQuality = 'Bidding: Badly';
                                       biddingClass = 'bad-bidding';
                                     }
                                     

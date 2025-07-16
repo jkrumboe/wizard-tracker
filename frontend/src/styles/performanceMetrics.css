@@ -187,7 +187,6 @@
 .bidding-style-value {
   font-size: 1.3rem;
   font-weight: bold;
-  margin-bottom: var(--spacing-xs);
   text-align: center;
 }
 
