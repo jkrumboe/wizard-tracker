@@ -135,7 +135,6 @@ export class LocalGameStorage {
         }
       }
 
-      // this.debugStorage();
       return gameId;
     } catch (error) {
       console.error("Error saving game:", error);
@@ -233,9 +232,6 @@ export class LocalGameStorage {
    */
   static getSavedGamesList() {
     try {
-      // this.debugStorage();
-      
-      // Try to directly get the raw data to check format
       const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
       
       if (!stored) {
@@ -247,9 +243,8 @@ export class LocalGameStorage {
       
       // Direct array format (old format from finishGame)
       if (Array.isArray(parsedData)) {
-        
         gamesList = parsedData
-          .filter(game => game && game.id) // Ensure valid games only
+          .filter(game => game && game.id)
           .map(game => ({
             id: game.id,
             name: game.name || `Game from ${new Date(game.created_at || game.lastPlayed).toLocaleDateString()}`,
@@ -260,17 +255,14 @@ export class LocalGameStorage {
             totalRounds: game.total_rounds || game.totalRounds || 0,
             mode: game.game_mode || game.mode || "Local",
             players: game.players ? game.players.map(p => p.name) : [],
-            isPaused: false, // Finished games from the array format are not paused
-            gameFinished: true // Array format games are always finished
+            isPaused: false,
+            gameFinished: true
           }));
-          
       } else if (typeof parsedData === 'object' && parsedData !== null) {
         // Object format (new format from LocalGameStorage)
-        
         gamesList = Object.values(parsedData)
-          .filter(game => game && game.id) // Ensure valid games only
+          .filter(game => game && game.id)
           .map(game => {
-            // Make sure we have all the required properties, even if they're null
             const gameData = {
               id: game.id,
               name: game.name || `Game from ${new Date(game.savedAt || game.lastPlayed).toLocaleDateString()}`,
@@ -285,7 +277,7 @@ export class LocalGameStorage {
               gameFinished: game.gameFinished || (game.gameState && game.gameState.gameFinished) || false
             };
             
-            // For finished games, add more data for compatibility with GameHistoryItem
+            // For finished games, add more data for compatibility
             if (gameData.gameFinished) {
               gameData.created_at = game.created_at || game.savedAt || new Date().toISOString();
               gameData.winner_id = game.winner_id || (game.gameState && game.gameState.winner_id);
@@ -297,8 +289,6 @@ export class LocalGameStorage {
               gameData.duration_seconds = game.duration_seconds || (game.gameState && game.gameState.duration_seconds);
               gameData.is_local = true;
               gameData.game_mode = game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local";
-              
-              // Include the gameState for access to player data
               gameData.gameState = game.gameState;
             }
             
@@ -382,26 +372,6 @@ export class LocalGameStorage {
   }
 
   /**
-   * Clean up old saved games (keep only the most recent 10)
-   */
-  static cleanupOldGames(maxGames = 10) {
-    const games = this.getAllSavedGames();
-    const gamesList = Object.values(games)
-      .sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
-    
-    if (gamesList.length > maxGames) {
-      const gamesToKeep = gamesList.slice(0, maxGames);
-      const cleanedGames = {};
-      
-      gamesToKeep.forEach(game => {
-        cleanedGames[game.id] = game;
-      });
-      
-      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(cleanedGames));
-    }
-  }
-
-  /**
    * Export all saved games as JSON
    * @returns {string} - JSON string of all saved games
    */
@@ -410,7 +380,7 @@ export class LocalGameStorage {
   }
 
   /**
-   * Import saved games from JSON
+   * Import saved games from JSON with metadata
    * @param {string} jsonData - JSON string of saved games
    * @returns {boolean} - Success status
    */
@@ -418,8 +388,30 @@ export class LocalGameStorage {
     try {
       const importedGames = JSON.parse(jsonData);
       const existingGames = this.getAllSavedGames();
-      const mergedGames = { ...existingGames, ...importedGames };
+      const importTimestamp = new Date().toISOString();
       
+      // Add import metadata to each imported game
+      const processedImportedGames = {};
+      Object.keys(importedGames).forEach(gameId => {
+        const game = importedGames[gameId];
+        // Generate new game ID to avoid conflicts
+        const newGameId = this.generateGameId();
+        processedImportedGames[newGameId] = {
+          ...game,
+          id: newGameId,
+          importedAt: importTimestamp,
+          originalGameId: gameId,
+          isImported: true,
+          name: game.name ? `${game.name} (Imported)` : (game.gameName ? `${game.gameName} (Imported)` : 'Imported Game'),
+          gameState: {
+            ...game.gameState,
+            id: newGameId,
+            gameId: newGameId
+          }
+        };
+      });
+      
+      const mergedGames = { ...existingGames, ...processedImportedGames };
       localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(mergedGames));
       return true;
     } catch (error) {
@@ -428,38 +420,4 @@ export class LocalGameStorage {
     }
   }
 
-  /**
-   * Debug the storage state
-   * Call this to debug issues with local storage
-   */
-  // static debugStorage() {
-  //   try {
-  //     const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
-      
-  //     if (!stored) {
-  //       console.error("DEBUG: No games found in storage");
-  //       return;
-  //     }
-      
-  //     const parsedData = JSON.parse(stored);
-      
-  //     if (Array.isArray(parsedData)) {
-  //       console.debug("DEBUG: Sample game:", parsedData[0] ? { 
-  //         id: parsedData[0].id,
-  //         created_at: parsedData[0].created_at,
-  //         is_finished: !!parsedData[0].gameFinished
-  //       } : "None");
-  //     } else {
-  //       const firstKey = Object.keys(parsedData)[0];
-  //       console.debug("DEBUG: Sample game:", firstKey ? {
-  //         id: parsedData[firstKey].id,
-  //         savedAt: parsedData[firstKey].savedAt,
-  //         isPaused: parsedData[firstKey].isPaused,
-  //         gameFinished: parsedData[firstKey].gameFinished
-  //       } : "None");
-  //     }
-  //   } catch (error) {
-  //     console.error("DEBUG: Error inspecting storage:", error);
-  //   }
-  // }
 }

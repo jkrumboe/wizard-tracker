@@ -64,7 +64,7 @@
 
 .game-container .adv-stats-btn {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   border-radius: var(--radius-md);
   padding: 8px 12px;
@@ -72,10 +72,6 @@
   font-size: 0.9rem;
   transition: background-color 0.2s ease;
 }
-
-/* .game-container .adv-stats-btn:hover {
-  background-color: var(--primary-dark);
-} */
 
 /* Fixed position for the round info at the top */
 .game-container .round-info {
@@ -196,7 +192,7 @@
 
 
 
-.settings-button,
+/* .settings-button, */
 .leave-button {
   padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
@@ -207,23 +203,23 @@
   transition: all 0.3s ease;
   box-shadow: var(--shadow-sm);
 }
-
+/* 
 .settings-button {
   background-color: var(--warning-color);
   color: var(--text-color);
-}
+} */
 
 .leave-button {
   background-color: var(--error-color);
   color: var(--text-color);
 }
 
-.settings-button:hover,
+/* .settings-button:hover,
 .leave-button:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
   opacity: 0.9;
-}
+} */
 
 .loading-spinner {
   display: flex;

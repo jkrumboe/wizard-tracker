@@ -92,15 +92,6 @@
   transition: left 0.5s ease;
 }
 
-.theme-button:hover {
-  background-color: var(--card-background);
-  transform: translateY(-1px);
-}
-
-.theme-button:hover::before {
-  left: 100%;
-}
-
 .theme-button.active {
   background-color: var(--primary-color);
   color: white;
@@ -131,7 +122,7 @@
 }
 
 .storage-metric {
-  padding-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -157,7 +148,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: var(--spacing-md) ;
   border-radius: 8px;
   border: none;
   font-weight: 500;
@@ -167,35 +158,79 @@
   color: var(--text-color);
 }
 
-.settings-button:hover {
-  background-color: var(--background-hover);
-}
-
 .danger-button {
   background-color: rgba(var(--danger-rgb), 0.1);
+  padding: var(--spacing-sm) var(--spacing-md);
   color: var(--danger-color);
-}
-
-.danger-button:hover {
-  background-color: rgba(var(--danger-rgb), 0.2);
 }
 
 .refresh-button {
   background-color: rgba(var(--info-rgb), 0.1);
+  padding: var(--spacing-sm) var(--spacing-md);
   color: var(--info-color);
 }
 
-.refresh-button:hover {
-  background-color: rgba(var(--info-rgb), 0.2);
+.import-export-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: 0.8rem;
 }
 
 .export-button {
   background-color: rgba(var(--success-rgb), 0.1);
   color: var(--success-color);
+  padding:var(--spacing-sm);
+  width: 50%;
 }
 
-.export-button:hover {
-  background-color: rgba(var(--success-rgb), 0.2);
+.import-button {
+  background-color: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning-color);
+  position: relative;
+  overflow: hidden;
+  padding:var(--spacing-sm);
+  width: 50%;
+}
+
+.share-button {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary-color);
+}
+
+/* Share Game Button */
+.share-game-button {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary-color);
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-game-button:active {
+  transform: translateY(0);
+}
+
+/* Download Game Button */
+.download-game-button {
+  background-color: transparent;
+  color: var(--text-color);
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.download-game-button:active {
+  transform: translateY(0);
 }
 
 /* Games List */
@@ -214,11 +249,6 @@
   margin: var(--spacing-sm) var(--spacing-xs);
   transition: all 0.2s ease;
   border: 1px solid var(--border-color);
-}
-
-.game-item:hover {
-  border-color: var(--border-color);
-  background-color: var(--background-hover);
 }
 
 .game-info {
@@ -332,20 +362,12 @@
   color: var(--text-color);
 }
 
-.cancel-button:hover {
-  background-color: var(--background-hover);
-}
-
 .confirm-button.danger-button {
   background-color: var(--danger-color);
   color: white;
 }
 
-.confirm-button.danger-button:hover {
-  background-color: var(--danger-color-dark);
-}
-
-/* Message Notification */
+/* Settings Messages */
 .settings-message {
   position: fixed;
   top: var(--spacing-md);
@@ -356,24 +378,35 @@
   border-radius: 8px;
   margin-bottom: var(--spacing-lg);
   animation: fadeIn 0.3s ease-in-out;
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-md);
+  font-weight: 500;
+  border: 1px solid transparent;
 }
 
 .settings-message.success {
   background-color: rgba(var(--success-rgb), 0.1);
   color: var(--success-color);
-  border: 1px solid rgba(var(--success-rgb), 0.2);
+  border-color: rgba(var(--success-rgb), 0.2);
 }
 
 .settings-message.error {
   background-color: rgba(var(--danger-rgb), 0.1);
   color: var(--danger-color);
-  border: 1px solid rgba(var(--danger-rgb), 0.2);
+  border-color: rgba(var(--danger-rgb), 0.2);
+}
+
+.settings-message.warning {
+  background-color: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning-color);
+  border-color: rgba(var(--warning-rgb), 0.2);
 }
 
 .settings-message.info {
-  background-color: rgba(var(--info-rgb));
-  color: var(--text-color);
-  border: 1px solid rgba(var(--info-rgb));
+  background-color: rgba(var(--info-rgb), 0.1);
+  color: var(--info-color);
+  border-color: rgba(var(--info-rgb), 0.2);
 }
 
 .no-games {
@@ -381,6 +414,28 @@
   font-style: italic;
   text-align: center;
   padding: var(--spacing-md);
+}
+
+/* Share & Import Info */
+.share-info {
+  background-color: var(--background-light);
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  margin-bottom: var(--spacing-md);
+}
+
+.share-info p {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.share-info p:last-child {
+  margin-bottom: 0;
+}
+
+.share-info strong {
+  color: var(--primary-color);
 }
 
 /* Animations */
@@ -413,4 +468,37 @@
     padding: var(--spacing-sm);
     font-size: 0.9rem;
   }
+}
+
+/* Import Badge Styles */
+.import-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary-color);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-left: var(--spacing-sm);
+}
+
+.imported-game {
+  border-left: 3px solid var(--primary-color);
+}
+
+.imported-game::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 95%, rgba(var(--primary-rgb), 0.1) 100%);
+  pointer-events: none;
+}
+
+.imported-game {
+  position: relative;
 }

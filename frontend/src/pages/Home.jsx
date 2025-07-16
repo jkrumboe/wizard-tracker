@@ -61,7 +61,7 @@ const Home = () => {
         }
         
         // Always fetch local games
-        const localGames = getRecentLocalGames(4); // This is synchronous
+        const localGames = getRecentLocalGames(10); // This is synchronous
         
         // Ensure all games have proper date formatting for sorting
         const formattedServerGames = Array.isArray(serverGames) ? serverGames.map(game => ({

@@ -40,13 +40,15 @@
   font-size: 0.95rem;
 }
 
+.round-made {
+  border-top: 1px solid var(--border-light);
+}
+
 .round-row .round-score {
   position: static;
 }
 
-.player-round-cell {
-  padding: var(--spacing-xs) !important;
-}
+
 
 /* Add responsive class handling in the scorecard */
 @media (max-width: 768px) {
@@ -63,11 +65,6 @@
 /* Make sure the game page adapts to player count */
 .game-container {
   padding: var(--spacing-md);
-}
-
-/* Make sure the player round cells adapt for more players */
-.player-round-cell {
-  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 /* Apply dynamic player count classes */

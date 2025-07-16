@@ -89,32 +89,37 @@
   width: 120px; /* Match player header width */
   min-width: 120px;
   max-width: 120px;
+  padding: 0 !important;
 }
 
-.player-round-cell:hover {
+/* .player-round-cell:hover {
   background-color: var(--input-background);
-}
+} */
 
 .player-round-data {
-    display: grid;
-    grid-template-rows: auto auto;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.1rem ;
+  display: grid;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr 1fr;
+  /* gap: 0.1rem ; */
 }
 
 .player-round-data > :nth-child(1) {
-    grid-row: 1;
-    grid-column: 1;
+  grid-row: 1;
+  grid-column: 1;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .player-round-data > :nth-child(2) {
-    grid-row: 1;
-    grid-column: 2;
+  grid-row: 1;
+  grid-column: 2;
+  border-left: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .player-round-data > :nth-child(3) {
-    grid-row: 2;
-    grid-column: 1 / span 2;
+  grid-row: 2;
+  grid-column: 1 / span 2;
 }
 
 .round-bid ,
@@ -123,13 +128,10 @@
   color: var(--text-color);
   font-weight: 600 ;
   font-size: 1rem;
-}
-
-.round-bid ,
-.round-score {
+  padding: var(--spacing-xs);
+  display: flex;
   justify-content: center;
   align-items: center;
-  height: 16px;
 }
 
 .total-row {

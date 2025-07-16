@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
 import { getGameById } from "../services/gameService"
 import { getPlayerById } from "../services/playerService"
-import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon } from "../components/Icon"
+import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, DownloadIcon, TableIcon } from "../components/Icon"
+import { LocalGameStorage } from '../services/localGameStorage';
+import PageTransition from "../components/PageTransition"
 import PerformanceMetric from "../components/PerformanceMetric"
 import StatsChart from "../components/StatsChart"
 import defaultAvatar from "../assets/default-avatar.png" 
@@ -12,7 +14,9 @@ import "../styles/performanceMetrics.css"
 import "../styles/scorecard.css"
 import "../styles/statsChart.css"
 import "../styles/chartToggle.css"
-import PageTransition from "../components/PageTransition"
+import "../styles/settings.css"
+import "../styles/gameDetails.css"
+
 import "../styles/pageTransition.css"
 
 const GameDetails = () => {
@@ -27,6 +31,7 @@ const GameDetails = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('stats')
   const [showChart, setShowChart] = useState(false)
+  const [message, setMessage] = useState({ text: '', type: '' })
   const [windowWidth, setWindowWidth] = useState(() => {
     // Safely handle window access for SSR
     return typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -102,11 +107,23 @@ const GameDetails = () => {
     });
   };
 
+  const clearMessage = () => {
+    setTimeout(() => {
+      setMessage({ text: '', type: '' });
+    }, 3000);
+  };
+
+  useEffect(() => {
+    if (message.text) {
+      clearMessage();
+    }
+  }, [message]);
+
   if (error || !game) {
     return <div className="error">{error || "Game not found"}</div>
   }
 
-  // Sort players by score (highest first)
+  // Sort players by score (highest first) and calculate ranks with tie handling
   const sortedPlayers = Object.entries(game.final_scores || {})
     .map(([playerId, score]) => {
       // Handle player IDs consistently - keep as string if it has scientific notation (e)
@@ -119,6 +136,19 @@ const GameDetails = () => {
       };
     })
     .sort((a, b) => b.score - a.score)
+    .map((player, index, array) => {
+      // Calculate rank with proper tie handling
+      let rank = 1;
+      
+      // Count how many players have a higher score
+      for (let i = 0; i < index; i++) {
+        if (array[i].score > player.score) {
+          rank++;
+        }
+      }
+      
+      return { ...player, rank };
+    });
 
   // Add detailed statistics for each player
   function calculatePlayerStats(game) {
@@ -241,6 +271,132 @@ const GameDetails = () => {
     return { playersData, roundData };
   };
 
+  const generateShareableLink = () => {
+    try {
+      // Create a more compact data structure by removing redundant information
+      const compactGameData = {
+        id: game.id,
+        players: game.players || [],
+        winner_id: game.winner_id,
+        final_scores: game.final_scores || {},
+        round_data: game.round_data || [],
+        total_rounds: game.total_rounds || game.round_data?.length || 0,
+        created_at: game.created_at,
+        game_mode: game.game_mode || "Local",
+        duration_seconds: game.duration_seconds || 0
+      };
+      
+      // Remove any undefined or null values to make it more compact
+      const cleanedData = JSON.parse(JSON.stringify(compactGameData, (key, value) => {
+        return value === undefined || value === null ? undefined : value;
+      }));
+      
+      const jsonData = JSON.stringify(cleanedData);
+      
+      // Use direct URL method that works across devices
+      const compressedData = btoa(unescape(encodeURIComponent(jsonData)));
+      const baseUrl = window.location.origin;
+      const shareableLink = `${baseUrl}?importGame=${compressedData}`;
+      
+      // Check URL length and warn user about different sharing methods
+      if (shareableLink.length > 8000) {
+        setMessage({ 
+          text: 'Game data is too large for URL sharing. Please use the download button instead.', 
+          type: 'error' 
+        });
+        return;
+      } else if (shareableLink.length > 2000) {
+        // Create a temporary share key for very large data
+        const shareKey = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const expirationTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        
+        // Store the compact data in localStorage temporarily
+        localStorage.setItem(shareKey, jsonData);
+        localStorage.setItem(shareKey + '_expires', expirationTime.toString());
+        
+        // Create a shorter URL with just the share key
+        const shortShareableLink = `${baseUrl}?shareKey=${shareKey}`;
+        
+        // Copy the short URL to clipboard
+        navigator.clipboard.writeText(shortShareableLink).then(() => {
+          setMessage({ 
+            text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
+            type: 'success' 
+          });
+        }).catch(() => {
+          // Fallback for browsers that don't support clipboard API
+          const textArea = document.createElement('textarea');
+          textArea.value = shortShareableLink;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          setMessage({ 
+            text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
+            type: 'success' 
+          });
+        });
+        return;
+      }
+      
+      // URL is short enough, use the direct method
+      setMessage({ text: 'Game link copied to clipboard!', type: 'success' });
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(shareableLink).then(() => {
+        // Success
+      }).catch(() => {
+        // Fallback for browsers that don't support clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = shareableLink;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      });
+    } catch (error) {
+      console.error('Error generating shareable link:', error);
+      setMessage({ text: 'Failed to generate game link.', type: 'error' });
+    }
+  };
+
+  const downloadSingleGame = () => {
+    try {
+      // Create a more compact data structure by removing redundant information
+      const compactGameData = {
+        id: game.id,
+        players: game.players || [],
+        winner_id: game.winner_id,
+        final_scores: game.final_scores || {},
+        round_data: game.round_data || [],
+        total_rounds: game.total_rounds || game.round_data?.length || 0,
+        created_at: game.created_at,
+        game_mode: game.game_mode || "Local",
+        duration_seconds: game.duration_seconds || 0
+      };
+      
+      // Remove any undefined or null values to make it more compact
+      const cleanedData = JSON.parse(JSON.stringify(compactGameData, (key, value) => {
+        return value === undefined || value === null ? undefined : value;
+      }));
+      
+      const jsonData = JSON.stringify(cleanedData, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wizard-tracker-game-${game.id}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setMessage({ text: 'Game exported successfully.', type: 'success' });
+    } catch (error) {
+      console.error('Error downloading single game:', error);
+      setMessage({ text: 'Failed to export game.', type: 'error' });
+    }
+  };
+
   // const duration = game.duration_seconds
   //   ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
   //   : "N/A";
@@ -252,6 +408,12 @@ const GameDetails = () => {
       loadingSubtitle="Gathering round data and player statistics"
     >
       <div className="game-details-container">
+        {message.text && (
+          <div className={`settings-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+        
         <div className="game-details-header">
           <div className="game-header-top">
             <Link to="/" className="back-link">
@@ -266,15 +428,25 @@ const GameDetails = () => {
                   aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
                   aria-pressed={activeTab === 'stats'}
                 >
-                  {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <GamepadIcon size={22} />}
+                  {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <TableIcon size={22} />}
                 </button>
             </div>
           </div>
           <h1 id="header-game-detail-badge">{game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
           <div className="game-date">Finished: {formattedDate}</div>
           {/* <div className="game-date">Duration: {duration}</div> */}
-          <div className="game-winner">
+          {/* <div className="game-winner">
             Winner: {playerDetails[game.winner_id]?.name || 'Unknown'}
+          </div> */}
+          <div className="game-controls">
+            <button className="settings-button share-button" onClick={generateShareableLink}>
+              <ShareIcon size={18} />
+              Share Game
+            </button>
+            <button className="settings-button download-button" onClick={downloadSingleGame}>
+              <DownloadIcon size={18} />
+              Download Game
+            </button>
           </div>
         </div>
 
@@ -373,9 +545,11 @@ const GameDetails = () => {
                 </div>
               ) : (
                 <div className="results-table">
-                  {sortedPlayers.map((player, index) => (
+                  {sortedPlayers.map((player) => (
                     <div key={player.id} className="results-row">
-                      <div className="rank-col">{index + 1}</div>
+                      <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
+                        {player.rank}
+                      </div>
                       <div className="player-col">
                         {game.is_local ? (
                           <div className="player-info">

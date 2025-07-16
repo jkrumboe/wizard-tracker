@@ -1,0 +1,67 @@
+/* Game Details Page Styles */
+.game-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  /* margin-top: var(--spacing-md); */
+}
+
+.game-controls .settings-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.game-controls .share-button {
+  color: var(--primary-color);
+}
+
+.game-controls .download-button {
+  color: var(--primary-color);
+}
+
+/* Message styles for game details */
+.game-details-container .settings-message {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Medal colors for top 3 ranks */
+
+.rank-col {
+    color: var(--primary-color)
+}
+
+.rank-col.gold {
+  color: #FFD700; /* Gold */
+  font-weight: bold;
+}
+
+.rank-col.silver {
+  color: #e6e6e6; /* Silver */
+  font-weight: bold;
+}
+
+.rank-col.bronze {
+  color: #CD7F32; /* Bronze */
+  font-weight: bold;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

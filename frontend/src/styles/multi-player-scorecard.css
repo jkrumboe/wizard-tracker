@@ -30,25 +30,9 @@
 }
 
 /* Make scorecards more compact for more players */
-/* .many-players .scorecard-table th, 
-.many-players .scorecard-table td {
-  padding: 0.6rem;
-} */
-
 .many-players .player-round-data {
   gap: 0;
 }
-
-/* Add a scroll indicator for horizontally scrollable tables */
-/* .many-players .wizard-scorecard::after {
-  content: "⟷";
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  color: var(--text-light);
-  font-size: 1.2rem;
-  opacity: 0.7;
-} */
 
 /* Special styles for mobile with many players */
 @media (max-width: 768px) {
