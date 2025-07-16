@@ -408,11 +408,11 @@ const GameDetails = () => {
       loadingSubtitle="Gathering round data and player statistics"
     >
       <div className="game-details-container">
-        {message.text && (
+        {/* {message.text && (
           <div className={`settings-message ${message.type}`}>
             {message.text}
           </div>
-        )}
+        )} */}
         
         <div className="game-details-header">
           <div className="game-header-top">
