@@ -1225,8 +1225,8 @@
   }
   
   .selected-players {
-    height: 330px;
-    max-height: 330px;
+    height: 300px;
+    max-height: 300px;
     justify-content: center;
     align-items: center;
     overflow: hidden; /* Remove scrolling from container */
