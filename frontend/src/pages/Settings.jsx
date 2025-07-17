@@ -392,6 +392,12 @@ const Settings = () => {
   };
 
   const generateSingleGameShareableLink = (gameId, gameData) => {
+    // Don't allow sharing of paused games
+    if (gameData.isPaused) {
+      setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
+      return;
+    }
+    
     try {
       // Create a more compact data structure by removing redundant information
       const gameState = gameData.gameState || {};
@@ -480,6 +486,12 @@ const Settings = () => {
   };
 
   const downloadSingleGame = (gameId, gameData) => {
+    // Don't allow downloading of paused games
+    if (gameData.isPaused) {
+      setMessage({ text: 'Cannot download paused games. Please finish the game first.', type: 'error' });
+      return;
+    }
+    
     try {
       // Create a more compact data structure by removing redundant information
       const gameState = gameData.gameState || {};
@@ -650,6 +662,7 @@ const Settings = () => {
                           className="share-game-button" 
                           onClick={() => generateSingleGameShareableLink(gameId, game)}
                           aria-label="Share game"
+                          disabled={game.isPaused}
                         >
                           <ShareIcon size={25} />
                         </button>
@@ -657,6 +670,7 @@ const Settings = () => {
                           className="download-game-button" 
                           onClick={() => downloadSingleGame(gameId, game)}
                           aria-label="Download game"
+                          disabled={game.isPaused}
                         >
                           <DownloadIcon size={25} />
                         </button>
