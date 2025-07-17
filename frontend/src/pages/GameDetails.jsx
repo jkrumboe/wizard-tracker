@@ -454,12 +454,12 @@ const GameDetails = () => {
           </div> */}
           <div className="game-controls">
             <button className="settings-button share-button" onClick={generateShareableLink}>
-              <ShareIcon size={18} />
-              Share Game
+              <ShareIcon size={20} />
+              Share
             </button>
             <button className="settings-button download-button" onClick={downloadSingleGame}>
-              <DownloadIcon size={18} />
-              Download Game
+              <DownloadIcon size={20} />
+              Download
             </button>
           </div>
         </div>

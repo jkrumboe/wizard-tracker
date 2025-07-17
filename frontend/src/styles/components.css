@@ -391,7 +391,8 @@
   
   /* Game Details Page */
   .game-details-container {
-    padding: var(--spacing-md) var(--spacing-sm);
+    padding: var(--spacing-sm);
+    padding-top: var(--spacing-lg);
     overflow-y: auto;
     max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
   }
@@ -2369,7 +2370,7 @@
   display: flex;
   flex-direction: column;
   max-width: 960px;
-  margin: var(--spacing-xl) auto;
+  margin: var(--spacing-lg) auto;
 }
 
 /* Game table input styles */
@@ -2450,6 +2451,10 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.game-controls .settings-button {
+  background: transparent;
 }
 
 .game-control-btn {
@@ -3122,12 +3127,6 @@
 }
 
 /* Home specific container to handle bottom navigation spacing */
-.home-container {
-  display: flex;
-  flex-direction: column;
-  max-width: 960px;
-  margin: var(--spacing-xl) auto;
-}
 
 /* Game table input styles */
   .score-table input[type="tel"] {
