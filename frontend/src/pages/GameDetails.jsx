@@ -6,6 +6,7 @@ import { getGameById } from "../services/gameService"
 import { getPlayerById } from "../services/playerService"
 import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, DownloadIcon, TableIcon } from "../components/Icon"
 import { LocalGameStorage } from '../services/localGameStorage';
+import { ShareValidator } from '../utils/shareValidator';
 import PageTransition from "../components/PageTransition"
 import PerformanceMetric from "../components/PerformanceMetric"
 import StatsChart from "../components/StatsChart"
@@ -286,8 +287,21 @@ const GameDetails = () => {
         duration_seconds: game.duration_seconds || 0
       };
       
+      // Validate the game data structure before sharing
+      const validation = ShareValidator.validateGameDataStructure(compactGameData);
+      if (!validation.isValid) {
+        setMessage({ 
+          text: `Cannot share game: ${validation.error}`, 
+          type: 'error' 
+        });
+        return;
+      }
+      
+      // Sanitize the data to prevent any security issues
+      const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
+      
       // Remove any undefined or null values to make it more compact
-      const cleanedData = JSON.parse(JSON.stringify(compactGameData, (key, value) => {
+      const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
         return value === undefined || value === null ? undefined : value;
       }));
       

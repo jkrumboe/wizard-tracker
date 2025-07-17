@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { LocalGameStorage } from '../services/localGameStorage';
+import { ShareValidator } from '../utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '../components/Icon';
 import PageTransition from '../components/PageTransition';
 import '../styles/settings.css';
@@ -23,10 +24,20 @@ const Settings = () => {
     const shareKeyParam = urlParams.get('shareKey');
     
     if (importGamesParam) {
-      // Handle multiple games import
+      // Handle multiple games import with security validation
+      const validation = ShareValidator.validateEncodedGamesData(importGamesParam);
+      
+      if (!validation.isValid) {
+        setMessage({ 
+          text: `Invalid shared link: ${validation.error}`, 
+          type: 'error' 
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+      
       try {
-        const jsonData = atob(importGamesParam);
-        const success = LocalGameStorage.importGames(jsonData);
+        const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
         if (success) {
           loadSavedGames();
           calculateStorageUsage();
@@ -36,15 +47,25 @@ const Settings = () => {
         }
       } catch (error) {
         console.error('Error importing games from URL:', error);
-        setMessage({ text: 'Invalid shared link data.', type: 'error' });
+        setMessage({ text: 'Failed to process shared link data.', type: 'error' });
       }
       
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (importGameParam) {
-      // Handle single game import
+      // Handle single game import with security validation
+      const validation = ShareValidator.validateEncodedGameData(importGameParam);
+      
+      if (!validation.isValid) {
+        setMessage({ 
+          text: `Invalid shared link: ${validation.error}`, 
+          type: 'error' 
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+      
       try {
-        const jsonData = decodeURIComponent(escape(atob(importGameParam)));
-        const compactGameData = JSON.parse(jsonData);
+        const compactGameData = validation.data;
         
         // Convert compact data back to full game format
         const fullGameData = {
@@ -103,12 +124,23 @@ const Settings = () => {
         }
       } catch (error) {
         console.error('Error importing game from URL:', error);
-        setMessage({ text: 'Invalid shared link data.', type: 'error' });
+        setMessage({ text: 'Failed to process shared link data.', type: 'error' });
       }
       
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (shareKeyParam) {
-      // Handle share key import (for large data)
+      // Handle share key import (for large data) with security validation
+      
+      // First validate the share key format
+      if (!ShareValidator.isValidShareKey(shareKeyParam)) {
+        setMessage({ 
+          text: 'Invalid share link format.', 
+          type: 'error' 
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+      
       try {
         const jsonData = localStorage.getItem(shareKeyParam);
         const expirationTime = localStorage.getItem(shareKeyParam + '_expires');
@@ -118,6 +150,7 @@ const Settings = () => {
             text: 'This share link was created on a different device. Please use the download/import file method for cross-device sharing.', 
             type: 'error' 
           });
+          window.history.replaceState({}, document.title, window.location.pathname);
           return;
         }
         
@@ -126,10 +159,36 @@ const Settings = () => {
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
           setMessage({ text: 'Shared game link has expired.', type: 'error' });
+          window.history.replaceState({}, document.title, window.location.pathname);
           return;
         }
         
-        const success = LocalGameStorage.importGames(jsonData);
+        // Validate the JSON data structure before importing
+        try {
+          JSON.parse(jsonData); // Just validate it's valid JSON
+        } catch (parseError) {
+          console.warn('Parse error for share key data:', parseError);
+          localStorage.removeItem(shareKeyParam);
+          localStorage.removeItem(shareKeyParam + '_expires');
+          setMessage({ text: 'Invalid shared link data format.', type: 'error' });
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+        
+        // Validate the structure as games data
+        const validation = ShareValidator.validateEncodedGamesData(btoa(jsonData));
+        if (!validation.isValid) {
+          localStorage.removeItem(shareKeyParam);
+          localStorage.removeItem(shareKeyParam + '_expires');
+          setMessage({ 
+            text: `Invalid shared link: ${validation.error}`, 
+            type: 'error' 
+          });
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+        
+        const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
         
         if (success) {
           loadSavedGames();
@@ -144,7 +203,7 @@ const Settings = () => {
         }
       } catch (error) {
         console.error('Error importing game from share key:', error);
-        setMessage({ text: 'Invalid shared link data.', type: 'error' });
+        setMessage({ text: 'Failed to process shared link data.', type: 'error' });
       }
       
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -300,57 +359,97 @@ const Settings = () => {
   };
 
   const importGamesData = (file) => {
+    // File size limit (1MB)
+    const MAX_FILE_SIZE = 1024 * 1024;
+    
+    if (file.size > MAX_FILE_SIZE) {
+      setMessage({ text: 'File too large. Maximum size is 1MB.', type: 'error' });
+      return;
+    }
+    
+    // File type validation
+    if (!file.type.includes('json') && !file.name.endsWith('.json')) {
+      setMessage({ text: 'Invalid file type. Please select a JSON file.', type: 'error' });
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const jsonData = e.target.result;
-        const parsedData = JSON.parse(jsonData);
+        
+        // Additional size check after reading
+        if (jsonData.length > MAX_FILE_SIZE) {
+          setMessage({ text: 'File content too large.', type: 'error' });
+          return;
+        }
+        
+        let parsedData;
+        try {
+          parsedData = JSON.parse(jsonData);
+        } catch (parseError) {
+          console.warn('JSON parse error:', parseError.message);
+          setMessage({ text: 'Invalid JSON file format.', type: 'error' });
+          return;
+        }
         
         // Check if it's a compact single game format or full games format
         if (parsedData.id && parsedData.players && parsedData.round_data) {
-          // This is a compact single game format
+          // This is a compact single game format - validate it
+          const validation = ShareValidator.validateGameDataStructure(parsedData);
+          if (!validation.isValid) {
+            setMessage({ 
+              text: `Invalid game data: ${validation.error}`, 
+              type: 'error' 
+            });
+            return;
+          }
+          
+          // Sanitize the data
+          const sanitizedGameData = ShareValidator.sanitizeGameData(parsedData);
+          
           const fullGameData = {
-            [parsedData.id]: {
-              id: parsedData.id,
-              name: `Imported Game - ${new Date(parsedData.created_at).toLocaleDateString()}`,
+            [sanitizedGameData.id]: {
+              id: sanitizedGameData.id,
+              name: `Imported Game - ${new Date(sanitizedGameData.created_at).toLocaleDateString()}`,
               gameState: {
-                id: parsedData.id,
-                players: parsedData.players,
-                winner_id: parsedData.winner_id,
-                final_scores: parsedData.final_scores,
-                round_data: parsedData.round_data,
-                total_rounds: parsedData.total_rounds,
-                created_at: parsedData.created_at,
-                game_mode: parsedData.game_mode,
-                duration_seconds: parsedData.duration_seconds,
-                currentRound: parsedData.total_rounds,
-                maxRounds: parsedData.total_rounds,
-                roundData: parsedData.round_data,
+                id: sanitizedGameData.id,
+                players: sanitizedGameData.players,
+                winner_id: sanitizedGameData.winner_id,
+                final_scores: sanitizedGameData.final_scores,
+                round_data: sanitizedGameData.round_data,
+                total_rounds: sanitizedGameData.total_rounds,
+                created_at: sanitizedGameData.created_at,
+                game_mode: sanitizedGameData.game_mode,
+                duration_seconds: sanitizedGameData.duration_seconds,
+                currentRound: sanitizedGameData.total_rounds,
+                maxRounds: sanitizedGameData.total_rounds,
+                roundData: sanitizedGameData.round_data,
                 gameStarted: true,
                 gameFinished: true,
-                mode: parsedData.game_mode,
+                mode: sanitizedGameData.game_mode,
                 isLocal: true,
                 isPaused: false,
-                referenceDate: parsedData.created_at,
-                gameId: parsedData.id,
-                player_ids: parsedData.players.map(p => p.id)
+                referenceDate: sanitizedGameData.created_at,
+                gameId: sanitizedGameData.id,
+                player_ids: sanitizedGameData.players.map(p => p.id)
               },
-              savedAt: parsedData.created_at,
-              lastPlayed: parsedData.created_at,
-              playerCount: parsedData.players.length,
-              roundsCompleted: parsedData.total_rounds,
-              totalRounds: parsedData.total_rounds,
-              mode: parsedData.game_mode,
+              savedAt: sanitizedGameData.created_at,
+              lastPlayed: sanitizedGameData.created_at,
+              playerCount: sanitizedGameData.players.length,
+              roundsCompleted: sanitizedGameData.total_rounds,
+              totalRounds: sanitizedGameData.total_rounds,
+              mode: sanitizedGameData.game_mode,
               gameFinished: true,
               isPaused: false,
               isImported: true,
-              winner_id: parsedData.winner_id,
-              final_scores: parsedData.final_scores,
-              created_at: parsedData.created_at,
-              player_ids: parsedData.players.map(p => p.id),
-              round_data: parsedData.round_data,
-              total_rounds: parsedData.total_rounds,
-              duration_seconds: parsedData.duration_seconds,
+              winner_id: sanitizedGameData.winner_id,
+              final_scores: sanitizedGameData.final_scores,
+              created_at: sanitizedGameData.created_at,
+              player_ids: sanitizedGameData.players.map(p => p.id),
+              round_data: sanitizedGameData.round_data,
+              total_rounds: sanitizedGameData.total_rounds,
+              duration_seconds: sanitizedGameData.duration_seconds,
               is_local: true
             }
           };
@@ -364,8 +463,17 @@ const Settings = () => {
             setMessage({ text: 'Failed to import game.', type: 'error' });
           }
         } else {
-          // This is the full games format
-          const success = LocalGameStorage.importGames(jsonData);
+          // This is the full games format - validate it
+          const validation = ShareValidator.validateEncodedGamesData(btoa(jsonData));
+          if (!validation.isValid) {
+            setMessage({ 
+              text: `Invalid games data: ${validation.error}`, 
+              type: 'error' 
+            });
+            return;
+          }
+          
+          const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
           if (success) {
             loadSavedGames();
             calculateStorageUsage();
@@ -376,7 +484,7 @@ const Settings = () => {
         }
       } catch (error) {
         console.error('Error importing games data:', error);
-        setMessage({ text: 'Invalid games data file.', type: 'error' });
+        setMessage({ text: 'Failed to process games data file.', type: 'error' });
       }
     };
     reader.readAsText(file);
@@ -413,8 +521,21 @@ const Settings = () => {
         duration_seconds: gameState.duration_seconds || 0
       };
       
+      // Validate the game data structure before sharing
+      const validation = ShareValidator.validateGameDataStructure(compactGameData);
+      if (!validation.isValid) {
+        setMessage({ 
+          text: `Cannot share game: ${validation.error}`, 
+          type: 'error' 
+        });
+        return;
+      }
+      
+      // Sanitize the data to prevent any security issues
+      const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
+      
       // Remove any undefined or null values to make it more compact
-      const cleanedData = JSON.parse(JSON.stringify(compactGameData, (key, value) => {
+      const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
         return value === undefined || value === null ? undefined : value;
       }));
       
@@ -507,8 +628,21 @@ const Settings = () => {
         duration_seconds: gameState.duration_seconds || 0
       };
       
+      // Validate the game data structure before downloading
+      const validation = ShareValidator.validateGameDataStructure(compactGameData);
+      if (!validation.isValid) {
+        setMessage({ 
+          text: `Cannot download game: ${validation.error}`, 
+          type: 'error' 
+        });
+        return;
+      }
+      
+      // Sanitize the data to prevent any security issues
+      const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
+      
       // Remove any undefined or null values to make it more compact
-      const cleanedData = JSON.parse(JSON.stringify(compactGameData, (key, value) => {
+      const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
         return value === undefined || value === null ? undefined : value;
       }));
       
