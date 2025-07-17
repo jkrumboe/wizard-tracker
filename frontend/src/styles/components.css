@@ -1225,8 +1225,8 @@
   }
   
   .selected-players {
-    height: 300px;
-    max-height: 300px;
+    height: 280px;
+    max-height: 280px;
     justify-content: center;
     align-items: center;
     overflow: hidden; /* Remove scrolling from container */
@@ -2033,7 +2033,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(var(--spacing-xl) * 2); /* Extra padding at bottom for scroll area */
+  /* padding-bottom: calc(var(--spacing-xl) * 2);  */
 }
 
 /* Paused Games List */
