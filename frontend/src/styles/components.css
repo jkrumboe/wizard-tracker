@@ -132,6 +132,7 @@
     background-color: var(--card-background);
     border: 2px solid var(--error-color);
     border-radius: var(--radius-lg);
+    font-size: 0.9rem;
   }
 
   /* Tags */
@@ -1136,8 +1137,8 @@
   
   /* New Game Page */
   .new-game-container {
-    padding-top: var(--spacing-xl);
-    max-width: 960px; /* Constrain the width */
+    padding-top: var(--spacing-lg);
+    max-width: 960px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1225,8 +1226,8 @@
   }
   
   .selected-players {
-    height: 280px;
-    max-height: 280px;
+    height: 27vh;
+    max-height: 27vh;
     justify-content: center;
     align-items: center;
     overflow: hidden; /* Remove scrolling from container */

@@ -340,15 +340,15 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 /* Main container for content with spacing for fixed navigation */
 .main-container {
-  padding-top: var(--top-nav-height); /* Space for top navbar */
-  padding-bottom: var(--bottom-nav-height); /* Space for bottom navbar */
+  padding-top: var(--top-nav-height); 
+  padding-bottom: var(--bottom-nav-height);
   height: 100vh;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding-left: var(--spacing-lg);
   padding-right: var(--spacing-lg);
-  overflow-y: auto; /* Enable scrolling on the main container */
+  overflow-y: auto;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
