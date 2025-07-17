@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "../hooks/useGameState"
 import { LocalGameStorage } from "../services/localGameStorage"
@@ -29,6 +29,9 @@ const NewGame = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [gameToDelete, setGameToDelete] = useState(null)
   const [message, setMessage] = useState({ text: '', type: '' })
+  
+  // Ref for auto-scrolling to bottom of player list
+  const selectedPlayersRef = useRef(null)
   
   // Function to load paused games
   const loadPausedGames = useCallback(async () => {
@@ -72,6 +75,16 @@ const NewGame = () => {
   const handleAddPlayer = () => {
     // Call addPlayer without any arguments as it now generates unique IDs internally
     addPlayer()
+    
+    // Scroll to bottom after adding player (use setTimeout to ensure DOM update)
+    setTimeout(() => {
+      if (selectedPlayersRef.current) {
+        selectedPlayersRef.current.scrollTo({
+          top: selectedPlayersRef.current.scrollHeight,
+          behavior: 'smooth'
+        })
+      }
+    }, 100)
   }
 
   const handlePlayerNameChange = (playerId, e) => {
@@ -183,27 +196,27 @@ const NewGame = () => {
         </div>
       )} */}
 
+      <div className="tab-controls">
+        <button 
+          className={`tab-button ${activeTab === 'new-game' ? 'active' : ''}`}
+          onClick={() => setActiveTab('new-game')}
+        >
+          New Game
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'paused-games' ? 'active' : ''}`}
+          onClick={() => setActiveTab('paused-games')}
+        >
+          Paused Games
+        </button>
+      </div>
+
       {activeTab === 'new-game' && (
         <div className={`tab-panel players-${gameState.players.length}`}>
           <div className="setup-section">
-            <div className="tab-controls">
-              <button 
-                className={`tab-button ${activeTab === 'new-game' ? 'active' : ''}`}
-                onClick={() => setActiveTab('new-game')}
-              >
-                New Game
-              </button>
-              <button 
-                className={`tab-button ${activeTab === 'paused-games' ? 'active' : ''}`}
-                onClick={() => setActiveTab('paused-games')}
-              >
-                Paused Games
-              </button>
-            </div>
-
             {/*Adding Players*/}
             <div className="selected-players">
-              <div className="player-list">
+              <div className="player-list" ref={selectedPlayersRef}>
                 {gameState.players.map((player, index) => (
                   <div key={player.id} className="player-item">
                     <span>{index + 1}</span>
@@ -269,24 +282,8 @@ const NewGame = () => {
 
       {activeTab === 'paused-games' && (
         <div className="tab-panel">
-          <div className="paused-games-section">
-            <div className="tab-controls">
-              <button 
-                className={`tab-button ${activeTab === 'new-game' ? 'active' : ''}`}
-                onClick={() => setActiveTab('new-game')}
-              >
-                New Game
-              </button>
-              <button 
-                className={`tab-button ${activeTab === 'paused-games' ? 'active' : ''}`}
-                onClick={() => setActiveTab('paused-games')}
-              >
-                Paused Games
-              </button>
-            </div>
-            
-            
-            { pausedGames.length === 0 ? (
+          <div className="paused-games-section">            
+            {pausedGames.length === 0 ? (
               <div className="empty-paused-games">
                 <p>No paused games found</p>
                 <p>When you pause a game, it will appear here</p>

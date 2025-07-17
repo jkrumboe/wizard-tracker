@@ -527,7 +527,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   width: 80%;
   background: transparent;
   margin: 0 10%;
-  border: 3px dashed var(--primary-color);
+  border: 3px solid var(--primary-color);
   color: var(--primary-color);
   font-size: 1.4rem;
   padding: 0;
@@ -542,8 +542,6 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   font-size: 1rem;
   width: 50%;
 }
-
-
 
 @media (min-width: 576px) {
   .game-list {

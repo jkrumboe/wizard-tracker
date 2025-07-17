@@ -1144,6 +1144,19 @@
     overflow-y: hidden;
     max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - var(--spacing-xl));
   }
+
+  /* For really small phones */
+  /* Only apply for small screens with iPhone SE-like aspect ratio (e.g. 375x667, ~1.77) */
+  @media (max-width: 400px) and (max-height: 700px) and (min-aspect-ratio: 1/2) and (max-aspect-ratio: 10/5) {
+    .new-game-container {
+      overflow-y: auto;
+    }
+
+    .selected-players {
+      height: 150px !important; 
+      max-height: 150px !important;
+    }
+  }
   
   .new-game-container h1 {
     text-align: center;
@@ -1155,7 +1168,7 @@
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
     box-shadow: var(--shadow);
   }
   
@@ -1212,11 +1225,59 @@
   }
   
   .selected-players {
-    /* margin-top: var(--spacing-lg); */
+    height: 330px;
     max-height: 330px;
     justify-content: center;
     align-items: center;
-    overflow-y: auto;
+    overflow: hidden; /* Remove scrolling from container */
+    padding-right: var(--spacing-xs);
+    position: relative;
+  }
+
+  /* Fading border effect using pseudo-elements */
+  .selected-players::before,
+  .selected-players::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--primary-color) 15%,
+      var(--primary-color) 85%,
+      transparent 100%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .selected-players::before {
+    left: 0;
+  }
+
+  .selected-players::after {
+    right: 0;
+  }
+
+  /* Scrollbar styling for selected players */
+  .selected-players::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .selected-players::-webkit-scrollbar-track {
+    background: var(--card-background-alt);
+    border-radius: var(--radius-md);
+  }
+
+  .selected-players::-webkit-scrollbar-thumb {
+    background: var(--primary-light);
+    border-radius: var(--radius-md);
+  }
+
+  .selected-players::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
   }
   
   .remove-btn {
@@ -1235,7 +1296,7 @@
     display: flex;
     align-items: center;
     padding: var(--spacing-sm) 0;
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
   }
 
   .setting-item label {
@@ -1290,7 +1351,7 @@
     width: 100%;
     background-color: var(--primary-color);
     color: var(--text-color);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
     border: none;
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -1883,21 +1944,18 @@
   background: var(--background-color);
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-light);
+  color: var(--text-color);
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
   border-radius: var(--radius-md);
   margin: 0 var(--spacing-sm);
+  border: 2px solid var(--border-color)
 }
 
 .tab-button.active {
   background-color: var(--primary-color);
   color: var(--text-color);
-}
-
-.tab-button:hover {
-  background-color: var(--primary-light);
-  color: var(--text-color);
+  border: none;
 }
 
 /* Styling for the card content */
@@ -1951,8 +2009,10 @@
 .tab-controls {
   display: flex;
   justify-content: center;
-  margin-bottom: var(--spacing-sm);
-  padding-bottom: var(--spacing-xs);
+  background-color: var(--card-background);
+  padding: var(--spacing-sm);
+  /* margin-bottom: var(--spacing-sm); */
+  border-radius: var(--radius-lg);
 }
 
 .badge {
@@ -1991,7 +2051,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
+  /* margin-top: var(--spacing-md); */
   justify-content: flex-start;
   align-items: center;
   overflow-y: auto;
