@@ -23,12 +23,43 @@ export default defineConfig({  server: {
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          }
+        ]
+      },
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {
         name: "KeepWiz",
         short_name: "WizTracker",
         description: "Track your Wizard card game stats and performance",
         theme_color: "#4A90E2",
+        start_url: "/",
+        scope: "/",
+        capture_links: "existing-client",
+        display: "standalone",
         icons: [
           {
             src: 'pwa-192x192.png',

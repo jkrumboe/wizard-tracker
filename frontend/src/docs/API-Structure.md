@@ -1,24 +1,32 @@
 # API Structure
 
-This document outlines the backend API endpoints available in the KeepWiz application, their functionality, and usage examples.
+This document outlines the backend API endpoints available in the Wizard Tracker application, their functionality, and usage examples.
 
 ## Base URL
 
 All API endpoints are prefixed with `/api`.
 
-For local development: `http://localhost:5055/api`
+For local development: `http://localhost:5000/api`
 For production: `https://wizard.jkrumboe.dev/api`
 
 ## Authentication
 
 Most endpoints require authentication via JWT tokens. The token should be included in:
 
-1. HTTP-only cookies (recommended)
-2. Authorization header: `Authorization: Bearer <token>`
+1. HTTP-only cookies (recommended for web apps)
+2. Authorization header: `Authorization: Bearer <token>` (for API clients)
 
-### Authentication Endpoints
+## Online/Offline Mode
 
-#### User Authentication
+The application supports online/offline mode functionality:
+
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|--------------|
+| `/online/status` | GET | Get current online status | No |
+
+## Authentication Endpoints
+
+### User Authentication
 
 | Endpoint | Method | Description | Auth Required |
 |----------|--------|-------------|--------------|
@@ -29,7 +37,7 @@ Most endpoints require authentication via JWT tokens. The token should be includ
 | `/me` | GET | Get current user info | Yes |
 | `/profile` | GET | Get current user profile | Yes |
 
-#### Admin Authentication
+### Admin Authentication
 
 | Endpoint | Method | Description | Auth Required |
 |----------|--------|-------------|--------------|
@@ -81,8 +89,9 @@ Most endpoints require authentication via JWT tokens. The token should be includ
 | `/rooms/:roomId/leave` | POST | Leave a room | Yes |
 | `/player/session` | GET | Get player's current session | Yes |
 | `/player/status` | POST | Update player online status | Yes |
+| `/rooms/:roomId/verify-password` | POST | Verify password for private room | No |
 
-## Protected Resources
+## Protected/Admin Endpoints
 
 | Endpoint | Method | Description | Auth Required | Roles |
 |----------|--------|-------------|--------------|-------|
@@ -96,6 +105,7 @@ Most endpoints require authentication via JWT tokens. The token should be includ
 ### Login
 
 Request:
+
 ```json
 POST /api/login
 {
@@ -105,6 +115,7 @@ POST /api/login
 ```
 
 Response:
+
 ```json
 {
   "user": {
@@ -120,11 +131,13 @@ Response:
 ### Getting Player Information
 
 Request:
-```
+
+```http
 GET /api/players/1
 ```
 
 Response:
+
 ```json
 {
   "id": 1,
@@ -142,6 +155,7 @@ Response:
 ### Creating a Game
 
 Request:
+
 ```json
 POST /api/games
 {
@@ -155,6 +169,7 @@ POST /api/games
 ```
 
 Response:
+
 ```json
 {
   "message": "Game saved and Elo updated",
@@ -181,6 +196,7 @@ The API uses standard HTTP status codes for error responses:
 - 500: Internal server error
 
 Error responses follow the format:
+
 ```json
 {
   "error": "Error message description"
@@ -196,6 +212,44 @@ API endpoints are protected by rate limiting:
 
 When rate limit is exceeded, the server returns a 429 status code.
 
+## Security Features
+
+- JWT-based authentication with refresh tokens
+- HTTP-only secure cookies for token storage  
+- Password hashing with bcrypt
+- Input validation and sanitization
+- CORS configuration for cross-origin requests
+- Audit logging for authentication events
+- Rate limiting for API protection
+
+## Database Features
+
+The backend uses PostgreSQL with the following key features:
+
+- **Players Table**: Stores player information, ELO ratings, statistics
+- **Games Table**: Game records with participant data and results
+- **Users Table**: User accounts with role-based authentication
+- **Game Rooms**: Multiplayer room management with Colyseus integration
+- **ELO History**: Tracks rating changes over time
+- **Tags System**: Player categorization and search functionality
+- **Audit Logs**: Security and authentication event tracking
+
+## Multiplayer Architecture
+
+The application uses **Colyseus** for real-time multiplayer functionality:
+
+- **Room Management**: Create, join, and leave game rooms
+- **Real-time Communication**: WebSocket-based game state synchronization
+- **Session Management**: Player online status and session tracking
+- **Private Rooms**: Password-protected rooms for private games
+
 ## API Versioning
 
 Currently, the API does not use explicit versioning in the URL paths. Future versions may be introduced using URL prefixes like `/api/v2/`.
+
+## Development Notes
+
+- **Port**: Backend runs on port 5000 (default) or configurable via PORT environment variable
+- **CORS**: Configured for development (localhost:3000) and production domains
+- **Environment**: Supports both development and production configurations
+- **Database**: Uses connection pooling with retry logic for reliability

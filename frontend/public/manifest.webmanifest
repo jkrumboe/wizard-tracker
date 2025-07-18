@@ -6,6 +6,8 @@
     "display": "standalone",
     "background_color": "#F5F5F5",
     "theme_color": "#000000",
+    "scope": "/",
+    "capture_links": "existing-client",
     "icons": [
       {
         "src": "/icons/pwa-logo.png",

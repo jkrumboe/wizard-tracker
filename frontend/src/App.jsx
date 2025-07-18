@@ -24,6 +24,7 @@ import { ThemeProvider } from "./contexts/ThemeContext"
 import authService from "./services/authService"
 import { LocalGameStorage } from "./services/localGameStorage"
 import "./styles/theme.css"
+import "./utils/devUpdateHelper" // Development update testing helper
 
 // Component to handle URL imports
 function URLImportHandler() {
