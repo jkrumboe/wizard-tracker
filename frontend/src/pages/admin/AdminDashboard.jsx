@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getPlayers, createPlayer, updatePlayer } from "@/services/playerService";
-import { getGames } from "@/services/gameService";
-import { authService } from "@/services/authService";
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { LogOutIcon, UsersIcon, GamepadIcon, BarChartIcon, SearchIcon, PlusIcon, EditIcon, TrashIcon } from "@/components/Icon";
-import "@/styles/admin.css";
-import "@/styles/offline-notification.css";
+import { getPlayers, createPlayer, updatePlayer } from "@/shared/api/playerService";
+import { getGames } from "@/shared/api/gameService";
+import { authService } from "@/shared/api/authService";
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
+import { LogOutIcon, UsersIcon, GamepadIcon, BarChartIcon, SearchIcon, PlusIcon, EditIcon, TrashIcon } from "@/components/ui/Icon";
+import "@/styles/pages/admin.css";
+import "@/styles/components/offline-notification.css";
 
 const AdminDashboard = () => {
   const [players, setPlayers] = useState([]);

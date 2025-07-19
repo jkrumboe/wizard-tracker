@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import GameHistoryItem from '@/components/GameHistoryItem'
-import LoadGameDialog from '@/components/LoadGameDialog'
-import PageTransition from '@/components/PageTransition'
-import { getRecentGames, getRecentLocalGames } from '@/services/gameService'
-import { useGameStateContext } from '@/hooks/useGameState'
-import { useOnlineStatus } from '@/hooks/useOnlineStatus'
-import "@/styles/pageTransition.css"
-import "@/styles/offline-notification.css"
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import GameHistoryItem from '@/components/game/GameHistoryItem'
+import LoadGameDialog from '@/components/modals/LoadGameDialog'
+import PageTransition from '@/components/common/PageTransition'
+import { getRecentGames, getRecentLocalGames } from '@/shared/api/gameService'
+import { useGameStateContext } from '@/shared/hooks/useGameState'
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
+import "@/styles/utils/pageTransition.css"
+import "@/styles/components/offline-notification.css"
 
 const Home = () => {
   const navigate = useNavigate()

@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '@/hooks/useTheme';
-import { LocalGameStorage } from '@/services/localGameStorage';
-import { ShareValidator } from '@/utils/shareValidator';
-import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/Icon';
-import PageTransition from '@/components/PageTransition';
-import '@/styles/settings.css';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { LocalGameStorage } from '@/shared/api';
+import { ShareValidator } from '@/shared/utils/shareValidator';
+import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
+import PageTransition from '@/components/common/PageTransition';
+import '@/styles/pages/settings.css';
 
 const Settings = () => {
   const [savedGames, setSavedGames] = useState({});
