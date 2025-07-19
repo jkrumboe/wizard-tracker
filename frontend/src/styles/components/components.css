@@ -462,7 +462,7 @@
     border: 2px solid var(--border-color);
     width: 100%;
     max-width: 100%;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
   
   .results-row {
@@ -1721,10 +1721,10 @@
 }
 
 /* Ensure game cards have padding to prevent cutoff */
-/* .results-row {
+.results-row {
   border-bottom: 1px solid var(--border-color);
   overflow: visible;
-} */
+}
   
   @media (min-width: 768px) {
 
