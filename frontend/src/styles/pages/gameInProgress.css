@@ -97,8 +97,9 @@
   justify-content: space-between;
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
-  flex-wrap: wrap;
   position: relative;
+  flex-direction: row;
+  flex-wrap: nowrap;
 }
 
 .game-in-progress .results-row:nth-child(even) {
@@ -109,23 +110,35 @@
   border-bottom: none;
 }
 
-.game-in-progress .rank-col {
+.game-in-progress .results-row .rank-col {
+  flex: 0 0 15%;
+  min-width: 40px;
+  max-width: 60px;
+  text-align: center;
   font-weight: bold;
   font-size: 1.2rem;
-  width: 30px;
-  text-align: center;
 }
 
-.game-in-progress .player-col {
-  flex: 1;
+.game-in-progress .results-row .player-col {
+  flex: 1 1 auto;
+  min-width: 100px;
   font-size: 1.1rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.game-in-progress .score-col {
+.game-in-progress .results-row .score-col {
+  flex: 0 0 20%;
+  min-width: 60px;
+  max-width: 80px;
+  text-align: center;
   font-weight: bold;
   font-size: 1.2rem;
-  margin: 0 var(--spacing-md);
 }
 
 /* Fixed position for the round info at the top */

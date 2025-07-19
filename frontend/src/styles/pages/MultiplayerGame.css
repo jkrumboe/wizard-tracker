@@ -31,8 +31,9 @@
   justify-content: space-between;
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
-  flex-wrap: wrap;
   position: relative;
+  flex-direction: row;
+  flex-wrap: nowrap;
 }
 
 .game-container .results-row:nth-child(even) {
@@ -44,25 +45,40 @@
 }
 
 .game-container .rank-col {
+  flex: 0 0 15%;
+  min-width: 40px;
+  max-width: 60px;
+  text-align: center;
   font-weight: bold;
   font-size: 1.2rem;
-  width: 30px;
-  text-align: center;
 }
 
 .game-container .player-col {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 100px;
   font-size: 1.1rem;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .game-container .score-col {
+  flex: 0 0 20%;
+  min-width: 60px;
+  max-width: 80px;
+  text-align: center;
   font-weight: bold;
   font-size: 1.2rem;
-  margin: 0 var(--spacing-md);
 }
 
 .game-container .adv-stats-btn {
+  flex: 0 0 25%;
+  min-width: 80px;
+  max-width: 100px;
   background-color: var(--primary-color);
   color: var(--text-color);
   border: none;
@@ -71,6 +87,7 @@
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.2s ease;
+  margin-left: var(--spacing-sm);
 }
 
 /* Fixed position for the round info at the top */

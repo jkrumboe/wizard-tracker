@@ -460,19 +460,81 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 2px solid var(--border-color);
+    width: 100%;
+    max-width: 100%;
+    font-size: 1.3rem;
   }
-  
-  
   
   .results-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: var(--spacing-md);
-    border-bottom: 1px solid #ddd;
-    flex-wrap: wrap;
+    padding: var(--spacing-sm);
     border-bottom: 1px solid var(--border-color);
-    overflow: visible;
+    overflow: hidden;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Proportional column widths to ensure proper fit */
+  .results-row .rank-col {
+    flex: 0 0 15%;
+    min-width: 40px;
+    max-width: 60px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .results-row .player-col {
+    flex: 1 1 auto;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .results-row .score-col {
+    flex: 0 0 20%;
+    min-width: 60px;
+    max-width: 80px;
+    text-align: right;
+    font-weight: bold;
+    margin-right: 5%;
+  }
+
+  .results-row .adv-stats-btn {
+    flex: 0 0 25%;
+    min-width: 80px;
+    max-width: 100px;
+    margin-left: var(--spacing-sm);
+  }
+
+  /* Responsive adjustments for smaller screens */
+  @media (max-width: 480px) {
+    .results-row .rank-col {
+      flex: 0 0 12%;
+      min-width: 35px;
+    }
+    
+    .results-row .player-col {
+      min-width: 80px;
+    }
+    
+    .results-row .score-col {
+      flex: 0 0 18%;
+      min-width: 50px;
+    }
+    
+    .results-row .adv-stats-btn {
+      flex: 0 0 28%;
+      min-width: 70px;
+      font-size: 15px;
+      padding: 4px 8px;
+    }
   }
   
   .results-row:nth-child(even) {
@@ -1524,8 +1586,7 @@
   }
 
   .player-col {
-    display: flex;
-    align-items: center;
+    text-align: left; /* Override center alignment for player names */
   }
 
   .player-avatar {
@@ -1542,15 +1603,13 @@
 
   /* Styling for the Adv. Stats button */
   .adv-stats-btn {
-    flex: 0 0 auto;
-    margin-left: 10px;
     background-color: var(--primary-color);
     border: none;
     border-radius: 4px;
     padding: 5px 10px;
     color: var(--text-color);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     transition: background-color 0.3s ease;
   }
 
@@ -1662,10 +1721,10 @@
 }
 
 /* Ensure game cards have padding to prevent cutoff */
-.results-row {
+/* .results-row {
   border-bottom: 1px solid var(--border-color);
   overflow: visible;
-}
+} */
   
   @media (min-width: 768px) {
 
