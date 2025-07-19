@@ -480,15 +480,12 @@
   /* Proportional column widths to ensure proper fit */
   .results-row .rank-col {
     flex: 0 0 15%;
-    min-width: 40px;
-    max-width: 60px;
     text-align: center;
     font-weight: bold;
   }
 
   .results-row .player-col {
-    flex: 1 1 auto;
-    min-width: 100px;
+    flex: 1 1 40%;
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -499,8 +496,6 @@
 
   .results-row .score-col {
     flex: 0 0 20%;
-    min-width: 60px;
-    max-width: 80px;
     text-align: right;
     font-weight: bold;
     margin-right: 5%;
@@ -508,8 +503,6 @@
 
   .results-row .adv-stats-btn {
     flex: 0 0 25%;
-    min-width: 80px;
-    max-width: 100px;
     margin-left: var(--spacing-sm);
   }
 
@@ -517,21 +510,18 @@
   @media (max-width: 480px) {
     .results-row .rank-col {
       flex: 0 0 12%;
-      min-width: 35px;
     }
     
     .results-row .player-col {
-      min-width: 80px;
+      flex: 1 1 35%;
     }
     
     .results-row .score-col {
-      flex: 0 0 18%;
-      min-width: 50px;
+      flex: 0 0 10%;
     }
     
     .results-row .adv-stats-btn {
-      flex: 0 0 28%;
-      min-width: 70px;
+      flex: 0 0 36%;
       font-size: 15px;
       padding: 4px 8px;
     }
