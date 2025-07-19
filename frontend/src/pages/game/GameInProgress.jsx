@@ -842,7 +842,7 @@ const GameInProgress = () => {
         </div>
 
         <button className="nav-btn" id="prevRoundBtn" onClick={previousRound} disabled={isFirstRound}>
-            <ArrowLeftIcon />
+          <ArrowLeftIcon /> 
         </button>
 
         <button className="nav-btn" id="nextRoundBtn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
