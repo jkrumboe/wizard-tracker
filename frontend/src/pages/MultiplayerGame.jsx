@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import colyseusService from '../services/colyseusClient';
-import { useAuth } from '../hooks/useAuth';
-import GameMenuModal from "../components/GameMenuModal";
-import PauseConfirmationModal from "../components/PauseConfirmationModal";
-import { MenuIcon, PauseIcon, SaveIcon, StatIcon, BarChartIcon, GamepadIcon } from "../components/Icon";
-import PerformanceMetric from "../components/PerformanceMetric";
-import StatsChart from "../components/StatsChart";
+import colyseusService from '@/services/colyseusClient';
+import { useAuth } from '@/hooks/useAuth';
+import GameMenuModal from "@/components/GameMenuModal";
+import PauseConfirmationModal from "@/components/PauseConfirmationModal";
+import { MenuIcon, PauseIcon, SaveIcon, StatIcon, BarChartIcon, GamepadIcon } from "@/components/Icon";
+import PerformanceMetric from "@/components/PerformanceMetric";
+import StatsChart from "@/components/StatsChart";
 import { ArrowLeftIcon, ArrowRight } from "lucide-react";
-import "../styles/performanceMetrics.css";
-import "../styles/stats.css";
-import "../styles/statsChart.css";
-import "../styles/MultiplayerGame.css";
+import "@/styles/performanceMetrics.css";
+import "@/styles/stats.css";
+import "@/styles/statsChart.css";
+import "@/styles/MultiplayerGame.css";
 
 // Calculate comprehensive game statistics for all players
 const calculateDetailedGameStats = (gameState, currentRoundIndex = 0) => {

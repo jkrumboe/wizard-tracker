@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import colyseusService from '../services/colyseusClient';
-import { roomAPI } from '../services/api';
-import { useAuth } from '../hooks/useAuth';
-import CreateGameModal from '../components/CreateGameModal';
-import '../styles/Lobby.css';
-import '../styles/modal.css';
+import colyseusService from '@/services/colyseusClient';
+import { roomAPI } from '@/services/api';
+import { useAuth } from '@/hooks/useAuth';
+import CreateGameModal from '@/components/CreateGameModal';
+import '@/styles/Lobby.css';
+import '@/styles/modal.css';
 
 const Lobby = () => {
   const navigate = useNavigate();

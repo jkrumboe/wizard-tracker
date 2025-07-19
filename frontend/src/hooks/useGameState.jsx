@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
-import { createGame } from "../services/gameService"
-import { LocalGameStorage } from "../services/localGameStorage"
+import { createGame } from "@/services/gameService"
+import { LocalGameStorage } from "@/services/localGameStorage"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()

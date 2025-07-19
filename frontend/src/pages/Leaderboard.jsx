@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getPlayers } from '../services/playerService'
-import defaultAvatar from "../assets/default-avatar.png";
-import PageTransition from "../components/PageTransition"
-import "../styles/pageTransition.css"
+import { getPlayers } from '@/services/playerService'
+import defaultAvatar from "@/assets/default-avatar.png";
+import PageTransition from "@/components/PageTransition"
+
+import "@/styles/pageTransition.css"
 
 const Leaderboard = () => {
   const [players, setPlayers] = useState([])

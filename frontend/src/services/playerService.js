@@ -1,5 +1,5 @@
 // Enhanced player service for new database schema with user-player separation
-import { playerAPI, tagsAPI } from "./api";
+import { playerAPI, tagsAPI } from "@/services/api";
 
 //=== Get ALL ===//
 

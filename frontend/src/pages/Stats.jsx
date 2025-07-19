@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import StatCard from '../components/StatCard'
-import PageTransition from '../components/PageTransition'
-import { getPlayerById } from '../services/playerService'
-import { getPlayerGameHistory } from '../services/gameService'
+import StatCard from '@/components/StatCard'
+import PageTransition from '@/components/PageTransition'
+import { getPlayerById } from '@/services/playerService'
+import { getPlayerGameHistory } from '@/services/gameService'
 
 const Stats = () => {
   const { id } = useParams()

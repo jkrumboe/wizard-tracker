@@ -1,6 +1,6 @@
 import React from 'react';
 import { XIcon, PauseIcon } from './Icon';
-import '../styles/modal.css'; 
+import '@/styles/modal.css'; 
 
 const PauseConfirmationModal = ({ 
   isOpen, 

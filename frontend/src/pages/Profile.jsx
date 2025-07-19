@@ -1,17 +1,17 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import GameHistoryItem from '../components/GameHistoryItem'
-import StatCard from '../components/StatCard'
-import PageTransition from '../components/PageTransition'
-import { useUser } from '../hooks/useUser'
-import { StatIcon, EditIcon, CalendarIcon } from "../components/Icon"
-import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '../services/playerService'
-import { getPlayerGameHistory } from '../services/gameService'
-import defaultAvatar from "../assets/default-avatar.png";
+import GameHistoryItem from '@/components/GameHistoryItem'
+import StatCard from '@/components/StatCard'
+import PageTransition from '@/components/PageTransition'
+import { useUser } from '@/hooks/useUser'
+import { StatIcon, EditIcon, CalendarIcon } from "@/components/Icon"
+import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/services/playerService'
+import { getPlayerGameHistory } from '@/services/gameService'
+import defaultAvatar from "@/assets/default-avatar.png";
 import imageCompression from 'browser-image-compression';
 import DOMPurify from 'dompurify';
-import "../styles/pageTransition.css"
+import "@/styles/pageTransition.css"
 
 const Profile = () => {
   const { id } = useParams()

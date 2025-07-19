@@ -2,23 +2,29 @@
 
 import { useState, useEffect } from "react"
 import { useParams, Link } from "react-router-dom"
-import { getGameById } from "../services/gameService"
-import { getPlayerById } from "../services/playerService"
-import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, DownloadIcon, TableIcon } from "../components/Icon"
-import { LocalGameStorage } from '../services/localGameStorage';
-import { ShareValidator } from '../utils/shareValidator';
-import PageTransition from "../components/PageTransition"
-import PerformanceMetric from "../components/PerformanceMetric"
-import StatsChart from "../components/StatsChart"
-import defaultAvatar from "../assets/default-avatar.png" 
-import "../styles/performanceMetrics.css"
-import "../styles/scorecard.css"
-import "../styles/statsChart.css"
-import "../styles/chartToggle.css"
-import "../styles/settings.css"
-import "../styles/gameDetails.css"
 
-import "../styles/pageTransition.css"
+// Services
+import { getGameById } from "@/services/gameService"
+import { getPlayerById } from "@/services/playerService"
+import { LocalGameStorage } from '@/services/localGameStorage';
+// Utilities
+import { ShareValidator } from '@/utils/shareValidator';
+// Components
+import PageTransition from "@/components/PageTransition"
+import PerformanceMetric from "@/components/PerformanceMetric"
+import StatsChart from "@/components/StatsChart"
+// Assets
+import defaultAvatar from "@/assets/default-avatar.png"
+// Styles
+import "@/styles/performanceMetrics.css"
+import "@/styles/scorecard.css"
+import "@/styles/statsChart.css"
+import "@/styles/chartToggle.css"
+import "@/styles/settings.css"
+import "@/styles/gameDetails.css"
+import "@/styles/pageTransition.css"
+// Icon imports
+import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, DownloadIcon, TableIcon } from "@/components/Icon"
 
 const GameDetails = () => {
   // Helper function to compare IDs regardless of type (string vs number)

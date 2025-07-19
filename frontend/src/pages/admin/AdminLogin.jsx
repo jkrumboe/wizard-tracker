@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
-import '../styles/admin.css';
+import { authService } from '@services/authService';
+import '@styles/admin.css';
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({

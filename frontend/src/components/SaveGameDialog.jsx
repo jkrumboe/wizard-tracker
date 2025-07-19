@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { XIcon, SaveIcon, PauseIcon, PlayIcon } from './Icon';
+import { XIcon, SaveIcon, PauseIcon, PlayIcon } from '@/components/Icon';
 
 const SaveGameDialog = ({ 
   isOpen, 

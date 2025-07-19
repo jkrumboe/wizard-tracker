@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { getPlayerById } from "../services/playerService";
+import { getPlayerById } from "@/services/playerService";
 
 const GameHistoryItem = ({ game }) => {
   const [playerDetails, setPlayerDetails] = useState({});

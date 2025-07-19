@@ -3,7 +3,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5055/api"
 
 // Import the online check utility
-import { addOnlineChecksToAPI } from '../utils/onlineCheck';
+import { addOnlineChecksToAPI } from '@/utils/onlineCheck';
 
 // Helper function for making API requests
 export async function fetchAPI(endpoint, options = {}) {

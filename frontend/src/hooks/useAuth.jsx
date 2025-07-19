@@ -1,6 +1,6 @@
 import { useContext } from 'react';
-import { UserContext } from '../contexts/UserContext';
-import authService from '../services/authService';
+import { UserContext } from '@/contexts/UserContext';
+import authService from '@/services/authService';
 
 // Enhanced auth hook that works with the new user-player separation schema
 export function useAuth() {

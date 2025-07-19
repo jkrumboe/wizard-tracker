@@ -3,19 +3,20 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { useGameStateContext } from "../hooks/useGameState"
-import SaveGameDialog from "../components/SaveGameDialog"
-import LoadGameDialog from "../components/LoadGameDialog"
-import GameMenuModal from "../components/GameMenuModal"
-import PauseConfirmationModal from "../components/PauseConfirmationModal"
-import { SaveIcon, PauseIcon, MenuIcon, StatIcon, BarChartIcon, GamepadIcon } from "../components/Icon"
-import PerformanceMetric from "../components/PerformanceMetric"
-import "../styles/performanceMetrics.css"
-import "../styles/stats.css"
-import "../styles/gameInProgress.css"
-import "../styles/statsChart.css"
-import { ArrowLeftIcon, ArrowRight } from "lucide-react";
-import StatsChart from "../components/StatsChart";
+import { useGameStateContext } from "@/hooks/useGameState"
+import SaveGameDialog from "@/components/SaveGameDialog"
+import LoadGameDialog from "@/components/LoadGameDialog"
+import GameMenuModal from "@/components/GameMenuModal"
+import PauseConfirmationModal from "@/components/PauseConfirmationModal"
+import PerformanceMetric from "@/components/PerformanceMetric"
+import "@/styles/performanceMetrics.css"
+import "@/styles/stats.css"
+import "@/styles/gameInProgress.css"
+import "@/styles/statsChart.css"
+import StatsChart from "@/components/StatsChart";
+
+import { PauseIcon, ArrowLeftIcon, BarChartIcon, GamepadIcon } from "@/components/Icon"
+
 
 const GameInProgress = () => {
   const navigate = useNavigate()

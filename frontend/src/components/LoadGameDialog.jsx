@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlayIcon, TrashIcon, CalendarIcon, UsersIcon, XIcon } from './Icon';
+import { PlayIcon, TrashIcon, CalendarIcon, UsersIcon, XIcon } from '@/components/Icon';
 
 const LoadGameDialog = ({ 
   isOpen, 

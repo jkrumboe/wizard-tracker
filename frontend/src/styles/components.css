@@ -927,147 +927,7 @@
     border-radius: 0 0 var(--radius-md) var(--radius-md);
   }
   
- /* Enhanced Popup NumberPicker */
-.number-picker {
-  position: relative;
-  display: inline-block;
-}
-
-.number-display {
-  padding: 0;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  font-size: 1.5rem;
-  background-color: var(--card-background-alt);
-  color: var(--text-color);
-  transition: border-color 0.3s, box-shadow 0.3s;
-  appearance: none;
-  cursor: pointer;
-}
-
-.number-display:hover {
-  border-color: var(--primary-color);
-}
-
-.number-picker-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000000; /* Even higher z-index to ensure it's on top of everything */
-  animation: fadeIn 0.25s ease;
-  will-change: opacity;
-  touch-action: none; /* Prevent scrolling on mobile */
-  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
-}
-
-.number-picker-modal {
-  background-color: var(--card-background);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  width: 90%;
-  max-width: 320px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); /* Even stronger shadow */
-  animation: popIn 0.3s cubic-bezier(0.17, 0.67, 0.26, 1.24);
-  border: 4px solid var(--primary-color); /* Thicker colored border for visibility */
-  position: relative; /* Ensure positioning context for children */
-}
-
-.number-picker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: var(--spacing-sm);
-}
-
-.number-picker-header h3 {
-  margin: 0;
-  color: var(--primary-color);
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: var(--text-light);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0.25rem;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.close-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-color);
-}
-
-.number-picker-value {
-  font-size: 3rem;
-  font-weight: bold;
-  text-align: center;
-  margin: var(--spacing-lg) 0;
-  color: var(--primary-color);
-}
-
-.increment-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: var(--spacing-md);
-}
-
-.increment-button, .reset-button {
-  flex: 1 0 auto;
-  min-width: 60px;
-  padding: 12px 16px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: var(--radius-md);
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.increment-button {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-}
-
-.increment-button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-
-.reset-button {
-  background-color: var(--card-background-alt);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
-
-.reset-button:hover:not(:disabled) {
-  background-color: var(--border-color);
-}
-
-.increment-button:disabled, .reset-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+ /* Confirm Button */
 .confirm-button {
   background-color: var(--primary-color);
   color: var(--text-color);
@@ -1077,11 +937,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.confirm-button:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
 }
 
 /* Secondary Button Variant */
@@ -1125,27 +980,17 @@
   }
 }
 
-/* Media query for larger screens */
-@media (min-width: 640px) {
-  .number-picker-modal {
-    padding: var(--spacing-xl);
-  }
-  
-  .increment-controls {
-    gap: var(--spacing-md);
-  }
+
+/* New Game Page */
+.new-game-container {
+  padding-top: var(--spacing-lg);
+  max-width: 960px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - var(--spacing-xl));
 }
-  
-  /* New Game Page */
-  .new-game-container {
-    padding-top: var(--spacing-lg);
-    max-width: 960px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow-y: hidden;
-    max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height) - var(--spacing-xl));
-  }
 
   /* For really small phones */
   /* Only apply for small screens with iPhone SE-like aspect ratio (e.g. 375x667, ~1.77) */
@@ -2819,10 +2664,6 @@
 .confirm-button.danger-button {
   background-color: var(--danger-color);
   color: white;
-}
-
-.confirm-button.danger-button:hover {
-  background-color: var(--danger-color-dark);
 }
 
 /* Message Notification */

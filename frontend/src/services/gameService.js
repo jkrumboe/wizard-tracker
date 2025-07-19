@@ -1,6 +1,6 @@
 // Enhanced game service for new database schema with multiplayer support
 import { gameAPI, playerAPI, roomAPI } from "./api";
-import { LocalGameStorage } from "./localGameStorage";
+import { LocalGameStorage } from "@/services/localGameStorage";
 
 //=== Game Management ===//
 

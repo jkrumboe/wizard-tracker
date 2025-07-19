@@ -1,6 +1,6 @@
 import React from 'react';
-import '../styles/modal.css';
-import { XIcon } from 'lucide-react';
+import '@/styles/modal.css';
+import { XIcon} from "@/components/Icon"
 
 const CreateGameModal = ({ 
   isOpen, 

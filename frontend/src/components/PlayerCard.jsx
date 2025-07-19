@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import defaultAvatar from "../assets/default-avatar.png"
+import defaultAvatar from "@/assets/default-avatar.png"
 
 const PlayerCard = ({ player, onClick, showStats = true }) => {
   if (!player) return null

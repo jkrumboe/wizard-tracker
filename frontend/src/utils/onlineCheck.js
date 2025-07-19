@@ -1,4 +1,4 @@
-import { onlineStatusService } from '../services/onlineStatusService';
+import { onlineStatusService } from '@/services/onlineStatusService';
 
 /**
  * Higher-order function that creates a wrapper for API functions

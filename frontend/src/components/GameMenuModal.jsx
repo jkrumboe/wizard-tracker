@@ -1,6 +1,6 @@
 import React from 'react';
-import { XIcon } from './Icon';
-import '../styles/modal.css'; // Ensure this path is correct based on your project structure
+import { XIcon} from "@/components/Icon"
+import '@/styles/modal.css';
 
 const GameMenuModal = ({ 
   isOpen, 

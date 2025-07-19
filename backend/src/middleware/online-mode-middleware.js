@@ -18,6 +18,7 @@ export function requireOnlineMode(req, res, next) {
     '/api/players/online',
     '/api/stats/global',
     '/api/colyseus',
+    'api/me'
     // Add more online-only paths as needed
   ];
   

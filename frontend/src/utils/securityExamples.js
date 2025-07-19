@@ -3,7 +3,7 @@
  * This file shows how the security measures protect against various attacks
  */
 
-import { ShareValidator } from '../src/utils/shareValidator';
+import { ShareValidator } from '@/src/utils/shareValidator';
 
 // Example 1: XSS Attack Prevention
 console.log("=== XSS Attack Prevention ===");

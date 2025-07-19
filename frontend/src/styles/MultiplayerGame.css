@@ -914,11 +914,6 @@
   }
 }
 
-.number-picker-inline {
-  display: flex;
-  justify-content: center;
-}
-
 .call-cell,
 .made-cell {
   font-weight: 600;

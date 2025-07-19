@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { useGameStateContext } from "../hooks/useGameState"
-import { LocalGameStorage } from "../services/localGameStorage"
+import { useGameStateContext } from "@/hooks/useGameState"
+import { LocalGameStorage } from "@/services/localGameStorage"
 
 const NewGame = () => {
   

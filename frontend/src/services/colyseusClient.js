@@ -1,5 +1,5 @@
 import { Client } from 'colyseus.js';
-import { roomAPI } from './api.js';
+import { roomAPI } from '@/services/api';
 
 class ColyseusService {
   constructor() {    // Use development URL for now, can be configured for production

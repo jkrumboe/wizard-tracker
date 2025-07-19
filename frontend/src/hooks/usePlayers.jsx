@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { getPlayers, getTags, createPlayer, updatePlayer, deletePlayer } from "../services/playerService"
+import { getPlayers, getTags, createPlayer, updatePlayer, deletePlayer } from "@/services/playerService"
 
 export function usePlayers() {
   const [players, setPlayers] = useState([])

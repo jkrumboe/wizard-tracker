@@ -2,29 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
-import Home from "./pages/Home"
-import Profile from "./pages/Profile"
-import Leaderboard from "./pages/Leaderboard"
-import Stats from "./pages/Stats"
-import NewGame from "./pages/NewGame"
-import GameDetails from "./pages/GameDetails"
-import GameInProgress from "./pages/GameInProgress"
-import Lobby from "./pages/Lobby"
-import MultiplayerGame from "./pages/MultiplayerGame"
-import Settings from "./pages/Settings"
-import Navbar from "./components/Navbar"
-import OnlineProtectedRoute from "./components/OnlineProtectedRoute"
-import AdminDashboard from "./pages/AdminDashboard";
-import Login from "./pages/Login";
-import { register } from "./serviceWorkerRegistration"
-import { GameStateProvider } from "./hooks/useGameState"
-import { UserProvider } from "./contexts/UserContext"
-import { OnlineStatusProvider } from "./contexts/OnlineStatusContext"
-import { ThemeProvider } from "./contexts/ThemeContext"
-import authService from "./services/authService"
-import { LocalGameStorage } from "./services/localGameStorage"
-import "./styles/theme.css"
-import "./utils/devUpdateHelper" // Development update testing helper
+import Home from "@/pages/Home"
+import Profile from "@/pages/Profile"
+import Leaderboard from "@/pages/Leaderboard"
+import Stats from "@/pages/Stats"
+import NewGame from "@/pages/NewGame"
+import GameDetails from "@/pages/GameDetails"
+import GameInProgress from "@/pages/GameInProgress"
+import Lobby from "@/pages/Lobby"
+import MultiplayerGame from "@/pages/MultiplayerGame"
+import Settings from "@/pages/Settings"
+import Navbar from "@/components/Navbar"
+import OnlineProtectedRoute from "@/components/OnlineProtectedRoute"
+import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
+import Login from "@/pages/Login";
+import { register } from "@/serviceWorkerRegistration"
+import { GameStateProvider } from "@/hooks/useGameState"
+import { UserProvider } from "@/contexts/UserContext"
+import { OnlineStatusProvider } from "@/contexts/OnlineStatusContext"
+import { ThemeProvider } from "@/contexts/ThemeContext"
+import authService from "@/services/authService"
+import { LocalGameStorage } from "@/services/localGameStorage"
+import "@/styles/theme.css"
+import "@/utils/devUpdateHelper" // Development update testing helper
 
 // Component to handle URL imports
 function URLImportHandler() {

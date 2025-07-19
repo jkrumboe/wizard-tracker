@@ -2,13 +2,13 @@
 
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
-import { useUser } from '../hooks/useUser'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
-// import { useTheme } from '../hooks/useTheme'
-import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from './Icon'
-import ThemeToggle from './ThemeToggle'
-import defaultAvatar from "../assets/default-avatar.png"
-import "../styles/components.css"
+import { useUser } from '@/hooks/useUser'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+// import { useTheme } from '@/hooks/useTheme'
+import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from '@/components/Icon'
+import ThemeToggle from '@/components/ThemeToggle'
+import defaultAvatar from "@/assets/default-avatar.png"
+import "@/styles/components.css"
 
 const Navbar = () => {
   const { user, player } = useUser()
