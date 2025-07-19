@@ -215,22 +215,24 @@ const NewGame = () => {
         <div className={`tab-panel players-${gameState.players.length}`}>
           <div className="setup-section">
             {/*Adding Players*/}
-            <div className="selected-players">
-              <div className="player-list" ref={selectedPlayersRef}>
-                {gameState.players.map((player, index) => (
-                  <div key={player.id} className="player-item">
-                    <span>{index + 1}</span>
-                    <input 
-                      className="inputPlayerName" 
-                      value={player.name} 
-                      inputMode="text" 
-                      onChange={(e) => handlePlayerNameChange(player.id, e)}
-                    />
-                    <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
-                      ×
-                    </button>
-                  </div>
-                ))}
+            <div className="selected-players-wrapper">
+              <div className="selected-players" ref={selectedPlayersRef}>
+                <div className="player-list">
+                  {gameState.players.map((player, index) => (
+                    <div key={player.id} className="player-item">
+                      <span>{index + 1}</span>
+                      <input 
+                        className="inputPlayerName" 
+                        value={player.name} 
+                        inputMode="text" 
+                        onChange={(e) => handlePlayerNameChange(player.id, e)}
+                      />
+                      <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

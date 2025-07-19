@@ -1061,7 +1061,7 @@
       overflow-y: auto;
     }
 
-    .selected-players {
+    .selected-players-wrapper {
       height: 150px !important; 
       max-height: 150px !important;
     }
@@ -1133,19 +1133,25 @@
     color: var(--text-light);
   }
   
-  .selected-players {
+  .selected-players-wrapper {
     height: 27vh;
     max-height: 27vh;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden; /* Remove scrolling from container */
-    padding-right: var(--spacing-xs);
     position: relative;
+    padding-right: var(--spacing-xs);
   }
 
-  /* Fading border effect using pseudo-elements */
-  .selected-players::before,
-  .selected-players::after {
+  .selected-players {
+    height: 100%;
+    max-height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+    scrollbar-gutter: stable; /* Reserve space for scrollbar to prevent shifting */
+  }
+
+  /* Fading border effect using pseudo-elements on wrapper */
+  .selected-players-wrapper::before,
+  .selected-players-wrapper::after {
     content: '';
     position: absolute;
     top: 0;
@@ -1162,11 +1168,11 @@
     pointer-events: none;
   }
 
-  .selected-players::before {
+  .selected-players-wrapper::before {
     left: 0;
   }
 
-  .selected-players::after {
+  .selected-players-wrapper::after {
     right: 0;
   }
 
