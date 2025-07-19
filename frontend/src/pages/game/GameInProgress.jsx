@@ -15,7 +15,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
 
-import { PauseIcon, ArrowLeftIcon, BarChartIcon, GamepadIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon } from "@/components/ui/Icon"
 
 
 const GameInProgress = () => {
@@ -846,7 +846,7 @@ const GameInProgress = () => {
         </button>
 
         <button className="nav-btn" id="nextRoundBtn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
-          <ArrowRight />
+          <ArrowRightIcon />
         </button>
       </div> 
 
