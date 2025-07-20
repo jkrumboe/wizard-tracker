@@ -499,112 +499,112 @@ const Settings = () => {
     event.target.value = '';
   };
 
-  const generateSingleGameShareableLink = (gameId, gameData) => {
-    // Don't allow sharing of paused games
-    if (gameData.isPaused) {
-      setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
-      return;
-    }
+  // const generateSingleGameShareableLink = (gameId, gameData) => {
+  //   // Don't allow sharing of paused games
+  //   if (gameData.isPaused) {
+  //     setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
+  //     return;
+  //   }
     
-    try {
-      // Create a more compact data structure by removing redundant information
-      const gameState = gameData.gameState || {};
-      const compactGameData = {
-        id: gameId,
-        players: gameState.players || [],
-        winner_id: gameState.winner_id,
-        final_scores: gameState.final_scores || {},
-        round_data: gameState.round_data || [],
-        total_rounds: gameState.total_rounds || gameState.maxRounds || 0,
-        created_at: gameState.created_at || gameData.savedAt,
-        game_mode: gameState.game_mode || gameState.mode || "Local",
-        duration_seconds: gameState.duration_seconds || 0
-      };
+  //   try {
+  //     // Create a more compact data structure by removing redundant information
+  //     const gameState = gameData.gameState || {};
+  //     const compactGameData = {
+  //       id: gameId,
+  //       players: gameState.players || [],
+  //       winner_id: gameState.winner_id,
+  //       final_scores: gameState.final_scores || {},
+  //       round_data: gameState.round_data || [],
+  //       total_rounds: gameState.total_rounds || gameState.maxRounds || 0,
+  //       created_at: gameState.created_at || gameData.savedAt,
+  //       game_mode: gameState.game_mode || gameState.mode || "Local",
+  //       duration_seconds: gameState.duration_seconds || 0
+  //     };
       
-      // Validate the game data structure before sharing
-      const validation = ShareValidator.validateGameDataStructure(compactGameData);
-      if (!validation.isValid) {
-        setMessage({ 
-          text: `Cannot share game: ${validation.error}`, 
-          type: 'error' 
-        });
-        return;
-      }
+  //     // Validate the game data structure before sharing
+  //     const validation = ShareValidator.validateGameDataStructure(compactGameData);
+  //     if (!validation.isValid) {
+  //       setMessage({ 
+  //         text: `Cannot share game: ${validation.error}`, 
+  //         type: 'error' 
+  //       });
+  //       return;
+  //     }
       
-      // Sanitize the data to prevent any security issues
-      const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
+  //     // Sanitize the data to prevent any security issues
+  //     const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
       
-      // Remove any undefined or null values to make it more compact
-      const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
-        return value === undefined || value === null ? undefined : value;
-      }));
+  //     // Remove any undefined or null values to make it more compact
+  //     const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
+  //       return value === undefined || value === null ? undefined : value;
+  //     }));
       
-      const jsonData = JSON.stringify(cleanedData);
+  //     const jsonData = JSON.stringify(cleanedData);
       
-      // Use direct URL method that works across devices
-      const compressedData = btoa(unescape(encodeURIComponent(jsonData)));
-      const baseUrl = window.location.origin;
-      const shareableLink = `${baseUrl}?importGame=${compressedData}`;
+  //     // Use direct URL method that works across devices
+  //     const compressedData = btoa(unescape(encodeURIComponent(jsonData)));
+  //     const baseUrl = window.location.origin;
+  //     const shareableLink = `${baseUrl}?importGame=${compressedData}`;
       
-      // Check URL length and warn user about different sharing methods
-      if (shareableLink.length > 8000) {
-        setMessage({ 
-          text: 'Game data is too large for URL sharing. Please use the download button instead.', 
-          type: 'error' 
-        });
-        return;
-      } else if (shareableLink.length > 2000) {
-        // Create a temporary share key for very large data
-        const shareKey = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const expirationTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+  //     // Check URL length and warn user about different sharing methods
+  //     if (shareableLink.length > 8000) {
+  //       setMessage({ 
+  //         text: 'Game data is too large for URL sharing. Please use the download button instead.', 
+  //         type: 'error' 
+  //       });
+  //       return;
+  //     } else if (shareableLink.length > 2000) {
+  //       // Create a temporary share key for very large data
+  //       const shareKey = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  //       const expirationTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
         
-        // Store the compact data in localStorage temporarily
-        localStorage.setItem(shareKey, jsonData);
-        localStorage.setItem(shareKey + '_expires', expirationTime.toString());
+  //       // Store the compact data in localStorage temporarily
+  //       localStorage.setItem(shareKey, jsonData);
+  //       localStorage.setItem(shareKey + '_expires', expirationTime.toString());
         
-        // Create a shorter URL with just the share key
-        const shortShareableLink = `${baseUrl}?shareKey=${shareKey}`;
+  //       // Create a shorter URL with just the share key
+  //       const shortShareableLink = `${baseUrl}?shareKey=${shareKey}`;
         
-        // Copy the short URL to clipboard
-        navigator.clipboard.writeText(shortShareableLink).then(() => {
-          // Success
-        }).catch(() => {
-          // Fallback for browsers that don't support clipboard API
-          const textArea = document.createElement('textarea');
-          textArea.value = shortShareableLink;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-        });
+  //       // Copy the short URL to clipboard
+  //       navigator.clipboard.writeText(shortShareableLink).then(() => {
+  //         // Success
+  //       }).catch(() => {
+  //         // Fallback for browsers that don't support clipboard API
+  //         const textArea = document.createElement('textarea');
+  //         textArea.value = shortShareableLink;
+  //         document.body.appendChild(textArea);
+  //         textArea.select();
+  //         document.execCommand('copy');
+  //         document.body.removeChild(textArea);
+  //       });
         
-        setMessage({ 
-          text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
-          type: 'success' 
-        });
-        return;
-      }
+  //       setMessage({ 
+  //         text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
+  //         type: 'success' 
+  //       });
+  //       return;
+  //     }
       
-      // URL is short enough, use the direct method
-      setMessage({ text: 'Game link copied to clipboard!', type: 'success' });
+  //     // URL is short enough, use the direct method
+  //     setMessage({ text: 'Game link copied to clipboard!', type: 'success' });
       
-      // Copy to clipboard
-      navigator.clipboard.writeText(shareableLink).then(() => {
-        // Success
-      }).catch(() => {
-        // Fallback for browsers that don't support clipboard API
-        const textArea = document.createElement('textarea');
-        textArea.value = shareableLink;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      });
-    } catch (error) {
-      console.error('Error generating single game shareable link:', error);
-      setMessage({ text: 'Failed to generate game link.', type: 'error' });
-    }
-  };
+  //     // Copy to clipboard
+  //     navigator.clipboard.writeText(shareableLink).then(() => {
+  //       // Success
+  //     }).catch(() => {
+  //       // Fallback for browsers that don't support clipboard API
+  //       const textArea = document.createElement('textarea');
+  //       textArea.value = shareableLink;
+  //       document.body.appendChild(textArea);
+  //       textArea.select();
+  //       document.execCommand('copy');
+  //       document.body.removeChild(textArea);
+  //     });
+  //   } catch (error) {
+  //     console.error('Error generating single game shareable link:', error);
+  //     setMessage({ text: 'Failed to generate game link.', type: 'error' });
+  //   }
+  // };
 
   const downloadSingleGame = (gameId, gameData) => {
     // Don't allow downloading of paused games
@@ -792,14 +792,14 @@ const Settings = () => {
                         >
                           <TrashIcon size={25} />
                         </button>
-                        <button 
+                        {/* <button 
                           className="share-game-button" 
                           onClick={() => generateSingleGameShareableLink(gameId, game)}
                           aria-label="Share game"
                           disabled={game.isPaused}
                         >
                           <ShareIcon size={25} />
-                        </button>
+                        </button> */}
                         <button 
                           className="download-game-button" 
                           onClick={() => downloadSingleGame(gameId, game)}
