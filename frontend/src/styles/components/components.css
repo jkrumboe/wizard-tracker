@@ -2306,7 +2306,11 @@
   display: flex;
   flex-direction: column;
   max-width: 960px;
-  margin: var(--spacing-lg) auto;
+  margin-top: var(--spacing-lg);
+}
+
+.home-container .recent-games {
+  margin-bottom: 0;
 }
 
 /* Game table input styles */
