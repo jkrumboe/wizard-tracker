@@ -107,11 +107,6 @@
     to   { transform: rotate(360deg); }
 }
 
-/* .page-content {
-    opacity: 0;
-    transition: opacity 0.4s ease-out;
-} */
-
 .page-content.visible {
     opacity: 1;
 }

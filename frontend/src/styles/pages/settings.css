@@ -3,9 +3,8 @@
   max-width: 900px;
   margin: 0 auto;
   padding-top: var(--spacing-lg);
-  overflow-y: auto;
+  padding-bottom: var(--spacing-xxl);
   width: 100%;
-  min-height: 100%;
   flex: 1;
 }
 
@@ -26,7 +25,7 @@
   background-color: var(--card-background);
   border-radius: 12px;
   padding: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   box-shadow: var(--shadow-sm);
 }
 
@@ -139,6 +138,7 @@
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .settings-button {
@@ -153,7 +153,7 @@
   transition: all 0.2s ease;
   color: var(--text-color);
   border: 2px solid var(--border-color);
-  background-color: var(--background-color);
+  background-color: var(--card-background-alt);
 }
 
 .danger-button {
@@ -486,21 +486,6 @@
 }
 
 .imported-game {
-  border-left: 3px solid var(--primary-color);
-}
-
-.imported-game::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent 95%, rgba(var(--primary-rgb), 0.1) 100%);
-  pointer-events: none;
-}
-
-.imported-game {
   position: relative;
 }
 
@@ -509,23 +494,23 @@
   flex-direction: column;
   justify-content: center;
   gap: var(--spacing-sm);
-  width: 80%;
+  width: 70%;
 }
 
 .settings-card-actions {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
+  justify-content: center;
+  gap: var(--spacing-md);
 }
 
 .settings-card-content {
   display: flex;
   flex-direction: row;
+  align-items: center;
   justify-content: space-between;
   gap: var(--spacing-md);
-  width: 100%;
 }
 
 /* App Info Section */

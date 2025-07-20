@@ -360,7 +360,7 @@ const NewGame = () => {
       </div>
 
       {activeTab === 'new-game' && (
-        <div className={`tab-panel players-${gameState.players.length}`}>
+        <div className={`tab-panel players-${gameState.players.length}`} id="new-game-panel">
           <div className="setup-section">
             {/*Adding Players*/}
             <div className="selected-players-wrapper">
@@ -419,21 +419,23 @@ const NewGame = () => {
             </div>
           </div>
 
-          <button 
-            className="start-game-btn" 
-            disabled={gameState.players.length < 3 || gameState.players.length > 6} 
-            onClick={handleStartGame}
-          >
-            Start Game
-          </button>
-          
-          {gameState.players.length < 3 && (
-            <div className="error-message">At least 3 players are needed to start a game</div>
-          )}
-          
-          {gameState.players.length > 6 && (
-            <div className="error-message">Maximum of 6 players are supported</div>
-          )}
+          <div className="new-game-actions">
+            <button 
+              className="start-game-btn" 
+              disabled={gameState.players.length < 3 || gameState.players.length > 8} 
+              onClick={handleStartGame}
+            >
+              Start Game
+            </button>
+            
+            {gameState.players.length < 3 && (
+              <div className="error-message">At least 3 players are needed to start a game</div>
+            )}
+            
+            {gameState.players.length > 8 && (
+              <div className="error-message">Maximum of 8 players are supported</div>
+            )}
+          </div>
         </div>
       )}
 

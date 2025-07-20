@@ -3,8 +3,8 @@
 #game-performance {
   display: flex;
   margin-top: var(--spacing-sm);
-  /* grid-template-columns: repeat(2, 1fr); */
-  /* grid-template-rows: repeat(2, auto); */
+  /* grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto); */
 }
 
 #game-performance p {
@@ -48,28 +48,28 @@
 .metric-bar-container {
   height: 10px;
   background-color: var(--background-color);
-  border-radius: var(--radius-sm);
-  overflow: visible; /* Changed to visible to show the target marker and labels */
-  margin-bottom: var(--spacing-sm); /* Increased to make room for target labels */
-  position: relative; /* Added position relative for absolute positioning of target marker */
-  border: 1px solid var(--border-color); /* Subtle border for definition */
+  overflow: visible;
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+  border: 1px solid var(--border-color);
+  /* border-radius: var(--radius-sm); */
 }
 
 .target-marker {
   position: absolute;
-  top: -3px; /* Extends above the bar */
-  height: 14px; /* Taller than the bar for visibility */
-  width: 2px; /* Width of the marker line */
-  background-color: var(--text-color); /* Light color for contrast */
-  z-index: 2; /* Ensure it's above the bar */
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+  top: -3px;
+  height: 14px;
+  width: 2px;
+  background-color: var(--text-color);
+  z-index: 2;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .target-value-label {
   position: absolute;
-  top: 14px; /* Position below the bar */
-  transform: translateX(-50%); /* Center the label on the marker */
+  top: 14px;
+  transform: translateX(-50%);
   font-size: 0.7rem;
   color: var(--text-color);
   white-space: nowrap;
@@ -78,12 +78,12 @@
 
 /* Additional styles for target position edge cases */
 .target-value-label-left-edge {
-  transform: translateX(0); /* Don't shift left when at start */
+  transform: translateX(0);
   left: 0;
 }
 
 .target-value-label-right-edge {
-  transform: translateX(-100%); /* Shift all the way left when at end */
+  transform: translateX(-100%);
   right: 0;
 }
 
@@ -102,7 +102,7 @@
 .metric-bar {
   height: 100%;
   /* border-radius: var(--radius-sm); */
-  position: relative; /* For z-index stacking */
+  position: relative; 
   z-index: 1;
 }
 
@@ -154,7 +154,7 @@
   font-size: 1.1rem;
   color: var(--text-color);
   font-weight: 500;
-  padding-bottom: var(--spacing-xs);
+  /* padding-bottom: var(--spacing-xs); */
   border-bottom: 2px solid var(--border-color);
 }
 

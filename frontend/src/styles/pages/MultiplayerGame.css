@@ -11,8 +11,6 @@
 /* Make the tab panels scrollable */
 .game-container .tab-panel {
   flex: 1;
-  overflow-y: auto; 
-  padding-bottom: calc(60px + var(--spacing-xl)); /* Extra padding at bottom for the fixed controls */
 }
 
 /* Results table styling */
@@ -176,8 +174,6 @@
   border: 1px solid var(--border-color);
   font-weight: 500;
 }
-
-
 
 /* .settings-button, */
 .leave-button {

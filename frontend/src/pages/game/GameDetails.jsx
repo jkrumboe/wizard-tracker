@@ -39,6 +39,16 @@ const GameDetails = () => {
   const [activeTab, setActiveTab] = useState('stats')
   const [showChart, setShowChart] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [isLandscape, setIsLandscape] = useState(() => {
+    if (typeof window !== 'undefined' && window.screen && window.screen.orientation) {
+      return window.screen.orientation.type.startsWith('landscape');
+    }
+    // Fallback: compare width and height
+    return typeof window !== 'undefined'
+      ? window.innerWidth > window.innerHeight
+      : true;
+  });
+
   const [windowWidth, setWindowWidth] = useState(() => {
     // Safely handle window access for SSR
     return typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -441,6 +451,7 @@ const GameDetails = () => {
             </Link>
             <h1 id="header-game-detail-badge">Game Details </h1>
             <div className="toggle-section">
+              {!isLandscape  && (
                 <button
                   className="game-control-btn"
                   id="game-toggle-details"
@@ -450,82 +461,25 @@ const GameDetails = () => {
                 >
                   {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <TableIcon size={22} />}
                 </button>
+              )}
             </div>
           </div>
           <div className="game-date" style={{ margin: "0 auto" }}>Finished: {formattedDate}</div>
-          <h1 id="header-game-detail-badge">{game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
-          {/* <div className="game-date">Duration: {duration}</div> */}
-          <div className="game-controls">
+          
+          {/* Container for mode badge and download button */}
+          <div className="badge-controls-container">
+            {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}
             <button className="settings-button download-button" onClick={downloadSingleGame}>
               <DownloadIcon size={20} />
               Download
             </button>
           </div>
+          
+          {/* <div className="game-date">Duration: {duration}</div> */}
         </div>
 
         <div className="game-summary">
-          {activeTab === 'rounds' && (
-            <div className="rounds-section">
-              <div className={`wizard-scorecard ${sortedPlayers.length > 3 ? 'many-players' : ''}`} data-player-count={sortedPlayers.length}>
-                <table className="scorecard-table">
-                  <thead>
-                    <tr>
-                      <th className="round-header sticky-cell">Round</th>
-                      {sortedPlayers.map(player => (
-                        <th key={player.id} className="player-header">
-                          <div className="player-header-name">{player.name}</div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {game.round_data && game.round_data.map((round, index) => (
-                      <tr key={index} className="round-row">
-                        <td className="round-number sticky-cell">{index + 1}</td>
-                        {sortedPlayers.map(player => {
-                          const playerRound = round.players.find(p => compareIds(p.id, player.id));
-                          
-                          // Determine bid status for color-coding
-                          let bidStatusClass = '';
-                          if (playerRound) {
-                            if (playerRound.call === playerRound.made) {
-                              bidStatusClass = 'correct-bid';
-                            } else if (playerRound.made > playerRound.call) {
-                              bidStatusClass = 'over-bid';
-                            } else {
-                              bidStatusClass = 'under-bid';
-                            }
-                          }
-                          
-                          return (
-                            <td key={player.id} className="player-round-cell">
-                              {playerRound && (
-                                <div className="player-round-data">
-                                <div className="round-score">{playerRound.score}</div>
-                                <div className="round-bid">{playerRound.call}</div>
-                                <div className={`round-made ${bidStatusClass}`}>{playerRound.made}</div>
-                              </div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                    <tr className="total-row">
-                      <td className="total-label sticky-cell">Total</td>
-                      {sortedPlayers.map(player => (
-                        <td key={player.id} className="total-score">
-                          {player.score}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {(windowWidth > 768 || activeTab === 'stats') && (
+          {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">
               <div className="results-header">
                 <h2>Final Results</h2>
@@ -736,6 +690,67 @@ const GameDetails = () => {
                 ))}
               </div>
               )}
+            </div>
+          )}
+
+          {(isLandscape || activeTab === 'rounds') && (
+            <div className="rounds-section">
+              <div className={`wizard-scorecard ${sortedPlayers.length > 3 ? 'many-players' : ''}`} data-player-count={sortedPlayers.length}>
+                <table className="scorecard-table">
+                  <thead>
+                    <tr>
+                      <th className="round-header sticky-cell">Round</th>
+                      {sortedPlayers.map(player => (
+                        <th key={player.id} className="player-header">
+                          <div className="player-header-name">{player.name}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {game.round_data && game.round_data.map((round, index) => (
+                      <tr key={index} className="round-row">
+                        <td className="round-number sticky-cell">{index + 1}</td>
+                        {sortedPlayers.map(player => {
+                          const playerRound = round.players.find(p => compareIds(p.id, player.id));
+                          
+                          // Determine bid status for color-coding
+                          let bidStatusClass = '';
+                          if (playerRound) {
+                            if (playerRound.call === playerRound.made) {
+                              bidStatusClass = 'correct-bid';
+                            } else if (playerRound.made > playerRound.call) {
+                              bidStatusClass = 'over-bid';
+                            } else {
+                              bidStatusClass = 'under-bid';
+                            }
+                          }
+                          
+                          return (
+                            <td key={player.id} className="player-round-cell">
+                              {playerRound && (
+                                <div className="player-round-data">
+                                <div className="round-score">{playerRound.score}</div>
+                                <div className="round-bid">{playerRound.call}</div>
+                                <div className={`round-made ${bidStatusClass}`}>{playerRound.made}</div>
+                              </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    <tr className="total-row">
+                      <td className="total-label sticky-cell">Total</td>
+                      {sortedPlayers.map(player => (
+                        <td key={player.id} className="total-score">
+                          {player.score}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

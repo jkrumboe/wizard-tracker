@@ -20,6 +20,7 @@ import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/cont
 import { authService } from "@/shared/api/authService"
 import { LocalGameStorage } from "@/shared/api/localGameStorage"
 import "@/styles/base/theme.css"
+import "@/styles/devices/tablet.css"
 import "@/shared/utils/devUpdateHelper"
 
 // Component to handle URL imports
@@ -189,7 +190,7 @@ function App() {
       showOnAppOpen={true}
       appOpenThreshold={15 * 60 * 1000}
       storageKey="wizardAppLastUsed"
-      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.5.7'}
+      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.5.8'}
       versionKey="wizardAppVersion"
     >
       <Router>

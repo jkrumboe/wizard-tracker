@@ -37,8 +37,8 @@
 
 .game-in-progress .score-table td {
   overflow: hidden;
-  min-height: 62px;
-  height: 62px;
+  /* min-height: 62px;
+  height: 62px; */
 }
 
 /* Fixed column widths */
@@ -67,16 +67,7 @@
 .game-in-progress {
   display: flex;
   flex-direction: column;
-  height: 100vh; 
-  max-height: calc(100vh - var(--top-nav-height)); 
   position: relative;
-  overflow: hidden;
-}
-
-/* Make the tab panels scrollable */
-.game-in-progress .tab-panel {
-  flex: 1;
-  overflow-y: auto;
 }
 
 /* Results table styling */
@@ -159,12 +150,6 @@
 .rounds-input.made-correct {
   border-color: var(--success-color) !important;
   border-width: 2px !important;
-}
-
-@media (max-height: 776px) {
-  .game-in-progress .tab-panel {
-    padding-bottom: calc(60px + var(--spacing-lg));
-  }
 }
 
 /* Mobile responsiveness */
