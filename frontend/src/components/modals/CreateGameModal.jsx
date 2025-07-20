@@ -36,8 +36,8 @@ const CreateGameModal = ({
               >
                 <option value="classic">Classic</option>
                 <option value="ranked">Ranked</option>
-                <option value="quick">Quick Game</option>
-                <option value="tournament">Tournament</option>
+                {/* <option value="quick">Quick Game</option>
+                <option value="tournament">Tournament</option> */}
               </select>
             </div>
 
@@ -47,7 +47,6 @@ const CreateGameModal = ({
                 value={gameSettings.maxPlayers}
                 onChange={(e) => onSettingsChange({ ...gameSettings, maxPlayers: parseInt(e.target.value) })}
               >
-                <option value={2}>2 Players</option>
                 <option value={3}>3 Players</option>
                 <option value={4}>4 Players</option>
                 <option value={5}>5 Players</option>

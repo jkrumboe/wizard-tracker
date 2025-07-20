@@ -168,7 +168,7 @@ function App() {  useEffect(() => {
                     <Leaderboard />
                   </OnlineProtectedRoute>
                 } />
-                <Route path="/stats/:id" element={<Stats />} />
+                <Route path="/stats/:name" element={<Stats />} />
                 <Route path="/new-game" element={<NewGame />} />
                 <Route path="/game/:id" element={<GameDetails />} />
                 <Route path="/game/current" element={<GameInProgress />} />

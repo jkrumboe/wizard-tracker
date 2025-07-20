@@ -567,25 +567,27 @@ const GameDetails = () => {
                 <div className="results-table">
                   {sortedPlayers.map((player) => (
                     <div key={player.id} className="results-row">
-                      <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
-                        {player.rank}
+                      <div className="top-result-row">
+                        <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
+                          {player.rank}
+                        </div>
+                        <div className="player-col">
+                          {game.is_local ? (
+                            <div className="player-info">
+                              <span>{player.name}</span>
+                            </div>
+                          ) : (
+                            <Link to={`/profile/${player.id}`} className="player-link">
+                              <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
+                              <span>{player.name}</span>
+                            </Link>
+                          )}
+                        </div>
+                        <div className="score-col">{player.score}</div>
+                        <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
+                          Adv. Stats
+                        </button>
                       </div>
-                      <div className="player-col">
-                        {game.is_local ? (
-                          <div className="player-info">
-                            <span>{player.name}</span>
-                          </div>
-                        ) : (
-                          <Link to={`/profile/${player.id}`} className="player-link">
-                            <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
-                            <span>{player.name}</span>
-                          </Link>
-                        )}
-                      </div>
-                      <div className="score-col">{player.score}</div>
-                      <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
-                        Adv. Stats
-                      </button>
                     {compareIds(selectedPlayerId, player.id) && (() => {
                       // Find player stats once and store in variable for efficient access
                       // Convert IDs to strings for comparison to handle type mismatches

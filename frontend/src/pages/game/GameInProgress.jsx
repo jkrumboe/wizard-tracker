@@ -654,16 +654,18 @@ const GameInProgress = () => {
               <div className="results-table">
               {detailedStats.map((playerStats, index) => (
                 <div key={playerStats.id} className="results-row">
-                  <div className="rank-col">{index + 1}</div>
-                  <div className="player-col">
-                    <div className="player-info">
-                      <span>{playerStats.name}</span>
+                  <div className="top-result-row">
+                    <div className="rank-col">{index + 1}</div>
+                    <div className="player-col">
+                      <div className="player-info">
+                        <span>{playerStats.name}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="score-col">{playerStats.totalPoints || 0}</div>
-                  <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
-                    {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
-                  </button>
+                    <div className="score-col">{playerStats.totalPoints || 0}</div>
+                    <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
+                      {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
+                    </button>
+                </div>
                   
                   {selectedPlayerId === playerStats.id && (
                     <div className="advanced-stats">

@@ -91,56 +91,6 @@
   box-shadow: var(--shadow);
 }
 
-.game-in-progress .results-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
-  position: relative;
-  flex-direction: row;
-  flex-wrap: nowrap;
-}
-
-.game-in-progress .results-row:nth-child(even) {
-  background-color: var(--card-background-alt);
-}
-
-.game-in-progress .results-row:last-child {
-  border-bottom: none;
-}
-
-.game-in-progress .results-row .rank-col {
-  flex: 0 0 15%;
-  min-width: 40px;
-  max-width: 60px;
-  text-align: center;
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.game-in-progress .results-row .player-col {
-  flex: 1 1 auto;
-  min-width: 100px;
-  font-size: 1.1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.game-in-progress .results-row .score-col {
-  flex: 0 0 20%;
-  min-width: 60px;
-  max-width: 80px;
-  text-align: center;
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
 /* Fixed position for the round info at the top */
 .game-in-progress .round-info {
   position: sticky;
@@ -164,7 +114,7 @@
 }
 
 /* Stats Subtabs styling */
-.game-in-progress .stats-subtabs {
+/* .game-in-progress .stats-subtabs {
   display: flex;
   justify-content: center;
   gap: var(--spacing-xl);
@@ -189,7 +139,7 @@
 
 .game-in-progress .stats-subtab-btn:hover:not(.active) {
   background-color: var(--card-background);
-}
+} */
 
 /* Fixed bottom controls with translucent background */
 .game-in-progress .game-bottom-section {

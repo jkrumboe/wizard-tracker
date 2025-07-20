@@ -329,7 +329,7 @@ if (editing) {
               </div>
             </div>
             
-            <Link to={`/stats/${player.id}`} className="view-all-stats">
+            <Link to={`/stats/${encodeURIComponent(player.display_name || player.name)}`} className="view-all-stats">
               View Complete Stats History
             </Link>
           </div>

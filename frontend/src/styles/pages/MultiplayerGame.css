@@ -115,11 +115,10 @@
 }
 
 /* Stats Subtabs styling */
-.game-container .stats-subtabs {
+/* .game-container .stats-subtabs {
   display: flex;
   justify-content: center;
   gap: var(--spacing-xl);
-  margin-bottom: var(--spacing-md);
 }
 
 .game-container .stats-subtab-btn {
@@ -141,7 +140,7 @@
 
 .game-container .stats-subtab-btn:hover:not(.active) {
   background-color: var(--card-background);
-}
+} */
 
 /* Fixed bottom controls with translucent background */
 .game-container .game-bottom-section {

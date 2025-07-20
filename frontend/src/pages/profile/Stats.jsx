@@ -3,11 +3,11 @@ import { useParams, Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import StatCard from '@/components/ui/StatCard'
 import PageTransition from '@/components/common/PageTransition'
-import { getPlayerById } from '@/shared/api/playerService'
+import { getPlayers } from '@/shared/api/playerService'
 import { getPlayerGameHistory } from '@/shared/api/gameService'
 
 const Stats = () => {
-  const { id } = useParams()
+  const { name } = useParams()
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
   const [eloHistory] = useState([]);
@@ -18,10 +18,13 @@ const Stats = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const playerData = await getPlayerById(id)
+        // Fetch all players and find by name
+        const allPlayers = await getPlayers()
+        const playerData = allPlayers.find(p => (p.display_name || p.name) === decodeURIComponent(name))
+        if (!playerData) throw new Error('Player not found')
         setPlayer(playerData)
         
-        const history = await getPlayerGameHistory(id)
+        const history = await getPlayerGameHistory(playerData.id)
         setGameHistory(history)
         
         setLoading(false)
@@ -32,7 +35,7 @@ const Stats = () => {
       }
     }
     fetchData()
-  }, [id])
+  }, [name])
 
   const filteredHistory = () => {
     if (timeRange === 'all' || !gameHistory.length) return gameHistory
@@ -207,4 +210,4 @@ const Stats = () => {
   )
 }
 
-export default Stats 
+export default Stats
