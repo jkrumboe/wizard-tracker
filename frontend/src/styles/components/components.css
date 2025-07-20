@@ -391,7 +391,7 @@
   
   /* Game Details Page */
   .game-details-container {
-    padding: var(--spacing-sm);
+    padding: 0;
     padding-top: var(--spacing-lg);
     overflow-y: auto;
     max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
