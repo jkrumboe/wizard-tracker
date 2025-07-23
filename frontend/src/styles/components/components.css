@@ -744,18 +744,9 @@
   }
   
   .games-list {
-    margin-top: var(--spacing-md);
-    max-height: 300px; /* Set a maximum height */
-    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 300px;
+    overflow-y: auto;
   }
-  
-  /* .game-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-sm) 0;
-    border-bottom: 1px solid var(--border-color);
-  } */
   
   .view-all-stats {
     display: block;
@@ -768,13 +759,8 @@
     font-weight: 500;
     transition: background-color 0.2s;
   }
-  
-  /* .view-all-stats:hover {
-    background-color: rgba(53, 99, 233, 0.2);
-  } */
 
   /* Profile Edit */
-
   .profile-header {
     position: relative;
   }
@@ -802,7 +788,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center; /* Center horizontally */
+    align-items: center;
     height: 85vh;
   }
 
@@ -811,7 +797,7 @@
     display: flex;
     width: 90%;
     flex-direction: column;
-    align-items: center; /* Center horizontally */
+    align-items: center;
     text-align: center;
     margin-bottom: var(--spacing-lg);
     background-color: var(--card-background);
@@ -1015,7 +1001,7 @@
   }
   
  /* Confirm Button */
-.confirm-button {
+/* .confirm-button {
   background-color: var(--primary-color);
   color: var(--text-color);
   border: none;
@@ -1024,7 +1010,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-}
+} */
 
 /* Secondary Button Variant */
 .btn.btn-secondary {
@@ -1886,7 +1872,6 @@
   cursor: pointer;
   transition: background-color 0.3s, color 0.3s;
   border-radius: var(--radius-md);
-  margin: 0 var(--spacing-sm);
   border: 2px solid var(--border-color)
 }
 
@@ -1951,6 +1936,7 @@
   padding: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
   border-radius: var(--radius-lg);
+  gap: var(--spacing-sm);
 }
 
 .badge {
@@ -2735,17 +2721,8 @@
 .confirm-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: var(--spacing-lg);
-}
-
-.confirm-button{
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  margin: 0;
+  margin-top: var(--spacing-md);
+  gap: var(--spacing-lg)
 }
 
 .cancel-button {

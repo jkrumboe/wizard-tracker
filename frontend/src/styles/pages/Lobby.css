@@ -371,6 +371,7 @@
 .modal-content {
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
+  padding-top: var(--spacing-sm);
   max-width: 500px;
   width: 100%;
   max-height: 80dvh;

@@ -22,7 +22,19 @@ const app = express()
 // Set online mode based on environment variable, default to offline
 const startOffline = process.env.START_OFFLINE !== 'false';
 setOnlineStatus(!startOffline, startOffline ? 'Server startup - default to offline mode' : 'Server startup - online mode enabled');
+// Log config file path and online/offline mode only once
+const configFilePath = './src/config/online-status.json';
+console.log(`✅ Using config file: ${configFilePath}`);
 console.log(`🔌 Online features: ${startOffline ? 'DISABLED' : 'ENABLED'} by default`);
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔧 Backend starting up...`);
+if (startOffline) {
+  console.log(`🔴 OFFLINE MODE ENABLED - SERVER'S ONLINE FEATURES ARE OFFLINE`);
+  console.log(`Reason: Server startup - default to offline mode`);
+} else {
+  console.log(`🟢 ONLINE MODE ENABLED - SERVER'S ONLINE FEATURES ARE ACTIVE`);
+  console.log(`Reason: Server startup - online mode enabled`);
+}
 
 // Trust proxy for proper IP detection (important for rate limiting and logging)
 app.set('trust proxy', 1);
@@ -87,8 +99,8 @@ app.get('/api/online/status', (req, res) => {
   res.json({
     online: status.online,
     lastUpdated: status.lastUpdated,
-    message: status.online ? 
-      'All features are available' : 
+    message: status.online ?
+      'All features are available' :
       'Online features are disabled. Only local features are available.'
   });
 });

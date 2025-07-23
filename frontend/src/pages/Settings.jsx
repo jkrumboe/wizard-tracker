@@ -6,6 +6,7 @@ import { LocalGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
 import PageTransition from '@/components/common/PageTransition';
+import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import '@/styles/pages/settings.css';
 
 const Settings = () => {
@@ -664,7 +665,6 @@ const Settings = () => {
   };
 
   return (
-    <PageTransition>
       <div className="settings-container">
         {/* {message.text && (
           <div className={`settings-message ${message.type}`}>
@@ -819,34 +819,13 @@ const Settings = () => {
           )}
         </div>
 
-        {showConfirmDialog && (
-          <div className="confirm-dialog-overlay">
-            <div className="confirm-dialog">
-              <h3>{deleteAll ? 'Clear All Data?' : 'Delete Game?'}</h3>
-              <p>
-                {deleteAll 
-                  ? 'Are you sure you want to delete all local storage data? This action cannot be undone.'
-                  : 'Are you sure you want to delete this game? This action cannot be undone.'}
-              </p>
-              <div className="confirm-actions">
-                <button 
-                  className="cancel-button" 
-                  onClick={() => setShowConfirmDialog(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="confirm-button danger-button" 
-                  onClick={handleConfirmDelete}
-                >
-                  {deleteAll ? 'Clear All Data' : 'Delete Game'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteConfirmationModal
+          isOpen={showConfirmDialog}
+          onClose={() => setShowConfirmDialog(false)}
+          onConfirm={handleConfirmDelete}
+          deleteAll={deleteAll}
+        />
       </div>
-    </PageTransition>
   );
 };
 

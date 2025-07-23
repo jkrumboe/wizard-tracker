@@ -68,11 +68,6 @@ docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js off "Mai
 docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js on "Maintenance complete"
 ```
 
-For Windows users, you can use the included test script:
-```
-test-online-mode.bat [on|off|status]
-```
-
 See [Admin Commands](wiki/Admin-Commands.md) for more details.
 
 ## 📚 Documentation

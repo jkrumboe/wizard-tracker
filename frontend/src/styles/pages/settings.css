@@ -3,7 +3,6 @@
   max-width: 900px;
   margin: 0 auto;
   padding-top: var(--spacing-lg);
-  animation: fadeIn 0.3s ease-in-out;
   overflow-y: auto;
   width: 100%;
   min-height: 100%;
@@ -34,7 +33,7 @@
 .settings-section h2 {
   font-size: 1.3rem;
   margin-top: 0;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   color: var(--text-color);
   padding-bottom: var(--spacing-sm);
 }
@@ -324,16 +323,18 @@
 
 /* Confirm Dialog */
 .confirm-dialog-overlay {
+  /* Use modal-overlay styles for consistency */
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -352,20 +353,15 @@
   color: var(--danger-color);
 }
 
-.confirm-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--spacing-lg);
-}
-
 .confirm-button, .cancel-button {
-  padding: 10px 16px;
+  padding: var(--spacing-sm) 0;
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
   margin: 0;
+  width: 50%;
 }
 
 .cancel-button {
@@ -375,7 +371,7 @@
 
 .confirm-button.danger-button {
   background-color: var(--danger-color);
-  color: white;
+  color: var(--text-color);
 }
 
 /* Settings Messages */
