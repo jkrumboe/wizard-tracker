@@ -1,0 +1,116 @@
+.splash-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-color);
+    color: var(--text-color);
+    z-index: 9999;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.splash-screen.enter {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.splash-screen.exit {
+    opacity: 0;
+    transform: scale(1.1);
+}
+
+/* Teilchen-Hintergrund bleibt unverändert */
+.splash-background {
+    position: absolute;
+    inset: 0;
+    overflow: hidden; 
+}
+
+.background-particles {
+    position: absolute;
+    inset: 0;
+ }
+
+.particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    animation: twinkle linear infinite;
+    opacity: 0.6;
+}
+
+@keyframes twinkle {
+    0%,100% { opacity: 0; transform: scale(0); }
+    50%     { opacity: 1; transform: scale(1); }
+}
+
+.splash-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: contentSlideUp 1s ease-out;
+}
+
+@keyframes contentSlideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.app-info {
+    margin-bottom: var(--spacing-sm);
+}
+
+.app-name {
+    font-size: 2.5rem; font-weight: 700; margin: 0 0 0.5rem;
+    color: var(--primary-color);
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from { filter: brightness(1); }
+    to   { filter: brightness(1.1); }
+}
+
+.app-subtitle {
+    font-size: 1.1rem; font-weight: 300;
+    color: var(--text-light); letter-spacing: 0.5px; margin: 0;
+}
+
+/* Magic Spinner */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px; height: 60px;
+}
+
+.magic-spinner {
+    margin-top: 2rem;
+    width: 60px;
+    height: 60px;
+    background: var(--primary-color);
+    clip-path: polygon(
+        50% 0%, 60% 35%, 98% 35%, 68% 57%,
+        79% 91%, 50% 70%, 21% 91%, 32% 57%,
+        2% 35%, 40% 35%
+    );
+    animation: rotateRune 2.5s linear infinite;
+    box-shadow: 0 0 12px var(--primary-color);
+}
+@keyframes rotateRune {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.page-content {
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+}
+
+.page-content.visible {
+    opacity: 1;
+}

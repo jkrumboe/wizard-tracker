@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
-import PageTransition from '@/components/common/PageTransition'
+import AppLoadingScreen from '@/components/common/AppLoadingScreen'
 import { getRecentGames, getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
-import "@/styles/utils/pageTransition.css"
 import "@/styles/components/offline-notification.css"
 
 const Home = () => {
@@ -110,7 +109,7 @@ const Home = () => {
   }, [location, navigate]);
 
   return (
-    <PageTransition
+    <AppLoadingScreen
       isLoading={loading}
       loadingTitle="Welcome!"
       loadingSubtitle={
@@ -164,7 +163,7 @@ const Home = () => {
           getSavedGames={getSavedGames}
         />
       </div>
-    </PageTransition>
+    </AppLoadingScreen>
   )
 }
 

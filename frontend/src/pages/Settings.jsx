@@ -5,7 +5,6 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { LocalGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
-import PageTransition from '@/components/common/PageTransition';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import '@/styles/pages/settings.css';
 

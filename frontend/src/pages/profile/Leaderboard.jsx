@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getPlayers } from '@/shared/api/playerService'
 import defaultAvatar from "@/assets/default-avatar.png";
-import PageTransition from "@/components/common/PageTransition"
 
 import "@/styles/utils/pageTransition.css"
 
@@ -84,12 +83,15 @@ const Leaderboard = () => {
     }
   }
 
+  if (loading) {
+    return (
+        <div className="loading-container">
+          <h1>Loading...</h1>
+        </div>
+    )
+  }
+
   return (
-      <PageTransition 
-        isLoading={loading} 
-        loadingTitle="Loading Leaderboard data..." 
-        loadingSubtitle="Please wait while we gather the latest player stats."
-      >
       <div className="leaderboard-container">
         <h1>Leaderboard</h1>
         
@@ -168,7 +170,6 @@ const Leaderboard = () => {
           </button>
         </div>
       </div>
-    </PageTransition>
   )
 }
 
