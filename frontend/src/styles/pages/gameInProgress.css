@@ -19,7 +19,6 @@
   font-weight: bold;
   color: var(--text-color);
   flex-shrink: 0; /* Prevent badges from shrinking */
-  margin-right: var(--spacing-xs);
 }
 
 .dealer-badge {

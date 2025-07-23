@@ -1056,7 +1056,7 @@
 
 .round-info span {
   text-align: center;
-  background-color: var(--card-background-alt);
+  background-color: var(--card-background);
   color: var(--text-color);
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--border-color);

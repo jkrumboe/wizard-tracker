@@ -284,14 +284,6 @@ const GameInProgress = () => {
     return <div>Loading game state...</div>;
   }
 
-  if (isRecovering) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h3>Recovering Game...</h3>
-        <p>Restoring your game state from backup...</p>
-      </div>
-    );
-  }
 
   if (!gameState.gameStarted) {
     console.log('GameInProgress: gameState.gameStarted is false, gameState:', gameState);

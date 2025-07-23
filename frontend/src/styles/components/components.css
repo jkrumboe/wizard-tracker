@@ -1376,7 +1376,7 @@
   
   .nav-btn {
     background-color: var(--primary-color);
-    color: var(--text-color);
+    color: var(--text-white);
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
@@ -1384,11 +1384,6 @@
     font-weight: 500;
     transition: background-color 0.2s, transform 0.1s;
     font-size: 0.9rem;
-  }
-  
-  .nav-btn:hover:not(:disabled) {
-    background-color: var(--primary-dark);
-    transform: translateY(-2px);
   }
   
   .nav-btn:disabled {
@@ -2320,7 +2315,7 @@
   }
   
   .score-table input[type="tel"]:disabled {
-    background-color: var(--disabled-background);
+    background-color: var(--disabled-background-dark);
     opacity: 0.6;
     cursor: not-allowed;
     border: 1px solid var(--border-color);
@@ -2383,7 +2378,7 @@
 
 .game-control-btn {
   background-color: var(--primary-color);
-  color: var(--text-color);
+  color: var(--text-white);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -3061,7 +3056,7 @@
   }
   
   .score-table input[type="tel"]:disabled {
-    background-color: var(--disabled-background);
+    background-color: var(--disabled-background-dark);
     opacity: 0.6;
     cursor: not-allowed;
     border: 1px solid var(--border-color);
@@ -3120,7 +3115,7 @@
 
 .game-control-btn {
   background-color: var(--primary-color);
-  color: var(--text-color);
+  color: var(--text-white);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
