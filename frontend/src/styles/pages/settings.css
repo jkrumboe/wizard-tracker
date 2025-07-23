@@ -370,8 +370,9 @@
 }
 
 .confirm-button.danger-button {
-  background-color: var(--danger-color);
-  color: var(--text-color);
+  background-color: transparent;
+  border: 2px solid var(--error-color);
+  color: var(--error-color);
 }
 
 /* Settings Messages */

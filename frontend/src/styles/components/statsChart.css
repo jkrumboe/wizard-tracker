@@ -8,7 +8,6 @@
 .chart-controls {
   display: flex;
   flex-wrap: wrap;
-  margin-bottom: var(--spacing-md);
 }
 
 .chart-type-selector {

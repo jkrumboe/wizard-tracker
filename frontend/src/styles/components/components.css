@@ -1392,7 +1392,7 @@
   }
   
   .nav-btn:disabled {
-    background-color: var(--primary-light);
+    background-color: var(--disabled-background-dark);
     cursor: not-allowed;
   }
   
@@ -2046,10 +2046,7 @@
 .resume-btn {
   background-color: var(--primary-color);
   border: none;
-}
-
-.resume-btn:hover {
-  background-color: var(--primary-dark);
+  color: var(--text-color);
 }
 
 .delete-btn {

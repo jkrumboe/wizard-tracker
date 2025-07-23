@@ -91,7 +91,9 @@
 }
 
 .modal-button.danger {
-  background-color: var(--danger-color-dark);
+  background-color: transparent;
+  border: 2px solid var(--error-color);
+  color: var(--error-color);
 }
 
 .pause-confirmation-modal {

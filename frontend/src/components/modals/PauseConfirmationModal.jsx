@@ -27,9 +27,6 @@ const PauseConfirmationModal = ({
         
         <div className="modal-content">
           <h3>Are you sure you want to pause the current game?</h3>
-          <div className="pause-icon">
-            <PauseIcon size={48} />
-          </div>
           <p className="pause-description">
             Your game progress will be saved and you can resume it later from the Paused Games tab in the New Game page.
           </p>

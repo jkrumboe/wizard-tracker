@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { LocalGameStorage } from "@/shared/api"
+import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 
 const NewGame = () => {
   
@@ -330,31 +331,12 @@ const NewGame = () => {
         </div>
       )}
 
-      {showConfirmDialog && (
-        <div className="confirm-dialog-overlay">
-          <div className="confirm-dialog">
-            <h3>Delete Game?</h3>
-            <p>
-              Are you sure you want to delete this game? This action cannot be undone.
-            </p>
-            <div className="confirm-actions">
-              <button 
-                className="cancel-button" 
-                onClick={() => setShowConfirmDialog(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="confirm-button danger-button" 
-                onClick={handleConfirmDelete}
-              >
-                Delete Game
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <DeleteConfirmationModal
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={handleConfirmDelete}
+        deleteAll={false}
+      />
     </div>
   )
 }
