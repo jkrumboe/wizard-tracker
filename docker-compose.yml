@@ -1,41 +1,101 @@
+version: '3.8'
+
 services:
+  # PostgreSQL database used by Supabase
   db:
-    image: postgres:16
+    image: supabase/postgres:15
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: wizard
-      POSTGRES_PASSWORD: geheim
-      POSTGRES_DB: wizard_db
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared-net
+
+  # User authentication service
+  auth:
+    image: supabase/gotrue:latest
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - shared-net
+
+  # Kong API gateway exposes Supabase over a single port
+  kong:
+    image: kong:2
+    restart: unless-stopped
+    env_file: .env
     ports:
-      - "5433:5432"
+      - "8000:8000"
+    depends_on:
+      auth:
+        condition: service_started
+      db:
+        condition: service_healthy
+    networks:
+      - shared-net
+
+  # Realtime websocket server
+  realtime:
+    image: supabase/realtime:latest
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - shared-net
+
+  # Object storage API
+  storage:
+    image: supabase/storage-api:latest
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      auth:
+        condition: service_started
+      db:
+        condition: service_healthy
+    networks:
+      - shared-net
+
+  # Web UI for managing your project
+  studio:
+    image: supabase/studio:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - shared-net
 
   frontend:
-    build: 
+    build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:5055/api
+        VITE_API_URL: http://kong:8000
     ports:
-      - "8088:80"  # Host:Container
+      - "8088:80"
     depends_on:
-      - backend
-
-  backend:
-    build: ./backend
-    ports:
-      - "5055:5000"  # Host:Container
-    environment:
-      - DATABASE_URL=postgres://wizard:geheim@db:5432/wizard_db
-      - START_OFFLINE=true  # Start in offline mode by default
-    env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend/config:/app/config:delegated  # Persist config files outside the container with delegated permission
-      # This creates a volume that persists between container restarts but is mounted at the correct path
-    command: npm run start  # Could change to start:offline if needed
-    depends_on:
-      - db
-
+      kong:
+        condition: service_started
+    networks:
+      - shared-net
 
 volumes:
-  pgdata:
+  db-data:
+
+networks:
+  shared-net:
+    external: true
