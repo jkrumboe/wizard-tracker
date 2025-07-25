@@ -5,7 +5,7 @@ import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import AppLoadingScreen from '@/components/common/AppLoadingScreen'
 import { getRecentGames, getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus.jsx'
 import "@/styles/components/offline-notification.css"
 
 const Home = () => {

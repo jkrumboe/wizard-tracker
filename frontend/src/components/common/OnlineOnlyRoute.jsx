@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus.jsx';
 
 /**
  * A wrapper component that redirects to the home page with a message
