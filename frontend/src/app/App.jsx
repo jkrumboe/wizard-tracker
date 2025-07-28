@@ -18,6 +18,7 @@ import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/cont
 import { authService, LocalGameStorage } from "@/shared/api"
 import "@/styles/base/theme.css"
 import "@/shared/utils/devUpdateHelper" // Development update testing helper
+// import supabase from "@/shared/utils/supabase.js";
 
 // Component to handle URL imports
 function URLImportHandler() {
