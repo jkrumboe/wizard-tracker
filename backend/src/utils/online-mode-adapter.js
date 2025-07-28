@@ -1,9 +1,8 @@
-// Import the CommonJS module using require
-const { isOnline } = require('./config/online-mode');
+import { isOnline } from '../config/online-mode.js';
 
 // Export an adapter that provides the isOnline function in ESM
-export function checkOnlineMode() {
-  return isOnline();
+export async function checkOnlineMode() {
+  return await isOnline();
 }
 
 export default {

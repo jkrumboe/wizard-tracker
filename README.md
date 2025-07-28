@@ -53,19 +53,21 @@ npm run dev
 
 ## 🔌 Online/Offline Mode
 
-KeepWiz supports an offline mode that disables all online features (multiplayer, leaderboards, etc.) while still allowing local gameplay. This feature is useful during maintenance or for users who want to use the application in a completely offline environment.
+KeepWiz stores the online mode flag in a Supabase `config` table. When set to `false`, multiplayer features are disabled while local gameplay remains available. This allows toggling maintenance mode without modifying files inside the container.
 
 ### Toggle Online/Offline Mode (Admin Only)
+
+Use the CLI to update the value in Supabase:
 
 ```bash
 # Check current status
 docker exec -it wizard-tracker-backend-1 node src/online-cli.js status
 
-# Turn off online features (using root user to avoid permission issues)
-docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js off "Maintenance mode"
+# Turn off online features
+docker exec -it wizard-tracker-backend-1 node src/online-cli.js off "Maintenance mode"
 
-# Turn on online features (using root user to avoid permission issues)
-docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js on "Maintenance complete"
+# Turn on online features
+docker exec -it wizard-tracker-backend-1 node src/online-cli.js on "Maintenance complete"
 ```
 
 See [Admin Commands](wiki/Admin-Commands.md) for more details.

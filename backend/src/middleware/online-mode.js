@@ -13,8 +13,8 @@ import { isOnline } from '../config/online-mode.js';
  * @param {Object} res - Express response object
  * @param {Function} next - Next middleware function
  */
-function requireOnlineMode(req, res, next) {
-  if (isOnline()) {
+async function requireOnlineMode(req, res, next) {
+  if (await isOnline()) {
     next(); // Allow the request to proceed
   } else {
     res.status(503).json({

@@ -1,7 +1,7 @@
 import { isOnline, getOnlineStatus } from '../config/online-mode.js';
 
 // Create a middleware that checks online status for specific endpoints
-export function requireOnlineMode(req, res, next) {
+export async function requireOnlineMode(req, res, next) {
   // Skip check for status endpoint so client can always check server status
   if (req.path === '/api/status' || req.path === '/api/online/status') {
     return next();
@@ -23,8 +23,8 @@ export function requireOnlineMode(req, res, next) {
   ];
   
   const isProtectedPath = requiresOnline.some(path => req.path.startsWith(path));
-  
-  if (isProtectedPath && !isOnline()) {
+
+  if (isProtectedPath && !(await isOnline())) {
     return res.status(503).json({
       error: 'Online features are currently disabled',
       status: 'offline',
@@ -36,8 +36,8 @@ export function requireOnlineMode(req, res, next) {
 }
 
 // Export other helpful functions
-export function getOnlineStatusInfo() {
-  return getOnlineStatus();
+export async function getOnlineStatusInfo() {
+  return await getOnlineStatus();
 }
 
 export default {

@@ -16,35 +16,35 @@ const reason = args.slice(1).join(' ') || 'Manual update';
 
 switch (command) {
   case 'status':
-    showStatus();
+    await showStatus();
     break;
     
   case 'true':
   case 'on':
   case 'online':
-    setOnline(true, reason);
+    await setOnline(true, reason);
     break;
     
   case 'false':
   case 'off':
   case 'offline':
-    setOnline(false, reason);
+    await setOnline(false, reason);
     break;
     
   default:
-    showHelp();
+    await showHelp();
 }
 
-function showStatus() {
-  const status = getOnlineStatus();
+async function showStatus() {
+  const status = await getOnlineStatus();
   console.log('Current status:', status.online ? 'ONLINE' : 'OFFLINE');
   console.log('Last updated:', new Date(status.lastUpdated).toLocaleString());
   console.log('Reason:', status.reason || 'N/A');
 }
 
-function setOnline(online, reason) {
+async function setOnline(online, reason) {
   try {
-    const status = setOnlineStatus(online, reason);
+    const status = await setOnlineStatus(online, reason);
     console.log(`✅ Online mode set to: ${online ? 'ONLINE' : 'OFFLINE'}`);
     console.log(`Timestamp: ${new Date(status.lastUpdated).toLocaleString()}`);
     console.log(`Reason: ${status.reason}`);
@@ -59,7 +59,7 @@ function setOnline(online, reason) {
   }
 }
 
-function showHelp() {
+async function showHelp() {
   console.log('Usage: node online-cli.js [status|on|off|online|offline] [reason]');
   console.log('Commands:');
   console.log('  status         Show current online/offline status');
@@ -73,5 +73,5 @@ function showHelp() {
   
   // Show current status
   console.log('');
-  showStatus();
+  await showStatus();
 }
