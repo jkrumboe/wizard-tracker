@@ -16,8 +16,6 @@ export function useAuth() {
       context.clearUserData();
     } catch (error) {
       console.error('Logout error:', error);
-      // Clear local state even if server logout fails
-      localStorage.removeItem('token');
       context.clearUserData();
     }
   };
