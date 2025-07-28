@@ -5,7 +5,7 @@ import '@/styles/pages/admin.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState(''); // Add username state
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -28,7 +28,7 @@ const Login = () => {
       email,
       password,
       options: {
-        data: { username }
+        data: { name }
       }
     });
     if (error) {
@@ -48,14 +48,16 @@ const Login = () => {
           isRegistering ? handleRegister() : handleLogin();
         }}
       >
-        <input
-          type="text"
-          placeholder="Username"
-          autoComplete="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          disabled={!isRegistering}
-        />
+        {isRegistering && (
+          <input
+            type="text"
+            placeholder="Username"
+            autoComplete="username"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={!isRegistering}
+          />
+        )}
         <input
           type="email"
           placeholder="Email"
