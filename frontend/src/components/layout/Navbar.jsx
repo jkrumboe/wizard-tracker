@@ -3,7 +3,7 @@
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { useUser } from '@/shared/hooks/useUser'
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus.jsx'
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from '@/components/ui/Icon'
 import ThemeToggle from '@/components/ui/ThemeToggle'

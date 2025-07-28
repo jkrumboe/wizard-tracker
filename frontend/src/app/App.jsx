@@ -18,8 +18,6 @@ import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/cont
 import { authService, LocalGameStorage } from "@/shared/api"
 import "@/styles/base/theme.css"
 import "@/shared/utils/devUpdateHelper" // Development update testing helper
-import AppwriteStatus from "./AppwriteStatus";
-
 
 // Component to handle URL imports
 function URLImportHandler() {
@@ -145,8 +143,7 @@ function ProtectedRoute({ children, roles }) {
   return children;
 }
 
-function App() {
-    useEffect(() => {
+function App() {  useEffect(() => {
     // Register service worker for PWA functionality
     register()
     
@@ -209,7 +206,6 @@ function App() {
           </OnlineStatusProvider>
         </UserProvider>
       </ThemeProvider>
-      <AppwriteStatus />
     </Router>
   )
 }

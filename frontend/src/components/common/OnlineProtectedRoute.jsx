@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus.jsx';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 
 /**
  * Component to protect routes that require online mode

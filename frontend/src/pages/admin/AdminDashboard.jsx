@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getPlayers, createPlayer, updatePlayer } from "@/shared/api/playerService";
 import { getGames } from "@/shared/api/gameService";
 import { authService } from "@/shared/api/authService";
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus.jsx';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LogOutIcon, UsersIcon, GamepadIcon, BarChartIcon, SearchIcon, PlusIcon, EditIcon, TrashIcon } from "@/components/ui/Icon";
 import "@/styles/pages/admin.css";
 import "@/styles/components/offline-notification.css";
