@@ -12,10 +12,12 @@ import defaultAvatar from "@/assets/default-avatar.png";
 import imageCompression from 'browser-image-compression';
 import DOMPurify from 'dompurify';
 import "@/styles/utils/pageTransition.css"
+import authService from '@/shared/api/authService'
 
 const Profile = () => {
-  const { id } = useParams()
+  const { id: paramId } = useParams()
   const { user, refreshPlayerData, updatePlayerData } = useUser()
+  const id = paramId || user?.player_id
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
   const [tags, setTags] = useState([])
@@ -42,6 +44,7 @@ return false;
 useEffect(() => {
   const fetchData = async () => {
     try {
+      if (!id) return;
       // Fetch player data first - this is the most critical
       const playerData = await getPlayerById(id);
       if (!playerData) {
@@ -74,7 +77,7 @@ useEffect(() => {
     }
   };
 
-  fetchData();
+  if (id) fetchData();
 }, [id]);
 
 useEffect(() => {
@@ -116,10 +119,11 @@ const handleEditProfile = async () => {
     setEditedAvatar('');
     setEditing(false);
     
-    // Update context and refresh navbar avatar if this is the current user's profile
+    // Update context and Supabase auth metadata if this is the current user's profile
     if (user && user.player_id === player.id) {
-      updatePlayerData(updatedPlayer); 
-      await refreshPlayerData(); 
+      await authService.updateProfile({ name: updatedPlayer.name, avatar: updatedPlayer.avatar });
+      updatePlayerData(updatedPlayer);
+      await refreshPlayerData();
     }
   } catch (err) {
     console.error("Error updating profile:", err);

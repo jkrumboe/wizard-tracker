@@ -55,6 +55,14 @@ class AuthService {
     // Assume admin created via Supabase dashboard
     return;
   }
+
+  async updateProfile({ name, avatar }) {
+    const { data, error } = await supabase.auth.updateUser({
+      data: { name, avatar }
+    });
+    if (error) throw new Error(error.message);
+    return data.user;
+  }
 }
 
 export const authService = new AuthService();

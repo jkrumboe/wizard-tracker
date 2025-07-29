@@ -164,6 +164,7 @@ function App() {
               <div className="main-container">
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:id" element={<Profile />} />
                 <Route path="/leaderboard" element={
                   <OnlineProtectedRoute>
