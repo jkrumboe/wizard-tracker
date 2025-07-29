@@ -6,7 +6,6 @@ import Home from "@/pages/Home"
 import Profile from "@/pages/profile/Profile"
 import Leaderboard from "@/pages/profile/Leaderboard"
 import Stats from "@/pages/profile/Stats"
-import Account from "@/pages/profile/Account"
 import Settings from "@/pages/Settings"
 import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame } from "@/pages/game"
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx"
@@ -167,7 +166,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:id" element={<Profile />} />
-                <Route path="/account" element={<Account />} />
+                <Route path="/account" element={<Navigate to="/profile" replace />} />
                 <Route path="/leaderboard" element={
                   <OnlineProtectedRoute>
                     <Leaderboard />

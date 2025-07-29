@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useCallback } from 'react'
 import { getPlayerById } from '../api/playerService'
 import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
+import supabase from '../utils/supabase'
 
 export const UserContext = createContext()
 
@@ -40,6 +41,19 @@ export function UserProvider({ children }) {
     }
 
     checkAuthenticationStatus()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        setUser(null)
+        setPlayer(null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   // Fetch player data when user is set

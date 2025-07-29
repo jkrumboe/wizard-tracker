@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
-import PageTransition from '@/components/common/PageTransition'
 import { useUser } from '@/shared/hooks/useUser'
 import { StatIcon, EditIcon, CalendarIcon } from "@/components/ui/Icon"
 import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
@@ -22,7 +21,7 @@ const Profile = () => {
   const [gameHistory, setGameHistory] = useState([])
   const [tags, setTags] = useState([])
   const [defaultTags, setDefaultTags] = useState([])
-  const [loading, setLoading] = useState(true)
+  // const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   // const [playerStats, setPlayerStats] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
@@ -69,11 +68,11 @@ useEffect(() => {
       const history = await getPlayerGameHistory(id);
       setGameHistory(history);
 
-      setLoading(false);
+      // setLoading(false);
     } catch (err) {
       console.error("Error fetching profile data:", err);
       setError("Failed to load player profile");
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -134,9 +133,7 @@ const handleEditProfile = async () => {
 // Don't fail if tags or other minor data is missing
 if (error || !player) {
   return (
-    <PageTransition isLoading={false}>
       <div className="error">{error || 'Player not found'}</div>
-    </PageTransition>
   )
 }
   const recentGames = gameHistory.slice(0, 3);
@@ -244,11 +241,6 @@ if (editing) {
   );
   }else{
   return (
-  <PageTransition 
-    isLoading={loading} 
-    loadingTitle="Loading Profile..." 
-    loadingSubtitle="Fetching player data and game history"
-  >
     <div className="profile-container">
       <div className="profile-content">
         {canEdit && (
@@ -353,9 +345,12 @@ if (editing) {
             </div>
           </div>
         )}
+
+        {user && user.player_id === player.id && (
+          <button onClick={authService.logout} className="logout-btn">Sign Out</button>
+        )}
       </div>
     </div>
-  </PageTransition>
   )
 }
 }
