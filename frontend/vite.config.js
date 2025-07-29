@@ -48,7 +48,8 @@ export default defineConfig({  server: {
               }
             }
           }
-        ]
+        ],
+        maximumFileSizeToCacheInBytes: 3145728 // 3MB
       },
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {
