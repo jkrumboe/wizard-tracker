@@ -3,6 +3,7 @@
  * 
  * Handles checking if online features are available
  */
+import supabase from '@/shared/utils/supabase';
 
 class OnlineStatusService {
   constructor() {
@@ -11,6 +12,7 @@ class OnlineStatusService {
     this._checkInterval = 60000; // Check every minute
     this._listeners = [];
     
+    this._subscribeToUpdates();
     // Start periodic checking
     this._startPeriodicCheck();
   }
@@ -28,12 +30,24 @@ class OnlineStatusService {
     }
     
     try {
-      const response = await fetch('/api/online/status');
-      if (!response.ok) {
-        throw new Error(`Failed to check online status: ${response.status}`);
+      const { data, error } = await supabase
+        .from('app_config')
+        .select('status, updated_at')
+        .eq('mode', 'online_features')
+        .single();
+
+      if (error) {
+        throw error;
       }
-      
-      const status = await response.json();
+
+      const status = {
+        online: data?.status === true,
+        lastUpdated: data?.updated_at || new Date().toISOString(),
+        message: data?.status
+          ? 'All features are available'
+          : 'Online features are disabled. Only local features are available.'
+      };
+
       this._updateStatus(status);
       return status;
     } catch (error) {
@@ -101,6 +115,35 @@ class OnlineStatusService {
         console.error('Error in online status listener:', error);
       }
     }
+  }
+  
+  /**
+   * Subscribe to Supabase realtime updates for online status changes
+   * @private
+   */
+  _subscribeToUpdates() {
+    supabase
+      .channel('online-status')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'app_config',
+          filter: 'mode=eq.online_features'
+        },
+        payload => {
+          const data = payload.new;
+          this._updateStatus({
+            online: data.status === true,
+            lastUpdated: payload.commit_timestamp,
+            message: data.status
+              ? 'All features are available'
+              : 'Online features are disabled. Only local features are available.'
+          });
+        }
+      )
+      .subscribe();
   }
   
   /**

@@ -17,8 +17,7 @@ import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
 import { authService, LocalGameStorage } from "@/shared/api"
 import "@/styles/base/theme.css"
-import "@/shared/utils/devUpdateHelper" // Development update testing helper
-import supabase from "@/shared/utils/supabase.js";
+import "@/shared/utils/devUpdateHelper"
 
 // Component to handle URL imports
 function URLImportHandler() {
@@ -144,9 +143,7 @@ function ProtectedRoute({ children, roles }) {
   return children;
 }
 
-function App() {
-  const [onlineEnabled, setOnlineEnabled] = useState(false); // Default: true
-  
+function App() {  
   useEffect(() => {
     // Register service worker for PWA functionality
     register()
@@ -154,29 +151,13 @@ function App() {
     // Initialize authentication service
     authService.initialize()
 
-    // Check online feature status from Supabase
-    async function fetchOnlineStatus() {
-      try {
-        const { data, error } = await supabase
-          .from('app_config')
-          .select('status')
-          .eq('mode', 'online_features')
-          .single();
-        console.log("Supabase online status response:", data, error);
-        setOnlineEnabled(data?.status === true); // or whatever value means "enabled"
-      } catch (err) {
-        console.error("Supabase online status fetch error:", err);
-        setOnlineEnabled(true); // fallback: enable if error
-      }
-    }
-    fetchOnlineStatus();
   }, []);
   
   return (
     <Router>
       <ThemeProvider>
         <UserProvider>
-          <OnlineStatusProvider onlineEnabled={onlineEnabled}>
+          <OnlineStatusProvider>
             <GameStateProvider>
               <URLImportHandler />
               <Navbar />
