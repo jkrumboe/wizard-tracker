@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
-import PageTransition from '@/components/common/PageTransition'
 import { useUser } from '@/shared/hooks/useUser'
 import { StatIcon, EditIcon, CalendarIcon } from "@/components/ui/Icon"
 import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
@@ -12,15 +11,17 @@ import defaultAvatar from "@/assets/default-avatar.png";
 import imageCompression from 'browser-image-compression';
 import DOMPurify from 'dompurify';
 import "@/styles/utils/pageTransition.css"
+import authService from '@/shared/api/authService'
 
 const Profile = () => {
-  const { id } = useParams()
+  const { id: paramId } = useParams()
   const { user, refreshPlayerData, updatePlayerData } = useUser()
+  const id = paramId || user?.player_id
   const [player, setPlayer] = useState(null)
   const [gameHistory, setGameHistory] = useState([])
   const [tags, setTags] = useState([])
   const [defaultTags, setDefaultTags] = useState([])
-  const [loading, setLoading] = useState(true)
+  // const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   // const [playerStats, setPlayerStats] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
@@ -42,6 +43,7 @@ return false;
 useEffect(() => {
   const fetchData = async () => {
     try {
+      if (!id) return;
       // Fetch player data first - this is the most critical
       const playerData = await getPlayerById(id);
       if (!playerData) {
@@ -66,15 +68,15 @@ useEffect(() => {
       const history = await getPlayerGameHistory(id);
       setGameHistory(history);
 
-      setLoading(false);
+      // setLoading(false);
     } catch (err) {
       console.error("Error fetching profile data:", err);
       setError("Failed to load player profile");
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
-  fetchData();
+  if (id) fetchData();
 }, [id]);
 
 useEffect(() => {
@@ -116,10 +118,11 @@ const handleEditProfile = async () => {
     setEditedAvatar('');
     setEditing(false);
     
-    // Update context and refresh navbar avatar if this is the current user's profile
+    // Update context and Supabase auth metadata if this is the current user's profile
     if (user && user.player_id === player.id) {
-      updatePlayerData(updatedPlayer); 
-      await refreshPlayerData(); 
+      await authService.updateProfile({ name: updatedPlayer.name, avatar: updatedPlayer.avatar });
+      updatePlayerData(updatedPlayer);
+      await refreshPlayerData();
     }
   } catch (err) {
     console.error("Error updating profile:", err);
@@ -130,9 +133,7 @@ const handleEditProfile = async () => {
 // Don't fail if tags or other minor data is missing
 if (error || !player) {
   return (
-    <PageTransition isLoading={false}>
       <div className="error">{error || 'Player not found'}</div>
-    </PageTransition>
   )
 }
   const recentGames = gameHistory.slice(0, 3);
@@ -240,11 +241,6 @@ if (editing) {
   );
   }else{
   return (
-  <PageTransition 
-    isLoading={loading} 
-    loadingTitle="Loading Profile..." 
-    loadingSubtitle="Fetching player data and game history"
-  >
     <div className="profile-container">
       <div className="profile-content">
         {canEdit && (
@@ -349,9 +345,12 @@ if (editing) {
             </div>
           </div>
         )}
+
+        {user && user.player_id === player.id && (
+          <button onClick={authService.logout} className="logout-btn">Sign Out</button>
+        )}
       </div>
     </div>
-  </PageTransition>
   )
 }
 }

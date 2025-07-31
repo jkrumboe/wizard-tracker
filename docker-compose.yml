@@ -1,52 +1,14 @@
 services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: wizard
-      POSTGRES_PASSWORD: geheim
-      POSTGRES_DB: wizard_db
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wizard -d wizard_db "]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   frontend:
-    build: 
+    build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:5055/api
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     ports:
       - "8088:80"  # Host:Container
-    depends_on:
-      - backend
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build: ./backend
-    ports:
-      - "5055:5000"  # Host:Container
-    environment:
-      - DATABASE_URL=postgres://wizard:geheim@db:5432/wizard_db
-      - START_OFFLINE=true  # Start in offline mode by default
-    env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend/config:/app/config:delegated  # Persist config files outside the container with delegated permission
-      # This creates a volume that persists between container restarts but is mounted at the correct path
-    command: npm run start  # Could change to start:offline if needed
-    depends_on:
-      - db
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/online/status || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

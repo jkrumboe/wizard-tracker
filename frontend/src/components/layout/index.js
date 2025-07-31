@@ -1,2 +1,2 @@
 // Layout Components exports
-export { default as Navbar } from './Navbar.jsx';
+export { default as Navbar } from '@/components/layout/Navbar';

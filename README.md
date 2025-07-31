@@ -26,25 +26,18 @@ The easiest way to get started is using Docker Compose:
 git clone https://github.com/jkrumboe/wizard-tracker.git
 cd wizard-tracker
 
-# Start all services (database, backend, frontend)
+# Start the frontend (it connects to Supabase)
 docker compose up
 ```
 
 The application will be available at:
-- Frontend: http://localhost:8088
-- Backend API: http://localhost:5055
-- Database: localhost:5433 (PostgreSQL)
+
+- Frontend: <http://localhost:8088>
 
 ### Option 2: Manual Setup
 
-#### Backend Setup
-```bash
-cd backend
-npm install
-npm start
-```
-
 #### Frontend Setup
+
 ```bash
 cd frontend
 npm install
@@ -53,19 +46,21 @@ npm run dev
 
 ## 🔌 Online/Offline Mode
 
-KeepWiz supports an offline mode that disables all online features (multiplayer, leaderboards, etc.) while still allowing local gameplay. This feature is useful during maintenance or for users who want to use the application in a completely offline environment.
+KeepWiz stores the online mode flag in a Supabase `config` table. When set to `false`, multiplayer features are disabled while local gameplay remains available. This allows toggling maintenance mode without modifying files inside the container.
 
 ### Toggle Online/Offline Mode (Admin Only)
 
+Use the Supabase CLI or dashboard to update the value in the `config` table:
+
 ```bash
 # Check current status
-docker exec -it wizard-tracker-backend-1 node src/online-cli.js status
+supabase functions invoke get-online-status
 
-# Turn off online features (using root user to avoid permission issues)
-docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js off "Maintenance mode"
+# Turn off online features
+supabase functions invoke set-online-status --param online=false --param reason="Maintenance mode"
 
-# Turn on online features (using root user to avoid permission issues)
-docker exec -it -u root wizard-tracker-backend-1 node src/online-cli.js on "Maintenance complete"
+# Turn on online features
+supabase functions invoke set-online-status --param online=true --param reason="Maintenance complete"
 ```
 
 See [Admin Commands](wiki/Admin-Commands.md) for more details.
@@ -75,6 +70,7 @@ See [Admin Commands](wiki/Admin-Commands.md) for more details.
 Full documentation is available in our [Wiki](https://github.com/jkrumboe/wizard-tracker/wiki).
 
 Key documentation pages:
+
 - [Getting Started](https://github.com/jkrumboe/wizard-tracker/wiki/Getting-Started)
 - [Architecture Overview](https://github.com/jkrumboe/wizard-tracker/wiki/Architecture-Overview)
 - [API Structure](https://github.com/jkrumboe/wizard-tracker/wiki/API-Structure)

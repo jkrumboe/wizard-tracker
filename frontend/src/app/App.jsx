@@ -17,7 +17,7 @@ import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
 import { authService, LocalGameStorage } from "@/shared/api"
 import "@/styles/base/theme.css"
-import "@/shared/utils/devUpdateHelper" // Development update testing helper
+import "@/shared/utils/devUpdateHelper"
 
 // Component to handle URL imports
 function URLImportHandler() {
@@ -143,12 +143,14 @@ function ProtectedRoute({ children, roles }) {
   return children;
 }
 
-function App() {  useEffect(() => {
+function App() {  
+  useEffect(() => {
     // Register service worker for PWA functionality
     register()
     
     // Initialize authentication service
     authService.initialize()
+
   }, []);
   
   return (
@@ -162,7 +164,9 @@ function App() {  useEffect(() => {
               <div className="main-container">
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:id" element={<Profile />} />
+                <Route path="/account" element={<Navigate to="/profile" replace />} />
                 <Route path="/leaderboard" element={
                   <OnlineProtectedRoute>
                     <Leaderboard />
