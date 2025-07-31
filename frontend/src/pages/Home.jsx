@@ -18,6 +18,19 @@ const Home = () => {
   const [loading, setLoading] = useState(true)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [offlineMessage, setOfflineMessage] = useState('')
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false)
+
+
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      // Only show loading screen if loading takes longer than 200ms
+      timer = setTimeout(() => setShowLoadingScreen(true), 200);
+    } else {
+      setShowLoadingScreen(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
   
   const handleLoadGame = async (gameId) => {
     try {
@@ -110,7 +123,7 @@ const Home = () => {
 
   return (
     <AppLoadingScreen
-      isLoading={loading}
+      isLoading={showLoadingScreen}
       loadingTitle="Welcome!"
       loadingSubtitle={
         <>

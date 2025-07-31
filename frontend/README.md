@@ -1,12 +1,19 @@
-# React + Vite
+# KeepWiz Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the React code for the KeepWiz score tracking application. It is built with [Vite](https://vitejs.dev/) and integrates with a self‑hosted Supabase backend.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Copy `env-config.js.template` to `env-config.js` and fill in your Supabase URL and anon key.
+2. Install dependencies with `npm install`.
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   The app runs on <http://localhost:5173> by default.
 
-## Expanding the ESLint configuration
+## Building for Production
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Run `npm run build` to create optimized static files in the `dist/` folder. You can serve these with any static file server or via Docker using the provided `Dockerfile`.
+
+See [`src/docs/Frontend-Setup.md`](src/docs/Frontend-Setup.md) for more details on configuration and usage.

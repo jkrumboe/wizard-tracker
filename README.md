@@ -1,6 +1,6 @@
 # KeepWiz
 
-![Version](https://img.shields.io/badge/version-1.1.1-blue)
+![Version](https://img.shields.io/badge/version-1.1.2-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen)
 
@@ -8,9 +8,9 @@ A full-stack application for tracking and managing Wizard card game scores, play
 
 ## 🔮 Features
 
-- Track player stats, ELO ratings, and game history
-- Real-time multiplayer game support via Colyseus
+- Track player stats, ELO ratings, and game histor
 - Comprehensive player leaderboards and statistics
+- Self-hosted Supabase backend (in progress)
 - User authentication and authorization
 - Mobile-friendly responsive design with PWA support
 - Admin dashboard for system management
@@ -67,7 +67,7 @@ See [Admin Commands](wiki/Admin-Commands.md) for more details.
 
 ## 📚 Documentation
 
-Full documentation is available in our [Wiki](https://github.com/jkrumboe/wizard-tracker/wiki).
+For setting up the React frontend with Supabase see [`frontend/src/docs/Frontend-Setup.md`](frontend/src/docs/Frontend-Setup.md).
 
 Key documentation pages:
 
@@ -91,7 +91,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgements
 
 - [React](https://reactjs.org/)
-- [Node.js](https://nodejs.org/)
-- [Express](https://expressjs.com/)
 - [PostgreSQL](https://www.postgresql.org/)
-- [Colyseus](https://colyseus.io/)
+- [Supabase](https://supabase.com/)
