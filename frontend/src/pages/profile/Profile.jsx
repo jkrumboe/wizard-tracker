@@ -118,7 +118,7 @@ const handleEditProfile = async () => {
     setEditedAvatar('');
     setEditing(false);
     
-    // Update context and Supabase auth metadata if this is the current user's profile
+    // Update context and user metadata if this is the current user's profile
     if (user && user.player_id === player.id) {
       await authService.updateProfile({ name: updatedPlayer.name, avatar: updatedPlayer.avatar });
       updatePlayerData(updatedPlayer);

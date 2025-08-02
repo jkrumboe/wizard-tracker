@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
@@ -324,7 +324,7 @@ const Home = () => {
                   <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '24px', fontWeight: 300, color: '#2d2d31', margin: 0 }}>
                     Connection Active!
                   </h3>
-                  <p style={{ margin: '8px 0', color: '#666' }}>Successfully connected to Appwrite backend.</p>
+                  <p style={{ margin: '8px 0', color: '#666' }}>Successfully connected to Appwrite backend with realtime updates!</p>
                 </div>
               ) : (
                 <div>
@@ -350,6 +350,25 @@ const Home = () => {
               >
                 Send a ping
               </button>
+              
+              <Link
+                to="/realtime-test"
+                style={{
+                  cursor: 'pointer',
+                  borderRadius: '6px',
+                  background: '#17a2b8',
+                  padding: '8px 14px',
+                  border: 'none',
+                  color: 'white',
+                  marginTop: '8px',
+                  marginLeft: '8px',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  display: 'inline-block'
+                }}
+              >
+                🚀 Realtime Test
+              </Link>
             </div>
           </div>
         </section>

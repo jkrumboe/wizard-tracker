@@ -1,5 +1,4 @@
 // API Services exports
-export { default as api } from './api.js';
 export { default as authService } from './authService.js';
 export { default as colyseusClient } from './colyseusClient.js';
 export { default as gameService } from './gameService.js';

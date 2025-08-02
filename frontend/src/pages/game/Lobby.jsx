@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import colyseusService from '@/shared/api/colyseusClient';
-import { roomAPI } from '@/shared/api/api';
 import { useAuth } from '@/shared/hooks/useAuth';
 import CreateGameModal from '@/components/modals/CreateGameModal';
 import '@/styles/pages/Lobby.css';
@@ -36,8 +35,9 @@ const Lobby = () => {
       });      // Fetch active rooms from database
       const fetchActiveRooms = async () => {
         try {
-          const rooms = await roomAPI.getActive();
-          setAvailableRooms(rooms);
+          // Placeholder - roomAPI removed with Supabase migration
+          console.warn('Lobby: Room fetching not available - Supabase dependency removed');
+          setAvailableRooms([]);
         } catch (error) {
           console.error('Failed to fetch active rooms:', error);
         }
@@ -169,8 +169,9 @@ const Lobby = () => {
     
   const refreshRooms = async () => {
     try {
-      const rooms = await roomAPI.getActive();
-      setAvailableRooms(rooms);
+      // Placeholder - roomAPI removed with Supabase migration
+      console.warn('Lobby: Room refresh not available - Supabase dependency removed');
+      setAvailableRooms([]);
     } catch (error) {
       console.error('Failed to refresh rooms:', error);
       setError('Failed to refresh rooms');

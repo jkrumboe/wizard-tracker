@@ -3,7 +3,7 @@
  * 
  * Handles checking if online features are available
  */
-import supabase from '@/shared/utils/supabase';
+// import { subscribeToOnlineStatus, getOnlineStatus } from '@/shared/utils/appwrite';
 
 class OnlineStatusService {
   constructor() {
@@ -11,6 +11,7 @@ class OnlineStatusService {
     this._lastChecked = null;
     this._checkInterval = 60000; // Check every minute
     this._listeners = [];
+    this._subscription = null;
     
     this._subscribeToUpdates();
     // Start periodic checking
@@ -30,20 +31,16 @@ class OnlineStatusService {
     }
     
     try {
-      const { data, error } = await supabase
-        .from('app_config')
-        .select('status, updated_at')
-        .eq('mode', 'online_features')
-        .single();
+      const result = await getOnlineStatus();
 
-      if (error) {
-        throw error;
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       const status = {
-        online: data?.status === true,
-        lastUpdated: data?.updated_at || new Date().toISOString(),
-        message: data?.status
+        online: result.status === true,
+        lastUpdated: result.document?.$updatedAt || new Date().toISOString(),
+        message: result.status
           ? 'All features are available'
           : 'Online features are disabled. Only local features are available.'
       };
@@ -118,32 +115,24 @@ class OnlineStatusService {
   }
   
   /**
-   * Subscribe to Supabase realtime updates for online status changes
+   * Subscribe to Appwrite realtime updates for online status changes
    * @private
    */
   _subscribeToUpdates() {
-    supabase
-      .channel('online-status')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'app_config',
-          filter: 'mode=eq.online_features'
-        },
-        payload => {
-          const data = payload.new;
-          this._updateStatus({
-            online: data.status === true,
-            lastUpdated: payload.commit_timestamp,
-            message: data.status
-              ? 'All features are available'
-              : 'Online features are disabled. Only local features are available.'
-          });
-        }
-      )
-      .subscribe();
+    try {
+      this._subscription = subscribeToOnlineStatus((update) => {
+        console.log('Online status update received:', update);
+        this._updateStatus({
+          online: update.status === true,
+          lastUpdated: update.data?.$updatedAt || new Date().toISOString(),
+          message: update.status
+            ? 'All features are available'
+            : 'Online features are disabled. Only local features are available.'
+        });
+      });
+    } catch (error) {
+      console.error('Error subscribing to online status updates:', error);
+    }
   }
   
   /**
@@ -158,6 +147,16 @@ class OnlineStatusService {
     setInterval(() => {
       this.getStatus(true);
     }, this._checkInterval);
+  }
+  
+  /**
+   * Clean up subscriptions
+   */
+  destroy() {
+    if (this._subscription) {
+      this._subscription();
+      this._subscription = null;
+    }
   }
 }
 
