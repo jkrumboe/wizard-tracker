@@ -10,12 +10,14 @@ import Settings from "@/pages/Settings"
 import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame } from "@/pages/game"
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx"
 import Login from "@/pages/auth/Login"
+import RealtimeTest from "@/pages/RealtimeTest"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute } from "@/components/common"
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
-import { authService, LocalGameStorage } from "@/shared/api"
+import { authService } from "@/shared/api/authService"
+import { LocalGameStorage } from "@/shared/api/localGameStorage"
 import "@/styles/base/theme.css"
 import "@/shared/utils/devUpdateHelper"
 
@@ -192,11 +194,12 @@ function App() {
                   </OnlineProtectedRoute>
                 } />
                 <Route path="/login" element= {
-                  <OnlineProtectedRoute>
+                  // <OnlineProtectedRoute>
                     <Login />
-                  </OnlineProtectedRoute>
+                  // </OnlineProtectedRoute>
                 }/>
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/realtime-test" element={<RealtimeTest />} />
               <Route
                 path="/admin"
                 element={

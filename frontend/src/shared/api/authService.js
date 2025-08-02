@@ -1,46 +1,64 @@
-import supabase from '@/shared/utils/supabase';
+import { account, ID } from '@/shared/utils/appwrite';
 
 class AuthService {
   async login({ email, password }) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
-    return data.user;
+    try {
+      await account.createEmailPasswordSession(email, password);
+      return await account.get();
+    } catch (error) {
+      throw new Error(error.message);
+    }
   }
 
   async register({ email, password, name }) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } }
-    });
-    if (error) throw new Error(error.message);
-    return data.user;
+    try {
+      await account.create(ID.unique(), email, password, name);
+      // Automatically log in after registration
+      await account.createEmailPasswordSession(email, password);
+      return await account.get();
+    } catch (error) {
+      throw new Error(error.message);
+    }
   }
 
   async logout() {
-    await supabase.auth.signOut();
-    window.location.href = '/login';
+    try {
+      await account.deleteSession('current');
+      window.location.href = '/login';
+    } catch {
+      // Ignore errors on logout, redirect anyway
+      window.location.href = '/login';
+    }
   }
 
-  isAuthenticated() {
-    const { data } = supabase.auth.getSession();
-    return !!data?.session;
+  async isAuthenticated() {
+    try {
+      await account.get();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async refreshToken() {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw new Error(error.message);
-    return data.session;
+    // Appwrite handles token refresh automatically
+    try {
+      return await account.get();
+    } catch (error) {
+      throw new Error(error.message);
+    }
   }
 
   async checkAuthStatus() {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) return null;
-    return data.user;
+    try {
+      return await account.get();
+    } catch {
+      return null;
+    }
   }
 
   initialize() {
-    // No-op for Supabase
+    // No-op for Appwrite - initialization handled in client setup
   }
 
   async adminLogin({ email, password }) {
@@ -52,16 +70,18 @@ class AuthService {
   }
 
   async setupAdmin() {
-    // Assume admin created via Supabase dashboard
+    // Admin creation would be handled via Appwrite console
     return;
   }
 
-  async updateProfile({ name, avatar }) {
-    const { data, error } = await supabase.auth.updateUser({
-      data: { name, avatar }
-    });
-    if (error) throw new Error(error.message);
-    return data.user;
+  async updateProfile({ name }) {
+    try {
+      return await account.updateName(name);
+      // Note: Appwrite doesn't have built-in avatar update in account service
+      // You might need to handle avatar separately via databases or storage
+    } catch (error) {
+      throw new Error(error.message);
+    }
   }
 }
 

@@ -1,8 +1,6 @@
 import { createContext, useState, useEffect, useCallback } from 'react'
-import { getPlayerById } from '../api/playerService'
 import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
-import supabase from '../utils/supabase'
 
 export const UserContext = createContext()
 
@@ -10,25 +8,12 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null)
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
-  // Initialize user from HTTP-only cookies by checking with server
+  
+  // Initialize user authentication check
   useEffect(() => {
     const checkAuthenticationStatus = async () => {
       try {
-        // First check if there's a token in localStorage (backward compatibility)
-        const token = localStorage.getItem("token")
-        if (token) {
-          try {
-            const decoded = JSON.parse(atob(token.split(".")[1]))
-            setUser(decoded)
-            setLoading(false)
-            return
-          } catch (err) {
-            console.error("Error decoding localStorage token:", err)
-            localStorage.removeItem("token")
-          }
-        }
-
-        // Check authentication status with server (using HTTP-only cookies)
+        // Check authentication status with Appwrite
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {
           setUser(userFromServer)
@@ -41,37 +26,27 @@ export function UserProvider({ children }) {
     }
 
     checkAuthenticationStatus()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user)
-      } else {
-        setUser(null)
-        setPlayer(null)
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
   }, [])
 
   // Fetch player data when user is set
   useEffect(() => {
-    if (!user?.player_id) {
+    if (!user?.$id) {
       setPlayer(null)
       return
     }
 
     const fetchPlayerData = async () => {
       try {
-        const playerData = await getPlayerById(user.player_id)
-        if (playerData) {
-          setPlayer({
-            ...playerData,
-            avatar: playerData.avatar || defaultAvatar,
-          })
+        // For now, we'll create a basic player object from the user data
+        // Later you can implement proper player data storage in Appwrite databases
+        const basicPlayer = {
+          id: user.$id,
+          name: user.name,
+          email: user.email,
+          avatar: defaultAvatar,
+          // Add other default player properties as needed
         }
+        setPlayer(basicPlayer)
       } catch (err) {
         console.error("Error fetching player data:", err)
       }
@@ -82,20 +57,22 @@ export function UserProvider({ children }) {
 
   // Function to refresh player data
   const refreshPlayerData = useCallback(async () => {
-    if (!user?.player_id) return
+    if (!user?.$id) return
     
     try {
-      const playerData = await getPlayerById(user.player_id)
-      if (playerData) {
-        setPlayer({
-          ...playerData,
-          avatar: playerData.avatar || defaultAvatar,
-        })
+      // For now, just refresh from the current user data
+      // Later implement proper player data fetching from Appwrite databases
+      const basicPlayer = {
+        id: user.$id,
+        name: user.name,
+        email: user.email,
+        avatar: defaultAvatar,
       }
+      setPlayer(basicPlayer)
     } catch (err) {
       console.error("Error refreshing player data:", err)
     }
-  }, [user?.player_id])
+  }, [user])
 
   // Function to update player data locally
   const updatePlayerData = useCallback((updatedPlayer) => {

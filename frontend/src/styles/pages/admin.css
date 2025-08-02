@@ -258,6 +258,28 @@
   font-size: 2rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.test-link {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.test-link:hover {
+  background-color: var(--primary-hover);
+  color: white;
+  text-decoration: none;
+}
+
 .logout-btn {
   background: var(--error-color);
   border: none;
@@ -273,4 +295,88 @@
   padding: var(--spacing-xl);
   color: var(--text-light);
   font-size: 1.1rem;
+}
+
+/* === Online Status Control === */
+
+.online-status-control {
+  margin: var(--spacing-xl) 0;
+  padding: var(--spacing-lg);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.online-status-control h2 {
+  margin-bottom: var(--spacing-md);
+  color: var(--primary-color);
+}
+
+.status-control-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.current-status .status-online {
+  color: #10b981;
+}
+
+.current-status .status-offline {
+  color: #ef4444;
+}
+
+.current-status .last-updated {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-top: var(--spacing-xs);
+}
+
+.toggle-status-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.toggle-status-btn.online {
+  background-color: #ef4444;
+  color: white;
+}
+
+.toggle-status-btn.online:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.toggle-status-btn.offline {
+  background-color: #10b981;
+  color: white;
+}
+
+.toggle-status-btn.offline:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.toggle-status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status-info {
+  padding: var(--spacing-sm);
+  background-color: var(--background-light);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--primary-color);
+}
+
+.status-info p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }

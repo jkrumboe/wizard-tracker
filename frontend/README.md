@@ -4,7 +4,7 @@ This directory contains the React code for the KeepWiz score tracking applicatio
 
 ## Development
 
-1. Copy `env-config.js.template` to `env-config.js` and fill in your Supabase URL and anon key.
+1. Copy `env-config.js.template` to `env-config.js` and fill in your Appwrite endpoint and project ID.
 2. Install dependencies with `npm install`.
 3. Start the development server:
    ```bash

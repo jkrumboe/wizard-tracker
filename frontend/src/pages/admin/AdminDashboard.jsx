@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getPlayers, createPlayer, updatePlayer } from "@/shared/api/playerService";
 import { getGames } from "@/shared/api/gameService";
 import { authService } from "@/shared/api/authService";
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
+// import { getOnlineStatus, updateOnlineStatus } from '@/shared/utils/appwrite';
 import { LogOutIcon, UsersIcon, GamepadIcon, BarChartIcon, SearchIcon, PlusIcon, EditIcon, TrashIcon } from "@/components/ui/Icon";
 import "@/styles/pages/admin.css";
 import "@/styles/components/offline-notification.css";
@@ -18,6 +19,8 @@ const AdminDashboard = () => {
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [onlineStatusDoc, setOnlineStatusDoc] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const { isOnline, lastUpdated } = useOnlineStatus();
   const navigate = useNavigate();
 
@@ -48,7 +51,42 @@ const AdminDashboard = () => {
       }
     };
     fetchData();
+    
+    // Fetch current online status document
+    fetchOnlineStatus();
   }, [navigate]);
+
+  const fetchOnlineStatus = async () => {
+    try {
+      const result = await getOnlineStatus();
+      if (result.success) {
+        setOnlineStatusDoc(result.document);
+      }
+    } catch (error) {
+      console.error('Error fetching online status:', error);
+    }
+  };
+
+  const handleToggleOnlineStatus = async () => {
+    if (!onlineStatusDoc) return;
+    
+    setUpdatingStatus(true);
+    try {
+      const newStatus = !onlineStatusDoc.status;
+      const result = await updateOnlineStatus(onlineStatusDoc.$id, newStatus);
+      
+      if (result.success) {
+        setOnlineStatusDoc(result.document);
+        console.log(`Online status updated to: ${newStatus}`);
+      } else {
+        console.error('Failed to update online status:', result.error);
+      }
+    } catch (error) {
+      console.error('Error updating online status:', error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -80,10 +118,15 @@ const AdminDashboard = () => {
     <div className="admin-dashboard-container">
       <div className="admin-header">
         <h1>🔧 Admin Dashboard</h1>
-        <button onClick={handleLogout} className="logout-btn">
-          <LogOutIcon size={16} />
-          Logout
-        </button>
+        <div className="header-actions">
+          <Link to="/realtime-test" className="test-link">
+            🚀 Realtime Test
+          </Link>
+          <button onClick={handleLogout} className="logout-btn">
+            <LogOutIcon size={16} />
+            Logout
+          </button>
+        </div>
       </div>
       
       {/* Online Status Banner */}
@@ -120,6 +163,32 @@ const AdminDashboard = () => {
               <h3><BarChartIcon size={16} /> Total Scores</h3>
               <p>{stats.totalScores}</p>
             </div>
+          </div>
+        </section>
+
+        {/* Online Status Control Section */}
+        <section className="online-status-control">
+          <h2>🌐 Online Status Control</h2>
+          <div className="status-control-container">
+            <div className="current-status">
+              <p>Current Status: <strong className={isOnline ? 'status-online' : 'status-offline'}>
+                {isOnline ? 'ONLINE' : 'OFFLINE'}
+              </strong></p>
+              {lastUpdated && (
+                <p className="last-updated">Last updated: {new Date(lastUpdated).toLocaleString()}</p>
+              )}
+            </div>
+            <button 
+              onClick={handleToggleOnlineStatus}
+              disabled={updatingStatus || !onlineStatusDoc}
+              className={`toggle-status-btn ${onlineStatusDoc?.status ? 'online' : 'offline'}`}
+            >
+              {updatingStatus ? 'Updating...' : 
+               onlineStatusDoc?.status ? 'Set Offline' : 'Set Online'}
+            </button>
+          </div>
+          <div className="status-info">
+            <p>💡 Toggle this to enable/disable online features for all users. When offline, users will only have access to local features.</p>
           </div>
         </section>        <section className="player-management">
             <h2><UsersIcon size={20} /> Player Management</h2>

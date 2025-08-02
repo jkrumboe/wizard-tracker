@@ -1,5 +1,4 @@
 import { Client } from 'colyseus.js';
-import { roomAPI } from '@/shared/api/api';
 
 class ColyseusService {
   constructor() {    // Use development URL for now, can be configured for production
@@ -84,8 +83,9 @@ class ColyseusService {
         createRoomData.password = gameSettings.password;
       }
       
-      // Use the roomAPI from the new API service
-      const roomData = await roomAPI.create(createRoomData);
+      // Placeholder for room creation - Supabase dependency removed
+      console.warn('colyseusClient: Room API removed with Supabase migration');
+      const roomData = { roomId: `temp_${Date.now()}` }; // Temporary placeholder
         // Create Colyseus room with database room ID
       const colyseusOptions = {
         dbRoomId: roomData.roomId,
@@ -160,13 +160,9 @@ class ColyseusService {
       // If it looks like a database UUID, fetch the Colyseus room ID
       if (roomId.length === 36 && roomId.includes('-')) {
         try {
-          const roomData = await roomAPI.getById(roomId);
-          colyseusRoomId = roomData.colyseusRoomId || roomData.colyseus_room_id;
-          dbRoomId = roomId;
-          
-          if (!colyseusRoomId) {
-            throw new Error('Room not available for joining');
-          }
+          // Placeholder for room lookup - Supabase dependency removed
+          console.warn('colyseusClient: Room lookup removed with Supabase migration');
+          throw new Error('Room API not available - Supabase dependency removed');
         } catch {
           throw new Error('Room not found in database');
         }

@@ -1,0 +1,124 @@
+.date-filter-dropdown {
+  position: relative;
+}
+
+.date-filter-container {
+  position: relative;
+  display: inline-block;
+  min-width: 120px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.date-picker-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  border: none;
+  background: transparent;
+}
+
+.date-display,
+.date-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: var(--background-color, white);
+  color: var(--text-color, #333);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+  transition: all 0.2s ease;
+}
+
+.date-display {
+  justify-content: space-between;
+  padding-right: 0.5rem;
+}
+
+.clear-date-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #666);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 3;
+}
+
+.clear-date-btn:hover {
+  background: var(--background-hover, #f0f0f0);
+  color: var(--text-color, #333);
+}
+
+.date-placeholder {
+  color: var(--text-secondary, #666);
+  font-weight: 400;
+}
+
+/* .date-filter-container:hover .date-display,
+.date-filter-container:hover .date-placeholder {
+  border-color: var(--primary-color, #007bff);
+  background: var(--background-hover, #f8f9fa);
+} */
+
+/* Dark theme support */
+[data-theme="dark"] .date-display,
+[data-theme="dark"] .date-placeholder {
+  background: var(--background-color);
+  border-color: var(--border-color);
+  color: var(--text-color, #fff);
+}
+
+[data-theme="dark"] .date-placeholder {
+  color: var(--text-secondary, #aaa);
+}
+
+[data-theme="dark"] .clear-date-btn {
+  color: var(--text-secondary, #aaa);
+}
+
+/* [data-theme="dark"] .date-filter-container:hover .date-display,
+[data-theme="dark"] .date-filter-container:hover .date-placeholder {
+  background: var(--background-hover, #333);
+  border-color: var(--primary-color, #0d6efd);
+} */
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .date-filter-container {
+    min-width: 100px;
+    height: 32px;
+  }
+  
+  .date-display,
+  .date-placeholder {
+    font-size: 0.8rem;
+    padding: 0 0.5rem;
+  }
+}

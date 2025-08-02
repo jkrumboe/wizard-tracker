@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import supabase from '@/shared/utils/supabase';
+import { account, ID } from '@/shared/utils/appwrite';
 import '@/styles/pages/admin.css';
 
 const Login = () => {
@@ -13,28 +13,23 @@ const Login = () => {
 
   const handleLogin = async () => {
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
-    } else {
+    try {
+      await account.createEmailPasswordSession(email, password);
       navigate('/');
+    } catch (error) {
+      setError(error.message);
     }
   };
 
   const handleRegister = async () => {
     setError(null);
-    // Supabase does not use username by default, but you can store it in user_metadata
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name }
-      }
-    });
-    if (error) {
-      setError(error.message);
-    } else {
+    try {
+      await account.create(ID.unique(), email, password, name);
+      // Automatically log in after successful registration
+      await account.createEmailPasswordSession(email, password);
       navigate('/');
+    } catch (error) {
+      setError(error.message);
     }
   };
 

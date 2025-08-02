@@ -10,12 +10,27 @@ A full-stack application for tracking and managing Wizard card game scores, play
 
 - Track player stats, ELO ratings, and game histor
 - Comprehensive player leaderboards and statistics
-- Self-hosted Supabase backend (in progress)
+- Appwrite backend for authentication and real-time features
 - User authentication and authorization
 - Mobile-friendly responsive design with PWA support
 - Admin dashboard for system management
 
 ## 🚀 Getting Started
+
+## Environment Variables
+
+Before running the application, set up your environment variables:
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Update the values in `.env` with your Appwrite configuration:
+   - `VITE_APPWRITE_PUBLIC_ENDPOINT`: Your Appwrite server endpoint
+   - `VITE_APPWRITE_PROJECT_ID`: Your Appwrite project ID
+
+## Installation & Usage
 
 ### Option 1: Docker Compose (Recommended)
 
@@ -26,7 +41,7 @@ The easiest way to get started is using Docker Compose:
 git clone https://github.com/jkrumboe/wizard-tracker.git
 cd wizard-tracker
 
-# Start the frontend (it connects to Supabase)
+# Start the frontend (it connects to Appwrite)
 docker compose up
 ```
 
@@ -46,28 +61,24 @@ npm run dev
 
 ## 🔌 Online/Offline Mode
 
-KeepWiz stores the online mode flag in a Supabase `config` table. When set to `false`, multiplayer features are disabled while local gameplay remains available. This allows toggling maintenance mode without modifying files inside the container.
+KeepWiz uses Appwrite's real-time database to control online/offline mode. When set to `false`, multiplayer features are disabled while local gameplay remains available. This allows toggling maintenance mode through the admin dashboard.
 
 ### Toggle Online/Offline Mode (Admin Only)
 
-Use the Supabase CLI or dashboard to update the value in the `config` table:
+Use the admin dashboard at `/admin` to control the online status:
 
-```bash
-# Check current status
-supabase functions invoke get-online-status
+- Access the admin dashboard
+- Navigate to the online status control section
+- Toggle the status as needed
+- Changes are applied in real-time across all connected clients
 
-# Turn off online features
-supabase functions invoke set-online-status --param online=false --param reason="Maintenance mode"
-
-# Turn on online features
-supabase functions invoke set-online-status --param online=true --param reason="Maintenance complete"
-```
+You can also test the real-time functionality at `/realtime-test`.
 
 See [Admin Commands](wiki/Admin-Commands.md) for more details.
 
 ## 📚 Documentation
 
-For setting up the React frontend with Supabase see [`frontend/src/docs/Frontend-Setup.md`](frontend/src/docs/Frontend-Setup.md).
+For setting up the React frontend with Appwrite see [`frontend/src/docs/Frontend-Setup.md`](frontend/src/docs/Frontend-Setup.md).
 
 Key documentation pages:
 
@@ -92,4 +103,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [React](https://reactjs.org/)
 - [PostgreSQL](https://www.postgresql.org/)
-- [Supabase](https://supabase.com/)
+- [Appwrite](https://appwrite.io/)

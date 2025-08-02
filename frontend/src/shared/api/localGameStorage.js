@@ -317,6 +317,40 @@ export class LocalGameStorage {
   }
 
   /**
+   * Get all games (alias for getAllSavedGames for compatibility)
+   * @returns {Object} - Object containing all saved games
+   */
+  static getAllGames() {
+    const games = this.getAllSavedGames();
+    console.log('LocalGameStorage.getAllGames() called, returning:', games);
+    console.log('Number of games found:', Object.keys(games).length);
+    return games;
+  }
+
+  /**
+   * Debug function to check localStorage directly
+   * @returns {Object} - Raw localStorage content
+   */
+  static debugLocalStorage() {
+    const rawData = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+    console.log('Raw localStorage data for key "' + LOCAL_GAMES_STORAGE_KEY + '":', rawData);
+    
+    if (rawData) {
+      try {
+        const parsed = JSON.parse(rawData);
+        console.log('Parsed localStorage data:', parsed);
+        console.log('Type of parsed data:', Array.isArray(parsed) ? 'Array' : typeof parsed);
+        return parsed;
+      } catch (error) {
+        console.error('Error parsing localStorage data:', error);
+        return null;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * Update a saved game's metadata
    * @param {string} gameId - The game ID
    * @param {Object} updates - Updates to apply

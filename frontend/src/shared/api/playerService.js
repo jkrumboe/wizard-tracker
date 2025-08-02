@@ -1,114 +1,101 @@
-// Enhanced player service for new database schema with user-player separation
-import { playerAPI, tagsAPI } from "@/shared/api/api";
+// Player service - Appwrite migration in progress
+// These are placeholder functions to prevent compilation errors
 
 //=== Get ALL ===//
 
 // Get all players
 export async function getPlayers() {
-  return playerAPI.getAll();
+  console.warn('playerService: getPlayers() - Server players feature not yet implemented with Appwrite');
+  return [];
+}
+
+// Get player by ID
+export async function getPlayerById(id) {
+  console.warn('playerService: getPlayerById() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return null;
+}
+
+// Update player
+export async function updatePlayer(id, data) {
+  console.warn('playerService: updatePlayer() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return null;
+}
+
+// Create player
+export async function createPlayer(data) {
+  console.warn('playerService: createPlayer() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return null;
+}
+
+// Delete player
+export async function deletePlayer(id) {
+  console.warn('playerService: deletePlayer() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return false;
+}
+
+// Get player tags
+export async function getTagsByPlayerId(id) {
+  console.warn('playerService: getTagsByPlayerId() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return [];
+}
+
+// Update player tags
+export async function updatePlayerTags(id, tags) {
+  console.warn('playerService: updatePlayerTags() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return false;
 }
 
 // Get all tags
 export async function getTags() {
-  return tagsAPI.getAll();
+  console.warn('playerService: getTags() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return [];
 }
 
-//=== Get by ID ===//
-
-// Get player by ID
-export async function getPlayerById(id) {
-  return playerAPI.getById(id);
+// Get player game history
+export async function getPlayerGameHistory(id, limit = 20) {
+  console.warn('playerService: getPlayerGameHistory() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return [];
 }
 
-// Get player stats (enhanced for new schema)
+// Get player stats
 export async function getPlayerStats(id) {
-  return playerAPI.getStats(id);
+  console.warn('playerService: getPlayerStats() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return null;
 }
 
-// Get player game history (enhanced for new schema)
+// Get player games
 export async function getPlayerGames(id, limit = 20) {
-  return playerAPI.getGames(id, limit);
+  console.warn('playerService: getPlayerGames() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return [];
 }
 
-// Get tags by player ID
-export async function getTagsByPlayerId(id) {
-  return playerAPI.getTags(id);
-}
-
-// Get Elo history for a player
-// export async function getEloHistory(id) {
-//   return playerAPI.getEloHistory(id);
-// }
-
-//=== Get by Tag ===//
-
-// Get players by tag
+// Search players by tag
 export async function searchPlayersByTag(tag) {
-  return playerAPI.getByTag(tag);
+  console.warn('playerService: searchPlayersByTag() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return [];
 }
 
-//=== Creators ===//
-
-// Create a new player (admin only)
-export async function createPlayer(playerData) {
-  return playerAPI.create(playerData);
-}
-
-//=== Updates ===//
-
-// Update player
-export async function updatePlayer(id, playerData) {
-  return playerAPI.update(id, playerData);
-}
-
-// Update player profile (enhanced for new schema)
+// Update player profile
 export async function updatePlayerProfile(playerData) {
-  try {
-    const response = await playerAPI.update(playerData.id, {
-      name: playerData.name,
-      display_name: playerData.display_name || playerData.name,
-      avatar: playerData.avatar
-    });
-    return response;
-  } catch (error) {
-    console.error('Failed to update player profile:', error);
-    throw error;
-  }
+  console.warn('playerService: updatePlayerProfile() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  return null;
 }
 
-// Update player tags
-export async function updatePlayerTags(playerId, tags) {
-  try {
-    const response = await playerAPI.updateTags(playerId, { tags });
-    return response;
-  } catch (error) {
-    console.error('Failed to update player tags:', error);
-    throw error;
-  }
-}
-
-//=== Deletes ===//
-
-// Delete player (admin only)
-export async function deletePlayer(id) {
-  return playerAPI.delete(id);
-}
-
-// Export default for backward compatibility
-export default {
+// Default export for compatibility with index.js
+const playerService = {
   getPlayers,
-  getTags,
   getPlayerById,
+  updatePlayer,
+  createPlayer,
+  deletePlayer,
+  getTagsByPlayerId,
+  updatePlayerTags,
+  getTags,
+  getPlayerGameHistory,
   getPlayerStats,
   getPlayerGames,
-  getTagsByPlayerId,
-  // getEloHistory,
   searchPlayersByTag,
-  createPlayer,
-  updatePlayer,
-  updatePlayerProfile,
-  updatePlayerTags,
-  deletePlayer
+  updatePlayerProfile
 };
 
-
+export default playerService;
