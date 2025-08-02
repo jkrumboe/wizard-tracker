@@ -2,6 +2,7 @@
 // These are placeholder functions to prevent compilation errors
 
 import { LocalGameStorage } from "@/shared/api/localGameStorage";
+import { filterGamesByDate, DATE_FILTER_OPTIONS } from "@/shared/utils/dateFilters";
 
 //=== Game Management ===//
 
@@ -18,7 +19,7 @@ export async function getRecentGames(limit = 5) {
 }
 
 // Get recent local games (this still works as it uses localStorage)
-export async function getRecentLocalGames(limit = 5) {
+export async function getRecentLocalGames(limit = 5, dateFilter = DATE_FILTER_OPTIONS.ALL, customRange = null) {
   try {
     const games = LocalGameStorage.getAllSavedGames();
     const gamesList = Object.values(games);
@@ -27,9 +28,12 @@ export async function getRecentLocalGames(limit = 5) {
     const finishedGames = gamesList.filter(game => 
       !game.isPaused && (game.gameFinished || game.gameState?.gameFinished)
     );
+
+    // Apply date filtering
+    const dateFilteredGames = filterGamesByDate(finishedGames, dateFilter, customRange);
     
     // Sort by lastPlayed or savedAt, whichever is available
-    const sortedGames = finishedGames
+    const sortedGames = dateFilteredGames
       .sort((a, b) => {
         const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
         const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
@@ -46,6 +50,71 @@ export async function getRecentLocalGames(limit = 5) {
     return finalGames;
   } catch (error) {
     console.error('Error getting recent local games:', error);
+    return [];
+  }
+}
+
+// Get paused local games with date filtering
+export async function getPausedLocalGames(limit = 10, dateFilter = DATE_FILTER_OPTIONS.ALL, customRange = null) {
+  try {
+    const games = LocalGameStorage.getAllSavedGames();
+    const gamesList = Object.values(games);
+    
+    // Filter to only show paused games
+    const pausedGames = gamesList.filter(game => 
+      game.isPaused || (game.gameState?.isPaused && !game.gameState?.gameFinished)
+    );
+
+    // Apply date filtering
+    const dateFilteredGames = filterGamesByDate(pausedGames, dateFilter, customRange);
+    
+    // Sort by lastPlayed or savedAt, whichever is available
+    const sortedGames = dateFilteredGames
+      .sort((a, b) => {
+        const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
+        const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
+        return dateB - dateA;
+      })
+      .slice(0, limit);
+    
+    const finalGames = sortedGames.map(game => ({
+        ...game,
+        // Ensure we have a created_at field for compatibility
+        created_at: game.created_at || game.lastPlayed || game.savedAt || new Date().toISOString()
+      }));
+    
+    return finalGames;
+  } catch (error) {
+    console.error('Error getting paused local games:', error);
+    return [];
+  }
+}
+
+// Get all local games with date filtering (for settings page)
+export async function getAllLocalGames(dateFilter = DATE_FILTER_OPTIONS.ALL, customRange = null) {
+  try {
+    const games = LocalGameStorage.getAllSavedGames();
+    const gamesList = Object.values(games);
+    
+    // Apply date filtering
+    const dateFilteredGames = filterGamesByDate(gamesList, dateFilter, customRange);
+    
+    // Sort by lastPlayed or savedAt, whichever is available
+    const sortedGames = dateFilteredGames.sort((a, b) => {
+      const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
+      const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
+      return dateB - dateA;
+    });
+    
+    const finalGames = sortedGames.map(game => ({
+        ...game,
+        // Ensure we have a created_at field for compatibility
+        created_at: game.created_at || game.lastPlayed || game.savedAt || new Date().toISOString()
+      }));
+    
+    return finalGames;
+  } catch (error) {
+    console.error('Error getting all local games:', error);
     return [];
   }
 }
@@ -124,6 +193,8 @@ const gameService = {
   getGames,
   getRecentGames,
   getRecentLocalGames,
+  getPausedLocalGames,
+  getAllLocalGames,
   createGame,
   getPlayerGameHistory,
   getGameById,
