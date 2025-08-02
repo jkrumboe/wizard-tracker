@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-// import { subscribeToOnlineStatus, getOnlineStatus, updateOnlineStatus, databases, CONFIG_DATABASE_ID, ONLINE_COLLECTION_ID, createInitialStatusDocument } from '@/shared/utils/appwrite';
+import { subscribeToOnlineStatus, getOnlineStatus, updateOnlineStatus, databases, CONFIG_DATABASE_ID, ONLINE_COLLECTION_ID, createInitialStatusDocument } from '@/shared/utils/appwrite';
 
 const RealtimeTest = () => {
   const [status, setStatus] = useState(null);
@@ -22,7 +22,12 @@ const RealtimeTest = () => {
 
       // Subscribe to realtime updates
       const unsubscribe = subscribeToOnlineStatus((update) => {
-        addLog(`Realtime update received: ${update.type} - Status: ${update.status}`);
+        addLog(`🔄 Realtime update received:`);
+        addLog(`   Type: ${update.type}`);
+        addLog(`   Document ID: ${update.data?.$id}`);
+        addLog(`   Status: ${update.data?.status}`);
+        addLog(`   Updated At: ${update.data?.$updatedAt}`);
+        addLog(`   Full payload: ${JSON.stringify(update.data, null, 2)}`);
         setStatus(update.data);
       });
       

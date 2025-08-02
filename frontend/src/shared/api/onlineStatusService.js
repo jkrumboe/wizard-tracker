@@ -3,7 +3,7 @@
  * 
  * Handles checking if online features are available
  */
-// import { subscribeToOnlineStatus, getOnlineStatus } from '@/shared/utils/appwrite';
+import { subscribeToOnlineStatus, getOnlineStatus } from '@/shared/utils/appwrite';
 
 class OnlineStatusService {
   constructor() {
@@ -38,9 +38,9 @@ class OnlineStatusService {
       }
 
       const status = {
-        online: result.status === true,
+        online: result.document?.status === true,
         lastUpdated: result.document?.$updatedAt || new Date().toISOString(),
-        message: result.status
+        message: result.document?.status
           ? 'All features are available'
           : 'Online features are disabled. Only local features are available.'
       };
@@ -122,10 +122,14 @@ class OnlineStatusService {
     try {
       this._subscription = subscribeToOnlineStatus((update) => {
         console.log('Online status update received:', update);
+        
+        // Handle the document structure from your realtime data
+        const document = update.data || update.payload;
+        
         this._updateStatus({
-          online: update.status === true,
-          lastUpdated: update.data?.$updatedAt || new Date().toISOString(),
-          message: update.status
+          online: document?.status === true,
+          lastUpdated: document?.$updatedAt || new Date().toISOString(),
+          message: document?.status
             ? 'All features are available'
             : 'Online features are disabled. Only local features are available.'
         });

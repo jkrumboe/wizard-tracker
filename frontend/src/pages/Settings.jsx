@@ -7,6 +7,7 @@ import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import '@/styles/pages/settings.css';
+import "@/styles/components/offline-notification.css";
 
 const Settings = () => {
   const [savedGames, setSavedGames] = useState({});
