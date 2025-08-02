@@ -5,7 +5,7 @@
 
 // Get all players
 export async function getPlayers() {
-  console.warn('playerService: getPlayers() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('playerService: getPlayers() - Server players feature not yet implemented with Appwrite');
   return [];
 }
 

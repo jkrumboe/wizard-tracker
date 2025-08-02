@@ -8,13 +8,13 @@ import { filterGamesByDate, DATE_FILTER_OPTIONS } from "@/shared/utils/dateFilte
 
 // Get all games
 export async function getGames() {
-  console.warn('gameService: getGames() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('gameService: getGames() - Server games feature not yet implemented with Appwrite');
   return [];
 }
 
 // Get recent games
 export async function getRecentGames(limit = 5) {
-  console.warn('gameService: getRecentGames() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('gameService: getRecentGames() - Server games feature not yet implemented with Appwrite');
   return [];
 }
 
@@ -121,13 +121,13 @@ export async function getAllLocalGames(dateFilter = DATE_FILTER_OPTIONS.ALL, cus
 
 // Create game
 export async function createGame(data) {
-  console.warn('gameService: createGame() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('gameService: createGame() - Server games feature not yet implemented with Appwrite');
   return null;
 }
 
 // Get player game history
 export async function getPlayerGameHistory(id, limit = 20) {
-  console.warn('gameService: getPlayerGameHistory() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('gameService: getPlayerGameHistory() - Server games feature not yet implemented with Appwrite');
   return [];
 }
 
@@ -178,13 +178,13 @@ export async function getGameById(id) {
 
 // Update game
 export async function updateGame(id, data) {
-  console.warn('gameService: updateGame() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('gameService: updateGame() - Server games feature not yet implemented with Appwrite');
   return null;
 }
 
 // Delete game
 export async function deleteGame(id) {
-  console.warn('gameService: deleteGame() - Supabase dependency removed, feature not yet implemented with Appwrite');
+  console.warn('gameService: deleteGame() - Server games feature not yet implemented with Appwrite');
   return false;
 }
 
