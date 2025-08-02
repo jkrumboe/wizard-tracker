@@ -13,11 +13,18 @@ const DateFilterDropdown = ({
   };
 
   const handleClear = (e) => {
+    console.log('Clear button clicked'); // Debug log
     e.stopPropagation();
+    e.preventDefault();
     onChange('');
   };
 
-  const handleContainerClick = () => {
+  const handleContainerClick = (e) => {
+    // Don't open date picker if clicking on clear button
+    if (e.target.closest('.clear-date-btn')) {
+      return;
+    }
+    
     if (inputRef.current) {
       inputRef.current.focus();
       inputRef.current.showPicker?.();
@@ -50,6 +57,7 @@ const DateFilterDropdown = ({
             <button 
               className="clear-date-btn"
               onClick={handleClear}
+              onMouseDown={handleClear}
               type="button"
               aria-label="Clear date filter"
             >
