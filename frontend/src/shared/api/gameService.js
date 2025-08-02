@@ -20,10 +20,30 @@ export async function getRecentGames(limit = 5) {
 // Get recent local games (this still works as it uses localStorage)
 export async function getRecentLocalGames(limit = 5) {
   try {
-    const games = LocalGameStorage.getAllGames();
-    return Object.values(games)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    const games = LocalGameStorage.getAllSavedGames();
+    const gamesList = Object.values(games);
+    
+    // Filter out paused games - only show finished games in recent games section
+    const finishedGames = gamesList.filter(game => 
+      !game.isPaused && (game.gameFinished || game.gameState?.gameFinished)
+    );
+    
+    // Sort by lastPlayed or savedAt, whichever is available
+    const sortedGames = finishedGames
+      .sort((a, b) => {
+        const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
+        const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
+        return dateB - dateA;
+      })
       .slice(0, limit);
+    
+    const finalGames = sortedGames.map(game => ({
+        ...game,
+        // Ensure we have a created_at field for compatibility
+        created_at: game.created_at || game.lastPlayed || game.savedAt || new Date().toISOString()
+      }));
+    
+    return finalGames;
   } catch (error) {
     console.error('Error getting recent local games:', error);
     return [];
@@ -44,8 +64,47 @@ export async function getPlayerGameHistory(id, limit = 20) {
 
 // Get game by ID
 export async function getGameById(id) {
-  console.warn('gameService: getGameById() - Supabase dependency removed, feature not yet implemented with Appwrite');
-  return null;
+  try {
+    // First, try to find the game in local storage
+    const localGames = LocalGameStorage.getAllSavedGames();
+    const localGame = localGames[id];
+    
+    if (localGame) {
+      // Convert local game format to match expected game format
+      const gameData = {
+        id: localGame.id,
+        name: localGame.name,
+        created_at: localGame.created_at || localGame.savedAt,
+        is_local: true,
+        mode: localGame.mode || "Local",
+        players: localGame.gameState?.players || [],
+        winner_id: localGame.winner_id,
+        final_scores: localGame.final_scores,
+        round_data: localGame.round_data || localGame.gameState?.roundData,
+        total_rounds: localGame.total_rounds || localGame.totalRounds,
+        duration_seconds: localGame.duration_seconds,
+        player_ids: localGame.player_ids || (localGame.gameState?.players?.map(p => p.id)) || [],
+        game_mode: localGame.game_mode || localGame.mode || "Local",
+        gameState: localGame.gameState,
+        // Include metadata
+        savedAt: localGame.savedAt,
+        lastPlayed: localGame.lastPlayed,
+        playerCount: localGame.playerCount,
+        roundsCompleted: localGame.roundsCompleted,
+        isPaused: localGame.isPaused,
+        gameFinished: localGame.gameFinished
+      };
+      
+      return gameData;
+    }
+    
+    // TODO: If not found locally and online, try to fetch from Appwrite
+    console.warn('gameService: getGameById() - Game not found in local storage, server lookup not yet implemented with Appwrite');
+    return null;
+  } catch (error) {
+    console.error('Error getting game by ID:', error);
+    return null;
+  }
 }
 
 // Update game

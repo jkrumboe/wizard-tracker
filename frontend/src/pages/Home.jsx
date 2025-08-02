@@ -72,7 +72,7 @@ const Home = () => {
         }
         
         // Always fetch local games
-        const localGames = getRecentLocalGames(10); // This is synchronous
+        const localGames = await getRecentLocalGames(10); // Fix: await the async function
         
         // Ensure all games have proper date formatting for sorting
         const formattedServerGames = Array.isArray(serverGames) ? serverGames.map(game => ({
@@ -93,7 +93,7 @@ const Home = () => {
         console.error('Error fetching games:', error)
         // Even if there's an error with server games, still show local games
         try {
-          const localGames = getRecentLocalGames(4)
+          const localGames = await getRecentLocalGames(4)
           const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
             ...game,
             created_at: game.created_at || new Date().toISOString()
