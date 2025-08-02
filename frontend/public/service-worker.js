@@ -1,5 +1,5 @@
 // Service Worker for KeepWiz PWA - Automatic Updates
-const CACHE_NAME = "keep-wiz-v1.1.2" // Increment version for updates
+const CACHE_NAME = "keep-wiz-v1.1.3" // Increment version for updates
 const urlsToCache = [
   "/", 
   "/index.html", 
@@ -10,10 +10,10 @@ const urlsToCache = [
 
 // Install event - cache assets and skip waiting for immediate activation
 self.addEventListener("install", (event) => {
-  console.log('Service Worker installing...');
+ console.debug('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("Opened cache")
+     console.debug("Opened cache")
       // Cache files individually to handle failures gracefully
       return Promise.allSettled(
         urlsToCache.map(url => 
@@ -31,20 +31,20 @@ self.addEventListener("install", (event) => {
 
 // Activate event - clean up old caches and take control immediately
 self.addEventListener("activate", (event) => {
-  console.log('Service Worker activating...');
+ console.debug('Service Worker activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
+           console.debug('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
       // Take control of all clients immediately
-      console.log('Service Worker taking control of all clients');
+     console.debug('Service Worker taking control of all clients');
       return self.clients.claim();
     })
   );
@@ -53,7 +53,7 @@ self.addEventListener("activate", (event) => {
 // Handle messages from clients (for manual skip waiting if needed)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('Received SKIP_WAITING message');
+   console.debug('Received SKIP_WAITING message');
     self.skipWaiting();
   }
 });

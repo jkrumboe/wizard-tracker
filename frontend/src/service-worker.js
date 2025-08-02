@@ -1,12 +1,12 @@
 // Service Worker for KeepWiz PWA
-const CACHE_NAME = "keep-wiz-v1.1.2"
+const CACHE_NAME = "keep-wiz-v1.1.3"
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/pwa-192x192.png", "/icons/pwa-512x512.png"]
 
 // Install event - cache assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("Opened cache")
+      console.debug("Opened cache")
       return cache.addAll(urlsToCache)
     }),
   )
