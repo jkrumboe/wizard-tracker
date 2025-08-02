@@ -3,8 +3,8 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_APPWRITE_PUBLIC_ENDPOINT: ${VITE_APPWRITE_PUBLIC_ENDPOINT}
+        VITE_APPWRITE_PROJECT_ID: ${VITE_APPWRITE_PROJECT_ID}
     ports:
       - "8088:80"  # Host:Container
 

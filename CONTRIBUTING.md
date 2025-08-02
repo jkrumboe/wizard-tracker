@@ -76,9 +76,8 @@ This section guides you through submitting an enhancement suggestion, including 
    ```
 
 4. Set up environment variables
-   - Copy `backend/.env.example` to `backend/.env`
    - Copy `frontend/env-config.js.template` to `frontend/env-config.js`
-   - Update the values as needed
+   - Update the values with your Appwrite endpoint and project ID
 
 5. Start the development servers
    ```bash

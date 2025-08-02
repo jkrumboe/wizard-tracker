@@ -20,8 +20,8 @@ cp env-config.js.template env-config.js
 
 ```javascript
 window._env_ = {
-  VITE_SUPABASE_URL: 'https://your-supabase-url',
-  VITE_SUPABASE_ANON_KEY: 'your-anon-key'
+  VITE_APPWRITE_PUBLIC_ENDPOINT: 'https://your-appwrite-endpoint',
+  VITE_APPWRITE_PROJECT_ID: 'your-project-id'
 };
 ```
 

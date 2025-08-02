@@ -17,6 +17,21 @@ A full-stack application for tracking and managing Wizard card game scores, play
 
 ## 🚀 Getting Started
 
+## Environment Variables
+
+Before running the application, set up your environment variables:
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Update the values in `.env` with your Appwrite configuration:
+   - `VITE_APPWRITE_PUBLIC_ENDPOINT`: Your Appwrite server endpoint
+   - `VITE_APPWRITE_PROJECT_ID`: Your Appwrite project ID
+
+## Installation & Usage
+
 ### Option 1: Docker Compose (Recommended)
 
 The easiest way to get started is using Docker Compose:

@@ -9,8 +9,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     env:
-      VITE_SUPABASE_URL: https://supabase.jkrumboe.dev
-      VITE_SUPABASE_ANON_KEY: G8R4LUauJZW9bayoi7sTPtTQCqb4JWzgx1A6rgysgODl2myNzHDOi0bdPEdKmRTS3LTsHCdo4b1sBoqt1TKaFVTYb9dbHxG6HgPOCKSXwUNQmSHOc7tEVr3IFu9zA4c7
+      VITE_APPWRITE_PUBLIC_ENDPOINT: https://appwrite.jkrumboe.dev/v1
+      VITE_APPWRITE_PROJECT_ID: 688cd65e00060f0e4d43
 
     steps:
       - name: Checkout repository
@@ -32,5 +32,5 @@ jobs:
           push: true
           tags: beerejustin/wizard-frontend:latest
           build-args: |
-            VITE_SUPABASE_URL=https://supabase.jkrumboe.dev
-            VITE_SUPABASE_ANON_KEY=G8R4LUauJZW9bayoi7sTPtTQCqb4JWzgx1A6rgysgODl2myNzHDOi0bdPEdKmRTS3LTsHCdo4b1sBoqt1TKaFVTYb9dbHxG6HgPOCKSXwUNQmSHOc7tEVr3IFu9zA4c7
+            VITE_APPWRITE_PUBLIC_ENDPOINT=https://appwrite.jkrumboe.dev/v1
+            VITE_APPWRITE_PROJECT_ID=688cd65e00060f0e4d43
