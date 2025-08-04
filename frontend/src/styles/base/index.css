@@ -506,16 +506,16 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 }
 
 /* Game list container */
-.game-list {
+/* .game-list {
   display: grid;
-  grid-template-columns: 1fr; /* Default to single column */
+  grid-template-columns: 1fr;
   gap: var(--spacing-md);
   flex: 1;
   min-height: 0;
   overflow: hidden;
   justify-content: center;
   align-items: center;
-}
+} */
 
 .empty-message {
   text-align: center;
@@ -543,12 +543,6 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   color: var(--text-color);
   font-size: 1rem;
   width: 50%;
-}
-
-@media (min-width: 576px) {
-  .game-list {
-    gap: var(--spacing-lg); /* Increase spacing */
-  }
 }
 
 @media (min-width: 768px) {
@@ -585,12 +579,6 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   .nav-link.active {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-md);
-  }
-}
-
-@media (min-width: 992px) {
-  .game-list {
-    grid-template-columns: repeat(3, 1fr); /* Three columns for larger screens */
   }
 }
 

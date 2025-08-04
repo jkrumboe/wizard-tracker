@@ -326,7 +326,14 @@ const Settings = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString("en-DE", {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
   };
 
   const handleThemeModeChange = (e) => {
@@ -505,113 +512,6 @@ const Settings = () => {
     event.target.value = '';
   };
 
-  // const generateSingleGameShareableLink = (gameId, gameData) => {
-  //   // Don't allow sharing of paused games
-  //   if (gameData.isPaused) {
-  //     setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
-  //     return;
-  //   }
-    
-  //   try {
-  //     // Create a more compact data structure by removing redundant information
-  //     const gameState = gameData.gameState || {};
-  //     const compactGameData = {
-  //       id: gameId,
-  //       players: gameState.players || [],
-  //       winner_id: gameState.winner_id,
-  //       final_scores: gameState.final_scores || {},
-  //       round_data: gameState.round_data || [],
-  //       total_rounds: gameState.total_rounds || gameState.maxRounds || 0,
-  //       created_at: gameState.created_at || gameData.savedAt,
-  //       game_mode: gameState.game_mode || gameState.mode || "Local",
-  //       duration_seconds: gameState.duration_seconds || 0
-  //     };
-      
-  //     // Validate the game data structure before sharing
-  //     const validation = ShareValidator.validateGameDataStructure(compactGameData);
-  //     if (!validation.isValid) {
-  //       setMessage({ 
-  //         text: `Cannot share game: ${validation.error}`, 
-  //         type: 'error' 
-  //       });
-  //       return;
-  //     }
-      
-  //     // Sanitize the data to prevent any security issues
-  //     const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
-      
-  //     // Remove any undefined or null values to make it more compact
-  //     const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
-  //       return value === undefined || value === null ? undefined : value;
-  //     }));
-      
-  //     const jsonData = JSON.stringify(cleanedData);
-      
-  //     // Use direct URL method that works across devices
-  //     const compressedData = btoa(unescape(encodeURIComponent(jsonData)));
-  //     const baseUrl = window.location.origin;
-  //     const shareableLink = `${baseUrl}?importGame=${compressedData}`;
-      
-  //     // Check URL length and warn user about different sharing methods
-  //     if (shareableLink.length > 8000) {
-  //       setMessage({ 
-  //         text: 'Game data is too large for URL sharing. Please use the download button instead.', 
-  //         type: 'error' 
-  //       });
-  //       return;
-  //     } else if (shareableLink.length > 2000) {
-  //       // Create a temporary share key for very large data
-  //       const shareKey = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  //       const expirationTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-        
-  //       // Store the compact data in localStorage temporarily
-  //       localStorage.setItem(shareKey, jsonData);
-  //       localStorage.setItem(shareKey + '_expires', expirationTime.toString());
-        
-  //       // Create a shorter URL with just the share key
-  //       const shortShareableLink = `${baseUrl}?shareKey=${shareKey}`;
-        
-  //       // Copy the short URL to clipboard
-  //       navigator.clipboard.writeText(shortShareableLink).then(() => {
-  //         // Success
-  //       }).catch(() => {
-  //         // Fallback for browsers that don't support clipboard API
-  //         const textArea = document.createElement('textarea');
-  //         textArea.value = shortShareableLink;
-  //         document.body.appendChild(textArea);
-  //         textArea.select();
-  //         document.execCommand('copy');
-  //         document.body.removeChild(textArea);
-  //       });
-        
-  //       setMessage({ 
-  //         text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
-  //         type: 'success' 
-  //       });
-  //       return;
-  //     }
-      
-  //     // URL is short enough, use the direct method
-  //     setMessage({ text: 'Game link copied to clipboard!', type: 'success' });
-      
-  //     // Copy to clipboard
-  //     navigator.clipboard.writeText(shareableLink).then(() => {
-  //       // Success
-  //     }).catch(() => {
-  //       // Fallback for browsers that don't support clipboard API
-  //       const textArea = document.createElement('textarea');
-  //       textArea.value = shareableLink;
-  //       document.body.appendChild(textArea);
-  //       textArea.select();
-  //       document.execCommand('copy');
-  //       document.body.removeChild(textArea);
-  //     });
-  //   } catch (error) {
-  //     console.error('Error generating single game shareable link:', error);
-  //     setMessage({ text: 'Failed to generate game link.', type: 'error' });
-  //   }
-  // };
-
   const downloadSingleGame = (gameId, gameData) => {
     // Don't allow downloading of paused games
     if (gameData.isPaused) {
@@ -762,36 +662,42 @@ const Settings = () => {
             <h2>Saved Games</h2>
           </div>
           {Object.keys(savedGames).length > 0 ? (
-            <div className="games-list">
+            <div className="game-history">
               {Object.entries(savedGames).map(([gameId, game]) => (
                 <div key={gameId} className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
-                  <div className="game-date">
-                    {game.isPaused ? 'Paused' : 'Finished'}: {formatDate(game.lastPlayed)} | 
-                    Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}
-                    {game.isImported && (
-                      <span className="import-badge">
-                        <ShareIcon size={14} />
-                        Imported
-                      </span>
-                    )}
-                  </div>
-                  <div className="game-info">
-                    {(() => {
-                      const winnerName = game.gameState?.winner_name || game.gameState?.players?.find(p => p.id === game.gameState?.winner_id)?.name;
-                      return winnerName ? (
+                  <div className="settings-card-content">
+                    <div className="settings-card-header">
+                      <div className="game-info">
                         <div className="game-winner">
-                          Winner: {winnerName}
+                          {game.isPaused ? 'Paused Game' : 'Finished Game'}
+                          
                         </div>
-                      ) : null;
-                    })()}
-                    <div className="game-players">
-                      Players:{" "}
-                      {game.gameState?.players 
-                        ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                        : "No players"}
-                    </div>
-                    <div className="bottom-game-history">
-                      <div className="game-actions">
+                        {game.isImported && (
+                            <span className="import-badge">
+                              <ShareIcon size={14} />
+                            </span>
+                          )}
+                        <div>Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
+                      </div>
+                      <div className="game-players">
+                        Players:{" "}
+                        {game.gameState?.players 
+                          ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                          : "No players"}
+                      </div>
+                      <div className="actions-game-history">
+                        <div className="bottom-actions-game-history">
+                          <span className="mode-badge local">
+                            Local
+                          </span>
+                          <div className="game-date">
+                            {formatDate(game.lastPlayed)}
+                          </div>
+                        </div>
+                      </div>
+                      </div>
+                    
+                      <div className="settings-card-actions">
                         <button 
                           className="delete-game-button" 
                           onClick={() => handleDeleteGame(gameId)}
@@ -799,14 +705,6 @@ const Settings = () => {
                         >
                           <TrashIcon size={25} />
                         </button>
-                        {/* <button 
-                          className="share-game-button" 
-                          onClick={() => generateSingleGameShareableLink(gameId, game)}
-                          aria-label="Share game"
-                          disabled={game.isPaused}
-                        >
-                          <ShareIcon size={25} />
-                        </button> */}
                         <button 
                           className="download-game-button" 
                           onClick={() => downloadSingleGame(gameId, game)}
@@ -816,7 +714,6 @@ const Settings = () => {
                           <DownloadIcon size={25} />
                         </button>
                       </div>
-                    </div>
                   </div>
                 </div>
               ))}

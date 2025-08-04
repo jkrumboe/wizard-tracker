@@ -41,7 +41,6 @@
 /* Theme Settings */
 .settings-option {
   padding: 0 ;
-  /* margin-bottom: var(--spacing-md); */
   gap: var(--spacing-md);
 }
 
@@ -62,7 +61,6 @@
 .theme-button-group {
   display: flex;
   margin-top: var(--spacing-sm);
-  /* gap: var(--spacing-sm); */
 }
 
 .theme-button {
@@ -221,11 +219,11 @@
 
 /* Download Game Button */
 .download-game-button {
-  background-color: transparent;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
   color: var(--text-color);
-  border: none;
   border-radius: 6px;
-  padding: 8px;
+  padding: var(--spacing-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -238,7 +236,7 @@
 }
 
 .download-game-button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   color: var(--text-muted);
 }
@@ -262,7 +260,10 @@
 }
 
 .game-info {
-  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1rem;
 }
 
 .game-name {
@@ -275,7 +276,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 80%;
+  max-width: 100%;
 }
 
 .game-status {
@@ -294,19 +295,12 @@
   color: var(--success-color);
 }
 
-/* .settings-actions .confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
-} */
-
 .delete-game-button {
-  background: transparent;
-  border: none;
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   color: var(--text-secondary);
-  padding: 0 6px;
+  padding: var(--spacing-sm);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -485,11 +479,10 @@
   gap: 4px;
   background-color: rgba(var(--primary-rgb), 0.1);
   color: var(--primary-color);
-  padding: 2px 8px;
+  /* padding: 2px 8px; */
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
-  margin-left: var(--spacing-sm);
 }
 
 .imported-game {
@@ -509,4 +502,28 @@
 
 .imported-game {
   position: relative;
+}
+
+.settings-card-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  width: 80%;
+}
+
+.settings-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.settings-card-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  width: 100%;
 }

@@ -97,13 +97,14 @@ const GameHistoryItem = ({ game }) => {
 
   return (
     <div className="game-card">
-      <div className="game-date">Finished: {formattedDate} | Rounds: {total_rounds}</div>
       {/* <div className="game-rounds"></div> */}
-      <div className="game-info">
-        <div className="game-winner">
-          Winner: {playerDetails[winner_id]?.name || "Unknown"}
+        <div className="game-info">
+          <div className="game-winner">
+            Winner: {playerDetails[winner_id]?.name || "Unknown"}
+          </div>
+          <div>Rounds: {total_rounds}</div>
         </div>
-          <div className="game-players">
+        <div className="game-players">
             Players:{" "}
             {game.gameState && game.gameState.players 
               ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
@@ -117,16 +118,20 @@ const GameHistoryItem = ({ game }) => {
                       )
                       .join(", ")
                   : "No players"}
-          </div>
-        <div className="bottom-game-history">
+        </div>
+        <div className="actions-game-history">
           <Link to={`/game/${id}`} className="game-details">
             View Details
           </Link>
-          <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>
-            {game_mode || 'Local'}
-          </span>
+          <div className="bottom-actions-game-history">
+            <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>
+              {game_mode || 'Local'}
+            </span>
+            <div className="game-date">
+              Finished: {formattedDate}
+            </div>
+          </div>
         </div>
-      </div>
     </div>
   );
 };

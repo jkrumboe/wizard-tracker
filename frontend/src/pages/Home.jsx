@@ -152,7 +152,7 @@ const Home = () => {
           <div className="section-header">
             <h2>Recent Games</h2>
           </div>
-          <div className="game-list">
+          {/* <div className="game-list"> */}
             {recentGames.length > 0 || recentLocalGames.length > 0 ? (
               <div className="game-history">
                 {/* Combine and sort all games by date */}
@@ -167,7 +167,7 @@ const Home = () => {
             ) : (
               <div className="empty-message">No games found</div>
             )}
-          </div>
+          {/* </div> */}
         </section>
 
         {/* Load Game Dialog */}
