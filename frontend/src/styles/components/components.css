@@ -519,7 +519,7 @@
 .stats-subtabs {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xxxl);
 }
 
 .stats-subtab-btn {
@@ -528,7 +528,7 @@
   border-radius: var(--radius-md);
   color: var(--text-color);
   padding: var(--spacing-sm) 0;
-  margin: 0 var(--spacing-md);
+  /* margin: 0 var(--spacing-md); */
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -538,7 +538,6 @@
 .stats-subtab-btn.active {
   background-color: var(--primary-color);
   color: var(--text-white);
-  border-color: var(--primary-dark);
 }
 
 .stats-subtab-btn:hover:not(.active) {
