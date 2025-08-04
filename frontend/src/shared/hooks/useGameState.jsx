@@ -172,6 +172,20 @@ export function GameStateProvider({ children }) {
       };
     });
   }, [])
+
+  // Reorder players (for drag and drop)
+  const reorderPlayers = useCallback((startIndex, endIndex) => {
+    setGameState((prevState) => {
+      const players = [...prevState.players];
+      const [removed] = players.splice(startIndex, 1);
+      players.splice(endIndex, 0, removed);
+      
+      return {
+        ...prevState,
+        players,
+      };
+    });
+  }, [])
     // Helper function to recalculate all scores after a round update
   const recalculateScores = useCallback((roundData, changedRoundIndex) => {
     const updatedRoundData = [...roundData];
@@ -729,6 +743,7 @@ export function GameStateProvider({ children }) {
         setMaxRounds,
         setMode,
         updatePlayerName,
+        reorderPlayers,
         getLocalGames,
         removeLocalGame,
         saveGame,

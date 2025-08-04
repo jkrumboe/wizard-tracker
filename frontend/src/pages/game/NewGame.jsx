@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import { GripVertical } from 'lucide-react';
 
 const NewGame = () => {
   
@@ -15,6 +16,7 @@ const NewGame = () => {
     addPlayer, 
     removePlayer, 
     updatePlayerName, 
+    reorderPlayers,
     startGame, 
     setMaxRounds, 
     getSavedGames, 
@@ -30,6 +32,11 @@ const NewGame = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [gameToDelete, setGameToDelete] = useState(null)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [draggedIndex, setDraggedIndex] = useState(null)
+  const [dragOverIndex, setDragOverIndex] = useState(null)
+  const [touchStartY, setTouchStartY] = useState(null)
+  const [isDraggingTouch, setIsDraggingTouch] = useState(false)
+  const [longPressTimer, setLongPressTimer] = useState(null)
   
   // Ref for auto-scrolling to bottom of player list
   const selectedPlayersRef = useRef(null)
@@ -95,6 +102,131 @@ const NewGame = () => {
 
   const handleRemovePlayer = (playerId) => {
     removePlayer(playerId)
+  }
+
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    // Add a visual indicator that we're dragging
+    e.target.style.opacity = '0.5'
+  }
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1'
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      reorderPlayers(draggedIndex, dragOverIndex)
+    }
+    
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  // Touch event handlers for mobile
+  const handleTouchStart = (e, index) => {
+    setTouchStartY(e.touches[0].clientY)
+    
+    // Start a timer for long press detection
+    const timer = setTimeout(() => {
+      setDraggedIndex(index)
+      setIsDraggingTouch(true)
+      // Add haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }, 150) // 150ms delay for long press detection
+    
+    setLongPressTimer(timer)
+  }
+
+  const handleTouchMove = (e) => {
+    if (!isDraggingTouch || draggedIndex === null) return
+    
+    e.preventDefault()
+    const touchY = e.touches[0].clientY
+    const playerItems = document.querySelectorAll('.player-item')
+    
+    // Find which item we're over
+    let newDragOverIndex = null
+    let closestDistance = Infinity
+    
+    playerItems.forEach((item, index) => {
+      const rect = item.getBoundingClientRect()
+      const itemCenterY = rect.top + rect.height / 2
+      const distance = Math.abs(touchY - itemCenterY)
+      
+      if (distance < closestDistance) {
+        closestDistance = distance
+        newDragOverIndex = index
+      }
+    })
+    
+    if (newDragOverIndex !== null && newDragOverIndex !== draggedIndex) {
+      setDragOverIndex(newDragOverIndex)
+    }
+  }
+
+  const handleTouchEnd = () => {
+    // Clear the long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+    
+    if (!isDraggingTouch) return
+    
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      reorderPlayers(draggedIndex, dragOverIndex)
+    }
+    
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+    setIsDraggingTouch(false)
+    setTouchStartY(null)
+  }
+
+  // Helper function to get CSS classes for visual reordering
+  const getPlayerItemClass = (index) => {
+    let classes = 'player-item'
+    
+    if (draggedIndex === index) {
+      classes += ' dragging'
+    } else if (draggedIndex !== null && dragOverIndex !== null) {
+      // Visual reordering logic
+      if (draggedIndex < dragOverIndex) {
+        // Dragging down: items between draggedIndex and dragOverIndex move up
+        if (index > draggedIndex && index <= dragOverIndex) {
+          classes += ' will-move-up'
+        }
+      } else if (draggedIndex > dragOverIndex) {
+        // Dragging up: items between dragOverIndex and draggedIndex move down  
+        if (index >= dragOverIndex && index < draggedIndex) {
+          classes += ' will-move-down'
+        }
+      }
+    }
+    
+    return classes
   }
 
   const handleStartGame = () => {
@@ -220,13 +352,28 @@ const NewGame = () => {
               <div className="selected-players" ref={selectedPlayersRef}>
                 <div className="player-list">
                   {gameState.players.map((player, index) => (
-                    <div key={player.id} className="player-item">
-                      <span>{index + 1}</span>
+                    <div 
+                      key={player.id} 
+                      className={getPlayerItemClass(index)}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e)}
+                      onTouchStart={(e) => handleTouchStart(e, index)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      style={{ touchAction: 'none' }}
+                    >
+                      <GripVertical size={16} className="drag-handle" />
+                      <span className="player-number">{index + 1}</span>
                       <input 
                         className="inputPlayerName" 
                         value={player.name} 
                         inputMode="text" 
                         onChange={(e) => handlePlayerNameChange(player.id, e)}
+                        onTouchStart={(e) => e.stopPropagation()}
                       />
                       <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
                         ×
