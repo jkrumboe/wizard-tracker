@@ -2045,12 +2045,14 @@
 }
 
 .resume-btn, .delete-btn {
-  padding: var(--spacing-xs) var(--spacing-lg);
+  padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   border: 2px solid var(--border-color);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  margin: var(--spacing-sm) 0;
+  width: 100%;
 }
 
 .resume-btn {

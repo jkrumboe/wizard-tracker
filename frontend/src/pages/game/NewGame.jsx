@@ -294,34 +294,44 @@ const NewGame = () => {
             ) : (
               <div className="paused-games-list">
                 {pausedGames.map(game => (
-                  <div key={game.id} className="paused-game-item">
-                    <div className="game-date">
-                      <span>Paused on: {normalizeDate(game.lastPlayed)}</span>
-                    </div>
-                    <div className="game-mode-rounds">
-                      <span>Mode: {game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local"} | <span>Round {game.roundsCompleted + 1}/{game.totalRounds}</span></span>
-                    </div>
-                    <div className="game-info">
-                       <div className="paused-game-details" >
-                        <label>Players: </label>
-                        <span>{game.players && game.players.join(', ')}</span>
-                        
+                  <div key={game.id} className="game-card">
+                    <div className="settings-card-content">
+                      <div className="settings-card-header">
+                        <div className="game-info">
+                          <div>Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds || game.gameState?.maxRounds || 0}</div>
+                        </div>
+                        <div className="game-players">
+                          Players:{" "}
+                          {game.gameState?.players 
+                            ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                            : game.players && game.players.join(", ") || "No players"}
+                        </div>
+                        <div className="actions-game-history">
+                          <div className="bottom-actions-game-history">
+                            <span className={`mode-badge ${(game.game_mode || game.mode || (game.gameState && game.gameState.mode) || 'local').toLowerCase()}`}>
+                              {game.game_mode || game.mode || (game.gameState && game.gameState.mode) || 'Local'}
+                            </span>
+                            <div className="game-date">
+                              {normalizeDate(game.lastPlayed)}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="game-actions" >
-                      <button 
-                        className="resume-btn" 
-                        onClick={() => handleLoadGame(game.id)}
-                      >
-                        Resume
-                      </button>
-                      <button 
-                        className="delete-btn" 
-                        onClick={() => handleDeleteGame(game.id)}
-                      >
-                        Delete
-                      </button>
+                      
+                      <div className="settings-card-actions">
+                        <button 
+                          className="resume-btn" 
+                          onClick={() => handleLoadGame(game.id)}
+                        >
+                          Resume
+                        </button>
+                        <button 
+                          className="delete-btn" 
+                          onClick={() => handleDeleteGame(game.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
