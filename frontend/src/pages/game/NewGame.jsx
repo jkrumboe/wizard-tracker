@@ -5,7 +5,78 @@ import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
-import { GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from '@dnd-kit/modifiers';
+
+// Sortable Player Item Component
+const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: player.id,
+    data: {
+      type: 'player',
+      player,
+      index,
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`player-item ${isDragging ? 'dragging' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <span className="player-number">{index + 1}</span>
+      <input 
+        className="inputPlayerName" 
+        value={player.name} 
+        inputMode="text" 
+        onChange={(e) => onNameChange(player.id, e)}
+      />
+      <button 
+        className="remove-btn" 
+        onClick={() => onRemove(player.id)}
+      >
+        ×
+      </button>
+    </div>
+  );
+};
 
 const NewGame = () => {
   
@@ -32,11 +103,47 @@ const NewGame = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [gameToDelete, setGameToDelete] = useState(null)
   const [message, setMessage] = useState({ text: '', type: '' })
-  const [draggedIndex, setDraggedIndex] = useState(null)
-  const [dragOverIndex, setDragOverIndex] = useState(null)
-  const [touchStartY, setTouchStartY] = useState(null)
-  const [isDraggingTouch, setIsDraggingTouch] = useState(false)
-  const [longPressTimer, setLongPressTimer] = useState(null)
+  
+  // @dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before starting drag
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 100, // 200ms delay for touch to differentiate from scrolling
+        tolerance: 5, // Allow 5px of movement during the delay
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Custom modifier to restrict dragging to player list container
+  const restrictToPlayerList = ({ transform, draggingNodeRect, containerNodeRect }) => {
+    if (!draggingNodeRect || !containerNodeRect) {
+      return transform;
+    }
+
+    const playerListElement = document.querySelector('.player-list');
+    if (!playerListElement) {
+      return transform;
+    }
+
+    const playerListRect = playerListElement.getBoundingClientRect();
+    
+    // Calculate boundaries relative to the container
+    const topBoundary = playerListRect.top - containerNodeRect.top;
+    const bottomBoundary = playerListRect.bottom - containerNodeRect.top - draggingNodeRect.height;
+
+    return {
+      ...transform,
+      y: Math.max(topBoundary, Math.min(bottomBoundary, transform.y)),
+    };
+  };
   
   // Ref for auto-scrolling to bottom of player list
   const selectedPlayersRef = useRef(null)
@@ -104,129 +211,19 @@ const NewGame = () => {
     removePlayer(playerId)
   }
 
-  // Drag and drop handlers
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index)
-    e.dataTransfer.effectAllowed = 'move'
-    // Add a visual indicator that we're dragging
-    e.target.style.opacity = '0.5'
-  }
+  // @dnd-kit drag end handler
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
 
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = '1'
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-  }
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    
-    if (draggedIndex !== null && draggedIndex !== index) {
-      setDragOverIndex(index)
-    }
-  }
-
-  const handleDragLeave = () => {
-    setDragOverIndex(null)
-  }
-
-  const handleDrop = (e) => {
-    e.preventDefault()
-    
-    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-      reorderPlayers(draggedIndex, dragOverIndex)
-    }
-    
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-  }
-
-  // Touch event handlers for mobile
-  const handleTouchStart = (e, index) => {
-    setTouchStartY(e.touches[0].clientY)
-    
-    // Start a timer for long press detection
-    const timer = setTimeout(() => {
-      setDraggedIndex(index)
-      setIsDraggingTouch(true)
-      // Add haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50)
-      }
-    }, 150) // 150ms delay for long press detection
-    
-    setLongPressTimer(timer)
-  }
-
-  const handleTouchMove = (e) => {
-    if (!isDraggingTouch || draggedIndex === null) return
-    
-    e.preventDefault()
-    const touchY = e.touches[0].clientY
-    const playerItems = document.querySelectorAll('.player-item')
-    
-    // Find which item we're over
-    let newDragOverIndex = null
-    let closestDistance = Infinity
-    
-    playerItems.forEach((item, index) => {
-      const rect = item.getBoundingClientRect()
-      const itemCenterY = rect.top + rect.height / 2
-      const distance = Math.abs(touchY - itemCenterY)
+    if (active.id !== over?.id) {
+      const oldIndex = gameState.players.findIndex(player => player.id === active.id);
+      const newIndex = gameState.players.findIndex(player => player.id === over?.id);
       
-      if (distance < closestDistance) {
-        closestDistance = distance
-        newDragOverIndex = index
-      }
-    })
-    
-    if (newDragOverIndex !== null && newDragOverIndex !== draggedIndex) {
-      setDragOverIndex(newDragOverIndex)
-    }
-  }
-
-  const handleTouchEnd = () => {
-    // Clear the long press timer
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
-    }
-    
-    if (!isDraggingTouch) return
-    
-    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-      reorderPlayers(draggedIndex, dragOverIndex)
-    }
-    
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-    setIsDraggingTouch(false)
-    setTouchStartY(null)
-  }
-
-  // Helper function to get CSS classes for visual reordering
-  const getPlayerItemClass = (index) => {
-    let classes = 'player-item'
-    
-    if (draggedIndex === index) {
-      classes += ' dragging'
-    } else if (draggedIndex !== null && dragOverIndex !== null) {
-      // Visual reordering logic
-      if (draggedIndex < dragOverIndex) {
-        // Dragging down: items between draggedIndex and dragOverIndex move up
-        if (index > draggedIndex && index <= dragOverIndex) {
-          classes += ' will-move-up'
-        }
-      } else if (draggedIndex > dragOverIndex) {
-        // Dragging up: items between dragOverIndex and draggedIndex move down  
-        if (index >= dragOverIndex && index < draggedIndex) {
-          classes += ' will-move-down'
-        }
+      // Only reorder if both indices are valid (within bounds)
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderPlayers(oldIndex, newIndex);
       }
     }
-    
-    return classes
   }
 
   const handleStartGame = () => {
@@ -350,37 +347,29 @@ const NewGame = () => {
             {/*Adding Players*/}
             <div className="selected-players-wrapper">
               <div className="selected-players" ref={selectedPlayersRef}>
-                <div className="player-list">
-                  {gameState.players.map((player, index) => (
-                    <div 
-                      key={player.id} 
-                      className={getPlayerItemClass(index)}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, index)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e)}
-                      onTouchStart={(e) => handleTouchStart(e, index)}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                      style={{ touchAction: 'none' }}
-                    >
-                      <GripVertical size={16} className="drag-handle" />
-                      <span className="player-number">{index + 1}</span>
-                      <input 
-                        className="inputPlayerName" 
-                        value={player.name} 
-                        inputMode="text" 
-                        onChange={(e) => handlePlayerNameChange(player.id, e)}
-                        onTouchStart={(e) => e.stopPropagation()}
-                      />
-                      <button className="remove-btn" onClick={() => handleRemovePlayer(player.id)}>
-                        ×
-                      </button>
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                  modifiers={[restrictToVerticalAxis, restrictToParentElement, restrictToPlayerList]}
+                >
+                  <SortableContext 
+                    items={gameState.players.map(p => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="player-list">
+                      {gameState.players.map((player, index) => (
+                        <SortablePlayerItem
+                          key={player.id}
+                          player={player}
+                          index={index}
+                          onNameChange={handlePlayerNameChange}
+                          onRemove={handleRemovePlayer}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               </div>
             </div>
 
