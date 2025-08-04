@@ -161,6 +161,12 @@
   border-width: 2px !important;
 }
 
+@media (max-height: 776px) {
+  .game-in-progress .tab-panel {
+    padding-bottom: calc(60px + var(--spacing-lg));
+  }
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {  
   .game-in-progress .results-row {

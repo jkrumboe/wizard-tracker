@@ -31,7 +31,7 @@
 
 .chart-view-container {
   /* margin-top: var(--spacing-sm); */
-  margin-bottom: var(--spacing-md);
+  /* margin-bottom: var(--spacing-md); */
   min-height: 100%;
 }
 
