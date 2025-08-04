@@ -14,9 +14,7 @@ import "@/styles/pages/stats.css"
 import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
-
 import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon } from "@/components/ui/Icon"
-
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -59,8 +57,6 @@ const GameInProgress = () => {
   const togglePlayerStats = (playerId) => {
     setSelectedPlayerId(prev => prev === playerId ? null : playerId)
   }
-
-  // We don't need the click outside handler for a modal, removing this useEffect
 
   const handleFinishGame = async () => {
     const success = await finishGame()
@@ -184,30 +180,23 @@ const GameInProgress = () => {
 
   // Log page reload and navigation events
   useEffect(() => {
-    console.log('GameInProgress page loaded/mounted');
-    
     // Use sessionStorage to track if this is truly the first visit
     const hasVisitedBefore = sessionStorage.getItem('gameInProgressVisited');
     const isFirstVisit = !hasVisitedBefore;
     
     if (isFirstVisit) {
       sessionStorage.setItem('gameInProgressVisited', 'true');
-      console.log('First visit to GameInProgress - auto-pause disabled');
     } else {
-      console.log('Returning to GameInProgress - auto-pause enabled');
+      console.debug('Returning to GameInProgress - auto-pause enabled');
     }
     
     // Store current game state in sessionStorage for recovery
     if (gameState && gameState.gameStarted && gameState.players?.length > 0) {
       sessionStorage.setItem('gameStateBackup', JSON.stringify(gameState));
-      console.log('Backed up game state to sessionStorage');
     }
     
     // Cleanup function runs when component unmounts (navigation away)
-    return () => {
-      console.log('GameInProgress page unmounted (navigated away)');
-      console.log('Unmount - gameState at cleanup:', gameStateRef.current);
-      
+    return () => {      
       // Check if this is a Vite hot reload (development mode)
       const isViteReload = import.meta.hot !== undefined;
       
@@ -216,11 +205,9 @@ const GameInProgress = () => {
       const currentPauseGame = pauseGameRef.current;
       
       if (!isFirstVisit && !isViteReload && currentGameState && currentGameState.gameStarted) {
-        console.log('Auto-pausing game due to navigation away');
         const gameName = `Auto-Paused - Round ${currentGameState.currentRound}/${currentGameState.maxRounds}`;
         try {
           currentPauseGame(gameName);
-          console.log('Game auto-paused on navigation away');
           // Clear backup since game is being auto-paused
           sessionStorage.removeItem('gameStateBackup');
           sessionStorage.removeItem('gameInProgressVisited');
@@ -228,8 +215,8 @@ const GameInProgress = () => {
           console.error('Failed to auto-pause game on navigation:', error);
         }
       } else {
-        console.log('Skipping auto-pause on unmount');
-        console.log('Unmount reasons: isFirstVisit:', isFirstVisit, 'isViteReload:', isViteReload, 'gameStarted:', currentGameState?.gameStarted);
+        console.debug('Skipping auto-pause on unmount');
+        console.debug('Unmount reasons: isFirstVisit:', isFirstVisit, 'isViteReload:', isViteReload, 'gameStarted:', currentGameState?.gameStarted);
       }
     };
   }, [gameState]); // Include gameState dependency for backup functionality
@@ -244,18 +231,15 @@ const GameInProgress = () => {
       if (backupGameState) {
         try {
           const parsedBackup = JSON.parse(backupGameState);
-          console.log('Attempting to recover game state from backup:', parsedBackup);
           
           // Only restore if the backup has valid game data
           if (parsedBackup.gameStarted && parsedBackup.players?.length > 0) {
-            console.log('Restoring game state from sessionStorage backup');
             setIsRecovering(true);
             
             // Use setTimeout to allow UI to update before recovery
             setTimeout(() => {
               const success = recoverGameState(parsedBackup);
               if (success) {
-                console.log('Game state successfully recovered!');
                 // Clear the backup after successful recovery to prevent re-triggering
                 sessionStorage.removeItem('gameStateBackup');
               } else {
@@ -271,27 +255,19 @@ const GameInProgress = () => {
         }
       }
     }
-  }, [gameState, recoverGameState, isRecovering]); // Include all dependencies but recovery logic prevents infinite loops
+  }, [gameState, recoverGameState, isRecovering]);
 
-  // Debug logging for game state
-  console.log('GameInProgress render - Current gameState:', gameState);
-  console.log('GameInProgress render - gameState.gameStarted:', gameState?.gameStarted);
-  console.log('GameInProgress render - gameState.players:', gameState?.players?.length);
 
   // Add defensive check for game state
   if (!gameState) {
-    console.log('GameInProgress: gameState is null/undefined');
     return <div>Loading game state...</div>;
   }
 
 
   if (!gameState.gameStarted) {
-    console.log('GameInProgress: gameState.gameStarted is false, gameState:', gameState);
     // If we have an empty game state but we're on the game page, show a loading message
     // This can happen during authentication issues or page refresh
     if (gameState.players?.length === 0 && gameState.roundData?.length === 0) {
-      console.log('GameInProgress: Detected empty game state, likely due to auth/reload issues');
-      
       // Check if we have a backup available
       const backupGameState = sessionStorage.getItem('gameStateBackup');
       if (backupGameState) {
@@ -307,12 +283,10 @@ const GameInProgress = () => {
                 <div style={{ marginTop: '20px' }}>
                   <button 
                     onClick={() => {
-                      console.log('Manual recovery triggered');
                       setIsRecovering(true);
                       setTimeout(() => {
                         const success = recoverGameState(parsedBackup);
                         if (success) {
-                          console.log('Manual recovery successful!');
                           sessionStorage.removeItem('gameStateBackup');
                         } else {
                           console.error('Manual recovery failed');
@@ -520,7 +494,7 @@ const GameInProgress = () => {
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
-        <span>
+        <span className="round-number">
           Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
         </span>
         <span className="total-calls">

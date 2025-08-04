@@ -1386,6 +1386,7 @@
     font-weight: 500;
     transition: background-color 0.2s, transform 0.1s;
     font-size: 0.9rem;
+    box-shadow: var(--shadow-lg);
   }
   
   .nav-btn:disabled {
@@ -1398,8 +1399,6 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow);
-    /* margin-top: var(--spacing-lg); */
-    margin-bottom: var(--spacing-lg);
   }
   
   .score-table tr:nth-child(even) {
@@ -1410,7 +1409,6 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    /* border-radius: var(--radius-sm); */
     overflow: hidden;
     box-shadow: var(--shadow);
     border: 2px solid var(--primary-color);
@@ -2858,8 +2856,6 @@
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Game Controls and Menu Styles */
-
 /* General .game-bottom-section styling for non-GameInProgress pages */
 .game-control-btn {
   background-color: var(--primary-color);
@@ -2873,6 +2869,7 @@
   justify-content: center;
   transition: all 0.2s ease;
   font-size: 1.2rem;
+  box-shadow: var(--shadow-lg);
 }
 
 #toggle-button-profile {
@@ -2884,7 +2881,6 @@
 
 .game-header-top {
   position: relative;
-  /* top: 100%; */
   display: flex;
   justify-content: space-between;
   align-items: center;

@@ -1011,9 +1011,16 @@
   width: 100%;
 }
 
+.round-number {
+  color: var(--text-color) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--shadow-lg);
+}
+
 .total-calls {
   color: var(--text-color) !important;
   font-weight: 600 !important;
+  box-shadow: var(--shadow-lg);
 }
 
 /* Host Controls */

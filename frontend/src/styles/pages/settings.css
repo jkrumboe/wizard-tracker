@@ -27,7 +27,7 @@
   border-radius: 12px;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-  box-shadow: var(--card-shadow);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-section h2 {
@@ -338,7 +338,7 @@
   padding: var(--spacing-lg);
   width: 90%;
   max-width: 400px;
-  box-shadow: var(--card-shadow-lg);
+  box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s ease-in-out;
 }
 
