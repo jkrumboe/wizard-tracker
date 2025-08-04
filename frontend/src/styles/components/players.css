@@ -26,17 +26,11 @@
     margin: 0 var(--spacing-md);
     border: 1px solid var(--border-color);
     font-weight: 600;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     max-height: 3rem;
     margin-left: calc(var(--spacing-sm) + 16px);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: grab; /* Show that the entire item is draggable */
-    touch-action: manipulation; /* Allow precise touch control */
     /* margin-left: var(--spacing-md); */
-}
-
-.player-item:active {
-    cursor: grabbing;
 }
 
 .player-item.dragging {
@@ -60,21 +54,48 @@
     height: 24px;
     background-color: var(--primary-color);
     color: var(--text-color);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     font-size: 0.8rem;
     font-weight: 600;
     flex-shrink: 0;
 }
 
+.drag-handle {
+    color: var(--text-light);
+    cursor: grab;
+    flex-shrink: 0;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+    color: var(--primary-color);
+}
+
 /* Mobile touch improvements */
 @media (max-width: 768px) {
     .player-item {
-        padding: var(--spacing-sm) var(--spacing-md);
-        min-height: 48px; /* Ensure minimum touch target */
+        padding: var(--spacing-sm);
+        min-height: 48px;
+    }
+    
+    .drag-handle {
+        padding: var(--spacing-sm);
+        min-width: 32px;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .inputPlayerName {
-        font-size: 16px; /* Prevent zoom on iOS */
+        font-size: 16px;
         touch-action: manipulation;
     }
     
@@ -94,23 +115,8 @@
     border: 1px solid var(--border-light);
     align-content: center;
     text-align: center;
-    margin: 0 var(--spacing-md);
-}
-
-.remove-btn {
-    background: none;
-    border: none;
-    color: var(--text-light);
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: var(--spacing-xs);
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-}
-
-.remove-btn:hover {
-    color: var(--error-color);
-    background-color: rgba(239, 68, 68, 0.1);
+    /* margin: 0 var(--spacing-md); */
+    touch-action: manipulation;
 }
 
 /* DnD Kit specific styles */

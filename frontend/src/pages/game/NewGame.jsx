@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import { GripVertical } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -53,15 +54,29 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
     zIndex: isDragging ? 1000 : 1,
   };
 
+  // Create drag listeners that exclude input and button areas
+  const dragListeners = {
+    ...listeners,
+  };
+
   return (
     <div 
       ref={setNodeRef}
       style={style}
       className={`player-item ${isDragging ? 'dragging' : ''}`}
       {...attributes}
-      {...listeners}
     >
-      <span className="player-number">{index + 1}</span>
+      <div
+        className="drag-handle"
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'grab' }}
+        {...dragListeners}
+      >
+        <GripVertical size={16} />
+        <span className="player-number">
+          {index + 1}
+        </span>
+      </div>
+      
       <input 
         className="inputPlayerName" 
         value={player.name} 
@@ -70,7 +85,10 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
       />
       <button 
         className="remove-btn" 
-        onClick={() => onRemove(player.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(player.id);
+        }}
       >
         ×
       </button>
@@ -113,8 +131,8 @@ const NewGame = () => {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 100, // 200ms delay for touch to differentiate from scrolling
-        tolerance: 5, // Allow 5px of movement during the delay
+        delay: 150, // Slightly longer delay to differentiate from scrolling
+        tolerance: 5, // Allow 8px of movement during the delay
       },
     }),
     useSensor(KeyboardSensor, {
