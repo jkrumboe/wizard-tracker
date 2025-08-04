@@ -452,17 +452,10 @@ const GameDetails = () => {
                 </button>
             </div>
           </div>
+          <div className="game-date" style={{ margin: "0 auto" }}>Finished: {formattedDate}</div>
           <h1 id="header-game-detail-badge">{game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}</h1>
-          <div className="game-date">Finished: {formattedDate}</div>
           {/* <div className="game-date">Duration: {duration}</div> */}
-          {/* <div className="game-winner">
-            Winner: {playerDetails[game.winner_id]?.name || 'Unknown'}
-          </div> */}
           <div className="game-controls">
-            {/* <button className="settings-button share-button" onClick={generateShareableLink}>
-              <ShareIcon size={20} />
-              Share
-            </button> */}
             <button className="settings-button download-button" onClick={downloadSingleGame}>
               <DownloadIcon size={20} />
               Download

@@ -279,20 +279,7 @@
     text-align: center;
     padding: var(--spacing-xs);
   }
-  
-  /* Game Details page local badge */
-  .game-details-header .mode-badge.local#game-detail-badge {
-    position: relative;
-    display: inline-block;
-    margin-left: var(--spacing-md);
-    vertical-align: middle;
-    font-size: 0.8rem;
-    background-color: var(--primary-color);
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    right: auto;
-  }
-  
+ 
   /* Game History */
   .actions-game-history {
     display: flex;
@@ -419,6 +406,7 @@
     margin-bottom: var(--spacing-lg);
     background-color: var(--card-background);
     padding: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
   }
@@ -1392,7 +1380,6 @@
   .nav-btn {
     background-color: var(--primary-color);
     color: var(--text-white);
-    border: none;
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -1402,7 +1389,7 @@
   }
   
   .nav-btn:disabled {
-    background-color: var(--disabled-background-dark);
+    background-color: var(--disabled-background);
     cursor: not-allowed;
   }
   
@@ -1498,10 +1485,6 @@
 
   .negative-score {
     color: var(--error-color);
-  }
-  
-  .round-score {
-    font-size: 0.8em;
   }
   
   .finish-btn {
@@ -2876,74 +2859,6 @@
   height: var(--bottom-nav-height);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
-
-/* Empty message styling */
-.empty-message {
-  text-align: center;
-  color: var(--text-light);
-  padding: var(--spacing-md) 0;
-  font-size: 1.4rem;
-  font-weight: 500;
-}
-
-/* Home specific container to handle bottom navigation spacing */
-
-/* Game table input styles */
-  .score-table input[type="tel"] {
-    width: 50px;
-    text-align: center;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background-color: var(--input-background);
-    color: var(--text-color);
-    font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
-  }
-  
-  .score-table input[type="tel"]:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
-  }
-  
-  .score-table input[type="tel"]:disabled {
-    background-color: var(--disabled-background-dark);
-    opacity: 0.6;
-    cursor: not-allowed;
-    border: 1px solid var(--border-color);
-    box-shadow: none;
-  }
-  
-  /* Hide spinner buttons in number inputs for browsers */
-  .score-table input[type="tel"]::-webkit-inner-spin-button, 
-  .score-table input[type="tel"]::-webkit-outer-spin-button { 
-    opacity: 1;
-    height: 20px;
-  }
-  
-  #rounds {
-    justify-items: center;
-    align-items: center;
-  }
-
-  .rounds-input {
-    width: 50px;
-    text-align: center;
-  }
-
-  #rounds-input {
-    text-align: center;
-    margin: auto;
-    padding: var(--spacing-xs);
-    border-radius: var(--radius-sm);
-    background-color: var(--input-background);
-    color: var(--text-color);
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
 
 /* Game Controls and Menu Styles */
 

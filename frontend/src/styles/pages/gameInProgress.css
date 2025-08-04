@@ -148,7 +148,6 @@
   bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
   z-index: 100;
   padding: var(--spacing-sm) var(--spacing-md);
-  gap: var(--spacing-lg);
   display: flex;
   align-items: center;
   justify-content: center;

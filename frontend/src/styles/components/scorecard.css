@@ -30,23 +30,23 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  width: 70px; /* Fixed width for all player headers */
-  min-width: 70px; /* Ensure minimum width */
-  max-width: 70px; /* Ensure maximum width */
+  width: 70px; 
+  min-width: 70px; 
+  max-width: 70px;
 }
 
 .player-header-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%; /* Use full width of the parent header */
+  width: 100%; 
 }
 
 /* Adjust for 4-6 players - corrected media query */
 @media (min-width: 768px) {
   /* No width adjustments - we want consistent widths */
   .player-header-name {
-    max-width: 90px; /* Smaller for more players */
+    max-width: 90px;
     font-size: 0.9rem;
   }
 }
@@ -128,7 +128,6 @@
   color: var(--text-color);
   font-weight: 600 ;
   font-size: 1rem;
-  padding: var(--spacing-xs);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -145,9 +144,8 @@
   position: sticky;
   left: 0;
   z-index: 9;
-  /* Fix the background to stay with the content */
+  padding: 0 !important;
   box-shadow: none;
-  /* Ensure the background fills the entire cell */
   isolation: isolate;
   border-right: 2px solid var(--primary-color);
 }
@@ -157,6 +155,7 @@
   color: var(--text-color);
   font-weight: bold;
   font-size: 1.1rem;
+  padding: 0 !important;
 }
 
 /* Add color coding for correct/incorrect bids */
