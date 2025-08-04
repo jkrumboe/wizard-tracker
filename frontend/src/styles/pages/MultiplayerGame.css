@@ -114,34 +114,6 @@
   font-size: 1.5rem;
 }
 
-/* Stats Subtabs styling */
-/* .game-container .stats-subtabs {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-xl);
-}
-
-.game-container .stats-subtab-btn {
-  background-color: var(--card-background-light);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  color: var(--text-color);
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.game-container .stats-subtab-btn.active {
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border-color: var(--primary-dark);
-}
-
-.game-container .stats-subtab-btn:hover:not(.active) {
-  background-color: var(--card-background);
-} */
-
 /* Fixed bottom controls with translucent background */
 .game-container .game-bottom-section {
   position: fixed;
@@ -218,23 +190,11 @@
   transition: all 0.3s ease;
   box-shadow: var(--shadow-sm);
 }
-/* 
-.settings-button {
-  background-color: var(--warning-color);
-  color: var(--text-color);
-} */
 
 .leave-button {
   background-color: var(--error-color);
   color: var(--text-color);
 }
-
-/* .settings-button:hover,
-.leave-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  opacity: 0.9;
-} */
 
 .loading-spinner {
   display: flex;
@@ -1374,9 +1334,6 @@
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
-  .game-container .tab-panel {
-    padding-bottom: calc(60px + var(--spacing-xl) * 1.5);
-  }
   
   .game-container .results-row {
     padding: var(--spacing-sm);

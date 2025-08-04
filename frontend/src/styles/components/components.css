@@ -1944,11 +1944,9 @@
 
 .tab-panel {
   width: 100%;
-  /* overflow-y: auto;  */
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* padding-bottom: calc(var(--spacing-xl) * 2);  */
 }
 
 /* Paused Games List */
@@ -2153,7 +2151,7 @@
 /* Media query for desktop */
 @media (min-width: 769px) {
   .tab-panel {
-    margin-bottom: var(--spacing-lg);
+    /* margin-bottom: var(--spacing-lg); */
   }
 }
 
