@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import AppLoadingScreen from '@/components/common/AppLoadingScreen'
-import { DateFilterDropdown } from '@/components/common'
 import { getRecentGames, getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
@@ -20,7 +19,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [offlineMessage, setOfflineMessage] = useState('')
-  const [dateFilter, setDateFilter] = useState('')
   const [showLoadingScreen, setShowLoadingScreen] = useState(false)
 
   useEffect(() => {
@@ -75,8 +73,7 @@ const Home = () => {
         }
         
         // Always fetch local games
-        const localGames = await getRecentLocalGames(10, dateFilter ? 'custom' : 'all', 
-          dateFilter ? { startDate: dateFilter, endDate: dateFilter } : null); // Fix: await the async function
+        const localGames = await getRecentLocalGames(10); // Fix: await the async function
         
         // Ensure all games have proper date formatting for sorting
         const formattedServerGames = Array.isArray(serverGames) ? serverGames.map(game => ({
@@ -97,8 +94,7 @@ const Home = () => {
         console.error('Error fetching games:', error)
         // Even if there's an error with server games, still show local games
         try {
-          const localGames = await getRecentLocalGames(4, dateFilter ? 'custom' : 'all', 
-            dateFilter ? { startDate: dateFilter, endDate: dateFilter } : null)
+          const localGames = await getRecentLocalGames(4)
           const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
             ...game,
             created_at: game.created_at || new Date().toISOString()
@@ -114,7 +110,7 @@ const Home = () => {
     }
 
     fetchGames()
-  }, [isOnline, dateFilter])
+  }, [isOnline])
 
   // Check for offline message from navigation state
   useEffect(() => {
@@ -155,11 +151,6 @@ const Home = () => {
         <section className="recent-games">
           <div className="section-header">
             <h2>Recent Games</h2>
-            <DateFilterDropdown
-              value={dateFilter}
-              onChange={setDateFilter}
-              className="recent-games-filter"
-            />
           </div>
           <div className="game-list">
             {recentGames.length > 0 || recentLocalGames.length > 0 ? (

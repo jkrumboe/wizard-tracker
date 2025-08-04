@@ -2,7 +2,6 @@
 // These are placeholder functions to prevent compilation errors
 
 import { LocalGameStorage } from "@/shared/api/localGameStorage";
-import { filterGamesByDate, DATE_FILTER_OPTIONS } from "@/shared/utils/dateFilters";
 
 //=== Game Management ===//
 
@@ -19,7 +18,7 @@ export async function getRecentGames(limit = 5) {
 }
 
 // Get recent local games (this still works as it uses localStorage)
-export async function getRecentLocalGames(limit = 5, dateFilter = DATE_FILTER_OPTIONS.ALL, customRange = null) {
+export async function getRecentLocalGames(limit = 5) {
   try {
     const games = LocalGameStorage.getAllSavedGames();
     const gamesList = Object.values(games);
@@ -28,12 +27,9 @@ export async function getRecentLocalGames(limit = 5, dateFilter = DATE_FILTER_OP
     const finishedGames = gamesList.filter(game => 
       !game.isPaused && (game.gameFinished || game.gameState?.gameFinished)
     );
-
-    // Apply date filtering
-    const dateFilteredGames = filterGamesByDate(finishedGames, dateFilter, customRange);
     
     // Sort by lastPlayed or savedAt, whichever is available
-    const sortedGames = dateFilteredGames
+    const sortedGames = finishedGames
       .sort((a, b) => {
         const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
         const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
@@ -54,8 +50,8 @@ export async function getRecentLocalGames(limit = 5, dateFilter = DATE_FILTER_OP
   }
 }
 
-// Get paused local games with date filtering
-export async function getPausedLocalGames(limit = 10, dateFilter = DATE_FILTER_OPTIONS.ALL, customRange = null) {
+// Get paused local games
+export async function getPausedLocalGames(limit = 10) {
   try {
     const games = LocalGameStorage.getAllSavedGames();
     const gamesList = Object.values(games);
@@ -64,12 +60,9 @@ export async function getPausedLocalGames(limit = 10, dateFilter = DATE_FILTER_O
     const pausedGames = gamesList.filter(game => 
       game.isPaused || (game.gameState?.isPaused && !game.gameState?.gameFinished)
     );
-
-    // Apply date filtering
-    const dateFilteredGames = filterGamesByDate(pausedGames, dateFilter, customRange);
     
     // Sort by lastPlayed or savedAt, whichever is available
-    const sortedGames = dateFilteredGames
+    const sortedGames = pausedGames
       .sort((a, b) => {
         const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
         const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
@@ -90,17 +83,14 @@ export async function getPausedLocalGames(limit = 10, dateFilter = DATE_FILTER_O
   }
 }
 
-// Get all local games with date filtering (for settings page)
-export async function getAllLocalGames(dateFilter = DATE_FILTER_OPTIONS.ALL, customRange = null) {
+// Get all local games (for settings page)
+export async function getAllLocalGames() {
   try {
     const games = LocalGameStorage.getAllSavedGames();
     const gamesList = Object.values(games);
     
-    // Apply date filtering
-    const dateFilteredGames = filterGamesByDate(gamesList, dateFilter, customRange);
-    
     // Sort by lastPlayed or savedAt, whichever is available
-    const sortedGames = dateFilteredGames.sort((a, b) => {
+    const sortedGames = gamesList.sort((a, b) => {
       const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
       const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
       return dateB - dateA;
@@ -120,13 +110,13 @@ export async function getAllLocalGames(dateFilter = DATE_FILTER_OPTIONS.ALL, cus
 }
 
 // Create game
-export async function createGame(data) {
+export async function createGame(_data) {
   console.warn('gameService: createGame() - Server games feature not yet implemented with Appwrite');
   return null;
 }
 
 // Get player game history
-export async function getPlayerGameHistory(id, limit = 20) {
+export async function getPlayerGameHistory(id, _limit = 20) {
   console.warn('gameService: getPlayerGameHistory() - Server games feature not yet implemented with Appwrite');
   return [];
 }

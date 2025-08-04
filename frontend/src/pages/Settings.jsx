@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { LocalGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { DateFilterDropdown } from '@/components/common';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import '@/styles/pages/settings.css';
@@ -17,7 +16,6 @@ const Settings = () => {
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [dateFilter, setDateFilter] = useState('');
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
 
   const checkForImportedGames = () => {
@@ -255,23 +253,8 @@ const Settings = () => {
 
   const loadSavedGames = useCallback(() => {
     const allGames = LocalGameStorage.getAllSavedGames();
-    const gamesList = Object.values(allGames);
-    
-    // Apply simple date filtering if a date is selected
-    const filteredGames = dateFilter ? gamesList.filter(game => {
-      const gameDate = new Date(game.lastPlayed || game.savedAt || game.created_at || '1970-01-01');
-      const filterDate = new Date(dateFilter);
-      return gameDate.toDateString() === filterDate.toDateString();
-    }) : gamesList;
-    
-    // Convert back to object format for display
-    const filteredGamesObject = {};
-    filteredGames.forEach(game => {
-      filteredGamesObject[game.id] = game;
-    });
-    
-    setSavedGames(filteredGamesObject);
-  }, [dateFilter]);
+    setSavedGames(allGames);
+  }, []);
 
   // Reload games when date filter changes
   useEffect(() => {
@@ -777,11 +760,6 @@ const Settings = () => {
         <div className="settings-section">
           <div className="section-header">
             <h2>Saved Games</h2>
-            <DateFilterDropdown
-              value={dateFilter}
-              onChange={setDateFilter}
-              className="saved-games-filter"
-            />
           </div>
           {Object.keys(savedGames).length > 0 ? (
             <div className="games-list">
