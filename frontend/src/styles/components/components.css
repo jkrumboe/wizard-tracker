@@ -233,7 +233,7 @@
     text-decoration: none;
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
-    background-color: transparent;
+    background-color: var(--card-background-alt);
     border: 1px solid var(--primary-color);
     transition: all 0.2s ease;
   }
@@ -3499,10 +3499,6 @@
   
   .game-date {
     font-size: 0.9rem;
-  }
-  
-  .game-winner {
-    font-size: 1rem;
   }
   
   .game-players {
