@@ -47,15 +47,15 @@
 }
 
 .game-in-progress .score-table td:nth-child(2) {
-  width: 15%; /* Call input column */
+  width: 18%; /* Call input column */
 }
 
 .game-in-progress .score-table td:nth-child(3) {
-  width: 15%; /* Made input column */
+  width: 18%; /* Made input column */
 }
 
 .game-in-progress .score-table td:nth-child(4) {
-  width: 13%; /* Score column */
+  width: 14%; /* Score column */
   align-content: center;
 }
 
