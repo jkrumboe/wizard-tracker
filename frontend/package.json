@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run update-version && vite build",
+    "build": "vite build",
+    "build:with-version": "npm run update-version && vite build",
     "update-version": "node scripts/update-version.js",
     "lint": "eslint .",
     "preview": "vite preview"

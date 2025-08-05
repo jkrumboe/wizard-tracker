@@ -8,17 +8,26 @@ import process from 'process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Read version from .env file
-function getVersionFromEnv() {
+// Read version from .env file or environment variables
+function getVersion() {
+  // First try to get from environment variable (Docker build)
+  if (process.env.VITE_APP_VERSION) {
+    return process.env.VITE_APP_VERSION;
+  }
+
+  // Fallback to reading from .env file (local development)
   const envPath = path.join(__dirname, '../.env');
   try {
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const versionMatch = envContent.match(/VITE_APP_VERSION\s*=\s*"([^"]+)"/);
-    return versionMatch ? versionMatch[1] : null;
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const versionMatch = envContent.match(/VITE_APP_VERSION\s*=\s*"([^"]+)"/);
+      return versionMatch ? versionMatch[1] : null;
+    }
   } catch (error) {
-    console.error('Error reading .env file:', error);
-    return null;
+    console.warn('Warning: Could not read .env file:', error.message);
   }
+
+  return null;
 }
 
 // Update service worker files with the version
@@ -65,11 +74,20 @@ function updateReadmeBadge(version) {
 
 // Main function
 function main() {
-  const version = getVersionFromEnv();
+  let version = getVersion();
   
   if (!version) {
-    console.error('❌ Could not find VITE_APP_VERSION in .env file');
-    process.exit(1);
+    // Use package.json version as ultimate fallback
+    try {
+      const packagePath = path.join(__dirname, '../package.json');
+      const packageContent = fs.readFileSync(packagePath, 'utf8');
+      const packageJson = JSON.parse(packageContent);
+      version = packageJson.version;
+      console.warn(`⚠️  Using package.json version as fallback: ${version}`);
+    } catch {
+      console.error('❌ Could not determine version from any source');
+      process.exit(1);
+    }
   }
 
   console.log(`🔄 Updating all version references to ${version}...`);
