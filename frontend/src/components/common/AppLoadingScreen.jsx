@@ -22,12 +22,37 @@ const AppLoadingScreen = ({
     // Check if app should show splash screen on open
     const checkAppOpen = () => {
       if (!showOnAppOpen) return true;
+      
       try {
-        const last = localStorage.getItem(storageKey);
+        // Use sessionStorage to detect if this is the same session (tab switch) or new session (app reopen)
+        const sessionId = sessionStorage.getItem('wizardAppSession');
+        const lastAppClose = localStorage.getItem('wizardAppLastClose');
         const lastVersion = localStorage.getItem(versionKey);
-        const timeExceeded = !last || Date.now() - parseInt(last, 10) > appOpenThreshold;
+        
+        // If session exists, this is just a tab switch - don't show loading
+        if (sessionId) {
+          return false;
+        }
+        
+        // Mark this as a new session
+        sessionStorage.setItem('wizardAppSession', Date.now().toString());
+        
+        // Check if version changed (app update)
         const versionChanged = lastVersion !== appVersion;
-        return timeExceeded || versionChanged;
+        if (versionChanged) {
+          localStorage.setItem(versionKey, appVersion);
+          return true;
+        }
+        
+        // Check if app was closed for more than 15 minutes
+        if (!lastAppClose) {
+          return true; // First time opening
+        }
+        
+        const timeSinceClose = Date.now() - parseInt(lastAppClose, 10);
+        const timeExceeded = timeSinceClose > appOpenThreshold;
+        
+        return timeExceeded;
       } catch {
         // If localStorage is unavailable, default to showing the splash
         return true;
@@ -76,7 +101,7 @@ const AppLoadingScreen = ({
     }
   }, [isLoading, minLoadingTime, showOnAppOpen, appOpenThreshold, storageKey, appVersion, versionKey]);
 
-  // Update last activity timestamp
+  // Update last activity timestamp and track app close events
   useEffect(() => {
     if (!showOnAppOpen) return;
     
@@ -86,6 +111,32 @@ const AppLoadingScreen = ({
         localStorage.setItem(versionKey, appVersion);
       } catch {
         // localStorage unavailable
+      }
+    };
+
+    // Track when the app is actually closed (not just tab hidden)
+    const handleBeforeUnload = () => {
+      // App is being closed/refreshed
+      localStorage.setItem('wizardAppLastClose', Date.now().toString());
+      sessionStorage.removeItem('wizardAppSession');
+    };
+
+    // Track visibility changes to detect potential app closes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // App is hidden - could be tab switch or minimize
+        localStorage.setItem('wizardAppLastHidden', Date.now().toString());
+      } else {
+        // App is visible again
+        const lastHidden = localStorage.getItem('wizardAppLastHidden');
+        if (lastHidden) {
+          const hiddenDuration = Date.now() - parseInt(lastHidden, 10);
+          // If hidden for more than 15 minutes, consider it closed
+          if (hiddenDuration > appOpenThreshold) {
+            localStorage.setItem('wizardAppLastClose', lastHidden);
+            sessionStorage.removeItem('wizardAppSession');
+          }
+        }
       }
     };
 
@@ -101,12 +152,22 @@ const AppLoadingScreen = ({
     };
 
     const throttled = throttle(update, 60000);
+    
+    // Activity tracking
     ['click', 'keydown', 'scroll', 'mousemove']
       .forEach(e => document.addEventListener(e, throttled));
     
-    return () => ['click', 'keydown', 'scroll', 'mousemove']
-      .forEach(e => document.removeEventListener(e, throttled));
-  }, [showOnAppOpen, storageKey, versionKey, appVersion]);
+    // App close/visibility tracking
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      ['click', 'keydown', 'scroll', 'mousemove']
+        .forEach(e => document.removeEventListener(e, throttled));
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [showOnAppOpen, storageKey, versionKey, appVersion, appOpenThreshold]);
 
   // React loading screen (shows after PWA loading)
   if (internalLoading) {

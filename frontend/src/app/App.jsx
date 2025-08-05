@@ -161,15 +161,11 @@ function App() {
       setIsUpdating(true);
     };
 
-    // Listen for visibilitychange to detect app updates
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        setIsUpdating(true);
-      }
-    };
+    // Don't set isUpdating on visibility change - let AppLoadingScreen handle this logic
+    // This was causing the loading screen to show on every tab switch
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Removed visibilitychange listener that was causing the issue
 
     // Register service worker for PWA functionality
     register()
@@ -180,7 +176,7 @@ function App() {
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Removed visibilitychange cleanup
     };
   }, []);
   
@@ -191,7 +187,7 @@ function App() {
       appSubtitle="Track your Wizard card game stats"
       minLoadingTime={600}
       showOnAppOpen={true}
-      appOpenThreshold={30 * 60 * 1000}
+      appOpenThreshold={15 * 60 * 1000}
       storageKey="wizardAppLastUsed"
       appVersion={import.meta.env.VITE_APP_VERSION || '1.1.5.2'}
       versionKey="wizardAppVersion"
