@@ -13,6 +13,7 @@ import Login from "@/pages/auth/Login"
 import RealtimeTest from "@/pages/RealtimeTest"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute } from "@/components/common"
+import AppLoadingScreen from "@/components/common/AppLoadingScreen"
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
@@ -145,75 +146,115 @@ function ProtectedRoute({ children, roles }) {
   return children;
 }
 
-function App() {  
+function App() {
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   useEffect(() => {
+    // Show loading screen for minimum time, then hide it
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+    }, 1500);
+
+    // Listen for beforeunload to show loading during updates/refreshes
+    const handleBeforeUnload = () => {
+      setIsUpdating(true);
+    };
+
+    // Listen for visibilitychange to detect app updates
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setIsUpdating(true);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Register service worker for PWA functionality
     register()
     
     // Initialize authentication service
     authService.initialize()
 
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
   
   return (
-    <Router>
-      <ThemeProvider>
-        <UserProvider>
-          <OnlineStatusProvider>
-            <GameStateProvider>
-              <URLImportHandler />
-              <Navbar />
-              <div className="main-container">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:id" element={<Profile />} />
-                <Route path="/account" element={<Navigate to="/profile" replace />} />
-                <Route path="/leaderboard" element={
-                  <OnlineProtectedRoute>
-                    <Leaderboard />
-                  </OnlineProtectedRoute>
-                } />
-                <Route path="/stats/:name" element={<Stats />} />
-                <Route path="/new-game" element={<NewGame />} />
-                <Route path="/game/:id" element={<GameDetails />} />
-                <Route path="/game/current" element={<GameInProgress />} />
-                <Route path="/lobby" element={
-                  <OnlineProtectedRoute>
-                    <Lobby />
-                  </OnlineProtectedRoute>
-                } />
-                <Route path="/multiplayer/:roomId" element={
-                  <OnlineProtectedRoute>
-                    <MultiplayerGame />
-                  </OnlineProtectedRoute>
-                } />
-                <Route path="/multiplayer/new" element={
-                  <OnlineProtectedRoute>
-                    <MultiplayerGame />
-                  </OnlineProtectedRoute>
-                } />
-                <Route path="/login" element= {
-                  // <OnlineProtectedRoute>
-                    <Login />
-                  // </OnlineProtectedRoute>
-                }/>
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/realtime-test" element={<RealtimeTest />} />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute roles={["admin"]}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>            </div>
-            </GameStateProvider>
-          </OnlineStatusProvider>
-        </UserProvider>
-      </ThemeProvider>
-    </Router>
+    <AppLoadingScreen
+      isLoading={isAppLoading || isUpdating}
+      appName="Wizard Tracker"
+      appSubtitle="Track your Wizard card game stats"
+      minLoadingTime={600}
+      showOnAppOpen={true}
+      appOpenThreshold={30 * 60 * 1000}
+      storageKey="wizardAppLastUsed"
+      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.5.2'}
+      versionKey="wizardAppVersion"
+    >
+      <Router>
+        <ThemeProvider>
+          <UserProvider>
+            <OnlineStatusProvider>
+              <GameStateProvider>
+                <URLImportHandler />
+                <Navbar />
+                <div className="main-container">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:id" element={<Profile />} />
+                  <Route path="/account" element={<Navigate to="/profile" replace />} />
+                  <Route path="/leaderboard" element={
+                    <OnlineProtectedRoute>
+                      <Leaderboard />
+                    </OnlineProtectedRoute>
+                  } />
+                  <Route path="/stats/:name" element={<Stats />} />
+                  <Route path="/new-game" element={<NewGame />} />
+                  <Route path="/game/:id" element={<GameDetails />} />
+                  <Route path="/game/current" element={<GameInProgress />} />
+                  <Route path="/lobby" element={
+                    <OnlineProtectedRoute>
+                      <Lobby />
+                    </OnlineProtectedRoute>
+                  } />
+                  <Route path="/multiplayer/:roomId" element={
+                    <OnlineProtectedRoute>
+                      <MultiplayerGame />
+                    </OnlineProtectedRoute>
+                  } />
+                  <Route path="/multiplayer/new" element={
+                    <OnlineProtectedRoute>
+                      <MultiplayerGame />
+                    </OnlineProtectedRoute>
+                  } />
+                  <Route path="/login" element= {
+                    // <OnlineProtectedRoute>
+                      <Login />
+                    // </OnlineProtectedRoute>
+                  }/>
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/realtime-test" element={<RealtimeTest />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute roles={["admin"]}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>            </div>
+              </GameStateProvider>
+            </OnlineStatusProvider>
+          </UserProvider>
+        </ThemeProvider>
+      </Router>
+    </AppLoadingScreen>
   )
 }
 

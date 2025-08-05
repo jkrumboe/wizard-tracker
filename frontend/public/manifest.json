@@ -1,14 +1,27 @@
 {
-    "name": "KeepWiz",
-    "short_name": "KeepWiz",
+    "name": "Wizard Tracker - Card Game Stats",
+    "short_name": "Wizard Tracker",
     "description": "Track your Wizard card game stats and performance",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#F5F5F5",
-    "theme_color": "#000000",
+    "background_color": "#dde4eb",
+    "theme_color": "#60a5fa",
     "scope": "/",
     "capture_links": "existing-client",
+    "orientation": "portrait-primary",
     "icons": [
+      {
+        "src": "/icons/pwa-192x192-v3.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "/icons/pwa-512x512-v3.png", 
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
       {
         "src": "/icons/pwa-logo.png",
         "sizes": "192x192",
@@ -17,7 +30,7 @@
       },
       {
         "src": "/icons/pwa-logo.png",
-        "sizes": "512x512",
+        "sizes": "512x512", 
         "type": "image/png",
         "purpose": "any"
       }
@@ -30,7 +43,6 @@
         "form_factor": "wide"
       }
     ]
-
   }
   
   

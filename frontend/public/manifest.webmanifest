@@ -4,8 +4,8 @@
     "description": "Track your Wizard card game stats and performance",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#F5F5F5",
-    "theme_color": "#000000",
+    "background_color": "#1f2937",
+    "theme_color": "#1f2937",
     "scope": "/",
     "capture_links": "existing-client",
     "icons": [

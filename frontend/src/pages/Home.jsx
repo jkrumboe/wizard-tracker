@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
-import AppLoadingScreen from '@/components/common/AppLoadingScreen'
 import { getRecentGames, getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
@@ -16,21 +15,8 @@ const Home = () => {
   const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [recentGames, setRecentGames] = useState([])
   const [recentLocalGames, setRecentLocalGames] = useState([])
-  const [loading, setLoading] = useState(true)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [offlineMessage, setOfflineMessage] = useState('')
-  const [showLoadingScreen, setShowLoadingScreen] = useState(false)
-
-  useEffect(() => {
-    let timer;
-    if (loading) {
-      // Only show loading screen if loading takes longer than 200ms
-      timer = setTimeout(() => setShowLoadingScreen(true), 200);
-    } else {
-      setShowLoadingScreen(false);
-    }
-    return () => clearTimeout(timer);
-  }, [loading]);
   
   const handleLoadGame = async (gameId) => {
     try {
@@ -62,8 +48,6 @@ const Home = () => {
 
   useEffect(() => {
     const fetchGames = async () => {
-      setLoading(true); // Ensure loading is true at the start
-      
       try {
         let serverGames = [];
         // Only fetch server games when online
@@ -89,7 +73,6 @@ const Home = () => {
         
         setRecentGames(formattedServerGames)
         setRecentLocalGames(formattedLocalGames)
-        setLoading(false)
       } catch (error) {
         console.error('Error fetching games:', error)
         // Even if there's an error with server games, still show local games
@@ -104,8 +87,6 @@ const Home = () => {
           console.error('Error fetching local games:', localError)
           setRecentLocalGames([])
         }
-        console.log('Home: Setting loading=false after error');
-        setLoading(false)
       }
     }
 
@@ -122,63 +103,48 @@ const Home = () => {
   }, [location, navigate]);
 
   return (
-    <AppLoadingScreen
-      isLoading={showLoadingScreen}
-      loadingTitle="Welcome!"
-      loadingSubtitle={
-        <>
-          The home base for tracking your Wizard games.
-          <br />
-          View stats, history, and more!
-        </>
-      }
-      showOnAppOpen={true}
-      appOpenThreshold={30 * 60 * 1000}
-      storageKey="wizardAppLastUsed"
-    >
-      <div className="home-container">
-        <header className="home-header">
-          <h1>KeepWiz</h1>
-          <p>Track your Wizard card game stats and performance</p>
-        </header>
+    <div className="home-container">
+      <header className="home-header">
+        <h1>KeepWiz</h1>
+        <p>Track your Wizard card game stats and performance</p>
+      </header>
 
-        {offlineMessage && (
-          <div className="offline-notification">
-            <div className="offline-message">{offlineMessage}</div>
-          </div>
-        )}
+      {offlineMessage && (
+        <div className="offline-notification">
+          <div className="offline-message">{offlineMessage}</div>
+        </div>
+      )}
 
-        <section className="recent-games">
-          <div className="section-header">
-            <h2>Recent Games</h2>
-          </div>
-          {/* <div className="game-list"> */}
-            {recentGames.length > 0 || recentLocalGames.length > 0 ? (
-              <div className="game-history">
-                {/* Combine and sort all games by date */}
-                {[...recentGames, ...recentLocalGames]
-                  .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                  .slice(0, 6) // Limit to 6 most recent games
-                  .map(game => (
-                    <GameHistoryItem key={game.id} game={game} />
-                  ))
-                }
-              </div>
-            ) : (
-              <div className="empty-message">No games found</div>
-            )}
-          {/* </div> */}
-        </section>
+      <section className="recent-games">
+        <div className="section-header">
+          <h2>Recent Games</h2>
+        </div>
+        {/* <div className="game-list"> */}
+          {recentGames.length > 0 || recentLocalGames.length > 0 ? (
+            <div className="game-history">
+              {/* Combine and sort all games by date */}
+              {[...recentGames, ...recentLocalGames]
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 6) // Limit to 6 most recent games
+                .map(game => (
+                  <GameHistoryItem key={game.id} game={game} />
+                ))
+              }
+            </div>
+          ) : (
+            <div className="empty-message">No games found</div>
+          )}
+        {/* </div> */}
+      </section>
 
-        {/* Load Game Dialog */}
-        <LoadGameDialog
-          isOpen={showLoadDialog}
-          onClose={() => setShowLoadDialog(false)}
-          onLoadGame={handleLoadGame}
-          getSavedGames={getSavedGames}
-        />
-      </div>
-    </AppLoadingScreen>
+      {/* Load Game Dialog */}
+      <LoadGameDialog
+        isOpen={showLoadDialog}
+        onClose={() => setShowLoadDialog(false)}
+        onLoadGame={handleLoadGame}
+        getSavedGames={getSavedGames}
+      />
+    </div>
   )
 }
 
