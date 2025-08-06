@@ -527,3 +527,43 @@
   gap: var(--spacing-md);
   width: 100%;
 }
+
+/* App Info Section */
+.app-info-section {
+  margin-top: var(--spacing-xl);
+  border: 1px solid var(--border-color);
+}
+
+.info-card {
+  background: var(--card-background);
+  border-radius: 8px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--background-subtle);
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+}
+
+.info-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}

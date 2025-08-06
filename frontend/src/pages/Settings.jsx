@@ -723,6 +723,23 @@ const Settings = () => {
           )}
         </div>
 
+        {/* App Info Section */}
+        <div className="settings-section app-info-section" >
+          <h3 className="settings-section-title">App Information</h3>
+          <div className="settings-card info-card">
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Version:</span>
+                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.5.3'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Build Date:</span>
+                <span className="info-value">{import.meta.env.VITE_BUILD_DATE || new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <DeleteConfirmationModal
           isOpen={showConfirmDialog}
           onClose={() => setShowConfirmDialog(false)}
