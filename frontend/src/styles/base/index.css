@@ -151,7 +151,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100vh;
-  overflow: hidden; /* Prevent default body scrolling */
+  overflow: none;
   animation: fadeIn 0.3s ease-in;
 }
 

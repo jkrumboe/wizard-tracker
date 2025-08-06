@@ -100,7 +100,7 @@ const GameHistoryItem = ({ game }) => {
       {/* <div className="game-rounds"></div> */}
         <div className="game-info">
           <div className="game-winner">
-            Winner: {playerDetails[winner_id]?.name || "Unknown"}
+            Winner: {playerDetails[winner_id]?.name || "Not determined"}
           </div>
           <div>Rounds: {total_rounds}</div>
         </div>

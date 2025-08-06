@@ -442,7 +442,7 @@
   
   .rounds-section {
     padding: 0;
-    width: 99%;
+    width: 100%;
     border: 1px solid var(--border-color);
   }
 
@@ -1869,7 +1869,7 @@
   background-color: transparent;
   border: none;
   padding: var(--spacing-sm);
-  background: var(--background-color);
+  background: var(--card-background-alt);
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-color);
@@ -2353,7 +2353,8 @@
     margin: auto;
     padding: var(--spacing-xs);
     border-radius: var(--radius-sm);
-    background-color: var(--input-background);
+    border: 1px solid var(--border-color);
+    background-color: var(--card-background-alt);
     color: var(--text-color);
     transition: border-color 0.3s, box-shadow 0.3s;
   }
