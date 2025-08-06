@@ -1,4 +1,36 @@
 /* Game Details Page Styles */
+.game-details-container {
+  padding: 0;
+  padding-top: var(--spacing-lg);
+  overflow-y: visible;
+  min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+  height: auto;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.game-details-header {
+  display: grid;
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--card-background);
+  padding: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  position: relative;
+  z-index: 2;
+}
+
+.game-summary {
+  position: relative;
+  z-index: 2;
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
 .game-controls {
   display: flex;
   gap: var(--spacing-sm);

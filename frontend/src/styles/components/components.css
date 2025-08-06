@@ -396,8 +396,12 @@
   .game-details-container {
     padding: 0;
     padding-top: var(--spacing-lg);
-    overflow-y: auto;
-    max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+    overflow-y: visible;
+    min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+    height: auto;
+    width: 100%;
+    position: relative;
+    z-index: 1;
   }
   
   .game-details-header {
@@ -431,7 +435,7 @@
   .results-section {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
+    /* padding: var(--spacing-md); */
     box-shadow: var(--shadow);
   }
 
@@ -1707,10 +1711,16 @@
     margin-top: var(--spacing-xs);
   }
   
-  /* Fix for advanced stats scrolling in game details */
+  /* Game details container - unified styles */
 .game-details-container {
-  overflow-y: auto;
-  max-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+  overflow-y: visible;
+  min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+  height: auto;
+  padding: 0;
+  padding-top: var(--spacing-lg);
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .results-section {
