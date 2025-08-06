@@ -60,7 +60,7 @@ export default defineConfig({
         name: "KeepWiz",
         short_name: "WizTracker",
         description: "Track your Wizard card game stats and performance",
-        theme_color: "#4A90E2",
+        theme_color: "#111827",
         start_url: "/",
         scope: "/",
         capture_links: "existing-client",
