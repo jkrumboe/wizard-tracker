@@ -16,7 +16,7 @@ function getVersion() {
   }
 
   // Fallback to reading from .env file (local development)
-  const envPath = path.join(__dirname, '../.env');
+  const envPath = path.join(__dirname, '../../.env'); // Look in root directory
   try {
     if (fs.existsSync(envPath)) {
       const envContent = fs.readFileSync(envPath, 'utf8');
