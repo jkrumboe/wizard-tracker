@@ -435,7 +435,7 @@
   .results-section {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    /* padding: var(--spacing-md); */
+    padding: var(--spacing-md);
     box-shadow: var(--shadow);
   }
 
@@ -1290,6 +1290,12 @@
     font-weight: 600;
     font-size: 1.1rem;
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+
+  .start-game-btn:disabled {
+    background-color: var(--disabled-background);
+    cursor: not-allowed;
+    box-shadow: none;
   }
   
   .start-game-btn:hover:not(:disabled) {

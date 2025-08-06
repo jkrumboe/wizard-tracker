@@ -37,6 +37,19 @@
                     "endsPattern": ".*(compiled|ready).*"
                 }
             }
+        },
+        
+        {
+            "label": "Update Version",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "update-version"],
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "group": "build",
+            "isBackground": false,
+            "problemMatcher": []
         }
     ]
 }

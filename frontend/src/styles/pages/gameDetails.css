@@ -22,14 +22,14 @@
   z-index: 2;
 }
 
-.game-summary {
+/* .game-summary {
   position: relative;
   z-index: 2;
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-}
+} */
 
 .game-controls {
   display: flex;

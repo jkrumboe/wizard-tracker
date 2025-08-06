@@ -421,7 +421,7 @@ const NewGame = () => {
 
           <button 
             className="start-game-btn" 
-            disabled={gameState.players.length < 2 || gameState.players.length > 6} 
+            disabled={gameState.players.length < 3 || gameState.players.length > 6} 
             onClick={handleStartGame}
           >
             Start Game
