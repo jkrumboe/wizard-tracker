@@ -730,11 +730,13 @@ const Settings = () => {
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Version:</span>
-                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.5.3'}</span>
+                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.5.4'}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Build Date:</span>
-                <span className="info-value">{import.meta.env.VITE_BUILD_DATE || new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC'}</span>
+                <span className="info-value">
+                  {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
+                </span>
               </div>
             </div>
           </div>
