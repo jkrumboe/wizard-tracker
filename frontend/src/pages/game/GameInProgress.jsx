@@ -14,6 +14,7 @@ import "@/styles/pages/stats.css"
 import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
+import { AdvancedStats } from "@/components/game";
 import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
@@ -633,152 +634,10 @@ const GameInProgress = () => {
                     </button>
                 </div>
                   
-                  {selectedPlayerId === playerStats.id && (
-                    <div className="advanced-stats">
-                      <div className="stats-section">
-                        <div className="stats-section-title">Game Performance</div>
-                        <div className="stats-cards" id="game-performance">
-                          {/* <p>Total Points: <span>{playerStats.totalPoints}</span></p> */}
-                          <p>Highest Round: <span>{Math.round(playerStats.bestRound)}</span></p>
-                          <p>Correct Bids: <span>{Math.round(playerStats.correctBids)}</span></p>
-                          <p>Total Tricks Won: <span>{Math.round(playerStats.totalTricks || playerStats.avgTricks * playerStats.roundsPlayed, 2)}</span></p>
-                        </div>
-                      </div>
-                      <div className="stats-section">
-                        <div className="stats-section-title">Additional Stats</div>
-                        <div className="stats-cards">
-                          <div className="additional-stats">
-                            <div className="stat-row">
-                              <span className="stat-label">Best Bidding Streak:</span>
-                              <span className="stat-value">{playerStats.maxConsecutiveCorrect}</span>
-                            </div>
-                            <div className="stat-row">
-                              <span className="stat-label">Worst Round:</span>
-                              <span className="stat-value negative">{playerStats.worstRound}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="stats-section">
-                        <div className="stats-section-title">Bidding Precision</div>
-                        <div className="stats-cards">
-                          <PerformanceMetric 
-                            label="Average Score" 
-                            value={playerStats.avgPoints} 
-                            targetMin={10} 
-                            targetMax={20}
-                            isBadWhenAboveMax={false}
-                          />
-                          <PerformanceMetric 
-                            label="Bid Accuracy" 
-                            value={parseFloat(playerStats.bidAccuracy || 0)} 
-                            targetMin={40} 
-                            targetMax={75}
-                            isPercentage={true}
-                            isBadWhenAboveMax={false} 
-                          />
-                        </div>
-                      </div>
-
-                      <div className="stats-section">
-                        <div className="stats-section-title">Bidding Tendency</div>
-                        <div className="stats-cards">
-                          <div className="bidding-style-card">
-                            <div className="bidding-style-value">
-                              {(() => {
-                                const overbids = playerStats.overBids || 0;
-                                const underbids = playerStats.underBids || 0;
-                                const correctBids = playerStats.correctBids || 0;
-                                const totalBids = overbids + underbids + correctBids;
-                                
-                                if (totalBids === 0) return <span className="no-data">No Data</span>;
-                                
-                                // Calculate percentages
-                                const correctBidPercent = totalBids > 0 ? (correctBids / totalBids) * 100 : 0;
-                                const overBidPercent = totalBids > 0 ? (overbids / totalBids) * 100 : 0;
-                                const underBidPercent = totalBids > 0 ? (underbids / totalBids) * 100 : 0;
-                                
-                                // Determine bidding quality based on correct bid percentage
-                                let biddingQuality = '';
-                                let biddingClass = '';
-                                
-                                if (correctBidPercent > 75) {
-                                  biddingQuality = 'Bidding: Excellent';
-                                  biddingClass = 'excellent-bidding';
-                                } else if (correctBidPercent >= 60) {
-                                  biddingQuality = 'Bidding: Good';
-                                  biddingClass = 'good-bidding';
-                                } else if (correctBidPercent >= 45) {
-                                  biddingQuality = 'Bidding: Okay';
-                                  biddingClass = 'okay-bidding';
-                                } else if (correctBidPercent >= 30) {
-                                  biddingQuality = 'Bidding: Poorly';
-                                  biddingClass = 'poor-bidding';
-                                } else {
-                                  biddingQuality = 'Bidding: Badly';
-                                  biddingClass = 'bad-bidding';
-                                }
-                                
-                                // Add bidding tendency descriptor
-                                let biddingTendency = '';
-                                if (overBidPercent > 25 && overBidPercent > underBidPercent) {
-                                  biddingTendency = ' (Tends to Overbid)';
-                                } else if (underBidPercent > 25 && underBidPercent > overBidPercent) {
-                                  biddingTendency = ' (Tends to Underbid)';
-                                } else if (overBidPercent === underBidPercent && overBidPercent > 15) {
-                                  biddingTendency = ' (Mixed Errors)';
-                                }
-                                
-                                return (
-                                  <div>
-                                    <span className={biddingClass}>
-                                      {biddingQuality}
-                                    </span>
-                                    {biddingTendency && (
-                                      <span className="bidding-tendency">{biddingTendency}</span>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                            
-                            {/* Visual mini-progress bar for correct bids percentage */}
-                            {(() => {
-                              const overbids = playerStats.overBids || 0;
-                              const underbids = playerStats.underBids || 0;
-                              const correctBids = playerStats.correctBids || 0;
-                              const totalBids = overbids + underbids + correctBids;
-                              
-                              const correctBidPercent = totalBids > 0 ? Math.round((correctBids / totalBids) * 100) : 0;
-                              const overBidPercent = totalBids > 0 ? Math.round((overbids / totalBids) * 100) : 0;
-                              const underBidPercent = totalBids > 0 ? Math.round((underbids / totalBids) * 100) : 0;
-                              
-                              return (
-                                <div className="bid-distribution-bar">
-                                  <div className="bid-segment correct-segment" style={{ width: `${correctBidPercent}%` }}></div>
-                                  <div className="bid-segment over-segment" style={{ width: `${overBidPercent}%` }}></div>
-                                  <div className="bid-segment under-segment" style={{ width: `${underBidPercent}%` }}></div>
-                                </div>
-                              );
-                            })()}
-                            
-                            <div className="bidding-stats">
-                              <span className="bid-stat correct">{playerStats.correctBids} correct</span> •
-                              <span className="bid-stat over">{playerStats.overBids} over</span> •
-                              <span className="bid-stat under">{playerStats.underBids} under</span>
-                            </div>
-                          </div>
-                          <PerformanceMetric 
-                            label="Average Deviation" 
-                            value={playerStats.avgDiff} 
-                            targetMin={0}
-                            targetMax={0.25}
-                            isBadWhenAboveMax={true}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <AdvancedStats 
+                    playerStats={playerStats} 
+                    isVisible={selectedPlayerId === playerStats.id} 
+                  />
                 </div>
               ))}
             </div>

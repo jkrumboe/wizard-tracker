@@ -11,7 +11,7 @@ jobs:
     env:
       VITE_APPWRITE_PUBLIC_ENDPOINT: https://appwrite.jkrumboe.dev/v1
       VITE_APPWRITE_PROJECT_ID: 688cd65e00060f0e4d43
-      VITE_APP_VERSION: "1.1.6"
+      VITE_APP_VERSION: "1.1.6.1"
 
     steps:
       - name: Checkout repository
@@ -35,5 +35,5 @@ jobs:
           build-args: |
             VITE_APPWRITE_PUBLIC_ENDPOINT=https://appwrite.jkrumboe.dev/v1
             VITE_APPWRITE_PROJECT_ID=688cd65e00060f0e4d43
-            VITE_APP_VERSION=1.1.6
+            VITE_APP_VERSION=1.1.6.1
             VITE_BUILD_DATE=${{ github.event.head_commit.timestamp }}
