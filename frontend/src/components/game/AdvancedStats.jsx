@@ -79,22 +79,33 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
 
   return (
     <div className="advanced-stats">
-      <div className="stats-section">
-        <div className="stats-section-title">Game Performance</div>
-        <div className="stats-cards" id="game-performance">
-          <p>Highest Round: <span>{Math.round(normalizedStats.bestRound)}</span></p>
-          <p>Correct Bids: <span>{Math.round(normalizedStats.correctBids)}</span></p>
-          <p>Total Tricks Won: <span>{Math.round(normalizedStats.totalTricks)}</span></p>
+        <div className="stats-section"> 
+            <div className="stats-section-title">Game Performance</div>
+            <div className="stats-cards">
+          <div className="additional-stats">
+                <div className="stat-row">
+                    <span className="stat-label">Correct Bids:</span>
+                    <span className="stat-value">{Math.round(normalizedStats.correctBids)}</span>
+                </div>
+                <div className="stat-row">
+                    <span className="stat-label">Total Tricks Won:</span>
+                    <span className="stat-value">{Math.round(normalizedStats.totalTricks)}</span>
+                </div>
+                </div>
+            </div>
         </div>
-      </div>
       
       <div className="stats-section">
         <div className="stats-section-title">Additional Stats</div>
         <div className="stats-cards">
           <div className="additional-stats">
-            <div className="stat-row">
-              <span className="stat-label">Best Bidding Streak:</span>
+            {/* <div className="stat-row">
+              <span className="stat-label">Best Streak:</span>
               <span className="stat-value">{normalizedStats.maxConsecutiveCorrect}</span>
+            </div> */}
+            <div className="stat-row">
+                <span className="stat-label">Highest Round:</span>
+                <span className="stat-value">{Math.round(normalizedStats.bestRound)}</span>
             </div>
             <div className="stat-row">
               <span className="stat-label">Worst Round:</span>

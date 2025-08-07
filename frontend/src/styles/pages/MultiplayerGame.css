@@ -1224,7 +1224,7 @@
 }
 
 .game-container .stats-section {
-  margin-bottom: var(--spacing-md);
+  /* margin-bottom: var(--spacing-md); */
 }
 
 .game-container .stats-section-title {
@@ -1325,10 +1325,6 @@
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
-}
-
-.game-container .stat-value {
-  font-weight: 600;
 }
 
 .game-container .stat-value.negative {

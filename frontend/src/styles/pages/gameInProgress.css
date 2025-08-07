@@ -130,7 +130,7 @@
 }
 
 .game-in-progress .stats-section {
-  margin-bottom: var(--spacing-md);
+  /* margin-bottom: var(--spacing-md); */
 }
 
 .game-in-progress .stats-section-title {

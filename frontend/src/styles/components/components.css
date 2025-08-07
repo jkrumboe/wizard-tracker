@@ -42,7 +42,7 @@
   }
   
   .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     color: var(--text-light);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -1740,7 +1740,8 @@
 }
 
 .stats-section {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  width: 100%;
 }
 
 /* Ensure game cards have padding to prevent cutoff */
@@ -3327,6 +3328,7 @@
 .stat-row {
   display: flex;
   align-items: center;
+  /* width: 100%; */
 }
 
 .stat-row:last-child {
@@ -3344,9 +3346,7 @@
 .stat-value {
   font-weight: 700;
   font-size: 1.1rem;
-  margin-right: var(--spacing-sm);
   min-width: 60px;
-  text-align: right;
   color: var(--text-color);
 }
 

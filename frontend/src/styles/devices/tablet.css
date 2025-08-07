@@ -79,8 +79,20 @@
     }
 
     #game-performance {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        /* grid-template-columns: 1fr 1fr; */
+    }
+
+    #game-performance p{
+        width: 100%;
+    }
+
+    .stat-row {
+        display: flex;
+        flex-direction: column;
+        /* width: 100%; */
     }
 
     /* Home */
