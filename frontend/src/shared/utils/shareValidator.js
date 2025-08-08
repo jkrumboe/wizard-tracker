@@ -170,11 +170,13 @@ export class ShareValidator {
       }
     }
 
-    // Validate total_rounds
-    if (typeof gameData.total_rounds !== 'number' || 
-        gameData.total_rounds < 0 || 
-        gameData.total_rounds > this.MAX_ROUNDS) {
-      return { isValid: false, error: 'Invalid total rounds' };
+    // Validate total_rounds (must be a number, non-negative, and not exceed MAX_ROUNDS)
+    if (
+      typeof gameData.total_rounds !== 'number' ||
+      gameData.total_rounds < 0 ||
+      gameData.total_rounds > this.MAX_ROUNDS
+    ) {
+      return { isValid: false, error: `Invalid total rounds (must be between 0 and ${this.MAX_ROUNDS})` };
     }
 
     // Validate round_data if present
@@ -325,12 +327,34 @@ export class ShareValidator {
     }
 
     // Remove HTML tags and script content
-    const cleaned = str
+    let cleaned = str
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags and content
       .replace(/<[^>]*>/g, '') // Remove HTML tags
       .replace(/javascript:/gi, '') // Remove javascript: protocol
       .replace(/on\w+\s*=/gi, '') // Remove event handlers
       .replace(/data:/gi, '') // Remove data: URLs
+      .replace(/alert\s*\(/gi, '') // Remove alert calls
+      .replace(/eval\s*\(/gi, '') // Remove eval calls
+      .replace(/document\./gi, '') // Remove document references
+      .replace(/window\./gi, '') // Remove window references
       .trim();
+
+    // HTML entity decode and re-encode to prevent encoded attacks
+    cleaned = cleaned
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;/g, "'")
+      .replace(/&#x2F;/g, '/')
+      .replace(/&amp;/g, '&');
+
+    // Remove any remaining dangerous patterns after decoding
+    cleaned = cleaned
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/alert\s*\(/gi, '')
+      .replace(/eval\s*\(/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '');
 
     // Truncate to max length
     return cleaned.length > maxLength ? cleaned.substring(0, maxLength) : cleaned;
