@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID } from "appwrite";
+import { Client, Account, Databases, Storage, Avatars, Permission, Role, ID } from "appwrite";
 
 const client = new Client()
     .setEndpoint(import.meta.env.VITE_APPWRITE_PUBLIC_ENDPOINT)
@@ -6,6 +6,8 @@ const client = new Client()
 
 const databases = new Databases(client);
 const account = new Account(client);
+const storage = new Storage(client);
+const avatars = new Avatars(client);
 
 // Database and Collection IDs
 const CONFIG_DATABASE_ID = '688cfb4b002d001bc2e5';
@@ -103,6 +105,10 @@ export {
     client, 
     account, 
     databases, 
+    storage,
+    avatars,
+    Permission,
+    Role,
     ID,
     CONFIG_DATABASE_ID,
     ONLINE_COLLECTION_ID,

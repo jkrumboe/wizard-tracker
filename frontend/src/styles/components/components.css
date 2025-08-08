@@ -347,11 +347,11 @@
   
   /* Stat Card */
   .stat-card {
-    background-color: var(--card-background);
+    /* background-color: var(--card-background); */
     border-radius: var(--radius-lg);
     text-align: center;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
+    /* box-shadow: var(--shadow); */
+    /* border: 1px solid var(--border-color); */
     transition: transform 0.3s;
     width: 30%;
   }
@@ -359,11 +359,11 @@
   .stat-title {
     font-size: 0.9rem;
     color: var(--text-light);
-    margin-bottom: var(--spacing-xs);
+    /* margin-bottom: var(--spacing-xs); */
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: var(--border-color) solid 1px;
-    padding: var(--spacing-xs) var(--spacing-sm);
+    /* border-bottom: var(--border-color) solid 1px; */
+    /* padding: var(--spacing-xs) var(--spacing-sm); */
   }
   
   .stat-value {
@@ -641,18 +641,6 @@
   /* Profile Page */
   .profile-container {
     margin-top: 10vh;
-  }  
-  
-  .profile-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-bottom: var(--spacing-lg);
-    background-color: var(--card-background);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
   }
   
   .avatar {
@@ -669,7 +657,7 @@
     width: 120px;
     height: 120px;
     position: absolute;
-    top: 5vh;
+    top: 10vh;
     left: 50%;
     transform: translateX(-50%);
     border-radius: var(--radius-full);
@@ -706,7 +694,7 @@
   .profile-content {
     display: grid;
     background-color: var(--card-background);
-    padding: 10vh var(--spacing-md) 0;
+    padding: var(--spacing-md);
     border-radius: var(--radius-lg);
   }
   
@@ -714,10 +702,7 @@
   .recent-games {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-    box-shadow: var(--shadow);
-    overflow: hidden;
+    padding-top: var(--spacing-md);
     min-height: 280px;
   }
   
@@ -759,21 +744,25 @@
     padding: var(--spacing-sm);
     background-color: rgba(53, 99, 233, 0.1);
     border-radius: var(--radius-md);
-    color: var(--primary-color);
+    color: var(--text-color);
     font-weight: 500;
     transition: background-color 0.2s;
   }
 
   /* Profile Edit */
   .profile-header {
-    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
   }
 
   .edit-button {
     background-color: var(--primary-color);
     color: var(--text-color);
     border: none;
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-sm);
     border-radius: var(--radius-md);
     cursor: pointer;
     display: flex;
@@ -781,56 +770,75 @@
     justify-content: center;
     transition: all 0.2s ease;
     font-size: 1.2rem;
-    top: 12vh;
-    right: var(--spacing-xl);
-    position: absolute;
-    padding: var(--spacing-sm);
   }
 
   .profile-edit-container {
-    padding: var(--spacing-md);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-    height: 85vh;
+    justify-content: center;
+    z-index: 1000;
+    padding: var(--spacing-md);
   }
 
   .profile-edit-header {
-    position: relative;
     display: flex;
-    width: 90%;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-bottom: var(--spacing-lg);
     background-color: var(--card-background);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
   }
 
   .profile-edit-header input {
     width: 100%;
+    /* max-width: 300px; */
     padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     font-size: 1rem;
     background-color: var(--card-background-alt);
     color: var(--text-color);
-    margin: var(--spacing-sm);
+    transition: border-color 0.2s;
+    /* margin: 0 auto; */
+  }
+
+  .profile-edit-header input:focus {
+    outline: none;
+    border-color: var(--primary-color);
   }
 
   .profile-edit-header .save-button {
     background-color: var(--primary-color);
-    margin: var(--spacing-sm);
-    margin-top: var(--spacing-md);
     color: var(--text-color);
     border: none;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-weight: 600;
     font-size: 1.1rem;
+    padding: var(--spacing-sm) var(--spacing-xl);
+    margin-top: var(--spacing-md);
+    min-width: 140px;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .profile-edit-header .save-button:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+
+  .profile-edit-header .save-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 
   .edit-avatar {
@@ -839,55 +847,152 @@
 
   .avatar-preview {
     object-fit: cover;
-    height: 25vh;
-    width: 25vh;
-    border-radius: 50%;
-    margin-top: var(--spacing-sm);
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-full);
     box-shadow: var(--shadow);
-    
-    border: 5px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    font-size: 1rem;
-    background-color: var(--card-background-alt);
-    color: var(--text-color);
-    margin: var(--spacing-sm);
+    border: 4px solid var(--primary-color);
+  }
+
+  .avatar-preview-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* margin: var(--spacing-md) 0; */
+  }
+
+  .avatar-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+    width: 100%;
+  }
+
+  .edit-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  /* Mobile responsive adjustments for profile edit */
+  @media (max-width: 768px) {
+    /* .profile-edit-container {
+      padding: var(--spacing-sm);
+    } */
+
+    .profile-edit-header {
+      padding: var(--spacing-lg);
+    }
+
+    .avatar-preview {
+      width: 100px;
+      height: 100px;
+    }
+
+    .avatar-actions {
+      flex-direction: row;
+      gap: var(--spacing-sm);
+    }
+
+    .avatar-upload-label,
+    .cancle-button {
+      width: auto;
+      font-size: 1rem;
+      min-width: 120px;
+      padding: var(--spacing-xs) 0 !important;
+      justify-content: center;
+      height: 32px; /* Set a fixed height for both buttons */
+      display: flex;
+      align-items: center;
+    }
   }
   
   .avatar-upload-label {
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
     padding: var(--spacing-sm) var(--spacing-md);
     background-color: var(--primary-color);
-    font-weight: bold;
-    border-radius: var(--radius-lg);
+    color: var(--text-color);
+    border-radius: var(--radius-md);
+    font-weight: 500;
     cursor: pointer;
-    margin: var(--spacing-sm) var(--spacing-sm) ;
-    box-shadow: var(--shadow);
-    transition: background-color 0.2s ease;
+    transition: all 0.2s;
+    border: none;
   }
-  
-  .avatar-upload-label:hover {
-    background-color: var(--primary-color-dark, var(--primary-dark));
+
+  .cancle-button {
+    background-color: var(--error-color);
+    color: var(--text-color);
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .cancle-button:hover:not(:disabled) {
+    background-color: var(--error-dark, #dc2626);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .cancle-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .uploading-indicator {
+    color: var(--primary-color);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: var(--spacing-xs) 0;
+  }
+
+  .profile-edit-header .settings-message {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin: var(--spacing-sm) 0;
+    font-weight: 500;
+    text-align: center;
+    max-width: 300px;
+  }
+
+  .profile-edit-header .settings-message.success {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--success-color, #22c55e);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .profile-edit-header .settings-message.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+    border: 1px solid rgba(239, 68, 68, 0.3);
   }
 
   .close-button-edit {
-    background: none;
-    border: none;
-    color: var(--text-light);
-    font-size: 1.1rem;
+    background-color: transparent;
+    color: var(--danger-color);
+    font-size: 1.5rem;
+    font-weight: bold;
     line-height: 1;
     cursor: pointer;
-    padding: 0.25rem;
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-full);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    align-self: flex-end;
+    justify-self: flex-end;
+    margin-left: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-    position: absolute;
-    top: var(--spacing-xs);
-    right: var(--spacing-md);
-  }  
+  }
   
   /* Stats Page */
   .stats-container {
@@ -943,8 +1048,12 @@
   .stats-summary {
     display: flex;
     gap: var(--spacing-md);
+    background: var(--card-background-alt);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-lg);
     flex-direction: row;
     justify-content: center;
+    border: 1px solid var(--border-color);
   }
   
   .chart-container {
@@ -1756,12 +1865,6 @@
       width: 80vw;
       margin: auto;
     }
-    .profile-header {
-      flex-direction: row;
-      text-align: left;
-      gap: var(--spacing-lg);
-      
-    }
   
     .avatar {
       margin-bottom: 0;
@@ -1770,13 +1873,7 @@
     }
   
     .profile-content {
-      /* grid-template-columns: 1fr 1fr; */
       height: max-content;
-    }
-  
-    .stats-summary {
-      display: grid;
-      gap: var(--spacing-md);
     }
   
     .game-summary {
@@ -1785,7 +1882,7 @@
     }
 
     .players-section{
-      grid-row: span 2; /* Make it span two rows */
+      grid-row: span 2;
     }
 
     .nav-menu {
@@ -2205,7 +2302,7 @@
 /* Empty message styling */
 .empty-message {
   text-align: center;
-  color: var(--text-light);
+  color: var(--text-color);
   padding: var(--spacing-md) 0;
   font-size: 1.4rem;
   font-weight: 500;
@@ -2389,26 +2486,12 @@
   background: transparent;
 }
 
-.game-control-btn {
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  border: none;
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-size: 1.2rem;
-}
-
-#toggle-button-profile {
-  top: 12vh;
+/* #toggle-button-profile {
+  top: 18vh;
   left: var(--spacing-xl);
   position: absolute;
   padding: var(--spacing-sm);
-}
+} */
 
 .game-header-top {
   position: relative;
@@ -2892,10 +2975,24 @@
 }
 
 #toggle-button-profile {
-  top: 12vh;
-  left: var(--spacing-xl);
-  position: absolute;
   padding: var(--spacing-sm);
+}
+
+.profile-header .toggle-section {
+  display: flex;
+  align-items: center;
+}
+
+/* Responsive adjustments for profile header */
+@media (max-width: 768px) {  
+  .edit-button {
+    padding: var(--spacing-xs);
+    font-size: 1rem;
+  }
+  
+  #toggle-button-profile {
+    padding: var(--spacing-xs);
+  }
 }
 
 .game-header-top {
@@ -2903,6 +3000,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.player-info {
+  margin-top: var(--spacing-md);
 }
 
 #game-toggle-details {
@@ -3338,7 +3439,6 @@
 
 .stat-label {
   flex: 1;
-  color: var(--text-color);
   font-weight: 500;
   min-width: 120px;
 }

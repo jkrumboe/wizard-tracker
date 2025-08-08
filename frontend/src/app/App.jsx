@@ -12,7 +12,7 @@ import AdminDashboard from "@/pages/admin/AdminDashboard.jsx"
 import Login from "@/pages/auth/Login"
 import RealtimeTest from "@/pages/RealtimeTest"
 import { Navbar } from "@/components/layout"
-import { OnlineProtectedRoute } from "@/components/common"
+import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
 import AppLoadingScreen from "@/components/common/AppLoadingScreen"
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
@@ -190,7 +190,7 @@ function App() {
       showOnAppOpen={true}
       appOpenThreshold={15 * 60 * 1000}
       storageKey="wizardAppLastUsed"
-      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.6.1'}
+      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.6.2'}
       versionKey="wizardAppVersion"
     >
       <Router>
@@ -203,8 +203,16 @@ function App() {
                 <div className="main-container">
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/:id" element={<Profile />} />
+                  <Route path="/profile" element={
+                    <AuthProtectedRoute>
+                      <Profile />
+                    </AuthProtectedRoute>
+                  } />
+                  <Route path="/profile/:id" element={
+                    <AuthProtectedRoute>
+                      <Profile />
+                    </AuthProtectedRoute>
+                  } />
                   <Route path="/account" element={<Navigate to="/profile" replace />} />
                   <Route path="/leaderboard" element={
                     <OnlineProtectedRoute>

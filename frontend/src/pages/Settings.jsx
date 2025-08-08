@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
+import { useUser } from '@/shared/hooks/useUser';
 import { LocalGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import authService from '@/shared/api/authService';
 import '@/styles/pages/settings.css';
 import "@/styles/components/offline-notification.css";
 
@@ -17,6 +19,7 @@ const Settings = () => {
   const [deleteAll, setDeleteAll] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
+  const { user, clearUserData } = useUser();
 
   const checkForImportedGames = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -334,6 +337,22 @@ const Settings = () => {
       minute: '2-digit',
       hour12: false
     });
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear user data first
+      clearUserData();
+      // Then logout from Appwrite
+      await authService.logout();
+      // Navigate to login page
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Even if logout fails on server, clear local data and redirect
+      clearUserData();
+      window.location.href = '/login';
+    }
   };
 
   const handleThemeModeChange = (e) => {
@@ -730,7 +749,7 @@ const Settings = () => {
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Version:</span>
-                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.6.1'}</span>
+                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.6.2'}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Build Date:</span>
@@ -741,6 +760,27 @@ const Settings = () => {
             </div>
           </div>
         </div>
+
+        {/* Account Section - Only show if user is logged in */}
+        {user && (
+          <div className="settings-section account-section">
+            <h3 className="settings-section-title">Account</h3>
+            <div className="settings-card">
+              <div className="account-info">
+                <div className="info-item">
+                  <span className="info-label">Logged in as:</span>
+                  <span className="info-value">{user.name || user.email}</span>
+                </div>
+              </div>
+              <button 
+                className="btn btn-danger logout-btn"
+                onClick={handleLogout}
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
 
         <DeleteConfirmationModal
           isOpen={showConfirmDialog}

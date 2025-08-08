@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { useUser } from '@/shared/hooks/useUser'
@@ -8,13 +9,45 @@ import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from '@/components/ui/Icon'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import defaultAvatar from "@/assets/default-avatar.png"
+import avatarService from '@/shared/api/avatarService'
 import "@/styles/components/components.css"
 
 const Navbar = () => {
-  const { user, player } = useUser()
+  const { user } = useUser()
   const { isOnline } = useOnlineStatus()
   // const { theme } = useTheme()
   const location = useLocation()
+  const [avatarUrl, setAvatarUrl] = useState(defaultAvatar)
+
+  // Load user avatar when user is available
+  useEffect(() => {
+    const loadAvatarUrl = async () => {
+      if (user && isOnline) {
+        try {
+          const url = await avatarService.getAvatarUrl()
+          setAvatarUrl(url)
+        } catch (error) {
+          console.error('Error loading navbar avatar:', error)
+          setAvatarUrl(defaultAvatar)
+        }
+      } else {
+        setAvatarUrl(defaultAvatar)
+      }
+    }
+
+    loadAvatarUrl()
+
+    // Listen for avatar updates (custom event that can be dispatched from Profile component)
+    const handleAvatarUpdate = () => {
+      loadAvatarUrl()
+    }
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate)
+
+    return () => {
+      window.removeEventListener('avatarUpdated', handleAvatarUpdate)
+    }
+  }, [user, isOnline])
 
   const isActive = (path) => {
     if (typeof path === 'string') {
@@ -36,9 +69,9 @@ const Navbar = () => {
           <ThemeToggle />
           
           {isOnline && (
-          <Link to={user ? `/profile/${user?.player_id}` : "/login"} className="profile-icon">
+          <Link to={user ? "/profile" : "/login"} className="profile-icon">
             <img
-              src={player?.avatar || defaultAvatar}
+              src={avatarUrl}
               alt="Profile"
               className="navbar-avatar"
             />

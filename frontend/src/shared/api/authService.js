@@ -24,11 +24,11 @@ class AuthService {
   async logout() {
     try {
       await account.deleteSession('current');
-      window.location.href = '/login';
-    } catch {
-      // Ignore errors on logout, redirect anyway
-      window.location.href = '/login';
+    } catch (error) {
+      // Ignore errors on logout, we want to clear local state anyway
+      console.log('Logout error (ignored):', error);
     }
+    // Don't automatically redirect here, let the calling component handle it
   }
 
   async isAuthenticated() {

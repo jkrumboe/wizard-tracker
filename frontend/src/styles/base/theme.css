@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-right: 8px;
+  /* margin-right: 8px; */
 }
 
 /* Theme toggle slider styles */

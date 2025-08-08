@@ -60,15 +60,20 @@ export function UserProvider({ children }) {
     if (!user?.$id) return
     
     try {
-      // For now, just refresh from the current user data
-      // Later implement proper player data fetching from Appwrite databases
-      const basicPlayer = {
-        id: user.$id,
-        name: user.name,
-        email: user.email,
-        avatar: defaultAvatar,
+      // Refresh user data from Appwrite to get latest changes
+      const updatedUser = await authService.checkAuthStatus()
+      if (updatedUser) {
+        setUser(updatedUser)
+        
+        // Update player data with fresh user info
+        const basicPlayer = {
+          id: updatedUser.$id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          avatar: defaultAvatar,
+        }
+        setPlayer(basicPlayer)
       }
-      setPlayer(basicPlayer)
     } catch (err) {
       console.error("Error refreshing player data:", err)
     }

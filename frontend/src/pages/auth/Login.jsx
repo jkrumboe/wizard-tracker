@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { account, ID } from '@/shared/utils/appwrite';
+import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/pages/admin.css';
 
 const Login = () => {
@@ -10,12 +11,19 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshAuthStatus } = useUser();
 
   const handleLogin = async () => {
     setError(null);
     try {
       await account.createEmailPasswordSession(email, password);
-      navigate('/');
+      // Refresh the user context after successful login
+      await refreshAuthStatus();
+      
+      // Navigate to the originally requested page or home
+      const from = location.state?.from || '/';
+      navigate(from, { replace: true });
     } catch (error) {
       setError(error.message);
     }
@@ -27,7 +35,12 @@ const Login = () => {
       await account.create(ID.unique(), email, password, name);
       // Automatically log in after successful registration
       await account.createEmailPasswordSession(email, password);
-      navigate('/');
+      // Refresh the user context after successful registration
+      await refreshAuthStatus();
+      
+      // Navigate to the originally requested page or home
+      const from = location.state?.from || '/';
+      navigate(from, { replace: true });
     } catch (error) {
       setError(error.message);
     }

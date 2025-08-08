@@ -11,7 +11,9 @@ jobs:
     env:
       VITE_APPWRITE_PUBLIC_ENDPOINT: https://appwrite.jkrumboe.dev/v1
       VITE_APPWRITE_PROJECT_ID: 688cd65e00060f0e4d43
-      VITE_APP_VERSION: "1.1.6.2"
+      VITE_APPWRITE_DATABASE_ID: 688cfb4b002d001bc2e5
+      VITE_APPWRITE_GAMES_COLLECTION_ID: 6894f3030007a5fb47b8
+      VITE_APP_VERSION: "1.1.7"
 
     steps:
       - name: Checkout repository
@@ -35,5 +37,7 @@ jobs:
           build-args: |
             VITE_APPWRITE_PUBLIC_ENDPOINT=https://appwrite.jkrumboe.dev/v1
             VITE_APPWRITE_PROJECT_ID=688cd65e00060f0e4d43
-            VITE_APP_VERSION=1.1.6.2
+            VITE_APPWRITE_DATABASE_ID=688cfb4b002d001bc2e5
+            VITE_APPWRITE_GAMES_COLLECTION_ID=6894f3030007a5fb47b8
+            VITE_APP_VERSION=1.1.7
             VITE_BUILD_DATE=${{ github.event.head_commit.timestamp }}
