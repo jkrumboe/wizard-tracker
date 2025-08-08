@@ -22,7 +22,20 @@ export class LocalGameStorage {
       }
 
       // Check if this is a finished game that was previously paused
-      let gameId = gameState.gameId || gameState.id;
+      // Canonical game ID property is 'gameId'. Validate consistency if both exist.
+      let gameId;
+      if (gameState.gameId !== undefined && gameState.id !== undefined) {
+        if (gameState.gameId !== gameState.id) {
+          console.error(
+            "Inconsistent game identification: both 'gameId' and 'id' exist with different values.",
+            { gameId: gameState.gameId, id: gameState.id }
+          );
+          return false;
+        }
+        gameId = gameState.gameId; // or gameState.id, since they're equal
+      } else {
+        gameId = gameState.gameId !== undefined ? gameState.gameId : gameState.id;
+      }
       const isFinishedPausedGame = !isPaused && gameId && this.gameExists(gameId);
       
       // If it's not an update to an existing paused game, generate a new ID
