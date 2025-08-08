@@ -154,7 +154,7 @@ export class LocalGameStorage {
         }
       }
 
-      return true;
+      return gameId;
     } catch (error) {
       console.error("Error saving game:", error);
       return false;
