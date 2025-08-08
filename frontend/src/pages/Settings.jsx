@@ -749,7 +749,7 @@ const Settings = () => {
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Version:</span>
-                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.6.2'}</span>
+                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.7'}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Build Date:</span>

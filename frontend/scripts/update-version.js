@@ -20,7 +20,8 @@ function getVersion() {
   try {
     if (fs.existsSync(envPath)) {
       const envContent = fs.readFileSync(envPath, 'utf8');
-      const versionMatch = envContent.match(/VITE_APP_VERSION\s*=\s*"([^"]+)"/);
+      // Updated regex to handle both quoted and unquoted values
+      const versionMatch = envContent.match(/VITE_APP_VERSION\s*=\s*"?([^"\s]+)"?/);
       return versionMatch ? versionMatch[1] : null;
     }
   } catch (error) {
@@ -72,6 +73,33 @@ function updateReadmeBadge(version) {
   }
 }
 
+// Update Docker workflow file
+function updateDockerWorkflow(version) {
+  const workflowPath = path.join(__dirname, '../../.github/workflows/docker-build.yml');
+  try {
+    if (fs.existsSync(workflowPath)) {
+      let content = fs.readFileSync(workflowPath, 'utf8');
+      
+      // Update the env section version (with quotes)
+      content = content.replace(
+        /VITE_APP_VERSION:\s*"[^"]+"/,
+        `VITE_APP_VERSION: "${version}"`
+      );
+      
+      // Update the build-args section version (without quotes)
+      content = content.replace(
+        /VITE_APP_VERSION=[^\s\n]+/,
+        `VITE_APP_VERSION=${version}`
+      );
+      
+      fs.writeFileSync(workflowPath, content);
+      console.log(`✅ Updated version in docker-build.yml to ${version}`);
+    }
+  } catch (error) {
+    console.error('Error updating docker-build.yml:', error);
+  }
+}
+
 // Main function
 function main() {
   let version = getVersion();
@@ -94,6 +122,7 @@ function main() {
   
   updateServiceWorkerVersion(version);
   updateReadmeBadge(version);
+  updateDockerWorkflow(version);
   
   console.log(`✅ Version update complete! All files now use version ${version}`);
 }

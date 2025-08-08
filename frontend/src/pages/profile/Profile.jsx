@@ -290,7 +290,6 @@ if (editing) {
             src={previewAvatarUrl || editedAvatar || avatarUrl} 
             alt="Avatar Preview" 
             className="avatar-preview" 
-            style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover' }}
           />
         </div>
 
@@ -431,6 +430,8 @@ if (editing) {
             </button>
           </div>
 
+        <img src={currentPlayer?.avatar || defaultAvatar} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
+
           {canEdit && (
             <button
               onClick={handleStartEditing}
@@ -440,7 +441,6 @@ if (editing) {
           )}
         </div>
 
-        <img src={currentPlayer?.avatar || defaultAvatar} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
       
         <div className="player-info">
             <div className="player-name-tags">

@@ -654,17 +654,18 @@
   }
 
   .profile-avatar {
-    width: 120px;
-    height: 120px;
-    position: absolute;
-    top: 10vh;
-    left: 50%;
-    transform: translateX(-50%);
+    width: 140px;
+    height: 140px;
+    align-self: center;
+    justify-self: center;
     border-radius: var(--radius-full);
     object-fit: cover;
-    margin-bottom: var(--spacing-md);
+    /* margin-bottom: var(--spacing-md); */
+    margin-top: -70px; 
     border: 4px solid var(--primary-color);
     box-shadow: var(--shadow);
+    position: relative;
+    z-index: 10; 
   }
 
   
@@ -789,10 +790,11 @@
     display: flex;
     flex-direction: column;
     background-color: var(--card-background);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     width: 100%;
+    padding-top: var(--spacing-sm);
   }
 
   .profile-edit-header input {
@@ -847,8 +849,8 @@
 
   .avatar-preview {
     object-fit: cover;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: var(--radius-full);
     box-shadow: var(--shadow);
     border: 4px solid var(--primary-color);
@@ -880,19 +882,6 @@
 
   /* Mobile responsive adjustments for profile edit */
   @media (max-width: 768px) {
-    /* .profile-edit-container {
-      padding: var(--spacing-sm);
-    } */
-
-    .profile-edit-header {
-      padding: var(--spacing-lg);
-    }
-
-    .avatar-preview {
-      width: 100px;
-      height: 100px;
-    }
-
     .avatar-actions {
       flex-direction: row;
       gap: var(--spacing-sm);
@@ -1868,12 +1857,11 @@
   
     .avatar {
       margin-bottom: 0;
+      margin-top: -75px; /* Increase negative margin for larger avatar */
       width: 150px; /* Increase size for tablets */
       height: 150px;
-    }
-  
-    .profile-content {
-      height: max-content;
+      position: relative;
+      z-index: 10;
     }
   
     .game-summary {
@@ -1931,6 +1919,9 @@
     .avatar {
       width: 150px; /* Increase size for desktops */
       height: 150px;
+      margin-top: -75px; /* Maintain negative margin for larger avatar */
+      position: relative;
+      z-index: 10;
     }
   }
 
@@ -3000,10 +2991,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.player-info {
-  margin-top: var(--spacing-md);
 }
 
 #game-toggle-details {

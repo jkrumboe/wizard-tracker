@@ -190,7 +190,7 @@ function App() {
       showOnAppOpen={true}
       appOpenThreshold={15 * 60 * 1000}
       storageKey="wizardAppLastUsed"
-      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.6.2'}
+      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.7'}
       versionKey="wizardAppVersion"
     >
       <Router>
