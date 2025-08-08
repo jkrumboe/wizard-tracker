@@ -26,8 +26,72 @@ export class LocalGameStorage {
     const timestamp = new Date().toISOString();
     
     try {
+<<<<<<< HEAD
       // Create standardized game object following your proposed structure
       const standardizedGame = {
+=======
+      // Validate game state
+      if (!gameState) {
+        console.error('Invalid game state provided to saveGame');
+        return false;
+      }
+
+      // Check if this is a finished game that was previously paused
+      // Canonical game ID property is 'gameId'. Validate consistency if both exist.
+      let gameId;
+      if (gameState.gameId !== undefined && gameState.id !== undefined) {
+        if (gameState.gameId !== gameState.id) {
+          console.error(
+            "Inconsistent game identification: both 'gameId' and 'id' exist with different values.",
+            { gameId: gameState.gameId, id: gameState.id }
+          );
+          return false;
+        }
+        gameId = gameState.gameId; // or gameState.id, since they're equal
+      } else {
+        gameId = gameState.gameId !== undefined ? gameState.gameId : gameState.id;
+      }
+      const isFinishedPausedGame = !isPaused && gameId && this.gameExists(gameId);
+      
+      // If it's not an update to an existing paused game, generate a new ID
+      if (!isFinishedPausedGame && !gameId) {
+        gameId = this.generateGameId();
+      }
+      
+      const timestamp = new Date().toISOString();
+      
+      // Create a new saved game object
+      const gameStateCopy = { 
+        ...gameState,
+        isPaused: isPaused,
+        gameFinished: !isPaused  // If it's not paused, it's finished
+      };
+      
+      // Generate an appropriate name based on game state
+      let defaultName;
+      if (isPaused) {
+        defaultName = `Paused Game - Round ${gameState.currentRound}/${gameState.maxRounds}`;
+      } else {
+        defaultName = `Finished Game - ${new Date().toLocaleDateString()}`;
+      }
+      
+      // Extract data for finished games to make it accessible at the top level
+      const topLevelData = {};
+      if (!isPaused) {
+        // This is a finished game, extract important data to top level for compatibility
+        topLevelData.winner_id = gameState.winner_id;
+        topLevelData.final_scores = gameState.final_scores;
+        topLevelData.created_at = gameState.created_at || timestamp;
+        topLevelData.player_ids = gameState.player_ids || 
+                                (gameState.players ? gameState.players.map(p => p.id) : []);
+        topLevelData.round_data = gameState.roundData;
+        topLevelData.total_rounds = gameState.maxRounds || gameState.totalRounds;
+        topLevelData.duration_seconds = gameState.duration_seconds;
+        topLevelData.is_local = true;
+      }
+      
+      const savedGame = {
+>>>>>>> 469a03e5055f34ae80718fcd6cd16c97cc4b0739
         id: gameId,
         name: gameName || (isPaused ? 
           `Paused Game - Round ${gameState.currentRound}/${gameState.maxRounds}` : 
@@ -115,7 +179,7 @@ export class LocalGameStorage {
         }
       }
 
-      return true;
+      return gameId;
     } catch (error) {
       console.error("Error saving game:", error);
       return false;

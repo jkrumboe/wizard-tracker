@@ -170,9 +170,13 @@ export class ShareValidator {
       }
     }
 
-    // Validate total_rounds (allow extreme values, will be clamped during sanitization)
-    if (typeof gameData.total_rounds !== 'number' || gameData.total_rounds < 0) {
-      return { isValid: false, error: 'Invalid total rounds' };
+    // Validate total_rounds (must be a number, non-negative, and not exceed MAX_ROUNDS)
+    if (
+      typeof gameData.total_rounds !== 'number' ||
+      gameData.total_rounds < 0 ||
+      gameData.total_rounds > this.MAX_ROUNDS
+    ) {
+      return { isValid: false, error: `Invalid total rounds (must be between 0 and ${this.MAX_ROUNDS})` };
     }
 
     // Validate round_data if present

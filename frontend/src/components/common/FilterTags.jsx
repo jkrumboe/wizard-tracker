@@ -92,7 +92,7 @@ const FilterTags = ({
               >
                 {tag}
                 {selectedTags.includes(tag) && (
-                  <XIcon className="selected-icon" />
+                  <XIcon className="selected-icon" aria-hidden="true" />
                 )}
               </button>
             ))}
