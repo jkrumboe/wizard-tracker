@@ -14,18 +14,24 @@ export class LocalGameStorage {
    * @returns {string} - The game ID
    */
   static saveGame(gameState, gameName = null, isPaused = true) {
-    // Check if this is a finished game that was previously paused
-    let gameId = gameState.gameId;
-    const isFinishedPausedGame = !isPaused && gameId && this.gameExists(gameId);
-    
-    // If it's not an update to an existing paused game, generate a new ID
-    if (!isFinishedPausedGame) {
-      gameId = this.generateGameId();
-    }
-    
-    const timestamp = new Date().toISOString();
-    
     try {
+      // Validate game state
+      if (!gameState) {
+        console.error('Invalid game state provided to saveGame');
+        return false;
+      }
+
+      // Check if this is a finished game that was previously paused
+      let gameId = gameState.gameId || gameState.id;
+      const isFinishedPausedGame = !isPaused && gameId && this.gameExists(gameId);
+      
+      // If it's not an update to an existing paused game, generate a new ID
+      if (!isFinishedPausedGame && !gameId) {
+        gameId = this.generateGameId();
+      }
+      
+      const timestamp = new Date().toISOString();
+      
       // Create a new saved game object
       const gameStateCopy = { 
         ...gameState,
@@ -135,10 +141,10 @@ export class LocalGameStorage {
         }
       }
 
-      return gameId;
+      return true;
     } catch (error) {
       console.error("Error saving game:", error);
-      throw error;
+      return false;
     }
   }
 
@@ -166,11 +172,73 @@ export class LocalGameStorage {
   /**
    * Delete a saved game
    * @param {string} gameId - The game ID to delete
+   * @returns {boolean} - Success status
    */
   static deleteGame(gameId) {
-    const games = this.getAllSavedGames();
-    delete games[gameId];
-    localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
+    try {
+      const games = this.getAllSavedGames();
+      delete games[gameId];
+      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get a single game by ID
+   * @param {string} gameId - The game ID to retrieve
+   * @returns {Object|null} - The game data or null if not found
+   */
+  static getGame(gameId) {
+    if (!gameId) return null;
+    
+    try {
+      const games = this.getAllSavedGames();
+      return games[gameId] || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Get recent games sorted by last played
+   * @param {number} limit - Maximum number of games to return
+   * @returns {Array} - Array of recent games
+   */
+  static getRecentGames(limit = 10) {
+    try {
+      const games = this.getAllSavedGames();
+      const gameArray = Object.values(games);
+      
+      // Sort by updated_at, lastPlayed, or created_at timestamp
+      gameArray.sort((a, b) => {
+        const timeA = new Date(a.updated_at || a.lastPlayed || a.created_at || 0);
+        const timeB = new Date(b.updated_at || b.lastPlayed || b.created_at || 0);
+        return timeB - timeA;
+      });
+      
+      return gameArray.slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Get only paused games
+   * @returns {Array} - Array of paused games
+   */
+  static getPausedGames() {
+    try {
+      const games = this.getAllSavedGames();
+      const gameArray = Object.values(games);
+      
+      return gameArray.filter(game => 
+        game.isPaused || (game.gameState && game.gameState.isPaused)
+      );
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -318,13 +386,14 @@ export class LocalGameStorage {
 
   /**
    * Get all games (alias for getAllSavedGames for compatibility)
-   * @returns {Object} - Object containing all saved games
+   * @returns {Array} - Array containing all saved games
    */
   static getAllGames() {
     const games = this.getAllSavedGames();
+    const gameArray = Object.values(games);
     console.log('LocalGameStorage.getAllGames() called, returning:', games);
-    console.log('Number of games found:', Object.keys(games).length);
-    return games;
+    console.log('Number of games found:', gameArray.length);
+    return gameArray;
   }
 
   /**
