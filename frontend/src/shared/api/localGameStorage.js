@@ -196,7 +196,7 @@ export class LocalGameStorage {
     try {
       const games = this.getAllSavedGames();
       return games[gameId] || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
