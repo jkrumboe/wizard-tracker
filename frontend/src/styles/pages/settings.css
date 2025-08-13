@@ -580,3 +580,76 @@
   width: 100%;
   justify-content: center;
 }
+
+/* Cloud Sync Styles */
+.cloud-sync-button {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.cloud-sync-button:disabled {
+  background-color: var(--muted-color) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.upload-progress {
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-sm);
+  background-color: var(--background-color);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--muted-color);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-xs);
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.progress-stats {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.cloud-upload-game-button {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  padding: var(--spacing-xs) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cloud-upload-game-button:hover:not(:disabled) {
+  background-color: var(--primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+.cloud-upload-game-button:disabled {
+  background-color: var(--muted-color) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}

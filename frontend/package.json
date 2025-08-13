@@ -24,6 +24,8 @@
     "dompurify": "^3.2.5",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.525.0",
+    "node-appwrite": "^17.2.0",
+    "p-limit": "^6.2.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",

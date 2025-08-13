@@ -1,0 +1,27 @@
+{
+  "name": "wizard-tracker-appwrite-upload",
+  "version": "1.0.0",
+  "description": "Appwrite upload service for Wizard Tracker games",
+  "main": "appwriteGameUpload.ts",
+  "scripts": {
+    "build": "tsc",
+    "upload": "node dist/appwriteGameUpload.js"
+  },
+  "dependencies": {
+    "node-appwrite": "^13.0.0",
+    "p-limit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "appwrite",
+    "wizard-tracker",
+    "card-game",
+    "database"
+  ]
+}

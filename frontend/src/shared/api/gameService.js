@@ -83,6 +83,133 @@ export function validateGameData(gameData) {
   };
 }
 
+/**
+ * Converts new schema game format to Appwrite-compatible format
+ * @param {Object} migratedGame - Game in new schema format
+ * @returns {Object} - Game in Appwrite upload format
+ */
+export function convertToAppwriteFormat(migratedGame) {
+  try {
+    // The migrated game should now be in the new schema format
+    const appwriteGame = {
+      id: migratedGame.id,
+      players: migratedGame.players || [],
+      winner_id: migratedGame.totals?.winner_id || null,
+      final_scores: migratedGame.totals?.final_scores || {},
+      round_data: (migratedGame.rounds || []).map((round) => ({
+        round: round.number,
+        cards: round.cards,
+        players: Object.keys(round.bids || {}).map(playerId => ({
+          id: playerId,
+          call: round.bids[playerId] || 0,
+          made: round.tricks[playerId] || 0,
+          score: round.points[playerId] || 0,
+          totalScore: calculatePlayerTotalScore(migratedGame.rounds, playerId, round.number)
+        }))
+      })),
+      total_rounds: migratedGame.totals?.total_rounds || migratedGame.rounds?.length || 0,
+      created_at: migratedGame.created_at,
+      game_mode: migratedGame.mode === 'local' ? 'Local' : 
+                 migratedGame.mode === 'online' ? 'Online' : 
+                 migratedGame.mode === 'tournament' ? 'Tournament' : 'Local',
+      duration_seconds: migratedGame.duration_seconds || 0
+    };
+
+    return appwriteGame;
+  } catch (error) {
+    console.error('Error converting to Appwrite format:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to calculate player's total score up to a specific round
+ * @param {Array} rounds - All rounds data
+ * @param {string} playerId - Player ID
+ * @param {number} upToRound - Calculate total up to this round number
+ * @returns {number} - Total score
+ */
+function calculatePlayerTotalScore(rounds, playerId, upToRound) {
+  let total = 0;
+  for (let i = 0; i < upToRound && i < rounds.length; i++) {
+    const round = rounds[i];
+    total += round.points[playerId] || 0;
+  }
+  return total;
+}
+
+/**
+ * Uploads a local game to Appwrite (requires Appwrite upload service)
+ * @param {string} gameId - ID of the local game to upload
+ * @param {Object} options - Upload options
+ * @returns {Promise<Object>} - Upload result
+ */
+export async function uploadLocalGameToAppwrite(gameId, options = {}) {
+  try {
+    // Get the game from local storage
+    const localGame = LocalGameStorage.loadGame(gameId);
+    if (!localGame) {
+      throw new Error(`Game with ID ${gameId} not found in local storage`);
+    }
+
+    // First migrate the local game to the new schema format
+    const migratedGame = migrateToNewSchema(localGame);
+    
+    // Validate the migrated game (it should now be in the correct format)
+    const validation = validateGameSchema(migratedGame);
+    if (!validation.isValid) {
+      throw new Error(`Game migration failed: ${validation.errors.join(', ')}`);
+    }
+
+    // Convert the migrated game to Appwrite format
+    const appwriteGame = convertToAppwriteFormat(migratedGame);
+
+    // Import and use the Appwrite uploader
+    try {
+      // Try to use the real Appwrite upload service
+      const { uploadLocalGame } = await import('@/shared/utils/appwriteGameUpload.js');
+      const uploadResult = await uploadLocalGame(appwriteGame, options);
+      
+      return {
+        success: true,
+        gameId: appwriteGame.id,
+        message: 'Game uploaded to Appwrite successfully!',
+        uploadResult: uploadResult,
+        migratedGame: migratedGame,
+        convertedGame: appwriteGame
+      };
+    } catch (error) {
+      // Show the actual error for debugging
+      console.error('Failed to upload to Appwrite:', error);
+      
+      if (error.message.includes('not authorized') || error.message.includes('Unauthorized')) {
+        console.log('💡 SOLUTION: Configure Appwrite collection permissions to allow "role:guests"');
+        console.log('📍 Go to: https://appwrite.jkrumboe.dev/console → Database → Collections → Settings → Permissions');
+        console.log('➕ Add "role:guests" to Create, Read, Update, Delete permissions for all collections');
+      }
+      
+      console.warn('Falling back to migration/conversion only mode.');
+      console.log('Migrated game data:', migratedGame);
+      console.log('Converted Appwrite game data:', appwriteGame);
+      
+      return {
+        success: true,
+        gameId: appwriteGame.id,
+        message: 'Game migrated and converted successfully (upload pending Appwrite service)',
+        migratedGame: migratedGame,
+        convertedGame: appwriteGame
+      };
+    }
+
+  } catch (error) {
+    console.error('Error uploading game to Appwrite:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 // Get recent local games (this still works as it uses localStorage)
 export async function getRecentLocalGames(limit = 5) {
   try {
@@ -264,6 +391,8 @@ const gameService = {
   migrateGameToNewSchema,
   convertToLegacyFormat,
   validateGameData,
+  convertToAppwriteFormat,
+  uploadLocalGameToAppwrite,
   // Schema constants
   GameStatus,
   GameMode

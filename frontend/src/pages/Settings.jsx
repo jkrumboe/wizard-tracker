@@ -8,6 +8,7 @@ import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import authService from '@/shared/api/authService';
+import { uploadLocalGameToAppwrite } from '@/shared/api/gameService';
 import '@/styles/pages/settings.css';
 import "@/styles/components/offline-notification.css";
 
@@ -18,6 +19,7 @@ const Settings = () => {
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [cloudSyncStatus, setCloudSyncStatus] = useState({ uploading: false, progress: '', uploadedCount: 0, totalCount: 0 });
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
 
@@ -588,6 +590,101 @@ const Settings = () => {
     }
   };
 
+  // Cloud Sync Functions
+  const uploadSingleGameToCloud = async (gameId, gameData) => {
+    if (gameData.isPaused) {
+      throw new Error('Cannot upload paused games. Please finish the game first.');
+    }
+
+    try {
+      const result = await uploadLocalGameToAppwrite(gameId, { replaceExisting: false });
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Failed to upload game ${gameId}:`, error);
+      throw error;
+    }
+  };
+
+  const handleBulkCloudSync = async () => {
+    const gameEntries = Object.entries(savedGames);
+    const uploadableGames = gameEntries.filter(([, game]) => !game.isPaused);
+    
+    if (uploadableGames.length === 0) {
+      setMessage({ text: 'No games available for upload.', type: 'error' });
+      return;
+    }
+
+    setCloudSyncStatus({ 
+      uploading: true, 
+      progress: 'Starting upload...', 
+      uploadedCount: 0, 
+      totalCount: uploadableGames.length 
+    });
+
+    let successful = 0;
+    let failed = 0;
+    const errors = [];
+
+    try {
+      for (let i = 0; i < uploadableGames.length; i++) {
+        const [gameId, gameData] = uploadableGames[i];
+        
+        setCloudSyncStatus(prev => ({
+          ...prev,
+          progress: `Uploading game ${i + 1} of ${uploadableGames.length}...`,
+          uploadedCount: i
+        }));
+
+        try {
+          await uploadSingleGameToCloud(gameId, gameData);
+          successful++;
+        } catch (error) {
+          failed++;
+          errors.push(`Game ${gameId}: ${error.message}`);
+        }
+      }
+
+      setCloudSyncStatus({ 
+        uploading: false, 
+        progress: '', 
+        uploadedCount: 0, 
+        totalCount: 0 
+      });
+
+      if (successful > 0 && failed === 0) {
+        setMessage({ 
+          text: `✅ All ${successful} games uploaded successfully!`, 
+          type: 'success' 
+        });
+      } else if (successful > 0 && failed > 0) {
+        setMessage({ 
+          text: `⚠️ Uploaded ${successful} games, ${failed} failed. Check console for details.`, 
+          type: 'warning' 
+        });
+        console.warn('Upload errors:', errors);
+      } else {
+        setMessage({ 
+          text: `❌ All uploads failed. Check console for details.`, 
+          type: 'error' 
+        });
+        console.error('Upload errors:', errors);
+      }
+    } catch (error) {
+      setCloudSyncStatus({ 
+        uploading: false, 
+        progress: '', 
+        uploadedCount: 0, 
+        totalCount: 0 
+      });
+      setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+    }
+  };
+
   return (
       <div className="settings-container">
         {/* {message.text && (
@@ -676,6 +773,53 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Cloud Sync Section */}
+        <div className="settings-section">
+          <h2>Cloud Sync</h2>
+          <div className="storage-info">
+            <div className="storage-metric">
+              <span>Uploadable Games</span>
+              <span className="storage-value">
+                {Object.values(savedGames).filter(game => !game.isPaused).length}
+              </span>
+            </div>
+            <div className="storage-metric">
+              <span>Status</span>
+              <span className="storage-value">
+                {cloudSyncStatus.uploading ? 'Uploading...' : 'Ready'}
+              </span>
+            </div>
+          </div>
+
+          {cloudSyncStatus.uploading && (
+            <div className="upload-progress">
+              <div className="progress-text">{cloudSyncStatus.progress}</div>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ 
+                    width: `${(cloudSyncStatus.uploadedCount / cloudSyncStatus.totalCount) * 100}%` 
+                  }}
+                ></div>
+              </div>
+              <div className="progress-stats">
+                {cloudSyncStatus.uploadedCount} / {cloudSyncStatus.totalCount} games
+              </div>
+            </div>
+          )}
+
+          <div className="settings-actions">
+            <button 
+              className="settings-button cloud-sync-button" 
+              onClick={handleBulkCloudSync}
+              disabled={cloudSyncStatus.uploading || Object.values(savedGames).filter(game => !game.isPaused).length === 0}
+            >
+              <UploadIcon size={18} />
+              {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
+            </button>
+          </div>
+        </div>
+
         <div className="settings-section">
           <div className="section-header">
             <h2>Saved Games</h2>
@@ -731,6 +875,22 @@ const Settings = () => {
                           disabled={game.isPaused}
                         >
                           <DownloadIcon size={25} />
+                        </button>
+                        <button 
+                          className="cloud-upload-game-button" 
+                          onClick={async () => {
+                            try {
+                              await uploadSingleGameToCloud(gameId, game);
+                              setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
+                            } catch (error) {
+                              setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                            }
+                          }}
+                          aria-label="Upload to cloud"
+                          disabled={game.isPaused}
+                          title={game.isPaused ? 'Cannot upload paused games' : 'Upload to cloud'}
+                        >
+                          <UploadIcon size={25} />
                         </button>
                       </div>
                   </div>
