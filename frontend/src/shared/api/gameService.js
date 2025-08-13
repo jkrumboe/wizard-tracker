@@ -2,6 +2,14 @@
 // These are placeholder functions to prevent compilation errors
 
 import { LocalGameStorage } from "@/shared/api/localGameStorage";
+import { 
+  migrateToNewSchema, 
+  toLegacyFormat, 
+  validateGameSchema,
+  GameStatus,
+  GameMode 
+} from "@/shared/schemas/gameSchema";
+import { validateWithJsonSchema } from "@/shared/schemas/gameJsonSchema";
 
 //=== Game Management ===//
 
@@ -12,9 +20,67 @@ export async function getGames() {
 }
 
 // Get recent games
-export async function getRecentGames(limit = 5) {
+// eslint-disable-next-line no-unused-vars
+export async function getRecentGames(_limit = 5) {
   console.warn('gameService: getRecentGames() - Server games feature not yet implemented with Appwrite');
   return [];
+}
+
+//=== Schema Migration and Validation ===//
+
+/**
+ * Migrates a game from old format to new schema
+ * @param {Object} oldGame - Game in old format
+ * @returns {Object} - Game in new schema format
+ */
+export function migrateGameToNewSchema(oldGame) {
+  try {
+    const newGame = migrateToNewSchema(oldGame);
+    
+    // Validate the migrated game
+    const validation = validateGameSchema(newGame);
+    if (!validation.isValid) {
+      console.warn('Game migration validation failed:', validation.errors);
+      // Return original if migration fails
+      return oldGame;
+    }
+    
+    return newGame;
+  } catch (error) {
+    console.error('Error migrating game schema:', error);
+    return oldGame;
+  }
+}
+
+/**
+ * Converts new schema game to legacy format for backward compatibility
+ * @param {Object} newGame - Game in new schema format
+ * @returns {Object} - Game in legacy format
+ */
+export function convertToLegacyFormat(newGame) {
+  try {
+    return toLegacyFormat(newGame);
+  } catch (error) {
+    console.error('Error converting to legacy format:', error);
+    return newGame;
+  }
+}
+
+/**
+ * Validates game data using both custom validation and JSON schema
+ * @param {Object} gameData - Game data to validate
+ * @returns {Object} - Validation result with combined errors
+ */
+export function validateGameData(gameData) {
+  const customValidation = validateGameSchema(gameData);
+  const jsonValidation = validateWithJsonSchema(gameData);
+  
+  return {
+    isValid: customValidation.isValid && jsonValidation.isValid,
+    errors: [...customValidation.errors, ...jsonValidation.errors],
+    customValidation,
+    jsonValidation
+  };
 }
 
 // Get recent local games (this still works as it uses localStorage)
@@ -110,13 +176,15 @@ export async function getAllLocalGames() {
 }
 
 // Create game
+// eslint-disable-next-line no-unused-vars
 export async function createGame(_data) {
   console.warn('gameService: createGame() - Server games feature not yet implemented with Appwrite');
   return null;
 }
 
 // Get player game history
-export async function getPlayerGameHistory(id, _limit = 20) {
+// eslint-disable-next-line no-unused-vars
+export async function getPlayerGameHistory(_id, _limit = 20) {
   console.warn('gameService: getPlayerGameHistory() - Server games feature not yet implemented with Appwrite');
   return [];
 }
@@ -167,13 +235,15 @@ export async function getGameById(id) {
 }
 
 // Update game
-export async function updateGame(id, data) {
+// eslint-disable-next-line no-unused-vars
+export async function updateGame(_id, _data) {
   console.warn('gameService: updateGame() - Server games feature not yet implemented with Appwrite');
   return null;
 }
 
 // Delete game
-export async function deleteGame(id) {
+// eslint-disable-next-line no-unused-vars
+export async function deleteGame(_id) {
   console.warn('gameService: deleteGame() - Server games feature not yet implemented with Appwrite');
   return false;
 }
@@ -189,7 +259,14 @@ const gameService = {
   getPlayerGameHistory,
   getGameById,
   updateGame,
-  deleteGame
+  deleteGame,
+  // New schema functions
+  migrateGameToNewSchema,
+  convertToLegacyFormat,
+  validateGameData,
+  // Schema constants
+  GameStatus,
+  GameMode
 };
 
 export default gameService;
