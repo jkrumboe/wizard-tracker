@@ -503,4 +503,39 @@ export class LocalGameStorage {
     }
   }
 
+  /**
+   * Migrate existing games to add upload tracking properties
+   * This ensures older games have the necessary properties for sync tracking
+   */
+  static migrateGamesForUploadTracking() {
+    const games = this.getAllSavedGames();
+    let migrationNeeded = false;
+    
+    for (const gameId in games) {
+      const game = games[gameId];
+      
+      // Add missing upload tracking properties
+      if (game.isUploaded === undefined) {
+        game.isUploaded = false;
+        migrationNeeded = true;
+      }
+      
+      if (game.cloudGameId === undefined) {
+        game.cloudGameId = null;
+        migrationNeeded = true;
+      }
+      
+      if (game.cloudLookupKey === undefined) {
+        game.cloudLookupKey = null;
+        migrationNeeded = true;
+      }
+    }
+    
+    if (migrationNeeded) {
+      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
+    }
+    
+    return games;
+  }
+
 }

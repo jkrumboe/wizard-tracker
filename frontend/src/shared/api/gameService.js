@@ -163,6 +163,9 @@ export async function uploadLocalGameToAppwrite(gameId, options = {}) {
 
     // Convert the migrated game to Appwrite format
     const appwriteGame = convertToAppwriteFormat(migratedGame);
+    
+    // IMPORTANT: Ensure the appwrite game uses the correct local storage gameId
+    appwriteGame.id = gameId;
 
     // Import and use the Appwrite uploader
     try {
@@ -172,8 +175,12 @@ export async function uploadLocalGameToAppwrite(gameId, options = {}) {
       
       return {
         success: true,
-        gameId: appwriteGame.id,
-        message: 'Game uploaded to Appwrite successfully!',
+        gameId: gameId, // Use the original gameId
+        appwriteGameId: uploadResult.appwriteGameId,
+        isDuplicate: uploadResult.isDuplicate,
+        message: uploadResult.isDuplicate 
+          ? 'Game was already in cloud - marked as online!'
+          : 'Game uploaded to Appwrite successfully!',
         uploadResult: uploadResult,
         migratedGame: migratedGame,
         convertedGame: appwriteGame

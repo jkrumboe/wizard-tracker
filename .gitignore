@@ -18,6 +18,9 @@ dist-ssr
 !.env.template
 !.env.example
 
+# Documentation (temporary)
+frontend/src/docs/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

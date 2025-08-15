@@ -9,6 +9,7 @@ import { TrashIcon, SettingsIcon, RefreshIcon, CloudIcon, ShareIcon } from '@/co
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import authService from '@/shared/api/authService';
 import { uploadLocalGameToAppwrite } from '@/shared/api/gameService';
+import { checkGameSyncStatus } from '@/shared/utils/syncChecker';
 import '@/styles/pages/settings.css';
 import "@/styles/components/offline-notification.css";
 
@@ -21,6 +22,7 @@ const Settings = () => {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [cloudSyncStatus, setCloudSyncStatus] = useState({ uploading: false, progress: '', uploadedCount: 0, totalCount: 0 });
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
+  const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
 
@@ -257,9 +259,25 @@ const Settings = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Keep empty dependency array and handle URL changes elsewhere
 
-  const loadSavedGames = useCallback(() => {
+  const loadSavedGames = useCallback(async () => {
+    // First migrate games to ensure they have upload tracking properties
+    LocalGameStorage.migrateGamesForUploadTracking();
+    
     const allGames = LocalGameStorage.getAllSavedGames();
     setSavedGames(allGames);
+    
+    // Check sync status for each game
+    const syncStatuses = {};
+    for (const gameId of Object.keys(allGames)) {
+      try {
+        const syncStatus = await checkGameSyncStatus(gameId);
+        syncStatuses[gameId] = syncStatus;
+      } catch (error) {
+        console.error(`Error checking sync status for game ${gameId}:`, error);
+        syncStatuses[gameId] = { status: 'Local', synced: false };
+      }
+    }
+    setGameSyncStatuses(syncStatuses);
   }, []);
 
   // Reload games when date filter changes
@@ -621,9 +639,16 @@ const Settings = () => {
                       </div>
                       <div className="actions-game-history">
                         <div className="bottom-actions-game-history">
-                          <span className={`mode-badge ${game.isUploaded ? 'online' : 'local'}`}>
-                            {game.isUploaded ? 'Online' : 'Local'}
-                          </span>
+                          {(() => {
+                            const syncStatus = gameSyncStatuses[gameId];
+                            const status = syncStatus?.status || (game.isUploaded ? 'Online' : 'Local');
+                            const badgeClass = status.toLowerCase();
+                            return (
+                              <span className={`mode-badge ${badgeClass}`}>
+                                {status}
+                              </span>
+                            );
+                          })()}
                           <div className="game-date">
                             {formatDate(game.lastPlayed)}
                           </div>

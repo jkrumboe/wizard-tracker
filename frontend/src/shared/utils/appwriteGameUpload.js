@@ -87,18 +87,11 @@ class FrontendAppwriteGameUploader {
       await this.ensureAuthentication();
 
       // Step 0: Check for duplicates using content-based detection
-      const { generateGameContentHash } = await import('@/shared/utils/gameIdentifier');
-      
       // Get all existing games to check for duplicates
-      // Since createdBy field doesn't exist in schema, we'll check all games
       const existingGames = await this.databases.listDocuments(
         this.config.databaseId,
         this.config.collections.games
       );
-
-      // Generate content identifiers for comparison
-      const currentContentHash = generateGameContentHash(gameData);
-      console.log('🔗 Generated content hash for duplicate check:', currentContentHash);
 
       // Check each existing game for content match
       for (const existingGame of existingGames.documents) {
@@ -108,18 +101,15 @@ class FrontendAppwriteGameUploader {
         const sameFinalScores = existingGame.finalScoresJson === JSON.stringify(gameData.final_scores || {});
         
         if (samePlayerCount && sameTotalRounds && sameFinalScores && !replaceExisting) {
-          console.log('� Duplicate game detected! Game already exists in cloud:', existingGame.$id);
-          console.log('📊 Match details:', {
-            playerCount: `${existingGame.playerIds?.length} vs ${gameData.players?.length}`,
-            totalRounds: `${existingGame.totalRounds} vs ${gameData.total_rounds}`,
-            finalScores: 'Match',
-            existingExtId: existingGame.extId,
-            currentGameId: gameData.id
-          });
+          console.log('Duplicate game detected! Game already exists in cloud:', existingGame.$id);
+          
+          // Generate cloudLookupKey for this game to enable proper sync tracking
+          const { generateCloudLookupKey } = await import('@/shared/utils/gameIdentifier');
+          const cloudLookupKey = generateCloudLookupKey(gameData);
           
           // Mark the local game as uploaded to prevent future uploads
           const { LocalGameStorage } = await import('@/shared/api/localGameStorage');
-          LocalGameStorage.markGameAsUploaded(gameData.id, existingGame.$id);
+          LocalGameStorage.markGameAsUploaded(gameData.id, existingGame.$id, cloudLookupKey);
           
           return {
             success: true,
@@ -149,9 +139,12 @@ class FrontendAppwriteGameUploader {
       await this.uploadRoundPlayers(gameData, gameRecord.$id, playerMapping);
       console.log('✅ Round players uploaded');
       
-      // Step 5: Mark the local game as uploaded
+      // Step 5: Mark the local game as uploaded with cloudLookupKey
       const { LocalGameStorage } = await import('@/shared/api/localGameStorage');
-      LocalGameStorage.markGameAsUploaded(gameData.id, gameRecord.$id);
+      const { generateCloudLookupKey } = await import('@/shared/utils/gameIdentifier');
+      const cloudLookupKey = generateCloudLookupKey(gameData);
+      
+      LocalGameStorage.markGameAsUploaded(gameData.id, gameRecord.$id, cloudLookupKey);
       
       console.log('🎉 Game upload completed successfully!');
       
@@ -233,8 +226,7 @@ class FrontendAppwriteGameUploader {
       winnerPlayerId: playerMapping[gameData.winner_id] || null,
       finalScoresJson: JSON.stringify(gameData.final_scores || {}),
       totalRounds: gameData.total_rounds || 0,
-      gameMode: normalizedGameMode // Use normalized lowercase value
-      // Removed durationSeconds and createdBy - not in your Appwrite schema
+      gameMode: normalizedGameMode
     };
 
     console.log('📋 Game document to create:', gameDocument);

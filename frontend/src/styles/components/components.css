@@ -264,6 +264,12 @@
     border-color: var(--success-color);
   }
 
+  .mode-badge.synced {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+
   #header-game-detail-badge {
     display: flex;
     flex-direction: row;
