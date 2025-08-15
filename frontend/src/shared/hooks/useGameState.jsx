@@ -29,6 +29,9 @@ export function GameStateProvider({ children }) {
     gameId: null,   // Current game ID for saving
     isPaused: false, // Track if game is paused
     gameName: null,  // Custom game name
+    // Auto-upload status
+    autoUploadStatus: null, // 'uploading', 'success', 'warning', null
+    autoUploadMessage: null // Message to show user
   })
 
   // Restore current game only when specifically accessing /game/current
@@ -497,7 +500,66 @@ export function GameStateProvider({ children }) {
           duration_seconds: duration,
           total_rounds: gameState.maxRounds,
         };
-        LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
+        const savedGameId = LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
+        
+        // 🚀 Automatically upload the finished game to Appwrite
+        try {
+          console.log('📤 Auto-uploading finished game to cloud...');
+          
+          // Show user that auto-upload is happening
+          setGameState((prevState) => ({
+            ...prevState,
+            autoUploadStatus: 'uploading',
+            autoUploadMessage: 'Uploading game to cloud...'
+          }));
+          
+          const { uploadLocalGameToAppwrite } = await import('@/shared/api/gameService');
+          const uploadResult = await uploadLocalGameToAppwrite(savedGameId, { replaceExisting: false });
+          
+          console.log('✅ Game automatically uploaded to cloud!', uploadResult);
+          
+          // Show appropriate success message based on whether it was a duplicate
+          const message = uploadResult.isDuplicate 
+            ? '✅ Game was already in cloud - marked as online!'
+            : '✅ Game uploaded to cloud successfully!';
+          
+          // Show success message
+          setGameState((prevState) => ({
+            ...prevState,
+            autoUploadStatus: 'success',
+            autoUploadMessage: message
+          }));
+          
+          // Clear the message after 5 seconds
+          setTimeout(() => {
+            setGameState((prevState) => ({
+              ...prevState,
+              autoUploadStatus: null,
+              autoUploadMessage: null
+            }));
+          }, 5000);
+          
+        } catch (uploadError) {
+          console.warn('⚠️ Auto-upload to cloud failed (game saved locally):', uploadError.message);
+          
+          // Show warning message (game is still saved locally)
+          setGameState((prevState) => ({
+            ...prevState,
+            autoUploadStatus: 'warning',
+            autoUploadMessage: '⚠️ Cloud sync failed - game saved locally. Try manual sync in Settings.'
+          }));
+          
+          // Clear the message after 8 seconds (longer for warnings)
+          setTimeout(() => {
+            setGameState((prevState) => ({
+              ...prevState,
+              autoUploadStatus: null,
+              autoUploadMessage: null
+            }));
+          }, 8000);
+          
+          // Don't throw - game is still saved locally, upload can be retried manually
+        }
       } else {
         // Save game data to database using API
         await createGame(gameData);

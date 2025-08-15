@@ -54,6 +54,7 @@ class FrontendAppwriteGameUploader {
     try {
       // Try to get current session
       const session = await account.get();
+      this.userId = session.$id; // Store user ID
       console.log('✅ Authenticated as:', session.email || session.name || 'Anonymous');
       return true;
     } catch {
@@ -62,6 +63,7 @@ class FrontendAppwriteGameUploader {
       try {
         // Create anonymous session for game uploads
         const session = await account.createAnonymousSession();
+        this.userId = session.userId || session.$id; // Store user ID from anonymous session
         console.log('✅ Anonymous session created:', session.$id);
         return true;
       } catch (anonError) {
@@ -83,12 +85,59 @@ class FrontendAppwriteGameUploader {
       
       // Ensure we have proper authentication
       await this.ensureAuthentication();
+
+      // Step 0: Check for duplicates using content-based detection
+      const { generateGameContentHash } = await import('@/shared/utils/gameIdentifier');
+      
+      // Get all existing games to check for duplicates
+      // Since createdBy field doesn't exist in schema, we'll check all games
+      const existingGames = await this.databases.listDocuments(
+        this.config.databaseId,
+        this.config.collections.games
+      );
+
+      // Generate content identifiers for comparison
+      const currentContentHash = generateGameContentHash(gameData);
+      console.log('🔗 Generated content hash for duplicate check:', currentContentHash);
+
+      // Check each existing game for content match
+      for (const existingGame of existingGames.documents) {
+        // Compare key game data fields to detect duplicates
+        const samePlayerCount = existingGame.playerIds?.length === (gameData.players?.length || 0);
+        const sameTotalRounds = existingGame.totalRounds === (gameData.total_rounds || 0);
+        const sameFinalScores = existingGame.finalScoresJson === JSON.stringify(gameData.final_scores || {});
+        
+        if (samePlayerCount && sameTotalRounds && sameFinalScores && !replaceExisting) {
+          console.log('� Duplicate game detected! Game already exists in cloud:', existingGame.$id);
+          console.log('📊 Match details:', {
+            playerCount: `${existingGame.playerIds?.length} vs ${gameData.players?.length}`,
+            totalRounds: `${existingGame.totalRounds} vs ${gameData.total_rounds}`,
+            finalScores: 'Match',
+            existingExtId: existingGame.extId,
+            currentGameId: gameData.id
+          });
+          
+          // Mark the local game as uploaded to prevent future uploads
+          const { LocalGameStorage } = await import('@/shared/api/localGameStorage');
+          LocalGameStorage.markGameAsUploaded(gameData.id, existingGame.$id);
+          
+          return {
+            success: true,
+            isDuplicate: true,
+            gameId: existingGame.$id,
+            appwriteGameId: existingGame.$id,
+            message: `Game already exists in cloud (${existingGame.extId}) - marked as uploaded locally`
+          };
+        }
+      }
+
+      console.log('✅ No duplicate games found, proceeding with upload...');
       
       // Step 1: Ensure all players exist
       const playerMapping = await this.ensurePlayersExist(gameData.players);
       console.log('✅ Players processed:', Object.keys(playerMapping).length);
       
-      // Step 2: Create or update the game record
+      // Step 2: Create or update the game record (without cloudLookupKey for now)
       const gameRecord = await this.createGameRecord(gameData, playerMapping, replaceExisting);
       console.log('✅ Game record created:', gameRecord.$id);
       
@@ -100,10 +149,15 @@ class FrontendAppwriteGameUploader {
       await this.uploadRoundPlayers(gameData, gameRecord.$id, playerMapping);
       console.log('✅ Round players uploaded');
       
+      // Step 5: Mark the local game as uploaded
+      const { LocalGameStorage } = await import('@/shared/api/localGameStorage');
+      LocalGameStorage.markGameAsUploaded(gameData.id, gameRecord.$id);
+      
       console.log('🎉 Game upload completed successfully!');
       
       return {
         success: true,
+        isDuplicate: false,
         gameId: gameRecord.$id,
         appwriteGameId: gameRecord.$id,
         playersCreated: Object.keys(playerMapping).length,
@@ -163,7 +217,7 @@ class FrontendAppwriteGameUploader {
   /**
    * Create the main game record
    */
-  async createGameRecord(gameData, playerMapping, replaceExisting) {
+  async createGameRecord(gameData, playerMapping, replaceExisting = false) {
     // Normalize game mode to match Appwrite enum (lowercase)
     let normalizedGameMode = 'local'; // default
     if (gameData.game_mode) {
@@ -180,7 +234,7 @@ class FrontendAppwriteGameUploader {
       finalScoresJson: JSON.stringify(gameData.final_scores || {}),
       totalRounds: gameData.total_rounds || 0,
       gameMode: normalizedGameMode // Use normalized lowercase value
-      // Removed durationSeconds - not in your Appwrite schema
+      // Removed durationSeconds and createdBy - not in your Appwrite schema
     };
 
     console.log('📋 Game document to create:', gameDocument);

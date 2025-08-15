@@ -258,6 +258,12 @@
     color: var(--text-secondary);
   }
 
+  .mode-badge.online {
+    background-color: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+  }
+
   #header-game-detail-badge {
     display: flex;
     flex-direction: row;
@@ -2267,7 +2273,7 @@
   flex-direction: column;
   overflow-y: auto;
   max-height: 100%;
-  height: 50dvh;
+  height: 40dvh;
   gap: var(--spacing-md);
 }
 
@@ -3530,7 +3536,7 @@
 .bottom-actions-game-history {
   display: flex;
   width: 100%;
-  /* justify-content: space-between; */
+  justify-content: space-between;
   align-items: center;
   gap: var(--spacing-sm);
 }

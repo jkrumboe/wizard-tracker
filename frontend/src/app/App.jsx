@@ -14,6 +14,7 @@ import RealtimeTest from "@/pages/RealtimeTest"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
 import AppLoadingScreen from "@/components/common/AppLoadingScreen"
+import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
@@ -197,6 +198,7 @@ function App() {
         <ThemeProvider>
           <UserProvider>
             <OnlineStatusProvider>
+              <AutoLogoutHandler />
               <GameStateProvider>
                 <URLImportHandler />
                 <Navbar />
@@ -239,9 +241,9 @@ function App() {
                     </OnlineProtectedRoute>
                   } />
                   <Route path="/login" element= {
-                    // <OnlineProtectedRoute>
+                    <OnlineProtectedRoute>
                       <Login />
-                    // </OnlineProtectedRoute>
+                    </OnlineProtectedRoute>
                   }/>
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/realtime-test" element={<RealtimeTest />} />

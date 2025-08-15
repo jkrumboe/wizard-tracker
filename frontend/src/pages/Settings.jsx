@@ -5,7 +5,7 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 import { LocalGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, SettingsIcon, RefreshIcon, DownloadIcon, UploadIcon, ShareIcon } from '@/components/ui/Icon';
+import { TrashIcon, SettingsIcon, RefreshIcon, CloudIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import authService from '@/shared/api/authService';
 import { uploadLocalGameToAppwrite } from '@/shared/api/gameService';
@@ -20,6 +20,7 @@ const Settings = () => {
   const [deleteAll, setDeleteAll] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [cloudSyncStatus, setCloudSyncStatus] = useState({ uploading: false, progress: '', uploadedCount: 0, totalCount: 0 });
+  const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
 
@@ -373,223 +374,6 @@ const Settings = () => {
     }
   }, [message]);
 
-  const exportGamesData = () => {
-    try {
-      const jsonData = LocalGameStorage.exportGames();
-      const blob = new Blob([jsonData], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `wizard-tracker-games-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setMessage({ text: 'Games data exported successfully.', type: 'success' });
-    } catch (error) {
-      console.error('Error exporting games data:', error);
-      setMessage({ text: 'Failed to export games data.', type: 'error' });
-    }
-  };
-
-  const importGamesData = (file) => {
-    // File size limit (1MB)
-    const MAX_FILE_SIZE = 1024 * 1024;
-    
-    if (file.size > MAX_FILE_SIZE) {
-      setMessage({ text: 'File too large. Maximum size is 1MB.', type: 'error' });
-      return;
-    }
-    
-    // File type validation
-    if (!file.type.includes('json') && !file.name.endsWith('.json')) {
-      setMessage({ text: 'Invalid file type. Please select a JSON file.', type: 'error' });
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const jsonData = e.target.result;
-        
-        // Additional size check after reading
-        if (jsonData.length > MAX_FILE_SIZE) {
-          setMessage({ text: 'File content too large.', type: 'error' });
-          return;
-        }
-        
-        let parsedData;
-        try {
-          parsedData = JSON.parse(jsonData);
-        } catch (parseError) {
-          console.warn('JSON parse error:', parseError.message);
-          setMessage({ text: 'Invalid JSON file format.', type: 'error' });
-          return;
-        }
-        
-        // Check if it's a compact single game format or full games format
-        if (parsedData.id && parsedData.players && parsedData.round_data) {
-          // This is a compact single game format - validate it
-          const validation = ShareValidator.validateGameDataStructure(parsedData);
-          if (!validation.isValid) {
-            setMessage({ 
-              text: `Invalid game data: ${validation.error}`, 
-              type: 'error' 
-            });
-            return;
-          }
-          
-          // Sanitize the data
-          const sanitizedGameData = ShareValidator.sanitizeGameData(parsedData);
-          
-          const fullGameData = {
-            [sanitizedGameData.id]: {
-              id: sanitizedGameData.id,
-              name: `Imported Game - ${new Date(sanitizedGameData.created_at).toLocaleDateString()}`,
-              gameState: {
-                id: sanitizedGameData.id,
-                players: sanitizedGameData.players,
-                winner_id: sanitizedGameData.winner_id,
-                final_scores: sanitizedGameData.final_scores,
-                round_data: sanitizedGameData.round_data,
-                total_rounds: sanitizedGameData.total_rounds,
-                created_at: sanitizedGameData.created_at,
-                game_mode: sanitizedGameData.game_mode,
-                duration_seconds: sanitizedGameData.duration_seconds,
-                currentRound: sanitizedGameData.total_rounds,
-                maxRounds: sanitizedGameData.total_rounds,
-                roundData: sanitizedGameData.round_data,
-                gameStarted: true,
-                gameFinished: true,
-                mode: sanitizedGameData.game_mode,
-                isLocal: true,
-                isPaused: false,
-                referenceDate: sanitizedGameData.created_at,
-                gameId: sanitizedGameData.id,
-                player_ids: sanitizedGameData.players.map(p => p.id)
-              },
-              savedAt: sanitizedGameData.created_at,
-              lastPlayed: sanitizedGameData.created_at,
-              playerCount: sanitizedGameData.players.length,
-              roundsCompleted: sanitizedGameData.total_rounds,
-              totalRounds: sanitizedGameData.total_rounds,
-              mode: sanitizedGameData.game_mode,
-              gameFinished: true,
-              isPaused: false,
-              isImported: true,
-              winner_id: sanitizedGameData.winner_id,
-              final_scores: sanitizedGameData.final_scores,
-              created_at: sanitizedGameData.created_at,
-              player_ids: sanitizedGameData.players.map(p => p.id),
-              round_data: sanitizedGameData.round_data,
-              total_rounds: sanitizedGameData.total_rounds,
-              duration_seconds: sanitizedGameData.duration_seconds,
-              is_local: true
-            }
-          };
-          
-          const success = LocalGameStorage.importGames(JSON.stringify(fullGameData));
-          if (success) {
-            loadSavedGames();
-            calculateStorageUsage();
-            setMessage({ text: 'Game imported successfully.', type: 'success' });
-          } else {
-            setMessage({ text: 'Failed to import game.', type: 'error' });
-          }
-        } else {
-          // This is the full games format - validate it
-          const validation = ShareValidator.validateEncodedGamesData(btoa(jsonData));
-          if (!validation.isValid) {
-            setMessage({ 
-              text: `Invalid games data: ${validation.error}`, 
-              type: 'error' 
-            });
-            return;
-          }
-          
-          const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
-          if (success) {
-            loadSavedGames();
-            calculateStorageUsage();
-            setMessage({ text: 'Games data imported successfully.', type: 'success' });
-          } else {
-            setMessage({ text: 'Failed to import games data.', type: 'error' });
-          }
-        }
-      } catch (error) {
-        console.error('Error importing games data:', error);
-        setMessage({ text: 'Failed to process games data file.', type: 'error' });
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleFileImport = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      importGamesData(file);
-    }
-    // Reset the input
-    event.target.value = '';
-  };
-
-  const downloadSingleGame = (gameId, gameData) => {
-    // Don't allow downloading of paused games
-    if (gameData.isPaused) {
-      setMessage({ text: 'Cannot download paused games. Please finish the game first.', type: 'error' });
-      return;
-    }
-    
-    try {
-      // Create a more compact data structure by removing redundant information
-      const gameState = gameData.gameState || {};
-      const compactGameData = {
-        id: gameId,
-        players: gameState.players || [],
-        winner_id: gameState.winner_id,
-        final_scores: gameState.final_scores || {},
-        round_data: gameState.round_data || [],
-        total_rounds: gameState.total_rounds || gameState.maxRounds || 0,
-        created_at: gameState.created_at || gameData.savedAt,
-        game_mode: gameState.game_mode || gameState.mode || "Local",
-        duration_seconds: gameState.duration_seconds || 0
-      };
-      
-      // Validate the game data structure before downloading
-      const validation = ShareValidator.validateGameDataStructure(compactGameData);
-      if (!validation.isValid) {
-        setMessage({ 
-          text: `Cannot download game: ${validation.error}`, 
-          type: 'error' 
-        });
-        return;
-      }
-      
-      // Sanitize the data to prevent any security issues
-      const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
-      
-      // Remove any undefined or null values to make it more compact
-      const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
-        return value === undefined || value === null ? undefined : value;
-      }));
-      
-      const jsonData = JSON.stringify(cleanedData, null, 2);
-      const blob = new Blob([jsonData], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `wizard-tracker-game-${gameId}-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setMessage({ text: 'Game exported successfully.', type: 'success' });
-    } catch (error) {
-      console.error('Error downloading single game:', error);
-      setMessage({ text: 'Failed to export game.', type: 'error' });
-    }
-  };
-
   // Cloud Sync Functions
   const uploadSingleGameToCloud = async (gameId, gameData) => {
     if (gameData.isPaused) {
@@ -602,6 +386,9 @@ const Settings = () => {
       if (!result.success) {
         throw new Error(result.error || 'Upload failed');
       }
+
+      // Refresh the saved games list to show updated badge status
+      loadSavedGames();
       
       return result;
     } catch (error) {
@@ -655,6 +442,9 @@ const Settings = () => {
         uploadedCount: 0, 
         totalCount: 0 
       });
+
+      // Refresh the saved games list to show updated badge status
+      loadSavedGames();
 
       if (successful > 0 && failed === 0) {
         setMessage({ 
@@ -729,66 +519,35 @@ const Settings = () => {
         </div>
 
         <div className="settings-section">
-          <h2>Local Storage</h2>
-          <div className="storage-info">
-            <div className="storage-metric">
-              <span>Total Storage Used</span>
-              <span className="storage-value">{totalStorageSize.toFixed(2)} KB</span>
+          <h2>Storage & Cloud Sync</h2>
+          <div className="storage-cloud-grid">
+            <div className="storage-info">
+              {/* <h3>Local Storage</h3> */}
+              <div className="storage-metric">
+                <span>Total Storage Used</span>
+                <span className="storage-value">{totalStorageSize.toFixed(2)} KB</span>
+              </div>
+              <div className="storage-metric">
+                <span>Saved Games</span>
+                <span className="storage-value">{Object.keys(savedGames).length}</span>
+              </div>
             </div>
-            <div className="storage-metric">
-              <span>Saved Games</span>
-              <span className="storage-value">{Object.keys(savedGames).length}</span>
-            </div>
-          </div>
-
-          <div className="settings-actions">
-            <button className="settings-button refresh-button" onClick={() => {
-              loadSavedGames();
-              calculateStorageUsage();
-              setMessage({ text: 'Storage information refreshed.', type: 'info' });
-            }}>
-              <RefreshIcon size={18} />
-              Refresh Storage
-            </button>
-            <div className='import-export-buttons'>
-              <label className="settings-button import-button">
-                <DownloadIcon size={18} />
-                Import
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileImport}
-                  style={{ display: 'none' }}
-                />
-              </label>
-              <button className="settings-button export-button" onClick={exportGamesData}>
-                <UploadIcon size={18} />
-                Export
-              </button>
-            </div>
-            <button className="settings-button danger-button" onClick={handleDeleteAllData}>
-              <TrashIcon size={18} />
-              Clear all Data
-            </button>
-          </div>
-        </div>
-
-        {/* Cloud Sync Section */}
-        <div className="settings-section">
-          <h2>Cloud Sync</h2>
-          <div className="storage-info">
-            <div className="storage-metric">
-              <span>Uploadable Games</span>
-              <span className="storage-value">
-                {Object.values(savedGames).filter(game => !game.isPaused).length}
-              </span>
-            </div>
-            <div className="storage-metric">
-              <span>Status</span>
-              <span className="storage-value">
-                {cloudSyncStatus.uploading ? 'Uploading...' : 'Ready'}
-              </span>
-            </div>
+{/* 
+            <div className="storage-info">
+              <h3>Cloud Sync</h3>
+              <div className="storage-metric">
+                <span>Uploadable Games</span>
+                <span className="storage-value">
+                  {Object.values(savedGames).filter(game => !game.isPaused).length}
+                </span>
+              </div>
+              <div className="storage-metric">
+                <span>Status</span>
+                <span className="storage-value">
+                  {cloudSyncStatus.uploading ? 'Uploading...' : 'Ready'}
+                </span>
+              </div>
+            </div> */}
           </div>
 
           {cloudSyncStatus.uploading && (
@@ -809,13 +568,25 @@ const Settings = () => {
           )}
 
           <div className="settings-actions">
+            <button className="settings-button refresh-button" onClick={() => {
+              loadSavedGames();
+              calculateStorageUsage();
+              setMessage({ text: 'Storage information refreshed.', type: 'info' });
+            }}>
+              <RefreshIcon size={18} />
+              Refresh Storage
+            </button>
             <button 
               className="settings-button cloud-sync-button" 
               onClick={handleBulkCloudSync}
               disabled={cloudSyncStatus.uploading || Object.values(savedGames).filter(game => !game.isPaused).length === 0}
             >
-              <UploadIcon size={18} />
+              <CloudIcon size={18} />
               {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
+            </button>
+            <button className="settings-button danger-button" onClick={handleDeleteAllData}>
+              <TrashIcon size={18} />
+              Clear all Data
             </button>
           </div>
         </div>
@@ -850,8 +621,8 @@ const Settings = () => {
                       </div>
                       <div className="actions-game-history">
                         <div className="bottom-actions-game-history">
-                          <span className="mode-badge local">
-                            Local
+                          <span className={`mode-badge ${game.isUploaded ? 'online' : 'local'}`}>
+                            {game.isUploaded ? 'Online' : 'Local'}
                           </span>
                           <div className="game-date">
                             {formatDate(game.lastPlayed)}
@@ -869,28 +640,38 @@ const Settings = () => {
                           <TrashIcon size={25} />
                         </button>
                         <button 
-                          className="download-game-button" 
-                          onClick={() => downloadSingleGame(gameId, game)}
-                          aria-label="Download game"
-                          disabled={game.isPaused}
-                        >
-                          <DownloadIcon size={25} />
-                        </button>
-                        <button 
-                          className="cloud-upload-game-button" 
+                          className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
                           onClick={async () => {
+                            if (uploadingGames.has(gameId)) return; // Prevent double-click
+                            
+                            setUploadingGames(prev => new Set([...prev, gameId]));
                             try {
-                              await uploadSingleGameToCloud(gameId, game);
-                              setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
+                              const result = await uploadSingleGameToCloud(gameId, game);
+                              if (result.isDuplicate) {
+                                setMessage({ text: `Game was already uploaded - marked as online!`, type: 'success' });
+                              } else {
+                                setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
+                              }
                             } catch (error) {
                               setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                            } finally {
+                              setUploadingGames(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(gameId);
+                                return newSet;
+                              });
                             }
                           }}
-                          aria-label="Upload to cloud"
-                          disabled={game.isPaused}
-                          title={game.isPaused ? 'Cannot upload paused games' : 'Upload to cloud'}
+                          aria-label={uploadingGames.has(gameId) ? "Uploading..." : "Upload to cloud"}
+                          disabled={game.isPaused || (game.isUploaded && !uploadingGames.has(gameId)) || uploadingGames.has(gameId)}
+                          title={
+                            uploadingGames.has(gameId) ? 'Uploading game...' :
+                            game.isPaused ? 'Cannot upload paused games' : 
+                            game.isUploaded ? 'Game already uploaded to cloud' : 
+                            'Upload to cloud'
+                          }
                         >
-                          <UploadIcon size={25} />
+                          <CloudIcon size={25} />
                         </button>
                       </div>
                   </div>

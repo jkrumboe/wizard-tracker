@@ -503,6 +503,13 @@ const GameInProgress = () => {
         </span>
       </div>
 
+      {/* Auto-upload notification */}
+      {gameState.autoUploadStatus && (
+        <div className={`auto-upload-notification ${gameState.autoUploadStatus}`}>
+          <span>{gameState.autoUploadMessage}</span>
+        </div>
+      )}
+
       {isLastRound && isRoundComplete && (
         <button className="finish-btn" onClick={handleFinishGame}>
           Finish Game

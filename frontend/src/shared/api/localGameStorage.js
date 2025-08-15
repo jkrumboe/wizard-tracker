@@ -364,6 +364,55 @@ export class LocalGameStorage {
   }
 
   /**
+   * Mark a game as uploaded to cloud
+   * @param {string} gameId - The game ID
+   * @param {string} cloudGameId - The cloud/Appwrite game ID
+   * @param {string} cloudLookupKey - The cloud lookup key for duplicate detection
+   */
+  static markGameAsUploaded(gameId, cloudGameId, cloudLookupKey = null) {
+    const games = this.getAllSavedGames();
+    if (games[gameId]) {
+      games[gameId].isUploaded = true;
+      games[gameId].cloudGameId = cloudGameId;
+      games[gameId].uploadedAt = new Date().toISOString();
+      if (cloudLookupKey) {
+        games[gameId].cloudLookupKey = cloudLookupKey;
+      }
+      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
+    }
+  }
+
+  /**
+   * Check if a game has been uploaded to cloud
+   * @param {string} gameId - The game ID
+   * @returns {boolean} - True if game has been uploaded
+   */
+  static isGameUploaded(gameId) {
+    const games = this.getAllSavedGames();
+    return games[gameId]?.isUploaded === true;
+  }
+
+  /**
+   * Get the cloud game ID for an uploaded game
+   * @param {string} gameId - The local game ID
+   * @returns {string|null} - The cloud game ID or null if not uploaded
+   */
+  static getCloudGameId(gameId) {
+    const games = this.getAllSavedGames();
+    return games[gameId]?.cloudGameId || null;
+  }
+
+  /**
+   * Find games by cloud lookup key (for duplicate detection)
+   * @param {string} cloudLookupKey - The cloud lookup key
+   * @returns {Array} - Array of local games with the same cloud lookup key
+   */
+  static findGamesByCloudLookupKey(cloudLookupKey) {
+    const games = this.getAllSavedGames();
+    return Object.values(games).filter(game => game.cloudLookupKey === cloudLookupKey);
+  }
+
+  /**
    * Auto-save a game with a specific ID (for continuous saving)
    * @param {Object} gameState - The current game state
    * @param {string} gameId - Existing game ID for auto-save
