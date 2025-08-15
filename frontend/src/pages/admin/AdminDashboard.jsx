@@ -77,7 +77,7 @@ const AdminDashboard = () => {
       
       if (result.success) {
         setOnlineStatusDoc(result.document);
-        console.log(`Online status updated to: ${newStatus}`);
+        console.debug(`Online status updated to: ${newStatus}`);
       } else {
         console.error('Failed to update online status:', result.error);
       }

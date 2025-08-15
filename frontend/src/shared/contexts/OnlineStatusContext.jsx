@@ -3,17 +3,17 @@ import { onlineStatusService } from '../api/onlineStatusService';
 
 // Create context
 const OnlineStatusContext = createContext({
-  isOnline: true,
+  isOnline: false, // Start as offline until we know for sure
   lastUpdated: null,
-  message: ''
+  message: 'Checking online status...'
 });
 
 // Provider component
 export function OnlineStatusProvider({ children }) {
   const [onlineStatus, setOnlineStatus] = useState({
-    isOnline: true,
+    isOnline: false, // Start as offline until we know for sure
     lastUpdated: null,
-    message: ''
+    message: 'Checking online status...'
   });
 
   useEffect(() => {

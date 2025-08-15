@@ -121,7 +121,7 @@ class OnlineStatusService {
   _subscribeToUpdates() {
     try {
       this._subscription = subscribeToOnlineStatus((update) => {
-        console.log('Online status update received:', update);
+        console.debug('Online status update received:', update);
         
         // Handle the document structure from your realtime data
         const document = update.data || update.payload;

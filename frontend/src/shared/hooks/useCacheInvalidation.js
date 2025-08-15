@@ -42,7 +42,7 @@ export const clearAllCaches = async () => {
       const cacheNames = await caches.keys();
       const deletionPromises = cacheNames.map(cacheName => caches.delete(cacheName));
       await Promise.all(deletionPromises);
-      console.log('All caches cleared successfully');
+      console.debug('All caches cleared successfully');
       return true;
     } catch (error) {
       console.error('Failed to clear caches:', error);
@@ -59,7 +59,7 @@ export const refreshCache = async (cacheName) => {
   if ('caches' in window) {
     try {
       await caches.delete(cacheName);
-      console.log(`Cache ${cacheName} cleared successfully`);
+      console.debug(`Cache ${cacheName} cleared successfully`);
       return true;
     } catch (error) {
       console.error(`Failed to clear cache ${cacheName}:`, error);

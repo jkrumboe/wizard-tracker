@@ -108,7 +108,7 @@ const StatsChart = ({ playersData, roundData }) => {
 
   const generatePointsProgressionData = () => {
     if (!roundData || roundData.length === 0) {
-      console.log("No round data available for points progression chart");
+      console.debug("No round data available for points progression chart");
       return { labels: [], datasets: [] };
     }
     
@@ -225,7 +225,7 @@ const StatsChart = ({ playersData, roundData }) => {
 
   const generatePointsPerRoundData = () => {
     if (!roundData || roundData.length === 0) {
-      console.log("No round data available for points per round chart");
+      console.debug("No round data available for points per round chart");
       return { labels: [], datasets: [] };
     }
     
@@ -246,7 +246,7 @@ const StatsChart = ({ playersData, roundData }) => {
     const datasets = playersToShow.map(playerId => {
       const player = playersData.find(p => String(p.id) === String(playerId));
       if (!player) {
-        console.log(`Player with ID ${playerId} not found in playersData`);
+        console.debug(`Player with ID ${playerId} not found in playersData`);
         return null;
       }
       

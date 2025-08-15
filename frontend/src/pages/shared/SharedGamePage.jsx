@@ -24,7 +24,7 @@ const SharedGamePage = () => {
           throw new Error('Invalid share link - no game ID found');
         }
 
-        console.log('Loading shared game with ID:', shareId);
+        console.debug('Loading shared game with ID:', shareId);
 
         // Try to get the game data directly using the game ID from URL
         const gameData = await getSharedGameData(shareId);

@@ -69,7 +69,7 @@ export function GameStateProvider({ children }) {
           };
           
           setGameState(restoredGameState);
-          console.log('Restored current game:', gameId);
+          console.debug('Restored current game:', gameId);
         }
       } catch (error) {
         console.error('Error restoring current game:', error);
@@ -96,7 +96,7 @@ export function GameStateProvider({ children }) {
         });
 
         if (autoSaveIds.length > 0) {
-          console.log('Cleaned up', autoSaveIds.length, 'auto-saved games');
+          console.debug('Cleaned up', autoSaveIds.length, 'auto-saved games');
         }
       } catch (error) {
         console.warn('Error during auto-save cleanup:', error);
@@ -504,7 +504,7 @@ export function GameStateProvider({ children }) {
         
         // 🚀 Automatically upload the finished game to Appwrite
         try {
-          console.log('📤 Auto-uploading finished game to cloud...');
+          console.debug('📤 Auto-uploading finished game to cloud...');
           
           // Show user that auto-upload is happening
           setGameState((prevState) => ({
@@ -516,7 +516,7 @@ export function GameStateProvider({ children }) {
           const { uploadLocalGameToAppwrite } = await import('@/shared/api/gameService');
           const uploadResult = await uploadLocalGameToAppwrite(savedGameId, { replaceExisting: false });
           
-          console.log('✅ Game automatically uploaded to cloud!', uploadResult);
+          console.debug('✅ Game automatically uploaded to cloud!', uploadResult);
           
           // Show appropriate success message based on whether it was a duplicate
           const message = uploadResult.isDuplicate 

@@ -31,7 +31,7 @@ const config = {
  */
 export async function createSharedGameRecord(game, shareId) {
   // No need to store anything - we'll reconstruct from existing game data
-  console.log('Game sharing enabled for:', { shareId, gameId: game.id });
+  console.debug('Game sharing enabled for:', { shareId, gameId: game.id });
   
   return {
     success: true,
@@ -47,7 +47,7 @@ export async function createSharedGameRecord(game, shareId) {
  */
 export async function getSharedGameData(originalGameId) {
   try {
-    console.log('Reconstructing game data for:', originalGameId);
+    console.debug('Reconstructing game data for:', originalGameId);
     
     // 1. Get the game record
     const gameResult = await databases.listDocuments(
@@ -57,12 +57,12 @@ export async function getSharedGameData(originalGameId) {
     );
 
     if (gameResult.documents.length === 0) {
-      console.log('Game not found with extId:', originalGameId);
+      console.debug('Game not found with extId:', originalGameId);
       return null;
     }
 
     const gameDoc = gameResult.documents[0];
-    console.log('Found game document:', gameDoc);
+    console.debug('Found game document:', gameDoc);
 
     // 2. Get all players for this game using the playerIds array
     const playerDocs = [];
@@ -76,7 +76,7 @@ export async function getSharedGameData(originalGameId) {
       playerDocs.push(...playersResult.documents);
     }
 
-    console.log('Found players:', playerDocs);
+    console.debug('Found players:', playerDocs);
 
     // 3. Get all rounds for this game
     const roundsResult = await databases.listDocuments(
@@ -85,7 +85,7 @@ export async function getSharedGameData(originalGameId) {
       [Query.equal('gameId', gameDoc.$id)]
     );
 
-    console.log('Found rounds:', roundsResult.documents);
+    console.debug('Found rounds:', roundsResult.documents);
 
     // 4. Get all round players data for this game
     const roundPlayersResult = await databases.listDocuments(
@@ -94,7 +94,7 @@ export async function getSharedGameData(originalGameId) {
       [Query.equal('gameId', gameDoc.$id)]
     );
 
-    console.log('Found round players:', roundPlayersResult.documents);
+    console.debug('Found round players:', roundPlayersResult.documents);
 
     // 5. Reconstruct the game data
     const reconstructedGame = reconstructGameFromAppwriteData(
@@ -104,7 +104,7 @@ export async function getSharedGameData(originalGameId) {
       roundPlayersResult.documents
     );
 
-    console.log('Reconstructed game:', reconstructedGame);
+    console.debug('Reconstructed game:', reconstructedGame);
     return reconstructedGame;
 
   } catch (error) {
@@ -169,7 +169,7 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
   const final_scores = {};
   try {
     const parsedScores = JSON.parse(gameDoc.finalScoresJson || '{}');
-    console.log('Parsed final scores from JSON:', parsedScores);
+    console.debug('Parsed final scores from JSON:', parsedScores);
     
     // The finalScoresJson already contains original player IDs, not Appwrite IDs
     // So we can use it directly

@@ -204,8 +204,8 @@ function App() {
     >
       <Router>
         <ThemeProvider>
-          <UserProvider>
-            <OnlineStatusProvider>
+          <OnlineStatusProvider>
+            <UserProvider>
               <AutoLogoutHandler />
               <GameStateProvider>
                 <URLImportHandler />
@@ -264,10 +264,11 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-              </Routes>            </div>
+              </Routes>
+                </div>
               </GameStateProvider>
-            </OnlineStatusProvider>
-          </UserProvider>
+            </UserProvider>
+          </OnlineStatusProvider>
         </ThemeProvider>
       </Router>
     </AppLoadingScreen>

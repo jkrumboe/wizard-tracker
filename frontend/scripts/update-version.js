@@ -47,7 +47,7 @@ function updateServiceWorkerVersion(version) {
           `const CACHE_NAME = "keep-wiz-v${version}"`
         );
         fs.writeFileSync(filePath, content);
-        console.log(`✅ Updated version in ${path.basename(filePath)} to ${version}`);
+        console.debug(`✅ Updated version in ${path.basename(filePath)} to ${version}`);
       }
     } catch (error) {
       console.error(`Error updating ${filePath}:`, error);
@@ -66,7 +66,7 @@ function updateReadmeBadge(version) {
         `![Version](https://img.shields.io/badge/version-${version}-blue)`
       );
       fs.writeFileSync(readmePath, content);
-      console.log(`✅ Updated version badge in README.md to ${version}`);
+      console.debug(`✅ Updated version badge in README.md to ${version}`);
     }
   } catch (error) {
     console.error('Error updating README.md:', error);
@@ -93,7 +93,7 @@ function updateDockerWorkflow(version) {
       );
       
       fs.writeFileSync(workflowPath, content);
-      console.log(`✅ Updated version in docker-build.yml to ${version}`);
+      console.debug(`✅ Updated version in docker-build.yml to ${version}`);
     }
   } catch (error) {
     console.error('Error updating docker-build.yml:', error);
@@ -118,13 +118,13 @@ function main() {
     }
   }
 
-  console.log(`🔄 Updating all version references to ${version}...`);
+  console.debug(`🔄 Updating all version references to ${version}...`);
   
   updateServiceWorkerVersion(version);
   updateReadmeBadge(version);
   updateDockerWorkflow(version);
   
-  console.log(`✅ Version update complete! All files now use version ${version}`);
+  console.debug(`✅ Version update complete! All files now use version ${version}`);
 }
 
 main();

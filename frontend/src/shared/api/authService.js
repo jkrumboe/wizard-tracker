@@ -1,4 +1,5 @@
 import { account, ID } from '@/shared/utils/appwrite';
+import { onlineStatusService } from './onlineStatusService';
 
 class AuthService {
   async login({ email, password }) {
@@ -30,10 +31,35 @@ class AuthService {
       try {
         await account.deleteSessions();
       } catch (deleteAllError) {
-        console.log('Logout errors (ignored):', { current: error, deleteAll: deleteAllError });
+        console.debug('Logout errors (ignored):', { current: error, deleteAll: deleteAllError });
       }
     }
     // Don't automatically redirect here, let the calling component handle it
+  }
+
+  clearLocalSession() {
+    // Clear any stored session data locally without making server calls
+    // This is useful when switching to offline mode
+    try {
+      // Appwrite typically stores session data with these keys
+      const appwriteKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('appwrite') || key.includes('session') || key.includes('account'))) {
+          appwriteKeys.push(key);
+        }
+      }
+      
+      // Remove all found Appwrite-related keys
+      appwriteKeys.forEach(key => {
+        localStorage.removeItem(key);
+        console.debug(`🔄 Cleared localStorage key: ${key}`);
+      });
+      
+      console.debug('🔄 Local session data cleared');
+    } catch (error) {
+      console.debug('Error clearing local session:', error);
+    }
   }
 
   async isAuthenticated() {
@@ -56,6 +82,29 @@ class AuthService {
 
   async checkAuthStatus() {
     try {
+      // Simple check: if navigator is offline, skip auth check
+      if (!navigator.onLine) {
+        console.debug('🔒 Browser is offline - skipping auth check');
+        return null;
+      }
+      
+      // Try to get status from service, but don't wait too long
+      try {
+        const statusCheck = await Promise.race([
+          onlineStatusService.getStatus(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
+        ]);
+        
+        if (!statusCheck.online) {
+          console.debug('🔒 App is in offline mode - skipping auth check');
+          return null;
+        }
+      } catch {
+        // If status check times out, assume offline for safety
+        console.debug('🔒 Status check timed out - assuming offline mode');
+        return null;
+      }
+      
       return await account.get();
     } catch {
       return null;

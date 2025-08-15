@@ -30,7 +30,7 @@ export class GameMigrationService {
         try {
           // Check if game is already in new format
           if (this.isNewSchemaFormat(game)) {
-            console.log(`Game ${gameId} already in new format, skipping`);
+            console.debug(`Game ${gameId} already in new format, skipping`);
             continue;
           }
           

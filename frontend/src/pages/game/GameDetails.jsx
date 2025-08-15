@@ -284,7 +284,7 @@ const GameDetails = () => {
     });
     
     // Log data for debugging (will be removed in production)
-    console.log("Chart data prepared:", { playersData, roundData });
+    console.debug("Chart data prepared:", { playersData, roundData });
     
     return { playersData, roundData };
   };

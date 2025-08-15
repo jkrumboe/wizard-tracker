@@ -76,11 +76,11 @@ export async function shareNatively(url, game) {
  * @returns {Promise<{success: boolean, method: string, url: string}>}
  */
 export async function shareGame(game) {
-  console.log('shareGame called with:', game);
-  console.log('Game ID:', game.id);
+  console.debug('shareGame called with:', game);
+  console.debug('Game ID:', game.id);
   
   const url = generateShareableLink(game);
-  console.log('Generated shareable URL:', url);
+  console.debug('Generated shareable URL:', url);
   
   // Try native sharing first on mobile devices
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

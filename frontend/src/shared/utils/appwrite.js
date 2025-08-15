@@ -18,7 +18,7 @@ const subscribeToOnlineStatus = (callback) => {
     const unsubscribe = client.subscribe(
         `databases.${CONFIG_DATABASE_ID}.collections.${ONLINE_COLLECTION_ID}.documents`,
         (response) => {
-            console.log('Realtime update:', response);
+            console.debug('Realtime update:', response);
             
             if (response.events && response.events.length > 0) {
                 const event = response.events[0];
