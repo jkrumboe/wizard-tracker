@@ -10,6 +10,7 @@ import Settings from "@/pages/Settings"
 import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame } from "@/pages/game"
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx"
 import Login from "@/pages/auth/Login"
+import SharedGamePage from "@/pages/shared/SharedGamePage"
 import RealtimeTest from "@/pages/RealtimeTest"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
@@ -30,10 +31,17 @@ function URLImportHandler() {
   
   useEffect(() => {
     const handleUrlImport = () => {
+      const currentPath = window.location.pathname;
       const urlParams = new URLSearchParams(window.location.search);
       const importGameParam = urlParams.get('importGame');
       const importGamesParam = urlParams.get('importGames');
       const shareKeyParam = urlParams.get('shareKey');
+      
+      // Check if this is a shared game link pattern
+      if (currentPath.startsWith('/shared/')) {
+        // Let React Router handle shared game links
+        return;
+      }
       
       if (importGameParam) {
         try {
@@ -191,7 +199,7 @@ function App() {
       showOnAppOpen={true}
       appOpenThreshold={15 * 60 * 1000}
       storageKey="wizardAppLastUsed"
-      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.7.1'}
+      appVersion={import.meta.env.VITE_APP_VERSION || '1.1.8'}
       versionKey="wizardAppVersion"
     >
       <Router>
@@ -246,6 +254,7 @@ function App() {
                     </OnlineProtectedRoute>
                   }/>
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/shared/:shareId" element={<SharedGamePage />} />
                   <Route path="/realtime-test" element={<RealtimeTest />} />
                 <Route
                   path="/admin"

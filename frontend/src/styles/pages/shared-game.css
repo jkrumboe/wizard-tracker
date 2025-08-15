@@ -1,0 +1,142 @@
+/* Shared Game Page Styles */
+
+.shared-game-page {
+  /* min-height: 100vh; */
+  background: var(--background-color);
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shared-game-container {
+  background: var(--card-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--spacing-xl);
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+}
+
+.shared-game-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  color: var(--primary-color);
+}
+
+.shared-game-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.shared-game-info {
+  text-align: left;
+}
+
+.game-summary h2 {
+  color: var(--text-color);
+  margin-bottom: var(--spacing-md);
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+/* .game-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--background-light);
+  border-radius: var(--radius-md);
+} */
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.detail-item .score {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.import-section {
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--spacing-lg);
+  text-align: center;
+}
+
+.import-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.5;
+}
+
+.import-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.import-btn {
+  min-width: 120px;
+}
+
+.shared-game-error {
+  text-align: center;
+  color: var(--error-color);
+}
+
+.shared-game-error h2 {
+  margin-bottom: var(--spacing-md);
+  color: var(--error-color);
+}
+
+.shared-game-error p {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+.shared-game-success {
+  text-align: center;
+  color: var(--success-color);
+}
+
+.shared-game-success h2 {
+  margin: var(--spacing-md) 0;
+  color: var(--success-color);
+}
+
+.shared-game-success p {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .shared-game-page {
+    padding: var(--spacing-md);
+  }
+  
+  .shared-game-container {
+    padding: var(--spacing-lg);
+  }
+  
+  .shared-game-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .import-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

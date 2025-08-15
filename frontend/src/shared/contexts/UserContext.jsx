@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useCallback } from 'react'
 import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
+import { onlineStatusService } from '../api/onlineStatusService'
 
 export const UserContext = createContext()
 
@@ -9,11 +10,21 @@ export function UserProvider({ children }) {
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
   
-  // Initialize user authentication check
+  // Initialize user authentication check, but only if online mode is enabled
   useEffect(() => {
     const checkAuthenticationStatus = async () => {
       try {
-        // Check authentication status with Appwrite
+        // First check if online mode is enabled
+        const statusCheck = await onlineStatusService.getStatus()
+        
+        if (!statusCheck.online) {
+          console.log('🔒 App is in offline mode - skipping authentication check')
+          setLoading(false)
+          return
+        }
+        
+        // Only check authentication if online mode is enabled
+        console.log('🔓 App is in online mode - checking authentication')
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {
           setUser(userFromServer)

@@ -19,7 +19,8 @@ const config = {
     players: 'players',
     games: 'games',
     rounds: 'rounds',
-    roundPlayers: 'roundPlayers'
+    roundPlayers: 'roundPlayers',
+    sharedGames: 'sharedGames'
   }
 };
 
@@ -37,11 +38,11 @@ class FrontendAppwriteGameUploader {
     
     this.databases = new Databases(this.client);
     
-    console.log('🚀 Frontend Appwrite uploader initialized:', {
-      endpoint: this.config.endpoint,
-      projectId: this.config.projectId,
-      databaseId: this.config.databaseId
-    });
+    // console.log('🚀 Frontend Appwrite uploader initialized:', {
+    //   endpoint: this.config.endpoint,
+    //   projectId: this.config.projectId,
+    //   databaseId: this.config.databaseId
+    // });
   }
 
   /**
@@ -55,10 +56,10 @@ class FrontendAppwriteGameUploader {
       // Try to get current session
       const session = await account.get();
       this.userId = session.$id; // Store user ID
-      console.log('✅ Authenticated as:', session.email || session.name || 'Anonymous');
+      // console.log('✅ Authenticated as:', session.email || session.name || 'Anonymous');
       return true;
     } catch {
-      console.log('🔐 No authentication found, creating anonymous session...');
+      console.error('🔐 No authentication found, creating anonymous session...');
       
       try {
         // Create anonymous session for game uploads

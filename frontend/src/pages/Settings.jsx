@@ -10,6 +10,8 @@ import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal
 import authService from '@/shared/api/authService';
 import { uploadLocalGameToAppwrite } from '@/shared/api/gameService';
 import { checkGameSyncStatus } from '@/shared/utils/syncChecker';
+import { shareGame } from '@/shared/utils/gameSharing';
+import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import '@/styles/pages/settings.css';
 import "@/styles/components/offline-notification.css";
 
@@ -23,6 +25,7 @@ const Settings = () => {
   const [cloudSyncStatus, setCloudSyncStatus] = useState({ uploading: false, progress: '', uploadedCount: 0, totalCount: 0 });
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
+  const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
 
@@ -415,6 +418,63 @@ const Settings = () => {
     }
   };
 
+  // Share Game Function
+  const handleShareGame = async (gameId, gameData) => {
+    console.log('handleShareGame called with gameId:', gameId, 'gameData:', gameData);
+    
+    if (gameData.isPaused) {
+      setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
+      return;
+    }
+
+    // Only allow sharing of online games (those that have been uploaded)
+    const syncStatus = gameSyncStatuses[gameId];
+    const isOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
+    
+    if (!isOnline) {
+      setMessage({ text: 'Game must be uploaded to cloud before sharing.', type: 'error' });
+      return;
+    }
+
+    setSharingGames(prev => new Set([...prev, gameId]));
+    
+    try {
+      // Ensure the game object has the correct ID for sharing
+      const gameToShare = {
+        ...gameData,
+        id: gameId // Always use the gameId from the map as the authoritative ID
+      };
+      
+      console.log('Game to share:', gameToShare);
+      
+      // Generate share link and handle sharing
+      const shareResult = await shareGame(gameToShare);
+      
+      if (shareResult.success) {
+        // Create shared game record in cloud
+        const shareId = shareResult.url.split('/').pop();
+        await createSharedGameRecord(gameData, shareId);
+        
+        if (shareResult.method === 'native') {
+          setMessage({ text: 'Game shared successfully!', type: 'success' });
+        } else {
+          setMessage({ text: 'Share link copied to clipboard!', type: 'success' });
+        }
+      } else {
+        setMessage({ text: 'Failed to share game. Please try again.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Failed to share game:', error);
+      setMessage({ text: `Share failed: ${error.message}`, type: 'error' });
+    } finally {
+      setSharingGames(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(gameId);
+        return newSet;
+      });
+    }
+  };
+
   const handleBulkCloudSync = async () => {
     const gameEntries = Object.entries(savedGames);
     const uploadableGames = gameEntries.filter(([, game]) => !game.isPaused);
@@ -623,12 +683,7 @@ const Settings = () => {
                         <div className="game-winner">
                           {game.isPaused ? 'Paused Game' : 'Finished Game'}
                           
-                        </div>
-                        {game.isImported && (
-                            <span className="import-badge">
-                              <ShareIcon size={14} />
-                            </span>
-                          )}
+                        </div>                  
                         <div>Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
                       </div>
                       <div className="game-players">
@@ -664,40 +719,75 @@ const Settings = () => {
                         >
                           <TrashIcon size={25} />
                         </button>
-                        <button 
-                          className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
-                          onClick={async () => {
-                            if (uploadingGames.has(gameId)) return; // Prevent double-click
-                            
-                            setUploadingGames(prev => new Set([...prev, gameId]));
-                            try {
-                              const result = await uploadSingleGameToCloud(gameId, game);
-                              if (result.isDuplicate) {
-                                setMessage({ text: `Game was already uploaded - marked as online!`, type: 'success' });
-                              } else {
-                                setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
-                              }
-                            } catch (error) {
-                              setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                            } finally {
-                              setUploadingGames(prev => {
-                                const newSet = new Set(prev);
-                                newSet.delete(gameId);
-                                return newSet;
-                              });
-                            }
-                          }}
-                          aria-label={uploadingGames.has(gameId) ? "Uploading..." : "Upload to cloud"}
-                          disabled={game.isPaused || (game.isUploaded && !uploadingGames.has(gameId)) || uploadingGames.has(gameId)}
-                          title={
-                            uploadingGames.has(gameId) ? 'Uploading game...' :
-                            game.isPaused ? 'Cannot upload paused games' : 
-                            game.isUploaded ? 'Game already uploaded to cloud' : 
-                            'Upload to cloud'
+                        
+                        {/* Conditionally show upload or share button based on sync status */}
+                        {(() => {
+                          const syncStatus = gameSyncStatuses[gameId];
+                          const status = syncStatus?.status || (game.isUploaded ? 'Online' : 'Local');
+                          const isOnline = status === 'Online' || status === 'Synced';
+                          
+                          if (isOnline) {
+                            // Show share button for online/synced games
+                            return (
+                              <button 
+                                className={`cloud-upload-game-button share-button ${sharingGames.has(gameId) ? 'sharing' : ''}`}
+                                onClick={() => {
+                                  console.log('Share button clicked for gameId:', gameId);
+                                  console.log('Game object:', game);
+                                  console.log('Game object ID:', game.id);
+                                  handleShareGame(gameId, game);
+                                }}
+                                aria-label={sharingGames.has(gameId) ? "Sharing..." : "Share game"}
+                                disabled={game.isPaused || sharingGames.has(gameId)}
+                                title={
+                                  sharingGames.has(gameId) ? 'Creating share link...' :
+                                  game.isPaused ? 'Cannot share paused games' : 
+                                  'Share game'
+                                }
+                              >
+                                <ShareIcon size={25} />
+                              </button>
+                            );
+                          } else {
+                            // Show upload button for local games
+                            return (
+                              <button 
+                                className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
+                                onClick={async () => {
+                                  if (uploadingGames.has(gameId)) return; // Prevent double-click
+                                  
+                                  setUploadingGames(prev => new Set([...prev, gameId]));
+                                  try {
+                                    const result = await uploadSingleGameToCloud(gameId, game);
+                                    if (result.isDuplicate) {
+                                      setMessage({ text: `Game was already uploaded - marked as online!`, type: 'success' });
+                                    } else {
+                                      setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
+                                    }
+                                  } catch (error) {
+                                    setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                                  } finally {
+                                    setUploadingGames(prev => {
+                                      const newSet = new Set(prev);
+                                      newSet.delete(gameId);
+                                      return newSet;
+                                    });
+                                  }
+                                }}
+                                aria-label={uploadingGames.has(gameId) ? "Uploading..." : "Upload to cloud"}
+                                disabled={game.isPaused || (game.isUploaded && !uploadingGames.has(gameId)) || uploadingGames.has(gameId)}
+                                title={
+                                  uploadingGames.has(gameId) ? 'Uploading game...' :
+                                  game.isPaused ? 'Cannot upload paused games' : 
+                                  game.isUploaded ? 'Game already uploaded to cloud' : 
+                                  'Upload to cloud'
+                                }
+                              >
+                                <CloudIcon size={25} />
+                              </button>
+                            );
                           }
-                        >
-                          <CloudIcon size={25} />
-                        </button>
+                        })()}
                       </div>
                   </div>
                 </div>
@@ -715,7 +805,7 @@ const Settings = () => {
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Version:</span>
-                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.7.1'}</span>
+                <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.1.8'}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Build Date:</span>

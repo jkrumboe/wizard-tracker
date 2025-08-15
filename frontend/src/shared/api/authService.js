@@ -23,10 +23,15 @@ class AuthService {
 
   async logout() {
     try {
+      // Delete current session
       await account.deleteSession('current');
     } catch (error) {
-      // Ignore errors on logout, we want to clear local state anyway
-      console.log('Logout error (ignored):', error);
+      // If current session deletion fails, try to delete all sessions
+      try {
+        await account.deleteSessions();
+      } catch (deleteAllError) {
+        console.log('Logout errors (ignored):', { current: error, deleteAll: deleteAllError });
+      }
     }
     // Don't automatically redirect here, let the calling component handle it
   }
