@@ -1623,7 +1623,6 @@
     width: 100%;
     border-radius: var(--radius-lg);
     margin: var(--spacing-lg) auto;
-    padding: var(--spacing-lg) 0;
   }
 
   .leaderboard-container h1 {
@@ -1872,9 +1871,9 @@
       flex-direction: row;
     }
 
-    .players-section{
+    /* .players-section{
       grid-row: span 2;
-    }
+    } */
 
     .nav-menu {
       display: flex;
@@ -2338,10 +2337,6 @@
   
   .home-header h1 {
     font-size: 1.5rem;
-  }
-  
-  .action-buttons {
-    margin: var(--spacing-lg);
   }
 
   .form-group {

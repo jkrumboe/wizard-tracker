@@ -12,7 +12,7 @@ const Leaderboard = () => {
   const [sortOrder, setSortOrder] = useState('desc')
   const [filter, setFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const playersPerPage = 5
+  const playersPerPage = 10
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
@@ -93,8 +93,6 @@ const Leaderboard = () => {
 
   return (
       <div className="leaderboard-container">
-        <h1>Leaderboard</h1>
-        
         <div className="filter-container">
           <input
             type="text"

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { lobbyService } from '@/shared/api/lobbyService';
+import {CopyIcon, XIcon, CheckMarkIcon} from '@/components/ui/Icon';
+import '@/styles/pages/gameRoom.css';
+
 
 const GameRoom = () => {
   const { roomId } = useParams();
@@ -13,6 +16,7 @@ const GameRoom = () => {
   // const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [copiedRoomId, setCopiedRoomId] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -174,18 +178,8 @@ const GameRoom = () => {
   const allPlayersReady = members.length > 1 && members.every(member => member.is_ready);
 
   return (
-    <div className="game-room">
       <div className="game-room-container">
-        {/* Header */}
-        <div className="game-room-header">
-          <h1>{room.room_name}</h1>
-          <div className="room-info">
-            <span>Room ID: {roomId}</span>
-            <span>Status: {room.status}</span>
-          </div>
-        </div>
-
-        {error && (
+                {error && (
           <div className="error-message">
             <span>{error}</span>
             <button onClick={() => setError('')}>×</button>
@@ -195,10 +189,32 @@ const GameRoom = () => {
         <div className="game-room-content">
           {/* Players Section */}
           <div className="players-section">
-            <h3>Players ({members.length}/{room.max_players})</h3>
+            {/* Header */}
+            <div className="game-room-header">
+              <h1>Roomname: {room.room_name}</h1>
+              <div className="room-info">
+                <span
+                  className="room-id copyable"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(room.room_id);
+                    setCopiedRoomId(room.room_id);
+                    setTimeout(() => setCopiedRoomId(null), 3500);
+                  }}
+                >
+                  {room.room_id}{' '}
+                  {copiedRoomId === room.room_id ? (
+                    <CheckMarkIcon className="Icon-Check"  size={12} />
+                  ) : (
+                    <CopyIcon size={12} />
+                  )}
+                </span>
+                {/*<span>Status: {room.status}</span>*/}
+              </div>
+            </div>
+            {/* <h3>Players ({members.length}/{room.max_players})</h3> */}
             <div className="players-list">
               {members.map((member) => (
-                <div key={member.$id} className={`player-card ${member.is_ready ? 'ready' : 'not-ready'}`}>
+                <div key={member.$id} className={`gameRoom-player-card ${member.is_ready ? 'ready' : 'not-ready'}`}>
                   <div className="player-info">
                     <div className="player-avatar">
                       {member.user_name.charAt(0).toUpperCase()}
@@ -210,20 +226,20 @@ const GameRoom = () => {
                           <span className="host-badge">HOST</span>
                         )}
                       </div>
+                      <div className="player-status">
+                        {member.is_ready ? 'Ready' : 'Not Ready'}
+                      </div>
                     </div>
-                  </div>
-                  <div className="player-status">
-                    {member.is_ready ? 'Ready' : 'Not Ready'}
                   </div>
                 </div>
               ))}
               
               {/* Empty slots */}
               {Array.from({ length: room.max_players - members.length }).map((_, index) => (
-                <div key={`empty-${index}`} className="player-card empty">
+                <div key={`empty-${index}`} className="gameRoom-player-card empty">
                   <div className="player-info">
-                    <div className="player-avatar empty">?</div>
-                    <div className="player-details">
+                    {/* <div className="player-avatar empty">?</div> */}
+                    <div className="player-details" style={{ color: '#999' }}>
                       Waiting for player...
                     </div>
                   </div>
@@ -233,7 +249,7 @@ const GameRoom = () => {
           </div>
 
           {/* Game Settings Section */}
-          <div className="settings-section">
+          {/* <div className="settings-section">
             <h3>Game Settings</h3>
             <div className="settings-card">
               <div className="setting-item">
@@ -245,7 +261,7 @@ const GameRoom = () => {
                 <span>{room.game_settings?.mode || 'Standard'}</span>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="game-room-actions">
@@ -282,7 +298,6 @@ const GameRoom = () => {
           )}
         </div>
       </div>
-    </div>
   );
 };
 

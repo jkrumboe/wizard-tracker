@@ -503,14 +503,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   color: var(--text-light);
 }
 
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-md);
-}
-
 /* Game list container */
-
 .empty-message {
   text-align: center;
   padding: var(--spacing-xl);

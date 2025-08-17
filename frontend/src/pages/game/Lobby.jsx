@@ -14,6 +14,7 @@ const Lobby = () => {
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(6);
+  const [copiedRoomId, setCopiedRoomId] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -130,7 +131,6 @@ const Lobby = () => {
   //   );
   // }
 
-  const [copiedRoomId, setCopiedRoomId] = useState(null);
 
   return (
       <div className="lobby-container">
@@ -205,7 +205,6 @@ const Lobby = () => {
               {rooms.map((room) => (
                 <div key={room.$id} className="room-card">
                   <div className="room-header">
-                    <span className="room-name">{room.room_name}</span>
                     <span
                       className="room-id copyable"
                       onClick={async () => {
@@ -221,6 +220,8 @@ const Lobby = () => {
                         <CopyIcon size={12} />
                       )}
                     </span>
+                    {/*<span className="room-name">{room.room_name}</span>*/}
+
                   </div>
                   <div className="room-details">
                     <div className="room-detail">
