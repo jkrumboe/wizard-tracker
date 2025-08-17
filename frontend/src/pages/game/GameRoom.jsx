@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { lobbyService } from '@/shared/api/lobbyService';
-import '@/styles/pages/GameRoom.css';
-import '@/styles/pages/GameRoom.css';
 
 const GameRoom = () => {
   const { roomId } = useParams();
@@ -12,7 +10,7 @@ const GameRoom = () => {
   
   const [room, setRoom] = useState(null);
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isReady, setIsReady] = useState(false);
 
@@ -23,7 +21,7 @@ const GameRoom = () => {
     }
 
     const loadRoomData = async () => {
-      setLoading(true);
+      // setLoading(true);
       try {
         const [roomResponse, membersResponse] = await Promise.all([
           lobbyService.getRoom(roomId),
@@ -55,14 +53,48 @@ const GameRoom = () => {
         }
       } catch {
         setError('Failed to load room data');
-      } finally {
-        setLoading(false);
       }
+      //  finally {
+      //   setLoading(false);
+      // }
     };
 
-    const handleRoomUpdate = () => {
-      // Refresh room data when updates occur
-      loadRoomData();
+    const handleRoomUpdate = async (response) => {
+      try {
+        // Handle different types of updates more efficiently
+        if (response.payload) {
+          const eventType = response.events[0];
+          
+          if (eventType.includes('room_members')) {
+            // Only update members if it's a member change
+            const membersResponse = await lobbyService.getRoomMembers(roomId);
+            if (membersResponse.success) {
+              setMembers(membersResponse.members);
+              
+              // Update current user ready status
+              const currentUserMember = membersResponse.members.find(m => m.user_id === user.$id);
+              if (currentUserMember) {
+                setIsReady(currentUserMember.is_ready);
+              }
+            }
+          } else if (eventType.includes('game_rooms')) {
+            // Only update room data if it's a room change
+            const roomResponse = await lobbyService.getRoom(roomId);
+            if (roomResponse.success) {
+              setRoom(roomResponse.room);
+              
+              // If room is starting, redirect to game
+              if (roomResponse.room.status === 'starting') {
+                navigate(`/multiplayer/${roomId}`);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling room update:', error);
+        // Fallback to full reload if selective update fails
+        loadRoomData();
+      }
     };
 
     loadRoomData();
@@ -110,24 +142,26 @@ const GameRoom = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="game-room">
-        <div className="room-container">
-          <div className="loading">Loading room...</div>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="loading-container">
+  //       <div className="loading-content">
+  //         <div className="loading-spinner"></div>
+  //         <div>Loading room...</div>
+  //         <div>Please wait while we fetch room details</div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (!room) {
     return (
-      <div className="game-room">
-        <div className="room-container">
-          <div className="error-message">
+      <div className="room-not-found">
+        <div className="room-not-found-content">
+          <div className="room-not-found-card">
             <h2>Room Not Found</h2>
             <p>The room you're looking for doesn't exist or has been deleted.</p>
-            <button onClick={() => navigate('/lobby')} className="btn btn-primary">
+            <button onClick={() => navigate('/lobby')}>
               Back to Lobby
             </button>
           </div>
@@ -141,54 +175,67 @@ const GameRoom = () => {
 
   return (
     <div className="game-room">
-      <div className="room-container">
-        <div className="room-header">
+      <div className="game-room-container">
+        {/* Header */}
+        <div className="game-room-header">
           <h1>{room.room_name}</h1>
           <div className="room-info">
-            <span className="room-id">Room ID: {roomId}</span>
-            <span className="room-status">Status: {room.status}</span>
+            <span>Room ID: {roomId}</span>
+            <span>Status: {room.status}</span>
           </div>
         </div>
 
         {error && (
           <div className="error-message">
-            {error}
-            <button onClick={() => setError('')} className="close-btn">×</button>
+            <span>{error}</span>
+            <button onClick={() => setError('')}>×</button>
           </div>
         )}
 
-        <div className="room-content">
+        <div className="game-room-content">
+          {/* Players Section */}
           <div className="players-section">
             <h3>Players ({members.length}/{room.max_players})</h3>
             <div className="players-list">
               {members.map((member) => (
                 <div key={member.$id} className={`player-card ${member.is_ready ? 'ready' : 'not-ready'}`}>
                   <div className="player-info">
-                    <div className="player-name">
-                      {member.user_name}
-                      {member.user_id === room.host_id && <span className="host-badge">HOST</span>}
+                    <div className="player-avatar">
+                      {member.user_name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="player-status">
-                      {member.is_ready ? '✓ Ready' : '⏳ Not Ready'}
+                    <div className="player-details">
+                      <div className="player-name">
+                        {member.user_name}
+                        {member.user_id === room.host_id && (
+                          <span className="host-badge">HOST</span>
+                        )}
+                      </div>
                     </div>
+                  </div>
+                  <div className="player-status">
+                    {member.is_ready ? 'Ready' : 'Not Ready'}
                   </div>
                 </div>
               ))}
               
-              {/* Show empty slots */}
+              {/* Empty slots */}
               {Array.from({ length: room.max_players - members.length }).map((_, index) => (
                 <div key={`empty-${index}`} className="player-card empty">
                   <div className="player-info">
-                    <div className="player-name">Waiting for player...</div>
+                    <div className="player-avatar empty">?</div>
+                    <div className="player-details">
+                      Waiting for player...
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="game-settings">
+          {/* Game Settings Section */}
+          <div className="settings-section">
             <h3>Game Settings</h3>
-            <div className="settings-grid">
+            <div className="settings-card">
               <div className="setting-item">
                 <label>Rounds:</label>
                 <span>{room.game_settings?.rounds || 10}</span>
@@ -201,18 +248,15 @@ const GameRoom = () => {
           </div>
         </div>
 
-        <div className="room-actions">
-          <div className="player-actions">
+        <div className="game-room-actions">
+          <div className="action-buttons">
             <button
               onClick={handleToggleReady}
-              className={`btn ${isReady ? 'btn-warning' : 'btn-success'}`}
+              className={`ready-button ${isReady ? 'not-ready' : 'ready'}`}
             >
               {isReady ? 'Not Ready' : 'Ready'}
             </button>
-            <button
-              onClick={handleLeaveRoom}
-              className="btn btn-danger"
-            >
+            <button onClick={handleLeaveRoom} className="leave-button">
               Leave Room
             </button>
           </div>
@@ -222,7 +266,7 @@ const GameRoom = () => {
               <button
                 onClick={handleStartGame}
                 disabled={!allPlayersReady || members.length < 2}
-                className={`btn ${allPlayersReady && members.length >= 2 ? 'btn-primary' : 'btn-disabled'}`}
+                className="start-game-button"
               >
                 {!allPlayersReady ? 'Waiting for players to be ready' : 
                  members.length < 2 ? 'Need at least 2 players' : 
@@ -230,13 +274,13 @@ const GameRoom = () => {
               </button>
             </div>
           )}
-        </div>
 
-        {!isHost && (
-          <div className="waiting-message">
-            <p>Waiting for the host to start the game...</p>
-          </div>
-        )}
+          {!isHost && (
+            <div className="waiting-message">
+              <p>Waiting for the host to start the game...</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 import { databases, account, ID, client } from '@/shared/utils/appwrite';
 import { Query } from 'appwrite';
 
-// Database and Collection IDs (you'll need to create these in Appwrite)
-const LOBBY_DATABASE_ID = 'lobby_db'; // Replace with your actual database ID
+// Database and Collection IDs - using existing database
+const LOBBY_DATABASE_ID = '688cfb4b002d001bc2e5'; // Using existing database
 const ROOMS_COLLECTION_ID = 'game_rooms';
 const ROOM_MEMBERS_COLLECTION_ID = 'room_members';
 
@@ -25,10 +25,13 @@ class LobbyService {
           host_name: user.name,
           max_players: roomData.maxPlayers || 6,
           current_players: 1,
-          game_settings: roomData.gameSettings || {},
-          status: 'waiting',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          game_settings: JSON.stringify(roomData.gameSettings || {
+            rounds: 10,
+            mode: 'standard',
+            difficulty: 'normal'
+          }),
+          status: 'waiting'
+          // Using automatic $createdAt instead of manual created_at
         }
       );
 
@@ -59,7 +62,7 @@ class LobbyService {
         [
           // Only show waiting rooms
           Query.equal('status', 'waiting'),
-          Query.orderDesc('created_at'),
+          Query.orderDesc('$createdAt'), // Using automatic $createdAt
           Query.limit(50)
         ]
       );
@@ -70,6 +73,16 @@ class LobbyService {
       };
     } catch (error) {
       console.error('Error fetching rooms:', error);
+      
+      // If collections don't exist, return empty array with helpful message
+      if (error.message.includes('Collection not found') || error.message.includes('Database not found')) {
+        console.warn('⚠️  Lobby collections not set up yet. Please create game_rooms and room_members collections in Appwrite.');
+        return {
+          success: true,
+          rooms: []
+        };
+      }
+      
       return {
         success: false,
         error: error.message
@@ -111,8 +124,7 @@ class LobbyService {
           room_id: roomId,
           user_id: user.$id,
           user_name: user.name,
-          avatar: user.avatar || '',
-          joined_at: new Date().toISOString(),
+          joined_at: new Date().toISOString(), // Required by collection schema
           is_ready: false
         }
       );
@@ -123,8 +135,8 @@ class LobbyService {
         ROOMS_COLLECTION_ID,
         room.room.$id,
         {
-          current_players: room.room.current_players + 1,
-          updated_at: new Date().toISOString()
+          current_players: room.room.current_players + 1
+          // Using automatic $updatedAt instead of manual updated_at
         }
       );
 
@@ -187,8 +199,8 @@ class LobbyService {
             ROOMS_COLLECTION_ID,
             room.room.$id,
             {
-              current_players: newPlayerCount,
-              updated_at: new Date().toISOString()
+              current_players: newPlayerCount
+              // Using automatic $updatedAt instead of manual updated_at
             }
           );
         }
@@ -361,8 +373,8 @@ class LobbyService {
         ROOMS_COLLECTION_ID,
         room.room.$id,
         {
-          status: 'starting',
-          updated_at: new Date().toISOString()
+          status: 'starting'
+          // Using automatic $updatedAt instead of manual updated_at
         }
       );
 
@@ -389,13 +401,31 @@ class LobbyService {
         `databases.${LOBBY_DATABASE_ID}.collections.${ROOM_MEMBERS_COLLECTION_ID}.documents`
       ],
       (response) => {
-        // Filter for this specific room
+        // Filter for this specific room to avoid unnecessary updates
         if (response.payload && (
           response.payload.room_id === roomId ||
           response.payload.$id === roomId
         )) {
           callback(response);
         }
+      }
+    );
+
+    return unsubscribe;
+  }
+
+  /**
+   * Subscribe to lobby (all rooms) updates
+   */
+  subscribeToLobby(callback) {
+    const unsubscribe = client.subscribe(
+      [
+        `databases.${LOBBY_DATABASE_ID}.collections.${ROOMS_COLLECTION_ID}.documents`,
+        `databases.${LOBBY_DATABASE_ID}.collections.${ROOM_MEMBERS_COLLECTION_ID}.documents`
+      ],
+      (response) => {
+        // Call callback for any room or member change
+        callback(response);
       }
     );
 

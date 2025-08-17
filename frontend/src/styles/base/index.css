@@ -106,6 +106,7 @@ html, body {
   /* Border colors */
   --border-color: #374151;
   --border-light: #4b5563;
+  --border-dark: #4b5563;
   
   /* Shadows - darker for dark mode */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -222,9 +223,12 @@ h2::after {
 /* Buttons */
 button,
 .btn {
-  padding: 0.625rem 1.25rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   border-radius: var(--radius-md);
+  background-color: var(--card-background-light);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-color);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
