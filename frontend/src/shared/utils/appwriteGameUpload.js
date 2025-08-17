@@ -38,7 +38,7 @@ class FrontendAppwriteGameUploader {
     
     this.databases = new Databases(this.client);
     
-    // console.log('🚀 Frontend Appwrite uploader initialized:', {
+    // console.debug('🚀 Frontend Appwrite uploader initialized:', {
     //   endpoint: this.config.endpoint,
     //   projectId: this.config.projectId,
     //   databaseId: this.config.databaseId
@@ -56,7 +56,7 @@ class FrontendAppwriteGameUploader {
       // Try to get current session
       const session = await account.get();
       this.userId = session.$id; // Store user ID
-      // console.log('✅ Authenticated as:', session.email || session.name || 'Anonymous');
+      // console.debug('✅ Authenticated as:', session.email || session.name || 'Anonymous');
       return true;
     } catch {
       console.error('🔐 No authentication found, creating anonymous session...');
@@ -65,7 +65,7 @@ class FrontendAppwriteGameUploader {
         // Create anonymous session for game uploads
         const session = await account.createAnonymousSession();
         this.userId = session.userId || session.$id; // Store user ID from anonymous session
-        console.log('✅ Anonymous session created:', session.$id);
+        console.debug('✅ Anonymous session created:', session.$id);
         return true;
       } catch (anonError) {
         console.error('❌ Failed to create anonymous session:', anonError);
@@ -82,7 +82,7 @@ class FrontendAppwriteGameUploader {
     const { replaceExisting = false } = options;
     
     try {
-      console.log('📤 Starting game upload:', gameData.id);
+      console.debug('📤 Starting game upload:', gameData.id);
       
       // Ensure we have proper authentication
       await this.ensureAuthentication();
@@ -102,7 +102,7 @@ class FrontendAppwriteGameUploader {
         const sameFinalScores = existingGame.finalScoresJson === JSON.stringify(gameData.final_scores || {});
         
         if (samePlayerCount && sameTotalRounds && sameFinalScores && !replaceExisting) {
-          console.log('Duplicate game detected! Game already exists in cloud:', existingGame.$id);
+          console.debug('Duplicate game detected! Game already exists in cloud:', existingGame.$id);
           
           // Generate cloudLookupKey for this game to enable proper sync tracking
           const { generateCloudLookupKey } = await import('@/shared/utils/gameIdentifier');
@@ -122,23 +122,23 @@ class FrontendAppwriteGameUploader {
         }
       }
 
-      console.log('✅ No duplicate games found, proceeding with upload...');
+      console.debug('✅ No duplicate games found, proceeding with upload...');
       
       // Step 1: Ensure all players exist
       const playerMapping = await this.ensurePlayersExist(gameData.players);
-      console.log('✅ Players processed:', Object.keys(playerMapping).length);
+      console.debug('✅ Players processed:', Object.keys(playerMapping).length);
       
       // Step 2: Create or update the game record (without cloudLookupKey for now)
       const gameRecord = await this.createGameRecord(gameData, playerMapping, replaceExisting);
-      console.log('✅ Game record created:', gameRecord.$id);
+      console.debug('✅ Game record created:', gameRecord.$id);
       
       // Step 3: Upload all rounds
       await this.uploadRounds(gameData, gameRecord.$id);
-      console.log('✅ Rounds uploaded:', gameData.round_data?.length || 0);
+      console.debug('✅ Rounds uploaded:', gameData.round_data?.length || 0);
       
       // Step 4: Upload round players data
       await this.uploadRoundPlayers(gameData, gameRecord.$id, playerMapping);
-      console.log('✅ Round players uploaded');
+      console.debug('✅ Round players uploaded');
       
       // Step 5: Mark the local game as uploaded with cloudLookupKey
       const { LocalGameStorage } = await import('@/shared/api/localGameStorage');
@@ -147,7 +147,7 @@ class FrontendAppwriteGameUploader {
       
       LocalGameStorage.markGameAsUploaded(gameData.id, gameRecord.$id, cloudLookupKey);
       
-      console.log('🎉 Game upload completed successfully!');
+      console.debug('🎉 Game upload completed successfully!');
       
       return {
         success: true,
@@ -182,7 +182,7 @@ class FrontendAppwriteGameUploader {
         if (existingPlayers.documents.length > 0) {
           // Player exists, use existing ID
           playerMapping[player.id] = existingPlayers.documents[0].$id;
-          console.log(`♻️  Using existing player: ${player.name} (${player.id})`);
+          console.debug(`♻️  Using existing player: ${player.name} (${player.id})`);
         } else {
           // Create new player
           const newPlayer = await this.databases.createDocument(
@@ -197,7 +197,7 @@ class FrontendAppwriteGameUploader {
           );
           
           playerMapping[player.id] = newPlayer.$id;
-          console.log(`➕ Created new player: ${player.name} (${player.id})`);
+          console.debug(`➕ Created new player: ${player.name} (${player.id})`);
         }
       } catch (error) {
         console.error(`Failed to process player ${player.id}:`, error);
@@ -230,7 +230,7 @@ class FrontendAppwriteGameUploader {
       gameMode: normalizedGameMode
     };
 
-    console.log('📋 Game document to create:', gameDocument);
+    console.debug('📋 Game document to create:', gameDocument);
 
     try {
       // Check if game already exists
@@ -272,7 +272,7 @@ class FrontendAppwriteGameUploader {
    */
   async uploadRounds(gameData, appwriteGameId) {
     if (!gameData.round_data || gameData.round_data.length === 0) {
-      console.log('No rounds to upload');
+      console.debug('No rounds to upload');
       return;
     }
 
@@ -300,7 +300,7 @@ class FrontendAppwriteGameUploader {
    */
   async uploadRoundPlayers(gameData, appwriteGameId, playerMapping) {
     if (!gameData.round_data || gameData.round_data.length === 0) {
-      console.log('No round players data to upload');
+      console.debug('No round players data to upload');
       return;
     }
 

@@ -61,15 +61,6 @@
   }
 
    /* === Login Page === */
-  .admin-login {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 90vh;
-    background-color: var(--background-color);
-  }
-
   .login-page {
     padding: var(--spacing-lg);
     display: flex;
@@ -679,7 +670,6 @@
     position: relative;
     z-index: 10; 
   }
-
   
   .player-info h1 {
     color: var(--primary-color);
@@ -687,6 +677,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: var(--spacing-sm);
   }
 
   .player-name-tags {
@@ -1632,7 +1623,6 @@
     width: 100%;
     border-radius: var(--radius-lg);
     margin: var(--spacing-lg) auto;
-    padding: var(--spacing-lg) 0;
   }
 
   .leaderboard-container h1 {
@@ -1881,9 +1871,9 @@
       flex-direction: row;
     }
 
-    .players-section{
+    /* .players-section{
       grid-row: span 2;
-    }
+    } */
 
     .nav-menu {
       display: flex;
@@ -2347,10 +2337,6 @@
   
   .home-header h1 {
     font-size: 1.5rem;
-  }
-  
-  .action-buttons {
-    margin: var(--spacing-lg);
   }
 
   .form-group {

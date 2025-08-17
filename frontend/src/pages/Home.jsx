@@ -16,7 +16,7 @@ const Home = () => {
   const [recentGames, setRecentGames] = useState([])
   const [recentLocalGames, setRecentLocalGames] = useState([])
   const [showLoadDialog, setShowLoadDialog] = useState(false)
-  const [offlineMessage, setOfflineMessage] = useState('')
+  // const [offlineMessage, setOfflineMessage] = useState('')
   
   const handleLoadGame = async (gameId) => {
     try {
@@ -35,11 +35,11 @@ const Home = () => {
   // Check for offline mode redirect
   useEffect(() => {
     if (location.state?.offlineRedirect) {
-      setOfflineMessage(location.state.message || 'Online features are currently unavailable');
+      // setOfflineMessage(location.state.message || 'Online features are currently unavailable');
       
       // Clear the message after 5 seconds
       const timer = setTimeout(() => {
-        setOfflineMessage('');
+        // setOfflineMessage('');
       }, 5000);
       
       return () => clearTimeout(timer);
@@ -96,7 +96,7 @@ const Home = () => {
   // Check for offline message from navigation state
   useEffect(() => {
     if (location.state?.offlineMessage) {
-      setOfflineMessage(location.state.offlineMessage);
+      // setOfflineMessage(location.state.offlineMessage);
       // Clear the state to avoid showing the message after navigating away and back
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -109,11 +109,11 @@ const Home = () => {
         <p>Track your Wizard card game stats and performance</p>
       </header>
 
-      {offlineMessage && (
+      {/* {offlineMessage && (
         <div className="offline-notification">
           <div className="offline-message">{offlineMessage}</div>
         </div>
-      )}
+      )} */}
 
       <section className="recent-games">
         <div className="section-header">

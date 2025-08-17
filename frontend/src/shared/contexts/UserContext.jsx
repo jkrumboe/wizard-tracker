@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useCallback } from 'react'
 import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
-import { onlineStatusService } from '../api/onlineStatusService'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 export const UserContext = createContext()
 
@@ -9,22 +9,15 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null)
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { isOnline } = useOnlineStatus()
   
-  // Initialize user authentication check, but only if online mode is enabled
+  // Initialize user authentication check only on initial load
   useEffect(() => {
     const checkAuthenticationStatus = async () => {
       try {
-        // First check if online mode is enabled
-        const statusCheck = await onlineStatusService.getStatus()
-        
-        if (!statusCheck.online) {
-          console.log('🔒 App is in offline mode - skipping authentication check')
-          setLoading(false)
-          return
-        }
-        
-        // Only check authentication if online mode is enabled
-        console.log('🔓 App is in online mode - checking authentication')
+        // Always check authentication on initial load - don't depend on online status
+        // The online status check might fail if the collection isn't set up yet
+        console.debug('🔓 Checking authentication status on app startup')
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {
           setUser(userFromServer)
@@ -36,8 +29,21 @@ export function UserProvider({ children }) {
       }
     }
 
+    // Only run this check once on initial mount
     checkAuthenticationStatus()
-  }, [])
+  }, []) // Intentionally exclude isOnline to prevent auto-login on mode switch
+
+  // Handle online status changes - clear user session when going offline  
+  useEffect(() => {
+    if (!isOnline && user) {
+      console.debug('🔒 Switching to offline mode - clearing user session')
+      authService.clearLocalSession() // Clear any stored session data
+      setUser(null)
+      setPlayer(null)
+    }
+    // Note: We don't auto-login when switching to online mode
+    // Users must manually log in after switching to online mode
+  }, [isOnline, user])
 
   // Fetch player data when user is set
   useEffect(() => {

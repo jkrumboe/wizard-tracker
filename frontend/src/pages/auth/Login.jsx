@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { account, ID } from '@/shared/utils/appwrite';
+import { ID } from '@/shared/utils/appwrite';
 import { useUser } from '@/shared/hooks/useUser';
-import '@/styles/pages/admin.css';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
+import authService from '@/shared/api/authService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -13,11 +14,18 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshAuthStatus } = useUser();
+  const { isOnline } = useOnlineStatus();
 
   const handleLogin = async () => {
     setError(null);
+    
+    if (!isOnline) {
+      setError('Cannot login while in offline mode. Please wait for online mode to be enabled.');
+      return;
+    }
+    
     try {
-      await account.createEmailPasswordSession(email, password);
+      await authService.login({ email, password });
       // Refresh the user context after successful login
       await refreshAuthStatus();
       
@@ -31,10 +39,14 @@ const Login = () => {
 
   const handleRegister = async () => {
     setError(null);
+    
+    if (!isOnline) {
+      setError('Cannot register while in offline mode. Please wait for online mode to be enabled.');
+      return;
+    }
+    
     try {
-      await account.create(ID.unique(), email, password, name);
-      // Automatically log in after successful registration
-      await account.createEmailPasswordSession(email, password);
+      await authService.register({ email, password, name });
       // Refresh the user context after successful registration
       await refreshAuthStatus();
       
@@ -49,6 +61,16 @@ const Login = () => {
   return (
     <div className="login-page">
       <h1>{isRegistering ? "Register" : "Login"}</h1>
+      
+      {!isOnline && (
+        <div className="offline-notification" style={{ marginBottom: '1rem' }}>
+          <p className="offline-message">
+            <strong>Offline Mode:</strong> Authentication is currently disabled. 
+            Please wait for online mode to be enabled.
+          </p>
+        </div>
+      )}
+      
       <form
         className="login-form"
         onSubmit={(e) => {
@@ -63,7 +85,7 @@ const Login = () => {
             autoComplete="username"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            disabled={!isRegistering}
+            disabled={!isRegistering || !isOnline}
           />
         )}
         <input
@@ -72,6 +94,7 @@ const Login = () => {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={!isOnline}
           required
         />
         <input
@@ -81,16 +104,18 @@ const Login = () => {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={!isOnline}
           required
         />
         <button
           type="button"
           className="switch-btn"
           onClick={() => setIsRegistering(!isRegistering)}
+          disabled={!isOnline}
         >
           {isRegistering ? "Switch to Login" : "Switch to Register"}
         </button>
-        <button type="submit">
+        <button type="submit" disabled={!isOnline}>
           {isRegistering ? "Register" : "Login"}
         </button>
         {error && <p className="error-message">{error}</p>}

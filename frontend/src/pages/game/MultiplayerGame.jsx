@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
-import '@/styles/pages/MultiplayerGame.css';
+// import '@/styles/pages/MultiplayerGame.css';
 
 const MultiplayerGame = () => {
   const navigate = useNavigate();

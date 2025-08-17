@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
+import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LocalGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, CloudIcon, ShareIcon } from '@/components/ui/Icon';
@@ -28,6 +29,7 @@ const Settings = () => {
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
+  const { isOnline } = useOnlineStatus();
 
   const checkForImportedGames = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -397,6 +399,10 @@ const Settings = () => {
 
   // Cloud Sync Functions
   const uploadSingleGameToCloud = async (gameId, gameData) => {
+    if (!isOnline) {
+      throw new Error('Cannot upload games while in offline mode');
+    }
+    
     if (gameData.isPaused) {
       throw new Error('Cannot upload paused games. Please finish the game first.');
     }
@@ -420,7 +426,12 @@ const Settings = () => {
 
   // Share Game Function
   const handleShareGame = async (gameId, gameData) => {
-    console.log('handleShareGame called with gameId:', gameId, 'gameData:', gameData);
+    console.debug('handleShareGame called with gameId:', gameId, 'gameData:', gameData);
+    
+    if (!isOnline) {
+      setMessage({ text: 'Cannot share games while in offline mode', type: 'error' });
+      return;
+    }
     
     if (gameData.isPaused) {
       setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
@@ -429,9 +440,9 @@ const Settings = () => {
 
     // Only allow sharing of online games (those that have been uploaded)
     const syncStatus = gameSyncStatuses[gameId];
-    const isOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
+    const isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
     
-    if (!isOnline) {
+    if (!isGameOnline) {
       setMessage({ text: 'Game must be uploaded to cloud before sharing.', type: 'error' });
       return;
     }
@@ -445,7 +456,7 @@ const Settings = () => {
         id: gameId // Always use the gameId from the map as the authoritative ID
       };
       
-      console.log('Game to share:', gameToShare);
+      console.debug('Game to share:', gameToShare);
       
       // Generate share link and handle sharing
       const shareResult = await shareGame(gameToShare);
@@ -476,6 +487,11 @@ const Settings = () => {
   };
 
   const handleBulkCloudSync = async () => {
+    if (!isOnline) {
+      setMessage({ text: 'Cannot upload games while in offline mode', type: 'error' });
+      return;
+    }
+    
     const gameEntries = Object.entries(savedGames);
     const uploadableGames = gameEntries.filter(([, game]) => !game.isPaused);
     
@@ -597,7 +613,17 @@ const Settings = () => {
         </div>
 
         <div className="settings-section">
-          <h2>Storage & Cloud Sync</h2>
+          <h2>Storage{isOnline ? ' & Cloud Sync' : ''}</h2>
+          
+          {/* {!isOnline && (
+            <div className="offline-notification">
+              <p className="offline-message">
+                <strong>Offline Mode:</strong> Cloud sync and sharing features are currently disabled. 
+                You can still manage your local saved games below.
+              </p>
+            </div>
+          )} */}
+          
           <div className="storage-cloud-grid">
             <div className="storage-info">
               {/* <h3>Local Storage</h3> */}
@@ -610,25 +636,9 @@ const Settings = () => {
                 <span className="storage-value">{Object.keys(savedGames).length}</span>
               </div>
             </div>
-{/* 
-            <div className="storage-info">
-              <h3>Cloud Sync</h3>
-              <div className="storage-metric">
-                <span>Uploadable Games</span>
-                <span className="storage-value">
-                  {Object.values(savedGames).filter(game => !game.isPaused).length}
-                </span>
-              </div>
-              <div className="storage-metric">
-                <span>Status</span>
-                <span className="storage-value">
-                  {cloudSyncStatus.uploading ? 'Uploading...' : 'Ready'}
-                </span>
-              </div>
-            </div> */}
           </div>
 
-          {cloudSyncStatus.uploading && (
+          {isOnline && cloudSyncStatus.uploading && (
             <div className="upload-progress">
               <div className="progress-text">{cloudSyncStatus.progress}</div>
               <div className="progress-bar">
@@ -654,14 +664,16 @@ const Settings = () => {
               <RefreshIcon size={18} />
               Refresh Storage
             </button>
-            <button 
-              className="settings-button cloud-sync-button" 
-              onClick={handleBulkCloudSync}
-              disabled={cloudSyncStatus.uploading || Object.values(savedGames).filter(game => !game.isPaused).length === 0}
-            >
-              <CloudIcon size={18} />
-              {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
-            </button>
+            {isOnline && (
+              <button 
+                className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
+                onClick={handleBulkCloudSync}
+                disabled={cloudSyncStatus.uploading || Object.values(savedGames).filter(game => !game.isPaused).length === 0}
+              >
+                <CloudIcon size={18} />
+                {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
+              </button>
+            )}
             <button className="settings-button danger-button" onClick={handleDeleteAllData}>
               <TrashIcon size={18} />
               Clear all Data
@@ -720,21 +732,21 @@ const Settings = () => {
                           <TrashIcon size={25} />
                         </button>
                         
-                        {/* Conditionally show upload or share button based on sync status */}
-                        {(() => {
+                        {/* Conditionally show upload or share button based on sync status - only when app is online */}
+                        {isOnline && (() => {
                           const syncStatus = gameSyncStatuses[gameId];
                           const status = syncStatus?.status || (game.isUploaded ? 'Online' : 'Local');
-                          const isOnline = status === 'Online' || status === 'Synced';
+                          const isGameOnline = status === 'Online' || status === 'Synced';
                           
-                          if (isOnline) {
+                          if (isGameOnline) {
                             // Show share button for online/synced games
                             return (
                               <button 
                                 className={`cloud-upload-game-button share-button ${sharingGames.has(gameId) ? 'sharing' : ''}`}
                                 onClick={() => {
-                                  console.log('Share button clicked for gameId:', gameId);
-                                  console.log('Game object:', game);
-                                  console.log('Game object ID:', game.id);
+                                  console.debug('Share button clicked for gameId:', gameId);
+                                  console.debug('Game object:', game);
+                                  console.debug('Game object ID:', game.id);
                                   handleShareGame(gameId, game);
                                 }}
                                 aria-label={sharingGames.has(gameId) ? "Sharing..." : "Share game"}

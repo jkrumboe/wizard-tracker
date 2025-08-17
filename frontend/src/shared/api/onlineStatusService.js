@@ -20,7 +20,7 @@ class OnlineStatusService {
   
   /**
    * Get the current online status
-   * @param {boolean} forceCheck - Force a fresh check from the server
+   * @param {boolean} forceCheck - Whether to force a fresh check
    * @returns {Promise<{online: boolean, lastUpdated: string, message: string}>}
    */
   async getStatus(forceCheck = false) {
@@ -121,7 +121,7 @@ class OnlineStatusService {
   _subscribeToUpdates() {
     try {
       this._subscription = subscribeToOnlineStatus((update) => {
-        console.log('Online status update received:', update);
+        console.debug('Online status update received:', update);
         
         // Handle the document structure from your realtime data
         const document = update.data || update.payload;

@@ -68,4 +68,6 @@ export const ShareIcon = (props) => <Icon name="Share2" {...props} />;
 export const LinkIcon = (props) => <Icon name="Link" {...props} />;
 export const FileIcon = (props) => <Icon name="File" {...props} />;
 export const TableIcon = (props) => <Icon name="Table" {...props} />;
+export const CopyIcon = (props) => <Icon name="Copy" {...props} />;
+export const CheckMarkIcon = (props) => <Icon name="Check" {...props} />;
 

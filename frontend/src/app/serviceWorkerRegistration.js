@@ -7,7 +7,7 @@ export function register() {
       navigator.serviceWorker
         .register(swUrl)
         .then((registration) => {
-          console.log("ServiceWorker registration successful with scope: ", registration.scope)
+          console.debug("ServiceWorker registration successful with scope: ", registration.scope)
           
           // Check for updates every 30 seconds when the page is visible
           setInterval(() => {
@@ -22,7 +22,7 @@ export function register() {
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('New version available - updating automatically...');
+                  console.debug('New version available - updating automatically...');
                   
                   // Clear all caches immediately
                   clearAllCachesAndUpdate(registration);
@@ -33,7 +33,7 @@ export function register() {
 
           // Check if there's already a waiting service worker
           if (registration.waiting) {
-            console.log('Update available on page load - updating automatically...');
+            console.debug('Update available on page load - updating automatically...');
             clearAllCachesAndUpdate(registration);
           }
         })
@@ -44,7 +44,7 @@ export function register() {
 
     // Listen for controller change and reload immediately
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('New service worker activated - reloading...');
+      console.debug('New service worker activated - reloading...');
       window.location.reload();
     });
   }
@@ -57,7 +57,7 @@ async function clearAllCachesAndUpdate(registration) {
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-      console.log('All caches cleared');
+      console.debug('All caches cleared');
     }
 
     // Clear CSS cache by invalidating stylesheets

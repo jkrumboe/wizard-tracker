@@ -264,7 +264,7 @@ const validate = ajv.compile(GAME_JSON_SCHEMA);
 const isValid = validate(gameData);
 
 if (!isValid) {
-  console.log('Validation errors:', validate.errors);
+  console.debug('Validation errors:', validate.errors);
 }
 ```
 

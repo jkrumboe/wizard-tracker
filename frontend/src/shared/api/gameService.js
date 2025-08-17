@@ -190,14 +190,14 @@ export async function uploadLocalGameToAppwrite(gameId, options = {}) {
       console.error('Failed to upload to Appwrite:', error);
       
       if (error.message.includes('not authorized') || error.message.includes('Unauthorized')) {
-        console.log('💡 SOLUTION: Configure Appwrite collection permissions to allow "role:guests"');
-        console.log('📍 Go to: https://appwrite.jkrumboe.dev/console → Database → Collections → Settings → Permissions');
-        console.log('➕ Add "role:guests" to Create, Read, Update, Delete permissions for all collections');
+        console.debug('💡 SOLUTION: Configure Appwrite collection permissions to allow "role:guests"');
+        console.debug('📍 Go to: https://appwrite.jkrumboe.dev/console → Database → Collections → Settings → Permissions');
+        console.debug('➕ Add "role:guests" to Create, Read, Update, Delete permissions for all collections');
       }
       
       console.warn('Falling back to migration/conversion only mode.');
-      console.log('Migrated game data:', migratedGame);
-      console.log('Converted Appwrite game data:', appwriteGame);
+      console.debug('Migrated game data:', migratedGame);
+      console.debug('Converted Appwrite game data:', appwriteGame);
       
       return {
         success: true,

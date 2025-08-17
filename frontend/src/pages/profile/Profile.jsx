@@ -76,7 +76,7 @@ useEffect(() => {
         const history = await getPlayerGameHistory(currentPlayer.id);
         setGameHistory(history || []);
       } catch (err) {
-        console.log('Game history not available:', err);
+        console.debug('Game history not available:', err);
         setGameHistory([]);
       }
       
@@ -181,7 +181,7 @@ const handleEditProfile = async () => {
       try {
         // First try to update using the Users API (requires backend implementation)
         await userService.updateUserName(user.$id, sanitizedEditedName);
-        console.log('Username updated successfully via Users API');
+        console.debug('Username updated successfully via Users API');
         setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
       } catch (error) {
         // Only log warning if it's not the expected "backend not available" error
@@ -191,7 +191,7 @@ const handleEditProfile = async () => {
         // Fallback to account service if backend is not available
         try {
           await authService.updateProfile({ name: sanitizedEditedName });
-          console.log('Username updated successfully via account service');
+          console.debug('Username updated successfully via account service');
           setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
         } catch (fallbackError) {
           console.error('Both Users API and account service failed:', fallbackError);

@@ -322,8 +322,8 @@ export class LocalGameStorage {
    */
   static getAllGames() {
     const games = this.getAllSavedGames();
-    console.log('LocalGameStorage.getAllGames() called, returning:', games);
-    console.log('Number of games found:', Object.keys(games).length);
+    console.debug('LocalGameStorage.getAllGames() called, returning:', games);
+    console.debug('Number of games found:', Object.keys(games).length);
     return games;
   }
 
@@ -333,13 +333,13 @@ export class LocalGameStorage {
    */
   static debugLocalStorage() {
     const rawData = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
-    console.log('Raw localStorage data for key "' + LOCAL_GAMES_STORAGE_KEY + '":', rawData);
+    console.debug('Raw localStorage data for key "' + LOCAL_GAMES_STORAGE_KEY + '":', rawData);
     
     if (rawData) {
       try {
         const parsed = JSON.parse(rawData);
-        console.log('Parsed localStorage data:', parsed);
-        console.log('Type of parsed data:', Array.isArray(parsed) ? 'Array' : typeof parsed);
+        console.debug('Parsed localStorage data:', parsed);
+        console.debug('Type of parsed data:', Array.isArray(parsed) ? 'Array' : typeof parsed);
         return parsed;
       } catch (error) {
         console.error('Error parsing localStorage data:', error);

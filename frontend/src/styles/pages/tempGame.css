@@ -1013,11 +1013,7 @@
   box-shadow: var(--shadow-lg);
 }
 
-.total-calls {
-  color: var(--text-color) !important;
-  font-weight: 600 !important;
-  box-shadow: var(--shadow-lg);
-}
+
 
 /* Host Controls */
 .host-controls {
@@ -1070,33 +1066,33 @@
 }
 
 /* Player scores table styling */
-.game-container .player-scores {
+/* .game-container .player-scores {
   margin-top: var(--spacing-md);
   overflow-x: auto;
-}
+} */
 
-.game-container .score-table {
+/* .game-container .score-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: var(--spacing-md);
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-}
+} */
 
-.game-container .player-row {
+/* .game-container .player-row {
   border-bottom: 1px solid var(--border-color);
-}
+} */
 
-.game-container .player-row:last-child {
+/* .game-container .player-row:last-child {
   border-bottom: none;
-}
+} */
 
-.game-container .player-cell {
+/* .game-container .player-cell {
   padding: var(--spacing-md);
   font-weight: 500;
   text-align: left;
-}
+} */
 
 .game-container .player-badges {
   display: flex;

@@ -55,24 +55,24 @@ interface MockID {
 // Mock implementations
 const MockClient = class implements MockClient {
   setEndpoint(endpoint: string): this {
-    console.log(`Mock: Setting endpoint to ${endpoint}`);
+    console.debug(`Mock: Setting endpoint to ${endpoint}`);
     return this;
   }
   
   setProject(projectId: string): this {
-    console.log(`Mock: Setting project to ${projectId}`);
+    console.debug(`Mock: Setting project to ${projectId}`);
     return this;
   }
   
   setKey(apiKey: string): this {
-    console.log(`Mock: Setting API key`);
+    console.debug(`Mock: Setting API key`);
     return this;
   }
 };
 
 const MockDatabases = class implements MockDatabases {
   constructor(client: any) {
-    console.log('Mock: Databases initialized');
+    console.debug('Mock: Databases initialized');
   }
 
   async listDocuments(
@@ -80,7 +80,7 @@ const MockDatabases = class implements MockDatabases {
     collectionId: string,
     queries?: string[]
   ): Promise<{ documents: any[] }> {
-    console.log(`Mock: Listing documents in ${collectionId}`);
+    console.debug(`Mock: Listing documents in ${collectionId}`);
     return { documents: [] };
   }
 
@@ -90,7 +90,7 @@ const MockDatabases = class implements MockDatabases {
     documentId: string,
     data: any
   ): Promise<any> {
-    console.log(`Mock: Creating document in ${collectionId}:`, data);
+    console.debug(`Mock: Creating document in ${collectionId}:`, data);
     return { $id: documentId, ...data };
   }
 
@@ -100,7 +100,7 @@ const MockDatabases = class implements MockDatabases {
     documentId: string,
     data: any
   ): Promise<any> {
-    console.log(`Mock: Updating document ${documentId} in ${collectionId}:`, data);
+    console.debug(`Mock: Updating document ${documentId} in ${collectionId}:`, data);
     return { $id: documentId, ...data };
   }
 };
@@ -136,7 +136,7 @@ interface LimitFunction {
 }
 
 const pLimit = (concurrency: number): LimitFunction => {
-  console.log(`Mock: Creating limit function with concurrency ${concurrency}`);
+  console.debug(`Mock: Creating limit function with concurrency ${concurrency}`);
   return async <T>(fn: () => Promise<T>): Promise<T> => {
     return await fn();
   };
@@ -370,12 +370,12 @@ export class AppwriteGameUploader {
     // First, try to find existing player
     const existingPlayer = await this.findPlayerByExtId(extId);
     if (existingPlayer) {
-      console.log(`Found existing player: ${name} (${extId})`);
+      console.debug(`Found existing player: ${name} (${extId})`);
       return existingPlayer;
     }
 
     // Create new player
-    console.log(`Creating new player: ${name} (${extId})`);
+    console.debug(`Creating new player: ${name} (${extId})`);
     const playerData = {
       extId,
       name,
@@ -456,7 +456,7 @@ export class AppwriteGameUploader {
       durationSeconds: game.duration_seconds,
     };
 
-    console.log(`Creating game document for: ${game.id}`);
+    console.debug(`Creating game document for: ${game.id}`);
     const gameDoc = await withRetry(async () => {
       return await this.databases.createDocument(
         this.config.databaseId,
@@ -466,7 +466,7 @@ export class AppwriteGameUploader {
       );
     }) as GameDocument;
 
-    console.log(`Created game document with ID: ${gameDoc.$id}`);
+    console.debug(`Created game document with ID: ${gameDoc.$id}`);
 
     // Create rounds and round players
     const roundsCreated = await this.createRounds(gameDoc.$id, game.round_data);
@@ -477,7 +477,7 @@ export class AppwriteGameUploader {
       options.concurrency || 5
     );
 
-    console.log(`Game upload complete:
+    console.debug(`Game upload complete:
       - Game ID: ${gameDoc.$id}
       - Rounds created: ${roundsCreated}
       - Round players created: ${roundPlayersCreated}`);
@@ -489,7 +489,7 @@ export class AppwriteGameUploader {
    * Creates round documents
    */
   private async createRounds(gameId: string, roundData: LocalRound[]): Promise<number> {
-    console.log(`Creating ${roundData.length} rounds...`);
+    console.debug(`Creating ${roundData.length} rounds...`);
     
     for (const round of roundData) {
       const roundDoc = {
@@ -559,7 +559,7 @@ export class AppwriteGameUploader {
       }
     }
 
-    console.log(`Creating round players with concurrency ${concurrency}...`);
+    console.debug(`Creating round players with concurrency ${concurrency}...`);
     await Promise.all(tasks);
 
     return totalCreated;
@@ -569,7 +569,7 @@ export class AppwriteGameUploader {
    * Uploads a local game to Appwrite
    */
   async uploadLocalGame(game: LocalGame, options: UploadOptions = {}): Promise<void> {
-    console.log(`Starting upload for game: ${game.id}`);
+    console.debug(`Starting upload for game: ${game.id}`);
 
     // Validate input
     this.validateLocalGame(game);
@@ -578,7 +578,7 @@ export class AppwriteGameUploader {
     const existingGame = await this.findGameByExtId(game.id);
     if (existingGame) {
       if (!options.replaceExisting) {
-        console.log(`Game ${game.id} already exists, skipping upload`);
+        console.debug(`Game ${game.id} already exists, skipping upload`);
         return;
       } else {
         throw new Error(`Game ${game.id} already exists and replaceExisting not implemented yet`);
@@ -586,7 +586,7 @@ export class AppwriteGameUploader {
     }
 
     // Upsert all players
-    console.log(`Upserting ${game.players.length} players...`);
+    console.debug(`Upserting ${game.players.length} players...`);
     const playerIdMap = new Map<string, string>();
 
     for (const player of game.players) {
@@ -594,12 +594,12 @@ export class AppwriteGameUploader {
       playerIdMap.set(player.id, playerDoc.$id);
     }
 
-    console.log(`Player mapping complete: ${playerIdMap.size} players mapped`);
+    console.debug(`Player mapping complete: ${playerIdMap.size} players mapped`);
 
     // Create game and related documents
     await this.createGameDocuments(game, playerIdMap, options);
 
-    console.log(`Successfully uploaded game: ${game.id}`);
+    console.debug(`Successfully uploaded game: ${game.id}`);
   }
 }
 
@@ -672,10 +672,10 @@ if (require.main === module) {
       const fs = await import('fs/promises');
       const gameData = JSON.parse(await fs.readFile(filePath, 'utf8')) as LocalGame;
       
-      console.log(`Loading game from: ${filePath}`);
+      console.debug(`Loading game from: ${filePath}`);
       await uploadLocalGame(gameData, { replaceExisting: false });
       
-      console.log('Upload completed successfully!');
+      console.debug('Upload completed successfully!');
     } catch (error) {
       console.error('Upload failed:', error);
       process.exit(1);

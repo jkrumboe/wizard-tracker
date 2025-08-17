@@ -20,9 +20,9 @@ const AutoLogoutHandler = () => {
       
       // If we're starting in offline mode and there's a user, log them out immediately
       if (!isOnline && user) {
-        console.log('🔐 App started in offline mode with logged-in user - logging out immediately');
+        console.debug('🔐 App started in offline mode with logged-in user - logging out immediately');
         logout().then(() => {
-          console.log('✅ User automatically logged out due to offline mode on startup');
+          console.debug('✅ User automatically logged out due to offline mode on startup');
         }).catch((error) => {
           console.error('❌ Error during startup logout:', error);
         });
@@ -32,11 +32,11 @@ const AutoLogoutHandler = () => {
 
     // Check if we went from online to offline and there's a logged-in user
     if (previousOnlineStatusRef.current && !isOnline && user) {
-      console.log('🔐 Online mode disabled - automatically logging out user');
+      console.debug('🔐 Online mode disabled - automatically logging out user');
       
       // Perform automatic logout
       logout().then(() => {
-        console.log('✅ User automatically logged out due to offline mode');
+        console.debug('✅ User automatically logged out due to offline mode');
       }).catch((error) => {
         console.error('❌ Error during automatic logout:', error);
       });

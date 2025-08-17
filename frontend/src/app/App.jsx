@@ -7,11 +7,9 @@ import Profile from "@/pages/profile/Profile"
 import Leaderboard from "@/pages/profile/Leaderboard"
 import Stats from "@/pages/profile/Stats"
 import Settings from "@/pages/Settings"
-import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame } from "@/pages/game"
-import AdminDashboard from "@/pages/admin/AdminDashboard.jsx"
+import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame, GameRoom } from "@/pages/game"
 import Login from "@/pages/auth/Login"
 import SharedGamePage from "@/pages/shared/SharedGamePage"
-import RealtimeTest from "@/pages/RealtimeTest"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
 import AppLoadingScreen from "@/components/common/AppLoadingScreen"
@@ -127,35 +125,6 @@ function URLImportHandler() {
   return null;
 }
 
-function ProtectedRoute({ children, roles }) {
-  const [userRole, setUserRole] = useState(null);
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = JSON.parse(atob(token.split(".")[1]));
-        console.debug("Decoded token:", decoded); // Debugging line
-        setUserRole(decoded.role);
-      } catch (error) {
-        console.error("Error decoding token:", error);
-        // Clear invalid token
-        localStorage.removeItem("token");
-        setUserRole(null);
-      }
-    }
-  }, []);
-
-  if (!userRole) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!roles.includes(userRole)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}
-
 function App() {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -204,8 +173,8 @@ function App() {
     >
       <Router>
         <ThemeProvider>
-          <UserProvider>
-            <OnlineStatusProvider>
+          <OnlineStatusProvider>
+            <UserProvider>
               <AutoLogoutHandler />
               <GameStateProvider>
                 <URLImportHandler />
@@ -238,6 +207,11 @@ function App() {
                       <Lobby />
                     </OnlineProtectedRoute>
                   } />
+                  <Route path="/room/:roomId" element={
+                    <OnlineProtectedRoute>
+                      <GameRoom />
+                    </OnlineProtectedRoute>
+                  } />
                   <Route path="/multiplayer/:roomId" element={
                     <OnlineProtectedRoute>
                       <MultiplayerGame />
@@ -255,19 +229,11 @@ function App() {
                   }/>
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/shared/:shareId" element={<SharedGamePage />} />
-                  <Route path="/realtime-test" element={<RealtimeTest />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute roles={["admin"]}>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>            </div>
+              </Routes>
+                </div>
               </GameStateProvider>
-            </OnlineStatusProvider>
-          </UserProvider>
+            </UserProvider>
+          </OnlineStatusProvider>
         </ThemeProvider>
       </Router>
     </AppLoadingScreen>
