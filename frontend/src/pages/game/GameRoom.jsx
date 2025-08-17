@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { lobbyService } from '@/shared/api/lobbyService';
 import {CopyIcon, XIcon, CheckMarkIcon} from '@/components/ui/Icon';
-import '@/styles/pages/gameRoom.css';
+import '@/styles/pages/GameRoom.css';
 
 
 const GameRoom = () => {
