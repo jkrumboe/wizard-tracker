@@ -4,6 +4,19 @@ import { onlineStatusService } from './onlineStatusService';
 class AuthService {
   async login({ email, password }) {
     try {
+      // First, check if there's already an active session
+      try {
+        const currentUser = await account.get();
+        if (currentUser) {
+          console.debug('🔓 Found existing active session for:', currentUser.email);
+          return currentUser;
+        }
+      } catch {
+        // No active session, proceed with login
+        console.debug('🔐 No active session found, proceeding with login');
+      }
+
+      // Create a new session if no active session exists
       await account.createEmailPasswordSession(email, password);
       return await account.get();
     } catch (error) {
@@ -26,15 +39,48 @@ class AuthService {
     try {
       // Delete current session
       await account.deleteSession('current');
+      console.debug('🔓 Successfully logged out current session');
     } catch (error) {
       // If current session deletion fails, try to delete all sessions
       try {
         await account.deleteSessions();
+        console.debug('🔓 Successfully cleared all sessions');
       } catch (deleteAllError) {
         console.debug('Logout errors (ignored):', { current: error, deleteAll: deleteAllError });
       }
     }
     // Don't automatically redirect here, let the calling component handle it
+  }
+
+  async clearAllSessions() {
+    try {
+      await account.deleteSessions();
+      console.debug('🔓 All sessions cleared');
+    } catch (error) {
+      console.debug('Error clearing sessions:', error);
+      throw new Error(error.message);
+    }
+  }
+
+  async getCurrentUser() {
+    try {
+      const currentUser = await account.get();
+      console.debug('🔓 Current user:', currentUser.email);
+      return currentUser;
+    } catch (error) {
+      console.debug('🔒 No current user session');
+      return null;
+    }
+  }
+
+  // Method to force logout and clear all sessions
+  async forceLogoutAllSessions() {
+    try {
+      await this.clearAllSessions();
+      console.debug('🔓 Force logged out all sessions');
+    } catch {
+      console.debug('Force logout completed with errors (ignored)');
+    }
   }
 
   clearLocalSession() {

@@ -20,7 +20,7 @@ class OnlineStatusService {
   
   /**
    * Get the current online status
-   * @param {boolean} forceCheck - Force a fresh check from the server
+   * @param {boolean} forceCheck - Whether to force a fresh check
    * @returns {Promise<{online: boolean, lastUpdated: string, message: string}>}
    */
   async getStatus(forceCheck = false) {

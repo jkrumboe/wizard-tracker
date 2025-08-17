@@ -15,15 +15,9 @@ export function UserProvider({ children }) {
   useEffect(() => {
     const checkAuthenticationStatus = async () => {
       try {
-        // Check if we're online using the React context
-        if (!isOnline) {
-          console.debug('🔒 App is in offline mode - skipping authentication check')
-          setLoading(false)
-          return
-        }
-        
-        // Only check authentication if online mode is enabled
-        console.debug('🔓 App is in online mode - checking authentication')
+        // Always check authentication on initial load - don't depend on online status
+        // The online status check might fail if the collection isn't set up yet
+        console.debug('🔓 Checking authentication status on app startup')
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {
           setUser(userFromServer)
