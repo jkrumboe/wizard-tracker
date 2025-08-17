@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { lobbyService } from '@/shared/api/lobbyService';
 import {CopyIcon, XIcon, CheckMarkIcon} from '@/components/ui/Icon';
-import '@/styles/pages/lobby.css';
+import '@/styles/pages/Lobby.css';
 import '@/styles/components/modal.css';
 
 const Lobby = () => {
