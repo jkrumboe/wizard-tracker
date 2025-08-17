@@ -7,7 +7,7 @@ import Profile from "@/pages/profile/Profile"
 import Leaderboard from "@/pages/profile/Leaderboard"
 import Stats from "@/pages/profile/Stats"
 import Settings from "@/pages/Settings"
-import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame } from "@/pages/game"
+import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame, GameRoom } from "@/pages/game"
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx"
 import Login from "@/pages/auth/Login"
 import SharedGamePage from "@/pages/shared/SharedGamePage"
@@ -236,6 +236,11 @@ function App() {
                   <Route path="/lobby" element={
                     <OnlineProtectedRoute>
                       <Lobby />
+                    </OnlineProtectedRoute>
+                  } />
+                  <Route path="/room/:roomId" element={
+                    <OnlineProtectedRoute>
+                      <GameRoom />
                     </OnlineProtectedRoute>
                   } />
                   <Route path="/multiplayer/:roomId" element={
