@@ -61,15 +61,6 @@
   }
 
    /* === Login Page === */
-  .admin-login {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 90vh;
-    background-color: var(--background-color);
-  }
-
   .login-page {
     padding: var(--spacing-lg);
     display: flex;

@@ -636,24 +636,6 @@ const Settings = () => {
                 <span className="storage-value">{Object.keys(savedGames).length}</span>
               </div>
             </div>
-            
-            {isOnline && (
-              <div className="storage-info">
-                <h3>Cloud Sync</h3>
-                <div className="storage-metric">
-                  <span>Uploadable Games</span>
-                  <span className="storage-value">
-                    {Object.values(savedGames).filter(game => !game.isPaused).length}
-                  </span>
-                </div>
-                <div className="storage-metric">
-                  <span>Status</span>
-                  <span className="storage-value">
-                    {cloudSyncStatus.uploading ? 'Uploading...' : 'Ready'}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {isOnline && cloudSyncStatus.uploading && (

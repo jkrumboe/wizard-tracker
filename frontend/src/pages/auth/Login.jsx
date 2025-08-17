@@ -4,7 +4,6 @@ import { ID } from '@/shared/utils/appwrite';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import authService from '@/shared/api/authService';
-import '@/styles/pages/admin.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');

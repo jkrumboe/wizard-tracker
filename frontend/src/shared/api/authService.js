@@ -115,19 +115,6 @@ class AuthService {
     // No-op for Appwrite - initialization handled in client setup
   }
 
-  async adminLogin({ email, password }) {
-    return this.login({ email, password });
-  }
-
-  async adminLogout() {
-    return this.logout();
-  }
-
-  async setupAdmin() {
-    // Admin creation would be handled via Appwrite console
-    return;
-  }
-
   async updateProfile({ name }) {
     try {
       return await account.updateName(name);
