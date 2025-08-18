@@ -90,7 +90,7 @@ Key documentation pages:
 - [API Structure](https://github.com/jkrumboe/wizard-tracker/wiki/API-Structure)
 - [How to Contribute](https://github.com/jkrumboe/wizard-tracker/wiki/How-to-Contribute)
 
-## 🛠️ Development
+## Development
 
 For local development, see the [Development Guide](https://github.com/jkrumboe/wizard-tracker/wiki/Development-Guide).
 
