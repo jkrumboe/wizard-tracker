@@ -33,7 +33,7 @@ cp .env.example .env
 
 ## Installation & Usage
 
-### Option 1: Manual Setup
+### Option 1: Manual Setup (Recommended)
 
 #### Frontend Setup
 
@@ -43,7 +43,7 @@ npm install
 npm run dev
 ```
 
-### Option 2: Docker Compose (Recommended)
+### Option 2: Docker Compose
 
 The easiest way to get started is using Docker Compose:
 
