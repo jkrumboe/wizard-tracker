@@ -496,10 +496,6 @@
       font-size: 15px;
       padding: 4px 8px;
     }
-
-    .game-winner {
-      font-size: 0.9rem;
-    }
   }
   
   .results-row:nth-child(even) {
