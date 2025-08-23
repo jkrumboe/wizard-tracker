@@ -210,22 +210,34 @@ export function migrateToNewSchema(oldGame) {
     })
   );
   
-  // Convert round data
+  // Convert round data, robustly mapping all possible bid/call and tricks/made property names
   const rounds = (gameState.roundData || gameState.round_data || []).map((round, index) => {
     const roundSchema = createRoundSchema({
       number: index + 1,
       cards: round.cards || index + 1
     });
-    
+
     // Convert player round data to bids/tricks/points objects
     if (round.players) {
       round.players.forEach(playerRound => {
-        roundSchema.bids[playerRound.id] = playerRound.bid || 0;
-        roundSchema.tricks[playerRound.id] = playerRound.tricks || 0;
+        // Robustly extract bid/call
+        let bid = 0;
+        if (playerRound.bid !== undefined) bid = playerRound.bid;
+        else if (playerRound.call !== undefined) bid = playerRound.call;
+        else if (playerRound.bids !== undefined) bid = playerRound.bids;
+
+        // Robustly extract tricks/made
+        let tricks = 0;
+        if (playerRound.tricks !== undefined) tricks = playerRound.tricks;
+        else if (playerRound.made !== undefined) tricks = playerRound.made;
+        else if (playerRound.trick !== undefined) tricks = playerRound.trick;
+
+        roundSchema.bids[playerRound.id] = bid;
+        roundSchema.tricks[playerRound.id] = tricks;
         roundSchema.points[playerRound.id] = playerRound.score || 0;
       });
     }
-    
+
     return roundSchema;
   });
   

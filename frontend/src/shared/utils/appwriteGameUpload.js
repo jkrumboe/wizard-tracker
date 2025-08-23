@@ -326,6 +326,17 @@ class FrontendAppwriteGameUploader {
             continue;
           }
 
+          // Robustly extract call/bid and made/tricks from all possible property names
+          let call = 0;
+          if (player.call !== undefined) call = player.call;
+          else if (player.bid !== undefined) call = player.bid;
+          else if (player.bids !== undefined) call = player.bids;
+
+          let made = 0;
+          if (player.made !== undefined) made = player.made;
+          else if (player.tricks !== undefined) made = player.tricks;
+          else if (player.trick !== undefined) made = player.trick;
+
           await this.databases.createDocument(
             this.config.databaseId,
             this.config.collections.roundPlayers,
@@ -334,8 +345,8 @@ class FrontendAppwriteGameUploader {
               gameId: appwriteGameId,
               roundNumber: round.round,
               playerId: appwritePlayerId,
-              call: player.call || 0,
-              made: player.made || 0,
+              call,
+              made,
               score: player.score || 0,
               totalScore: player.totalScore || 0
             }
