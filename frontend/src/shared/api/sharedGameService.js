@@ -48,21 +48,30 @@ export async function createSharedGameRecord(game, shareId) {
 export async function getSharedGameData(originalGameId) {
   try {
     console.debug('Reconstructing game data for:', originalGameId);
-    
-    // 1. Get the game record
-    const gameResult = await databases.listDocuments(
-      config.databaseId,
-      config.collections.games,
-      [Query.equal('extId', originalGameId)]
-    );
+    let gameDoc = null;
 
-    if (gameResult.documents.length === 0) {
-      console.debug('Game not found with extId:', originalGameId);
-      return null;
+    // Try to fetch by Appwrite document ID ($id) first
+    try {
+      gameDoc = await databases.getDocument(
+        config.databaseId,
+        config.collections.games,
+        originalGameId
+      );
+      console.debug('Found game document by $id:', gameDoc);
+    } catch (e) {
+      // Not found by $id, try by extId (legacy/compatibility)
+      const gameResult = await databases.listDocuments(
+        config.databaseId,
+        config.collections.games,
+        [Query.equal('extId', originalGameId)]
+      );
+      if (gameResult.documents.length === 0) {
+        console.debug('Game not found with $id or extId:', originalGameId);
+        return null;
+      }
+      gameDoc = gameResult.documents[0];
+      console.debug('Found game document by extId:', gameDoc);
     }
-
-    const gameDoc = gameResult.documents[0];
-    console.debug('Found game document:', gameDoc);
 
     // 2. Get all players for this game using the playerIds array
     const playerDocs = [];
@@ -153,11 +162,18 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
 
   // Ensure all rounds up to total_rounds are present, and all players are included in each round
   const totalRounds = gameDoc.totalRounds || (roundDocs.length > 0 ? Math.max(...roundDocs.map(r => r.roundNumber)) : 0);
+  console.debug('Total rounds to reconstruct:', totalRounds);
   const allPlayerIds = playerDocs.map(p => p.$id);
   const allPlayerExtIds = playerDocs.map(p => p.extId);
 
   const round_data = [];
-  for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+  // Only include rounds for which there is at least one roundPlayer
+  // Get all unique round numbers from roundPlayersByRound
+  const roundNumbersWithData = Object.keys(roundPlayersByRound)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  for (const roundNum of roundNumbersWithData) {
     const round = roundByNumber[roundNum] || { roundNumber: roundNum, cards: roundNum };
     const roundPlayers = roundPlayersByRound[roundNum] || [];
 

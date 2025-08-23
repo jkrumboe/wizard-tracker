@@ -409,14 +409,25 @@ const Settings = () => {
 
     try {
       const result = await uploadLocalGameToAppwrite(gameId, { replaceExisting: false });
-      
       if (!result.success) {
         throw new Error(result.error || 'Upload failed');
       }
 
+      // Patch local game object with Appwrite ID and isUploaded:true
+      const appwriteGameId = result.appwriteGameId || result.cloudGameId || result.id;
+      if (appwriteGameId) {
+        // Update local storage directly and safely
+        const allGames = LocalGameStorage.getAllSavedGames();
+        if (allGames[gameId]) {
+          allGames[gameId].appwriteGameId = appwriteGameId;
+          allGames[gameId].isUploaded = true;
+          // Save back to localStorage (do not call saveGame with wrong args)
+          localStorage.setItem('wizardTracker_localGames', JSON.stringify(allGames));
+        }
+      }
+
       // Refresh the saved games list to show updated badge status
       loadSavedGames();
-      
       return result;
     } catch (error) {
       console.error(`Failed to upload game ${gameId}:`, error);
@@ -493,11 +504,14 @@ const Settings = () => {
       console.error('Failed to share game:', error);
       setMessage({ text: `Share failed: ${error.message}`, type: 'error' });
     } finally {
-      setSharingGames(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(gameId);
-        return newSet;
-      });
+      // Delay spinner removal for 1.5s to allow UI to update smoothly
+      setTimeout(() => {
+        setSharingGames(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(gameId);
+          return newSet;
+        });
+      }, 3000);
     }
   };
 
@@ -685,7 +699,11 @@ const Settings = () => {
                 onClick={handleBulkCloudSync}
                 disabled={cloudSyncStatus.uploading || Object.values(savedGames).filter(game => !game.isPaused).length === 0}
               >
-                <CloudIcon size={18} />
+                {cloudSyncStatus.uploading ? (
+                  <span className="share-spinner" aria-label="Syncing..." />
+                ) : (
+                  <CloudIcon size={18} />
+                )}
                 {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
               </button>
             )}
@@ -772,7 +790,11 @@ const Settings = () => {
                                   'Share game'
                                 }
                               >
-                                <ShareIcon size={25} />
+                                {sharingGames.has(gameId) ? (
+                                  <span className="share-spinner" aria-label="Sharing..." />
+                                ) : (
+                                  <ShareIcon size={25} />
+                                )}
                               </button>
                             );
                           } else if (needsUpload) {
@@ -790,6 +812,8 @@ const Settings = () => {
                                     } else {
                                       setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
                                     }
+                                    // Wait for loadSavedGames to finish before removing spinner
+                                    await loadSavedGames();
                                   } catch (error) {
                                     setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
                                   } finally {
@@ -808,7 +832,11 @@ const Settings = () => {
                                   'Upload to cloud'
                                 }
                               >
-                                <CloudIcon size={25} />
+                                {uploadingGames.has(gameId) ? (
+                                  <span className="share-spinner" aria-label="Uploading..." />
+                                ) : (
+                                  <CloudIcon size={25} />
+                                )}
                               </button>
                             );
                           }
