@@ -3,7 +3,7 @@
   max-width: 900px;
   margin: 0 auto;
   padding-top: var(--spacing-lg);
-  padding-bottom: var(--spacing-xxl);
+  /* padding-bottom: var(--spacing-xxl); */
   width: 100%;
   flex: 1;
 }
@@ -209,11 +209,6 @@
   width: 50%;
 }
 
-.share-button {
-  background-color: var(--primary-rgb);
-  color: var(--primary-color);
-}
-
 /* Share Game Button */
 .share-game-button {
   background-color: transparent;
@@ -320,13 +315,19 @@
   background: var(--background-color);
   border: 1px solid var(--border-color);
   cursor: pointer;
-  color: var(--text-secondary);
   padding: var(--spacing-xs);
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+}
+
+/* When offline, make delete-game-button take full height of its container */
+.delete-game-button.offline {
+  height: 100%;
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
 .settings-section  .game-actions {
@@ -507,6 +508,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
+  height: 100%;
 }
 
 .settings-card-content {
@@ -634,11 +636,12 @@
 }
 
 .cloud-upload-game-button {
-  background-color: var(--primary-color) !important;
-  color: white !important;
-  border: none !important;
+  /* background-color: var(--primary-color) !important; */
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
+  color: var(--primary-color) !important;
   border-radius: var(--radius-sm) !important;
-  padding: var(--spacing-xs) !important;
+  padding: var(--spacing-xs) ;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -649,10 +652,6 @@
   min-width: 35px;
   min-height: 35px;
   flex-shrink: 0;
-}
-
-.cloud-upload-game-button.share-button {
-  background-color: var(--secondary-color) !important;
 }
 
 .cloud-upload-game-button.sharing {

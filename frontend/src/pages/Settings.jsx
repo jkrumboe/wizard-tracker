@@ -438,10 +438,29 @@ const Settings = () => {
       return;
     }
 
-    // Only allow sharing of online games (those that have been uploaded)
-    const syncStatus = gameSyncStatuses[gameId];
-    const isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
-    
+    let syncStatus = gameSyncStatuses[gameId];
+    let isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
+
+    // If not synced, upload first
+    if (!isGameOnline) {
+      setMessage({ text: 'Syncing game to cloud before sharing...', type: 'info' });
+      try {
+        const uploadResult = await uploadSingleGameToCloud(gameId, gameData);
+        if (!uploadResult.success) {
+          setMessage({ text: uploadResult.error || 'Failed to sync game before sharing.', type: 'error' });
+          return;
+        }
+        // Optionally reload sync status here if needed
+        if (typeof loadSavedGames === 'function') loadSavedGames();
+        // Update syncStatus after upload
+        syncStatus = gameSyncStatuses[gameId];
+        isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
+      } catch (error) {
+        setMessage({ text: `Failed to sync game before sharing: ${error.message}`, type: 'error' });
+        return;
+      }
+    }
+
     if (!isGameOnline) {
       setMessage({ text: 'Game must be uploaded to cloud before sharing.', type: 'error' });
       return;
@@ -708,8 +727,8 @@ const Settings = () => {
                         <div className="bottom-actions-game-history">
                           {(() => {
                             const syncStatus = gameSyncStatuses[gameId];
-                            const status = syncStatus?.status || (game.isUploaded ? 'Online' : 'Local');
-                            const badgeClass = status.toLowerCase();
+                            const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
+                            const badgeClass = status.toLowerCase().replace(' ', '-');
                             return (
                               <span className={`mode-badge ${badgeClass}`}>
                                 {status}
@@ -725,7 +744,7 @@ const Settings = () => {
                     
                       <div className="settings-card-actions">
                         <button 
-                          className="delete-game-button" 
+                          className={`delete-game-button${!isOnline ? ' offline' : ''}`}
                           onClick={() => handleDeleteGame(gameId)}
                           aria-label="Delete game"
                         >
@@ -735,11 +754,11 @@ const Settings = () => {
                         {/* Conditionally show upload or share button based on sync status - only when app is online */}
                         {isOnline && (() => {
                           const syncStatus = gameSyncStatuses[gameId];
-                          const status = syncStatus?.status || (game.isUploaded ? 'Online' : 'Local');
-                          const isGameOnline = status === 'Online' || status === 'Synced';
-                          
-                          if (isGameOnline) {
-                            // Show share button for online/synced games
+                          const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
+                          const isGameSynced = status === 'Synced';
+                          const needsUpload = status === 'Local';
+                          if (isGameSynced) {
+                            // Show share button for synced games
                             return (
                               <button 
                                 className={`cloud-upload-game-button share-button ${sharingGames.has(gameId) ? 'sharing' : ''}`}
@@ -760,19 +779,18 @@ const Settings = () => {
                                 <ShareIcon size={25} />
                               </button>
                             );
-                          } else {
+                          } else if (needsUpload) {
                             // Show upload button for local games
                             return (
                               <button 
                                 className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
                                 onClick={async () => {
                                   if (uploadingGames.has(gameId)) return; // Prevent double-click
-                                  
                                   setUploadingGames(prev => new Set([...prev, gameId]));
                                   try {
                                     const result = await uploadSingleGameToCloud(gameId, game);
                                     if (result.isDuplicate) {
-                                      setMessage({ text: `Game was already uploaded - marked as online!`, type: 'success' });
+                                      setMessage({ text: `Game was already uploaded - marked as synced!`, type: 'success' });
                                     } else {
                                       setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
                                     }
@@ -787,11 +805,10 @@ const Settings = () => {
                                   }
                                 }}
                                 aria-label={uploadingGames.has(gameId) ? "Uploading..." : "Upload to cloud"}
-                                disabled={game.isPaused || (game.isUploaded && !uploadingGames.has(gameId)) || uploadingGames.has(gameId)}
+                                disabled={game.isPaused || uploadingGames.has(gameId)}
                                 title={
                                   uploadingGames.has(gameId) ? 'Uploading game...' :
                                   game.isPaused ? 'Cannot upload paused games' : 
-                                  game.isUploaded ? 'Game already uploaded to cloud' : 
                                   'Upload to cloud'
                                 }
                               >
@@ -799,6 +816,7 @@ const Settings = () => {
                               </button>
                             );
                           }
+                          return null;
                         })()}
                       </div>
                   </div>
