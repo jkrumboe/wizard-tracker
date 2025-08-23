@@ -467,24 +467,20 @@ const Settings = () => {
     }
 
     setSharingGames(prev => new Set([...prev, gameId]));
-    
     try {
-      // Ensure the game object has the correct ID for sharing
+      // Use appwriteGameId for sharing if available, else fallback to local gameId
+      let idToShare = gameData.appwriteGameId || gameData.cloudGameId || gameData.id || gameId;
       const gameToShare = {
         ...gameData,
-        id: gameId // Always use the gameId from the map as the authoritative ID
+        id: idToShare
       };
-      
       console.debug('Game to share:', gameToShare);
-      
       // Generate share link and handle sharing
       const shareResult = await shareGame(gameToShare);
-      
       if (shareResult.success) {
         // Create shared game record in cloud
         const shareId = shareResult.url.split('/').pop();
         await createSharedGameRecord(gameData, shareId);
-        
         if (shareResult.method === 'native') {
           setMessage({ text: 'Game shared successfully!', type: 'success' });
         } else {

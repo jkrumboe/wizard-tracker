@@ -252,7 +252,7 @@ export function migrateToNewSchema(oldGame) {
   }
   
   // Create new schema
-  return createGameSchema({
+  let newSchema = createGameSchema({
     id: oldGame.id || gameState.id,
     name: oldGame.name || `Migrated Game - ${new Date(oldGame.created_at || oldGame.savedAt || Date.now()).toLocaleDateString()}`,
     mode: GameMode.LOCAL,
@@ -271,6 +271,9 @@ export function migrateToNewSchema(oldGame) {
     notes: oldGame.notes,
     tags: oldGame.tags || []
   });
+  // Compute and set derived totals (winner, final scores)
+  newSchema = computeDerivedTotals(newSchema) || newSchema;
+  return newSchema;
 }
 
 /**
