@@ -45,33 +45,46 @@ class FrontendAppwriteGameUploader {
     // });
   }
 
+  // Shared promise to prevent parallel session creation
+  _authPromise = null;
+
   /**
    * Check authentication and create session if needed
+   * Only create anonymous session if there is no valid session at all.
+   * If a session exists but is invalid, log out and try again.
    */
   async ensureAuthentication() {
-    const { Account } = await import('appwrite');
-    const account = new Account(this.client);
-    
-    try {
-      // Try to get current session
-      const session = await account.get();
-      this.userId = session.$id; // Store user ID
-      // console.debug('✅ Authenticated as:', session.email || session.name || 'Anonymous');
-      return true;
-    } catch {
-      console.error('🔐 No authentication found, creating anonymous session...');
-      
+    // Prevent parallel session creation
+    if (this._authPromise) {
+      return this._authPromise;
+    }
+    this._authPromise = (async () => {
+      const { Account } = await import('appwrite');
+      const account = new Account(this.client);
       try {
-        // Create anonymous session for game uploads
-        const session = await account.createAnonymousSession();
-        this.userId = session.userId || session.$id; // Store user ID from anonymous session
-        console.debug('✅ Anonymous session created:', session.$id);
+        // Try to get current session
+        const session = await account.get();
+        this.userId = session.$id;
+        // console.debug('✅ Authenticated as:', session.email || session.name || 'Anonymous');
         return true;
-      } catch (anonError) {
-        console.error('❌ Failed to create anonymous session:', anonError);
-        console.error('📋 To fix this, go to your Appwrite console and set collection permissions to allow "role:guests" or "role:any"');
-        throw new Error('Authentication required for game uploads. Please configure Appwrite collection permissions for guests.');
+      } catch {
+        // If no valid session, just create anonymous session (don't try to delete)
+        try {
+          const session = await account.createAnonymousSession();
+          this.userId = session.userId || session.$id;
+          console.debug('✅ Anonymous session created:', session.$id);
+          return true;
+        } catch (anonError) {
+          console.error('❌ Failed to create anonymous session:', anonError);
+          console.error('📋 To fix this, go to your Appwrite console and set collection permissions to allow "role:guests" or "role:any"');
+          throw new Error('Authentication required for game uploads. Please configure Appwrite collection permissions for guests.');
+        }
       }
+    })();
+    try {
+      return await this._authPromise;
+    } finally {
+      this._authPromise = null;
     }
   }
 

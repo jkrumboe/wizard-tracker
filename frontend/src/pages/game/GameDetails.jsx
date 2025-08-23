@@ -9,6 +9,8 @@ import { getPlayerById } from "@/shared/api/playerService"
 import { LocalGameStorage } from '@/shared/api';
 // Utilities
 import { ShareValidator } from '@/shared/utils/shareValidator';
+import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing';
+import { ensureGameSynced } from '@/shared/utils/ensureGameSynced';
 // Components
 import PageTransition from "@/components/common/PageTransition"
 import PerformanceMetric from "@/components/common/PerformanceMetric"
@@ -289,142 +291,18 @@ const GameDetails = () => {
     return { playersData, roundData };
   };
 
-  // const generateShareableLink = () => {
-  //   try {
-  //     // Create a more compact data structure by removing redundant information
-  //     const compactGameData = {
-  //       id: game.id,
-  //       players: game.players || [],
-  //       winner_id: game.winner_id,
-  //       final_scores: game.final_scores || {},
-  //       round_data: game.round_data || [],
-  //       total_rounds: game.total_rounds || game.round_data?.length || 0,
-  //       created_at: game.created_at,
-  //       game_mode: game.game_mode || "Local",
-  //       duration_seconds: game.duration_seconds || 0
-  //     };
-      
-  //     // Validate the game data structure before sharing
-  //     const validation = ShareValidator.validateGameDataStructure(compactGameData);
-  //     if (!validation.isValid) {
-  //       setMessage({ 
-  //         text: `Cannot share game: ${validation.error}`, 
-  //         type: 'error' 
-  //       });
-  //       return;
-  //     }
-      
-  //     // Sanitize the data to prevent any security issues
-  //     const sanitizedData = ShareValidator.sanitizeGameData(compactGameData);
-      
-  //     // Remove any undefined or null values to make it more compact
-  //     const cleanedData = JSON.parse(JSON.stringify(sanitizedData, (key, value) => {
-  //       return value === undefined || value === null ? undefined : value;
-  //     }));
-      
-  //     const jsonData = JSON.stringify(cleanedData);
-      
-  //     // Use direct URL method that works across devices
-  //     const compressedData = btoa(unescape(encodeURIComponent(jsonData)));
-  //     const baseUrl = window.location.origin;
-  //     const shareableLink = `${baseUrl}?importGame=${compressedData}`;
-      
-  //     // Check URL length and warn user about different sharing methods
-  //     if (shareableLink.length > 8000) {
-  //       setMessage({ 
-  //         text: 'Game data is too large for URL sharing. Please use the download button instead.', 
-  //         type: 'error' 
-  //       });
-  //       return;
-  //     } else if (shareableLink.length > 2000) {
-  //       // Create a temporary share key for very large data
-  //       const shareKey = `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  //       const expirationTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-        
-  //       // Store the compact data in localStorage temporarily
-  //       localStorage.setItem(shareKey, jsonData);
-  //       localStorage.setItem(shareKey + '_expires', expirationTime.toString());
-        
-  //       // Create a shorter URL with just the share key
-  //       const shortShareableLink = `${baseUrl}?shareKey=${shareKey}`;
-        
-  //       // Copy the short URL to clipboard
-  //       navigator.clipboard.writeText(shortShareableLink).then(() => {
-  //         setMessage({ 
-  //           text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
-  //           type: 'success' 
-  //         });
-  //       }).catch(() => {
-  //         // Fallback for browsers that don't support clipboard API
-  //         const textArea = document.createElement('textarea');
-  //         textArea.value = shortShareableLink;
-  //         document.body.appendChild(textArea);
-  //         textArea.select();
-  //         document.execCommand('copy');
-  //         document.body.removeChild(textArea);
-  //         setMessage({ 
-  //           text: 'Game link copied to clipboard! (Note: This link only works on the same device and expires in 24 hours. For cross-device sharing, use the download button instead.)', 
-  //           type: 'success' 
-  //         });
-  //       });
-  //       return;
-  //     }
-      
-  //     // URL is short enough, use the direct method
-  //     setMessage({ text: 'Game link copied to clipboard!', type: 'success' });
-      
-  //     // Copy to clipboard
-  //     navigator.clipboard.writeText(shareableLink).then(() => {
-  //       // Success
-  //     }).catch(() => {
-  //       // Fallback for browsers that don't support clipboard API
-  //       const textArea = document.createElement('textarea');
-  //       textArea.value = shareableLink;
-  //       document.body.appendChild(textArea);
-  //       textArea.select();
-  //       document.execCommand('copy');
-  //       document.body.removeChild(textArea);
-  //     });
-  //   } catch (error) {
-  //     console.error('Error generating shareable link:', error);
-  //     setMessage({ text: 'Failed to generate game link.', type: 'error' });
-  //   }
-  // };
 
-  const downloadSingleGame = () => {
-    try {
-      // Create a more compact data structure by removing redundant information
-      const compactGameData = {
-        id: game.id,
-        players: game.players || [],
-        winner_id: game.winner_id,
-        final_scores: game.final_scores || {},
-        round_data: game.round_data || [],
-        total_rounds: game.total_rounds || game.round_data?.length || 0,
-        created_at: game.created_at,
-        game_mode: game.game_mode || "Local",
-        duration_seconds: game.duration_seconds || 0
-      };
-      
-      // Remove any undefined or null values to make it more compact
-      const cleanedData = JSON.parse(JSON.stringify(compactGameData, (key, value) => {
-        return value === undefined || value === null ? undefined : value;
-      }));
-      
-      const jsonData = JSON.stringify(cleanedData, null, 2);
-      const blob = new Blob([jsonData], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `wizard-tracker-game-${game.id}-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setMessage({ text: 'Game exported successfully.', type: 'success' });
-    } catch (error) {
-      console.error('Error downloading single game:', error);
-      setMessage({ text: 'Failed to export game.', type: 'error' });
+  // Use the shared shareGame utility for sharing
+  const handleShareGame = async () => {
+    if (!game) return;
+    // Ensure the game is synced before sharing
+    const synced = await ensureGameSynced(game.id || game.gameId, game, setMessage);
+    if (!synced) return;
+    const result = await shareGameUtil(game);
+    if (result.success) {
+      setMessage({ text: result.method === 'native' ? 'Game shared successfully!' : 'Share link copied to clipboard!', type: 'success' });
+    } else {
+      setMessage({ text: 'Failed to share game. Please try again.', type: 'error' });
     }
   };
 
@@ -467,12 +345,12 @@ const GameDetails = () => {
           </div>
           <div className="game-date" style={{ margin: "0 auto" }}>Finished: {formattedDate}</div>
           
-          {/* Container for mode badge and download button */}
+          {/* Container for mode badge and share button */}
           <div className="badge-controls-container">
             {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}
-            <button className="settings-button download-button" onClick={downloadSingleGame}>
-              <DownloadIcon size={20} />
-              Download
+            <button className="settings-button share-button" onClick={handleShareGame}>
+              <ShareIcon size={20} />
+              Share
             </button>
           </div>
           

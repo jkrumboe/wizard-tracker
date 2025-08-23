@@ -50,8 +50,8 @@ export class LocalGameStorage {
         topLevelData.created_at = gameState.created_at || timestamp;
         topLevelData.player_ids = gameState.player_ids || 
                                 (gameState.players ? gameState.players.map(p => p.id) : []);
-        topLevelData.round_data = gameState.roundData;
-        topLevelData.total_rounds = gameState.maxRounds || gameState.totalRounds;
+        topLevelData.round_data = gameState.round_data || gameState.roundData;
+        topLevelData.total_rounds = gameState.total_rounds || gameState.maxRounds || gameState.totalRounds;
         topLevelData.duration_seconds = gameState.duration_seconds;
         topLevelData.is_local = true;
       }
@@ -473,10 +473,28 @@ export class LocalGameStorage {
       const existingGames = this.getAllSavedGames();
       const importTimestamp = new Date().toISOString();
       
+      // Check for existing imports to prevent duplicates
+      const existingOriginalIds = new Set();
+      Object.values(existingGames).forEach(game => {
+        if (game.originalGameId) {
+          existingOriginalIds.add(game.originalGameId);
+        }
+        if (game.gameState?.originalGameId) {
+          existingOriginalIds.add(game.gameState.originalGameId);
+        }
+      });
+      
       // Add import metadata to each imported game
       const processedImportedGames = {};
       Object.keys(importedGames).forEach(gameId => {
         const game = importedGames[gameId];
+        
+        // Check if this game was already imported
+        if (existingOriginalIds.has(gameId)) {
+          console.log(`Game ${gameId} already imported, skipping duplicate`);
+          return;
+        }
+        
         // Generate new game ID to avoid conflicts
         const newGameId = this.generateGameId();
         processedImportedGames[newGameId] = {

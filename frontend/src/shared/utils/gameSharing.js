@@ -7,8 +7,20 @@
  */
 export function generateShareableLink(game) {
   const baseUrl = window.location.origin;
+  
+  // For imported/shared games, use the original game ID for sharing
+  // This allows re-sharing of imported games
+  let gameIdToShare = game.id;
+  
+  // Check if this is an imported game with an original ID
+  if (game.originalGameId) {
+    gameIdToShare = game.originalGameId;
+  } else if (game.gameState?.originalGameId) {
+    gameIdToShare = game.gameState.originalGameId;
+  }
+  
   // Use the game ID directly in the URL - much simpler!
-  return `${baseUrl}/shared/${game.id}`;
+  return `${baseUrl}/shared/${gameIdToShare}`;
 }
 
 /**

@@ -200,7 +200,10 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
     duration_seconds: null, // Not stored in Appwrite schema
     // Mark as shared
     isShared: true,
-    sharedFrom: 'cloud'
+    sharedFrom: 'cloud',
+    // Add properties needed for GameDetails.jsx compatibility
+    is_local: true,
+    player_ids: players.map(p => p.id)
   };
 }
 
@@ -214,6 +217,17 @@ export async function importSharedGame(gameData, shareInfo) {
   const { LocalGameStorage } = await import('../api/localGameStorage');
   
   try {
+    // Check if this game was already imported
+    const existingGames = LocalGameStorage.getAllSavedGames();
+    const alreadyImported = Object.values(existingGames).some(game => {
+      return game.originalGameId === shareInfo.gameId || 
+             game.gameState?.originalGameId === shareInfo.gameId;
+    });
+    
+    if (alreadyImported) {
+      throw new Error('This game has already been imported');
+    }
+    
     // Create a new game ID for the imported game
     const newGameId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -230,7 +244,10 @@ export async function importSharedGame(gameData, shareInfo) {
       // Clean up any Appwrite-specific fields that might have leaked through
       $id: undefined,
       $createdAt: undefined,
-      $updatedAt: undefined
+      $updatedAt: undefined,
+      // Add properties needed for GameDetails.jsx compatibility
+      is_local: true,
+      player_ids: gameData.players?.map(p => p.id) || []
     };
 
     // Save to local storage - saveGame(gameState, gameName, isPaused)

@@ -81,11 +81,9 @@ export async function checkGameSyncStatus(gameId) {
     if (isSynced) {
       status = 'Synced';
     } else if (localGame.isUploaded && cloudExists) {
-      status = 'Online';
-    } else if (localGame.isUploaded && !cloudExists) {
-      status = 'Online'; // Game marked as uploaded but cloud check failed
+      status = 'Synced'; // Game is uploaded and exists in cloud
     } else {
-      status = 'Local';
+      status = 'Local'; // Treat upload-failed as local for badge/UI
     }
 
     return {

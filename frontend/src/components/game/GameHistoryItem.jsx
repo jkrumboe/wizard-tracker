@@ -124,9 +124,11 @@ const GameHistoryItem = ({ game }) => {
             View Details
           </Link>
           <div className="bottom-actions-game-history">
-            <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>
-              {game_mode || 'Local'}
-            </span>
+            {game.isUploaded ? (
+              <span className="mode-badge synced" title="Synced to Cloud">Synced</span>
+            ) : (
+              <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>{game_mode || 'Local'}</span>
+            )}
             <div className="game-date">
               Finished: {formattedDate}
             </div>

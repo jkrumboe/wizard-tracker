@@ -90,10 +90,6 @@
   transition: all 0.2s ease;
 }
 
-.game-controls .share-button {
-  color: var(--primary-color);
-}
-
 .settings-button .download-button {
   color: var(--primary-color);
 }
