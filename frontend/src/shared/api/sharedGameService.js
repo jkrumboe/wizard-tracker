@@ -137,33 +137,55 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
     name: player.name
   }));
 
-  // Sort rounds by round number
-  const sortedRounds = roundDocs.sort((a, b) => a.roundNumber - b.roundNumber);
 
-  // Reconstruct round data
-  const round_data = sortedRounds.map(round => {
-    // Get round players for this round by roundNumber
-    const roundPlayers = roundPlayerDocs.filter(rp => rp.roundNumber === round.roundNumber);
-    
-    // Reconstruct players data for this round
-    const roundPlayersData = roundPlayers.map(rp => {
-      const player = playerById[rp.playerId];
+  // Build a map of roundNumber to round object for quick lookup
+  const roundByNumber = {};
+  roundDocs.forEach(round => {
+    roundByNumber[round.roundNumber] = round;
+  });
+
+  // Build a map of roundNumber to all roundPlayerDocs for that round
+  const roundPlayersByRound = {};
+  roundPlayerDocs.forEach(rp => {
+    if (!roundPlayersByRound[rp.roundNumber]) roundPlayersByRound[rp.roundNumber] = [];
+    roundPlayersByRound[rp.roundNumber].push(rp);
+  });
+
+  // Ensure all rounds up to total_rounds are present, and all players are included in each round
+  const totalRounds = gameDoc.totalRounds || (roundDocs.length > 0 ? Math.max(...roundDocs.map(r => r.roundNumber)) : 0);
+  const allPlayerIds = playerDocs.map(p => p.$id);
+  const allPlayerExtIds = playerDocs.map(p => p.extId);
+
+  const round_data = [];
+  for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
+    const round = roundByNumber[roundNum] || { roundNumber: roundNum, cards: roundNum };
+    const roundPlayers = roundPlayersByRound[roundNum] || [];
+
+    // Map of playerId (Appwrite) to roundPlayerDoc
+    const roundPlayerMap = {};
+    roundPlayers.forEach(rp => { roundPlayerMap[rp.playerId] = rp; });
+
+    // For each player, ensure an entry exists (fill with zeros if missing)
+    const roundPlayersData = allPlayerIds.map((playerId, idx) => {
+      const rp = roundPlayerMap[playerId];
+      const extId = allPlayerExtIds[idx];
+      const name = playerNameById[playerId];
       return {
-        id: player.extId, // Use original player ID
-        name: player.name,
-        call: rp.call,
-        made: rp.made,
-        score: rp.score,
-        totalScore: rp.totalScore
+        id: extId,
+        name,
+        call: rp ? rp.call : 0,
+        made: rp ? rp.made : 0,
+        score: rp ? rp.score : 0,
+        totalScore: rp ? rp.totalScore : 0
       };
     });
 
-    return {
-      round: round.roundNumber,
+    round_data.push({
+      round: roundNum,
       cards: round.cards,
       players: roundPlayersData
-    };
-  });
+    });
+  }
 
   // Parse final scores
   const final_scores = {};
