@@ -4,6 +4,8 @@ import { ID } from '@/shared/utils/appwrite';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import authService from '@/shared/api/authService';
+import "@/styles/pages/login.css"
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -60,7 +62,7 @@ const Login = () => {
 
   return (
     <div className="login-page">
-      <h1>{isRegistering ? "Register" : "Login"}</h1>
+      {/* <h1>{isRegistering ? "Register" : "Login"}</h1> */}
       
       {!isOnline && (
         <div className="offline-notification" style={{ marginBottom: '1rem' }}>
@@ -113,10 +115,10 @@ const Login = () => {
           onClick={() => setIsRegistering(!isRegistering)}
           disabled={!isOnline}
         >
-          {isRegistering ? "Switch to Login" : "Switch to Register"}
+          {isRegistering ? "Sign In" : "No Account yet? Sign Up"}
         </button>
         <button type="submit" disabled={!isOnline}>
-          {isRegistering ? "Register" : "Login"}
+          {isRegistering ? "Sign Up" : "Sign In"}
         </button>
         {error && <p className="error-message">{error}</p>}
       </form>

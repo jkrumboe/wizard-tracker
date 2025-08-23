@@ -60,74 +60,7 @@
     gap: var(--spacing-xs);
   }
 
-   /* === Login Page === */
-  .login-page {
-    padding: var(--spacing-lg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 80vh;
-    background-color: var(--background-color);
-  }
-  
-  .login-form {
-    background-color: var(--card-background);
-    padding: var(--spacing-xl);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .login-form input {
-    width: 100%;
-    padding: var(--spacing-sm);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background-color: var(--card-background-alt);
-    color: var(--text-color);
-    margin-bottom: var(--spacing-md);
-  }
-
-  input.password-input {
-    margin-bottom: var(--spacing-xs);
-  }
-  
-  .login-form input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.2);
-  }
-  
-  .login-form button {
-    width: 100%;
-  }
-
-  .switch-btn {
-    color: var(--primary-color);
-    border: none;
-    background-color: transparent;
-    padding: var(--spacing-sm) 0;
-    cursor: pointer;
-    text-align: left;
-    margin-bottom: var(--spacing-md);
-    max-width: 130px; /* Set a smaller width */
-  }
-  
-  .error-message {
-    color: var(--error-color);
-    margin-top: var(--spacing-sm);
-    text-align: center;
-    padding: var(--spacing-sm);
-    background-color: var(--card-background);
-    border: 2px solid var(--error-color);
-    border-radius: var(--radius-lg);
-    font-size: 0.9rem;
-  }
-
   /* Tags */
-
   .tags-list {
     display: flex;
     overflow-x: auto;
