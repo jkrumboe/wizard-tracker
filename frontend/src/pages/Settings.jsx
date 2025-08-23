@@ -725,7 +725,7 @@ const Settings = () => {
                     
                       <div className="settings-card-actions">
                         <button 
-                          className="delete-game-button" 
+                          className={`delete-game-button${!isOnline ? ' offline' : ''}`}
                           onClick={() => handleDeleteGame(gameId)}
                           aria-label="Delete game"
                         >
