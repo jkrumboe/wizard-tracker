@@ -1,5 +1,5 @@
 // Service Worker for KeepWiz PWA - Automatic Updates
-const CACHE_NAME = "keep-wiz-v1.1.10.5" // Increment version for updates
+const CACHE_NAME = "keep-wiz-v1.1.11" // Increment version for updates
 const urlsToCache = [
   "/", 
   "/index.html", 
