@@ -420,17 +420,21 @@ const Settings = () => {
           localStorage.setItem('wizardTracker_localGames', JSON.stringify(allGames));
         }
       }
-      // Refresh the saved games list and sync statuses to show updated badge status
+      // Force refresh the saved games list and sync statuses to show updated badge status
       await loadSavedGames();
       if (typeof window !== 'undefined') {
         // Dynamically import to avoid circular dependency
         const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
         const syncStatuses = await checkAllGamesSyncStatus();
         setGameSyncStatuses(syncStatuses);
+        // Extra: force a re-render by updating state with a new object
+        setGameSyncStatuses(prev => ({ ...syncStatuses }));
+        // Log for production debugging
+        console.log('[SyncDebug] Updated sync statuses after upload:', syncStatuses);
       }
       return result;
     } catch (error) {
-      console.error(`Failed to upload game ${gameId}:`, error);
+      console.error(`[SyncDebug] Failed to upload game ${gameId}:`, error);
       throw error;
     }
   };
@@ -461,19 +465,28 @@ const Settings = () => {
           setMessage({ text: uploadResult.error || 'Failed to sync game before sharing.', type: 'error' });
           return;
         }
-        // Optionally reload sync status here if needed
-        if (typeof loadSavedGames === 'function') loadSavedGames();
+        // Force reload sync status after upload
+        if (typeof loadSavedGames === 'function') await loadSavedGames();
+        if (typeof window !== 'undefined') {
+          const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
+          const syncStatuses = await checkAllGamesSyncStatus();
+          setGameSyncStatuses(syncStatuses);
+          setGameSyncStatuses(prev => ({ ...syncStatuses }));
+          console.log('[SyncDebug] Updated sync statuses after share upload:', syncStatuses);
+        }
         // Update syncStatus after upload
         syncStatus = gameSyncStatuses[gameId];
         isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
       } catch (error) {
         setMessage({ text: `Failed to sync game before sharing: ${error.message}`, type: 'error' });
+        console.error('[SyncDebug] Failed to sync before sharing:', error);
         return;
       }
     }
 
     if (!isGameOnline) {
       setMessage({ text: 'Game must be uploaded to cloud before sharing.', type: 'error' });
+      console.warn('[SyncDebug] Tried to share but game is not online:', syncStatus);
       return;
     }
 
