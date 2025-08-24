@@ -1,7 +1,8 @@
 /* Shared Game Page Styles */
 
 .shared-game-page {
-  /* min-height: 100vh; */
+  /* min-height: 100%;
+  height: 100%; */
   background: var(--background-color);
   padding: var(--spacing-lg);
   display: flex;
@@ -38,22 +39,23 @@
   text-align: left;
 }
 
-.game-summary h2 {
+.shared-game-summary h2 {
   color: var(--text-color);
   margin-bottom: var(--spacing-md);
   font-size: 1.4rem;
   text-align: center;
 }
 
-/* .game-details {
+.shared-game-details {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: var(--background-light);
-  border-radius: var(--radius-md);
-} */
+  margin-bottom: var(--spacing-lg);
+  background: var(--background-color);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+}
 
 .detail-item {
   display: flex;
@@ -69,8 +71,6 @@
 }
 
 .import-section {
-  border-top: 1px solid var(--border-light);
-  padding-top: var(--spacing-lg);
   text-align: center;
 }
 
@@ -111,8 +111,9 @@
   color: var(--success-color);
 }
 
-.shared-game-success h2 {
-  margin: var(--spacing-md) 0;
+.shared-game-success h1 {
+  margin: 0;
+  margin-bottom: var(--spacing-md);
   color: var(--success-color);
 }
 

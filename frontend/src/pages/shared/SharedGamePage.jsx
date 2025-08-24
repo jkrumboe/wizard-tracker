@@ -93,10 +93,6 @@ const SharedGamePage = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
   if (loading) {
     return <LoadingScreen />;
   }
@@ -125,8 +121,8 @@ const SharedGamePage = () => {
       <div className="shared-game-page">
         <div className="shared-game-container">
           <div className="shared-game-success">
-            <TrophyIcon size={48} />
-            <h2>Game Imported Successfully!</h2>
+            {/* <TrophyIcon size={48} /> */}
+            <h1>Game Imported Successfully!</h1>
             <p>The shared game has been added to your collection.</p>
             <p>Redirecting to your games...</p>
           </div>
@@ -138,48 +134,43 @@ const SharedGamePage = () => {
   return (
     <div className="shared-game-page">
       <div className="shared-game-container">
-        <div className="shared-game-header">
+        {/* <div className="shared-game-header">
           <ShareIcon size={32} />
           <h1>Shared Wizard Game</h1>
-        </div>
+        </div> */}
 
         {sharedGameInfo && (
           <div className="shared-game-info">
             <div className="game-summary">
               <h2>{sharedGameInfo.title}</h2>
-              
-              <div className="game-details">
+
+              <div className="shared-game-details">
                 <div className="detail-item">
-                  <TrophyIcon size={20} />
-                  <span>Winner: {sharedGameInfo.winnerName}</span>
+                  <TrophyIcon size={20} style={{ color: 'var(--warning-color)' }} />
+                  <span>{sharedGameInfo.winnerName} with</span>
+                  <span className="score">{sharedGameInfo.finalScore} points</span>
                 </div>
                 
                 <div className="detail-item">
-                  <span className="score">Final Score: {sharedGameInfo.finalScore} points</span>
                 </div>
                 
                 <div className="detail-item">
                   <UserIcon size={20} />
-                  <span>Players: {sharedGameInfo.playerNames}</span>
+                  <span>{sharedGameInfo.playerNames}</span>
                 </div>
                 
                 <div className="detail-item">
                   <span>Rounds: {sharedGameInfo.totalRounds}</span>
                 </div>
                 
-                <div className="detail-item">
+                {/* <div className="detail-item">
                   <CalendarIcon size={20} />
                   <span>Shared: {formatDate(sharedGameInfo.createdAt)}</span>
-                </div>
+                </div> */}
               </div>
             </div>
 
-            <div className="import-section">
-              <p className="import-description">
-                Want to add this game to your collection? Import it to view detailed round-by-round results 
-                and statistics in your Wizard Tracker app.
-              </p>
-              
+            <div className="import-section">              
               <div className="import-actions">
                 <button 
                   className="btn-primary import-btn"
