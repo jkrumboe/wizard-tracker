@@ -402,32 +402,32 @@ const Settings = () => {
     if (!isOnline) {
       throw new Error('Cannot upload games while in offline mode');
     }
-    
     if (gameData.isPaused) {
       throw new Error('Cannot upload paused games. Please finish the game first.');
     }
-
     try {
       const result = await uploadLocalGameToAppwrite(gameId, { replaceExisting: false });
       if (!result.success) {
         throw new Error(result.error || 'Upload failed');
       }
-
       // Patch local game object with Appwrite ID and isUploaded:true
       const appwriteGameId = result.appwriteGameId || result.cloudGameId || result.id;
       if (appwriteGameId) {
-        // Update local storage directly and safely
         const allGames = LocalGameStorage.getAllSavedGames();
         if (allGames[gameId]) {
           allGames[gameId].appwriteGameId = appwriteGameId;
           allGames[gameId].isUploaded = true;
-          // Save back to localStorage (do not call saveGame with wrong args)
           localStorage.setItem('wizardTracker_localGames', JSON.stringify(allGames));
         }
       }
-
-      // Refresh the saved games list to show updated badge status
-      loadSavedGames();
+      // Refresh the saved games list and sync statuses to show updated badge status
+      await loadSavedGames();
+      if (typeof window !== 'undefined') {
+        // Dynamically import to avoid circular dependency
+        const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
+        const syncStatuses = await checkAllGamesSyncStatus();
+        setGameSyncStatuses(syncStatuses);
+      }
       return result;
     } catch (error) {
       console.error(`Failed to upload game ${gameId}:`, error);
@@ -812,8 +812,13 @@ const Settings = () => {
                                     } else {
                                       setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
                                     }
-                                    // Wait for loadSavedGames to finish before removing spinner
+                                    // Wait for loadSavedGames and sync status update before removing spinner
                                     await loadSavedGames();
+                                    if (typeof window !== 'undefined') {
+                                      const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
+                                      const syncStatuses = await checkAllGamesSyncStatus();
+                                      setGameSyncStatuses(syncStatuses);
+                                    }
                                   } catch (error) {
                                     setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
                                   } finally {
