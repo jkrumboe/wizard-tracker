@@ -167,13 +167,8 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
   const allPlayerExtIds = playerDocs.map(p => p.extId);
 
   const round_data = [];
-  // Only include rounds for which there is at least one roundPlayer
-  // Get all unique round numbers from roundPlayersByRound
-  const roundNumbersWithData = Object.keys(roundPlayersByRound)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  for (const roundNum of roundNumbersWithData) {
+  // Ensure all rounds up to totalRounds are present, even if no player data exists for some rounds
+  for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
     const round = roundByNumber[roundNum] || { roundNumber: roundNum, cards: roundNum };
     const roundPlayers = roundPlayersByRound[roundNum] || [];
 
