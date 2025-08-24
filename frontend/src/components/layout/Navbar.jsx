@@ -7,6 +7,37 @@ import { useUser } from '@/shared/hooks/useUser'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from '@/components/ui/Icon'
+
+import { XIcon } from '@/components/ui/Icon';
+import '@/styles/components/modal.css';
+
+// Modal for Games tab, styled like other modals
+const GamesMenu = ({ show, onClose }) => {
+  if (!show) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Games</h2>
+          <button className="close-btn" onClick={onClose} aria-label="Close Games Menu">
+            <XIcon size={20} />
+          </button>
+        </div>
+        <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+          <Link to="/leaderboard" className="modal-button" onClick={onClose}>
+            <TrophyIcon size={18} style={{ marginRight: 8 }} /> Leaderboard
+          </Link>
+          <Link to="/new-game" className="modal-button" onClick={onClose}>
+            <GamepadIcon size={18} style={{ marginRight: 8 }} /> Local Game
+          </Link>
+          <Link to="/lobby" className="modal-button" onClick={onClose}>
+            <UsersIcon size={18} style={{ marginRight: 8 }} /> Multiplayer
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import defaultAvatar from "@/assets/default-avatar.png"
 import avatarService from '@/shared/api/avatarService'
@@ -18,6 +49,10 @@ const Navbar = () => {
   // const { theme } = useTheme()
   const location = useLocation()
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar)
+  // Add state for Games menu
+  const [showGamesMenu, setShowGamesMenu] = useState(false);
+  // Close menu on route change
+  useEffect(() => { setShowGamesMenu(false); }, [location.pathname]);
 
   // Load user avatar when user is available
   useEffect(() => {
@@ -81,47 +116,59 @@ const Navbar = () => {
       </div>
       
       <nav className="bottom-navbar">
-        {isOnline && (
-          <Link to="/leaderboard" className={`bottom-nav-item ${isActive("/leaderboard")}`}>
-            <div className="nav-icon">
-              <TrophyIcon size={20} />
-            </div>
-            <span>Leaderboard</span>
-          </Link>
-        )}
-        
-        <Link to="/new-game" className={`bottom-nav-item ${isActive(["/new-game", "/game"])}`}>
-          <div className="nav-icon">
-            <GamepadIcon size={20} />
-          </div>
-          <span>Local Game</span>
-        </Link>
+        {isOnline ? (
+          <>
+            <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} />
+            <div
+              className={`bottom-nav-item games-tab ${showGamesMenu ? "active" : ""}`}
+              onClick={() => setShowGamesMenu(v => !v)}
+              aria-label="Games"
 
-        <Link to="/" className={`bottom-nav-item ${isActive("/")}`}>
-          <div className="nav-icon">
-            <HomeIcon size={20} />
-          </div>
-          <span>Home</span>
-        </Link>
-
-        {isOnline && (
-          <Link to="/lobby" className={`bottom-nav-item ${isActive(["/lobby", "/multiplayer"])}`}>
-            <div className="nav-icon">
-              <UsersIcon size={20} />
+            >
+              <div className="nav-icon">
+                <GamepadIcon size={20} />
+              </div>
+              <span>Games</span>
             </div>
-            <span>Multiplayer</span>
-          </Link>
+            <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
+              <div className="nav-icon">
+                <HomeIcon size={20} />
+              </div>
+              <span>Home</span>
+            </Link>
+            <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
+              <div className="nav-icon">
+                <SettingsIcon size={20} />
+              </div>
+              <span>Settings</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link to="/new-game" className={`bottom-nav-item ${isActive(["/new-game", "/game"])}`}> 
+              <div className="nav-icon">
+                <GamepadIcon size={20} />
+              </div>
+              <span>Local Game</span>
+            </Link>
+            <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
+              <div className="nav-icon">
+                <HomeIcon size={20} />
+              </div>
+              <span>Home</span>
+            </Link>
+            <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
+              <div className="nav-icon">
+                <SettingsIcon size={20} />
+              </div>
+              <span>Settings</span>
+            </Link>
+          </>
         )}
-        
-        <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
-          <div className="nav-icon">
-            <SettingsIcon size={20} />
-          </div>
-          <span>Settings</span>
-        </Link>
       </nav>
     </>
   );
+
 };
 
 export default Navbar;
