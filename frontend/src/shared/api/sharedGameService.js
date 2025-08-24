@@ -24,6 +24,40 @@ const config = {
 };
 
 /**
+ * Helper to fetch all documents for a given collection and query by handling
+ * Appwrite's pagination limits. Appwrite defaults to returning only 25
+ * documents per request and caps results at 100 per query, so we loop using
+ * offsets until no more documents are returned.
+ *
+ * @param {string} collectionId - The collection to query
+ * @param {Array} queries - Array of Appwrite Query objects
+ * @returns {Promise<Array>} All documents matching the query
+ */
+async function fetchAllDocuments(collectionId, queries = []) {
+  const allDocs = [];
+  let offset = 0;
+  const limit = 100; // Appwrite's maximum allowed limit
+
+  while (true) {
+    const response = await databases.listDocuments(
+      config.databaseId,
+      collectionId,
+      [...queries, Query.limit(limit), Query.offset(offset)]
+    );
+
+    allDocs.push(...response.documents);
+
+    if (response.documents.length < limit) {
+      break; // No more documents to fetch
+    }
+
+    offset += limit;
+  }
+
+  return allDocs;
+}
+
+/**
  * Store a shared game reference in the cloud
  * @param {Object} game - The game object to make shareable
  * @param {string} shareId - The unique share identifier
@@ -58,7 +92,7 @@ export async function getSharedGameData(originalGameId) {
         originalGameId
       );
       console.debug('Found game document by $id:', gameDoc);
-    } catch (e) {
+    } catch {
       // Not found by $id, try by extId (legacy/compatibility)
       const gameResult = await databases.listDocuments(
         config.databaseId,
@@ -87,30 +121,28 @@ export async function getSharedGameData(originalGameId) {
 
     console.debug('Found players:', playerDocs);
 
-    // 3. Get all rounds for this game
-    const roundsResult = await databases.listDocuments(
-      config.databaseId,
+    // 3. Get all rounds for this game (handle pagination)
+    const rounds = await fetchAllDocuments(
       config.collections.rounds,
       [Query.equal('gameId', gameDoc.$id)]
     );
 
-    console.debug('Found rounds:', roundsResult.documents);
+    console.debug('Found rounds:', rounds);
 
-    // 4. Get all round players data for this game
-    const roundPlayersResult = await databases.listDocuments(
-      config.databaseId,
+    // 4. Get all round players data for this game (handle pagination)
+    const roundPlayers = await fetchAllDocuments(
       config.collections.roundPlayers,
       [Query.equal('gameId', gameDoc.$id)]
     );
 
-    console.debug('Found round players:', roundPlayersResult.documents);
+    console.debug('Found round players:', roundPlayers);
 
     // 5. Reconstruct the game data
     const reconstructedGame = reconstructGameFromAppwriteData(
       gameDoc,
       playerDocs,
-      roundsResult.documents,
-      roundPlayersResult.documents
+      rounds,
+      roundPlayers
     );
 
     console.debug('Reconstructed game:', reconstructedGame);
@@ -161,7 +193,8 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
   });
 
   // Ensure all rounds up to total_rounds are present, and all players are included in each round
-  const totalRounds = gameDoc.totalRounds || (roundDocs.length > 0 ? Math.max(...roundDocs.map(r => r.roundNumber)) : 0);
+  const highestRoundNumber = roundDocs.length > 0 ? Math.max(...roundDocs.map(r => r.roundNumber)) : 0;
+  const totalRounds = Math.max(gameDoc.totalRounds || 0, highestRoundNumber);
   console.debug('Total rounds to reconstruct:', totalRounds);
   const allPlayerIds = playerDocs.map(p => p.$id);
   const allPlayerExtIds = playerDocs.map(p => p.extId);
