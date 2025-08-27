@@ -117,6 +117,7 @@ const NewGame = () => {
   // No longer need index since we generate unique IDs in addPlayer
   // Always default to the new-game tab, never auto-switch
   const [activeTab, setActiveTab] = useState('new-game')
+  const [gameType, setGameType] = useState('wizard');
   const [pausedGames, setPausedGames] = useState([])
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [gameToDelete, setGameToDelete] = useState(null)
@@ -359,84 +360,106 @@ const NewGame = () => {
         </button>
       </div>
 
+      {/* Game type selection for new game */}
       {activeTab === 'new-game' && (
-        <div className={`tab-panel players-${gameState.players.length}`} id="new-game-panel">
-          <div className="setup-section">
-            {/*Adding Players*/}
-            <div className="selected-players-wrapper">
-              <div className="selected-players" ref={selectedPlayersRef}>
-                <DndContext 
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                  modifiers={[restrictToVerticalAxis, restrictToParentElement, restrictToPlayerList]}
-                >
-                  <SortableContext 
-                    items={gameState.players.map(p => p.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="player-list">
-                      {gameState.players.map((player, index) => (
-                        <SortablePlayerItem
-                          key={player.id}
-                          player={player}
-                          index={index}
-                          onNameChange={handlePlayerNameChange}
-                          onRemove={handleRemovePlayer}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            </div>
+        <div className="game-type-select" style={{ margin: '1rem 0', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <label style={{ fontWeight: 600 }}>Game Type:</label>
+          <select value={gameType} onChange={e => setGameType(e.target.value)} style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}>
+            <option value="wizard">Wizard</option>
+            <option value="table">Table (Simple Points)</option>
+          </select>
+        </div>
+      )}
 
-            <button className="addPlayer" onClick={handleAddPlayer}>
-              +
-            </button>
-            
-            <div className="settings-group">
-              <div className="setting-item">
-                <div className="setting-content">
-                  <div id="rounds">
-                    <label htmlFor="rounds-input">Number of Rounds:</label>
-                    <input
-                      id="rounds-input"
-                      type="tel"
-                      value={gameState.maxRounds}
-                      onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
-                      min={1}
-                      max={recommendedRounds ? recommendedRounds : 20}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                    />
+      {activeTab === 'new-game' && (
+        <>
+          {gameType === 'wizard' ? (
+            <div className={`tab-panel players-${gameState.players.length}`} id="new-game-panel">
+              <div className="setup-section">
+                {/*Adding Players*/}
+                <div className="selected-players-wrapper">
+                  <div className="selected-players" ref={selectedPlayersRef}>
+                    <DndContext 
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                      modifiers={[restrictToVerticalAxis, restrictToParentElement, restrictToPlayerList]}
+                    >
+                      <SortableContext 
+                        items={gameState.players.map(p => p.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="player-list">
+                          {gameState.players.map((player, index) => (
+                            <SortablePlayerItem
+                              key={player.id}
+                              player={player}
+                              index={index}
+                              onNameChange={handlePlayerNameChange}
+                              onRemove={handleRemovePlayer}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   </div>
-                  <div className="rounds-hint">
-                        Recommended: {recommendedRounds} rounds
+                </div>
+
+                <button className="addPlayer" onClick={handleAddPlayer}>
+                  +
+                </button>
+                
+                <div className="settings-group">
+                  <div className="setting-item">
+                    <div className="setting-content">
+                      <div id="rounds">
+                        <label htmlFor="rounds-input">Number of Rounds:</label>
+                        <input
+                          id="rounds-input"
+                          type="tel"
+                          value={gameState.maxRounds}
+                          onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
+                          min={1}
+                          max={recommendedRounds ? recommendedRounds : 20}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                      </div>
+                      <div className="rounds-hint">
+                            Recommended: {recommendedRounds} rounds
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="new-game-actions">
-            <button 
-              className="start-game-btn" 
-              disabled={gameState.players.length < 3 || gameState.players.length > 8} 
-              onClick={handleStartGame}
-            >
-              Start Game
-            </button>
-            
-            {gameState.players.length < 3 && (
-              <div className="error-message">At least 3 players are needed to start a game</div>
-            )}
-            
-            {gameState.players.length > 8 && (
-              <div className="error-message">Maximum of 8 players are supported</div>
-            )}
-          </div>
-        </div>
+              <div className="new-game-actions">
+                <button 
+                  className="start-game-btn" 
+                  disabled={gameState.players.length < 3 || gameState.players.length > 8} 
+                  onClick={handleStartGame}
+                >
+                  Start Game
+                </button>
+                
+                {gameState.players.length < 3 && (
+                  <div className="error-message">At least 3 players are needed to start a game</div>
+                )}
+                
+                {gameState.players.length > 8 && (
+                  <div className="error-message">Maximum of 8 players are supported</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="tab-panel table-game-panel">
+              <button className="start-game-btn" style={{ marginBottom: '1rem' }} onClick={() => navigate('/game/table')}>Start Table Game</button>
+              <div style={{ color: '#888', fontSize: '0.95rem', marginBottom: '1rem' }}>
+                Use this mode for simple games where you just want to add up points for each player in a table. Add columns for players, enter points per round, and see totals below.
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {activeTab === 'paused-games' && (

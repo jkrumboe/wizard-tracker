@@ -33,6 +33,9 @@ const GamesMenu = ({ show, onClose }) => {
           <Link to="/lobby" className="modal-button" onClick={onClose}>
             <UsersIcon size={18} style={{ marginRight: 8 }} /> Multiplayer
           </Link>
+          <Link to="/table" className="modal-button" onClick={onClose}>
+            <UsersIcon size={18} style={{ marginRight: 8 }} /> Table Game
+          </Link>
         </div>
       </div>
     </div>

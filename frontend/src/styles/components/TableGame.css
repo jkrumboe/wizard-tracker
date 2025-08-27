@@ -1,0 +1,207 @@
+/* Add Player button above the table */
+.table-game-add-player-above {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: var(--spacing-xs) 0;
+  margin-bottom: var(--spacing-md);
+  border-radius: 6px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: background 0.2s;
+  display: block;
+}
+.table-game-add-player-above:hover {
+  background: #2563eb;
+}
+/* Inline add buttons for table columns/rows */
+.table-game-add-player-inline {
+  background: var(--primary-color);
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 5;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 22px;
+  max-height: 22px;
+  margin: 0;
+  line-height: 1;
+  position: absolute;
+  top: 0px;
+  right: -9px;
+  width: 16px;
+  height: 16px;
+}
+.table-game-add-player-inline:hover {
+  display: flex;
+}
+.table-game-add-row-inline {
+  background: var(--primary-color);
+  border: none;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  width: 100%;
+  min-width: 0;
+  height: 20px;
+  margin: 0;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+/* TableGame styles */
+.table-game-container {
+  width: 100%;
+  max-width: 100vw;
+  margin: 0 auto;
+  padding: 0;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.table-game-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table-game-table {
+  border-collapse: collapse;
+  width: auto;
+  min-width: 0;
+  background: var(--card-background-alt);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  /* border-radius: 8px; */
+  overflow: auto;
+  table-layout: auto;
+  width: auto;
+  min-width: 100%;
+  max-width: none;
+}
+
+/* Make columns narrower and prevent expansion */
+.table-game-table th,
+.table-game-table td {
+  padding: 0.08rem 0.08rem;
+  text-align: center;
+  font-size: 0.93rem;
+  min-width: 80px;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.table-game-table th {
+  background: var(--card-background);
+  font-weight: 600;
+  min-width: 80px;
+  box-sizing: border-box;
+}
+
+.table-game-player-input {
+  width: 80%;
+  min-width: 0;
+  max-width: 100%;
+  background: #fff;
+  color: #232b36;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.93rem;
+  padding: 2px 2px;
+  text-align: center;
+  margin: 0 auto;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.table-game-point-input {
+  width: 80%;
+  padding: 0.12rem 0.2rem;
+  font-size: 0.93rem;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.table-game-add-player,
+.table-game-add-row {
+  background: #4f8cff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+  .table-game-add-player,
+  .table-game-add-row {
+    background: #4f8cff;
+    color: #fff;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .table-game-add-player.floating-add,
+  .table-game-add-row.floating-add {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    border-radius: 50%;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .table-game-add-row.floating-add {
+    border-radius: 16px;
+    font-size: 1rem;
+    width: 80px;
+    height: 32px;
+  }
+  .table-game-add-player:hover,
+  .table-game-add-row:hover {
+    background: #2563eb;
+  }
+
+.table-game-add-player:hover,
+.table-game-add-row:hover {
+  background: #2563eb;
+}
+
+.table-game-total {
+  font-weight: bold;
+  background: var(--card-background-alt);
+  font-size: 1.1rem;
+  min-width: 32px;
+  max-width: 48px;
+  border: none !important;
+}
+
+@media (max-width: 600px) {
+  .table-game-table th,
+  .table-game-table td {
+    padding: 0.25rem 0;
+  }
+  .table-game-player-input, .table-game-point-input {
+    /* width: 60px; */
+    font-size: 0.95rem;
+  }
+}

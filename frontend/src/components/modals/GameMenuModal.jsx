@@ -2,6 +2,9 @@ import React from 'react';
 import { XIcon} from "@/components/ui/Icon"
 import '@/styles/components/modal.css';
 
+
+import { useNavigate } from 'react-router-dom';
+
 const GameMenuModal = ({ 
   isOpen, 
   onClose, 
@@ -10,6 +13,7 @@ const GameMenuModal = ({
   onPauseGame, 
   onLeaveGame
 }) => {
+  const navigate = useNavigate();
   if (!isOpen) return null;
 
   return (
@@ -31,6 +35,9 @@ const GameMenuModal = ({
           </button>
           <button className="modal-button" onClick={onPauseGame}>
             Pause Game
+          </button>
+          <button className="modal-button" onClick={() => { onClose(); navigate('/game/table'); }}>
+            Table Game
           </button>
           <button className="modal-button danger" onClick={onLeaveGame}>
             Leave Game

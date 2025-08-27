@@ -5,3 +5,4 @@ export { default as GameInProgress } from './GameInProgress.jsx';
 export { default as Lobby } from './Lobby.jsx';
 export { default as MultiplayerGame } from './MultiplayerGame.jsx';
 export { default as GameRoom } from './GameRoom.jsx';
+export { default as TableGame } from './TableGame.jsx';

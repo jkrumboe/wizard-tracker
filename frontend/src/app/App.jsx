@@ -7,7 +7,7 @@ import Profile from "@/pages/profile/Profile"
 import Leaderboard from "@/pages/profile/Leaderboard"
 import Stats from "@/pages/profile/Stats"
 import Settings from "@/pages/Settings"
-import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame, GameRoom } from "@/pages/game"
+import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame, GameRoom, TableGame } from "@/pages/game"
 import Login from "@/pages/auth/Login"
 import SharedGamePage from "@/pages/shared/SharedGamePage"
 import { Navbar } from "@/components/layout"
@@ -200,6 +200,7 @@ function App() {
                   } />
                   <Route path="/stats/:name" element={<Stats />} />
                   <Route path="/new-game" element={<NewGame />} />
+                  <Route path="/table" element={<TableGame />} />
                   <Route path="/game/:id" element={<GameDetails />} />
                   <Route path="/game/current" element={<GameInProgress />} />
                   <Route path="/lobby" element={
