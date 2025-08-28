@@ -2,37 +2,7 @@
  * Sync Checker Utility
  * Checks if games exist both locally and in the cloud for sync status
  */
-
-import { FrontendAppwriteGameUploader } from './appwriteGameUpload.js';
 import { LocalGameStorage } from '../api/localGameStorage.js';
-
-/**
- * Check if a game exists in the cloud by cloudLookupKey
- * @param {string} cloudLookupKey - The cloud lookup key to search for
- * @returns {Promise<boolean>} - True if game exists in cloud
- */
-export async function checkCloudGameExists(cloudLookupKey) {
-  if (!cloudLookupKey) {
-    return false;
-  }
-
-  try {
-    const uploader = new FrontendAppwriteGameUploader();
-    await uploader.ensureAuthentication();
-    
-    const existingGames = await uploader.databases.listDocuments(
-      uploader.config.databaseId,
-      uploader.config.collections.games
-    );
-
-    return existingGames.documents.some(game => 
-      game.cloudLookupKey === cloudLookupKey
-    );
-  } catch (error) {
-    console.error('Error checking cloud game existence:', error);
-    return false;
-  }
-}
 
 /**
  * Check sync status for a local game
@@ -54,23 +24,13 @@ export async function checkGameSyncStatus(gameId) {
       };
     }
 
-    const cloudLookupKey = localGame.cloudLookupKey;
+    // Backend-only: Only check by cloudGameId (MongoDB _id)
     let cloudExists = false;
-
-    if (cloudLookupKey) {
-      cloudExists = await checkCloudGameExists(cloudLookupKey);
-      
-      // If cloudLookupKey check failed, try content matching as fallback
-      if (!cloudExists) {
-        cloudExists = await checkCloudGameByContent(localGame);
-      }
+    if (localGame.isUploaded && localGame.cloudGameId) {
+      cloudExists = await checkCloudGameExistsByGameId(localGame.cloudGameId);
     } else {
-      // No cloudLookupKey, check by cloudGameId or content matching
-      if (localGame.isUploaded && localGame.cloudGameId) {
-        cloudExists = await checkCloudGameExistsByGameId(localGame.cloudGameId);
-      } else {
-        cloudExists = await checkCloudGameByContent(localGame);
-      }
+      // Content-based check is not supported, always return false
+      cloudExists = false;
     }
 
     // Determine sync status
@@ -92,9 +52,8 @@ export async function checkGameSyncStatus(gameId) {
       cloud: cloudExists,
       synced: isSynced,
       status: status,
-      isUploaded: localGame.isUploaded || false,
-      cloudGameId: localGame.cloudGameId || null,
-      cloudLookupKey: cloudLookupKey || null
+  isUploaded: localGame.isUploaded || false,
+  cloudGameId: localGame.cloudGameId || null
     };
   } catch (error) {
     console.error('Error checking game sync status:', error);
@@ -131,77 +90,41 @@ export async function checkAllGamesSyncStatus() {
 }
 
 /**
- * Check if a game exists in the cloud by Appwrite game ID
- * @param {string} cloudGameId - The Appwrite game document ID
- * @returns {Promise<boolean>} - True if game exists in cloud
- */
-export async function checkCloudGameExistsByGameId(cloudGameId) {
-  if (!cloudGameId) {
-    return false;
-  }
-
-  try {
-    const uploader = new FrontendAppwriteGameUploader();
-    await uploader.ensureAuthentication();
-    
-    await uploader.databases.getDocument(
-      uploader.config.databaseId,
-      uploader.config.collections.games,
-      cloudGameId
-    );
-
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
- * Check if a game exists in the cloud by matching content
- * @param {Object} localGame - The local game object
- * @returns {Promise<boolean>} - True if game exists in cloud
+ * Check if a game exists in the backend by its MongoDB ID
+ * @param {string} cloudGameId - The MongoDB game document ID
+ * @returns {Promise<boolean>} - True if game exists in backend
  */
-export async function checkCloudGameByContent(localGame) {
+export async function checkCloudGameExistsByGameId(cloudGameId) {
+  if (!cloudGameId) return false;
   try {
-    const uploader = new FrontendAppwriteGameUploader();
-    await uploader.ensureAuthentication();
-    
-    const existingGames = await uploader.databases.listDocuments(
-      uploader.config.databaseId,
-      uploader.config.collections.games
-    );
-
-    // Extract game data for comparison
-    const gameData = localGame.gameState || localGame;
-    const playerCount = gameData.players?.length || 0;
-    const totalRounds = gameData.total_rounds || gameData.currentRound || gameData.maxRounds || 0;
-    const finalScores = JSON.stringify(gameData.final_scores || {});
-
-    const foundGame = existingGames.documents.find(cloudGame => {
-      const samePlayerCount = cloudGame.playerIds?.length === playerCount;
-      const sameTotalRounds = cloudGame.totalRounds === totalRounds;
-      const sameFinalScores = cloudGame.finalScoresJson === finalScores;
-      
-      return samePlayerCount && sameTotalRounds && sameFinalScores;
-    });
-
-    if (foundGame) {
-      // If we found a match and this local game doesn't have upload tracking,
-      // update it to mark as uploaded with the found cloud game
-      if (!localGame.isUploaded || !localGame.cloudGameId) {
-        const { LocalGameStorage } = await import('../api/localGameStorage.js');
-        const { generateCloudLookupKey } = await import('./gameIdentifier.js');
-        
-        const cloudLookupKey = generateCloudLookupKey(gameData);
-        LocalGameStorage.markGameAsUploaded(localGame.id, foundGame.$id, cloudLookupKey);
-      }
-      
-      return true;
+    const res = await fetch(`http://localhost:5000/api/games/${cloudGameId}`);
+    if (res.status === 404) {
+      // Not found means not uploaded
+      return false;
     }
-
-    return false;
-  } catch (error) {
-    console.error('Error checking cloud game by content:', error);
+    if (!res.ok) {
+      let errorMsg = `Backend returned status ${res.status}`;
+      try {
+        const errJson = await res.json();
+        errorMsg += `: ${JSON.stringify(errJson)}`;
+      } catch { /* ignore JSON parse error for non-JSON responses */ }
+      console.warn(`Game not found in backend for ID ${cloudGameId}. ${errorMsg}`);
+      return false;
+    }
+    const data = await res.json();
+    return !!data.game;
+  } catch (err) {
+    console.error(`Error checking game in backend for ID ${cloudGameId}:`, err);
     return false;
   }
 }
+
+
+/**
+
+// Content-based cloud check is not supported with backend-only sync. Always return false.
+export async function checkCloudGameByContent(localGame) {
+  return false;
+}*/

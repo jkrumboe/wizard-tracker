@@ -1,276 +1,49 @@
-// Shared game service for handling shared games in Appwrite
-import { Client, Databases, Query } from 'appwrite';
 
-// Initialize Appwrite client for shared game access
-const client = new Client();
-client
-  .setEndpoint(import.meta.env.VITE_APPWRITE_PUBLIC_ENDPOINT || 'https://appwrite.jkrumboe.dev/v1')
-  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID || '688cd65e00060f0e4d43');
-
-// Note: For shared games, we rely on the collections having proper read permissions
-// for anonymous/guest users, since API keys cannot be used in frontend code
-
-const databases = new Databases(client);
-
-// Configuration
-const config = {
-  databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || '688cfb4b002d001bc2e5',
-  collections: {
-    games: 'games',
-    players: 'players',
-    rounds: 'rounds',
-    roundPlayers: 'roundPlayers'
-  }
-};
+// Shared game service for handling shared games using backend API and local storage
 
 /**
- * Helper to fetch all documents for a given collection and query by handling
- * Appwrite's pagination limits. Appwrite defaults to returning only 25
- * documents per request and caps results at 100 per query, so we loop using
- * offsets until no more documents are returned.
- *
- * @param {string} collectionId - The collection to query
- * @param {Array} queries - Array of Appwrite Query objects
- * @returns {Promise<Array>} All documents matching the query
- */
-async function fetchAllDocuments(collectionId, queries = []) {
-  const allDocs = [];
-  let offset = 0;
-  const limit = 100; // Appwrite's maximum allowed limit
-
-  while (true) {
-    const response = await databases.listDocuments(
-      config.databaseId,
-      collectionId,
-      [...queries, Query.limit(limit), Query.offset(offset)]
-    );
-
-    allDocs.push(...response.documents);
-
-    if (response.documents.length < limit) {
-      break; // No more documents to fetch
-    }
-
-    offset += limit;
-  }
-
-  return allDocs;
-}
-
-/**
- * Store a shared game reference in the cloud
+ * Store a shared game reference in the backend
  * @param {Object} game - The game object to make shareable
  * @param {string} shareId - The unique share identifier
  * @returns {Promise<Object>} The shared game record
  */
 export async function createSharedGameRecord(game, shareId) {
-  // No need to store anything - we'll reconstruct from existing game data
-  console.debug('Game sharing enabled for:', { shareId, gameId: game.id });
-  
+  // Save the game to the backend with the shareId as a property
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/games', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ gameData: { ...game, shareId } })
+  });
+  if (!res.ok) throw new Error('Failed to create shared game');
+  const data = await res.json();
   return {
     success: true,
-    shareId: shareId,
-    gameId: game.id
+    shareId,
+    gameId: data.game.id
   };
 }
 
 /**
- * Get the full game data for a shared game by reconstructing it from Appwrite collections
- * @param {string} originalGameId - The original game ID (extId in Appwrite)
- * @returns {Promise<Object|null>} The reconstructed complete game data
+ * Get the full game data for a shared game by shareId
+ * @param {string} shareId - The share identifier
+ * @returns {Promise<Object|null>} The complete game data
  */
-export async function getSharedGameData(originalGameId) {
-  try {
-    console.debug('Reconstructing game data for:', originalGameId);
-    let gameDoc = null;
-
-    // Try to fetch by Appwrite document ID ($id) first
-    try {
-      gameDoc = await databases.getDocument(
-        config.databaseId,
-        config.collections.games,
-        originalGameId
-      );
-      console.debug('Found game document by $id:', gameDoc);
-    } catch {
-      // Not found by $id, try by extId (legacy/compatibility)
-      const gameResult = await databases.listDocuments(
-        config.databaseId,
-        config.collections.games,
-        [Query.equal('extId', originalGameId)]
-      );
-      if (gameResult.documents.length === 0) {
-        console.debug('Game not found with $id or extId:', originalGameId);
-        return null;
-      }
-      gameDoc = gameResult.documents[0];
-      console.debug('Found game document by extId:', gameDoc);
+export async function getSharedGameData(shareId) {
+  // Find the game by shareId in the backend
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api/games?shareId=${encodeURIComponent(shareId)}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
     }
-
-    // 2. Get all players for this game using the playerIds array
-    const playerDocs = [];
-    if (gameDoc.playerIds && gameDoc.playerIds.length > 0) {
-      // Query players by their document IDs
-      const playersResult = await databases.listDocuments(
-        config.databaseId,
-        config.collections.players,
-        [Query.equal('$id', gameDoc.playerIds)]
-      );
-      playerDocs.push(...playersResult.documents);
-    }
-
-    console.debug('Found players:', playerDocs);
-
-    // 3. Get all rounds for this game (handle pagination)
-    const rounds = await fetchAllDocuments(
-      config.collections.rounds,
-      [Query.equal('gameId', gameDoc.$id)]
-    );
-
-    console.debug('Found rounds:', rounds);
-
-    // 4. Get all round players data for this game (handle pagination)
-    const roundPlayers = await fetchAllDocuments(
-      config.collections.roundPlayers,
-      [Query.equal('gameId', gameDoc.$id)]
-    );
-
-    console.debug('Found round players:', roundPlayers);
-
-    // 5. Reconstruct the game data
-    const reconstructedGame = reconstructGameFromAppwriteData(
-      gameDoc,
-      playerDocs,
-      rounds,
-      roundPlayers
-    );
-
-    console.debug('Reconstructed game:', reconstructedGame);
-    return reconstructedGame;
-
-  } catch (error) {
-    console.error('Failed to get shared game data:', error);
-    throw new Error('Failed to load shared game');
-  }
-}
-
-/**
- * Reconstruct the complete game object from Appwrite data
- * @param {Object} gameDoc - Game document from Appwrite
- * @param {Array} playerDocs - Player documents
- * @param {Array} roundDocs - Round documents  
- * @param {Array} roundPlayerDocs - Round player documents
- * @returns {Object} Complete game object in the original format
- */
-function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPlayerDocs) {
-  // Create player lookup maps
-  const playerById = {};
-  const playerNameById = {};
-  
-  playerDocs.forEach(player => {
-    playerById[player.$id] = player;
-    playerNameById[player.$id] = player.name;
   });
-
-  // Reconstruct players array with original IDs
-  const players = playerDocs.map(player => ({
-    id: player.extId, // Use the original player ID
-    name: player.name
-  }));
-
-
-  // Build a map of roundNumber to round object for quick lookup
-  const roundByNumber = {};
-  roundDocs.forEach(round => {
-    roundByNumber[round.roundNumber] = round;
-  });
-
-  // Build a map of roundNumber to all roundPlayerDocs for that round
-  const roundPlayersByRound = {};
-  roundPlayerDocs.forEach(rp => {
-    if (!roundPlayersByRound[rp.roundNumber]) roundPlayersByRound[rp.roundNumber] = [];
-    roundPlayersByRound[rp.roundNumber].push(rp);
-  });
-
-  // Ensure all rounds up to total_rounds are present, and all players are included in each round
-  const highestRoundNumber = roundDocs.length > 0 ? Math.max(...roundDocs.map(r => r.roundNumber)) : 0;
-  const totalRounds = Math.max(gameDoc.totalRounds || 0, highestRoundNumber);
-  console.debug('Total rounds to reconstruct:', totalRounds);
-  const allPlayerIds = playerDocs.map(p => p.$id);
-  const allPlayerExtIds = playerDocs.map(p => p.extId);
-
-  const round_data = [];
-  // Ensure all rounds up to totalRounds are present, even if no player data exists for some rounds
-  for (let roundNum = 1; roundNum <= totalRounds; roundNum++) {
-    const round = roundByNumber[roundNum] || { roundNumber: roundNum, cards: roundNum };
-    const roundPlayers = roundPlayersByRound[roundNum] || [];
-
-    // Map of playerId (Appwrite) to roundPlayerDoc
-    const roundPlayerMap = {};
-    roundPlayers.forEach(rp => { roundPlayerMap[rp.playerId] = rp; });
-
-    // For each player, ensure an entry exists (fill with zeros if missing)
-    const roundPlayersData = allPlayerIds.map((playerId, idx) => {
-      const rp = roundPlayerMap[playerId];
-      const extId = allPlayerExtIds[idx];
-      const name = playerNameById[playerId];
-      return {
-        id: extId,
-        name,
-        call: rp ? rp.call : 0,
-        made: rp ? rp.made : 0,
-        score: rp ? rp.score : 0,
-        totalScore: rp ? rp.totalScore : 0
-      };
-    });
-
-    round_data.push({
-      round: roundNum,
-      cards: round.cards,
-      players: roundPlayersData
-    });
-  }
-
-  // Parse final scores
-  const final_scores = {};
-  try {
-    const parsedScores = JSON.parse(gameDoc.finalScoresJson || '{}');
-    console.debug('Parsed final scores from JSON:', parsedScores);
-    
-    // The finalScoresJson already contains original player IDs, not Appwrite IDs
-    // So we can use it directly
-    Object.assign(final_scores, parsedScores);
-  } catch (error) {
-    console.error('Failed to parse final scores:', error);
-  }
-
-  // Find winner using original player ID
-  let winner_id = null;
-  if (gameDoc.winnerPlayerId) {
-    const winnerPlayer = playerById[gameDoc.winnerPlayerId];
-    if (winnerPlayer) {
-      winner_id = winnerPlayer.extId;
-    }
-  }
-
-  // Reconstruct the complete game object
-  return {
-    id: gameDoc.extId,
-    players: players,
-    winner_id: winner_id,
-    final_scores: final_scores,
-    round_data: round_data,
-    total_rounds: gameDoc.totalRounds,
-    created_at: gameDoc.$createdAt,
-    game_mode: gameDoc.gameMode || 'online',
-    duration_seconds: null, // Not stored in Appwrite schema
-    // Mark as shared
-    isShared: true,
-    sharedFrom: 'cloud',
-    // Add properties needed for GameDetails.jsx compatibility
-    is_local: true,
-    player_ids: players.map(p => p.id)
-  };
+  if (!res.ok) return null;
+  const data = await res.json();
+  // Assume the first match is the shared game
+  return data.games && data.games.length > 0 ? data.games[0].gameData : null;
 }
 
 /**
@@ -281,7 +54,6 @@ function reconstructGameFromAppwriteData(gameDoc, playerDocs, roundDocs, roundPl
  */
 export async function importSharedGame(gameData, shareInfo) {
   const { LocalGameStorage } = await import('../api/localGameStorage');
-  
   try {
     // Check if this game was already imported
     const existingGames = LocalGameStorage.getAllSavedGames();
@@ -289,14 +61,11 @@ export async function importSharedGame(gameData, shareInfo) {
       return game.originalGameId === shareInfo.gameId || 
              game.gameState?.originalGameId === shareInfo.gameId;
     });
-    
     if (alreadyImported) {
       throw new Error('This game has already been imported');
     }
-    
     // Create a new game ID for the imported game
     const newGameId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
     // Prepare the game data for local storage
     const localGameData = {
       ...gameData,
@@ -307,25 +76,20 @@ export async function importSharedGame(gameData, shareInfo) {
       originalGameId: shareInfo.gameId,
       importedAt: new Date().toISOString(),
       sharedFrom: `Shared game from ${gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown'}`,
-      // Clean up any Appwrite-specific fields that might have leaked through
-      $id: undefined,
-      $createdAt: undefined,
-      $updatedAt: undefined,
-      // Add properties needed for GameDetails.jsx compatibility
       is_local: true,
       player_ids: gameData.players?.map(p => p.id) || []
     };
-
     // Save to local storage - saveGame(gameState, gameName, isPaused)
     const savedGameId = LocalGameStorage.saveGame(
       localGameData, 
       `Shared: ${gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} won`, 
       false // isPaused = false since this is a finished game
     );
-    
     return savedGameId;
   } catch (error) {
     console.error('Failed to import shared game:', error);
     throw new Error('Failed to import shared game');
   }
 }
+
+

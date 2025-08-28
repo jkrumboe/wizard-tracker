@@ -1,5 +1,4 @@
-// Game service - Appwrite migration in progress
-// These are placeholder functions to prevent compilation errors
+// Game service - Backend and local storage only
 
 import { LocalGameStorage } from "@/shared/api/localGameStorage";
 import { 
@@ -15,15 +14,28 @@ import { validateWithJsonSchema } from "@/shared/schemas/gameJsonSchema";
 
 // Get all games
 export async function getGames() {
-  console.warn('gameService: getGames() - Server games feature not yet implemented with Appwrite');
-  return [];
+  const token = localStorage.getItem('token');
+  const res = await fetch('http://localhost:5000/api/games', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!res.ok) throw new Error('Failed to fetch games');
+  const data = await res.json();
+  return data.games || [];
 }
 
 // Get recent games
-// eslint-disable-next-line no-unused-vars
 export async function getRecentGames(_limit = 5) {
-  console.warn('gameService: getRecentGames() - Server games feature not yet implemented with Appwrite');
-  return [];
+  const token = localStorage.getItem('token');
+  const res = await fetch(`http://localhost:5000/api/games?limit=${_limit}&sortOrder=desc`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  if (!res.ok) throw new Error('Failed to fetch recent games');
+  const data = await res.json();
+  return data.games || [];
 }
 
 //=== Schema Migration and Validation ===//
@@ -83,139 +95,7 @@ export function validateGameData(gameData) {
   };
 }
 
-/**
- * Converts new schema game format to Appwrite-compatible format
- * @param {Object} migratedGame - Game in new schema format
- * @returns {Object} - Game in Appwrite upload format
- */
-export function convertToAppwriteFormat(migratedGame) {
-  try {
-    // The migrated game should now be in the new schema format
-    const appwriteGame = {
-      id: migratedGame.id,
-      players: migratedGame.players || [],
-      winner_id: migratedGame.totals?.winner_id || null,
-      final_scores: migratedGame.totals?.final_scores || {},
-      round_data: (migratedGame.rounds || []).map((round) => ({
-        round: round.number,
-        cards: round.cards,
-        players: Object.keys(round.bids || {}).map(playerId => ({
-          id: playerId,
-          call: round.bids[playerId] || 0,
-          made: round.tricks[playerId] || 0,
-          score: round.points[playerId] || 0,
-          totalScore: calculatePlayerTotalScore(migratedGame.rounds, playerId, round.number)
-        }))
-      })),
-      total_rounds: migratedGame.totals?.total_rounds || migratedGame.rounds?.length || 0,
-      created_at: migratedGame.created_at,
-      game_mode: migratedGame.mode === 'local' ? 'Local' : 
-                 migratedGame.mode === 'online' ? 'Online' : 
-                 migratedGame.mode === 'tournament' ? 'Tournament' : 'Local',
-      duration_seconds: migratedGame.duration_seconds || 0
-    };
 
-    return appwriteGame;
-  } catch (error) {
-    console.error('Error converting to Appwrite format:', error);
-    throw error;
-  }
-}
-
-/**
- * Helper function to calculate player's total score up to a specific round
- * @param {Array} rounds - All rounds data
- * @param {string} playerId - Player ID
- * @param {number} upToRound - Calculate total up to this round number
- * @returns {number} - Total score
- */
-function calculatePlayerTotalScore(rounds, playerId, upToRound) {
-  let total = 0;
-  for (let i = 0; i < upToRound && i < rounds.length; i++) {
-    const round = rounds[i];
-    total += round.points[playerId] || 0;
-  }
-  return total;
-}
-
-/**
- * Uploads a local game to Appwrite (requires Appwrite upload service)
- * @param {string} gameId - ID of the local game to upload
- * @param {Object} options - Upload options
- * @returns {Promise<Object>} - Upload result
- */
-export async function uploadLocalGameToAppwrite(gameId, options = {}) {
-  try {
-    // Get the game from local storage
-    const localGame = LocalGameStorage.loadGame(gameId);
-    if (!localGame) {
-      throw new Error(`Game with ID ${gameId} not found in local storage`);
-    }
-
-    // First migrate the local game to the new schema format
-    const migratedGame = migrateToNewSchema(localGame);
-    
-    // Validate the migrated game (it should now be in the correct format)
-    const validation = validateGameSchema(migratedGame);
-    if (!validation.isValid) {
-      throw new Error(`Game migration failed: ${validation.errors.join(', ')}`);
-    }
-
-    // Convert the migrated game to Appwrite format
-    const appwriteGame = convertToAppwriteFormat(migratedGame);
-    
-    // IMPORTANT: Ensure the appwrite game uses the correct local storage gameId
-    appwriteGame.id = gameId;
-
-    // Import and use the Appwrite uploader
-    try {
-      // Try to use the real Appwrite upload service
-      const { uploadLocalGame } = await import('@/shared/utils/appwriteGameUpload.js');
-      const uploadResult = await uploadLocalGame(appwriteGame, options);
-      
-      return {
-        success: true,
-        gameId: gameId, // Use the original gameId
-        appwriteGameId: uploadResult.appwriteGameId,
-        isDuplicate: uploadResult.isDuplicate,
-        message: uploadResult.isDuplicate 
-          ? 'Game was already in cloud - marked as online!'
-          : 'Game uploaded to Appwrite successfully!',
-        uploadResult: uploadResult,
-        migratedGame: migratedGame,
-        convertedGame: appwriteGame
-      };
-    } catch (error) {
-      // Show the actual error for debugging
-      console.error('Failed to upload to Appwrite:', error);
-      
-      if (error.message.includes('not authorized') || error.message.includes('Unauthorized')) {
-        console.debug('💡 SOLUTION: Configure Appwrite collection permissions to allow "role:guests"');
-        console.debug('📍 Go to: https://appwrite.jkrumboe.dev/console → Database → Collections → Settings → Permissions');
-        console.debug('➕ Add "role:guests" to Create, Read, Update, Delete permissions for all collections');
-      }
-      
-      console.warn('Falling back to migration/conversion only mode.');
-      console.debug('Migrated game data:', migratedGame);
-      console.debug('Converted Appwrite game data:', appwriteGame);
-      
-      return {
-        success: true,
-        gameId: appwriteGame.id,
-        message: 'Game migrated and converted successfully (upload pending Appwrite service)',
-        migratedGame: migratedGame,
-        convertedGame: appwriteGame
-      };
-    }
-
-  } catch (error) {
-    console.error('Error uploading game to Appwrite:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
 
 // Get recent local games (this still works as it uses localStorage)
 export async function getRecentLocalGames(limit = 5) {
@@ -310,10 +190,19 @@ export async function getAllLocalGames() {
 }
 
 // Create game
-// eslint-disable-next-line no-unused-vars
-export async function createGame(_data) {
-  console.warn('gameService: createGame() - Server games feature not yet implemented with Appwrite');
-  return null;
+export async function createGame(gameData, localId) {
+  const token = localStorage.getItem('token');
+  const res = await fetch('http://localhost:5000/api/games', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ gameData, localId })
+  });
+  if (!res.ok) throw new Error('Failed to create game');
+  const data = await res.json();
+  return data;
 }
 
 // Get player game history
@@ -325,47 +214,20 @@ export async function getPlayerGameHistory(_id, _limit = 20) {
 
 // Get game by ID
 export async function getGameById(id) {
-  try {
-    // First, try to find the game in local storage
-    const localGames = LocalGameStorage.getAllSavedGames();
-    const localGame = localGames[id];
-    
-    if (localGame) {
-      // Convert local game format to match expected game format
-      const gameData = {
-        id: localGame.id,
-        name: localGame.name,
-        created_at: localGame.created_at || localGame.savedAt,
-        is_local: true,
-        mode: localGame.mode || "Local",
-        players: localGame.gameState?.players || [],
-        winner_id: localGame.winner_id,
-        final_scores: localGame.final_scores,
-        round_data: localGame.round_data || localGame.gameState?.roundData,
-        total_rounds: localGame.total_rounds || localGame.totalRounds,
-        duration_seconds: localGame.duration_seconds,
-        player_ids: localGame.player_ids || (localGame.gameState?.players?.map(p => p.id)) || [],
-        game_mode: localGame.game_mode || localGame.mode || "Local",
-        gameState: localGame.gameState,
-        // Include metadata
-        savedAt: localGame.savedAt,
-        lastPlayed: localGame.lastPlayed,
-        playerCount: localGame.playerCount,
-        roundsCompleted: localGame.roundsCompleted,
-        isPaused: localGame.isPaused,
-        gameFinished: localGame.gameFinished
-      };
-      
-      return gameData;
+  // Try local first for compatibility
+  const localGames = LocalGameStorage.getAllSavedGames();
+  const localGame = localGames[id];
+  if (localGame) return localGame;
+  // Try backend
+  const token = localStorage.getItem('token');
+  const res = await fetch(`http://localhost:5000/api/games/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
     }
-    
-    // TODO: If not found locally and online, try to fetch from Appwrite
-    console.warn('gameService: getGameById() - Game not found in local storage, server lookup not yet implemented with Appwrite');
-    return null;
-  } catch (error) {
-    console.error('Error getting game by ID:', error);
-    return null;
-  }
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.game || null;
 }
 
 // Update game
@@ -398,8 +260,7 @@ const gameService = {
   migrateGameToNewSchema,
   convertToLegacyFormat,
   validateGameData,
-  convertToAppwriteFormat,
-  uploadLocalGameToAppwrite,
+  // Removed Appwrite upload functions
   // Schema constants
   GameStatus,
   GameMode

@@ -9,7 +9,6 @@ import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, CloudIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import authService from '@/shared/api/authService';
-import { uploadLocalGameToAppwrite } from '@/shared/api/gameService';
 import { checkGameSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
@@ -286,9 +285,7 @@ const Settings = () => {
   }, []);
 
   // Reload games when date filter changes
-  useEffect(() => {
-    loadSavedGames();
-  }, [loadSavedGames]);
+  // Removed redundant reload on every render
 
   // Handle URL parameter changes
   useEffect(() => {
@@ -399,43 +396,35 @@ const Settings = () => {
 
   // Cloud Sync Functions
   const uploadSingleGameToCloud = async (gameId, gameData) => {
-    if (!isOnline) {
-      throw new Error('Cannot upload games while in offline mode');
-    }
-    if (gameData.isPaused) {
-      throw new Error('Cannot upload paused games. Please finish the game first.');
+    // Prevent uploading if already uploaded
+    if (LocalGameStorage.isGameUploaded(gameId)) {
+      return { success: false, error: 'Game already uploaded', isDuplicate: true };
     }
     try {
-      const result = await uploadLocalGameToAppwrite(gameId, { replaceExisting: false });
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
-      }
-      // Patch local game object with Appwrite ID and isUploaded:true
-      const appwriteGameId = result.appwriteGameId || result.cloudGameId || result.id;
-      if (appwriteGameId) {
-        const allGames = LocalGameStorage.getAllSavedGames();
-        if (allGames[gameId]) {
-          allGames[gameId].appwriteGameId = appwriteGameId;
-          allGames[gameId].isUploaded = true;
-          localStorage.setItem('wizardTracker_localGames', JSON.stringify(allGames));
+      const { createGame } = await import('@/shared/api/gameService');
+      const result = await createGame(gameData, gameId);
+      if (result.duplicate) {
+        // Mark as uploaded with existing cloud ID
+        LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
+        if (typeof loadSavedGames === 'function') await loadSavedGames();
+        if (typeof window !== 'undefined') {
+          const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
+          const syncStatuses = await checkAllGamesSyncStatus();
+          setGameSyncStatuses(syncStatuses);
         }
+        return { success: true, isDuplicate: true, cloudGameId: result.game.id };
+      } else {
+        LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
+        if (typeof loadSavedGames === 'function') await loadSavedGames();
+        if (typeof window !== 'undefined') {
+          const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
+          const syncStatuses = await checkAllGamesSyncStatus();
+          setGameSyncStatuses(syncStatuses);
+        }
+        return { success: true, cloudGameId: result.game.id };
       }
-      // Force refresh the saved games list and sync statuses to show updated badge status
-      await loadSavedGames();
-      if (typeof window !== 'undefined') {
-        // Dynamically import to avoid circular dependency
-        const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
-        const syncStatuses = await checkAllGamesSyncStatus();
-        setGameSyncStatuses(syncStatuses);
-        // Extra: force a re-render by updating state with a new object
-        setGameSyncStatuses(prev => ({ ...syncStatuses }));
-        // Log for production debugging
-        console.log('[SyncDebug] Updated sync statuses after upload:', syncStatuses);
-      }
-      return result;
     } catch (error) {
-      console.error(`[SyncDebug] Failed to upload game ${gameId}:`, error);
-      throw error;
+      return { success: false, error: error.message };
     }
   };
 
@@ -471,7 +460,6 @@ const Settings = () => {
           const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
           const syncStatuses = await checkAllGamesSyncStatus();
           setGameSyncStatuses(syncStatuses);
-          setGameSyncStatuses(prev => ({ ...syncStatuses }));
           console.log('[SyncDebug] Updated sync statuses after share upload:', syncStatuses);
         }
         // Update syncStatus after upload
@@ -812,26 +800,18 @@ const Settings = () => {
                             );
                           } else if (needsUpload) {
                             // Show upload button for local games
+                            const isUploaded = LocalGameStorage.isGameUploaded(gameId);
                             return (
                               <button 
                                 className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
                                 onClick={async () => {
-                                  if (uploadingGames.has(gameId)) return; // Prevent double-click
+                                  if (uploadingGames.has(gameId) || isUploaded) return; // Prevent double-click or duplicate upload
                                   setUploadingGames(prev => new Set([...prev, gameId]));
                                   try {
                                     const result = await uploadSingleGameToCloud(gameId, game);
-                                    if (result.isDuplicate) {
-                                      setMessage({ text: `Game was already uploaded - marked as synced!`, type: 'success' });
-                                    } else {
-                                      setMessage({ text: `Game uploaded to cloud successfully!`, type: 'success' });
-                                    }
-                                    // Wait for loadSavedGames and sync status update before removing spinner
+                                    setMessage({ text: result.isDuplicate ? `Game was already uploaded - marked as synced!` : `Game uploaded to cloud successfully!`, type: 'success' });
+                                    // Only reload local state and sync status once
                                     await loadSavedGames();
-                                    if (typeof window !== 'undefined') {
-                                      const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
-                                      const syncStatuses = await checkAllGamesSyncStatus();
-                                      setGameSyncStatuses(syncStatuses);
-                                    }
                                   } catch (error) {
                                     setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
                                   } finally {
@@ -843,9 +823,10 @@ const Settings = () => {
                                   }
                                 }}
                                 aria-label={uploadingGames.has(gameId) ? "Uploading..." : "Upload to cloud"}
-                                disabled={game.isPaused || uploadingGames.has(gameId)}
+                                disabled={game.isPaused || uploadingGames.has(gameId) || isUploaded}
                                 title={
                                   uploadingGames.has(gameId) ? 'Uploading game...' :
+                                  isUploaded ? 'Already uploaded' :
                                   game.isPaused ? 'Cannot upload paused games' : 
                                   'Upload to cloud'
                                 }
