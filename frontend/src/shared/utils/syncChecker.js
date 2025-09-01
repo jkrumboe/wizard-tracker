@@ -3,6 +3,7 @@
  * Checks if games exist both locally and in the cloud for sync status
  */
 import { LocalGameStorage } from '../api/localGameStorage.js';
+import { API_ENDPOINTS } from '../api/config.js';
 
 /**
  * Check sync status for a local game
@@ -33,16 +34,30 @@ export async function checkGameSyncStatus(gameId) {
       cloudExists = false;
     }
 
+    // Special handling for imported shared games
+    const isImportedSharedGame = localGame.isImported || localGame.isShared || localGame.originalGameId;
+    
     // Determine sync status
     const localExists = true;
-    const isSynced = localExists && cloudExists;
-    
+    let isSynced;
     let status;
-    if (isSynced) {
+    
+    if (isImportedSharedGame && localGame.isUploaded && localGame.cloudGameId) {
+      // Imported shared games that are marked as uploaded should be considered synced
+      isSynced = true;
+      status = 'Synced';
+    } else if (localExists && cloudExists) {
+      isSynced = true;
       status = 'Synced';
     } else if (localGame.isUploaded && cloudExists) {
+      isSynced = true;
       status = 'Synced'; // Game is uploaded and exists in cloud
+    } else if (isImportedSharedGame) {
+      // Imported games without proper sync should be treated as synced to prevent re-upload
+      isSynced = true;
+      status = 'Synced';
     } else {
+      isSynced = false;
       status = 'Local'; // Treat upload-failed as local for badge/UI
     }
 
@@ -99,7 +114,12 @@ export async function checkAllGamesSyncStatus() {
 export async function checkCloudGameExistsByGameId(cloudGameId) {
   if (!cloudGameId) return false;
   try {
-    const res = await fetch(`http://localhost:5000/api/games/${cloudGameId}`);
+    const token = localStorage.getItem('token');
+    const res = await fetch(API_ENDPOINTS.games.getById(cloudGameId), {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     if (res.status === 404) {
       // Not found means not uploaded
       return false;

@@ -1,9 +1,11 @@
+import { API_ENDPOINTS, SKIP_BACKEND } from './config.js';
+
 class UserService {
   constructor() {
-    // You'll need to set this to your backend API base URL
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    // Use the centralized API configuration
+    this.baseURL = API_ENDPOINTS.base;
     // Skip backend calls in development if no backend URL is configured
-    this.skipBackend = import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL;
+    this.skipBackend = SKIP_BACKEND;
   }
 
   async updateUserName(userId, name) {
@@ -13,7 +15,7 @@ class UserService {
     }
     
     try {
-      const response = await fetch(`${this.baseURL}/api/users/${userId}/name`, {
+      const response = await fetch(API_ENDPOINTS.users.updateName(userId), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

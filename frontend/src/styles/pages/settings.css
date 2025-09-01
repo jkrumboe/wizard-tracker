@@ -676,3 +676,11 @@
   opacity: 0.8;
   cursor: not-allowed;
 }
+
+.cloud-upload-game-button.disabled {
+  background-color: var(--background-color-secondary) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-color-light) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}

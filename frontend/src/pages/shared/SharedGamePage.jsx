@@ -70,8 +70,12 @@ const SharedGamePage = () => {
         throw new Error('Game data not found');
       }
 
-      // Import the game into local storage
-      const newGameId = await importSharedGame(gameData, sharedGameInfo);
+      // Import the game into local storage, passing shareId for proper syncing
+      const shareInfoWithId = {
+        ...sharedGameInfo,
+        shareId: shareId // Pass the shareId for marking as synced
+      };
+      const newGameId = await importSharedGame(gameData, shareInfoWithId);
       
       setImported(true);
       

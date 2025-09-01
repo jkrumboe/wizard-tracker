@@ -18,6 +18,18 @@ const gameSchema = new mongoose.Schema({
     required: [true, 'Game data is required'],
     default: {},
   },
+  shareId: {
+    type: String,
+    sparse: true, // Allow multiple null values, but require uniqueness for non-null values
+    index: true
+  },
+  isShared: {
+    type: Boolean,
+    default: false
+  },
+  sharedAt: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now

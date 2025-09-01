@@ -2,18 +2,16 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
-import { getRecentGames, getRecentLocalGames } from '@/shared/api/gameService'
+import { getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 import "@/styles/components/offline-notification.css"
 import "@/styles/pages/home.css"
 
 const Home = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isOnline } = useOnlineStatus()
+  // const { isOnline } = useOnlineStatus()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
-  const [recentGames, setRecentGames] = useState([])
   const [recentLocalGames, setRecentLocalGames] = useState([])
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   // const [offlineMessage, setOfflineMessage] = useState('')
@@ -47,51 +45,21 @@ const Home = () => {
   }, [location.state]);
 
   useEffect(() => {
-    const fetchGames = async () => {
+    const fetchLocalGames = async () => {
       try {
-        let serverGames = [];
-        // Only fetch server games when online
-        if (isOnline) {
-          // Fetch server games
-          serverGames = await getRecentGames(4);
-        }
-        
-        // Always fetch local games
-        const localGames = await getRecentLocalGames(10); // Fix: await the async function
-        
-        // Ensure all games have proper date formatting for sorting
-        const formattedServerGames = Array.isArray(serverGames) ? serverGames.map(game => ({
-          ...game,
-          created_at: game.created_at || new Date().toISOString()
-        })) : [];
-        
-        // Local games should already have created_at, but let's make sure
+        const localGames = await getRecentLocalGames(10);
         const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
           ...game,
           created_at: game.created_at || new Date().toISOString()
         })) : [];
-        
-        setRecentGames(formattedServerGames)
-        setRecentLocalGames(formattedLocalGames)
+        setRecentLocalGames(formattedLocalGames);
       } catch (error) {
-        console.error('Error fetching games:', error)
-        // Even if there's an error with server games, still show local games
-        try {
-          const localGames = await getRecentLocalGames(4)
-          const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
-            ...game,
-            created_at: game.created_at || new Date().toISOString()
-          })) : [];
-          setRecentLocalGames(formattedLocalGames)
-        } catch (localError) {
-          console.error('Error fetching local games:', localError)
-          setRecentLocalGames([])
-        }
+        console.error('Error fetching local games:', error);
+        setRecentLocalGames([]);
       }
-    }
-
-    fetchGames()
-  }, [isOnline])
+    };
+    fetchLocalGames();
+  }, []);
 
   // Check for offline message from navigation state
   useEffect(() => {
@@ -119,21 +87,18 @@ const Home = () => {
         <div className="section-header">
           <h2>Recent Games</h2>
         </div>
-        {/* <div className="game-list"> */}
-          {recentLocalGames.length > 0 ? (
-            <div className="game-history">
-              {recentLocalGames
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 6)
-                .map(game => (
-                  <GameHistoryItem key={game.id} game={game} />
-                ))
-              }
-            </div>
-          ) : (
-            <div className="empty-message">No games found</div>
-          )}
-        {/* </div> */}
+        {recentLocalGames.length > 0 ? (
+          <div className="game-history">
+            {recentLocalGames
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .slice(0, 6)
+              .map(game => (
+                <GameHistoryItem key={game.id} game={game} />
+              ))}
+          </div>
+        ) : (
+          <div className="empty-message">No games found</div>
+        )}
       </section>
 
       {/* Load Game Dialog */}

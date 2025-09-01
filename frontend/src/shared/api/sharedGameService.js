@@ -1,5 +1,5 @@
 
-// Shared game service for handling shared games using backend API and local storage
+// Shared game service for handling shared games using MongoDB backend
 
 /**
  * Store a shared game reference in the backend
@@ -8,23 +8,36 @@
  * @returns {Promise<Object>} The shared game record
  */
 export async function createSharedGameRecord(game, shareId) {
-  // Save the game to the backend with the shareId as a property
-  const token = localStorage.getItem('token');
-  const res = await fetch('/api/games', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ gameData: { ...game, shareId } })
-  });
-  if (!res.ok) throw new Error('Failed to create shared game');
-  const data = await res.json();
-  return {
-    success: true,
-    shareId,
-    gameId: data.game.id
-  };
+  try {
+    const token = localStorage.getItem('token');
+    
+    // First, find the game by its cloud ID or local ID
+    let gameId = game.cloudGameId || game.appwriteGameId || game.id;
+    
+    // Make the game shareable by updating it with shareId
+    const res = await fetch(`/api/games/${gameId}/share`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ shareId })
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to create shared game record');
+    }
+    
+    const data = await res.json();
+    return {
+      success: true,
+      shareId,
+      gameId: data.game.id
+    };
+  } catch (error) {
+    console.error('Failed to create shared game record:', error);
+    throw error;
+  }
 }
 
 /**
@@ -33,17 +46,21 @@ export async function createSharedGameRecord(game, shareId) {
  * @returns {Promise<Object|null>} The complete game data
  */
 export async function getSharedGameData(shareId) {
-  // Find the game by shareId in the backend
-  const token = localStorage.getItem('token');
-  const res = await fetch(`/api/games?shareId=${encodeURIComponent(shareId)}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
+  try {
+    const res = await fetch(`/api/games/shared/${encodeURIComponent(shareId)}`);
+    if (!res.ok) {
+      if (res.status === 404) {
+        return null; // Game not found
+      }
+      throw new Error('Failed to fetch shared game');
     }
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  // Assume the first match is the shared game
-  return data.games && data.games.length > 0 ? data.games[0].gameData : null;
+    
+    const data = await res.json();
+    return data.game?.gameData || null;
+  } catch (error) {
+    console.error('Failed to get shared game data:', error);
+    return null;
+  }
 }
 
 /**
@@ -64,8 +81,10 @@ export async function importSharedGame(gameData, shareInfo) {
     if (alreadyImported) {
       throw new Error('This game has already been imported');
     }
+    
     // Create a new game ID for the imported game
     const newGameId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Prepare the game data for local storage
     const localGameData = {
       ...gameData,
@@ -79,12 +98,20 @@ export async function importSharedGame(gameData, shareInfo) {
       is_local: true,
       player_ids: gameData.players?.map(p => p.id) || []
     };
+    
     // Save to local storage - saveGame(gameState, gameName, isPaused)
     const savedGameId = LocalGameStorage.saveGame(
       localGameData, 
       `Shared: ${gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} won`, 
       false // isPaused = false since this is a finished game
     );
+    
+    // IMPORTANT: Mark the imported game as uploaded/synced to prevent duplicate uploads
+    // Use the original shareId as the cloudGameId to establish the link
+    LocalGameStorage.markGameAsUploaded(savedGameId, shareInfo.shareId || shareInfo.gameId, null);
+    
+    console.log(`Imported shared game ${savedGameId} and marked as synced with cloud ID: ${shareInfo.shareId || shareInfo.gameId}`);
+    
     return savedGameId;
   } catch (error) {
     console.error('Failed to import shared game:', error);

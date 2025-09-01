@@ -28,13 +28,13 @@ const GamesMenu = ({ show, onClose }) => {
             <TrophyIcon size={18} style={{ marginRight: 8 }} /> Leaderboard
           </Link>
           <Link to="/new-game" className="modal-button" onClick={onClose}>
-            <GamepadIcon size={18} style={{ marginRight: 8 }} /> Local Game
+            <GamepadIcon size={18} style={{ marginRight: 8 }} /> Wizard
           </Link>
-          <Link to="/lobby" className="modal-button" onClick={onClose}>
+          {/* <Link to="/lobby" className="modal-button" onClick={onClose}>
             <UsersIcon size={18} style={{ marginRight: 8 }} /> Multiplayer
-          </Link>
+          </Link> */}
           <Link to="/table" className="modal-button" onClick={onClose}>
-            <UsersIcon size={18} style={{ marginRight: 8 }} /> Table Game
+            <UsersIcon size={18} style={{ marginRight: 8 }} /> Table
           </Link>
         </div>
       </div>
@@ -152,7 +152,7 @@ const Navbar = () => {
               <div className="nav-icon">
                 <GamepadIcon size={20} />
               </div>
-              <span>Local Game</span>
+              <span>Wizard</span>
             </Link>
             <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
               <div className="nav-icon">

@@ -442,18 +442,26 @@ const Settings = () => {
       return;
     }
 
+    // Check if this is an imported shared game - prevent re-sharing to avoid confusion
+    if (gameData.isImported || gameData.isShared || gameData.originalGameId) {
+      setMessage({ text: 'Cannot share imported games. This game was already shared by someone else.', type: 'error' });
+      return;
+    }
+
     let syncStatus = gameSyncStatuses[gameId];
     let isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
 
-    // If not synced, upload first
+    // If not synced, upload first using the new backend sync
     if (!isGameOnline) {
-      setMessage({ text: 'Syncing game to cloud before sharing...', type: 'info' });
       try {
-        const uploadResult = await uploadSingleGameToCloud(gameId, gameData);
-        if (!uploadResult.success) {
-          setMessage({ text: uploadResult.error || 'Failed to sync game before sharing.', type: 'error' });
+        const { ensureGameSynced } = await import('@/shared/utils/ensureGameSynced');
+        const syncSuccess = await ensureGameSynced(gameId, gameData, setMessage);
+        
+        if (!syncSuccess) {
+          setMessage({ text: 'Failed to sync game to backend before sharing.', type: 'error' });
           return;
         }
+        
         // Force reload sync status after upload
         if (typeof loadSavedGames === 'function') await loadSavedGames();
         if (typeof window !== 'undefined') {
@@ -473,15 +481,15 @@ const Settings = () => {
     }
 
     if (!isGameOnline) {
-      setMessage({ text: 'Game must be uploaded to cloud before sharing.', type: 'error' });
+      setMessage({ text: 'Game must be uploaded to backend before sharing.', type: 'error' });
       console.warn('[SyncDebug] Tried to share but game is not online:', syncStatus);
       return;
     }
 
     setSharingGames(prev => new Set([...prev, gameId]));
     try {
-      // Use appwriteGameId for sharing if available, else fallback to local gameId
-      let idToShare = gameData.appwriteGameId || gameData.cloudGameId || gameData.id || gameId;
+      // Use cloudGameId for sharing if available, else fallback to local gameId
+      let idToShare = gameData.cloudGameId || gameData.id || gameId;
       const gameToShare = {
         ...gameData,
         id: idToShare
@@ -772,8 +780,10 @@ const Settings = () => {
                           const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
                           const isGameSynced = status === 'Synced';
                           const needsUpload = status === 'Local';
-                          if (isGameSynced) {
-                            // Show share button for synced games
+                          const isImportedGame = game.isImported || game.isShared || game.originalGameId;
+                          
+                          if (isGameSynced && !isImportedGame) {
+                            // Show share button for synced games that are not imported
                             return (
                               <button 
                                 className={`cloud-upload-game-button share-button ${sharingGames.has(gameId) ? 'sharing' : ''}`}
@@ -798,8 +808,20 @@ const Settings = () => {
                                 )}
                               </button>
                             );
-                          } else if (needsUpload) {
-                            // Show upload button for local games
+                          } else if (isGameSynced && isImportedGame) {
+                            // Show a disabled button with tooltip for imported games
+                            return (
+                              <button 
+                                className="cloud-upload-game-button share-button disabled"
+                                disabled={true}
+                                title="Imported games cannot be shared"
+                                aria-label="Cannot share imported game"
+                              >
+                                <ShareIcon size={25} />
+                              </button>
+                            );
+                          } else if (needsUpload && !isImportedGame) {
+                            // Show upload button for local games that are not imported
                             const isUploaded = LocalGameStorage.isGameUploaded(gameId);
                             return (
                               <button 

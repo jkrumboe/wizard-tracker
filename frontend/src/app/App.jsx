@@ -203,7 +203,7 @@ function App() {
                   <Route path="/table" element={<TableGame />} />
                   <Route path="/game/:id" element={<GameDetails />} />
                   <Route path="/game/current" element={<GameInProgress />} />
-                  <Route path="/lobby" element={
+                  {/* <Route path="/lobby" element={
                     <OnlineProtectedRoute>
                       <Lobby />
                     </OnlineProtectedRoute>
@@ -222,7 +222,7 @@ function App() {
                     <OnlineProtectedRoute>
                       <MultiplayerGame />
                     </OnlineProtectedRoute>
-                  } />
+                  } /> */}
                   <Route path="/login" element= {
                     <OnlineProtectedRoute>
                       <Login />
