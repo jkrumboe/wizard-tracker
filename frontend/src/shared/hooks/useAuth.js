@@ -33,7 +33,7 @@ export function useAuth() {
    */
   const getAuthToken = () => {
     if (!isAuthenticated()) return null;
-    return localStorage.getItem('token');
+    return localStorage.getItem('auth_token');
   };
 
   return {

@@ -15,7 +15,7 @@ import { validateWithJsonSchema } from "@/shared/schemas/gameJsonSchema";
 
 // Get all games
 export async function getGames() {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   const res = await fetch(API_ENDPOINTS.games.list, {
     headers: {
       'Authorization': `Bearer ${token}`
@@ -28,7 +28,7 @@ export async function getGames() {
 
 // Get recent games
 export async function getRecentGames(_limit = 5) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   const res = await fetch(`${API_ENDPOINTS.games.list}?limit=${_limit}&sortOrder=desc`, {
     headers: {
       'Authorization': `Bearer ${token}`
@@ -192,7 +192,7 @@ export async function getAllLocalGames() {
 
 // Create game
 export async function createGame(gameData, localId) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   
   // Check if user is authenticated
   if (!token) {
@@ -231,7 +231,7 @@ export async function getGameById(id) {
   const localGame = localGames[id];
   if (localGame) return localGame;
   // Try backend
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   const res = await fetch(API_ENDPOINTS.games.getById(id), {
     headers: {
       'Authorization': `Bearer ${token}`

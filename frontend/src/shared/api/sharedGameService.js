@@ -9,7 +9,7 @@
  */
 export async function createSharedGameRecord(game, shareId) {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     
     // Check authentication
     if (!token) {

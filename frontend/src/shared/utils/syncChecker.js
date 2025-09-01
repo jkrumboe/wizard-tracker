@@ -131,7 +131,7 @@ export async function checkCloudGameExistsByGameId(cloudGameId) {
   if (!cloudGameId) return false;
   
   // Check authentication
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   if (!token) {
     // If not authenticated, we can't verify with the backend
     // Return null to indicate "unknown" rather than false

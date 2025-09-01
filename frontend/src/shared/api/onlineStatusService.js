@@ -29,8 +29,8 @@ class OnlineStatusService {
     }
     
     try {
-      // Check if the backend is available by pinging the health endpoint
-      const response = await fetch(`${API_ENDPOINTS.base}/api/health`, {
+      // Check the MongoDB-based online status endpoint
+      const response = await fetch(`${API_ENDPOINTS.base}/api/online/status`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -39,18 +39,29 @@ class OnlineStatusService {
         signal: AbortSignal.timeout(5000)
       });
 
-      const isOnline = response.ok;
-      
-      const status = {
-        online: isOnline,
-        lastUpdated: new Date().toISOString(),
-        message: isOnline
-          ? 'All features are available'
-          : 'Backend server is not available. Only local features are available.'
-      };
+      if (response.ok) {
+        const data = await response.json();
+        const status = {
+          online: data.online,
+          lastUpdated: data.lastUpdated,
+          message: data.message || (data.online ? 
+            'All features are available' : 
+            'Online features are currently disabled for maintenance')
+        };
 
-      this._updateStatus(status);
-      return status;
+        this._updateStatus(status);
+        return status;
+      } else {
+        // If the endpoint fails, fall back to offline mode
+        const offlineStatus = {
+          online: false,
+          lastUpdated: new Date().toISOString(),
+          message: 'Unable to check online status - operating in offline mode'
+        };
+        
+        this._updateStatus(offlineStatus);
+        return offlineStatus;
+      }
     } catch (error) {
       console.error('Error checking online status:', error);
       
@@ -73,6 +84,84 @@ class OnlineStatusService {
   async isOnline() {
     const status = await this.getStatus();
     return status.online;
+  }
+  
+  /**
+   * Toggle the online status (requires authentication)
+   * @param {boolean} status - Optional specific status to set
+   * @param {string} message - Optional custom message
+   * @returns {Promise<Object>} - Result of the toggle operation
+   */
+  async toggleOnlineStatus(status = undefined, message = undefined) {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Authentication required to change online status');
+      }
+
+      const response = await fetch(`${API_ENDPOINTS.base}/api/online/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status, message })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to toggle online status');
+      }
+
+      const result = await response.json();
+      
+      // Force refresh the status
+      await this.getStatus(true);
+      
+      return result;
+    } catch (error) {
+      console.error('Error toggling online status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Set specific online status (requires authentication)
+   * @param {boolean} status - The status to set (true = online, false = offline)
+   * @param {string} message - Optional custom message
+   * @returns {Promise<Object>} - Result of the operation
+   */
+  async setOnlineStatus(status, message = undefined) {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Authentication required to change online status');
+      }
+
+      const response = await fetch(`${API_ENDPOINTS.base}/api/online/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status, message })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to set online status');
+      }
+
+      const result = await response.json();
+      
+      // Force refresh the status
+      await this.getStatus(true);
+      
+      return result;
+    } catch (error) {
+      console.error('Error setting online status:', error);
+      throw error;
+    }
   }
   
   /**

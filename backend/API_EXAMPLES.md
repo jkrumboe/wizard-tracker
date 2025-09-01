@@ -186,7 +186,7 @@ const loginUser = async (username, password) => {
 
 // Create Game
 const createGame = async (score) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   const response = await fetch('http://localhost:5000/api/games', {
     method: 'POST',
     headers: {
@@ -205,7 +205,7 @@ const createGame = async (score) => {
 
 // Get Games
 const getGames = async (page = 1, limit = 10) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   const response = await fetch(`http://localhost:5000/api/games?page=${page}&limit=${limit}`, {
     headers: {
       'Authorization': `Bearer ${token}`

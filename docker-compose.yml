@@ -36,6 +36,20 @@ services:
     environment:
       - MONGO_INITDB_DATABASE=wizard-tracker
 
+  mongo-express:
+    image: mongo-express:1.0.2
+    ports:
+      - "8081:8081"  # Host:Container - Web interface for MongoDB
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017/wizard-tracker
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+      - ME_CONFIG_SITE_BASEURL=/
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
 volumes:
   mongodb_data:
 

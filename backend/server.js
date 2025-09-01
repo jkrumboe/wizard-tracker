@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const userRoutes = require('./routes/users');
 const gameRoutes = require('./routes/games');
+const onlineRoutes = require('./routes/online');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -22,6 +23,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/online', onlineRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

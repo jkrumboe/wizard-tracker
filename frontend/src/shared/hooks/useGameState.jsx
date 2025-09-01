@@ -502,7 +502,7 @@ export function GameStateProvider({ children }) {
       const savedGameId = LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
 
       // Only attempt cloud sync if user is authenticated
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       if (token) {
         try {
           await createGame(gameData, savedGameId);
