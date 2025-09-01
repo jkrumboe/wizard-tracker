@@ -17,7 +17,7 @@ export async function createSharedGameRecord(game, shareId) {
     }
     
     // First, find the game by its cloud ID or local ID
-    let gameId = game.cloudGameId || game.appwriteGameId || game.id;
+    let gameId = game.cloudGameId || game.id;
     
     // Make the game shareable by updating it with shareId
     const res = await fetch(`/api/games/${gameId}/share`, {

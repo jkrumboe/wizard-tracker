@@ -75,9 +75,9 @@ This section guides you through submitting an enhancement suggestion, including 
    npm install
    ```
 
-4. Set up environment variables
-   - Copy `frontend/env-config.js.template` to `frontend/env-config.js`
-   - Update the values with your Appwrite endpoint and project ID
+4. Set up environment variables (optional)
+   - Copy `frontend/env-config.js.template` to `frontend/env-config.js` if needed
+   - Update the values with your configuration
 
 5. Start the development servers
    ```bash

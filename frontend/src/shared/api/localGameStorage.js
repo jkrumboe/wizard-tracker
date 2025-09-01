@@ -366,7 +366,7 @@ export class LocalGameStorage {
   /**
    * Mark a game as uploaded to cloud
    * @param {string} gameId - The game ID
-   * @param {string} cloudGameId - The cloud/Appwrite game ID
+   * @param {string} cloudGameId - The cloud game ID
    * @param {string} cloudLookupKey - The cloud lookup key for duplicate detection
    */
   static markGameAsUploaded(gameId, cloudGameId, cloudLookupKey = null) {

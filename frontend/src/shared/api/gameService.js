@@ -220,7 +220,7 @@ export async function createGame(gameData, localId) {
 // Get player game history
 // eslint-disable-next-line no-unused-vars
 export async function getPlayerGameHistory(_id, _limit = 20) {
-  console.warn('gameService: getPlayerGameHistory() - Server games feature not yet implemented with Appwrite');
+  console.warn('gameService: getPlayerGameHistory() - Server games feature not yet implemented with MongoDB backend');
   return [];
 }
 
@@ -245,14 +245,14 @@ export async function getGameById(id) {
 // Update game
 // eslint-disable-next-line no-unused-vars
 export async function updateGame(_id, _data) {
-  console.warn('gameService: updateGame() - Server games feature not yet implemented with Appwrite');
+  console.warn('gameService: updateGame() - Server games feature not yet implemented with MongoDB backend');
   return null;
 }
 
 // Delete game
 // eslint-disable-next-line no-unused-vars
 export async function deleteGame(_id) {
-  console.warn('gameService: deleteGame() - Server games feature not yet implemented with Appwrite');
+  console.warn('gameService: deleteGame() - Server games feature not yet implemented with MongoDB backend');
   return false;
 }
 
@@ -272,7 +272,7 @@ const gameService = {
   migrateGameToNewSchema,
   convertToLegacyFormat,
   validateGameData,
-  // Removed Appwrite upload functions
+  // Removed MongoDB upload functions
   // Schema constants
   GameStatus,
   GameMode

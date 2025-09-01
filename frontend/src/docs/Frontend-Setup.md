@@ -1,27 +1,26 @@
 # Frontend Setup
 
-This guide explains how to run the KeepWiz React frontend against your own Supabase instance. The backend is still under development so only the client-side setup is covered here.
+This guide explains how to run the KeepWiz React frontend against your own MongoDB backend.
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 18 or higher
 - [npm](https://www.npmjs.com/) (comes with Node.js)
-- A self‑hosted [Supabase](https://supabase.com/) project
+- A MongoDB backend instance (see backend setup)
 
 ## Configuration
 
-1. Copy the example environment file and fill in your Supabase details:
+1. Copy the example environment file and fill in your configuration if needed:
 
 ```bash
 cp env-config.js.template env-config.js
 ```
 
-2. Edit `env-config.js` and set:
+2. Edit `env-config.js` and set any required environment variables:
 
 ```javascript
 window._env_ = {
-  VITE_APPWRITE_PUBLIC_ENDPOINT: 'https://your-appwrite-endpoint',
-  VITE_APPWRITE_PROJECT_ID: 'your-project-id'
+  VITE_APP_VERSION: '1.1.11'
 };
 ```
 

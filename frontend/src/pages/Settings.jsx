@@ -369,7 +369,7 @@ const Settings = () => {
     try {
       // Clear user data first
       clearUserData();
-      // Then logout from Appwrite
+      // Then logout from backend
       await authService.logout();
       // Navigate to login page
       window.location.href = '/login';

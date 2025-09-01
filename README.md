@@ -10,7 +10,7 @@ A full-stack application for tracking and managing Wizard card game scores, play
 
 - Track player stats and game history
 - Comprehensive player leaderboards and statistics
-- Appwrite backend for authentication and real-time features
+- MongoDB backend for authentication and real-time features
 - User authentication and authorization
 - Mobile-friendly responsive design with PWA support
 
@@ -26,10 +26,10 @@ Before running the application, set up your environment variables:
 cp .env.example .env
 ```
 
-2. Update the values in `.env` with your Appwrite configuration:
+2. Update the values in `.env` with your backend configuration:
 
-   - `VITE_APPWRITE_PUBLIC_ENDPOINT`: Your Appwrite server endpoint
-   - `VITE_APPWRITE_PROJECT_ID`: Your Appwrite project ID
+   - `MONGO_URI`: Your MongoDB connection string
+   - `JWT_SECRET`: Your JWT secret key for authentication
 
 ## Installation & Usage
 
@@ -52,7 +52,7 @@ The easiest way to get started is using Docker Compose:
 git clone https://github.com/jkrumboe/wizard-tracker.git
 cd wizard-tracker
 
-# Start the frontend (it connects to Appwrite)
+# Start the full application stack
 docker compose up
 ```
 
@@ -65,23 +65,25 @@ Frontend: <http://localhost:3000>
 ### Docker:
 
 Frontend: <http://localhost:8088>
+Backend API: <http://localhost:5000>
+MongoDB Admin: <http://localhost:8081> (admin/admin123)
 
 ## Online/Offline Mode
 
-KeepWiz uses Appwrite's real-time database to control online/offline mode. When set to `false`, multiplayer features are disabled while local gameplay remains available. This allows toggling maintenance mode through the Appwrite console.
+KeepWiz uses the MongoDB backend to control online/offline mode. When set to `false`, multiplayer features are disabled while local gameplay remains available. This allows toggling maintenance mode through the backend API.
 
 ### Toggle Online/Offline Mode
 
-Control the online status through the Appwrite console:
+Control the online status through the backend API:
 
-- Access your Appwrite console
-- Navigate to the databases section  
-- Toggle the online status document as needed
+- Access the backend API endpoints
+- Navigate to the online status endpoints  
+- Toggle the online status as needed
 - Changes are applied in real-time across all connected clients
 
 ## Documentation
 
-For setting up the React frontend with Appwrite see [`frontend/src/docs/Frontend-Setup.md`](frontend/src/docs/Frontend-Setup.md).
+For setting up the React frontend see [`frontend/src/docs/Frontend-Setup.md`](frontend/src/docs/Frontend-Setup.md).
 
 Key documentation pages:
 
@@ -105,5 +107,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 - [React](https://reactjs.org/)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Appwrite](https://appwrite.io/)
+- [MongoDB](https://www.mongodb.com/)
+- [Node.js](https://nodejs.org/)
