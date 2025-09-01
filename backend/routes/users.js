@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -94,6 +95,22 @@ router.post('/login', async (req, res, next) => {
         id: user._id,
         username: user.username,
         createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/me - Get current user info (protected route)
+router.get('/me', auth, async (req, res, next) => {
+  try {
+    // User is already attached to req by auth middleware
+    res.json({
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        createdAt: req.user.createdAt
       }
     });
   } catch (error) {

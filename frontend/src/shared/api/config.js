@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
   auth: {
     register: `${API_BASE_URL}/api/users/register`,
     login: `${API_BASE_URL}/api/users/login`,
+    me: `${API_BASE_URL}/api/users/me`,
   },
   games: {
     list: `${API_BASE_URL}/api/games`,

@@ -11,6 +11,11 @@ export async function createSharedGameRecord(game, shareId) {
   try {
     const token = localStorage.getItem('token');
     
+    // Check authentication
+    if (!token) {
+      throw new Error('You must be logged in to share games. Please sign in and try again.');
+    }
+    
     // First, find the game by its cloud ID or local ID
     let gameId = game.cloudGameId || game.appwriteGameId || game.id;
     
@@ -23,6 +28,10 @@ export async function createSharedGameRecord(game, shareId) {
       },
       body: JSON.stringify({ shareId })
     });
+    
+    if (res.status === 401) {
+      throw new Error('Your session has expired. Please sign in again to share games.');
+    }
     
     if (!res.ok) {
       throw new Error('Failed to create shared game record');

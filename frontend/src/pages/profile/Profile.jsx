@@ -19,7 +19,7 @@ const Profile = () => {
   const { id: paramId } = useParams()
   const { user, refreshPlayerData } = useUser()
   // For now, only allow viewing your own profile (paramId support can be added later)
-  const isOwnProfile = !paramId || paramId === user?.$id
+  const isOwnProfile = !paramId || paramId === user?.id
   
   const [gameHistory, setGameHistory] = useState([])
   const [tags, setTags] = useState([])
@@ -40,14 +40,14 @@ const Profile = () => {
   const currentPlayer = useMemo(() => {
     if (isOwnProfile && user) {
       return {
-        id: user.$id,
-        name: user.name || 'User',
-        email: user.email,
+        id: user.id,
+        name: user.name || user.username || 'User',
+        username: user.username,
         avatar: avatarUrl,
         // Add other default properties
         tags: [],
-        created_at: user.$createdAt,
-        updated_at: user.$updatedAt
+        created_at: user.createdAt,
+        updated_at: user.createdAt // For now, same as created
       }
     }
     return null

@@ -501,13 +501,47 @@ export function GameStateProvider({ children }) {
       };
       const savedGameId = LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
 
-      // Always save finished game to MongoDB backend
-      try {
-        await createGame(gameData, savedGameId);
+      // Only attempt cloud sync if user is authenticated
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await createGame(gameData, savedGameId);
+          setGameState((prevState) => ({
+            ...prevState,
+            autoUploadStatus: 'success',
+            autoUploadMessage: '✅ Game uploaded to database!'
+          }));
+          setTimeout(() => {
+            setGameState((prevState) => ({
+              ...prevState,
+              autoUploadStatus: null,
+              autoUploadMessage: null
+            }));
+          }, 5000);
+        } catch (uploadError) {
+          console.warn('⚠️ Upload to database failed (game saved locally):', uploadError.message);
+          const isAuthError = uploadError.message.includes('logged in') || uploadError.message.includes('session has expired');
+          setGameState((prevState) => ({
+            ...prevState,
+            autoUploadStatus: 'warning',
+            autoUploadMessage: isAuthError 
+              ? '⚠️ Game saved locally - sign in to sync to cloud'
+              : '⚠️ Database sync failed - game saved locally.'
+          }));
+          setTimeout(() => {
+            setGameState((prevState) => ({
+              ...prevState,
+              autoUploadStatus: null,
+              autoUploadMessage: null
+            }));
+          }, 8000);
+        }
+      } else {
+        // User not authenticated - show message about signing in for cloud sync
         setGameState((prevState) => ({
           ...prevState,
-          autoUploadStatus: 'success',
-          autoUploadMessage: '✅ Game uploaded to database!'
+          autoUploadStatus: 'info',
+          autoUploadMessage: 'ℹ️ Game saved locally - sign in to sync to cloud'
         }));
         setTimeout(() => {
           setGameState((prevState) => ({
@@ -515,21 +549,7 @@ export function GameStateProvider({ children }) {
             autoUploadStatus: null,
             autoUploadMessage: null
           }));
-        }, 5000);
-      } catch (uploadError) {
-        console.warn('⚠️ Upload to database failed (game saved locally):', uploadError.message);
-        setGameState((prevState) => ({
-          ...prevState,
-          autoUploadStatus: 'warning',
-          autoUploadMessage: '⚠️ Database sync failed - game saved locally.'
-        }));
-        setTimeout(() => {
-          setGameState((prevState) => ({
-            ...prevState,
-            autoUploadStatus: null,
-            autoUploadMessage: null
-          }));
-        }, 8000);
+        }, 6000);
       }
 
       setGameState((prevState) => ({

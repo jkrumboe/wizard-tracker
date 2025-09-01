@@ -3,7 +3,7 @@
  * 
  * Handles checking if online features are available
  */
-import { subscribeToOnlineStatus, getOnlineStatus } from '@/shared/utils/appwrite';
+import { API_ENDPOINTS } from './config.js';
 
 class OnlineStatusService {
   constructor() {
@@ -11,9 +11,7 @@ class OnlineStatusService {
     this._lastChecked = null;
     this._checkInterval = 60000; // Check every minute
     this._listeners = [];
-    this._subscription = null;
     
-    this._subscribeToUpdates();
     // Start periodic checking
     this._startPeriodicCheck();
   }
@@ -31,18 +29,24 @@ class OnlineStatusService {
     }
     
     try {
-      const result = await getOnlineStatus();
+      // Check if the backend is available by pinging the health endpoint
+      const response = await fetch(`${API_ENDPOINTS.base}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add a timeout
+        signal: AbortSignal.timeout(5000)
+      });
 
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
+      const isOnline = response.ok;
+      
       const status = {
-        online: result.document?.status === true,
-        lastUpdated: result.document?.$updatedAt || new Date().toISOString(),
-        message: result.document?.status
+        online: isOnline,
+        lastUpdated: new Date().toISOString(),
+        message: isOnline
           ? 'All features are available'
-          : 'Online features are disabled. Only local features are available.'
+          : 'Backend server is not available. Only local features are available.'
       };
 
       this._updateStatus(status);
@@ -115,31 +119,6 @@ class OnlineStatusService {
   }
   
   /**
-   * Subscribe to Appwrite realtime updates for online status changes
-   * @private
-   */
-  _subscribeToUpdates() {
-    try {
-      this._subscription = subscribeToOnlineStatus((update) => {
-        console.debug('Online status update received:', update);
-        
-        // Handle the document structure from your realtime data
-        const document = update.data || update.payload;
-        
-        this._updateStatus({
-          online: document?.status === true,
-          lastUpdated: document?.$updatedAt || new Date().toISOString(),
-          message: document?.status
-            ? 'All features are available'
-            : 'Online features are disabled. Only local features are available.'
-        });
-      });
-    } catch (error) {
-      console.error('Error subscribing to online status updates:', error);
-    }
-  }
-  
-  /**
    * Start periodic checking of online status
    * @private
    */
@@ -154,13 +133,10 @@ class OnlineStatusService {
   }
   
   /**
-   * Clean up subscriptions
+   * Clean up any resources (placeholder for future use)
    */
   destroy() {
-    if (this._subscription) {
-      this._subscription();
-      this._subscription = null;
-    }
+    // Nothing to clean up in this simple implementation
   }
 }
 

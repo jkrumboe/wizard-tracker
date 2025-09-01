@@ -29,6 +29,22 @@ export async function checkGameSyncStatus(gameId) {
     let cloudExists = false;
     if (localGame.isUploaded && localGame.cloudGameId) {
       cloudExists = await checkCloudGameExistsByGameId(localGame.cloudGameId);
+      
+      // Handle null return (no authentication)
+      if (cloudExists === null) {
+        // Can't verify with backend but game has cloud metadata
+        // Trust local isUploaded flag for read-only status
+        return {
+          exists: true,
+          local: true,
+          cloud: 'unknown', // Can't verify without authentication
+          synced: true, // Show as synced based on local metadata
+          status: 'Synced',
+          isUploaded: localGame.isUploaded || false,
+          cloudGameId: localGame.cloudGameId || null,
+          requiresAuth: true
+        };
+      }
     } else {
       // Content-based check is not supported, always return false
       cloudExists = false;
@@ -113,8 +129,17 @@ export async function checkAllGamesSyncStatus() {
  */
 export async function checkCloudGameExistsByGameId(cloudGameId) {
   if (!cloudGameId) return false;
+  
+  // Check authentication
+  const token = localStorage.getItem('token');
+  if (!token) {
+    // If not authenticated, we can't verify with the backend
+    // Return null to indicate "unknown" rather than false
+    // This allows the sync checker to rely on local isUploaded flag
+    return null;
+  }
+  
   try {
-    const token = localStorage.getItem('token');
     const res = await fetch(API_ENDPOINTS.games.getById(cloudGameId), {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -123,6 +148,11 @@ export async function checkCloudGameExistsByGameId(cloudGameId) {
     if (res.status === 404) {
       // Not found means not uploaded
       return false;
+    }
+    if (res.status === 401) {
+      // Unauthorized - user session expired
+      console.warn('Authentication expired while checking cloud game');
+      return null; // Return null to indicate unknown status
     }
     if (!res.ok) {
       let errorMsg = `Backend returned status ${res.status}`;
@@ -137,7 +167,7 @@ export async function checkCloudGameExistsByGameId(cloudGameId) {
     return !!data.game;
   } catch (err) {
     console.error(`Error checking game in backend for ID ${cloudGameId}:`, err);
-    return false;
+    return null; // Return null to indicate unknown status
   }
 }
 

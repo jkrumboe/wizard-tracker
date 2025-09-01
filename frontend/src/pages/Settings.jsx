@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
@@ -16,6 +17,7 @@ import '@/styles/pages/settings.css';
 import "@/styles/components/offline-notification.css";
 
 const Settings = () => {
+  const navigate = useNavigate();
   const [savedGames, setSavedGames] = useState({});
   const [totalStorageSize, setTotalStorageSize] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -396,6 +398,14 @@ const Settings = () => {
 
   // Cloud Sync Functions
   const uploadSingleGameToCloud = async (gameId, gameData) => {
+    // Check authentication before attempting upload
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Navigate to login page
+      navigate('/login');
+      return { success: false, error: 'You must be logged in to upload games to the cloud. Please sign in and try again.', requiresAuth: true };
+    }
+
     // Prevent uploading if already uploaded
     if (LocalGameStorage.isGameUploaded(gameId)) {
       return { success: false, error: 'Game already uploaded', isDuplicate: true };
@@ -434,6 +444,14 @@ const Settings = () => {
     
     if (!isOnline) {
       setMessage({ text: 'Cannot share games while in offline mode', type: 'error' });
+      return;
+    }
+
+    // Check authentication before attempting to share
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Navigate to login page
+      navigate('/login');
       return;
     }
     
@@ -527,6 +545,14 @@ const Settings = () => {
   const handleBulkCloudSync = async () => {
     if (!isOnline) {
       setMessage({ text: 'Cannot upload games while in offline mode', type: 'error' });
+      return;
+    }
+
+    // Check authentication before attempting bulk upload
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Navigate to login page
+      navigate('/login');
       return;
     }
     
@@ -702,7 +728,7 @@ const Settings = () => {
               <RefreshIcon size={18} />
               Refresh Storage
             </button>
-            {isOnline && (
+            {isOnline && user && (
               <button 
                 className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
                 onClick={handleBulkCloudSync}
@@ -714,6 +740,15 @@ const Settings = () => {
                   <CloudIcon size={18} />
                 )}
                 {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
+              </button>
+            )}
+            {isOnline && !user && (
+              <button 
+                className="settings-button cloud-sync-button"
+                onClick={() => navigate('/login')}
+              >
+                <CloudIcon size={18} />
+                Sign In to Upload Games
               </button>
             )}
             <button className="settings-button danger-button" onClick={handleDeleteAllData}>
@@ -788,6 +823,12 @@ const Settings = () => {
                               <button 
                                 className={`cloud-upload-game-button share-button ${sharingGames.has(gameId) ? 'sharing' : ''}`}
                                 onClick={() => {
+                                  // Check authentication and navigate to login if needed
+                                  if (!user) {
+                                    navigate('/login');
+                                    return;
+                                  }
+                                  
                                   console.debug('Share button clicked for gameId:', gameId);
                                   console.debug('Game object:', game);
                                   console.debug('Game object ID:', game.id);
@@ -797,7 +838,8 @@ const Settings = () => {
                                 disabled={game.isPaused || sharingGames.has(gameId)}
                                 title={
                                   sharingGames.has(gameId) ? 'Creating share link...' :
-                                  game.isPaused ? 'Cannot share paused games' : 
+                                  game.isPaused ? 'Cannot share paused games' :
+                                  !user ? 'Click to sign in and share games' :
                                   'Share game'
                                 }
                               >
@@ -828,6 +870,13 @@ const Settings = () => {
                                 className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
                                 onClick={async () => {
                                   if (uploadingGames.has(gameId) || isUploaded) return; // Prevent double-click or duplicate upload
+                                  
+                                  // Check authentication and navigate to login if needed
+                                  if (!user) {
+                                    navigate('/login');
+                                    return;
+                                  }
+                                  
                                   setUploadingGames(prev => new Set([...prev, gameId]));
                                   try {
                                     const result = await uploadSingleGameToCloud(gameId, game);
@@ -849,7 +898,8 @@ const Settings = () => {
                                 title={
                                   uploadingGames.has(gameId) ? 'Uploading game...' :
                                   isUploaded ? 'Already uploaded' :
-                                  game.isPaused ? 'Cannot upload paused games' : 
+                                  game.isPaused ? 'Cannot upload paused games' :
+                                  !user ? 'Click to sign in and upload to cloud' :
                                   'Upload to cloud'
                                 }
                               >

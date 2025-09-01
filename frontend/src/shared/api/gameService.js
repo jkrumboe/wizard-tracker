@@ -193,6 +193,12 @@ export async function getAllLocalGames() {
 // Create game
 export async function createGame(gameData, localId) {
   const token = localStorage.getItem('token');
+  
+  // Check if user is authenticated
+  if (!token) {
+    throw new Error('You must be logged in to sync games to the cloud. Please sign in and try again.');
+  }
+
   const res = await fetch(API_ENDPOINTS.games.create, {
     method: 'POST',
     headers: {
@@ -201,6 +207,11 @@ export async function createGame(gameData, localId) {
     },
     body: JSON.stringify({ gameData, localId })
   });
+  
+  if (res.status === 401) {
+    throw new Error('Your session has expired. Please sign in again to sync games to the cloud.');
+  }
+  
   if (!res.ok) throw new Error('Failed to create game');
   const data = await res.json();
   return data;

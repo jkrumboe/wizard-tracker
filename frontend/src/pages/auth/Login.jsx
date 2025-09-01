@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ID } from '@/shared/utils/appwrite';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import authService from '@/shared/api/authService';
@@ -8,7 +7,7 @@ import "@/styles/pages/login.css"
 
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -27,7 +26,7 @@ const Login = () => {
     }
     
     try {
-      await authService.login({ email, password });
+      await authService.login({ email: username, password }); // Using email field for username
       // Refresh the user context after successful login
       await refreshAuthStatus();
       
@@ -48,7 +47,7 @@ const Login = () => {
     }
     
     try {
-      await authService.register({ email, password, name });
+      await authService.register({ email: username, password, name });
       // Refresh the user context after successful registration
       await refreshAuthStatus();
       
@@ -83,19 +82,19 @@ const Login = () => {
         {isRegistering && (
           <input
             type="text"
-            placeholder="Username"
-            autoComplete="username"
+            placeholder="Display Name (Optional)"
+            autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={!isRegistering || !isOnline}
           />
         )}
         <input
-          type="email"
-          placeholder="Email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Username"
+          autoComplete="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           disabled={!isOnline}
           required
         />

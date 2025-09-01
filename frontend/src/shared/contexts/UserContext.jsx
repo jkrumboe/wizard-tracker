@@ -47,7 +47,7 @@ export function UserProvider({ children }) {
 
   // Fetch player data when user is set
   useEffect(() => {
-    if (!user?.$id) {
+    if (!user?.id) {
       setPlayer(null)
       return
     }
@@ -55,11 +55,11 @@ export function UserProvider({ children }) {
     const fetchPlayerData = async () => {
       try {
         // For now, we'll create a basic player object from the user data
-        // Later you can implement proper player data storage in Appwrite databases
+        // Later you can implement proper player data storage in your backend
         const basicPlayer = {
-          id: user.$id,
+          id: user.id,
           name: user.name,
-          email: user.email,
+          username: user.username,
           avatar: defaultAvatar,
           // Add other default player properties as needed
         }
@@ -74,19 +74,19 @@ export function UserProvider({ children }) {
 
   // Function to refresh player data
   const refreshPlayerData = useCallback(async () => {
-    if (!user?.$id) return
+    if (!user?.id) return
     
     try {
-      // Refresh user data from Appwrite to get latest changes
+      // Refresh user data from auth service to get latest changes
       const updatedUser = await authService.checkAuthStatus()
       if (updatedUser) {
         setUser(updatedUser)
         
         // Update player data with fresh user info
         const basicPlayer = {
-          id: updatedUser.$id,
+          id: updatedUser.id,
           name: updatedUser.name,
-          email: updatedUser.email,
+          username: updatedUser.username,
           avatar: defaultAvatar,
         }
         setPlayer(basicPlayer)

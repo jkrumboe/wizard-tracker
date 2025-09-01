@@ -204,6 +204,11 @@
   border: 2px solid var(--success-color);
 }
 
+.auto-upload-notification.info {
+  background-color: var(--info-color);
+  border: 2px solid var(--info-color);
+}
+
 .auto-upload-notification.warning {
   background-color: var(--warning-color);
   border: 2px solid var(--warning-color);

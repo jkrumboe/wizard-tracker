@@ -1,14 +1,15 @@
-import { account, storage, avatars, Permission, Role, ID } from '@/shared/utils/appwrite';
+import defaultAvatar from '@/assets/default-avatar.png';
 
 class AvatarService {
   constructor() {
-    this.bucketId = 'avatar'; // You'll need to create this bucket in Appwrite console
+    // For now, we'll just use local storage to track avatar preferences
+    // In the future, this could be enhanced to upload to the backend
   }
 
   /**
-   * Upload avatar image to Appwrite Storage
+   * Upload avatar image (currently stores base64 locally)
    * @param {File} file - The image file from input
-   * @returns {Promise<string>} - The file ID of the uploaded image
+   * @returns {Promise<string>} - The file identifier (base64 string)
    */
   async uploadAvatar(file) {
     try {
@@ -22,27 +23,13 @@ class AvatarService {
         throw new Error('File size must be less than 5MB');
       }
 
-      // Get current user to set permissions
-      const user = await account.get();
+      // Convert to base64 and store locally for now
+      const base64 = await this.fileToBase64(file);
+      
+      // Store in localStorage (in future this could be sent to backend)
+      localStorage.setItem('user_avatar', base64);
 
-      // Upload image to storage with proper permissions
-      const created = await storage.createFile(
-        this.bucketId,
-        ID.unique(),
-        file, // Pass the file directly in Appwrite 18.x
-        [
-          Permission.read(Role.any()),              // Anyone can view the avatar
-          Permission.update(Role.user(user.$id)),   // Only the owner can update
-          Permission.delete(Role.user(user.$id))    // Only the owner can delete
-        ]
-      );
-
-      const fileId = created.$id;
-
-      // Save fileId in user preferences
-      await account.updatePrefs({ avatarFileId: fileId });
-
-      return fileId;
+      return base64;
     } catch (error) {
       console.error('Error uploading avatar:', error);
       throw new Error(error.message || 'Failed to upload avatar');
@@ -50,57 +37,55 @@ class AvatarService {
   }
 
   /**
+   * Convert file to base64
+   * @param {File} file 
+   * @returns {Promise<string>}
+   */
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  }
+
+  /**
    * Get avatar URL for the current user
-   * @returns {Promise<string>} - The avatar URL or fallback initials URL
+   * @returns {Promise<string>} - The avatar URL or fallback default avatar
    */
   async getAvatarUrl() {
     try {
-      const prefs = await account.getPrefs();
-      const fileId = prefs.avatarFileId;
-
-      if (fileId) {
-        // Use preview to get a standardized 128x128 image
-        return storage.getFilePreview(
-          this.bucketId, 
-          fileId, 
-          128, // width
-          128  // height
-        );
+      // Check if user has a custom avatar stored locally
+      const customAvatar = localStorage.getItem('user_avatar');
+      
+      if (customAvatar) {
+        return customAvatar; // Return base64 data URL
       }
 
-      // Fallback to initials avatar
-      return avatars.getInitials(undefined, 128, 128);
+      // Return default avatar
+      return defaultAvatar;
     } catch (error) {
       console.error('Error getting avatar URL:', error);
-      // Return initials as fallback
-      return avatars.getInitials(undefined, 128, 128);
+      // Return default avatar as fallback
+      return defaultAvatar;
     }
   }
 
   /**
    * Get avatar URL for the current user with specific dimensions
-   * @param {number} width - Image width
-   * @param {number} height - Image height
-   * @returns {Promise<string>} - The avatar URL or fallback initials URL
+   * @param {number} width - Image width (ignored for now)
+   * @param {number} height - Image height (ignored for now)
+   * @returns {Promise<string>} - The avatar URL or fallback default avatar
    */
+  // eslint-disable-next-line no-unused-vars
   async getAvatarUrlWithSize(width = 128, height = 128) {
     try {
-      const prefs = await account.getPrefs();
-      const fileId = prefs.avatarFileId;
-
-      if (fileId) {
-        return storage.getFilePreview(
-          this.bucketId, 
-          fileId, 
-          width, 
-          height
-        );
-      }
-
-      return avatars.getInitials(undefined, width, height);
+      // For now, we ignore dimensions and return the same avatar
+      return await this.getAvatarUrl();
     } catch (error) {
       console.error('Error getting avatar URL:', error);
-      return avatars.getInitials(undefined, width, height);
+      return defaultAvatar;
     }
   }
 
@@ -110,20 +95,8 @@ class AvatarService {
    */
   async deleteAvatar() {
     try {
-      const prefs = await account.getPrefs();
-      const fileId = prefs.avatarFileId;
-
-      if (fileId) {
-        // Delete file from storage
-        // Note: Only the file owner can delete due to permissions set during upload
-        await storage.deleteFile(this.bucketId, fileId);
-        
-        // Remove from user preferences
-        const updatedPrefs = { ...prefs };
-        delete updatedPrefs.avatarFileId;
-        await account.updatePrefs(updatedPrefs);
-      }
-
+      // Remove from localStorage
+      localStorage.removeItem('user_avatar');
       return true;
     } catch (error) {
       console.error('Error deleting avatar:', error);
@@ -133,23 +106,14 @@ class AvatarService {
 
   /**
    * Replace current user's avatar with a new one
-   * This deletes the old avatar and uploads a new one
    * @param {File} file - The new image file
-   * @returns {Promise<string>} - The new file ID
+   * @returns {Promise<string>} - The new file identifier
    */
   async replaceAvatar(file) {
     try {
-      // Delete existing avatar first (if any)
-      const prefs = await account.getPrefs();
-      if (prefs.avatarFileId) {
-        try {
-          await storage.deleteFile(this.bucketId, prefs.avatarFileId);
-        } catch (error) {
-          // Continue even if delete fails (file might not exist)
-          console.warn('Could not delete old avatar:', error);
-        }
-      }
-
+      // Delete existing avatar first
+      await this.deleteAvatar();
+      
       // Upload new avatar
       return await this.uploadAvatar(file);
     } catch (error) {

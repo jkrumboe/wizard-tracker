@@ -13,6 +13,13 @@ import { LocalGameStorage } from '@/shared/api/localGameStorage';
  */
 export async function ensureGameSynced(gameId, gameData, setMessage) {
   try {
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      if (setMessage) setMessage({ text: 'You must be logged in to sync games to the cloud. Please sign in and try again.', type: 'error' });
+      return false;
+    }
+
     if (setMessage) setMessage({ text: 'Checking sync status...', type: 'info' });
     
     // Check if this is an imported shared game - don't upload it
