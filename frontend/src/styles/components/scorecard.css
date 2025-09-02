@@ -39,7 +39,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%; 
+  width: 100%;
+  font-size: 1.3rem;
 }
 
 /* Adjust for 4-6 players - corrected media query */
@@ -47,7 +48,7 @@
   /* No width adjustments - we want consistent widths */
   .player-header-name {
     max-width: 90px;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 }
 
@@ -63,13 +64,14 @@
   box-shadow: none;
   /* Ensure the background fills the entire cell */
   isolation: isolate;
+  font-size: 1.3rem;
 }
 
 .round-number {
   background-color: var(--card-background);
   color: var(--text-color);
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   position: sticky;
   left: 0;
   z-index: 100; /* Increased to ensure it's above all other rows/columns */
@@ -210,7 +212,7 @@
   
   .scorecard-table th, 
   .scorecard-table td {
-    padding:var(--spacing-sm);
+    padding:var(--spacing-xs);
   }
   
   /* Ensure sticky columns look correct on mobile */

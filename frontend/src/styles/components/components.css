@@ -1380,10 +1380,10 @@
   }
   
   /* Game in progress */
-  .game-in-progress {
+  /* .game-in-progress {
     padding: var(--spacing-md) 0;
     padding-bottom: 0;
-  }
+  } */
 
   @media (max-height: 780px) {
     .game-in-progress {

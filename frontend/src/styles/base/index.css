@@ -354,8 +354,8 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding-left: var(--spacing-lg);
-  padding-right: var(--spacing-lg);
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
