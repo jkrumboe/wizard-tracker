@@ -1,12 +1,9 @@
 // API Configuration
 // Central configuration for all API endpoints
 
-// Get the API base URL from environment or use default
-// In development, use relative URLs to go through Vite proxy
-// In production, use the configured backend URL
-export const API_BASE_URL = import.meta.env.DEV 
-  ? '' // Use relative URLs in development (goes through Vite proxy)
-  : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+// Get the API base URL from environment or use relative path by default
+// This lets Nginx or the current origin proxy /api requests in production
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // API endpoints
 export const API_ENDPOINTS = {

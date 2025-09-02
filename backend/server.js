@@ -7,6 +7,7 @@ const userRoutes = require('./routes/users');
 const gameRoutes = require('./routes/games');
 const onlineRoutes = require('./routes/online');
 const errorHandler = require('./middleware/errorHandler');
+const OnlineStatus = require('./models/OnlineStatus');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,7 +18,26 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    
+    // Initialize default online status document if none exists
+    try {
+      const statusCount = await OnlineStatus.countDocuments();
+      if (statusCount === 0) {
+        await OnlineStatus.create({
+          status: true,
+          message: 'All features are available',
+          updatedBy: 'system'
+        });
+        console.log('Default online status document created');
+      } else {
+        console.log('Online status document already exists');
+      }
+    } catch (error) {
+      console.error('Error initializing online status:', error);
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
