@@ -1,6 +1,6 @@
 # KeepWiz
 
-![Version](https://img.shields.io/badge/version-1.1.11.2-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen)
 
@@ -26,10 +26,13 @@ Before running the application, set up your environment variables:
 cp .env.example .env
 ```
 
-2. Update the values in `.env` with your backend configuration:
+2. Generate secure secrets and configure the environment:
 
-   - `MONGO_URI`: Your MongoDB connection string
-   - `JWT_SECRET`: Your JWT secret key for authentication
+```bash
+npm run setup-env
+```
+
+This will automatically generate a secure JWT secret and prepare your environment for deployment.
 
 ## Installation & Usage
 

@@ -1,0 +1,32 @@
+{
+  "name": "wizard-tracker",
+  "version": "1.2.0",
+  "description": "Card game score tracking application with React frontend and MongoDB backend",
+  "scripts": {
+    "setup-env": "node scripts/setup-env.js",
+    "update-secrets": "node scripts/setup-env.js",
+    "dev": "npm run setup-env && docker compose up -d",
+    "start": "docker compose up -d",
+    "stop": "docker compose down",
+    "restart": "npm run stop && npm run start",
+    "logs": "docker compose logs -f",
+    "build": "docker compose build",
+    "clean": "docker compose down -v && docker system prune -f"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jkrumboe/wizard-tracker.git"
+  },
+  "keywords": [
+    "card-game",
+    "score-tracking",
+    "react",
+    "mongodb",
+    "docker"
+  ],
+  "author": "jkrumboe",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
