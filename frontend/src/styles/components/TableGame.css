@@ -86,14 +86,13 @@
   border-collapse: collapse;
   width: auto;
   min-width: 0;
-  background: var(--card-background-alt);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  background: var(--card-background);
+  box-shadow: var(--shadow);
   overflow: auto;
   table-layout: auto;
   width: auto;
   min-width: 100%;
   max-width: none;
-
 }
 
 /* Make columns narrower and prevent expansion */
@@ -115,8 +114,9 @@
 }
 
 .table-game-table th {
-  background: var(--card-background);
+  background: var(--card-background-light);
   font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .table-game-player-header {
@@ -198,9 +198,9 @@
   width: 80%;
   min-width: 0;
   max-width: 100%;
-  background: #fff;
-  color: #232b36;
-  border: none;
+  background: var(--card-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.93rem;
   padding: 2px 2px;
@@ -215,7 +215,7 @@
   padding: 0.12rem 0.2rem;
   font-size: 0.93rem;
   color: var(--text-color);
-  background-color: var(--background-color);
+  background-color: white;
   border: 1px solid var(--border-light);
   border-radius: 4px;
   text-align: center;
@@ -270,7 +270,8 @@
 
 .table-game-total {
   font-weight: bold;
-  background: var(--card-background-alt);
+  background: var(--primary-color);
+  color: var(--text-white);
   font-size: 1.1rem;
   min-width: 32px;
   max-width: 48px;

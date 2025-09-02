@@ -45,6 +45,25 @@ export async function checkGameSyncStatus(gameId) {
           requiresAuth: true
         };
       }
+      
+      // If the game was marked as uploaded but doesn't exist in backend, 
+      // reset the isUploaded flag to prevent mismatches
+      if (cloudExists === false && localGame.isUploaded) {
+        console.warn(`Game ${gameId} was marked as uploaded but not found in backend. Resetting isUploaded flag.`);
+        const { LocalGameStorage } = await import('../api/localGameStorage.js');
+        // Reset upload status in local storage
+        const games = LocalGameStorage.getAllSavedGames();
+        if (games[gameId]) {
+          games[gameId].isUploaded = false;
+          games[gameId].cloudGameId = null;
+          games[gameId].uploadedAt = null;
+          games[gameId].cloudLookupKey = null;
+          localStorage.setItem('wizardTracker_localGames', JSON.stringify(games));
+        }
+        // Update local reference for this check
+        localGame.isUploaded = false;
+        localGame.cloudGameId = null;
+      }
     } else {
       // Content-based check is not supported, always return false
       cloudExists = false;

@@ -5,8 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="manifest" href="/manifest.json?v=2">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#dde4eb">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#111827">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f5f9">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Wizard Tracker" />
@@ -38,15 +38,15 @@
     <style>
       /* Critical CSS - Theme variables for immediate loading */
       :root {
-        --primary-color: #60a5fa;
-        --primary-dark: #3563e9;
+        --primary-color: #3b82f6;
+        --primary-dark: #1d4ed8;
         --primary-light: #93c5fd;
-        --text-color: #2d3748;
-        --text-light: #4a5568;
-        --background-color: #dde4eb;
-        --card-background: #f0f7ff;
+        --text-color: #111827;
+        --text-light: #4b5563;
+        --background-color: #f1f5f9;
+        --card-background: #ffffff;
         --border-light: #e2e8f0;
-        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.20);
         --spacing-sm: 0.5rem;
         --spacing-md: 1rem;
       }
@@ -55,24 +55,24 @@
       @media (prefers-color-scheme: dark) {
         :root {
           --primary-color: #60a5fa;
-          --text-color: #e5e7eb;
-          --text-light: #9ca3af;
-          --background-color: #1f2937;
-          --card-background: #111827;
-          --border-light: #4b5563;
-          --shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+          --text-color: #f9fafb;
+          --text-light: #d1d5db;
+          --background-color: #0f172a;
+          --card-background: #1e293b;
+          --border-light: #64748b;
+          --shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
         }
       }
 
       /* Manual dark theme override */
       [data-theme="dark"] {
         --primary-color: #60a5fa;
-        --text-color: #e5e7eb;
-        --text-light: #9ca3af;
-        --background-color: #1f2937;
-        --card-background: #111827;
-        --border-light: #4b5563;
-        --shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        --text-color: #f9fafb;
+        --text-light: #d1d5db;
+        --background-color: #0f172a;
+        --card-background: #1e293b;
+        --border-light: #64748b;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
       }
 
       /* Prevent any white flashes */

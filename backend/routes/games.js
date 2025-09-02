@@ -168,7 +168,15 @@ router.put('/:id/share', async (req, res) => {
 // GET /games/shared/:shareId - Get a shared game by shareId (public endpoint)
 router.get('/shared/:shareId', async (req, res) => {
   try {
-    const game = await Game.findOne({ shareId: req.params.shareId });
+    // First try to find by shareId
+    let game = await Game.findOne({ shareId: req.params.shareId });
+    
+    // If not found by shareId, try to find by localId as fallback
+    // This handles cases where games were uploaded but never properly shared
+    if (!game) {
+      game = await Game.findOne({ localId: req.params.shareId });
+    }
+    
     if (!game) {
       return res.status(404).json({ error: 'Shared game not found' });
     }

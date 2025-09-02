@@ -20,7 +20,7 @@
 .scorecard-table td {
   padding: 0.75rem;
   text-align: center;
-  border: 1px solid var(--border-color);
+  /* border: 1px solid var(--border-color); */
 }
 
 .player-header {
@@ -82,7 +82,7 @@
 }
 
 .player-round-cell {
-  background-color: var(--card-background-alt) ;
+  background-color: var(--card-background) ;
   padding-left: 0 !important;
   padding-right: 0 !important;
   transition: background-color 0.2s;
@@ -103,20 +103,21 @@
   grid-template-rows: auto auto;
   grid-template-columns: 1fr 1fr;
   /* gap: 0.1rem ; */
+  border: 1px solid var(--border-color);
 }
 
 .player-round-data > :nth-child(1) {
   grid-row: 1;
   grid-column: 1;
-  border-right: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
+  /* border-right: 1px solid var(--border-color); */
+  /* border-bottom: 1px solid var(--border-color); */
 }
 
 .player-round-data > :nth-child(2) {
   grid-row: 1;
   grid-column: 2;
-  border-left: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
+  border-left: 2px solid var(--border-color);
+  /* border-bottom: 2px solid var(--border-color); */
 }
 
 .player-round-data > :nth-child(3) {
@@ -136,12 +137,12 @@
 }
 
 .total-row {
-  background-color: var(--primary-dark);
+  background-color: var(--primary-color);
   font-weight: 700;
 }
 
 .total-label {
-  background-color: var(--primary-dark);
+  background-color: var(--primary-color);
   color: var(--text-color);
   position: sticky;
   left: 0;
@@ -197,7 +198,7 @@
   /* Remove box shadows in favor of a consistent border */
   box-shadow: none !important;
   /* Apply a consistent right border that stays with the cell */
-  border-right: 2px solid var(--border-color) !important;
+  /* border-right: 2px solid var(--border-color) !important; */
   z-index: 11;
   /* Critical fix: ensure the border stays with the cell */
   background-clip: padding-box;

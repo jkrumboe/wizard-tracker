@@ -71,6 +71,7 @@
   color: var(--primary-color);
   flex: 1;
   max-width: 120px;
+  box-shadow: none;
 }
 
 .badge-controls-container .settings-button:hover {
@@ -110,17 +111,26 @@
 }
 
 .rank-col.gold {
-  color: #FFD700; /* Gold */
+  background: linear-gradient(45deg, #f1e78a 0%, rgb(193, 164, 0) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: bold;
 }
 
 .rank-col.silver {
-  color: #e6e6e6; /* Silver */
+  background: linear-gradient(45deg, #cdcdcd 0%, #7f7f7f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: bold;
 }
 
 .rank-col.bronze {
-  color: #CD7F32; /* Bronze */
+  background: linear-gradient(45deg, #CD7F32 0%, #FFDAB9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: bold;
 }
 
