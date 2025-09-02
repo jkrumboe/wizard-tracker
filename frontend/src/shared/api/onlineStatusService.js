@@ -9,11 +9,15 @@ class OnlineStatusService {
   constructor() {
     this._onlineStatus = null;
     this._lastChecked = null;
-    this._checkInterval = 60000; // Check every minute
+    this._checkInterval = 15000; // Check every 15 seconds for better responsiveness
     this._listeners = [];
+    this._intervalId = null;
     
     // Start periodic checking
     this._startPeriodicCheck();
+    
+    // Add window focus listener to check status when user returns
+    this._addWindowFocusListener();
   }
   
   /**
@@ -83,6 +87,15 @@ class OnlineStatusService {
    */
   async isOnline() {
     const status = await this.getStatus();
+    return status.online;
+  }
+  
+  /**
+   * Force an immediate check of online status (useful for critical operations)
+   * @returns {Promise<boolean>}
+   */
+  async checkNow() {
+    const status = await this.getStatus(true);
     return status.online;
   }
   
@@ -215,17 +228,45 @@ class OnlineStatusService {
     // Check immediately on startup
     this.getStatus(true);
     
+    // Clear any existing interval
+    if (this._intervalId) {
+      clearInterval(this._intervalId);
+    }
+    
     // Then check periodically
-    setInterval(() => {
+    this._intervalId = setInterval(() => {
       this.getStatus(true);
     }, this._checkInterval);
   }
   
   /**
-   * Clean up any resources (placeholder for future use)
+   * Add window focus listener to check status when user returns to app
+   * @private
+   */
+  _addWindowFocusListener() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', () => {
+        // Check status when user returns to the app
+        this.getStatus(true);
+      });
+      
+      // Also check when the page becomes visible (handles tab switching)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.getStatus(true);
+        }
+      });
+    }
+  }
+  
+  /**
+   * Clean up any resources
    */
   destroy() {
-    // Nothing to clean up in this simple implementation
+    if (this._intervalId) {
+      clearInterval(this._intervalId);
+      this._intervalId = null;
+    }
   }
 }
 

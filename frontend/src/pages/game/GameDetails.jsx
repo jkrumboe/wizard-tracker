@@ -42,7 +42,7 @@ const GameDetails = () => {
   const [activeTab, setActiveTab] = useState('stats')
   const [showChart, setShowChart] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
-  const [isLandscape, setIsLandscape] = useState(() => {
+  const [isLandscape] = useState(() => {
     if (typeof window !== 'undefined' && window.screen && window.screen.orientation) {
       return window.screen.orientation.type.startsWith('landscape');
     }
@@ -88,9 +88,30 @@ const GameDetails = () => {
         let playerMap = {}
 
         // For local games, player data is already included in the game object
-        if (gameData.is_local && gameData.players) {
-          gameData.players.forEach((player) => {
-            if (player) {
+        if (gameData.is_local) {
+          // Try multiple sources for player data in local games
+          let playersSource = gameData.players || 
+                             gameData.gameState?.players || 
+                             [];
+          
+          // If we don't have players from the main sources, try to extract from round data
+          if (playersSource.length === 0 && gameData.round_data && gameData.round_data.length > 0) {
+            const firstRound = gameData.round_data[0];
+            if (firstRound.players) {
+              playersSource = firstRound.players.map(p => ({ id: p.id, name: p.name }));
+            }
+          }
+          
+          // If still no players, try gameState.roundData
+          if (playersSource.length === 0 && gameData.gameState?.roundData && gameData.gameState.roundData.length > 0) {
+            const firstRound = gameData.gameState.roundData[0];
+            if (firstRound.players) {
+              playersSource = firstRound.players.map(p => ({ id: p.id, name: p.name }));
+            }
+          }
+          
+          playersSource.forEach((player) => {
+            if (player && player.id) {
               playerMap[player.id] = player
             }
           })
@@ -109,6 +130,11 @@ const GameDetails = () => {
         }
 
         setPlayerDetails(playerMap)
+        
+        // Debug logging to see what's in playerMap
+        // console.log("Player map populated:", playerMap);
+        // console.log("Game final_scores keys:", Object.keys(gameData.final_scores || {}));
+        
         setLoading(false)
       } catch (err) {
         console.error("Error fetching game details:", err)
@@ -144,16 +170,60 @@ const GameDetails = () => {
   }
 
   // Sort players by score (highest first) and calculate ranks with tie handling
-  const sortedPlayers = Object.entries(game.final_scores || {})
+  // Use final_scores from gameState if available, otherwise use the root level
+  const finalScores = game.gameState?.final_scores || game.final_scores || {};
+  
+  const sortedPlayers = Object.entries(finalScores)
     .map(([playerId, score]) => {
       // Handle player IDs consistently - keep as string if it has scientific notation (e)
       const normalizedId = playerId.includes("e") ? playerId : Number.parseInt(playerId);
       
-      return {
+      // Try multiple lookup strategies to find the player data
+      let playerData = playerDetails[playerId] || 
+                      playerDetails[String(playerId)] || 
+                      playerDetails[Number(playerId)] || 
+                      playerDetails[normalizedId] ||
+                      playerDetails[String(normalizedId)];
+      
+      // If still not found, try to find by comparing all keys
+      if (!playerData) {
+        const foundKey = Object.keys(playerDetails).find(key => 
+          String(key) === String(playerId) || 
+          String(key) === String(normalizedId)
+        );
+        if (foundKey) {
+          playerData = playerDetails[foundKey];
+        }
+      }
+      
+      // If still not found and playerId is a number (array index), try to find by position
+      if (!playerData && !isNaN(playerId)) {
+        const playerIndex = parseInt(playerId);
+        // Try to find player by index in gameState.players array
+        if (game.gameState?.players && Array.isArray(game.gameState.players)) {
+          const playerByIndex = game.gameState.players[playerIndex];
+          if (playerByIndex) {
+            playerData = { name: playerByIndex };
+          }
+        }
+        
+        // Also try round_data first round to find player by index
+        if (!playerData && game.round_data?.[0]?.players && Array.isArray(game.round_data[0].players)) {
+          const playerByIndex = game.round_data[0].players[playerIndex];
+          if (playerByIndex) {
+            playerData = { name: playerByIndex };
+          }
+        }
+      }
+      
+      const result = {
         id: normalizedId,
         score,
-        ...playerDetails[playerId],
+        name: playerData?.name || 'Unknown Player',
+        ...playerData,
       };
+      
+      return result;
     })
     .sort((a, b) => b.score - a.score)
     .map((player, index, array) => {
@@ -253,9 +323,26 @@ const GameDetails = () => {
       // Ensure we're using the string version of ID for consistent lookup
       const stringId = String(playerStat.id);
       
+      // Try multiple lookup strategies to find the player name
+      let playerData = playerDetails[stringId] || 
+                      playerDetails[playerStat.id] || 
+                      playerDetails[String(playerStat.id)] || 
+                      playerDetails[Number(playerStat.id)];
+      
+      // If still not found, try to find by comparing all keys
+      if (!playerData) {
+        const foundKey = Object.keys(playerDetails).find(key => 
+          String(key) === String(playerStat.id) || 
+          String(key) === stringId
+        );
+        if (foundKey) {
+          playerData = playerDetails[foundKey];
+        }
+      }
+      
       return {
         id: playerStat.id, // Keep the original ID format for StatsChart
-        name: playerDetails[stringId]?.name || 'Unknown',
+        name: playerData?.name || 'Unknown Player',
         correctBids: playerStat.correctBids || 0,
         overBids: playerStat.overbids || 0,
         underBids: playerStat.underbids || 0,
@@ -286,7 +373,7 @@ const GameDetails = () => {
     });
     
     // Log data for debugging (will be removed in production)
-    console.debug("Chart data prepared:", { playersData, roundData });
+    // console.debug("Chart data prepared:", { playersData, roundData });
     
     return { playersData, roundData };
   };

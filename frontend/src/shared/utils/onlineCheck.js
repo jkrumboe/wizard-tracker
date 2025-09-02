@@ -8,7 +8,8 @@ import { onlineStatusService } from '@/shared/api/onlineStatusService';
  */
 export function withOnlineCheck(apiFn) {
   return async (...args) => {
-    const isOnline = await onlineStatusService.isOnline();
+    // Use checkNow() for immediate status check before critical operations
+    const isOnline = await onlineStatusService.checkNow();
     
     if (!isOnline) {
       throw new Error('Online features are currently disabled. Please use local mode features only.');
