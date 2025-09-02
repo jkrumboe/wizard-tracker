@@ -18,7 +18,9 @@ A full-stack application for tracking and managing Wizard card game scores, play
 
 ## Environment Variables
 
-Before running the application, set up your environment variables:
+The application uses environment variables for configuration. There are two types:
+
+### Development Setup
 
 1. Copy the example environment file:
 
@@ -26,13 +28,31 @@ Before running the application, set up your environment variables:
 cp .env.example .env
 ```
 
-2. Generate secure secrets and configure the environment:
+1. For development, the defaults in `.env` work out of the box.
+
+1. (Optional) Generate a secure JWT secret:
 
 ```bash
 npm run setup-env
 ```
 
-This will automatically generate a secure JWT secret and prepare your environment for deployment.
+### Production Deployment
+
+The Docker Compose setup uses environment variables with sensible defaults:
+
+- **Build-time variables**: `VITE_APP_VERSION`, `VITE_BUILD_DATE` are baked into the Docker image
+- **Runtime variables**: Can be overridden with environment variables or a production `.env` file
+
+For production, override these critical variables:
+
+```bash
+# Set these in your production environment
+JWT_SECRET=your-secure-production-jwt-secret
+ME_CONFIG_BASICAUTH_USERNAME=your-admin-username  
+ME_CONFIG_BASICAUTH_PASSWORD=your-secure-password
+```
+
+The Docker Compose file provides secure defaults that work for development and can be easily overridden for production without rebuilding images.
 
 ## Installation & Usage
 

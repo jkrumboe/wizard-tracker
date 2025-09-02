@@ -1240,15 +1240,38 @@
   }
   
   .remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
     margin-left: auto;
-    background: none;
+    background: var(--error-color);
     border: none;
-    color: var(--error-color);
+    color: white;
     cursor: pointer;
-    font-size: 1.7rem;
-    padding: 0;
     border-radius: var(--radius-full);
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+    opacity: 0.8;
+    transform: scale(0.9);
+  }
+  
+  .player-item:hover .remove-btn {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+  }
+  
+  .remove-btn:active {
+    transform: scale(0.95) !important;
   }
   
   .setting-item {

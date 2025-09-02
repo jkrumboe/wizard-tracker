@@ -6,6 +6,7 @@ import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { GripVertical } from 'lucide-react';
+import { XIcon } from '@/components/ui/Icon';
 import {
   DndContext,
   closestCenter,
@@ -89,8 +90,9 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
           e.stopPropagation();
           onRemove(player.id);
         }}
+        title="Remove Player"
       >
-        ×
+        <XIcon size={16} />
       </button>
     </div>
   );

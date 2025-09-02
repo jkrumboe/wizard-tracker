@@ -30,9 +30,6 @@ const GamesMenu = ({ show, onClose }) => {
           <Link to="/new-game" className="modal-button" onClick={onClose}>
             <GamepadIcon size={18} style={{ marginRight: 8 }} /> Wizard
           </Link>
-          {/* <Link to="/lobby" className="modal-button" onClick={onClose}>
-            <UsersIcon size={18} style={{ marginRight: 8 }} /> Multiplayer
-          </Link> */}
           <Link to="/table" className="modal-button" onClick={onClose}>
             <UsersIcon size={18} style={{ marginRight: 8 }} /> Table
           </Link>
@@ -119,55 +116,29 @@ const Navbar = () => {
       </div>
       
       <nav className="bottom-navbar">
-        {isOnline ? (
-          <>
-            <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} />
-            <div
-              className={`bottom-nav-item games-tab ${showGamesMenu ? "active" : ""}`}
-              onClick={() => setShowGamesMenu(v => !v)}
-              aria-label="Games"
-
-            >
-              <div className="nav-icon">
-                <GamepadIcon size={20} />
-              </div>
-              <span>Games</span>
-            </div>
-            <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
-              <div className="nav-icon">
-                <HomeIcon size={20} />
-              </div>
-              <span>Home</span>
-            </Link>
-            <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
-              <div className="nav-icon">
-                <SettingsIcon size={20} />
-              </div>
-              <span>Settings</span>
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link to="/new-game" className={`bottom-nav-item ${isActive(["/new-game", "/game"])}`}> 
-              <div className="nav-icon">
-                <GamepadIcon size={20} />
-              </div>
-              <span>Wizard</span>
-            </Link>
-            <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
-              <div className="nav-icon">
-                <HomeIcon size={20} />
-              </div>
-              <span>Home</span>
-            </Link>
-            <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
-              <div className="nav-icon">
-                <SettingsIcon size={20} />
-              </div>
-              <span>Settings</span>
-            </Link>
-          </>
-        )}
+        <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} />
+        <div
+          className={`bottom-nav-item games-tab ${showGamesMenu ? "active" : ""}`}
+          onClick={() => setShowGamesMenu(v => !v)}
+          aria-label="Games"
+        >
+          <div className="nav-icon">
+            <GamepadIcon size={20} />
+          </div>
+          <span>Games</span>
+        </div>
+        <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
+          <div className="nav-icon">
+            <HomeIcon size={20} />
+          </div>
+          <span>Home</span>
+        </Link>
+        <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
+          <div className="nav-icon">
+            <SettingsIcon size={20} />
+          </div>
+          <span>Settings</span>
+        </Link>
       </nav>
     </>
   );

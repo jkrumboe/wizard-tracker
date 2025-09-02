@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ArrowLeftIcon, ArrowRightIcon, XIcon } from "../../components/ui/Icon";
 import "../../styles/components/TableGame.css";
 
 const MIN_PLAYERS = 2;
@@ -8,6 +9,7 @@ const TableGame = () => {
   const [players, setPlayers] = useState([
     { name: "Player 1", points: [] },
     { name: "Player 2", points: [] },
+    { name: "Player 3", points: [] }
   ]);
 
   const handleNameChange = (idx, value) => {
@@ -26,6 +28,30 @@ const TableGame = () => {
   const insertPlayer = (idx) => {
     const newPlayers = [...players];
     newPlayers.splice(idx, 0, { name: `Player ${players.length + 1}`, points: [] });
+    setPlayers(newPlayers);
+  };
+
+  // Remove a player at a specific index
+  const removePlayer = (idx) => {
+    if (players.length <= MIN_PLAYERS) return; // Prevent removing below minimum
+    const newPlayers = [...players];
+    newPlayers.splice(idx, 1);
+    setPlayers(newPlayers);
+  };
+
+  // Move player to the left
+  const movePlayerLeft = (idx) => {
+    if (idx === 0) return; // Can't move first player left
+    const newPlayers = [...players];
+    [newPlayers[idx - 1], newPlayers[idx]] = [newPlayers[idx], newPlayers[idx - 1]];
+    setPlayers(newPlayers);
+  };
+
+  // Move player to the right
+  const movePlayerRight = (idx) => {
+    if (idx === players.length - 1) return; // Can't move last player right
+    const newPlayers = [...players];
+    [newPlayers[idx], newPlayers[idx + 1]] = [newPlayers[idx + 1], newPlayers[idx]];
     setPlayers(newPlayers);
   };
 
@@ -49,15 +75,18 @@ const TableGame = () => {
       <div className="table-game-scroll">
         <table className="table-game-table">
           <thead>
+            {/* Player Names Row */}
             <tr>
               {players.map((player, idx) => (
                 <th key={idx}>
-                  <input
-                    type="text"
-                    value={player.name}
-                    onChange={(e) => handleNameChange(idx, e.target.value)}
-                    className="table-game-player-input"
-                  />
+                  <div className="table-game-player-header">
+                    <input
+                      type="text"
+                      value={player.name}
+                      onChange={(e) => handleNameChange(idx, e.target.value)}
+                      className="table-game-player-input"
+                    />
+                  </div>
                 </th>
               ))}
             </tr>
@@ -68,10 +97,12 @@ const TableGame = () => {
                 {players.map((player, playerIdx) => (
                   <td key={playerIdx}>
                     <input
-                      type="number"
+                      type="tel"
                       value={player.points[rowIdx] || ""}
                       onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
                       className="table-game-point-input"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                     />
                   </td>
                 ))}
@@ -94,6 +125,40 @@ const TableGame = () => {
               {players.map((player, idx) => (
                 <td key={idx} className="table-game-total">
                   {getTotal(player)}
+                </td>
+              ))}
+            </tr>
+            {/* Controls Row */}
+            <tr className="table-game-controls-row">
+              {players.map((_, idx) => (
+                <td key={`controls-${idx}`} className="table-game-controls-cell">
+                  <div className="table-game-controls">
+                    <button
+                      className={`table-game-control-btn table-game-move-btn ${idx === 0 ? 'disabled' : ''}`}
+                      title="Move Left"
+                      onClick={() => movePlayerLeft(idx)}
+                      disabled={idx === 0}
+                    >
+                      <ArrowLeftIcon size={16} />
+                    </button>
+                    {players.length > MIN_PLAYERS && (
+                      <button
+                        className="table-game-control-btn table-game-remove-btn"
+                        title="Remove Player"
+                        onClick={() => removePlayer(idx)}
+                      >
+                        <XIcon size={16} />
+                      </button>
+                    )}
+                    <button
+                      className={`table-game-control-btn table-game-move-btn ${idx === players.length - 1 ? 'disabled' : ''}`}
+                      title="Move Right"
+                      onClick={() => movePlayerRight(idx)}
+                      disabled={idx === players.length - 1}
+                    >
+                      <ArrowRightIcon size={16} />
+                    </button>
+                  </div>
                 </td>
               ))}
             </tr>

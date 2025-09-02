@@ -28,7 +28,6 @@ const Settings = () => {
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
-  const [onlineStatusLoading, setOnlineStatusLoading] = useState(false); // Track online status changes
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
   const { isOnline } = useOnlineStatus();
@@ -634,48 +633,6 @@ const Settings = () => {
     }
   };
 
-  // Online Status Control Functions
-  const handleToggleOnlineStatus = async () => {
-    setOnlineStatusLoading(true);
-    try {
-      const { onlineStatusService } = await import('@/shared/api/onlineStatusService');
-      const result = await onlineStatusService.toggleOnlineStatus();
-      setMessage({ 
-        text: `Online status ${result.online ? 'enabled' : 'disabled'} successfully`, 
-        type: 'success' 
-      });
-    } catch (error) {
-      setMessage({ 
-        text: `Failed to toggle online status: ${error.message}`, 
-        type: 'error' 
-      });
-    } finally {
-      setOnlineStatusLoading(false);
-    }
-  };
-
-  const handleSetOnlineStatus = async (status) => {
-    setOnlineStatusLoading(true);
-    try {
-      const { onlineStatusService } = await import('@/shared/api/onlineStatusService');
-      const message = status ? 
-        'All features are available' : 
-        'Online features are currently disabled for maintenance';
-      const result = await onlineStatusService.setOnlineStatus(status, message);
-      setMessage({ 
-        text: `Online status set to ${result.online ? 'enabled' : 'disabled'} successfully`, 
-        type: 'success' 
-      });
-    } catch (error) {
-      setMessage({ 
-        text: `Failed to set online status: ${error.message}`, 
-        type: 'error' 
-      });
-    } finally {
-      setOnlineStatusLoading(false);
-    }
-  };
-
   return (
       <div className="settings-container">
         {/* {message.text && (
@@ -718,53 +675,6 @@ const Settings = () => {
             </div>
           )}
         </div>
-
-        {/* Admin Controls for Online Status */}
-        {user && (
-          <div className="settings-section">
-            <h2>Admin Controls</h2>
-            <div className="settings-option">
-              <div className="admin-control-group">
-                <div className="control-info">
-                  <span className="control-label">Online Status Control</span>
-                  <span className="control-description">
-                    Toggle online/offline mode for all users. When offline, only local features are available.
-                  </span>
-                </div>
-                <div className="control-actions">
-                  <button 
-                    className={`settings-button ${isOnline ? 'online' : 'offline'}`}
-                    onClick={handleToggleOnlineStatus}
-                    disabled={onlineStatusLoading}
-                  >
-                    {onlineStatusLoading ? 'Updating...' : (isOnline ? 'Set Offline' : 'Set Online')}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="settings-option">
-              <div className="online-status-buttons">
-                <button 
-                  className="settings-button success"
-                  onClick={() => handleSetOnlineStatus(true)}
-                  disabled={onlineStatusLoading || isOnline}
-                >
-                  Enable Online Mode
-                </button>
-                <button 
-                  className="settings-button warning"
-                  onClick={() => handleSetOnlineStatus(false)}
-                  disabled={onlineStatusLoading || !isOnline}
-                >
-                  Enable Maintenance Mode
-                </button>
-              </div>
-            </div>
-            <div className="settings-note">
-              <p><strong>Note:</strong> You can also control online status through Mongo Express at <code>http://localhost:8081</code> by editing the OnlineStatus collection.</p>
-            </div>
-          </div>
-        )}
 
         <div className="settings-section">
           <h2>Storage{isOnline ? ' & Cloud Sync' : ''}</h2>
