@@ -33,3 +33,10 @@ jobs:
           build-args: |
             VITE_APP_VERSION=1.2.0
             VITE_BUILD_DATE=${{ github.event.head_commit.timestamp }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: beerejustin/wizard-backend:latest
