@@ -798,6 +798,21 @@
   font-size: 0.9em;
 }
 
+/* Table Game Specific Styles */
+.table-game-card {
+  border-color: var(--secondary-color);
+}
+
+.table-game-card .game-winner {
+  color: var(--secondary-color);
+}
+
+.mode-badge.table {
+  background-color: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
 @media (max-width: 768px) {
   .admin-control-group {
     flex-direction: column;

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
-import { LocalGameStorage } from '@/shared/api';
+import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, SettingsIcon, RefreshIcon, CloudIcon, ShareIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
@@ -19,6 +19,7 @@ import "@/styles/components/offline-notification.css";
 const Settings = () => {
   const navigate = useNavigate();
   const [savedGames, setSavedGames] = useState({});
+  const [savedTableGames, setSavedTableGames] = useState([]);
   const [totalStorageSize, setTotalStorageSize] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
@@ -272,6 +273,10 @@ const Settings = () => {
     const allGames = LocalGameStorage.getAllSavedGames();
     setSavedGames(allGames);
     
+    // Load table games
+    const tableGames = LocalTableGameStorage.getSavedTableGamesList();
+    setSavedTableGames(tableGames);
+    
     // Check sync status for each game
     const syncStatuses = {};
     for (const gameId of Object.keys(allGames)) {
@@ -322,8 +327,8 @@ const Settings = () => {
     setTotalStorageSize(totalSize);
   };
 
-  const handleDeleteGame = (gameId) => {
-    setGameToDelete(gameId);
+  const handleDeleteGame = (gameId, isTableGame = false) => {
+    setGameToDelete({ id: gameId, isTableGame });
     setDeleteAll(false);
     setShowConfirmDialog(true);
   };
@@ -333,11 +338,16 @@ const Settings = () => {
       // Clear all localStorage data
       localStorage.clear();
       setSavedGames({});
+      setSavedTableGames([]);
       setTotalStorageSize(0);
       setMessage({ text: 'All local storage data has been cleared.', type: 'success' });
     } else if (gameToDelete) {
       // Delete specific game
-      LocalGameStorage.deleteGame(gameToDelete);
+      if (gameToDelete.isTableGame) {
+        LocalTableGameStorage.deleteTableGame(gameToDelete.id);
+      } else {
+        LocalGameStorage.deleteGame(gameToDelete.id);
+      }
       loadSavedGames();
       calculateStorageUsage();
       setMessage({ text: 'Game deleted successfully.', type: 'success' });
@@ -920,6 +930,56 @@ const Settings = () => {
             </div>
           ) : (
             <p className="no-games">No saved games found.</p>
+          )}
+        </div>
+
+        {/* Table Games Section */}
+        <div className="settings-section">
+          <div className="section-header">
+            <h2>Table Games</h2>
+          </div>
+          {savedTableGames.length > 0 ? (
+            <div className="game-history">
+              {savedTableGames.map((game) => (
+                <div key={game.id} className="game-card table-game-card">
+                  <div className="settings-card-content">
+                    <div className="settings-card-header">
+                      <div className="game-info">
+                        <div className="game-winner">
+                          Table Game - {game.name}
+                        </div>                  
+                        <div>Rounds: {game.totalRounds}</div>
+                      </div>
+                      <div className="game-players">
+                        Players: {game.players.join(", ")}
+                      </div>
+                      <div className="actions-game-history">
+                        <div className="bottom-actions-game-history">
+                          <span className="mode-badge table">
+                            Table
+                          </span>
+                          <div className="game-date">
+                            {formatDate(game.lastPlayed)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="settings-card-actions">
+                      <button 
+                        className="delete-game-button"
+                        onClick={() => handleDeleteGame(game.id, true)}
+                        aria-label="Delete table game"
+                      >
+                        <TrashIcon size={25} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="no-games">No table games found.</p>
           )}
         </div>
 
