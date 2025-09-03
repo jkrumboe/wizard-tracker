@@ -141,6 +141,10 @@
   align-items: center;
 }
 
+.score .round-score {
+  background-color: transparent;
+}
+
 .total-row {
   background-color: var(--primary-color);
   font-weight: 700;
