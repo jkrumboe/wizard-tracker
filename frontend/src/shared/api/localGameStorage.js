@@ -254,7 +254,17 @@ export class LocalGameStorage {
             roundsCompleted: game.total_rounds - 1 || game.roundsCompleted || 0,
             totalRounds: game.total_rounds || game.totalRounds || 0,
             mode: game.game_mode || game.mode || "Local",
-            players: game.players ? game.players.map(p => p.name) : [],
+            players: (() => {
+              // Handle both object and string arrays for backward compatibility
+              if (game.players && Array.isArray(game.players)) {
+                if (game.players.length > 0 && typeof game.players[0] === 'object' && game.players[0].name) {
+                  return game.players.map(p => p.name);
+                } else if (game.players.length > 0 && typeof game.players[0] === 'string') {
+                  return game.players;
+                }
+              }
+              return [];
+            })(),
             isPaused: false,
             gameFinished: true
           }));
@@ -272,7 +282,30 @@ export class LocalGameStorage {
               roundsCompleted: game.roundsCompleted || (game.gameState && game.gameState.currentRound - 1) || 0,
               totalRounds: game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0,
               mode: game.mode || (game.gameState && game.gameState.mode) || "Local",
-              players: (game.gameState && game.gameState.players) ? game.gameState.players.map(p => p.name) : [],
+              players: (() => {
+                // Try multiple sources for player names
+                
+                // Check root level players first (for imported games)
+                if (game.players && Array.isArray(game.players)) {
+                  if (game.players.length > 0 && typeof game.players[0] === 'object' && game.players[0].name) {
+                    const playerNames = game.players.map(p => p.name);
+                    console.debug('getSavedGamesList: Found players at root level:', playerNames);
+                    return playerNames;
+                  } else if (game.players.length > 0 && typeof game.players[0] === 'string') {
+                    console.debug('getSavedGamesList: Found string players at root level:', game.players);
+                    return game.players;
+                  }
+                }
+                // Fall back to gameState.players
+                else if (game.gameState && game.gameState.players) {
+                  // Players are in gameState.players (objects with name property)
+                  const playerNames = game.gameState.players.map(p => p.name);
+                  console.debug('getSavedGamesList: Found players in gameState:', playerNames);
+                  return playerNames;
+                }
+                console.debug('getSavedGamesList: No players found for game:', game.id || game.name);
+                return [];
+              })(),
               isPaused: game.isPaused || (game.gameState && game.gameState.isPaused) || false,
               gameFinished: game.gameFinished || (game.gameState && game.gameState.gameFinished) || false
             };
@@ -491,7 +524,7 @@ export class LocalGameStorage {
         
         // Check if this game was already imported
         if (existingOriginalIds.has(gameId)) {
-          console.log(`Game ${gameId} already imported, skipping duplicate`);
+          console.debug(`Game ${gameId} already imported, skipping duplicate`);
           return;
         }
         

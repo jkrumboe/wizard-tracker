@@ -98,11 +98,11 @@ const LoadGameDialog = ({
                 >
                   <div className="saved-game-info">
                     <div className="saved-game-name">
-                      {game.name || `Game with ${game.players.map(p => p.name).join(', ')}`}
+                      {game.name || `Game with ${Array.isArray(game.players) ? game.players.join(', ') : 'Unknown Players'}`}
                     </div>
                     <div className="saved-game-details">
                       <UsersIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
-                      {game.players.length} players • Round {game.currentRound}/{game.totalRounds}
+                      {game.players ? game.players.length : 0} players • Round {game.currentRound}/{game.totalRounds}
                       <br />
                       <CalendarIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
                       Last played: {formatDate(game.lastPlayed)}

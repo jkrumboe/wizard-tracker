@@ -109,7 +109,9 @@ const GameHistoryItem = ({ game }) => {
             {game.gameState && game.gameState.players 
               ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
               : game.is_local && game.players
-                ? game.players.map(player => player.name || "Unknown Player").join(", ")
+                ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
+                  ? game.players.join(", ") 
+                  : game.players.map(player => player.name || "Unknown Player").join(", ")
                 : Array.isArray(player_ids)
                   ? player_ids
                       .map(

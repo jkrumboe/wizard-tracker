@@ -41,7 +41,7 @@
 }
 
 .round-made {
-  border-top: 2px solid var(--border-color);
+  border-top: 1px solid var(--card-background);
 }
 
 .round-row .round-score {

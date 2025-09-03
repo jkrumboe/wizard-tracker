@@ -83,43 +83,49 @@ export async function importSharedGame(gameData, shareInfo) {
   try {
     // Check if this game was already imported
     const existingGames = LocalGameStorage.getAllSavedGames();
+    const gameIdToCheck = shareInfo.shareId || shareInfo.gameId || shareInfo.originalGameId;
     const alreadyImported = Object.values(existingGames).some(game => {
-      return game.originalGameId === shareInfo.gameId || 
-             game.gameState?.originalGameId === shareInfo.gameId;
+      return game.originalGameId === gameIdToCheck || 
+             game.gameState?.originalGameId === gameIdToCheck ||
+             game.cloudGameId === gameIdToCheck;
     });
     if (alreadyImported) {
-      throw new Error('This game has already been imported');
+      throw new Error('You already have this game in your collection. Check your game list to find it.');
     }
     
     // Create a new game ID for the imported game
     const newGameId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    // Extract players from the correct location
+    const players = gameData.players || gameData.gameState?.players || [];
+    
     // Prepare the game data for local storage
     const localGameData = {
       ...gameData,
+      players: players, // Ensure players are at the root level for compatibility
       gameId: newGameId, // Add gameId field that LocalGameStorage expects
       // Mark as imported from share
       isShared: true,
       isImported: true,
-      originalGameId: shareInfo.gameId,
+      originalGameId: gameIdToCheck,
       importedAt: new Date().toISOString(),
-      sharedFrom: `Shared game from ${gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown'}`,
+      sharedFrom: `Shared game from ${players.find(p => p.id === gameData.winner_id)?.name || 'Unknown'}`,
       is_local: true,
-      player_ids: gameData.players?.map(p => p.id) || []
+      player_ids: players.map(p => p.id) || []
     };
     
     // Save to local storage - saveGame(gameState, gameName, isPaused)
     const savedGameId = LocalGameStorage.saveGame(
       localGameData, 
-      `Shared: ${gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} won`, 
+      `Shared: ${players.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} won`, 
       false // isPaused = false since this is a finished game
     );
     
     // IMPORTANT: Mark the imported game as uploaded/synced to prevent duplicate uploads
     // Use the original shareId as the cloudGameId to establish the link
-    LocalGameStorage.markGameAsUploaded(savedGameId, shareInfo.shareId || shareInfo.gameId, null);
+    LocalGameStorage.markGameAsUploaded(savedGameId, shareInfo.shareId || shareInfo.gameId || shareInfo.originalGameId, null);
     
-    console.log(`Imported shared game ${savedGameId} and marked as synced with cloud ID: ${shareInfo.shareId || shareInfo.gameId}`);
+    console.debug(`Imported shared game ${savedGameId} and marked as synced with cloud ID: ${shareInfo.shareId || shareInfo.gameId || shareInfo.originalGameId}`);
     
     return savedGameId;
   } catch (error) {

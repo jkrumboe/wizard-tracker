@@ -486,7 +486,7 @@ const Settings = () => {
           const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
           const syncStatuses = await checkAllGamesSyncStatus();
           setGameSyncStatuses(syncStatuses);
-          console.log('[SyncDebug] Updated sync statuses after share upload:', syncStatuses);
+          console.debug('[SyncDebug] Updated sync statuses after share upload:', syncStatuses);
         }
         // Update syncStatus after upload
         syncStatus = gameSyncStatuses[gameId];

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSharedGameData, importSharedGame } from '@/shared/api/sharedGameService';
+import { LocalGameStorage } from '@/shared/api/localGameStorage';
 import LoadingScreen from '@/components/common/AppLoadingScreen';
 import { UserIcon, CalendarIcon, TrophyIcon, ShareIcon } from '@/components/ui/Icon';
 import '@/styles/pages/shared-game.css';
@@ -13,6 +14,7 @@ const SharedGamePage = () => {
   const [sharedGameInfo, setSharedGameInfo] = useState(null);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
+  const [alreadyImported, setAlreadyImported] = useState(false);
 
   useEffect(() => {
     const loadSharedGame = async () => {
@@ -33,19 +35,31 @@ const SharedGamePage = () => {
           throw new Error('Shared game not found - it may have been deleted');
         }
 
+        // Extract players from the correct location
+        const players = gameData.players || gameData.gameState?.players || [];
+
         // Create mock shared game info from the actual game data
         const mockSharedInfo = {
           shareId: shareId,
           originalGameId: shareId, // Use the direct game ID
-          title: `Wizard Game - ${gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} wins!`,
-          playerNames: gameData.players?.map(p => p.name).join(', ') || '',
-          winnerName: gameData.players?.find(p => p.id === gameData.winner_id)?.name || 'Unknown',
+          title: `Wizard Game - ${players.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} wins!`,
+          playerNames: players.map(p => p.name).join(', ') || '',
+          winnerName: players.find(p => p.id === gameData.winner_id)?.name || 'Unknown',
           finalScore: gameData.final_scores?.[gameData.winner_id] || 0,
           totalRounds: gameData.total_rounds || 0,
           createdAt: gameData.created_at || new Date().toISOString(),
           gameData: gameData
         };
 
+        // Check if this game is already imported
+        const existingGames = LocalGameStorage.getAllSavedGames();
+        const isAlreadyImported = Object.values(existingGames).some(game => {
+          return game.originalGameId === shareId || 
+                 game.gameState?.originalGameId === shareId ||
+                 game.cloudGameId === shareId;
+        });
+        
+        setAlreadyImported(isAlreadyImported);
         setSharedGameInfo(mockSharedInfo);
       } catch (error) {
         console.error('Failed to load shared game:', error);
@@ -176,13 +190,27 @@ const SharedGamePage = () => {
 
             <div className="import-section">              
               <div className="import-actions">
-                <button 
-                  className="btn-primary import-btn"
-                  onClick={handleImportGame}
-                  disabled={importing}
-                >
-                  {importing ? 'Importing...' : 'Import Game'}
-                </button>
+                {alreadyImported ? (
+                  <>
+                    <div className="already-imported-message">
+                      <p>✅ You already have this game in your collection!</p>
+                    </div>
+                    <button 
+                      className="btn-secondary"
+                      onClick={() => navigate('/settings')}
+                    >
+                      View My Games
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    className="btn-primary import-btn"
+                    onClick={handleImportGame}
+                    disabled={importing}
+                  >
+                    {importing ? 'Importing...' : 'Import Game'}
+                  </button>
+                )}
                 
                 <button 
                   className="btn-secondary"

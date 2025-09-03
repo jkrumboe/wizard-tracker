@@ -398,11 +398,7 @@ const GameDetails = () => {
   //   : "N/A";
 
   return (
-    <PageTransition 
-      isLoading={loading} 
-      loadingTitle="Loading Game Details" 
-      loadingSubtitle="Gathering round data and player statistics"
-    >
+    
       <div className="game-details-container">
         {/* {message.text && (
           <div className={`settings-message ${message.type}`}>
@@ -434,7 +430,7 @@ const GameDetails = () => {
           
           {/* Container for mode badge and share button */}
           <div className="badge-controls-container">
-            {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>}
+            {/* {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>} */}
             <button className="settings-button share-button" onClick={handleShareGame}>
               <ShareIcon size={20} />
               Share
@@ -595,7 +591,6 @@ const GameDetails = () => {
           )}
         </div>
       </div>
-    </PageTransition>
   );
 }
 

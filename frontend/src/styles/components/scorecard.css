@@ -4,6 +4,8 @@
   box-shadow: var(--shadow);
   overflow-x: auto;
   position: relative;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-lg);
   /* Improve scrolling experience */
   scrollbar-width: thin;
   scrollbar-color: var(--border-light) var(--card-background);
@@ -11,9 +13,14 @@
 
 .scorecard-table {
   width: 100%;
-   table-layout: fixed; /* Force equal column widths */
+  table-layout: fixed; /* Force equal column widths */
   border-collapse: separate;
   border-spacing: 0;
+  border-radius: var(--radius-lg);
+}
+
+.scorecard-table tbody {
+  border-radius: var(--radius-lg);
 }
 
 .scorecard-table th, 
@@ -102,22 +109,19 @@
   display: grid;
   grid-template-rows: auto auto;
   grid-template-columns: 1fr 1fr;
-  /* gap: 0.1rem ; */
-  border: 1px solid var(--border-color);
+  /* gap: 0.05rem; */
+  border: 1px solid var(--card-background);
 }
 
 .player-round-data > :nth-child(1) {
   grid-row: 1;
   grid-column: 1;
-  /* border-right: 1px solid var(--border-color); */
-  /* border-bottom: 1px solid var(--border-color); */
 }
 
 .player-round-data > :nth-child(2) {
   grid-row: 1;
   grid-column: 2;
-  border-left: 2px solid var(--border-color);
-  /* border-bottom: 2px solid var(--border-color); */
+  border-left: 1px solid var(--card-background);
 }
 
 .player-round-data > :nth-child(3) {
@@ -129,6 +133,7 @@
 .round-made ,
 .round-score {
   color: var(--text-color);
+  background-color: var(--card-background-alt);
   font-weight: 600 ;
   font-size: 1rem;
   display: flex;
@@ -161,6 +166,20 @@
   padding: 0 !important;
 }
 
+/* Round the bottom corners of the table */
+.total-row .total-label {
+  border-bottom-left-radius: var(--radius-md);
+}
+
+.total-row .total-score:last-child {
+  border-bottom-right-radius: var(--radius-md);
+}
+
+/* Alternative approach - target the last cell in the total row more specifically */
+.scorecard-table .total-row td:last-child {
+  border-bottom-right-radius: var(--radius-md);
+}
+
 /* Add color coding for correct/incorrect bids */
 .correct-bid {
   color: var(--success-color); /* green for correct bids */
@@ -182,7 +201,6 @@
   right: 0;
   bottom: 0;
   width: 2px;
-  /* background-color: var(--border-color); */
   z-index: 11;
 }
 

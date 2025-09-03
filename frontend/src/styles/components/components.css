@@ -121,6 +121,7 @@
     border: 2px solid var(--primary-color);
     transition: all 0.2s ease;
     gap: var(--spacing-sm);
+    box-shadow: var(--shadow-lg);
   }
   
   .game-date {
