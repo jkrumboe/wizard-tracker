@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
@@ -17,6 +17,7 @@ import authService from '@/shared/api/authService'
 
 const Profile = () => {
   const { id: paramId } = useParams()
+  const location = useLocation()
   const { user, refreshPlayerData } = useUser()
   // For now, only allow viewing your own profile (paramId support can be added later)
   const isOwnProfile = !paramId || paramId === user?.id
@@ -132,6 +133,13 @@ useEffect(() => {
     fetchTags();
   }
 }, [currentPlayer, isOwnProfile]);
+
+// Handle navigation state to start editing mode
+useEffect(() => {
+  if (location.state?.openEdit && user && !editing) {
+    handleStartEditing();
+  }
+}, [location.state, user]);
 
 const handleStartEditing = () => {
   setEditedName(user?.name || '');

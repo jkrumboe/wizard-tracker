@@ -456,12 +456,10 @@
 .retry-button:hover {
   background-color: var(--error-color);
   opacity: 0.9;
-  transform: translateY(-1px);
 }
 
 .back-button:hover {
   background-color: var(--card-background-light);
-  transform: translateY(-1px);
 }
 
 .game-content {
@@ -913,7 +911,6 @@
   border-color: var(--accent-color);
   background-color: var(--card-background-light);
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.4), 0 4px 8px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
 }
 
 .call-value,

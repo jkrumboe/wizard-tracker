@@ -42,8 +42,8 @@
         {
             "label": "Update Version",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "update-version"],
+            "command": "cmd",
+            "args": ["/C", "npm run update-version"],
             "options": {
                 "cwd": "${workspaceFolder}/frontend"
             },

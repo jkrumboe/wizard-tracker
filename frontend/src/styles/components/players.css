@@ -41,7 +41,6 @@
 
 .player-item:hover {
     border-color: var(--primary-color);
-    transform: translateY(-1px);
 }
 
 .player-number {

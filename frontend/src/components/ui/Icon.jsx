@@ -56,6 +56,7 @@ export const FilterIcon = (props) => <Icon name="Filter" {...props} />;
 export const RefreshIcon = (props) => <Icon name="RefreshCw" {...props} />;
 export const ArrowLeftIcon = (props) => <Icon name="ArrowLeft" {...props} />;
 export const ArrowRightIcon = (props) => <Icon name="ArrowRight" {...props} />;
+export const ArrowLeftCircleIcon = (props) => <Icon name="ArrowLeftCircle" {...props} />;
 export const SaveIcon = (props) => <Icon name="Save" {...props} />;
 export const PauseIcon = (props) => <Icon name="Pause" {...props} />;
 export const PlayIcon = (props) => <Icon name="Play" {...props} />;

@@ -15,7 +15,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
 import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -492,9 +492,21 @@ const GameInProgress = () => {
 
   const { dealer, caller } = getDealerAndCaller();
 
+  // Handle back button click
+  const handleBack = () => {
+    navigate(-1); // Go back to previous page
+  };
+
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
+        <button 
+          className="back-btn"
+          onClick={handleBack}
+          title="Go back"
+        >
+          <ArrowLeftCircleIcon size={28} />
+        </button>
         <span className="round-number">
           Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
         </span>

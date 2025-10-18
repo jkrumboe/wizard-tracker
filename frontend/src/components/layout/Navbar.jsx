@@ -24,9 +24,9 @@ const GamesMenu = ({ show, onClose }) => {
           </button>
         </div>
         <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-          <Link to="/leaderboard" className="modal-button" onClick={onClose}>
+          {/* <Link to="/leaderboard" className="modal-button" onClick={onClose}>
             <TrophyIcon size={18} style={{ marginRight: 8 }} /> Leaderboard
-          </Link>
+          </Link> */}
           <Link to="/new-game" className="modal-button" onClick={onClose}>
             <GamepadIcon size={18} style={{ marginRight: 8 }} /> Wizard
           </Link>
@@ -38,51 +38,16 @@ const GamesMenu = ({ show, onClose }) => {
     </div>
   );
 };
-import ThemeToggle from '@/components/ui/ThemeToggle'
-import defaultAvatar from "@/assets/default-avatar.png"
-import avatarService from '@/shared/api/avatarService'
 import "@/styles/components/components.css"
 
 const Navbar = () => {
   const { user } = useUser()
   const { isOnline } = useOnlineStatus()
-  // const { theme } = useTheme()
   const location = useLocation()
-  const [avatarUrl, setAvatarUrl] = useState(defaultAvatar)
   // Add state for Games menu
   const [showGamesMenu, setShowGamesMenu] = useState(false);
   // Close menu on route change
   useEffect(() => { setShowGamesMenu(false); }, [location.pathname]);
-
-  // Load user avatar when user is available
-  useEffect(() => {
-    const loadAvatarUrl = async () => {
-      if (user && isOnline) {
-        try {
-          const url = await avatarService.getAvatarUrl()
-          setAvatarUrl(url)
-        } catch (error) {
-          console.error('Error loading navbar avatar:', error)
-          setAvatarUrl(defaultAvatar)
-        }
-      } else {
-        setAvatarUrl(defaultAvatar)
-      }
-    }
-
-    loadAvatarUrl()
-
-    // Listen for avatar updates (custom event that can be dispatched from Profile component)
-    const handleAvatarUpdate = () => {
-      loadAvatarUrl()
-    }
-
-    window.addEventListener('avatarUpdated', handleAvatarUpdate)
-
-    return () => {
-      window.removeEventListener('avatarUpdated', handleAvatarUpdate)
-    }
-  }, [user, isOnline])
 
   const isActive = (path) => {
     if (typeof path === 'string') {
@@ -95,26 +60,6 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="top-navbar">
-        <Link to="/" className="navbar-logo">
-          KeepWiz
-        </Link>
-        
-        <div className="navbar-right">
-          <ThemeToggle />
-          
-          {isOnline && (
-          <Link to={user ? "/profile" : "/login"} className="profile-icon">
-            <img
-              src={avatarUrl}
-              alt="Profile"
-              className="navbar-avatar"
-            />
-          </Link>
-          )}
-        </div>
-      </div>
-      
       <nav className="bottom-navbar">
         <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} />
         <div

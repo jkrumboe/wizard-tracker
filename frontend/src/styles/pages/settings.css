@@ -81,15 +81,15 @@
 .checkbox-label {
   display: flex;
   padding-left: var(--spacing-sm);
-  align-items: center;
   font-weight: 500;
   cursor: pointer;
+  width: 100%;
 }
 
 /* Theme Button Group */
 .theme-button-group {
   display: flex;
-  margin-top: var(--spacing-sm);
+  gap: var(--spacing-lg);
 }
 
 .theme-button {
@@ -102,7 +102,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   position: relative;
   overflow: hidden;
 }
@@ -122,7 +122,6 @@
   background-color: var(--primary-color);
   color: white;
   box-shadow: 0 2px 8px rgba(53, 99, 233, 0.3);
-  transform: translateY(-1px);
 }
 
 .theme-button.active::before {
@@ -208,7 +207,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color);
-  border: 2px solid var(--border-color);
+  /* border: 2px solid var(--border-color); */
   background-color: var(--card-background-alt);
 }
 
@@ -515,7 +514,7 @@
   }
 
   .theme-button-group {
-    gap: var(--spacing-xs);
+    gap: var(--spacing-md);
   }
   
   .theme-button {

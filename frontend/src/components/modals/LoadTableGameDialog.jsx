@@ -6,7 +6,8 @@ const LoadTableGameDialog = ({
   isOpen, 
   onClose, 
   onLoadGame, 
-  onDeleteGame
+  onDeleteGame,
+  filterByGameName = null // Optional filter by game name/type
 }) => {
   const [savedGames, setSavedGames] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,13 @@ const LoadTableGameDialog = ({
     const loadSavedGames = async () => {
       setLoading(true);
       try {
-        const games = LocalTableGameStorage.getSavedTableGamesList();
+        let games = LocalTableGameStorage.getSavedTableGamesList();
+        
+        // Filter by game name if provided
+        if (filterByGameName) {
+          games = games.filter(game => game.name === filterByGameName);
+        }
+        
         setSavedGames(games);
       } catch (error) {
         console.error('Error loading saved table games:', error);
@@ -33,10 +40,17 @@ const LoadTableGameDialog = ({
   const handleLoadGame = async (gameId) => {
     setLoading(true);
     try {
-      const gameData = LocalTableGameStorage.loadTableGame(gameId);
-      if (gameData) {
-        onLoadGame(gameData);
-        onClose();
+      // Get the full saved game object first to get the name
+      const games = LocalTableGameStorage.getAllSavedTableGames();
+      const savedGame = games[gameId];
+      
+      if (savedGame) {
+        const gameData = LocalTableGameStorage.loadTableGame(gameId);
+        if (gameData) {
+          // Pass both gameData and the game name
+          onLoadGame({ ...gameData, gameName: savedGame.name });
+          onClose();
+        }
       }
     } catch (error) {
       console.error('Error loading table game:', error);
@@ -95,7 +109,7 @@ const LoadTableGameDialog = ({
               <p>Save a table game to see it here.</p>
             </div>
           ) : (
-            <div className="saved-games-list">
+            <div className="saved-games-list" style={{ marginBottom: "8px", background: "none" }}>
               {savedGames.map(game => (
                 <div 
                   key={game.id} 
@@ -129,7 +143,7 @@ const LoadTableGameDialog = ({
                       disabled={loading}
                       title="Load Game"
                     >
-                      <PlayIcon size={26} />
+                      Resume
                     </button>
                     {onDeleteGame && (
                       <button
@@ -141,7 +155,7 @@ const LoadTableGameDialog = ({
                         disabled={loading}
                         title="Delete Game"
                       >
-                        <TrashIcon size={16} />
+                        <TrashIcon size={18} />
                       </button>
                     )}
                   </div>
@@ -149,31 +163,7 @@ const LoadTableGameDialog = ({
               ))}
             </div>
           )}
-
-          {selectedGameId && (
-            <div className="selected-actions" style={{ marginTop: '1rem' }}>
-              <button
-                onClick={() => handleLoadGame(selectedGameId)}
-                className="dialog-btn primary"
-                disabled={loading}
-                style={{ width: '100%' }}
-              >
-                <PlayIcon size={16} style={{ marginRight: '8px' }} />
-                Load Selected Game
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="dialog-actions">
-          <button
-            onClick={onClose}
-            className="dialog-btn secondary"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-        </div>
+        </div>        
       </div>
     </div>
   );

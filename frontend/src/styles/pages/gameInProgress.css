@@ -99,6 +99,29 @@
   padding: 0 var(--spacing-md);
 }
 
+/* Back button styling */
+.game-in-progress .back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
+}
+
+.game-in-progress .back-btn:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  transform: translateX(-2px);
+}
+
+.game-in-progress .back-btn:active {
+  transform: translateX(-4px) scale(0.95);
+}
+
 /* Game stats container styling */
 .game-in-progress .game-stats-container {
   padding-top: var(--spacing-sm);

@@ -1,15 +1,17 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, SettingsIcon, RefreshIcon, CloudIcon, ShareIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import authService from '@/shared/api/authService';
+import avatarService from '@/shared/api/avatarService';
+import defaultAvatar from "@/assets/default-avatar.png";
 import { checkGameSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
@@ -29,6 +31,7 @@ const Settings = () => {
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
+  const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
   const { isOnline } = useOnlineStatus();
@@ -265,6 +268,36 @@ const Settings = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Keep empty dependency array and handle URL changes elsewhere
+
+  // Load user avatar when user is available
+  useEffect(() => {
+    const loadAvatarUrl = async () => {
+      if (user && isOnline) {
+        try {
+          const url = await avatarService.getAvatarUrl()
+          setAvatarUrl(url)
+        } catch (error) {
+          console.error('Error loading avatar:', error)
+          setAvatarUrl(defaultAvatar)
+        }
+      } else {
+        setAvatarUrl(defaultAvatar)
+      }
+    }
+
+    loadAvatarUrl()
+
+    // Listen for avatar updates
+    const handleAvatarUpdate = () => {
+      loadAvatarUrl()
+    }
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate)
+
+    return () => {
+      window.removeEventListener('avatarUpdated', handleAvatarUpdate)
+    }
+  }, [user, isOnline])
 
   const loadSavedGames = useCallback(async () => {
     // First migrate games to ensure they have upload tracking properties
@@ -652,37 +685,106 @@ const Settings = () => {
         )} */}
 
         <div className="settings-section">
-          <h2>Theme Settings</h2>
+          <h2>Profile</h2>
+          
+          {/* Profile Picture Section */}
+          {isOnline && (
+            <div className="settings-option">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <Link to={user ? "/profile" : "/login"} style={{ textDecoration: 'none' }}>
+                    <img
+                      src={avatarUrl}
+                      alt="Profile"
+                      style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        cursor: 'pointer',
+                        border: '2px solid var(--primary-color)'
+                      }}
+                    />
+                  </Link>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
+                    <Link 
+                      to="/profile" 
+                      state={{ openEdit: true }}
+                      style={{ fontSize: '14px', color: 'var(--primary-color)' }}
+                    >
+                      Edit Profile
+                    </Link>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--error-color)',
+                    border: '2px solid var(--error-color)',
+                  }}
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOutIcon size={24} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Theme Toggle Section */}
           <div className="settings-option">
             <label className="checkbox-label">
               <input 
-                type="checkbox" 
+                type="checkbox"
                 checked={useSystemTheme} 
-                onChange={handleThemeModeChange} 
+                onChange={handleThemeModeChange}
+                style={{ 
+                    width: '15px', 
+                    height: '15px',
+                    cursor: 'pointer',
+                    justifySelf: 'center',
+                    alignSelf: 'center'
+                  }}
               />
               <span> Use system theme preference</span>
             </label>
           </div>
 
           {!useSystemTheme && (
-            <div className="settings-option">
-              <div className="theme-button-group">
-                <button 
-                  type="button"
-                  className={`tab-button ${theme === 'light' ? 'active' : ''}`}
-                  onClick={() => theme === 'dark' && toggleTheme()}
-                >
-                  Light Mode
-                </button>
-                <button 
-                  type="button"
-                  className={`tab-button ${theme === 'dark' ? 'active' : ''}`}
-                  onClick={() => theme === 'light' && toggleTheme()}
-                >
-                  Dark Mode
-                </button>
+            <>
+              <div className="settings-option" style={{ marginBottom: 'var(--spacing-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Theme</span>
+                </div>
               </div>
-            </div>
+
+              <div className="settings-option">
+                <div className="theme-button-group">
+                  <button 
+                    type="button"
+                    className={`tab-button ${theme === 'light' ? 'active' : ''}`}
+                    onClick={() => theme === 'dark' && toggleTheme()}
+                  >
+                    Light Mode
+                  </button>
+                  <button 
+                    type="button"
+                    className={`tab-button ${theme === 'dark' ? 'active' : ''}`}
+                    onClick={() => theme === 'light' && toggleTheme()}
+                  >
+                    Dark Mode
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -1001,27 +1103,6 @@ const Settings = () => {
             </div>
           </div>
         </div>
-
-        {/* Account Section - Only show if user is logged in */}
-        {user && (
-          <div className="settings-section account-section">
-            <h3 className="settings-section-title">Account</h3>
-            <div className="settings-card">
-              <div className="account-info">
-                <div className="info-item">
-                  <span className="info-label">Logged in as:</span>
-                  <span className="info-value">{user.name || user.email}</span>
-                </div>
-              </div>
-              <button 
-                className="btn btn-danger logout-btn"
-                onClick={handleLogout}
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        )}
 
         <DeleteConfirmationModal
           isOpen={showConfirmDialog}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, XIcon, SaveIcon, UploadIcon } from "../../components/ui/Icon";
-import { LocalTableGameStorage } from "../../shared/api";
-import LoadTableGameDialog from "../../components/modals/LoadTableGameDialog";
+import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
+import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
+import GameTemplateSelector from "../../components/game/GameTemplateSelector";
 import "../../styles/components/TableGame.css";
 
 const MIN_PLAYERS = 2;
@@ -13,9 +13,8 @@ const TableGame = () => {
     { name: "Player 2", points: [] },
     { name: "Player 3", points: [] }
   ]);
-  const [gameName, setGameName] = useState("");
-  const [saveMessage, setSaveMessage] = useState({ text: "", type: "" });
-  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(true);
+  const [currentGameName, setCurrentGameName] = useState("");
 
   const handleNameChange = (idx, value) => {
     const updated = [...players];
@@ -25,7 +24,12 @@ const TableGame = () => {
 
   const handlePointChange = (playerIdx, rowIdx, value) => {
     const updated = [...players];
-    updated[playerIdx].points[rowIdx] = value === "" ? "" : parseInt(value, 10) || 0;
+    if (value === "") {
+      updated[playerIdx].points[rowIdx] = "";
+    } else {
+      const parsed = parseInt(value, 10);
+      updated[playerIdx].points[rowIdx] = isNaN(parsed) ? "" : parsed;
+    }
     setPlayers(updated);
   };
 
@@ -68,6 +72,49 @@ const TableGame = () => {
     return player.points.reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
   };
 
+  const loadGame = (gameData) => {
+    try {
+      if (gameData && gameData.players) {
+        setPlayers(gameData.players);
+        setRows(gameData.rows || 12);
+        setShowTemplateSelector(false);
+        
+        // Set the game name from the loaded game
+        const loadedGameName = gameData.gameName || "Loaded Game";
+        setCurrentGameName(loadedGameName);
+      }
+    } catch (error) {
+      console.error("Error loading table game:", error);
+    }
+  };
+
+  const handleSelectTemplate = (templateName) => {
+    setCurrentGameName(templateName);
+    setShowTemplateSelector(false);
+    // Reset the game state
+    setPlayers([
+      { name: "Player 1", points: [] },
+      { name: "Player 2", points: [] },
+      { name: "Player 3", points: [] }
+    ]);
+    setRows(12);
+  };
+
+  const handleCreateNewGame = (newGameName) => {
+    if (newGameName && newGameName.trim()) {
+      const trimmedName = newGameName.trim();
+      // Save as a template
+      LocalTableGameTemplate.saveTemplate(trimmedName);
+      // Start the game with this name
+      handleSelectTemplate(trimmedName);
+    }
+  };
+
+  const handleBackToTemplates = () => {
+    setShowTemplateSelector(true);
+    setCurrentGameName("");
+  };
+
   const saveGame = () => {
     try {
       const gameData = {
@@ -76,77 +123,54 @@ const TableGame = () => {
         timestamp: new Date().toISOString()
       };
 
-      const name = gameName.trim() || `Table Game - ${new Date().toLocaleDateString()}`;
-      const gameId = LocalTableGameStorage.saveTableGame(gameData, name);
+      const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      LocalTableGameStorage.saveTableGame(gameData, name);
       
-      setSaveMessage({ 
-        text: `Game saved successfully! (ID: ${gameId.substring(0, 8)}...)`, 
-        type: "success" 
-      });
-      
-      // Clear the message after 3 seconds
-      setTimeout(() => {
-        setSaveMessage({ text: "", type: "" });
-      }, 3000);
-      
+      // Show a brief success message (you could add state for this if you want a toast notification)
+      alert(`Game "${name}" saved successfully!`);
     } catch (error) {
       console.error("Error saving table game:", error);
-      setSaveMessage({ 
-        text: "Failed to save game. Please try again.", 
-        type: "error" 
-      });
-      
-      // Clear the message after 5 seconds
-      setTimeout(() => {
-        setSaveMessage({ text: "", type: "" });
-      }, 5000);
+      alert("Failed to save game. Please try again.");
     }
-  };
-
-  const loadGame = (gameData) => {
-    try {
-      if (gameData && gameData.players) {
-        setPlayers(gameData.players);
-        setRows(gameData.rows || 12);
-        setSaveMessage({ 
-          text: "Game loaded successfully!", 
-          type: "success" 
-        });
-        
-        // Clear the message after 3 seconds
-        setTimeout(() => {
-          setSaveMessage({ text: "", type: "" });
-        }, 3000);
-      }
-    } catch (error) {
-      console.error("Error loading table game:", error);
-      setSaveMessage({ 
-        text: "Failed to load game. Please try again.", 
-        type: "error" 
-      });
-      
-      // Clear the message after 5 seconds
-      setTimeout(() => {
-        setSaveMessage({ text: "", type: "" });
-      }, 5000);
-    }
-  };
-
-  const deleteGame = (gameId) => {
-    // This function is called when a game is deleted from the load dialog
-    // We don't need to do anything special here as the dialog handles the deletion
-    console.log(`Table game ${gameId} deleted`);
   };
 
   return (
     <div className="table-game-container">
-      <button
-        className="table-game-add-player-above"
-        title="Add Player"
-        onClick={() => insertPlayer(players.length)}
-      >
-        + Add Player
-      </button>
+      {showTemplateSelector ? (
+        <GameTemplateSelector
+          onSelectTemplate={handleSelectTemplate}
+          onCreateNew={handleCreateNewGame}
+          onLoadGame={loadGame}
+        />
+      ) : (
+        <>
+          <div className="table-game-header">
+            <button
+              className="back-to-templates-btn"
+              onClick={handleBackToTemplates}
+              title="Back to Game Selection"
+            >
+              <ArrowLeftCircleIcon size={20} />
+              Back
+            </button>
+            <button
+              className="table-game-add-player-above"
+              title="Add Player"
+              onClick={() => insertPlayer(players.length)}
+            >
+              Add Player
+            </button>
+            <button
+              className="table-game-save-btn"
+              onClick={saveGame}
+              title="Save Game"
+            >
+              <SaveIcon size={20} />
+              Save
+            </button>
+          </div>
+
+          
       <div className="table-game-scroll">
         <table className="table-game-table">
           <thead>
@@ -173,7 +197,7 @@ const TableGame = () => {
                   <td key={playerIdx}>
                     <input
                       type="tel"
-                      value={player.points[rowIdx] || ""}
+                      value={player.points[rowIdx] ?? ""}
                       onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
                       className="table-game-point-input"
                       inputMode="numeric"
@@ -240,48 +264,8 @@ const TableGame = () => {
           </tfoot>
         </table>
       </div>
-
-      {/* Save Game Section */}
-      <div className="table-game-save-section">
-        <div className="save-controls">
-          <input
-            type="text"
-            placeholder="Enter game name (optional)"
-            value={gameName}
-            onChange={(e) => setGameName(e.target.value)}
-            className="table-game-name-input"
-          />
-          <button
-            className="table-game-save-button"
-            onClick={saveGame}
-            title="Save Game"
-          >
-            <SaveIcon size={16} />
-            Save Game
-          </button>
-          <button
-            className="table-game-load-button"
-            onClick={() => setShowLoadDialog(true)}
-            title="Load Saved Game"
-          >
-            <UploadIcon size={16} />
-            Load Game
-          </button>
-        </div>
-        {saveMessage.text && (
-          <div className={`save-message ${saveMessage.type}`}>
-            {saveMessage.text}
-          </div>
-        )}
-      </div>
-
-      {/* Load Table Game Dialog */}
-      <LoadTableGameDialog
-        isOpen={showLoadDialog}
-        onClose={() => setShowLoadDialog(false)}
-        onLoadGame={loadGame}
-        onDeleteGame={deleteGame}
-      />
+        </>
+      )}
     </div>
   );
 };
