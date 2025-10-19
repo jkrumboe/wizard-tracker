@@ -514,10 +514,10 @@ const GameInProgress = () => {
         <span className="total-calls">
           Calls: {totalCalls} |  {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
         </span>
-        <SyncStatusIndicator 
+        {/* <SyncStatusIndicator 
           gameId={gameState.id || gameState.localId}
           showDetails={false}
-        />
+        /> */}
       </div>
 
       {/* Auto-upload notification */}

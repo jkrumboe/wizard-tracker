@@ -711,11 +711,11 @@ const Settings = () => {
                   <div>
                     <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
                     <Link 
-                      to="/profile" 
-                      state={{ openEdit: true }}
+                      to={user ? "/profile" : "/login"}
+                      state={user ? { openEdit: true } : undefined}
                       style={{ fontSize: '14px', color: 'var(--primary-color)' }}
                     >
-                      Edit Profile
+                      {user ? 'Edit Profile' : 'Login'}
                     </Link>
                   </div>
                 </div>

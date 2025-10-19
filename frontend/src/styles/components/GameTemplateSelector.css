@@ -29,7 +29,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
   min-height: 200px;
 }
 
@@ -61,7 +60,6 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-xs);
 }
 
 .template-name {
@@ -238,7 +236,7 @@
 .template-selector-actions {
   display: flex;
   gap: var(--spacing-md);
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-md);
 }
 
 .create-new-btn {
@@ -366,7 +364,7 @@
   .template-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
   }
 
   .template-info {
