@@ -199,6 +199,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                       className="template-action-btn continue-btn"
                       onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
                       title="Continue Saved Game"
+                      disabled={getSavedGamesCount(template.name) === 0}
                     >
                       <UploadIcon size={18} />
                     </button>

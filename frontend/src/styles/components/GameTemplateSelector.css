@@ -135,6 +135,13 @@
   box-shadow: var(--shadow-sm);
 }
 
+.template-action-btn.continue-btn:disabled,
+.template-action-btn.continue-btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.3;
+  box-shadow: none;
+}
+
 .template-action-btn.edit-btn-inline {
   padding: var(--spacing-sm);
 }
