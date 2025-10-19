@@ -6,4 +6,3 @@ export { default as AuthProtectedRoute } from './AuthProtectedRoute.jsx';
 export { default as PerformanceMetric } from './PerformanceMetric.jsx';
 export { default as GameSchemaMigration } from './GameSchemaMigration.jsx';
 export { default as AutoLogoutHandler } from './AutoLogoutHandler.jsx';
-export { default as UserSwitcher } from './UserSwitcher.jsx';

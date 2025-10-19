@@ -7,9 +7,8 @@ import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon, UserIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
-import UserSwitcher from '@/components/common/UserSwitcher';
 import authService from '@/shared/api/authService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
@@ -33,7 +32,6 @@ const Settings = () => {
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
-  const [showUserSwitcher, setShowUserSwitcher] = useState(false); // User switcher modal state
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
   const { isOnline } = useOnlineStatus();
@@ -740,37 +738,6 @@ const Settings = () => {
             </div>
           )}
 
-          {/* User Switcher Section */}
-          <div className="settings-option">
-            <button
-              onClick={() => setShowUserSwitcher(true)}
-              className="settings-button"
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 'var(--spacing-sm)',
-                padding: 'var(--spacing-sm)',
-                background: 'var(--secondary-color)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              title="Switch between user profiles on this device"
-            >
-              <UserIcon size={20} />
-              Manage User Profiles
-            </button>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 'var(--spacing-xs)' }}>
-              Switch between users or create guest profiles on this device
-            </p>
-          </div>
-
           {/* Theme Toggle Section */}
           <div className="settings-option">
             <label className="checkbox-label">
@@ -1141,11 +1108,6 @@ const Settings = () => {
           onClose={() => setShowConfirmDialog(false)}
           onConfirm={handleConfirmDelete}
           deleteAll={deleteAll}
-        />
-        
-        <UserSwitcher
-          isOpen={showUserSwitcher}
-          onClose={() => setShowUserSwitcher(false)}
         />
       </div>
   );
