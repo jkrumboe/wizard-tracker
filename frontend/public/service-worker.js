@@ -1,10 +1,11 @@
 // Service Worker for KeepWiz PWA - Automatic Updates + Offline Sync
-const CACHE_NAME = "keep-wiz-v1.2.6.1" // Increment version for updates
+const CACHE_NAME = "keep-wiz-v1.2.6.2" // Increment version for updates
 const API_CACHE_NAME = "keep-wiz-api-v1"
 const urlsToCache = [
   "/", 
   "/index.html", 
-  "/manifest.json", 
+  "/manifest.json",
+  "/manifest.webmanifest", 
   "/icons/logo-192.png",
   "/icons/logo-512.png",
   "/logo.png"
