@@ -195,6 +195,7 @@ function App() {
                   <Route path="/account" element={<Navigate to="/profile" replace />} />
                   {/* <Route path="/leaderboard" element={<Leaderboard />} /> */}
                   <Route path="/stats/:name" element={<Stats />} />
+                  <Route path="/profile/stats" element={<Stats />} />
                   <Route path="/new-game" element={<NewGame />} />
                   <Route path="/table" element={<TableGame />} />
                   <Route path="/game/:id" element={<GameDetails />} />

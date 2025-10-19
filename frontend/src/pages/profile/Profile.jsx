@@ -7,12 +7,11 @@ import { useUser } from '@/shared/hooks/useUser'
 import { StatIcon, EditIcon, CalendarIcon } from "@/components/ui/Icon"
 // Temporarily remove playerService imports since they're not implemented yet
 // import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
-import { getPlayerGameHistory } from '@/shared/api/gameService'
+import { getRecentLocalGames } from '@/shared/api/gameService'
 import userService from '@/shared/api/userService'
 import avatarService from '@/shared/api/avatarService'
 import defaultAvatar from "@/assets/default-avatar.png";
 import DOMPurify from 'dompurify';
-import "@/styles/utils/pageTransition.css"
 import authService from '@/shared/api/authService'
 
 const Profile = () => {
@@ -23,6 +22,7 @@ const Profile = () => {
   const isOwnProfile = !paramId || paramId === user?.id
   
   const [gameHistory, setGameHistory] = useState([])
+  const [allGames, setAllGames] = useState([])
   const [tags, setTags] = useState([])
   // const [defaultTags, setDefaultTags] = useState([])
   const [error, setError] = useState(null)
@@ -72,12 +72,74 @@ useEffect(() => {
       // For now, just set empty default data since playerService is not implemented
       // setDefaultTags([]);
       
-      // Try to fetch game history using the user ID
+      // Fetch all local games (both finished and paused)
       try {
-        const history = await getPlayerGameHistory(currentPlayer.id);
-        setGameHistory(history || []);
+        const localGames = await getRecentLocalGames(100); // Get up to 100 games
+        
+        // Get all possible identifiers for the current user
+        const userIdentifiers = [
+          currentPlayer.id,
+          currentPlayer.name,
+          currentPlayer.username,
+          user.id,
+          user.name,
+          user.username,
+          user.$id // Appwrite user ID
+        ].filter(Boolean); // Remove any null/undefined values
+        
+        // Filter games to only include games where the current user ACTUALLY PLAYED
+        const userGames = localGames.filter(game => {
+          // Check if user is in the players list by name/username (most reliable for local games)
+          if (game.gameState?.players && Array.isArray(game.gameState.players)) {
+            const isInPlayers = game.gameState.players.some(player => {
+              // Check if player name or username matches current user
+              const playerName = player.name?.toLowerCase().trim();
+              const playerUsername = player.username?.toLowerCase().trim();
+              const currentName = currentPlayer.name?.toLowerCase().trim();
+              const currentUsername = currentPlayer.username?.toLowerCase().trim();
+              
+              return playerName === currentName || playerUsername === currentUsername;
+            });
+            
+            if (isInPlayers) {
+              return true;
+            }
+          }
+          
+          // Fallback: Check if user is in the players list by ID
+          if (game.gameState?.players) {
+            const isInPlayersById = game.gameState.players.some(player => {
+              const playerIdentifiers = [
+                player.id,
+                player.userId
+              ].filter(Boolean);
+              
+              return playerIdentifiers.some(playerId => 
+                userIdentifiers.includes(playerId)
+              );
+            });
+            
+            if (isInPlayersById) {
+              return true;
+            }
+          }
+          
+          // Check player_ids array as last resort
+          if (game.player_ids && Array.isArray(game.player_ids)) {
+            if (game.player_ids.some(playerId => userIdentifiers.includes(playerId))) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+        
+        setAllGames(userGames || []);
+        // Use the same data for gameHistory (recent games)
+        setGameHistory(userGames || []);
       } catch (err) {
-        console.debug('Game history not available:', err);
+        console.debug('Local games not available:', err);
+        setAllGames([]);
         setGameHistory([]);
       }
       
@@ -88,7 +150,7 @@ useEffect(() => {
   };
 
   if (currentPlayer) fetchData();
-}, [currentPlayer, isOwnProfile]);
+}, [currentPlayer, isOwnProfile, user]);
 
 // Load avatar URL when user is available
 useEffect(() => {
@@ -245,9 +307,47 @@ if (!currentPlayer) {
 
 const recentGames = gameHistory.slice(0, 3);
 
-// Create pie chart data - ensure we always have some data to display
-const totalWins = currentPlayer?.total_wins || 0;
-const totalLosses = currentPlayer?.total_losses || 0;
+// Calculate actual stats from user's games
+const calculatedStats = useMemo(() => {
+  if (!allGames || allGames.length === 0) {
+    return {
+      totalGames: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0
+    };
+  }
+
+  let wins = 0;
+  let losses = 0;
+
+  allGames.forEach(game => {
+    // Determine if player won
+    const winnerId = game.winner_id || game.gameState?.winner_id;
+    const winnerName = game.gameState?.players?.find(p => p.id === winnerId)?.name;
+    const isWin = winnerName === currentPlayer.name || winnerId === currentPlayer.id;
+    
+    if (isWin) {
+      wins++;
+    } else {
+      losses++;
+    }
+  });
+
+  const totalGames = allGames.length;
+  const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+
+  return {
+    totalGames,
+    wins,
+    losses,
+    winRate: winRate.toFixed(1)
+  };
+}, [allGames, currentPlayer]);
+
+// Create pie chart data - use calculated stats
+const totalWins = calculatedStats.wins;
+const totalLosses = calculatedStats.losses;
 const hasGames = totalWins > 0 || totalLosses > 0;
 
 const data = hasGames ? [
@@ -431,7 +531,11 @@ if (editing) {
           <div className="toggle-section" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
             <button
               className="game-control-btn"
-              onClick={() => setActiveTab(activeTab === 'recentGames' ? 'performance' : 'recentGames')}
+              onClick={() => {
+                // Cycle through tabs: performance -> recentGames -> allGames -> performance
+                if (activeTab === 'performance') setActiveTab('recentGames');
+                else setActiveTab('performance');
+              }}
               id='toggle-button-profile'
             >
               {activeTab === 'recentGames' ? <StatIcon size={30} /> : <CalendarIcon size={30} />}
@@ -464,25 +568,55 @@ if (editing) {
             </div>
           <div className="stats-summary">
             <StatCard 
-              title="ELO" 
-              value={currentPlayer?.elo || 0}
-            />
-            <StatCard 
               title="Games" 
-              value={currentPlayer?.total_games || 0}
+              value={calculatedStats.totalGames}
             />
             <StatCard 
               title="Win Rate" 
-              value={
-                currentPlayer?.total_games ? 
-                `${((currentPlayer?.total_wins || 0) / Math.max(1, currentPlayer?.total_games) * 100).toFixed(2)}%` 
-                : '0%'
-              }
+              value={`${calculatedStats.winRate}%`}
             />
           </div>
         </div>
 
-        {(window.innerWidth > 768 || activeTab === 'performance') && (
+        {/* Desktop Tab Navigation */}
+        {window.innerWidth > 768 && (
+          <div className="profile-tabs" style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--border-color)', marginBottom: '1rem' }}>
+            <button
+              onClick={() => setActiveTab('performance')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === 'performance' ? '3px solid var(--primary-color)' : '3px solid transparent',
+                color: activeTab === 'performance' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: activeTab === 'performance' ? '600' : '400',
+                transition: 'all 0.2s'
+              }}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('recentGames')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === 'recentGames' ? '3px solid var(--primary-color)' : '3px solid transparent',
+                color: activeTab === 'recentGames' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: activeTab === 'recentGames' ? '600' : '400',
+                transition: 'all 0.2s'
+              }}
+            >
+              Recent Games
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'performance' && (
           <div className="stats-graph">
             <h2>Performance</h2>
             <ResponsiveContainer width="100%" height={100}>
@@ -519,32 +653,34 @@ if (editing) {
               )}
             </div>
             
-            {/* Disabled link */}
-            <span
-              className="view-all-stats"
-              style={{
-                pointerEvents: 'none',
-                opacity: 0.5,
-                cursor: 'not-allowed'
-              }}
-              aria-disabled="true"
-              tabIndex={-1}
-            >
-              View Complete Stats History
-            </span>
+            {/* Link to Stats History Page */}
+            {hasGames && (
+              <Link
+                to="/profile/stats"
+                className="view-all-stats"
+                style={{
+                  color: 'var(--primary-color)',
+                  fontSize: '0.875rem',
+                  display: 'inline-block',
+                  marginTop: '0.5rem'
+                }}
+              >
+                View Complete Stats History
+              </Link>
+            )}
           </div>
         )}
 
-        {(window.innerWidth > 768 || activeTab === 'recentGames') && (
+        {activeTab === 'recentGames' && (
           <div className="recent-games" style={{ padding: 'var(--spacing-md) 0' }}>
             <h2>Recent Games</h2>
             <div className="games-list">
-              {recentGames.length > 0 ? (
-                recentGames.map(game => (
+              {allGames.length > 0 ? (
+                allGames.map(game => (
                   <GameHistoryItem key={game.id} game={game} />
                 ))
               ) : (
-                <div className="empty-message">No game history found</div>
+                <div className="empty-message">No games found</div>
               )}
             </div>
           </div>

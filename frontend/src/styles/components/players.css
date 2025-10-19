@@ -83,7 +83,7 @@
     }
     
     .drag-handle {
-        padding: var(--spacing-sm);
+        padding: 0;
         min-width: 32px;
         min-height: 32px;
         display: flex;

@@ -12,7 +12,6 @@ import { ShareValidator } from '@/shared/utils/shareValidator';
 import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing';
 import { ensureGameSynced } from '@/shared/utils/ensureGameSynced';
 // Components
-import PageTransition from "@/components/common/PageTransition"
 import PerformanceMetric from "@/components/common/PerformanceMetric"
 import StatsChart from "@/components/game/StatsChart"
 import { AdvancedStats } from "@/components/game"
@@ -25,7 +24,6 @@ import "@/styles/components/statsChart.css"
 import "@/styles/components/chartToggle.css"
 import "@/styles/pages/settings.css"
 import "@/styles/pages/gameDetails.css"
-import "@/styles/utils/pageTransition.css"
 // Icon imports
 import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, DownloadIcon, TableIcon } from "@/components/ui/Icon"
 

@@ -121,7 +121,7 @@
     border: 2px solid var(--primary-color);
     transition: all 0.2s ease;
     gap: var(--spacing-sm);
-    box-shadow: var(--shadow-lg);
+    /* box-shadow: var(--shadow-lg); */
   }
   
   .game-date {
@@ -284,13 +284,14 @@
   
   /* Stat Card */
   .stat-card {
-    /* background-color: var(--card-background); */
+    background-color: var(--card-background);
     border-radius: var(--radius-lg);
     text-align: center;
+    padding: var(--spacing-sm);
     /* box-shadow: var(--shadow); */
     /* border: 1px solid var(--border-color); */
     transition: transform 0.3s;
-    width: 30%;
+    /* width: 30%; */
   }
   
   .stat-title {
@@ -634,24 +635,27 @@
   
   .stats-graph,
   .recent-games {
+    display: flex;
+    flex-direction: column;
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding-top: var(--spacing-md);
     min-height: 280px;
+    gap: var(--spacing-md);
   }
   
   .stats-graph h2,
   .recent-games h2 {
     color: var(--primary-color);
     position: relative;
-    padding-bottom: var(--spacing-sm);
+    /* padding-bottom: var(--spacing-sm); */
+    margin-bottom: 0;
   }
   
   .chart-legend {
     display: flex;
     justify-content: center;
     gap: var(--spacing-lg);
-    margin-top: var(--spacing-md);
   }
   
   .legend-item {
@@ -669,18 +673,19 @@
   .games-list {
     max-height: 300px;
     overflow-y: auto;
+    gap: var(--spacing-sm);
   }
   
   .view-all-stats {
     display: block;
     text-align: center;
-    margin-top: var(--spacing-md);
     padding: var(--spacing-sm);
-    background-color: rgba(53, 99, 233, 0.1);
+    background-color: rgba(53, 99, 233, 0.2);
     border-radius: var(--radius-md);
     color: var(--text-color);
     font-weight: 500;
     transition: background-color 0.2s;
+    width: 100%;
   }
 
   /* Profile Edit */
@@ -918,22 +923,15 @@
   /* Stats Page */
   .stats-container {
     max-width: 960px;
-    margin: var(--spacing-lg) auto;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-lg) 0;
   }
   
   .stats-header {
-    display: flex;
     flex-direction: row;
-    margin-bottom: var(--spacing-lg);
-    background-color: var(--card-background);
-    padding: var(--spacing-lg);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
+    gap: var(--spacing-lg);
   }
   
   .stats-header h1 {
-    margin-left: 5rem;
     color: var(--primary-color);
   }
   
@@ -969,8 +967,6 @@
   .stats-summary {
     display: flex;
     gap: var(--spacing-md);
-    background: var(--card-background-alt);
-    padding: var(--spacing-sm);
     border-radius: var(--radius-lg);
     flex-direction: row;
     justify-content: center;
@@ -2198,7 +2194,7 @@
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
-  box-shadow: var(--shadow);
+  /* box-shadow: var(--shadow); */
   max-height: calc(70vh - var(--bottom-nav-height));
   display: flex;
   flex-direction: column;
@@ -2973,7 +2969,7 @@
 /* General .game-bottom-section styling for non-GameInProgress pages */
 .game-control-btn {
   /* background-color: var(--primary-color); */
-  color: var(--text-white);
+  color: var(--text-color);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);

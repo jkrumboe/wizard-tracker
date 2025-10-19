@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { getPlayers } from '@/shared/api/playerService'
 import defaultAvatar from "@/assets/default-avatar.png";
 
-import "@/styles/utils/pageTransition.css"
-
 const Leaderboard = () => {
   const [players, setPlayers] = useState([])
   const [loading, setLoading] = useState(true)
