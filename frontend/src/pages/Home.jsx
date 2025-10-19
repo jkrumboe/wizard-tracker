@@ -85,7 +85,7 @@ const Home = () => {
 
       <section className="recent-games">
         <div className="section-header">
-          <h2>Recent Games</h2>
+          <h2>Finished Games</h2>
         </div>
         {recentLocalGames.length > 0 ? (
           <div className="game-history">

@@ -721,7 +721,6 @@ const Settings = () => {
                   onClick={handleLogout}
                   style={{
                     background: 'none',
-                    border: 'none',
                     cursor: 'pointer',
                     padding: '8px',
                     display: 'flex',

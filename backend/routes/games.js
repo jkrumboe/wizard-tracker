@@ -68,7 +68,7 @@ router.post('/', async (req, res, next) => {
     for (const similarGame of similarGames) {
       const similarScores = JSON.stringify(similarGame.gameData.final_scores || {});
       if (similarScores === contentSignature.finalScoresJson) {
-        console.log('[POST /api/games] Found content duplicate:', similarGame._id);
+        console.debug('[POST /api/games] Found content duplicate:', similarGame._id);
         return res.status(200).json({
           message: 'Game already exists (content duplicate)',
           duplicate: true,
@@ -84,7 +84,7 @@ router.post('/', async (req, res, next) => {
 
     // 3. Check if this is an imported shared game (should not be uploaded again)
     if (gameData.isImported || gameData.isShared || gameData.originalGameId) {
-      console.log('[POST /api/games] Rejecting upload of shared/imported game:', localId);
+      console.debug('[POST /api/games] Rejecting upload of shared/imported game:', localId);
       return res.status(400).json({ 
         error: 'Imported or shared games should not be uploaded to prevent duplicates',
         isImported: true

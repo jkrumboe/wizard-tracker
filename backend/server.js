@@ -6,6 +6,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/users');
 const gameRoutes = require('./routes/games');
 const onlineRoutes = require('./routes/online');
+const gameSyncRoutes = require('./routes/gameSync');
 const errorHandler = require('./middleware/errorHandler');
 const OnlineStatus = require('./models/OnlineStatus');
 
@@ -19,7 +20,7 @@ app.use(express.json());
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
-    console.log('Connected to MongoDB');
+    console.debug('Connected to MongoDB');
     
     // Initialize default online status document if none exists
     try {
@@ -30,9 +31,9 @@ mongoose.connect(process.env.MONGO_URI)
           message: 'All features are available',
           updatedBy: 'system'
         });
-        console.log('Default online status document created');
+        console.debug('Default online status document created');
       } else {
-        console.log('Online status document already exists');
+        console.debug('Online status document already exists');
       }
     } catch (error) {
       console.error('Error initializing online status:', error);
@@ -43,6 +44,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/games', gameSyncRoutes); // Game sync endpoints
 app.use('/api/online', onlineRoutes);
 
 // Health check route
@@ -59,7 +61,7 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.debug(`Server is running on port ${PORT}`);
 });
 
 module.exports = app;

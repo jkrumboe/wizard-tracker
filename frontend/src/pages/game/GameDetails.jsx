@@ -132,8 +132,8 @@ const GameDetails = () => {
         setPlayerDetails(playerMap)
         
         // Debug logging to see what's in playerMap
-        // console.log("Player map populated:", playerMap);
-        // console.log("Game final_scores keys:", Object.keys(gameData.final_scores || {}));
+        // console.debug("Player map populated:", playerMap);
+        // console.debug("Game final_scores keys:", Object.keys(gameData.final_scores || {}));
         
         setLoading(false)
       } catch (err) {

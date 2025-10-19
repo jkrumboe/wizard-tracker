@@ -47,8 +47,8 @@ const LoadTableGameDialog = ({
       if (savedGame) {
         const gameData = LocalTableGameStorage.loadTableGame(gameId);
         if (gameData) {
-          // Pass both gameData and the game name
-          onLoadGame({ ...gameData, gameName: savedGame.name });
+          // Pass gameData, game name, and game ID
+          onLoadGame({ ...gameData, gameName: savedGame.name, gameId: gameId });
           onClose();
         }
       }

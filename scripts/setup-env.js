@@ -21,7 +21,7 @@ function updateEnvFile() {
     // Check if .env file exists
     if (!fs.existsSync(ENV_PATH)) {
       console.error('.env file not found at:', ENV_PATH);
-      console.log('Please copy .env.example to .env first');
+      console.debug('Please copy .env.example to .env first');
       process.exit(1);
     }
 
@@ -40,9 +40,9 @@ function updateEnvFile() {
     // Write updated content back to .env
     fs.writeFileSync(ENV_PATH, envContent);
     
-    console.log('Environment setup completed!');
-    console.log('New JWT secret generated and updated in .env file');
-    console.log('Make sure to restart your application to use the new secret');
+    console.debug('Environment setup completed!');
+    console.debug('New JWT secret generated and updated in .env file');
+    console.debug('Make sure to restart your application to use the new secret');
     
   } catch (error) {
     console.error('Error updating .env file:', error.message);
@@ -66,19 +66,19 @@ function updatePackageJson() {
       packageJson.scripts['update-secrets'] = 'node scripts/setup-env.js';
       
       fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      console.log('Updated package.json with setup scripts');
+      console.debug('Updated package.json with setup scripts');
     } catch (error) {
-      console.log('Could not update package.json:', error.message);
+      console.debug('Could not update package.json:', error.message);
     }
   }
 }
 
 // Main execution
-console.log('Setting up Wizard Tracker environment...');
+console.debug('Setting up Wizard Tracker environment...');
 updateEnvFile();
 updatePackageJson();
 
-console.log('\n Next steps:');
-console.log('1. Run: npm run setup-env (anytime you need new secrets)');
-console.log('2. For Docker: docker compose down && docker compose up -d');
-console.log('3. For local dev: npm run dev (in frontend) and npm start (in backend)');
+console.debug('\n Next steps:');
+console.debug('1. Run: npm run setup-env (anytime you need new secrets)');
+console.debug('2. For Docker: docker compose down && docker compose up -d');
+console.debug('3. For local dev: npm run dev (in frontend) and npm start (in backend)');

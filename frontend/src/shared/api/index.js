@@ -8,3 +8,4 @@ export { LocalTableGameTemplate } from './localTableGameTemplate.js';
 export { default as onlineStatusService } from './onlineStatusService.js';
 export { default as playerService } from './playerService.js';
 export { default as userService } from './userService.js';
+export { syncApiClient } from './syncApiClient.js';

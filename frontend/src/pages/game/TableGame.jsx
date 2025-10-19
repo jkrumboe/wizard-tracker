@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
+import { SyncStatusIndicator } from "../../components/game";
 import "../../styles/components/TableGame.css";
 
 const MIN_PLAYERS = 2;
@@ -15,6 +16,231 @@ const TableGame = () => {
   ]);
   const [showTemplateSelector, setShowTemplateSelector] = useState(true);
   const [currentGameName, setCurrentGameName] = useState("");
+  const [currentGameId, setCurrentGameId] = useState(() => {
+    // Initialize from sessionStorage to survive HMR reloads
+    return sessionStorage.getItem('currentTableGameId') || null;
+  });
+
+  // Refs to store current values for auto-save on unmount
+  const playersRef = useRef(players);
+  const rowsRef = useRef(rows);
+  const currentGameNameRef = useRef(currentGameName);
+  const currentGameIdRef = useRef(currentGameId);
+  const showTemplateSelectorRef = useRef(showTemplateSelector);
+
+  // Persist game ID to sessionStorage whenever it changes
+  useEffect(() => {
+    if (currentGameId) {
+      sessionStorage.setItem('currentTableGameId', currentGameId);
+    } else {
+      sessionStorage.removeItem('currentTableGameId');
+    }
+  }, [currentGameId]);
+
+  // Persist game state to sessionStorage to survive HMR reloads
+  useEffect(() => {
+    if (!showTemplateSelector && currentGameId) {
+      const gameState = {
+        players,
+        rows,
+        currentGameName,
+        currentGameId
+      };
+      sessionStorage.setItem('currentTableGameState', JSON.stringify(gameState));
+    }
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector]);
+
+  // Restore game state from sessionStorage on mount (after HMR)
+  useEffect(() => {
+    const savedState = sessionStorage.getItem('currentTableGameState');
+    if (savedState && showTemplateSelector) {
+      try {
+        const gameState = JSON.parse(savedState);
+        // Only restore if we have valid data
+        if (gameState.currentGameId && gameState.players) {
+          setPlayers(gameState.players);
+          setRows(gameState.rows);
+          setCurrentGameName(gameState.currentGameName);
+          setCurrentGameId(gameState.currentGameId);
+          setShowTemplateSelector(false);
+          console.debug('🔄 Restored game state from session after HMR');
+        }
+      } catch (error) {
+        console.error('Failed to restore game state:', error);
+      }
+    }
+  }, []); // Only run once on mount
+
+  // Update refs when values change
+  useEffect(() => {
+    playersRef.current = players;
+    rowsRef.current = rows;
+    currentGameNameRef.current = currentGameName;
+    currentGameIdRef.current = currentGameId;
+    showTemplateSelectorRef.current = showTemplateSelector;
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector]);
+
+  // Debug: Log when players data changes
+  useEffect(() => {
+    if (!showTemplateSelector) {
+      const hasData = players.some(player => 
+        player.points.some(point => point !== "" && point !== undefined && point !== null)
+      );
+      console.debug('📝 Table game state:', {
+        gameName: currentGameName,
+        gameId: currentGameId,
+        playersCount: players.length,
+        hasData: hasData,
+        playerPoints: players.map(p => ({
+          name: p.name,
+          points: p.points.filter(pt => pt !== "" && pt !== undefined && pt !== null).length
+        }))
+      });
+    }
+  }, [players, currentGameName, currentGameId, showTemplateSelector]);
+
+  // Periodic auto-save every 5 seconds when there's data
+  useEffect(() => {
+    if (showTemplateSelector) return; // Don't auto-save on template selector
+    
+    const autoSaveInterval = setInterval(() => {
+      const hasData = players.some(player => 
+        player.points.some(point => point !== "" && point !== undefined && point !== null)
+      );
+      
+      if (hasData) {
+        try {
+          const gameData = {
+            players: players,
+            rows: rows,
+            timestamp: new Date().toISOString()
+          };
+          
+          const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+          
+          // If no game ID, create a new save
+          if (!currentGameId) {
+            const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+            setCurrentGameId(newGameId);
+            console.debug(`💾 Created initial save: "${name}" (ID: ${newGameId})`);
+          } else if (LocalTableGameStorage.tableGameExists(currentGameId)) {
+            LocalTableGameStorage.updateTableGame(currentGameId, {
+              gameData: gameData,
+              lastPlayed: new Date().toISOString(),
+              name: name
+            });
+            console.debug(`💾 Periodic auto-save: "${name}" (ID: ${currentGameId})`);
+          }
+        } catch (error) {
+          console.error('❌ Periodic auto-save failed:', error);
+        }
+      }
+    }, 5000); // Save every 5 seconds
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector]);
+
+  // Auto-save game when navigating away or closing tab
+  useEffect(() => {
+    // Mark that we've visited the table game page
+    sessionStorage.setItem('tableGameVisited', 'true');
+
+    // Cleanup function runs when component unmounts (navigation away)
+    return () => {
+      // Always save when leaving, regardless of conditions (like pressing Save button)
+      const currentPlayers = playersRef.current;
+      const currentRows = rowsRef.current;
+      const currentName = currentGameNameRef.current;
+      const currentId = currentGameIdRef.current;
+      const isShowingTemplateSelector = showTemplateSelectorRef.current;
+      
+      console.debug('💾 Silent save on unmount:', {
+        currentId,
+        isShowingTemplateSelector,
+        playersCount: currentPlayers.length
+      });
+      
+      // Save if we have a game in progress (not on template selector)
+      if (!isShowingTemplateSelector) {
+        try {
+          const gameData = {
+            players: currentPlayers,
+            rows: currentRows,
+            timestamp: new Date().toISOString()
+          };
+
+          const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
+          
+          // If no game ID, create a new save
+          if (!currentId) {
+            const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+            console.debug(`✅ Created save on navigation: "${name}" (ID: ${newGameId})`);
+          } else if (LocalTableGameStorage.tableGameExists(currentId)) {
+            // Update the existing game
+            LocalTableGameStorage.updateTableGame(currentId, {
+              gameData: gameData,
+              lastPlayed: new Date().toISOString(),
+              name: name
+            });
+            console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId})`);
+          }
+        } catch (error) {
+          console.error('❌ Failed to save on navigation:', error);
+        }
+      }
+    };
+  }, []); // Empty dependency array - only set up once
+
+  // Auto-save on browser close/refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const currentPlayers = playersRef.current;
+      const currentRows = rowsRef.current;
+      const currentName = currentGameNameRef.current;
+      const currentId = currentGameIdRef.current;
+      const isShowingTemplateSelector = showTemplateSelectorRef.current;
+      
+      console.debug('💾 Silent save on browser close:', {
+        isShowingTemplateSelector,
+        currentId
+      });
+      
+      // Save if we have a game in progress (not on template selector)
+      if (!isShowingTemplateSelector) {
+        try {
+          const gameData = {
+            players: currentPlayers,
+            rows: currentRows,
+            timestamp: new Date().toISOString()
+          };
+
+          const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
+          
+          // If no game ID, create a new save
+          if (!currentId) {
+            const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+            console.debug(`✅ Created save on browser close: "${name}" (ID: ${newGameId})`);
+          } else if (LocalTableGameStorage.tableGameExists(currentId)) {
+            // Update the existing game
+            LocalTableGameStorage.updateTableGame(currentId, {
+              gameData: gameData,
+              lastPlayed: new Date().toISOString(),
+              name: name
+            });
+            console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId})`);
+          }
+        } catch (error) {
+          console.error('❌ Failed to save on browser close:', error);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []); // Empty dependency array - set up once
 
   const handleNameChange = (idx, value) => {
     const updated = [...players];
@@ -29,6 +255,14 @@ const TableGame = () => {
     } else {
       const parsed = parseInt(value, 10);
       updated[playerIdx].points[rowIdx] = isNaN(parsed) ? "" : parsed;
+      
+      // Fill all empty cells above this row with 0
+      for (let i = 0; i < rowIdx; i++) {
+        const point = updated[playerIdx].points[i];
+        if (point === "" || point === undefined || point === null) {
+          updated[playerIdx].points[i] = 0;
+        }
+      }
     }
     setPlayers(updated);
   };
@@ -79,9 +313,13 @@ const TableGame = () => {
         setRows(gameData.rows || 12);
         setShowTemplateSelector(false);
         
-        // Set the game name from the loaded game
+        // Set the game name and ID from the loaded game
         const loadedGameName = gameData.gameName || "Loaded Game";
+        const loadedGameId = gameData.gameId || null;
         setCurrentGameName(loadedGameName);
+        setCurrentGameId(loadedGameId);
+        
+        console.debug(`Loaded game: "${loadedGameName}" (ID: ${loadedGameId})`);
       }
     } catch (error) {
       console.error("Error loading table game:", error);
@@ -90,6 +328,7 @@ const TableGame = () => {
 
   const handleSelectTemplate = (templateName) => {
     setCurrentGameName(templateName);
+    setCurrentGameId(null); // New game, no ID yet
     setShowTemplateSelector(false);
     // Reset the game state
     setPlayers([
@@ -113,6 +352,10 @@ const TableGame = () => {
   const handleBackToTemplates = () => {
     setShowTemplateSelector(true);
     setCurrentGameName("");
+    setCurrentGameId(null);
+    // Clear session storage
+    sessionStorage.removeItem('currentTableGameId');
+    sessionStorage.removeItem('currentTableGameState');
   };
 
   const saveGame = () => {
@@ -124,10 +367,23 @@ const TableGame = () => {
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
-      LocalTableGameStorage.saveTableGame(gameData, name);
       
-      // Show a brief success message (you could add state for this if you want a toast notification)
-      alert(`Game "${name}" saved successfully!`);
+      // If we have a game ID, update the existing game
+      if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
+        LocalTableGameStorage.updateTableGame(currentGameId, {
+          gameData: gameData,
+          lastPlayed: new Date().toISOString(),
+          name: name
+        });
+        console.debug(`Updated existing game: "${name}" (ID: ${currentGameId})`);
+        alert(`Game "${name}" updated successfully!`);
+      } else {
+        // Create new save and store the ID
+        const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+        setCurrentGameId(newGameId);
+        console.debug(`Saved new game: "${name}" (ID: ${newGameId})`);
+        alert(`Game "${name}" saved successfully!`);
+      }
     } catch (error) {
       console.error("Error saving table game:", error);
       alert("Failed to save game. Please try again.");
@@ -160,6 +416,11 @@ const TableGame = () => {
             >
               Add Player
             </button>
+            {/* <SyncStatusIndicator 
+              gameId={currentGameName ? `table-${currentGameName}` : null}
+              showDetails={false}
+              className="ml-2"
+            /> */}
             <button
               className="table-game-save-btn"
               onClick={saveGame}
@@ -197,7 +458,7 @@ const TableGame = () => {
                   <td key={playerIdx}>
                     <input
                       type="tel"
-                      value={player.points[rowIdx] ?? ""}
+                      value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
                       onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
                       className="table-game-point-input"
                       inputMode="numeric"

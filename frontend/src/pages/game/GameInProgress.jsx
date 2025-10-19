@@ -9,6 +9,7 @@ import LoadGameDialog from "@/components/modals/LoadGameDialog"
 import GameMenuModal from "@/components/modals/GameMenuModal"
 import PauseConfirmationModal from "@/components/modals/PauseConfirmationModal"
 import PerformanceMetric from "@/components/common/PerformanceMetric"
+import { SyncStatusIndicator } from "@/components/game"
 import "@/styles/utils/performanceMetrics.css"
 import "@/styles/pages/stats.css"
 import "@/styles/pages/gameInProgress.css"
@@ -513,6 +514,10 @@ const GameInProgress = () => {
         <span className="total-calls">
           Calls: {totalCalls} |  {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
         </span>
+        <SyncStatusIndicator 
+          gameId={gameState.id || gameState.localId}
+          showDetails={false}
+        />
       </div>
 
       {/* Auto-upload notification */}
