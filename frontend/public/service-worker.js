@@ -5,8 +5,9 @@ const urlsToCache = [
   "/", 
   "/index.html", 
   "/manifest.json", 
-  "/icons/pwa-logo.png",
-  "/vite.svg"
+  "/icons/logo-192.png",
+  "/icons/logo-512.png",
+  "/logo.png"
 ]
 
 // API endpoints that should be cached for offline access
