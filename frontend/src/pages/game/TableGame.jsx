@@ -3,17 +3,26 @@ import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } f
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
 import { SyncStatusIndicator } from "../../components/game";
+import { useUser } from "../../shared/hooks/useUser";
 import "../../styles/components/TableGame.css";
 
 const MIN_PLAYERS = 2;
 
 const TableGame = () => {
+  const { user } = useUser(); // Get the logged-in user
   const [rows, setRows] = useState(12);
-  const [players, setPlayers] = useState([
-    { name: "Player 1", points: [] },
-    { name: "Player 2", points: [] },
-    { name: "Player 3", points: [] }
-  ]);
+  
+  // Initialize players with the logged-in user as the first player if available
+  const getDefaultPlayers = () => {
+    const firstPlayerName = user?.username || user?.name || "Player 1";
+    return [
+      { name: firstPlayerName, points: [] },
+      { name: "Player 2", points: [] },
+      { name: "Player 3", points: [] }
+    ];
+  };
+  
+  const [players, setPlayers] = useState(getDefaultPlayers());
   const [showTemplateSelector, setShowTemplateSelector] = useState(true);
   const [currentGameName, setCurrentGameName] = useState("");
   const [currentGameId, setCurrentGameId] = useState(() => {
@@ -270,7 +279,9 @@ const TableGame = () => {
   // Insert a player at a specific index
   const insertPlayer = (idx) => {
     const newPlayers = [...players];
-    newPlayers.splice(idx, 0, { name: `Player ${players.length + 1}`, points: [] });
+    // Suggest a default name, but user can change it
+    const defaultName = `Player ${players.length + 1}`;
+    newPlayers.splice(idx, 0, { name: defaultName, points: [] });
     setPlayers(newPlayers);
   };
 
@@ -330,9 +341,10 @@ const TableGame = () => {
     setCurrentGameName(templateName);
     setCurrentGameId(null); // New game, no ID yet
     setShowTemplateSelector(false);
-    // Reset the game state
+    // Reset the game state with the logged-in user as the first player
+    const firstPlayerName = user?.username || user?.name || "Player 1";
     setPlayers([
-      { name: "Player 1", points: [] },
+      { name: firstPlayerName, points: [] },
       { name: "Player 2", points: [] },
       { name: "Player 3", points: [] }
     ]);

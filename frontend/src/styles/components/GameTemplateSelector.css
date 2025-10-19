@@ -176,8 +176,8 @@
 }
 
 .template-edit-input:focus {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.7);
 }
 
 .template-edit-actions {

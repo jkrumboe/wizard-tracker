@@ -726,9 +726,8 @@
 }
 
 .inline-number-input:focus {
-  border-color: var(--accent-color);
-  background-color: var(--card-background-light);
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.7);
 }
 
 .inline-number-input::placeholder {
@@ -908,9 +907,8 @@
 
 .call-input:focus,
 .tricks-input:focus {
-  border-color: var(--accent-color);
-  background-color: var(--card-background-light);
-  box-shadow: 0 0 12px rgba(251, 191, 36, 0.4), 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.7);
 }
 
 .call-value,
@@ -1099,7 +1097,7 @@
 }
 
 .game-container .dealer-badge {
-  background-color: var(--accent-color);
+  background-color: var(--primary-color);
   color: white;
   padding: 2px 6px;
   border-radius: var(--radius-sm);

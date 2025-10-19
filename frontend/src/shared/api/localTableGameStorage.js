@@ -1,20 +1,31 @@
 /**
  * Local Table Game Storage Service
  * Handles saving, loading, and managing table games separately from regular wizard games
+ * Now supports multiple users on the same device
  */
 
 const LOCAL_TABLE_GAMES_STORAGE_KEY = "wizardTracker_tableGames";
 
 export class LocalTableGameStorage {
   /**
+   * Get the current user ID from localStorage
+   * @returns {string|null} - The current user ID or null
+   */
+  static getCurrentUserId() {
+    return localStorage.getItem('wizardTracker_currentUserId');
+  }
+
+  /**
    * Save a table game to local storage
    * @param {Object} gameData - The table game data
    * @param {string} gameName - Optional custom name for the game
+   * @param {string} userId - Optional user ID (defaults to current user)
    * @returns {string} - The game ID
    */
-  static saveTableGame(gameData, gameName = null) {
+  static saveTableGame(gameData, gameName = null, userId = null) {
     const gameId = this.generateGameId();
     const timestamp = new Date().toISOString();
+    const currentUserId = userId || this.getCurrentUserId();
     
     try {
       // Create a saved table game object
@@ -27,7 +38,8 @@ export class LocalTableGameStorage {
         playerCount: gameData.players ? gameData.players.length : 0,
         totalRounds: gameData.rows || 0,
         gameType: 'table',
-        gameFinished: true
+        gameFinished: true,
+        userId: currentUserId // Add userId to track ownership
       };
 
       // Get existing storage
@@ -88,10 +100,43 @@ export class LocalTableGameStorage {
   }
 
   /**
-   * Get all saved table games
+   * Get all saved table games (for current user only)
+   * @param {string} userId - Optional user ID (defaults to current user)
+   * @returns {Object} - Object containing all saved table games for the user
+   */
+  static getAllSavedTableGames(userId = null) {
+    try {
+      const stored = localStorage.getItem(LOCAL_TABLE_GAMES_STORAGE_KEY);
+      const allGames = stored ? JSON.parse(stored) : {};
+      const currentUserId = userId || this.getCurrentUserId();
+      
+      // If no user is logged in, return all games (backward compatibility)
+      if (!currentUserId) {
+        return allGames;
+      }
+      
+      // Filter games for the current user
+      const userGames = {};
+      Object.keys(allGames).forEach(gameId => {
+        const game = allGames[gameId];
+        // Include games without userId (legacy) or games matching current user
+        if (!game.userId || game.userId === currentUserId) {
+          userGames[gameId] = game;
+        }
+      });
+      
+      return userGames;
+    } catch (error) {
+      console.error("Error loading saved table games:", error);
+      return {};
+    }
+  }
+  
+  /**
+   * Get all saved table games (all users, for admin/migration purposes)
    * @returns {Object} - Object containing all saved table games
    */
-  static getAllSavedTableGames() {
+  static getAllSavedTableGamesAllUsers() {
     try {
       const stored = localStorage.getItem(LOCAL_TABLE_GAMES_STORAGE_KEY);
       return stored ? JSON.parse(stored) : {};
@@ -102,12 +147,13 @@ export class LocalTableGameStorage {
   }
 
   /**
-   * Get saved table games list with metadata
+   * Get saved table games list with metadata (for current user)
+   * @param {string} userId - Optional user ID (defaults to current user)
    * @returns {Array} - Array of saved table game metadata
    */
-  static getSavedTableGamesList() {
+  static getSavedTableGamesList(userId = null) {
     try {
-      const games = this.getAllSavedTableGames();
+      const games = this.getAllSavedTableGames(userId);
       
       const gamesList = Object.values(games)
         .filter(game => game && game.id)
@@ -121,6 +167,7 @@ export class LocalTableGameStorage {
             totalRounds: game.totalRounds || 0,
             gameType: 'table',
             gameFinished: true,
+            userId: game.userId,
             players: game.gameData && game.gameData.players ? 
               game.gameData.players.map(p => p.name) : []
           };
@@ -218,10 +265,37 @@ export class LocalTableGameStorage {
    * @param {Object} updates - Object containing fields to update
    */
   static updateTableGame(gameId, updates) {
-    const games = this.getAllSavedTableGames();
+    const games = this.getAllSavedTableGamesAllUsers(); // Get all games to update
     if (games[gameId]) {
       games[gameId] = { ...games[gameId], ...updates };
       localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(games));
     }
+  }
+  
+  /**
+   * Migrate legacy games (without userId) to a specific user
+   * @param {string} userId - The user ID to assign legacy games to
+   * @returns {number} - Number of games migrated
+   */
+  static migrateLegacyGamesToUser(userId) {
+    if (!userId) return 0;
+    
+    const allGames = this.getAllSavedTableGamesAllUsers();
+    let migratedCount = 0;
+    
+    Object.keys(allGames).forEach(gameId => {
+      const game = allGames[gameId];
+      if (!game.userId) {
+        game.userId = userId;
+        migratedCount++;
+      }
+    });
+    
+    if (migratedCount > 0) {
+      localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(allGames));
+      console.debug(`✅ Migrated ${migratedCount} legacy table games to user ${userId}`);
+    }
+    
+    return migratedCount;
   }
 }

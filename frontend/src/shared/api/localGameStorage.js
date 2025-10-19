@@ -1,19 +1,29 @@
 /**
  * Local Game Storage Service
  * Handles saving, loading, and managing paused local games
+ * Now supports multiple users on the same device
  */
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames";
 
 export class LocalGameStorage {
   /**
+   * Get the current user ID from localStorage
+   * @returns {string|null} - The current user ID or null
+   */
+  static getCurrentUserId() {
+    return localStorage.getItem('wizardTracker_currentUserId');
+  }
+
+  /**
    * Save a game to local storage
    * @param {Object} gameState - The current game state
    * @param {string} gameName - Optional custom name for the game
    * @param {boolean} isPaused - Whether this is a paused game (true) or a finished game (false)
+   * @param {string} userId - Optional user ID (defaults to current user)
    * @returns {string} - The game ID
    */
-  static saveGame(gameState, gameName = null, isPaused = true) {
+  static saveGame(gameState, gameName = null, isPaused = true, userId = null) {
     // Check if this is a finished game that was previously paused
     let gameId = gameState.gameId;
     const isFinishedPausedGame = !isPaused && gameId && this.gameExists(gameId);
@@ -24,6 +34,7 @@ export class LocalGameStorage {
     }
     
     const timestamp = new Date().toISOString();
+    const currentUserId = userId || this.getCurrentUserId();
     
     try {
       // Create a new saved game object
@@ -68,6 +79,7 @@ export class LocalGameStorage {
         mode: gameState.mode || "Local",
         isPaused: isPaused,
         gameFinished: !isPaused, // If it's not paused, it's finished
+        userId: currentUserId, // Add userId to track ownership
         ...topLevelData // Add extracted data for finished games
       };
     
@@ -174,12 +186,14 @@ export class LocalGameStorage {
   }
 
   /**
-   * Get all saved games
-   * @returns {Object} - Object containing all saved games
+   * Get all saved games (for current user only)
+   * @param {string} userId - Optional user ID (defaults to current user)
+   * @returns {Object} - Object containing all saved games for the user
    */
-  static getAllSavedGames() {
+  static getAllSavedGames(userId = null) {
     try {
       const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      const currentUserId = userId || this.getCurrentUserId();
       
       // Check if the stored data is an array (old format from finishGame)
       if (stored) {
@@ -209,14 +223,40 @@ export class LocalGameStorage {
                 roundsCompleted: game.total_rounds,
                 totalRounds: game.total_rounds,
                 mode: game.game_mode || "Local",
-                gameFinished: true
+                gameFinished: true,
+                userId: game.userId // Preserve userId if it exists
               };
             }
           });
-          return games;
+          
+          // Filter by user if logged in
+          if (!currentUserId) {
+            return games;
+          }
+          
+          const userGames = {};
+          Object.keys(games).forEach(gameId => {
+            const game = games[gameId];
+            if (!game.userId || game.userId === currentUserId) {
+              userGames[gameId] = game;
+            }
+          });
+          return userGames;
         }
         
-        return parsedData;
+        // Object format - filter by user
+        if (!currentUserId) {
+          return parsedData; // Return all if no user logged in
+        }
+        
+        const userGames = {};
+        Object.keys(parsedData).forEach(gameId => {
+          const game = parsedData[gameId];
+          if (!game.userId || game.userId === currentUserId) {
+            userGames[gameId] = game;
+          }
+        });
+        return userGames;
       }
       
       return {};
@@ -559,7 +599,7 @@ export class LocalGameStorage {
    * This ensures older games have the necessary properties for sync tracking
    */
   static migrateGamesForUploadTracking() {
-    const games = this.getAllSavedGames();
+    const games = this.getAllSavedGamesAllUsers(); // Get all games for migration
     let migrationNeeded = false;
     
     for (const gameId in games) {
@@ -587,6 +627,86 @@ export class LocalGameStorage {
     }
     
     return games;
+  }
+
+  /**
+   * Get all saved games (all users, for admin/migration purposes)
+   * @returns {Object} - Object containing all saved games
+   */
+  static getAllSavedGamesAllUsers() {
+    try {
+      const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      
+      if (!stored) {
+        return {};
+      }
+      
+      const parsedData = JSON.parse(stored);
+      
+      // Convert array to object format if needed
+      if (Array.isArray(parsedData)) {
+        const games = {};
+        parsedData.forEach(game => {
+          if (game.id) {
+            games[game.id] = {
+              id: game.id,
+              name: `Game from ${new Date(game.created_at).toLocaleDateString()}`,
+              gameState: {
+                players: game.players,
+                currentRound: 1,
+                maxRounds: game.maxRounds,
+                roundData: game.round_data,
+                gameStarted: true,
+                gameFinished: true,
+                mode: game.game_mode || "Local",
+                isLocal: true
+              },
+              savedAt: game.created_at,
+              lastPlayed: game.created_at,
+              playerCount: game.players.length,
+              roundsCompleted: game.total_rounds,
+              totalRounds: game.total_rounds,
+              mode: game.game_mode || "Local",
+              gameFinished: true,
+              userId: game.userId
+            };
+          }
+        });
+        return games;
+      }
+      
+      return parsedData;
+    } catch (error) {
+      console.error("Error loading all saved games:", error);
+      return {};
+    }
+  }
+
+  /**
+   * Migrate legacy games (without userId) to a specific user
+   * @param {string} userId - The user ID to assign legacy games to
+   * @returns {number} - Number of games migrated
+   */
+  static migrateLegacyGamesToUser(userId) {
+    if (!userId) return 0;
+    
+    const allGames = this.getAllSavedGamesAllUsers();
+    let migratedCount = 0;
+    
+    Object.keys(allGames).forEach(gameId => {
+      const game = allGames[gameId];
+      if (!game.userId) {
+        game.userId = userId;
+        migratedCount++;
+      }
+    });
+    
+    if (migratedCount > 0) {
+      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(allGames));
+      console.debug(`✅ Migrated ${migratedCount} legacy games to user ${userId}`);
+    }
+    
+    return migratedCount;
   }
 
 }

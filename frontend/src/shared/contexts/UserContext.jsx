@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useCallback } from 'react'
 import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { LocalUserProfileService, LocalGameStorage, LocalTableGameStorage } from '../api'
 
 export const UserContext = createContext()
 
@@ -21,6 +22,27 @@ export function UserProvider({ children }) {
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {
           setUser(userFromServer)
+          
+          // Create or update local user profile for multi-user support
+          LocalUserProfileService.createOrUpdateProfile(
+            userFromServer.id,
+            userFromServer.username || userFromServer.name,
+            {
+              name: userFromServer.name,
+              email: userFromServer.email
+            }
+          );
+          
+          // Set as current user
+          LocalUserProfileService.setCurrentUser(userFromServer.id);
+          
+          // Migrate any legacy games without userId to this user
+          const migratedGames = LocalGameStorage.migrateLegacyGamesToUser(userFromServer.id);
+          const migratedTableGames = LocalTableGameStorage.migrateLegacyGamesToUser(userFromServer.id);
+          
+          if (migratedGames > 0 || migratedTableGames > 0) {
+            console.debug(`✅ Migrated ${migratedGames} games and ${migratedTableGames} table games to user ${userFromServer.id}`);
+          }
         }
       } catch (error) {
         console.error("Error checking authentication status:", error)
@@ -38,6 +60,7 @@ export function UserProvider({ children }) {
     if (!isOnline && user) {
       console.debug('🔒 Switching to offline mode - clearing user session')
       authService.clearLocalSession() // Clear any stored session data
+      LocalUserProfileService.clearCurrentUser() // Clear current user in local profile service
       setUser(null)
       setPlayer(null)
     }
@@ -106,14 +129,28 @@ export function UserProvider({ children }) {
       const userFromServer = await authService.checkAuthStatus()
       if (userFromServer) {
         setUser(userFromServer)
+        
+        // Update local user profile
+        LocalUserProfileService.createOrUpdateProfile(
+          userFromServer.id,
+          userFromServer.username || userFromServer.name,
+          {
+            name: userFromServer.name,
+            email: userFromServer.email
+          }
+        );
+        LocalUserProfileService.setCurrentUser(userFromServer.id);
+        
         return userFromServer
       } else {
         setUser(null)
+        LocalUserProfileService.clearCurrentUser()
         return null
       }
     } catch (error) {
       console.error("Error refreshing auth status:", error)
       setUser(null)
+      LocalUserProfileService.clearCurrentUser()
       return null
     }
   }, [])
@@ -122,6 +159,7 @@ export function UserProvider({ children }) {
   const clearUserData = useCallback(() => {
     setUser(null)
     setPlayer(null)
+    LocalUserProfileService.clearCurrentUser()
   }, [])
   const value = {
     user,
