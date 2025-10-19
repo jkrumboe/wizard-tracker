@@ -5,6 +5,16 @@
 // This lets Nginx or the current origin proxy /api requests in production
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
+// Log API configuration on startup (only in development)
+if (import.meta.env.DEV) {
+  console.debug('🔧 API Configuration:', {
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    API_BASE_URL: API_BASE_URL || '(relative path - proxied by nginx)',
+    DEV: import.meta.env.DEV,
+    SKIP_BACKEND: import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL
+  });
+}
+
 // API endpoints
 export const API_ENDPOINTS = {
   base: API_BASE_URL,

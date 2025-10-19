@@ -118,4 +118,60 @@ router.get('/me', auth, async (req, res, next) => {
   }
 });
 
+// PATCH /users/:userId/name - Update user's username (protected route)
+router.patch('/:userId/name', auth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { name } = req.body;
+
+    // Verify the user is updating their own username
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only update your own username' });
+    }
+
+    // Validate name
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Valid username is required' });
+    }
+
+    const trimmedName = name.trim();
+    if (trimmedName.length < 3 || trimmedName.length > 50) {
+      return res.status(400).json({ error: 'Username must be between 3 and 50 characters' });
+    }
+
+    // Check if username already exists (case-insensitive)
+    const existingUser = await User.findOne({ 
+      username: { $regex: new RegExp(`^${trimmedName}$`, 'i') },
+      _id: { $ne: req.user._id }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    // Update the username
+    req.user.username = trimmedName;
+    await req.user.save();
+
+    // Generate new JWT with updated username
+    const token = jwt.sign(
+      { userId: req.user._id, username: req.user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Username updated successfully',
+      token,
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        createdAt: req.user.createdAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

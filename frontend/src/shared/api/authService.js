@@ -287,10 +287,10 @@ class AuthService {
 
   async updateProfile({ name }) {
     try {
-      // For now, we'll just update the local user object
-      // You can implement a backend endpoint to update user profile later
+      // Update the local user object (fallback for offline mode)
       if (this.currentUser) {
         this.currentUser.name = name;
+        this.currentUser.username = name; // Keep username in sync with name
         console.debug('🔄 Profile updated locally:', name);
         return this.currentUser;
       }

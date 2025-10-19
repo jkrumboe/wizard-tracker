@@ -17,7 +17,7 @@ import authService from '@/shared/api/authService'
 const Profile = () => {
   const { id: paramId } = useParams()
   const location = useLocation()
-  const { user, refreshPlayerData } = useUser()
+  const { user, refreshPlayerData, setUser } = useUser()
   // For now, only allow viewing your own profile (paramId support can be added later)
   const isOwnProfile = !paramId || paramId === user?.id
   
@@ -248,32 +248,49 @@ const handleEditProfile = async () => {
     
     // Update username using the Users API through backend
     if (sanitizedEditedName && sanitizedEditedName !== user.name) {
+      let backendUpdateSucceeded = false;
+      
       try {
         // First try to update using the Users API (requires backend implementation)
-        await userService.updateUserName(user.$id, sanitizedEditedName);
-        console.debug('Username updated successfully via Users API');
+        const result = await userService.updateUserName(user.$id, sanitizedEditedName);
+        console.debug('✅ Username updated successfully via Users API');
+        backendUpdateSucceeded = true;
         setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
       } catch (error) {
         // Only log warning if it's not the expected "backend not available" error
         if (!error.message.includes('Backend server not available')) {
-          console.warn('Users API update failed, falling back to account service:', error);
+          console.warn('❌ Users API update failed, falling back to account service:', error);
+        } else {
+          console.debug('⚠️ Backend not available, using local-only update');
         }
-        // Fallback to account service if backend is not available
+        // Fallback to account service if backend is not available (local-only update)
         try {
           await authService.updateProfile({ name: sanitizedEditedName });
-          console.debug('Username updated successfully via account service');
-          setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
+          console.debug('✅ Username updated locally via account service (will not persist to backend)');
+          setSuccessMessage(prev => prev ? `${prev} Username updated locally (offline)!` : 'Username updated locally (offline)!');
         } catch (fallbackError) {
-          console.error('Both Users API and account service failed:', fallbackError);
+          console.error('❌ Both Users API and account service failed:', fallbackError);
           throw fallbackError;
         }
       }
       
-      // Add a small delay to ensure the update is processed
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Refresh the user context to get updated data
-      await refreshPlayerData();
+      // Only refresh from backend if the backend update succeeded
+      // This prevents overwriting local changes with stale data
+      if (backendUpdateSucceeded) {
+        // Add a small delay to ensure the update is processed
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Refresh the user context to get updated data from backend
+        await refreshPlayerData();
+      } else {
+        // For local-only updates, manually update the user context
+        // so the UI reflects the change immediately
+        setUser(prev => ({
+          ...prev,
+          name: sanitizedEditedName,
+          username: sanitizedEditedName
+        }));
+      }
     }
 
     // Clear success message after 3 seconds
