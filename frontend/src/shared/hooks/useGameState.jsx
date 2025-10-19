@@ -123,29 +123,35 @@ export function GameStateProvider({ children }) {
   }, [gameState]);
 
   // Add a player to the game
-  const addPlayer = useCallback(() => {
+  const addPlayer = useCallback((customName = null) => {
     setGameState((prevState) => {
       // Generate a unique ID based on timestamp and random number
       const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
       
-      // Get currently used names in the game
-      const usedNames = prevState.players.map(player => player.name);
+      let playerName;
       
-      // Filter out names that are already in use
-      const availableNames = PLAYER_NAMES.filter(name => !usedNames.includes(name));
-      
-      // If we're out of unique names (unlikely but possible), add a number to an existing name
-      let randomName;
-      if (availableNames.length === 0) {
-        // Take a random name and add a number to it
-        randomName = PLAYER_NAMES[Math.floor(Math.random() * PLAYER_NAMES.length)] + 
-          (Math.floor(Math.random() * 100) + 1);
+      if (customName) {
+        // Use the custom name if provided
+        playerName = customName;
       } else {
-        // Select a random name from the available names
-        randomName = availableNames[Math.floor(Math.random() * availableNames.length)];
+        // Get currently used names in the game
+        const usedNames = prevState.players.map(player => player.name);
+        
+        // Filter out names that are already in use
+        const availableNames = PLAYER_NAMES.filter(name => !usedNames.includes(name));
+        
+        // If we're out of unique names (unlikely but possible), add a number to an existing name
+        if (availableNames.length === 0) {
+          // Take a random name and add a number to it
+          playerName = PLAYER_NAMES[Math.floor(Math.random() * PLAYER_NAMES.length)] + 
+            (Math.floor(Math.random() * 100) + 1);
+        } else {
+          // Select a random name from the available names
+          playerName = availableNames[Math.floor(Math.random() * availableNames.length)];
+        }
       }
 
-      const player = { id: uniqueId, name: randomName };
+      const player = { id: uniqueId, name: playerName };
       
       return {
         ...prevState,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
+import { useUser } from "@/shared/hooks/useUser"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { GripVertical } from 'lucide-react';
@@ -101,6 +102,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
 const NewGame = () => {
   
   const navigate = useNavigate()
+  const { user } = useUser()
   // const { players, loading } = usePlayers()
   const { 
     gameState, 
@@ -123,6 +125,7 @@ const NewGame = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [gameToDelete, setGameToDelete] = useState(null)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [hasAutoAddedUser, setHasAutoAddedUser] = useState(false)
   
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -198,7 +201,18 @@ const NewGame = () => {
   // Reset game state when entering the new game page to ensure a clean state
   useEffect(() => {
     resetGame();
+    setHasAutoAddedUser(false); // Reset the flag when resetting the game
   }, [resetGame]);
+  
+  // Add logged-in user to player list after reset
+  useEffect(() => {
+    // Only add user once, if we have a logged-in user and haven't auto-added them yet
+    if (user && user.username && !hasAutoAddedUser && gameState.players.length === 0 && !gameState.gameStarted) {
+      // Add the logged-in user as the first player
+      addPlayer(user.username);
+      setHasAutoAddedUser(true); // Mark that we've added the user
+    }
+  }, [user, hasAutoAddedUser, gameState.players.length, gameState.gameStarted, addPlayer]);
   
   // Also refresh when activeTab changes to 'paused-games'
   useEffect(() => {
