@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
@@ -18,7 +18,7 @@ const Profile = () => {
   const { id: paramId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, refreshPlayerData, setUser } = useUser()
+  const { user, setUser } = useUser()
   // For now, only allow viewing your own profile (paramId support can be added later)
   const isOwnProfile = !paramId || paramId === user?.id
   
@@ -136,7 +136,7 @@ useEffect(() => {
         
         setAllGames(userGames || []);
       } catch (err) {
-        console.debug('Local games not available:', err);
+        console.error('Local games not available:', err);
         setAllGames([]);
       }
       
@@ -204,9 +204,18 @@ const handleStartEditing = useCallback(() => {
 }, [user, avatarUrl]);
 
 // Handle navigation state to start editing mode
+// Use a ref to track if we've already opened edit mode from navigation
+const hasOpenedFromNavigation = useRef(false);
+
 useEffect(() => {
-  if (location.state?.openEdit && user && !editing && avatarUrl) {
+  if (location.state?.openEdit && user && !editing && avatarUrl && !hasOpenedFromNavigation.current) {
+    hasOpenedFromNavigation.current = true;
     handleStartEditing();
+  }
+  
+  // Reset the ref when navigation state is cleared
+  if (!location.state?.openEdit) {
+    hasOpenedFromNavigation.current = false;
   }
 }, [location.state, user, avatarUrl, editing, handleStartEditing]);
 
@@ -218,7 +227,15 @@ const handleEditProfile = async () => {
     setError(null);
     setSuccessMessage('');
     
-    const sanitizedEditedName = DOMPurify.sanitize(editedName);
+    // Remove any spaces and sanitize the name
+    const sanitizedEditedName = DOMPurify.sanitize(editedName.replace(/\s/g, ''));
+    
+    // Validate username doesn't contain spaces
+    if (sanitizedEditedName && /\s/.test(sanitizedEditedName)) {
+      setError('Username cannot contain spaces');
+      setSaving(false);
+      return;
+    }
     
     // Handle avatar upload if a file was selected
     if (selectedAvatarFile) {
@@ -245,25 +262,34 @@ const handleEditProfile = async () => {
     
     // Update username using the Users API through backend
     if (sanitizedEditedName && sanitizedEditedName !== user.name) {
-      let backendUpdateSucceeded = false;
+      let newUserData = null;
       
       try {
         // First try to update using the Users API (requires backend implementation)
-        await userService.updateUserName(user.$id, sanitizedEditedName);
-        console.debug('✅ Username updated successfully via Users API');
-        backendUpdateSucceeded = true;
+        const result = await userService.updateUserName(user.$id, sanitizedEditedName);
+        
+        // Extract updated user data from the result
+        if (result && result.user) {
+          newUserData = {
+            ...user,
+            name: result.user.username,
+            username: result.user.username,
+            // Keep other properties from the result if available
+            ...(result.user.id && { id: result.user.id, $id: result.user.id })
+          };
+        }
+        
         setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
       } catch (error) {
         // Only log warning if it's not the expected "backend not available" error
         if (!error.message.includes('Backend server not available')) {
           console.warn('❌ Users API update failed, falling back to account service:', error);
         } else {
-          console.debug('⚠️ Backend not available, using local-only update');
+          console.error('⚠️ Backend not available, using local-only update');
         }
         // Fallback to account service if backend is not available (local-only update)
         try {
           await authService.updateProfile({ name: sanitizedEditedName });
-          console.debug('✅ Username updated locally via account service (will not persist to backend)');
           setSuccessMessage(prev => prev ? `${prev} Username updated locally (offline)!` : 'Username updated locally (offline)!');
         } catch (fallbackError) {
           console.error('❌ Both Users API and account service failed:', fallbackError);
@@ -272,21 +298,17 @@ const handleEditProfile = async () => {
       }
       
       // Update the user context immediately to reflect changes in UI
-      setUser(prev => ({
-        ...prev,
+      const updatedUserData = newUserData || {
+        ...user,
         name: sanitizedEditedName,
         username: sanitizedEditedName
-      }));
+      };
       
-      // Only refresh from backend if the backend update succeeded
-      // This prevents overwriting local changes with stale data
-      if (backendUpdateSucceeded) {
-        // Add a small delay to ensure the update is processed
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Refresh the user context to get updated data from backend
-        await refreshPlayerData();
-      }
+      // Force a complete state update by creating a new object
+      setUser(() => updatedUserData);
+      
+      // Force a re-render by updating the edited name
+      setEditedName(sanitizedEditedName);
     }
 
     // Clear success message after 3 seconds
@@ -297,6 +319,11 @@ const handleEditProfile = async () => {
     setEditedAvatar('');
     setSelectedAvatarFile(null);
     setPreviewAvatarUrl('');
+    
+    // Reset the ref to allow reopening from navigation in the future
+    hasOpenedFromNavigation.current = false;
+    // Clear the navigation state when closing edit mode after save
+    navigate(location.pathname, { replace: true, state: {} });
   } catch (err) {
     console.error("Error updating profile:", err);
     setError("Failed to update profile");
@@ -401,6 +428,8 @@ if (editing) {
           setSelectedAvatarFile(null);
           setPreviewAvatarUrl('');
           setEditing(false);
+          // Reset the ref to allow reopening from navigation in the future
+          hasOpenedFromNavigation.current = false;
           // Clear the navigation state to prevent reopening edit mode
           navigate(location.pathname, { replace: true, state: {} });
         }} className='close-button-edit'>x</button>
@@ -462,10 +491,22 @@ if (editing) {
               type="text"
               className='edit-name'
               value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
+              onChange={(e) => {
+                // Remove any spaces from the input
+                const nameWithoutSpaces = e.target.value.replace(/\s/g, '');
+                setEditedName(nameWithoutSpaces);
+              }}
               placeholder={user?.name || "Enter username"}
               maxLength={128}
             />
+          <small style={{ 
+            color: 'var(--text-secondary)', 
+            fontSize: '0.85rem',
+            marginTop: '0.25rem',
+            display: 'block'
+          }}>
+            No spaces allowed in username
+          </small>
 
           {uploadingAvatar && (
             <div className="uploading-indicator">

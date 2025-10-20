@@ -11,7 +11,6 @@ class UserService {
   async updateUserName(userId, name) {
     // Skip backend call if in development mode without configured backend
     if (this.skipBackend) {
-      console.debug('⚠️ SKIP_BACKEND is true - backend not configured for dev mode');
       throw new Error('Backend server not available - will use fallback method');
     }
     
@@ -19,8 +18,6 @@ class UserService {
       // Get the auth token from localStorage (use correct key 'auth_token')
       const token = localStorage.getItem('auth_token');
       const endpoint = API_ENDPOINTS.users.updateName(userId);
-      
-      console.debug('🔄 Updating username via backend:', { endpoint, userId, name, hasToken: !!token });
       
       const response = await fetch(endpoint, {
         method: 'PATCH',
@@ -38,11 +35,9 @@ class UserService {
       }
 
       const result = await response.json();
-      console.debug('✅ Backend update successful:', result);
       
       // If backend returns a new token (because username changed), update it
       if (result.token) {
-        console.debug('🔑 Updating auth token with new username');
         localStorage.setItem('auth_token', result.token);
       }
       
