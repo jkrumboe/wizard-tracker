@@ -16,8 +16,8 @@ class UserService {
     }
     
     try {
-      // Get the auth token from localStorage
-      const token = localStorage.getItem('authToken');
+      // Get the auth token from localStorage (use correct key 'auth_token')
+      const token = localStorage.getItem('auth_token');
       const endpoint = API_ENDPOINTS.users.updateName(userId);
       
       console.debug('🔄 Updating username via backend:', { endpoint, userId, name, hasToken: !!token });
@@ -43,7 +43,7 @@ class UserService {
       // If backend returns a new token (because username changed), update it
       if (result.token) {
         console.debug('🔑 Updating auth token with new username');
-        localStorage.setItem('authToken', result.token);
+        localStorage.setItem('auth_token', result.token);
       }
       
       return result;

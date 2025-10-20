@@ -707,7 +707,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    /* z-index: 1000; */
     padding: var(--spacing-md);
   }
 
@@ -790,7 +790,7 @@
 
   .avatar-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-sm);
@@ -816,10 +816,10 @@
     .cancle-button {
       width: auto;
       font-size: 1rem;
-      min-width: 120px;
-      padding: var(--spacing-xs) 0 !important;
+      /* min-width: 120px; */
+      padding: var(--spacing-xs) var(--spacing-sm) !important;
       justify-content: center;
-      height: 32px; /* Set a fixed height for both buttons */
+      /* height: 32px; */
       display: flex;
       align-items: center;
     }

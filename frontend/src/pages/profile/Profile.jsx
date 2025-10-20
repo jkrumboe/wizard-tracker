@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useParams, Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
@@ -17,11 +17,11 @@ import authService from '@/shared/api/authService'
 const Profile = () => {
   const { id: paramId } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, refreshPlayerData, setUser } = useUser()
   // For now, only allow viewing your own profile (paramId support can be added later)
   const isOwnProfile = !paramId || paramId === user?.id
   
-  const [gameHistory, setGameHistory] = useState([])
   const [allGames, setAllGames] = useState([])
   const [tags, setTags] = useState([])
   // const [defaultTags, setDefaultTags] = useState([])
@@ -135,12 +135,9 @@ useEffect(() => {
         });
         
         setAllGames(userGames || []);
-        // Use the same data for gameHistory (recent games)
-        setGameHistory(userGames || []);
       } catch (err) {
         console.debug('Local games not available:', err);
         setAllGames([]);
-        setGameHistory([]);
       }
       
     } catch (error) {
@@ -193,17 +190,10 @@ useEffect(() => {
 
   if (currentPlayer) {
     fetchTags();
-  }
+  };
 }, [currentPlayer, isOwnProfile]);
 
-// Handle navigation state to start editing mode
-useEffect(() => {
-  if (location.state?.openEdit && user && !editing) {
-    handleStartEditing();
-  }
-}, [location.state, user]);
-
-const handleStartEditing = () => {
+const handleStartEditing = useCallback(() => {
   setEditedName(user?.name || '');
   setEditedAvatar(avatarUrl || '');
   setSelectedAvatarFile(null);
@@ -211,7 +201,14 @@ const handleStartEditing = () => {
   setError(null);
   setSuccessMessage('');
   setEditing(true);
-};
+}, [user, avatarUrl]);
+
+// Handle navigation state to start editing mode
+useEffect(() => {
+  if (location.state?.openEdit && user && !editing && avatarUrl) {
+    handleStartEditing();
+  }
+}, [location.state, user, avatarUrl, editing, handleStartEditing]);
 
 const handleEditProfile = async () => {
   if (saving) return; // Prevent multiple simultaneous saves
@@ -252,7 +249,7 @@ const handleEditProfile = async () => {
       
       try {
         // First try to update using the Users API (requires backend implementation)
-        const result = await userService.updateUserName(user.$id, sanitizedEditedName);
+        await userService.updateUserName(user.$id, sanitizedEditedName);
         console.debug('✅ Username updated successfully via Users API');
         backendUpdateSucceeded = true;
         setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
@@ -274,6 +271,13 @@ const handleEditProfile = async () => {
         }
       }
       
+      // Update the user context immediately to reflect changes in UI
+      setUser(prev => ({
+        ...prev,
+        name: sanitizedEditedName,
+        username: sanitizedEditedName
+      }));
+      
       // Only refresh from backend if the backend update succeeded
       // This prevents overwriting local changes with stale data
       if (backendUpdateSucceeded) {
@@ -282,14 +286,6 @@ const handleEditProfile = async () => {
         
         // Refresh the user context to get updated data from backend
         await refreshPlayerData();
-      } else {
-        // For local-only updates, manually update the user context
-        // so the UI reflects the change immediately
-        setUser(prev => ({
-          ...prev,
-          name: sanitizedEditedName,
-          username: sanitizedEditedName
-        }));
       }
     }
 
@@ -309,24 +305,9 @@ const handleEditProfile = async () => {
   }
 };
 
-// Only show error if we have an explicit error message or if currentPlayer is null
-// Don't fail if tags or other minor data is missing
-if (error || (!currentPlayer && isOwnProfile)) {
-  return (
-      <div className="error">{error || 'Profile not available'}</div>
-  )
-}
-
-// Don't render anything if currentPlayer is not available yet
-if (!currentPlayer) {
-  return <div>Loading...</div>;
-}
-
-const recentGames = gameHistory.slice(0, 3);
-
 // Calculate actual stats from user's games
 const calculatedStats = useMemo(() => {
-  if (!allGames || allGames.length === 0) {
+  if (!currentPlayer || !allGames || allGames.length === 0) {
     return {
       totalGames: 0,
       wins: 0,
@@ -380,6 +361,19 @@ const COLORS = [
   '#6B7280' // Gray color for "No Games Yet"
 ]
 
+// Only show error if we have an explicit error message or if currentPlayer is null
+// Don't fail if tags or other minor data is missing
+if (error || (!currentPlayer && isOwnProfile)) {
+  return (
+      <div className="error">{error || 'Profile not available'}</div>
+  )
+}
+
+// Don't render anything if currentPlayer is not available yet
+if (!currentPlayer) {
+  return <div>Loading...</div>;
+}
+
 // Add functionality to toggle tags for adding or removing
 // const toggleTag = (tag) => {
 //   // Ensure tags is always an array
@@ -407,6 +401,8 @@ if (editing) {
           setSelectedAvatarFile(null);
           setPreviewAvatarUrl('');
           setEditing(false);
+          // Clear the navigation state to prevent reopening edit mode
+          navigate(location.pathname, { replace: true, state: {} });
         }} className='close-button-edit'>x</button>
         
         {/* Avatar preview */}
@@ -420,10 +416,11 @@ if (editing) {
 
         <div className="avatar-actions">
           <label className="avatar-upload-label">
-            <span>Upload Avatar</span>
+            <span>Upload</span>
             <input
             type="file"
             className="edit-avatar"
+            label="Upload Avatar"
             accept="image/*"
             onChange={async (e) => {
               const file = e.target.files[0];
@@ -461,6 +458,15 @@ if (editing) {
             />
           </label>
 
+          <input
+              type="text"
+              className='edit-name'
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              placeholder={user?.name || "Enter username"}
+              maxLength={128}
+            />
+
           {uploadingAvatar && (
             <div className="uploading-indicator">
               Uploading avatar...
@@ -486,14 +492,7 @@ if (editing) {
           )}
         </div>
 
-        <input
-        type="text"
-        className='edit-name'
-        value={editedName}
-        onChange={(e) => setEditedName(e.target.value)}
-        placeholder={user?.name || "Enter username"}
-        maxLength={128}
-        />
+        
         
         {/* Success message */}
         {successMessage && (
