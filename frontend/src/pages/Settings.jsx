@@ -360,6 +360,16 @@ const Settings = () => {
     setTotalStorageSize(totalSize);
   };
 
+  const formatStorageSize = (sizeInKB) => {
+    if (sizeInKB < 1024) {
+      return `${sizeInKB.toFixed(2)} KB`;
+    } else if (sizeInKB < 1024 * 1024) {
+      return `${(sizeInKB / 1024).toFixed(2)} MB`;
+    } else {
+      return `${(sizeInKB / (1024 * 1024)).toFixed(2)} GB`;
+    }
+  };
+
   const handleDeleteGame = (gameId, isTableGame = false) => {
     setGameToDelete({ id: gameId, isTableGame });
     setDeleteAll(false);
@@ -804,7 +814,7 @@ const Settings = () => {
               {/* <h3>Local Storage</h3> */}
               <div className="storage-metric">
                 <span>Total Storage Used</span>
-                <span className="storage-value">{totalStorageSize.toFixed(2)} KB</span>
+                <span className="storage-value">{formatStorageSize(totalStorageSize)}</span>
               </div>
               <div className="storage-metric">
                 <span>Saved Games</span>
