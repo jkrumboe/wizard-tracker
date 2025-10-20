@@ -152,7 +152,7 @@
   color: var(--text-color);
   font-weight: 500;
   /* padding-bottom: var(--spacing-xs); */
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .stats-cards {
@@ -282,7 +282,7 @@
 /* Additional Stats Styling */
 .additional-stats {
   background-color: var(--card-background);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: var(--spacing-sm);
   margin: var(--spacing-sm) 0;
@@ -353,6 +353,6 @@
   margin-top: 0;
   margin-bottom: var(--spacing-md);
   color: var(--text-color);
-  border-bottom: 2px solid var(--primary-color);
+  border-bottom: 1px solid var(--primary-color);
   padding-bottom: var(--spacing-xs);
 }

@@ -597,7 +597,7 @@ if (editing) {
 
         {/* Desktop Tab Navigation */}
         {window.innerWidth > 768 && (
-          <div className="profile-tabs" style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--border-color)', marginBottom: '1rem' }}>
+          <div className="profile-tabs" style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
             <button
               onClick={() => setActiveTab('performance')}
               style={{

@@ -713,7 +713,7 @@
 .inline-number-input {
   width: 60px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  border: 2px solid var(--primary-color);
+  border: 1px solid var(--primary-color);
   border-radius: var(--radius-md);
   background-color: var(--background-color);
   color: var(--text-color);
@@ -893,7 +893,7 @@
 .tricks-input {
   width: 80px;
   padding: var(--spacing-sm);
-  border: 2px solid var(--primary-color);
+  border: 1px solid var(--primary-color);
   border-radius: var(--radius-md);
   background-color: var(--background-color);
   color: var(--text-color);
@@ -931,7 +931,7 @@
 .made-value {
   color: var(--primary-color);
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
-  border: 2px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 /* Score container to display round points and total points together */
@@ -966,7 +966,7 @@
   font-weight: 800;
   font-size: 1.3em;
   background: linear-gradient(135deg, var(--card-background-alt) 0%, var(--card-background-light) 100%);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 

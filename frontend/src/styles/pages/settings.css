@@ -207,7 +207,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color);
-  /* border: 2px solid var(--border-color); */
+  /* border: 1px solid var(--border-color); */
   background-color: var(--card-background-alt);
 }
 
@@ -416,7 +416,7 @@
 
 .confirm-button.danger-button {
   background-color: transparent;
-  border: 2px solid var(--error-color);
+  border: 1px solid var(--error-color);
   color: var(--error-color);
 }
 

@@ -316,7 +316,7 @@
   width: 30px;
   height: 40px;
   background: linear-gradient(135deg, var(--card-background) 0%, var(--card-background-light) 100%);
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   animation: cardFloat 4s ease-in-out infinite;

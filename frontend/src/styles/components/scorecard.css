@@ -159,7 +159,7 @@
   padding: 0 !important;
   box-shadow: none;
   isolation: isolate;
-  border-right: 2px solid var(--primary-color);
+  border-right: 1px solid var(--primary-color);
 }
 
 .total-score {
@@ -220,7 +220,7 @@
   /* Remove box shadows in favor of a consistent border */
   box-shadow: none !important;
   /* Apply a consistent right border that stays with the cell */
-  /* border-right: 2px solid var(--border-color) !important; */
+  /* border-right: 1px solid var(--border-color) !important; */
   z-index: 11;
   /* Critical fix: ensure the border stays with the cell */
   background-clip: padding-box;

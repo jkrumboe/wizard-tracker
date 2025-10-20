@@ -702,7 +702,7 @@ const Settings = () => {
                         borderRadius: '50%',
                         objectFit: 'cover',
                         cursor: 'pointer',
-                        border: '2px solid var(--primary-color)'
+                        border: '1px solid var(--primary-color)'
                       }}
                     />
                   </Link>
@@ -727,7 +727,7 @@ const Settings = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'var(--error-color)',
-                    border: '2px solid var(--error-color)',
+                    border: '1px solid var(--error-color)',
                   }}
                   title="Sign Out"
                   aria-label="Sign Out"
@@ -978,7 +978,7 @@ const Settings = () => {
                             const isUploaded = LocalGameStorage.isGameUploaded(gameId);
                             return (
                               <button 
-                                className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''}`}
+                                className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''} ${game.isPaused || isUploaded ? 'disabled' : ''}`}
                                 onClick={async () => {
                                   if (uploadingGames.has(gameId) || isUploaded) return; // Prevent double-click or duplicate upload
                                   
