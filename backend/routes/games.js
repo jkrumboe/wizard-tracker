@@ -108,6 +108,12 @@ router.post('/', async (req, res, next) => {
         createdAt: game.createdAt
       }
     });
+  } catch (error) {
+    console.error('[POST /api/games] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /games/:id - Get a game by MongoDB _id
 router.get('/:id', async (req, res) => {
   try {
@@ -193,11 +199,6 @@ router.get('/shared/:shareId', async (req, res) => {
   } catch (error) {
     console.error('[GET /api/games/shared/:shareId] Error:', error);
     res.status(500).json({ error: error.message });
-  }
-});
-  } catch (error) {
-    console.error('[POST /api/games] Error:', error);
-    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
