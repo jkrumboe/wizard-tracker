@@ -25,6 +25,24 @@ export async function checkGameSyncStatus(gameId) {
       };
     }
 
+    // Special handling for imported shared games - treat them as synced without backend checks
+    const isImportedSharedGame = localGame.isImported || localGame.isShared || localGame.originalGameId;
+    
+    if (isImportedSharedGame) {
+      // Imported shared games should always be treated as synced
+      // They reference the original shared game and shouldn't be re-uploaded
+      return {
+        exists: true,
+        local: true,
+        cloud: true, // Consider as cloud-synced since it's a shared game
+        synced: true,
+        status: 'Synced',
+        isUploaded: true, // Mark as uploaded to prevent sync attempts
+        cloudGameId: localGame.cloudGameId || localGame.originalGameId || null,
+        isImported: true
+      };
+    }
+
     // Backend-only: Only check by cloudGameId (MongoDB _id)
     let cloudExists = false;
     if (localGame.isUploaded && localGame.cloudGameId) {
@@ -68,29 +86,18 @@ export async function checkGameSyncStatus(gameId) {
       // Content-based check is not supported, always return false
       cloudExists = false;
     }
-
-    // Special handling for imported shared games
-    const isImportedSharedGame = localGame.isImported || localGame.isShared || localGame.originalGameId;
     
     // Determine sync status
     const localExists = true;
     let isSynced;
     let status;
     
-    if (isImportedSharedGame && localGame.isUploaded && localGame.cloudGameId) {
-      // Imported shared games that are marked as uploaded should be considered synced
-      isSynced = true;
-      status = 'Synced';
-    } else if (localExists && cloudExists) {
+    if (localExists && cloudExists) {
       isSynced = true;
       status = 'Synced';
     } else if (localGame.isUploaded && cloudExists) {
       isSynced = true;
       status = 'Synced'; // Game is uploaded and exists in cloud
-    } else if (isImportedSharedGame) {
-      // Imported games without proper sync should be treated as synced to prevent re-upload
-      isSynced = true;
-      status = 'Synced';
     } else {
       isSynced = false;
       status = 'Local'; // Treat upload-failed as local for badge/UI
@@ -102,8 +109,8 @@ export async function checkGameSyncStatus(gameId) {
       cloud: cloudExists,
       synced: isSynced,
       status: status,
-  isUploaded: localGame.isUploaded || false,
-  cloudGameId: localGame.cloudGameId || null
+      isUploaded: localGame.isUploaded || false,
+      cloudGameId: localGame.cloudGameId || null
     };
   } catch (error) {
     console.error('Error checking game sync status:', error);

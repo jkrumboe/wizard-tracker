@@ -75,7 +75,7 @@ export async function getSharedGameData(shareId) {
 /**
  * Import a shared game into local storage
  * @param {Object} gameData - The reconstructed game data
- * @param {Object} shareInfo - Information about the share (contains gameId, timestamp)
+ * @param {Object} shareInfo - Information about the share (contains gameId, timestamp, selectedPlayerId, currentUserId)
  * @returns {Promise<string>} The new local game ID
  */
 export async function importSharedGame(gameData, shareInfo) {
@@ -97,7 +97,22 @@ export async function importSharedGame(gameData, shareInfo) {
     const newGameId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     // Extract players from the correct location
-    const players = gameData.players || gameData.gameState?.players || [];
+    let players = gameData.players || gameData.gameState?.players || [];
+    
+    // If user selected a player, update that player's data with current user info
+    if (shareInfo.selectedPlayerId && shareInfo.currentUserId) {
+      players = players.map(player => {
+        if (player.id === shareInfo.selectedPlayerId) {
+          return {
+            ...player,
+            userId: shareInfo.currentUserId, // Link to current user
+            isClaimed: true, // Mark as claimed by the importing user
+            claimedAt: new Date().toISOString()
+          };
+        }
+        return player;
+      });
+    }
     
     // Prepare the game data for local storage
     const localGameData = {
@@ -111,7 +126,12 @@ export async function importSharedGame(gameData, shareInfo) {
       importedAt: new Date().toISOString(),
       sharedFrom: `Shared game from ${players.find(p => p.id === gameData.winner_id)?.name || 'Unknown'}`,
       is_local: true,
-      player_ids: players.map(p => p.id) || []
+      player_ids: players.map(p => p.id) || [],
+      // Add claimed player info if applicable
+      ...(shareInfo.selectedPlayerId && {
+        claimedPlayerId: shareInfo.selectedPlayerId,
+        claimedByUserId: shareInfo.currentUserId
+      })
     };
     
     // Save to local storage - saveGame(gameState, gameName, isPaused)
@@ -126,6 +146,9 @@ export async function importSharedGame(gameData, shareInfo) {
     LocalGameStorage.markGameAsUploaded(savedGameId, shareInfo.shareId || shareInfo.gameId || shareInfo.originalGameId, null);
     
     console.debug(`Imported shared game ${savedGameId} and marked as synced with cloud ID: ${shareInfo.shareId || shareInfo.gameId || shareInfo.originalGameId}`);
+    if (shareInfo.selectedPlayerId) {
+      console.debug(`Linked player ${shareInfo.selectedPlayerId} to user ${shareInfo.currentUserId}`);
+    }
     
     return savedGameId;
   } catch (error) {

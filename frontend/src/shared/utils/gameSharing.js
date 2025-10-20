@@ -63,10 +63,24 @@ export async function shareNatively(url, game) {
   }
 
   try {
-    const winnerName = game.players?.find(p => p.id === game.winner_id)?.name || 'Unknown';
+    // Handle both direct and nested game structures
+    const players = game.players || game.gameState?.players || [];
+    const winnerId = game.winner_id || game.gameState?.winner_id;
+    const finalScores = game.final_scores || game.gameState?.final_scores || {};
+    
+    // console.debug('Share debug - Players:', players);
+    // console.debug('Share debug - Winner ID:', winnerId);
+    // console.debug('Share debug - Final Scores:', finalScores);
+    
+    const winnerName = players.find(p => p.id === winnerId)?.name || 'Unknown';
+    const winnerScore = finalScores[winnerId] || 0;
+    
+    // console.debug('Share debug - Winner Name:', winnerName);
+    // console.debug('Share debug - Winner Score:', winnerScore);
+    
     const shareData = {
-      title: 'Wizard Tracker Game',
-      text: `Check out this Wizard game! Winner: ${winnerName} with ${game.final_scores?.[game.winner_id] || 0} points.`,
+      title: 'Wizard Tracker',
+      text: `Check out this Wizard game! Winner: ${winnerName} with ${winnerScore} points.`,
       url: url
     };
 

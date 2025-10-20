@@ -74,6 +74,20 @@
   text-align: center;
 }
 
+.import-error-message {
+  background-color: var(--error-color-alpha, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--error-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  color: var(--error-color);
+}
+
+.import-error-message p {
+  margin: 0;
+  font-weight: 500;
+}
+
 .import-description {
   color: var(--text-secondary);
   margin-bottom: var(--spacing-lg);

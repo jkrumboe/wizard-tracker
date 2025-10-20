@@ -149,3 +149,80 @@
   color: var(--primary-light);
   font-weight: 600;
 }
+
+/* Import Game Player Selection Modal */
+.modal-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.current-user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--background-accent);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.current-user-info strong {
+  color: var(--text-color);
+}
+
+.player-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.player-selection-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-selection-item:hover {
+  border-color: var(--primary-color);
+  background-color: var(--background-accent);
+}
+
+.player-selection-item.selected {
+  border-color: var(--primary-color);
+  background-color: var(--primary-color-alpha);
+}
+
+.player-selection-item input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.player-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+}
+
+.player-name {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.player-score {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

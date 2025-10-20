@@ -91,7 +91,7 @@ const Home = () => {
           <div className="game-history">
             {recentLocalGames
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-              .slice(0, 6)
+              // .slice(0, 6)
               .map(game => (
                 <GameHistoryItem key={game.id} game={game} />
               ))}

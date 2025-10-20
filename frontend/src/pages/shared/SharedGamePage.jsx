@@ -2,19 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSharedGameData, importSharedGame } from '@/shared/api/sharedGameService';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
+import { useUser } from '@/shared/hooks';
 import LoadingScreen from '@/components/common/AppLoadingScreen';
+import { ImportGamePlayerSelectModal } from '@/components/modals';
 import { UserIcon, CalendarIcon, TrophyIcon, ShareIcon } from '@/components/ui/Icon';
 import '@/styles/pages/shared-game.css';
 
 const SharedGamePage = () => {
   const { shareId } = useParams();
   const navigate = useNavigate();
+  const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sharedGameInfo, setSharedGameInfo] = useState(null);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
   const [alreadyImported, setAlreadyImported] = useState(false);
+  const [showPlayerSelectModal, setShowPlayerSelectModal] = useState(false);
 
   useEffect(() => {
     const loadSharedGame = async () => {
@@ -73,9 +77,40 @@ const SharedGamePage = () => {
   }, [shareId]);
 
   const handleImportGame = async () => {
+    // Check one more time before proceeding
+    if (alreadyImported) {
+      setError('This game has already been imported to your collection.');
+      return;
+    }
+    
+    // If user is logged in, show player selection modal
+    if (user) {
+      setShowPlayerSelectModal(true);
+    } else {
+      // If not logged in, import without player selection
+      await performImport(null);
+    }
+  };
+
+  const performImport = async (selectedPlayerId) => {
     try {
       setImporting(true);
       setError(null);
+
+      // Double-check if already imported before proceeding
+      const existingGames = LocalGameStorage.getAllSavedGames();
+      const isAlreadyImported = Object.values(existingGames).some(game => {
+        return game.originalGameId === shareId || 
+               game.gameState?.originalGameId === shareId ||
+               game.cloudGameId === shareId;
+      });
+      
+      if (isAlreadyImported) {
+        setAlreadyImported(true);
+        setError('This game has already been imported to your collection.');
+        setImporting(false);
+        return;
+      }
 
       // Use the game data that's already loaded
       const gameData = sharedGameInfo.gameData;
@@ -87,17 +122,22 @@ const SharedGamePage = () => {
       // Import the game into local storage, passing shareId for proper syncing
       const shareInfoWithId = {
         ...sharedGameInfo,
-        shareId: shareId // Pass the shareId for marking as synced
+        shareId: shareId, // Pass the shareId for marking as synced
+        selectedPlayerId: selectedPlayerId, // Pass the selected player ID
+        currentUserId: user?.id // Pass the current user ID if logged in
       };
       const newGameId = await importSharedGame(gameData, shareInfoWithId);
       
       setImported(true);
+      setAlreadyImported(true); // Mark as imported to prevent further attempts
       
       // Redirect to settings page after a short delay
       setTimeout(() => {
         navigate('/settings', { 
           state: { 
-            message: 'Shared game imported successfully!',
+            message: selectedPlayerId 
+              ? 'Shared game imported and linked to your profile!' 
+              : 'Shared game imported successfully!',
             importedGameId: newGameId
           }
         });
@@ -188,12 +228,18 @@ const SharedGamePage = () => {
               </div>
             </div>
 
-            <div className="import-section">              
+            <div className="import-section">
+              {error && !imported && sharedGameInfo && (
+                <div className="import-error-message">
+                  <p>⚠️ {error}</p>
+                </div>
+              )}
+              
               <div className="import-actions">
                 {alreadyImported ? (
                   <>
                     <div className="already-imported-message">
-                      <p>✅ You already have this game in your collection!</p>
+                      <p>You already have this game in your collection!</p>
                     </div>
                     <button 
                       className="btn-secondary"
@@ -206,7 +252,7 @@ const SharedGamePage = () => {
                   <button 
                     className="btn-primary import-btn"
                     onClick={handleImportGame}
-                    disabled={importing}
+                    disabled={importing || alreadyImported}
                   >
                     {importing ? 'Importing...' : 'Import Game'}
                   </button>
@@ -222,6 +268,18 @@ const SharedGamePage = () => {
             </div>
           </div>
         )}
+
+        {/* Player Selection Modal */}
+        <ImportGamePlayerSelectModal
+          isOpen={showPlayerSelectModal}
+          onClose={() => setShowPlayerSelectModal(false)}
+          onConfirm={performImport}
+          players={(sharedGameInfo?.gameData?.players || []).map(player => ({
+            ...player,
+            final_score: sharedGameInfo?.gameData?.final_scores?.[player.id]
+          }))}
+          currentUser={user}
+        />
       </div>
     </div>
   );

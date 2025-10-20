@@ -971,6 +971,7 @@
     flex-direction: row;
     justify-content: center;
     border: 1px solid var(--border-color);
+    width: 100%;
   }
   
   .chart-container {
