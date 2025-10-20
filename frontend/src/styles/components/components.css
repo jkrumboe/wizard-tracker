@@ -165,7 +165,7 @@
 
   .mode-badge {
     padding: var(--spacing-xs) var(--spacing-md);
-    background-color: var(--badge-background);
+    background-color: var(--background-color);
     color: var(--text-white);
     border-radius: var(--radius-sm);
     font-size: 0.8rem;
