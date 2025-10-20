@@ -156,7 +156,7 @@
 
 .modal-btn.save-btn {
   background: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   box-shadow: var(--shadow-sm);
 }
 

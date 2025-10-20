@@ -152,7 +152,7 @@
 
 /* Import Game Player Selection Modal */
 .modal-description {
-  color: var(--text-secondary);
+  color: var(--text-color);
   margin-bottom: var(--spacing-lg);
   line-height: 1.5;
   text-align: center;
@@ -166,7 +166,7 @@
   background-color: var(--background-accent);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
-  color: var(--text-secondary);
+  color: var(--text-color);
   font-size: 0.9rem;
 }
 
@@ -223,6 +223,6 @@
 }
 
 .player-score {
-  color: var(--text-secondary);
+  color: var(--text-color);
   font-size: 0.9rem;
 }

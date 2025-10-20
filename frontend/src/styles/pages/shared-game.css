@@ -89,7 +89,7 @@
 }
 
 .import-description {
-  color: var(--text-secondary);
+  color: var(--text-color);
   margin-bottom: var(--spacing-lg);
   line-height: 1.5;
 }
@@ -117,7 +117,7 @@
 
 .shared-game-error p {
   margin-bottom: var(--spacing-lg);
-  color: var(--text-secondary);
+  color: var(--text-color);
 }
 
 .shared-game-success {
@@ -132,7 +132,7 @@
 }
 
 .shared-game-success p {
-  color: var(--text-secondary);
+  color: var(--text-color);
   margin-bottom: var(--spacing-sm);
 }
 

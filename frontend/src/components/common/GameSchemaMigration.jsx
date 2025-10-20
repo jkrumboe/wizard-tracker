@@ -327,7 +327,7 @@ const GameSchemaMigration = ({ onMigrationComplete }) => {
         .btn-primary {
           background: var(--color-primary);
           border-color: var(--color-primary);
-          color: white;
+          color: var(--text-color);
         }
 
         .btn-primary:hover:not(:disabled) {

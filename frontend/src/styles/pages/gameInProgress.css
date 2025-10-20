@@ -209,7 +209,7 @@
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 500;
-  color: white;
+  color: var(--text-color);
   z-index: 1000;
   min-width: 200px;
   text-align: center;

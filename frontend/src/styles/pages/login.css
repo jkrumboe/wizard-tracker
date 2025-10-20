@@ -47,9 +47,8 @@
     background-color: transparent;
     padding: var(--spacing-sm) 0;
     cursor: pointer;
-    text-align: left;
-    margin-bottom: var(--spacing-md);
-    box-shadow: none;
+    margin-bottom: var(--spacing-sm);
+    box-shadow: none !important;
   }
   
   .error-message {

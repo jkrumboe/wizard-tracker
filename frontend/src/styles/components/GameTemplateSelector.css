@@ -203,7 +203,7 @@
 
 .template-edit-btn.save-btn {
   background: var(--primary-color);
-  color: white;
+  color: var(--text-color);
 }
 
 .template-edit-btn.save-btn:hover {
@@ -249,12 +249,11 @@
   border: none;
   border-radius: var(--radius-md);
   font-size: 1.1rem;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-sm);
   background: var(--primary-color);
-  color: white;
+  color: var(--text);
 }
 
 .create-new-btn:hover {
@@ -348,7 +347,7 @@
 
 .delete-modal-btn.confirm {
   background: var(--error-color);
-  color: white;
+  color: var(--text-color);
 }
 
 .delete-modal-btn.confirm:hover {

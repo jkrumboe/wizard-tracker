@@ -1068,7 +1068,7 @@ const Settings = () => {
                     
                     <div className="settings-card-actions">
                       <button 
-                        className="delete-game-button"
+                        className="delete-game-button table"
                         onClick={() => handleDeleteGame(game.id, true)}
                         aria-label="Delete table game"
                       >

@@ -438,7 +438,7 @@ const TableGame = () => {
               onClick={saveGame}
               title="Save Game"
             >
-              <SaveIcon size={20} />
+              <SaveIcon size={16} />
               Save
             </button>
           </div>

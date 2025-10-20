@@ -135,7 +135,7 @@
 }
 
 .option-description {
-  color: var(--text-secondary);
+  color: var(--text-color);
   font-size: 0.9rem;
   margin-top: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
@@ -207,7 +207,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color);
-  /* border: 1px solid var(--border-color); */
+  /* border: 2px solid var(--border-color); */
   background-color: var(--card-background-alt);
 }
 
@@ -317,7 +317,7 @@
 
 .game-players {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -353,7 +353,8 @@
 }
 
 /* When offline, make delete-game-button take full height of its container */
-.delete-game-button.offline {
+.delete-game-button.offline,
+.delete-game-button.table {
   height: 100%;
   flex: 1 1 auto;
   align-self: stretch;
@@ -416,7 +417,7 @@
 
 .confirm-button.danger-button {
   background-color: transparent;
-  border: 1px solid var(--error-color);
+  border: 2px solid var(--error-color);
   color: var(--error-color);
 }
 
@@ -463,7 +464,7 @@
 }
 
 .no-games {
-  color: var(--text-secondary);
+  color: var(--text-color);
   font-style: italic;
   text-align: center;
   padding: var(--spacing-md);
@@ -577,7 +578,7 @@
 
 .info-label {
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-color);
   font-size: 0.9rem;
 }
 
@@ -619,7 +620,7 @@
 /* Cloud Sync Styles */
 .cloud-sync-button {
   background-color: var(--primary-color) !important;
-  color: var(--text-color) !important;
+  color: var(--text-white) !important;
 }
 
 .cloud-sync-button:disabled {
@@ -808,7 +809,7 @@
 
 .mode-badge.table {
   background-color: var(--secondary-color);
-  color: white;
+  color: var(--text-white);
   border-color: var(--secondary-color);
 }
 
