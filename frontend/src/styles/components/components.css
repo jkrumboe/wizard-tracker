@@ -1106,7 +1106,7 @@
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
     /* box-shadow: var(--shadow); */
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
   }
   
   .setup-section h2 {
@@ -1325,12 +1325,13 @@
     font-size: 1.1rem;
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
     box-shadow: none !important;
+    border: 1px solid var(--primary-color);
   }
 
   .start-game-btn:disabled {
     background-color: var(--disabled-background);
     cursor: not-allowed;
-    border: 1px solid var(--primary-color);
+    border: none !important;
   }
   
   .start-game-btn:hover:not(:disabled) {

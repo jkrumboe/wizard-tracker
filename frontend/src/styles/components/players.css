@@ -78,7 +78,7 @@
 /* Mobile touch improvements */
 @media (max-width: 768px) {
     .player-item {
-        padding: var(--spacing-sm);
+        padding: 0 var(--spacing-xs);
         min-height: 48px;
     }
     
