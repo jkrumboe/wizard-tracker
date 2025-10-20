@@ -75,8 +75,10 @@
 }
 
 .badge-controls-container .settings-button:hover {
-  background-color: var(--primary-color);
+  /* background-color: var(--primary-color); */
   color: var(--text-white);
+  box-shadow: none;
+  border: 1px solid var(--primary-color);
 }
 
 .game-controls .settings-button {
