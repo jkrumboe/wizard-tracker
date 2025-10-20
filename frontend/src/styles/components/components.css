@@ -2193,7 +2193,6 @@
   color: var(--primary-color);
   position: relative;
   padding-bottom: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
   flex-shrink: 0;
 }
 

@@ -843,7 +843,13 @@ const Settings = () => {
               <button 
                 className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
                 onClick={handleBulkCloudSync}
-                disabled={cloudSyncStatus.uploading || Object.values(savedGames).filter(game => !game.isPaused).length === 0}
+                disabled={
+                  cloudSyncStatus.uploading || 
+                  Object.values(savedGames).filter(game => !game.isPaused).length === 0 ||
+                  Object.entries(savedGames)
+                    .filter(([, game]) => !game.isPaused)
+                    .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced')
+                }
               >
                 {cloudSyncStatus.uploading ? (
                   <span className="share-spinner" aria-label="Syncing..." />
