@@ -16,7 +16,9 @@
   border-radius: var(--radius-md);
   padding: 0.35rem 0.75rem;
   font-size: 0.9rem;
-  transition: all 0.2s ease;
+  transform: none !important;
+  box-shadow: none !important;
+  /* transition: all 0.2s ease; */
 }
 
 /* .chart-toggle-btn:hover {
@@ -26,7 +28,7 @@
 .chart-toggle-btn.active {
   /* background-color: var(--primary-color); */
   color: var(--text-color);
-  border-color: var(--primary-color);
+  /* border-color: var(--primary-color); */
 }
 
 .chart-view-container {
