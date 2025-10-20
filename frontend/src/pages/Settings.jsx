@@ -798,7 +798,7 @@ const Settings = () => {
         </div>
 
         <div className="settings-section">
-          <h2>Storage{isOnline ? ' & Cloud Sync' : ''}</h2>
+          {/* <h2>Storage{isOnline ? ' & Cloud Sync' : ''}</h2> */}
           
           {/* {!isOnline && (
             <div className="offline-notification">
@@ -841,14 +841,14 @@ const Settings = () => {
           )}
 
           <div className="settings-actions">
-            <button className="settings-button refresh-button" onClick={() => {
+            {/* <button className="settings-button refresh-button" onClick={() => {
               loadSavedGames();
               calculateStorageUsage();
               setMessage({ text: 'Storage information refreshed.', type: 'info' });
             }}>
               <RefreshIcon size={18} />
               Refresh Storage
-            </button>
+            </button> */}
             {isOnline && user && (
               <button 
                 className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
@@ -955,10 +955,6 @@ const Settings = () => {
                                     navigate('/login');
                                     return;
                                   }
-                                  
-                                  console.debug('Share button clicked for gameId:', gameId);
-                                  console.debug('Game object:', game);
-                                  console.debug('Game object ID:', game.id);
                                   handleShareGame(gameId, game);
                                 }}
                                 aria-label={sharingGames.has(gameId) ? "Sharing..." : "Share game"}

@@ -41,7 +41,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  margin-top: var(--spacing-sm);
+  /* margin-top: var(--spacing-sm); */
 }
 
 .badge-controls-container .mode-badge {
