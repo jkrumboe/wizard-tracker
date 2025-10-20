@@ -1325,13 +1325,12 @@
     font-size: 1.1rem;
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
     box-shadow: none !important;
-    border: 1px solid var(--primary-color);
   }
 
   .start-game-btn:disabled {
     background-color: var(--disabled-background);
     cursor: not-allowed;
-    border: none !important;
+    border: 1px solid var(--primary-color);
   }
   
   .start-game-btn:hover:not(:disabled) {
