@@ -8,7 +8,6 @@ import "@/styles/pages/login.css"
 
 const Login = () => {
   const [username, setUsername] = useState('');
-  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -47,7 +46,7 @@ const Login = () => {
     }
     
     try {
-      await authService.register({ email: username, password, name });
+      await authService.register({ email: username, password });
       // Refresh the user context after successful registration
       await refreshAuthStatus();
       
@@ -79,47 +78,46 @@ const Login = () => {
           isRegistering ? handleRegister() : handleLogin();
         }}
       >
-        {isRegistering && (
+        <h2 className="login-title">{isRegistering ? "Create Account" : "Welcome Back"}</h2>
+        
+        <div className="input-group">
           <input
             type="text"
-            placeholder="Display Name (Optional)"
-            autoComplete="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={!isRegistering || !isOnline}
+            placeholder="Username"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={!isOnline}
+            required
           />
-        )}
-        <input
-          type="text"
-          placeholder="Username"
-          autoComplete="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          disabled={!isOnline}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="password-input"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={!isOnline}
-          required
-        />
+        </div>
+        
+        <div className="input-group">
+          <input
+            type="password"
+            placeholder="Password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={!isOnline}
+            required
+          />
+        </div>
+        
+        {error && <p className="error-message">{error}</p>}
+        
+        <button type="submit" className="submit-btn" disabled={!isOnline}>
+          {isRegistering ? "Sign Up" : "Sign In"}
+        </button>
+        
         <button
           type="button"
           className="switch-btn"
           onClick={() => setIsRegistering(!isRegistering)}
           disabled={!isOnline}
         >
-          {isRegistering ? "Sign In" : "No Account yet? Sign Up"}
+          {isRegistering ? "Already have an account? Sign In" : "No account yet? Sign Up"}
         </button>
-        <button type="submit" disabled={!isOnline}>
-          {isRegistering ? "Sign Up" : "Sign In"}
-        </button>
-        {error && <p className="error-message">{error}</p>}
       </form>
     </div>
   );
