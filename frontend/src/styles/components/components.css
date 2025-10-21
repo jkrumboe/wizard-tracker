@@ -1268,8 +1268,8 @@
   .setting-item {
     display: flex;
     align-items: center;
-    padding: var(--spacing-sm) 0;
-    margin-top: var(--spacing-sm);
+    /* padding: var(--spacing-sm) 0; */
+    margin-top: var(--spacing-md);
   }
 
   .setting-item label {
@@ -1335,7 +1335,7 @@
   }
 
   .start-game-btn:disabled {
-    background-color: var(--disabled-background);
+    background-color: transparent;
     cursor: not-allowed;
     border: 1px solid var(--primary-color);
   }
@@ -3234,7 +3234,7 @@
   gap: var(--spacing-md);
   max-height: 400px;
   overflow-y: auto;
-  padding-right: var(--spacing-xs);
+  padding-right: var(--spacing-sm);
 }
 
 /* Scrollbar styling for saved games list */
