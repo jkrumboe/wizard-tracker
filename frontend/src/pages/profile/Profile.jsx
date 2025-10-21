@@ -4,7 +4,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
 import { useUser } from '@/shared/hooks/useUser'
-import { StatIcon, EditIcon, CalendarIcon } from "@/components/ui/Icon"
+import { StatIcon, EditIcon, CalendarIcon, XIcon } from "@/components/ui/Icon"
+
 // Temporarily remove playerService imports since they're not implemented yet
 // import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
 import { getRecentLocalGames } from '@/shared/api/gameService'
@@ -432,7 +433,7 @@ if (editing) {
           hasOpenedFromNavigation.current = false;
           // Clear the navigation state to prevent reopening edit mode
           navigate(location.pathname, { replace: true, state: {} });
-        }} className='close-button-edit'>x</button>
+        }} className='close-button-edit'><XIcon size={20} /></button>
         
         {/* Avatar preview */}
         <div className="avatar-preview-container">
@@ -499,14 +500,7 @@ if (editing) {
               placeholder={user?.name || "Enter username"}
               maxLength={128}
             />
-          <small style={{ 
-            color: 'var(--text-secondary)', 
-            fontSize: '0.85rem',
-            marginTop: '0.25rem',
-            display: 'block'
-          }}>
-            No spaces allowed in username
-          </small>
+          
 
           {uploadingAvatar && (
             <div className="uploading-indicator">
@@ -514,7 +508,7 @@ if (editing) {
             </div>
           )}
 
-          {(previewAvatarUrl || (editedAvatar && editedAvatar !== defaultAvatar)) && (
+          {/* {(previewAvatarUrl || (editedAvatar && editedAvatar !== defaultAvatar)) && (
             <button
               onClick={() => {
                 // Clear the preview and selected file
@@ -530,10 +524,17 @@ if (editing) {
             >
               Remove Avatar
             </button>
-          )}
+          )} */}
         </div>
 
-        
+        <small style={{ 
+            color: 'var(--text-color)', 
+            fontSize: '0.85rem',
+            display: 'block',
+            alignSelf: 'center',
+          }}>
+            No spaces allowed in username
+          </small>
         
         {/* Success message */}
         {successMessage && (

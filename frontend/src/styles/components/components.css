@@ -627,7 +627,6 @@
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding-top: var(--spacing-md);
-    min-height: 280px;
     gap: var(--spacing-sm);
   }
   
@@ -720,6 +719,8 @@
     box-shadow: var(--shadow-lg);
     width: 100%;
     padding-top: var(--spacing-sm);
+    gap: var(--spacing-sm);
+    position: relative;
   }
 
   .profile-edit-header input {
@@ -749,7 +750,7 @@
     font-weight: 600;
     font-size: 1.1rem;
     padding: var(--spacing-sm) var(--spacing-xl);
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
     min-width: 140px;
     width: 100%;
     transition: all 0.2s;
@@ -794,7 +795,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-sm);
-    margin: var(--spacing-md) 0;
+    /* margin: var(--spacing-md) 0; */
     width: 100%;
   }
 
@@ -819,7 +820,7 @@
       /* min-width: 120px; */
       padding: var(--spacing-xs) var(--spacing-sm) !important;
       justify-content: center;
-      /* height: 32px; */
+      height: 36px;
       display: flex;
       align-items: center;
     }
@@ -890,21 +891,27 @@
   }
 
   .close-button-edit {
-    background-color: transparent;
-    color: var(--danger-color);
-    font-size: 1.5rem;
-    font-weight: bold;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    align-self: flex-end;
-    justify-self: flex-end;
-    margin-left: auto;
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: var(--spacing-xs);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    z-index: 10;
+    height: 30px;
+    width: 30px;
+  }
+
+  .close-button-edit:hover {
+    background: var(--border-color);
+    color: var(--text-color);
   }
   
   /* Stats Page */
