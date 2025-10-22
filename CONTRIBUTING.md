@@ -1,6 +1,4 @@
-# Contributing to KeepWiz
-
-First off, thank you for considering contributing to KeepWiz! It's people like you that make KeepWiz such a great tool.
+First off, thank you for considering contributing to KeepWiz!
 
 ## Code of Conduct
 
@@ -53,7 +51,6 @@ This section guides you through submitting an enhancement suggestion, including 
 
 - Node.js (v18 or higher)
 - Docker and Docker Compose (if using the containerized setup)
-- PostgreSQL (if running locally without Docker)
 
 ### Setup Steps
 
@@ -81,13 +78,8 @@ This section guides you through submitting an enhancement suggestion, including 
 
 5. Start the development servers
    ```bash
-   # Option 1: Using Docker Compose
+   # Terminal 1: Start backend containers (API & Database)
    docker compose up
-   
-   # Option 2: Running locally
-   # Terminal 1: Start the backend
-   cd backend
-   npm start
    
    # Terminal 2: Start the frontend
    cd frontend
