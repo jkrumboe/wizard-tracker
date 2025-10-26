@@ -116,6 +116,7 @@
 }
 
 .error-message {
+  display: flex;
   margin-top: var(--spacing-sm);
   padding: var(--spacing-sm);
   background: rgba(239, 68, 68, 0.1);
@@ -123,6 +124,7 @@
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
   border: 1px solid rgba(239, 68, 68, 0.2);
+  justify-content: center;
 }
 
 .add-game-modal-actions {
