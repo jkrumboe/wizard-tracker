@@ -238,7 +238,7 @@ button,
 
 button:hover:not(:disabled),
 .btn:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-color);
 }
@@ -254,7 +254,7 @@ button:disabled {
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--primary-dark);
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow);
 }
 
@@ -279,7 +279,7 @@ html:not([data-theme="dark"]) .btn-primary:hover:not(:disabled) {
   background-color: var(--primary-color);
   color: var(--text-white);
   border-color: var(--primary-color);
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow);
 }
 
@@ -293,7 +293,7 @@ html:not([data-theme="dark"]) .btn-secondary {
 html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
   background-color: var(--primary-color);
   color: var(--text-white);
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow-lg);
 }
 
@@ -304,7 +304,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 .btn-accent:hover:not(:disabled) {
   background-color: #d97706;
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow);
 }
 
@@ -315,7 +315,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 .btn-success:hover:not(:disabled) {
   background-color: #059669;
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow);
 }
 
@@ -326,7 +326,7 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 
 .btn-error:hover:not(:disabled) {
   background-color: var(--danger-color-dark);
-  transform: translateY(-2px);
+  transform: scale(0.95);
   box-shadow: var(--shadow);
 }
 

@@ -7,7 +7,7 @@ import { useUser } from "@/shared/hooks/useUser"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { GripVertical } from 'lucide-react';
-import { XIcon } from '@/components/ui/Icon';
+import { XIcon, DiceIcon } from '@/components/ui/Icon';
 import {
   DndContext,
   closestCenter,
@@ -334,6 +334,35 @@ const NewGame = () => {
     setMaxRounds(validValue);
   }
 
+  const handleRandomizePlayers = () => {
+    if (gameState.players.length < 2) return;
+    
+    // Create a shuffled copy using Fisher-Yates algorithm
+    const shuffled = [...gameState.players];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    // Convert shuffled array into a series of swap operations
+    // that can be applied to the current order
+    const current = [...gameState.players];
+    
+    // Apply swaps to transform current to shuffled
+    for (let i = 0; i < shuffled.length; i++) {
+      if (current[i].id !== shuffled[i].id) {
+        // Find where the correct player currently is
+        const correctIdx = current.findIndex(p => p.id === shuffled[i].id);
+        if (correctIdx > i) {
+          // Swap in the current array (to track state)
+          [current[i], current[correctIdx]] = [current[correctIdx], current[i]];
+          // Apply the swap to actual state
+          reorderPlayers(correctIdx, i);
+        }
+      }
+    }
+  }
+
   // Calculate the recommended rounds once (memoized)
   const recommendedRounds = gameState.players.length > 2 && gameState.players.length <= 6 
     ? Math.floor(60 / gameState.players.length)
@@ -408,9 +437,11 @@ const NewGame = () => {
                 </div>
               </div>
 
-              <button className="addPlayer" onClick={handleAddPlayer}>
-                +
-              </button>
+              <div className="player-actions">
+                <button className="addPlayer" onClick={handleAddPlayer}>
+                  +
+                </button>
+              </div>
               
               <div className="settings-group">
                 <div className="setting-item">
@@ -432,6 +463,15 @@ const NewGame = () => {
                           Recommended: {recommendedRounds} rounds
                     </div>
                   </div>
+                  <button 
+                    className="randomizer-btn" 
+                    onClick={handleRandomizePlayers}
+                    title="Randomize player order"
+                    aria-label="Randomize player order"
+                    disabled={gameState.players.length < 3}
+                  >
+                    <DiceIcon size={25} />
+                  </button>
                 </div>
               </div>
             </div>

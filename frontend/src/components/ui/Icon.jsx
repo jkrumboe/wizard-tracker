@@ -71,4 +71,5 @@ export const FileIcon = (props) => <Icon name="File" {...props} />;
 export const TableIcon = (props) => <Icon name="Table" {...props} />;
 export const CopyIcon = (props) => <Icon name="Copy" {...props} />;
 export const CheckMarkIcon = (props) => <Icon name="Check" {...props} />;
+export const DiceIcon = (props) => <Icon name="Dices" {...props} />;
 

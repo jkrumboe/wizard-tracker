@@ -1268,6 +1268,7 @@
   .setting-item {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     /* padding: var(--spacing-sm) 0; */
     margin-top: var(--spacing-md);
   }
@@ -1276,7 +1277,7 @@
     font-size: 1.3rem;
     font-weight: 600;
     color: var(--text-color);
-    margin-right: var(--spacing-md);
+    margin-right: var(--spacing-sm);
   }
   
   .setting-item span {
@@ -1307,10 +1308,51 @@
   .setting-content {
     display: flex;
     flex-direction: column;
+    flex: 1;
+  }
+
+  .randomizer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm);
+    margin-left: var(--spacing-md);
+    background-color: var(--primary-color);
+    color: var(--text-white);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 50px;
+    height: 50px;
+  }
+
+  .randomizer-btn:hover {
+    background-color: var(--primary-dark);
+  }
+
+  .randomizer-btn:hover:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .randomizer-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
+  }
+
+  .randomizer-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--border-color);
+  }
+
+  .randomizer-btn:disabled:hover {
+    background-color: var(--border-color);
+    transform: none;
   }
 
   .rounds-hint {
-    font-size: 1rem;
+    font-size: 0.8rem;
     color: var(--text-color);
     font-style: italic;
   }
@@ -2383,7 +2425,7 @@
     padding: var(--spacing-xs);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
-    background-color: var(--card-background-alt);
+    background-color: var(--input-background);
     color: var(--text-color);
     transition: border-color 0.3s, box-shadow 0.3s;
   }
