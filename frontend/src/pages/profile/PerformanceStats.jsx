@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { useMemo, useState } from 'react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import StatCard from '@/components/ui/StatCard';
 
 const PerformanceStats = ({ games, currentPlayer }) => {
+  const [selectedView, setSelectedView] = useState('overview'); // 'overview', 'detailed', 'headToHead'
+  
   // Calculate comprehensive statistics from games
   const stats = useMemo(() => {
     if (!games || games.length === 0) {
@@ -19,7 +21,20 @@ const PerformanceStats = ({ games, currentPlayer }) => {
         performanceOverTime: [],
         winLossOverTime: [],
         scoreDistribution: [],
-        recentTrend: 'neutral'
+        recentTrend: 'neutral',
+        currentStreak: { type: 'none', count: 0 },
+        longestWinStreak: 0,
+        longestLossStreak: 0,
+        performanceByPlayerCount: {},
+        bestGame: null,
+        worstGame: null,
+        headToHead: {},
+        bidAccuracy: 0,
+        perfectBids: 0,
+        achievements: [],
+        timeStats: {},
+        comebackWins: 0,
+        dominantWins: 0
       };
     }
 
@@ -32,6 +47,24 @@ const PerformanceStats = ({ games, currentPlayer }) => {
     let totalRounds = 0;
     const performanceData = [];
     const winLossData = [];
+    const headToHeadStats = {};
+    const performanceByPlayerCount = {};
+    let perfectBidsCount = 0;
+    let totalBids = 0;
+    let correctBids = 0;
+    let comebackWins = 0;
+    let dominantWins = 0;
+    let currentStreakType = null;
+    let currentStreakCount = 0;
+    let longestWinStreak = 0;
+    let longestLossStreak = 0;
+    let tempWinStreak = 0;
+    let tempLossStreak = 0;
+    let bestGameScore = -Infinity;
+    let worstGameScore = Infinity;
+    let bestGameData = null;
+    let worstGameData = null;
+    const timeStats = {};
 
     // Sort games by date (oldest first for chronological performance)
     const sortedGames = [...games].sort((a, b) => {

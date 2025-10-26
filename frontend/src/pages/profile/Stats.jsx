@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import PerformanceStats from './PerformanceStats'
+import PerformanceStatsEnhanced from './PerformanceStatsEnhanced'
 import { useUser } from '@/shared/hooks/useUser'
 import { getRecentLocalGames } from '@/shared/api/gameService'
 import { ArrowLeftCircleIcon } from '@/components/ui/Icon'
@@ -9,7 +9,6 @@ const Stats = () => {
   const navigate = useNavigate()
   const { user } = useUser()
   const [allGames, setAllGames] = useState([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   // Create player object from user data
@@ -28,7 +27,6 @@ const Stats = () => {
     const fetchData = async () => {
       try {
         if (!currentPlayer) {
-          setLoading(false);
           return;
         }
 
@@ -83,11 +81,9 @@ const Stats = () => {
         });
         
         setAllGames(userGames || []);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching stats data:', err)
         setError('Failed to load statistics')
-        setLoading(false)
       }
     }
     
@@ -121,7 +117,7 @@ const Stats = () => {
           </button>
         </div>
 
-        <PerformanceStats games={allGames} currentPlayer={currentPlayer} />
+        <PerformanceStatsEnhanced games={allGames} currentPlayer={currentPlayer} />
       </div>
   )
 }
