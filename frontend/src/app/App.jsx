@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
-import AppLoadingScreen from "@/components/common/AppLoadingScreen"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 
 // Lazy load pages for better performance
@@ -134,51 +133,15 @@ function URLImportHandler() {
 }
 
 function App() {
-  const [isAppLoading, setIsAppLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-
   useEffect(() => {
-    // Show loading screen for minimum time, then hide it
-    const timer = setTimeout(() => {
-      setIsAppLoading(false);
-    }, 1500);
-
-    // Listen for beforeunload to show loading during updates/refreshes
-    const handleBeforeUnload = () => {
-      setIsUpdating(true);
-    };
-
-    // Don't set isUpdating on visibility change - let AppLoadingScreen handle this logic
-    // This was causing the loading screen to show on every tab switch
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    // Removed visibilitychange listener that was causing the issue
-
     // Register service worker for PWA functionality
     register()
     
     // Initialize authentication service
     authService.initialize()
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      // Removed visibilitychange cleanup
-    };
   }, []);
   
   return (
-    <AppLoadingScreen
-      isLoading={isAppLoading || isUpdating}
-      appName="Wizard Tracker"
-      appSubtitle="Track your Wizard card game stats"
-      minLoadingTime={600}
-      showOnAppOpen={true}
-      appOpenThreshold={15 * 60 * 1000}
-      storageKey="wizardAppLastUsed"
-      appVersion={import.meta.env.VITE_APP_VERSION}
-      versionKey="wizardAppVersion"
-    >
       <Router>
         <ThemeProvider>
           <OnlineStatusProvider>
@@ -209,26 +172,6 @@ function App() {
                   <Route path="/table" element={<TableGame />} />
                   <Route path="/game/:id" element={<GameDetails />} />
                   <Route path="/game/current" element={<GameInProgress />} />
-                  {/* <Route path="/lobby" element={
-                    <OnlineProtectedRoute>
-                      <Lobby />
-                    </OnlineProtectedRoute>
-                  } />
-                  <Route path="/room/:roomId" element={
-                    <OnlineProtectedRoute>
-                      <GameRoom />
-                    </OnlineProtectedRoute>
-                  } />
-                  <Route path="/multiplayer/:roomId" element={
-                    <OnlineProtectedRoute>
-                      <MultiplayerGame />
-                    </OnlineProtectedRoute>
-                  } />
-                  <Route path="/multiplayer/new" element={
-                    <OnlineProtectedRoute>
-                      <MultiplayerGame />
-                    </OnlineProtectedRoute>
-                  } /> */}
                   <Route path="/login" element= {
                     <OnlineProtectedRoute>
                       <Login />
@@ -244,7 +187,6 @@ function App() {
           </OnlineStatusProvider>
         </ThemeProvider>
       </Router>
-    </AppLoadingScreen>
   )
 }
 
