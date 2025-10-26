@@ -1,19 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
-import Profile from "@/pages/profile/Profile"
-import Leaderboard from "@/pages/profile/Leaderboard"
-import Stats from "@/pages/profile/Stats"
-import Settings from "@/pages/Settings"
-import { NewGame, GameDetails, GameInProgress, Lobby, MultiplayerGame, GameRoom, TableGame } from "@/pages/game"
-import Login from "@/pages/auth/Login"
-import SharedGamePage from "@/pages/shared/SharedGamePage"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
 import AppLoadingScreen from "@/components/common/AppLoadingScreen"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
+
+// Lazy load pages for better performance
+const Profile = lazy(() => import("@/pages/profile/Profile"))
+const Leaderboard = lazy(() => import("@/pages/profile/Leaderboard"))
+const Stats = lazy(() => import("@/pages/profile/Stats"))
+const Settings = lazy(() => import("@/pages/Settings"))
+const NewGame = lazy(() => import("@/pages/game").then(module => ({ default: module.NewGame })))
+const GameDetails = lazy(() => import("@/pages/game").then(module => ({ default: module.GameDetails })))
+const GameInProgress = lazy(() => import("@/pages/game").then(module => ({ default: module.GameInProgress })))
+const Lobby = lazy(() => import("@/pages/game").then(module => ({ default: module.Lobby })))
+const MultiplayerGame = lazy(() => import("@/pages/game").then(module => ({ default: module.MultiplayerGame })))
+const GameRoom = lazy(() => import("@/pages/game").then(module => ({ default: module.GameRoom })))
+const TableGame = lazy(() => import("@/pages/game").then(module => ({ default: module.TableGame })))
+const Login = lazy(() => import("@/pages/auth/Login"))
+const SharedGamePage = lazy(() => import("@/pages/shared/SharedGamePage"))
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
@@ -180,8 +188,9 @@ function App() {
                 <URLImportHandler />
                 <Navbar />
                 <div className="main-container">
-                <Routes>
-                  <Route path="/" element={<Home />} />
+                <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
                   <Route path="/profile" element={
                     <AuthProtectedRoute>
                       <Profile />
@@ -227,7 +236,8 @@ function App() {
                   }/>
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/shared/:shareId" element={<SharedGamePage />} />
-              </Routes>
+                  </Routes>
+                </Suspense>
                 </div>
               </GameStateProvider>
             </UserProvider>
