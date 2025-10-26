@@ -626,6 +626,7 @@
 .cloud-sync-button:disabled {
   background-color: var(--muted-color) !important;
   color: var(--text-muted) !important;
+  border: 1px solid var(--primary-color) !important;
   cursor: not-allowed;
 }
 
