@@ -41,8 +41,6 @@ self.addEventListener("install", (event) => {
       );
     })
   );
-  // Immediately activate the new service worker
-  self.skipWaiting();
 });
 
 // Activate event - clean up old caches and take control immediately

@@ -1,66 +1,92 @@
 // Enhanced service worker registration with automatic updates
+let updatePromptActive = false;
+let isReloading = false;
+
 export function register() {
-  if ("serviceWorker" in navigator) {
-    // Track if we're already in the process of updating to prevent loops
-    let isUpdating = false;
-    
-    window.addEventListener("load", () => {
-      const swUrl = `${window.location.origin}/service-worker.js`
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
 
-      navigator.serviceWorker
-        .register(swUrl)
-        .then((registration) => {
-          console.debug("ServiceWorker registration successful with scope: ", registration.scope)
-          
-          // Check for updates every 60 seconds when the page is visible (increased from 30s)
-          setInterval(() => {
-            if (document.visibilityState === 'visible' && !isUpdating) {
-              registration.update();
-            }
-          }, 60000);
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+  if (isDev) {
+    console.debug('Skipping service worker registration in development');
+    return;
+  }
 
-          // Listen for updates and automatically trigger update
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker && !isUpdating) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.debug('New version available - updating automatically...');
-                  isUpdating = true;
-                  
-                  // Clear all caches immediately
-                  clearAllCachesAndUpdate(registration);
-                }
-              });
-            }
-          });
+  window.addEventListener("load", () => {
+    const swUrl = `${window.location.origin}/service-worker.js`
 
-          // Check if there's already a waiting service worker
-          if (registration.waiting && !isUpdating) {
-            console.debug('Update available on page load - updating automatically...');
-            isUpdating = true;
-            clearAllCachesAndUpdate(registration);
+    navigator.serviceWorker
+      .register(swUrl)
+      .then((registration) => {
+        console.debug("ServiceWorker registration successful with scope: ", registration.scope)
+
+        // Check for updates every 30 seconds when the page is visible
+        setInterval(() => {
+          if (document.visibilityState === 'visible') {
+            registration.update();
           }
-        })
-        .catch((error) => {
-          console.error("ServiceWorker registration failed: ", error)
-        })
-    })
+        }, 30000);
 
-    // Listen for controller change and reload immediately (only once)
-    let controllerChangeHandled = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!controllerChangeHandled) {
-        controllerChangeHandled = true;
-        console.debug('New service worker activated - reloading...');
-        window.location.reload();
-      }
-    });
+        // Listen for updates and prompt the user before activating
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.debug('New version available - awaiting user confirmation to update.');
+                promptForUpdate(registration);
+              }
+            });
+          }
+        });
+
+        // Check if there's already a waiting service worker
+        if (registration.waiting) {
+          console.debug('Update available on page load - awaiting user confirmation to update.');
+          promptForUpdate(registration);
+        }
+      })
+      .catch((error) => {
+        console.error("ServiceWorker registration failed: ", error)
+      })
+  })
+
+  // Listen for controller change and reload once the update has been applied
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (isReloading) {
+      return;
+    }
+
+    isReloading = true;
+    console.debug('New service worker activated - reloading...');
+    window.location.reload();
+  });
+}
+
+function promptForUpdate(registration) {
+  if (updatePromptActive) {
+    return;
+  }
+
+  const waitingWorker = registration.waiting;
+  if (!waitingWorker) {
+    return;
+  }
+
+  updatePromptActive = true;
+
+  const shouldUpdate = window.confirm('A new version of Wizard Tracker is available. Reload now to update?');
+
+  if (shouldUpdate) {
+    applyUpdate(waitingWorker);
+  } else {
+    updatePromptActive = false;
   }
 }
 
 // Helper function to clear caches and trigger update
-async function clearAllCachesAndUpdate(registration) {
+async function applyUpdate(waitingWorker) {
   try {
     // Clear all caches
     if ('caches' in window) {
@@ -69,15 +95,18 @@ async function clearAllCachesAndUpdate(registration) {
       console.debug('All caches cleared');
     }
 
-    // Tell the waiting service worker to skip waiting
-    if (registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-    
-    // The controllerchange event will trigger a reload
-    // Note: We removed CSS cache busting here as it can cause unnecessary reloads
+    // Clear CSS cache by invalidating stylesheets
+    const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    cssLinks.forEach(link => {
+      const href = link.href;
+      const separator = href.includes('?') ? '&' : '?';
+      link.href = `${href}${separator}v=${Date.now()}`;
+    });
+
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
   } catch (error) {
     console.error('Auto-update failed:', error);
+    updatePromptActive = false;
   }
 }
 
@@ -92,5 +121,3 @@ export function unregister() {
       })
   }
 }
-  
-  
