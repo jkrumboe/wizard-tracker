@@ -11,6 +11,7 @@ const AutoLogoutHandler = () => {
   const { user, logout } = useAuth();
   const previousOnlineStatusRef = useRef(null);
   const hasInitializedRef = useRef(false);
+  const isLoggingOutRef = useRef(false);
 
   useEffect(() => {
     // Initialize the previous status on first load
@@ -19,26 +20,32 @@ const AutoLogoutHandler = () => {
       hasInitializedRef.current = true;
       
       // If we're starting in offline mode and there's a user, log them out immediately
-      if (!isOnline && user) {
+      if (!isOnline && user && !isLoggingOutRef.current) {
         console.debug('🔐 App started in offline mode with logged-in user - logging out immediately');
+        isLoggingOutRef.current = true;
         logout().then(() => {
           console.debug('✅ User automatically logged out due to offline mode on startup');
+          isLoggingOutRef.current = false;
         }).catch((error) => {
           console.error('❌ Error during startup logout:', error);
+          isLoggingOutRef.current = false;
         });
       }
       return;
     }
 
     // Check if we went from online to offline and there's a logged-in user
-    if (previousOnlineStatusRef.current && !isOnline && user) {
+    if (previousOnlineStatusRef.current && !isOnline && user && !isLoggingOutRef.current) {
       console.debug('🔐 Online mode disabled - automatically logging out user');
       
       // Perform automatic logout
+      isLoggingOutRef.current = true;
       logout().then(() => {
         console.debug('✅ User automatically logged out due to offline mode');
+        isLoggingOutRef.current = false;
       }).catch((error) => {
         console.error('❌ Error during automatic logout:', error);
+        isLoggingOutRef.current = false;
       });
     }
 
