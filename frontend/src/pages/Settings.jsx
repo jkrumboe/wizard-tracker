@@ -686,6 +686,68 @@ const Settings = () => {
     }
   };
 
+  const handleDownloadCloudGames = async () => {
+    if (!isOnline) {
+      setMessage({ text: 'Cannot download games while in offline mode', type: 'error' });
+      return;
+    }
+
+    // Check authentication
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    setCloudSyncStatus({ 
+      uploading: true, 
+      progress: 'Downloading cloud games...', 
+      uploadedCount: 0, 
+      totalCount: 0 
+    });
+
+    try {
+      const { downloadUserCloudGames } = await import('@/shared/api/gameService');
+      const result = await downloadUserCloudGames();
+
+      setCloudSyncStatus({ 
+        uploading: false, 
+        progress: '', 
+        uploadedCount: 0, 
+        totalCount: 0 
+      });
+
+      // Refresh the saved games list
+      loadSavedGames();
+
+      if (result.downloaded > 0) {
+        setMessage({ 
+          text: `✅ Downloaded ${result.downloaded} games from cloud! (${result.skipped} already existed locally)`, 
+          type: 'success' 
+        });
+      } else if (result.skipped > 0) {
+        setMessage({ 
+          text: `All ${result.skipped} cloud games already exist locally`, 
+          type: 'info' 
+        });
+      } else {
+        setMessage({ 
+          text: 'No cloud games found', 
+          type: 'info' 
+        });
+      }
+    } catch (error) {
+      setCloudSyncStatus({ 
+        uploading: false, 
+        progress: '', 
+        uploadedCount: 0, 
+        totalCount: 0 
+      });
+      setMessage({ text: `Download failed: ${error.message}`, type: 'error' });
+      console.error('Download error:', error);
+    }
+  };
+
   return (
       <div className="settings-container">
         {/* {message.text && (
@@ -850,24 +912,38 @@ const Settings = () => {
               Refresh Storage
             </button> */}
             {isOnline && user && (
-              <button 
-                className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
-                onClick={handleBulkCloudSync}
-                disabled={
-                  cloudSyncStatus.uploading || 
-                  Object.values(savedGames).filter(game => !game.isPaused).length === 0 ||
-                  Object.entries(savedGames)
-                    .filter(([, game]) => !game.isPaused)
-                    .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced')
-                }
-              >
-                {cloudSyncStatus.uploading ? (
-                  <span className="share-spinner" aria-label="Syncing..." />
-                ) : (
-                  <CloudIcon size={18} />
-                )}
-                {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
-              </button>
+              <>
+                <button 
+                  className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
+                  onClick={handleBulkCloudSync}
+                  disabled={
+                    cloudSyncStatus.uploading || 
+                    Object.values(savedGames).filter(game => !game.isPaused).length === 0 ||
+                    Object.entries(savedGames)
+                      .filter(([, game]) => !game.isPaused)
+                      .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced')
+                  }
+                >
+                  {cloudSyncStatus.uploading ? (
+                    <span className="share-spinner" aria-label="Syncing..." />
+                  ) : (
+                    <CloudIcon size={18} />
+                  )}
+                  {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
+                </button>
+                <button 
+                  className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
+                  onClick={handleDownloadCloudGames}
+                  disabled={cloudSyncStatus.uploading}
+                >
+                  {cloudSyncStatus.uploading ? (
+                    <span className="share-spinner" aria-label="Downloading..." />
+                  ) : (
+                    <CloudIcon size={18} />
+                  )}
+                  {cloudSyncStatus.uploading ? 'Downloading...' : 'Download from Cloud'}
+                </button>
+              </>
             )}
             {isOnline && !user && (
               <button 

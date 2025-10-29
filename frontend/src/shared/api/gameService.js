@@ -39,6 +39,94 @@ export async function getRecentGames(_limit = 5) {
   return data.games || [];
 }
 
+/**
+ * Download all cloud games for the logged-in user and save them locally
+ * @returns {Promise<{success: boolean, downloaded: number, skipped: number, errors: number}>}
+ */
+export async function downloadUserCloudGames() {
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token) {
+    throw new Error('You must be logged in to download cloud games');
+  }
+
+  try {
+    // Fetch all user's games from cloud (paginated)
+    let allGames = [];
+    let currentPage = 1;
+    let hasMore = true;
+    
+    while (hasMore) {
+      const res = await fetch(`${API_ENDPOINTS.games.list}?page=${currentPage}&limit=100&sortOrder=desc`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch cloud games');
+      }
+      
+      const data = await res.json();
+      allGames = allGames.concat(data.games || []);
+      hasMore = data.pagination?.hasNextPage || false;
+      currentPage++;
+    }
+
+    let downloaded = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    // Save each game to local storage
+    for (const cloudGame of allGames) {
+      try {
+        // Check if game already exists locally
+        const localId = cloudGame.localId || cloudGame.id;
+        const existingGame = LocalGameStorage.loadGame(localId);
+        
+        if (existingGame) {
+          // Game already exists locally - skip
+          skipped++;
+          continue;
+        }
+
+        // Prepare game data for local storage
+        const gameToSave = {
+          ...cloudGame.gameData,
+          id: localId,
+          cloudGameId: cloudGame.id,
+          uploadedToCloud: true,
+          downloadedFromCloud: true,
+          created_at: cloudGame.createdAt,
+          savedAt: new Date().toISOString()
+        };
+
+        // Save to local storage
+        LocalGameStorage.saveGame(localId, gameToSave);
+        
+        // Mark as uploaded to prevent re-uploading
+        LocalGameStorage.markGameAsUploaded(localId, cloudGame.id);
+        
+        downloaded++;
+      } catch (error) {
+        console.error('Error saving cloud game locally:', error);
+        errors++;
+      }
+    }
+
+    return {
+      success: true,
+      total: allGames.length,
+      downloaded,
+      skipped,
+      errors
+    };
+  } catch (error) {
+    console.error('Error downloading cloud games:', error);
+    throw error;
+  }
+}
+
 //=== Schema Migration and Validation ===//
 
 /**
@@ -268,6 +356,7 @@ const gameService = {
   getGameById,
   updateGame,
   deleteGame,
+  downloadUserCloudGames,
   // New schema functions
   migrateGameToNewSchema,
   convertToLegacyFormat,

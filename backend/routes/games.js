@@ -4,12 +4,8 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-// TEMP: Disable auth middleware for all routes
-// router.use(auth);
-
-// POST /games - Create game for authenticated user
-// POST /games - Create game for authenticated user
-router.post('/', async (req, res, next) => {
+// POST /games - Create game for authenticated user (requires authentication)
+router.post('/', auth, async (req, res, next) => {
   try {
     const { gameData, localId } = req.body;
 
@@ -22,13 +18,11 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'localId (string) is required' });
     }
 
-    // TEMP: Allow unauthenticated game creation by using a dummy userId if not present
-    let userId = null;
-    if (req.user && req.user._id) {
-      userId = req.user._id;
-    } else {
-      // Use a fixed dummy userId for unauthenticated games
-      userId = '000000000000000000000000';
+    // Get userId from authenticated user
+    const userId = req.user._id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to upload games' });
     }
 
     // Enhanced duplicate checking
@@ -128,7 +122,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT /games/:id/share - Make a game shareable with a shareId
-router.put('/:id/share', async (req, res) => {
+router.put('/:id/share', auth, async (req, res) => {
   try {
     const { shareId } = req.body;
     
@@ -142,19 +136,21 @@ router.put('/:id/share', async (req, res) => {
       return res.status(409).json({ error: 'Share ID already in use' });
     }
 
-    const game = await Game.findByIdAndUpdate(
-      req.params.id,
-      { 
-        shareId, 
-        isShared: true, 
-        sharedAt: new Date() 
-      },
-      { new: true }
-    );
-
+    // Verify user owns the game
+    const game = await Game.findById(req.params.id);
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }
+
+    if (game.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Not authorized to share this game' });
+    }
+
+    // Update the game
+    game.shareId = shareId;
+    game.isShared = true;
+    game.sharedAt = new Date();
+    await game.save();
 
     res.json({
       message: 'Game shared successfully',
@@ -203,7 +199,7 @@ router.get('/shared/:shareId', async (req, res) => {
 });
 
 // GET /games - List games for authenticated user (sorted by createdAt)
-router.get('/', async (req, res, next) => {
+router.get('/', auth, async (req, res, next) => {
   try {
     const { page = 1, limit = 10, sortOrder = 'desc', shareId } = req.query;
 
@@ -241,37 +237,21 @@ router.get('/', async (req, res, next) => {
     const sortDirection = sortOrder === 'asc' ? 1 : -1;
     const skip = (pageNum - 1) * limitNum;
 
+    // Get userId from authenticated user
+    const userId = req.user._id;
 
-    // TEMP: Return all games if unauthenticated, else only user's games
-    let userId = null;
-    if (req.user && req.user._id) {
-      userId = req.user._id;
-    } else {
-      userId = null;
-    }
-
-    let games, totalGames;
-    if (userId) {
-      games = await Game.find({ userId })
-        .sort({ createdAt: sortDirection })
-        .skip(skip)
-        .limit(limitNum)
-        .populate('userId', 'username');
-      totalGames = await Game.countDocuments({ userId });
-    } else {
-      games = await Game.find({})
-        .sort({ createdAt: sortDirection })
-        .skip(skip)
-        .limit(limitNum)
-        .populate('userId', 'username');
-      totalGames = await Game.countDocuments({});
-    }
+    const games = await Game.find({ userId })
+      .sort({ createdAt: sortDirection })
+      .skip(skip)
+      .limit(limitNum);
+    
+    const totalGames = await Game.countDocuments({ userId });
 
     res.json({
       games: games.map(game => ({
         id: game._id,
-        userId: game.userId._id,
-        username: game.userId.username,
+        userId: game.userId,
+        localId: game.localId,
         gameData: game.gameData,
         shareId: game.shareId,
         createdAt: game.createdAt

@@ -37,8 +37,6 @@
 
 .game-in-progress .score-table td {
   overflow: hidden;
-  /* min-height: 62px;
-  height: 62px; */
 }
 
 /* Fixed column widths */
@@ -47,15 +45,17 @@
 }
 
 .game-in-progress .score-table td:nth-child(2) {
-  width: 18%;
+  width: 12%;
+  padding: var(--spacing-sm) 0;
 }
 
 .game-in-progress .score-table td:nth-child(3) {
-  width: 18%;
+  width: 12%;
+  padding: var(--spacing-sm) 0;
 }
 
 .game-in-progress .score-table td:nth-child(4) {
-  width: 14%;
+  width: 12%;
   align-content: center;
 }
 
@@ -279,7 +279,7 @@
 
 .score-table th,
 .score-table td {
-  padding: var(--spacing-md);
+  /* padding: var(--spacing-md); */
   text-align: center;
   border-bottom: 1px solid var(--border-color);
   transition: all 0.2s ease;

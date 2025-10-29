@@ -4,7 +4,7 @@ import defaultAvatar from '../../assets/default-avatar.png'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { LocalUserProfileService, LocalGameStorage, LocalTableGameStorage } from '../api'
 
-export const UserContext = createContext()
+export const UserContext = createContext(undefined)
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -140,6 +140,19 @@ export function UserProvider({ children }) {
           }
         );
         LocalUserProfileService.setCurrentUser(userFromServer.id);
+        
+        // Automatically download cloud games in the background
+        // This allows users to access their games across devices
+        setTimeout(async () => {
+          try {
+            const { downloadUserCloudGames } = await import('@/shared/api/gameService');
+            const result = await downloadUserCloudGames();
+            console.debug(`✅ Auto-synced cloud games: ${result.downloaded} downloaded, ${result.skipped} already local`);
+          } catch (error) {
+            // Silently fail - this is a background sync
+            console.debug('Background cloud sync failed (non-critical):', error.message);
+          }
+        }, 2000); // Wait 2 seconds after login to not block UI
         
         return userFromServer
       } else {
