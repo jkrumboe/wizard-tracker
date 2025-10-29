@@ -4,6 +4,7 @@ import PerformanceStatsEnhanced from './PerformanceStatsEnhanced'
 import { useUser } from '@/shared/hooks/useUser'
 import { getRecentLocalGames } from '@/shared/api/gameService'
 import { ArrowLeftCircleIcon } from '@/components/ui/Icon'
+import "@/styles/components/TableGame.css";
 
 const Stats = () => {
   const navigate = useNavigate()
