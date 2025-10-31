@@ -2251,7 +2251,7 @@
   flex-direction: column;
   overflow-y: auto;
   max-height: 100%;
-  height: 40dvh;
+  height: 55dvh;
   gap: var(--spacing-md);
 }
 

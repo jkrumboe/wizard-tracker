@@ -919,7 +919,7 @@ const Settings = () => {
               Refresh Storage
             </button> */}
             {isOnline && user && (
-              <>
+              <div className="cloud-sync-actions">
                 <button 
                   className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
                   onClick={handleBulkCloudSync}
@@ -936,7 +936,7 @@ const Settings = () => {
                   ) : (
                     <CloudIcon size={18} />
                   )}
-                  {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All to Cloud'}
+                  {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All'}
                 </button>
                 <button 
                   className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
@@ -948,9 +948,9 @@ const Settings = () => {
                   ) : (
                     <CloudIcon size={18} />
                   )}
-                  {cloudSyncStatus.uploading ? 'Downloading...' : 'Download from Cloud'}
+                  {cloudSyncStatus.uploading ? 'Downloading...' : 'Download'}
                 </button>
-              </>
+              </div>
             )}
             {isOnline && !user && (
               <button 

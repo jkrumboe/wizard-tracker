@@ -196,6 +196,17 @@
   justify-content: center;
 }
 
+.cloud-sync-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-sm);
+}
+
+.cloud-sync-actions .settings-button {
+  width: 50%;
+  padding: 0;
+}
+
 .settings-button {
   display: flex;
   align-items: center;
@@ -550,7 +561,7 @@
 
 /* App Info Section */
 .app-info-section {
-  margin-top: var(--spacing-xl);
+  /* margin-top: var(--spacing-xl); */
   border: 1px solid var(--border-color);
 }
 
