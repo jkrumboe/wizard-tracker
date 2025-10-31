@@ -1,5 +1,6 @@
 // Enhanced service worker registration with custom update UI
 let isReloading = false;
+let updateCheckInProgress = false;
 
 export function register() {
   if (!("serviceWorker" in navigator)) {
@@ -20,12 +21,19 @@ export function register() {
       .then((registration) => {
         console.debug("ServiceWorker registration successful with scope: ", registration.scope)
 
-        // Check for updates every 60 seconds when the page is visible (less frequent to avoid constant prompts)
+        // Check for updates only once every 5 minutes when page is visible
+        // This prevents constant update checks that cause multiple prompts
         setInterval(() => {
-          if (document.visibilityState === 'visible') {
-            registration.update();
+          if (document.visibilityState === 'visible' && !updateCheckInProgress) {
+            updateCheckInProgress = true;
+            registration.update().finally(() => {
+              // Reset after 10 seconds to prevent rapid successive checks
+              setTimeout(() => {
+                updateCheckInProgress = false;
+              }, 10000);
+            });
           }
-        }, 60000);
+        }, 300000); // 5 minutes
 
         // Listen for updates - the UpdateNotification component will handle the UI
         registration.addEventListener('updatefound', () => {
@@ -33,7 +41,7 @@ export function register() {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.debug('New version available - UpdateNotification component will handle the prompt.');
+                console.debug('New version available - UpdateNotification component will handle the update.');
               }
             });
           }
@@ -45,14 +53,21 @@ export function register() {
   })
 
   // Listen for controller change and reload once the update has been applied
+  // Use a flag to ensure we only reload once
+  let controllerChangeHandled = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (isReloading) {
+    if (isReloading || controllerChangeHandled) {
       return;
     }
 
+    controllerChangeHandled = true;
     isReloading = true;
     console.debug('New service worker activated - reloading...');
-    window.location.reload();
+    
+    // Small delay to allow the loading screen to show
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   });
 }
 

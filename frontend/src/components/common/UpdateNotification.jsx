@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '@/styles/components/update-notification.css';
 
 /**
  * UpdateNotification Component
  * 
- * Displays a custom update prompt when a new version of the PWA is available.
- * This replaces the default browser update confirmation dialog.
+ * Shows a loading screen during PWA updates to prevent multiple reload prompts.
+ * Automatically applies updates without user interaction for a smoother experience.
  */
 const UpdateNotification = () => {
-  const [showUpdate, setShowUpdate] = useState(false);
-  const [waitingWorker, setWaitingWorker] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const updateInProgressRef = useRef(false);
+  const hasShownUpdateRef = useRef(false);
 
   useEffect(() => {
     // Only run in production
@@ -17,10 +18,14 @@ const UpdateNotification = () => {
       return;
     }
 
-    let updatePromptActive = false;
+    // Prevent multiple updates from being processed
+    if (updateInProgressRef.current || hasShownUpdateRef.current) {
+      return;
+    }
 
-    const handleUpdateFound = (registration) => {
-      if (updatePromptActive) {
+    const handleUpdateFound = async (registration) => {
+      // Prevent duplicate update handling
+      if (updateInProgressRef.current || hasShownUpdateRef.current) {
         return;
       }
 
@@ -29,17 +34,47 @@ const UpdateNotification = () => {
         return;
       }
 
-      updatePromptActive = true;
-      setWaitingWorker(worker);
+      // Mark that we're handling an update
+      updateInProgressRef.current = true;
+      hasShownUpdateRef.current = true;
+
+      const applyUpdate = async () => {
+        // Show loading screen
+        setIsUpdating(true);
+
+        try {
+          // Wait a moment to ensure the service worker is ready
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Clear all caches for a clean update
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+            console.debug('Caches cleared for update');
+          }
+
+          // Tell the waiting service worker to skip waiting
+          worker.postMessage({ type: 'SKIP_WAITING' });
+          
+          // Wait for the new service worker to take control
+          // The controllerchange event will trigger the reload
+        } catch (error) {
+          console.error('Update failed:', error);
+          // Force reload as fallback after a delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
+      };
       
-      // If worker is already installed, show prompt immediately
+      // If worker is already installed, apply update immediately
       if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-        setShowUpdate(true);
+        await applyUpdate();
       } else {
         // Otherwise wait for state change
-        worker.addEventListener('statechange', () => {
+        worker.addEventListener('statechange', async () => {
           if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            setShowUpdate(true);
+            await applyUpdate();
           }
         });
       }
@@ -50,82 +85,53 @@ const UpdateNotification = () => {
       navigator.serviceWorker.getRegistration().then((registration) => {
         if (registration) {
           // Check if there's already a waiting worker
-          if (registration.waiting) {
+          if (registration.waiting && !hasShownUpdateRef.current) {
             handleUpdateFound(registration);
           }
 
           // Listen for new updates
           registration.addEventListener('updatefound', () => {
-            handleUpdateFound(registration);
+            if (!hasShownUpdateRef.current) {
+              handleUpdateFound(registration);
+            }
           });
+        }
+      });
+
+      // Listen for controller change (when new service worker takes over)
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Only reload if we initiated the update
+        if (updateInProgressRef.current) {
+          console.debug('Service worker updated, reloading page...');
+          // Small delay to show the loading screen
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
         }
       });
     }
 
     return () => {
-      updatePromptActive = false;
+      // Cleanup if component unmounts
     };
   }, []);
 
-  const handleUpdate = async () => {
-    if (!waitingWorker) {
-      return;
-    }
-
-    try {
-      // Clear all caches for a clean update
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-        console.debug('Caches cleared for update');
-      }
-
-      // Tell the waiting service worker to skip waiting
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-      
-      // The page will reload automatically when the new service worker takes control
-      setShowUpdate(false);
-    } catch (error) {
-      console.error('Update failed:', error);
-      // Force reload as fallback
-      window.location.reload();
-    }
-  };
-
-  const handleDismiss = () => {
-    setShowUpdate(false);
-    // User can manually refresh later to get the update
-  };
-
-  if (!showUpdate) {
+  if (!isUpdating) {
     return null;
   }
 
   return (
-    <div className="update-notification-overlay">
-      <div className="update-notification">
-        <div className="update-notification-content">
-          <h3 className="update-notification-title">Update verfügbar</h3>
-          <p className="update-notification-message">
-            Eine neue Version von Wizard Tracker ist verfügbar. Jetzt neu laden?
-          </p>
+    <div className="update-loading-overlay">
+      <div className="update-loading-content">
+        <div className="update-loading-spinner">
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
         </div>
-        <div className="update-notification-actions">
-          <button
-            onClick={handleDismiss}
-            className="update-notification-button update-notification-button-secondary"
-            aria-label="Abbrechen"
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={handleUpdate}
-            className="update-notification-button update-notification-button-primary"
-            aria-label="Aktualisieren"
-          >
-            OK
-          </button>
-        </div>
+        <h2 className="update-loading-title">Update wird installiert...</h2>
+        <p className="update-loading-message">
+          Bitte warten Sie einen Moment
+        </p>
       </div>
     </div>
   );
