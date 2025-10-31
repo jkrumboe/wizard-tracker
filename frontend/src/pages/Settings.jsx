@@ -9,6 +9,7 @@ import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import authService from '@/shared/api/authService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
@@ -31,6 +32,7 @@ const Settings = () => {
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
+  const [showCloudGameSelectModal, setShowCloudGameSelectModal] = useState(false); // Cloud game select modal
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
@@ -686,7 +688,7 @@ const Settings = () => {
     }
   };
 
-  const handleDownloadCloudGames = async () => {
+  const handleDownloadCloudGames = () => {
     if (!isOnline) {
       setMessage({ text: 'Cannot download games while in offline mode', type: 'error' });
       return;
@@ -699,16 +701,21 @@ const Settings = () => {
       return;
     }
 
+    // Open the cloud game select modal
+    setShowCloudGameSelectModal(true);
+  };
+
+  const handleDownloadSelectedGames = async (selectedGameIds) => {
     setCloudSyncStatus({ 
       uploading: true, 
-      progress: 'Downloading cloud games...', 
+      progress: 'Downloading selected games...', 
       uploadedCount: 0, 
-      totalCount: 0 
+      totalCount: selectedGameIds.length
     });
 
     try {
-      const { downloadUserCloudGames } = await import('@/shared/api/gameService');
-      const result = await downloadUserCloudGames();
+      const { downloadSelectedCloudGames } = await import('@/shared/api/gameService');
+      const result = await downloadSelectedCloudGames(selectedGameIds);
 
       setCloudSyncStatus({ 
         uploading: false, 
@@ -727,12 +734,12 @@ const Settings = () => {
         });
       } else if (result.skipped > 0) {
         setMessage({ 
-          text: `All ${result.skipped} cloud games already exist locally`, 
+          text: `All ${result.skipped} selected games already exist locally`, 
           type: 'info' 
         });
       } else {
         setMessage({ 
-          text: 'No cloud games found', 
+          text: 'No games were downloaded', 
           type: 'info' 
         });
       }
@@ -1196,6 +1203,12 @@ const Settings = () => {
           onClose={() => setShowConfirmDialog(false)}
           onConfirm={handleConfirmDelete}
           deleteAll={deleteAll}
+        />
+
+        <CloudGameSelectModal
+          isOpen={showCloudGameSelectModal}
+          onClose={() => setShowCloudGameSelectModal(false)}
+          onDownload={handleDownloadSelectedGames}
         />
       </div>
   );

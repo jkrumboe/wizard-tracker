@@ -40,14 +40,14 @@ export async function getRecentGames(_limit = 5) {
 }
 
 /**
- * Download all cloud games for the logged-in user and save them locally
- * @returns {Promise<{success: boolean, downloaded: number, skipped: number, errors: number}>}
+ * Get list of cloud games for the logged-in user (metadata only)
+ * @returns {Promise<Array>} List of cloud games with metadata
  */
-export async function downloadUserCloudGames() {
+export async function getUserCloudGamesList() {
   const token = localStorage.getItem('auth_token');
   
   if (!token) {
-    throw new Error('You must be logged in to download cloud games');
+    throw new Error('You must be logged in to access cloud games');
   }
 
   try {
@@ -73,32 +73,126 @@ export async function downloadUserCloudGames() {
       currentPage++;
     }
 
+    // Return games with useful metadata for selection
+    return allGames.map(cloudGame => {
+      const gameData = cloudGame.gameData || {};
+      const localId = cloudGame.localId || cloudGame.id;
+      const existingGame = LocalGameStorage.loadGame(localId);
+      
+      return {
+        cloudId: cloudGame.id,
+        localId: localId,
+        players: gameData.gameState?.players || gameData.players || [],
+        winner_id: gameData.winner_id || gameData.gameState?.winner_id,
+        final_scores: gameData.final_scores || gameData.gameState?.final_scores || {},
+        created_at: cloudGame.createdAt || gameData.created_at,
+        total_rounds: gameData.total_rounds || gameData.gameState?.total_rounds || 0,
+        isPaused: gameData.isPaused || gameData.gameState?.isPaused || false,
+        gameFinished: gameData.gameFinished || gameData.gameState?.gameFinished || false,
+        existsLocally: !!existingGame,
+        rawData: cloudGame // Keep raw data for download
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching cloud games list:', error);
+    throw error;
+  }
+}
+
+/**
+ * Download selected cloud games and save them locally
+ * @param {Array<string>} cloudGameIds - Array of cloud game IDs to download
+ * @returns {Promise<{success: boolean, downloaded: number, skipped: number, errors: number}>}
+ */
+export async function downloadSelectedCloudGames(cloudGameIds) {
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token) {
+    throw new Error('You must be logged in to download cloud games');
+  }
+
+  if (!Array.isArray(cloudGameIds) || cloudGameIds.length === 0) {
+    return { success: true, downloaded: 0, skipped: 0, errors: 0 };
+  }
+
+  try {
+    // Get all cloud games first
+    const cloudGamesList = await getUserCloudGamesList();
+    
     let downloaded = 0;
     let skipped = 0;
     let errors = 0;
 
-    // Save each game to local storage
-    for (const cloudGame of allGames) {
+    for (const cloudGameId of cloudGameIds) {
       try {
-        // Check if game already exists locally
+        // Find the game in the list
+        const cloudGameMeta = cloudGamesList.find(g => g.cloudId === cloudGameId);
+        
+        if (!cloudGameMeta) {
+          console.warn(`Cloud game ${cloudGameId} not found`);
+          errors++;
+          continue;
+        }
+
+        const cloudGame = cloudGameMeta.rawData;
         const localId = cloudGame.localId || cloudGame.id;
+        
+        // Check if game already exists locally
         const existingGame = LocalGameStorage.loadGame(localId);
         
         if (existingGame) {
-          // Game already exists locally - skip
           skipped++;
           continue;
         }
 
-        // Prepare game data for local storage
+        // Extract the actual game data - handle nested structure
+        let gameDataToSave = cloudGame.gameData || cloudGame;
+        
+        // If gameData is nested, unwrap it
+        if (gameDataToSave.gameData) {
+          gameDataToSave = gameDataToSave.gameData;
+        }
+
+        // Prepare game data for local storage with proper structure
         const gameToSave = {
-          ...cloudGame.gameData,
           id: localId,
+          name: gameDataToSave.name || `Game ${new Date(cloudGame.createdAt).toLocaleDateString()}`,
+          gameState: gameDataToSave.gameState || {
+            players: gameDataToSave.players || [],
+            currentRound: gameDataToSave.currentRound || gameDataToSave.total_rounds || 0,
+            maxRounds: gameDataToSave.maxRounds || gameDataToSave.total_rounds || 0,
+            roundData: gameDataToSave.roundData || gameDataToSave.round_data || [],
+            gameStarted: gameDataToSave.gameStarted !== false,
+            gameFinished: gameDataToSave.gameFinished || false,
+            mode: gameDataToSave.mode || 'Local',
+            isLocal: true,
+            isPaused: gameDataToSave.isPaused || false,
+            referenceDate: gameDataToSave.referenceDate || gameDataToSave.created_at || cloudGame.createdAt,
+            gameId: localId,
+            winner_id: gameDataToSave.winner_id,
+            final_scores: gameDataToSave.final_scores || {},
+            player_ids: gameDataToSave.player_ids || []
+          },
+          savedAt: cloudGame.createdAt,
+          lastPlayed: cloudGame.createdAt,
+          playerCount: gameDataToSave.playerCount || (gameDataToSave.players || gameDataToSave.gameState?.players || []).length,
+          roundsCompleted: gameDataToSave.roundsCompleted || gameDataToSave.total_rounds || 0,
+          totalRounds: gameDataToSave.totalRounds || gameDataToSave.total_rounds || 0,
+          mode: gameDataToSave.mode || 'Local',
+          gameFinished: gameDataToSave.gameFinished || false,
+          isPaused: gameDataToSave.isPaused || false,
           cloudGameId: cloudGame.id,
           uploadedToCloud: true,
           downloadedFromCloud: true,
-          created_at: cloudGame.createdAt,
-          savedAt: new Date().toISOString()
+          created_at: cloudGame.createdAt || gameDataToSave.created_at,
+          // Top-level fields for compatibility
+          winner_id: gameDataToSave.winner_id || gameDataToSave.gameState?.winner_id,
+          final_scores: gameDataToSave.final_scores || gameDataToSave.gameState?.final_scores || {},
+          player_ids: gameDataToSave.player_ids || gameDataToSave.gameState?.player_ids || [],
+          round_data: gameDataToSave.round_data || gameDataToSave.roundData || gameDataToSave.gameState?.roundData || [],
+          total_rounds: gameDataToSave.total_rounds || gameDataToSave.totalRounds || 0,
+          duration_seconds: gameDataToSave.duration_seconds || 0,
+          is_local: true
         };
 
         // Save to local storage
@@ -109,22 +203,35 @@ export async function downloadUserCloudGames() {
         
         downloaded++;
       } catch (error) {
-        console.error('Error saving cloud game locally:', error);
+        console.error('Error downloading game:', error);
         errors++;
       }
     }
 
     return {
       success: true,
-      total: allGames.length,
+      total: cloudGameIds.length,
       downloaded,
       skipped,
       errors
     };
   } catch (error) {
-    console.error('Error downloading cloud games:', error);
+    console.error('Error downloading selected cloud games:', error);
     throw error;
   }
+}
+
+/**
+ * Download all cloud games for the logged-in user and save them locally
+ * @returns {Promise<{success: boolean, downloaded: number, skipped: number, errors: number}>}
+ */
+export async function downloadUserCloudGames() {
+  // Get all cloud games
+  const cloudGamesList = await getUserCloudGamesList();
+  
+  // Download all of them
+  const cloudGameIds = cloudGamesList.map(g => g.cloudId);
+  return downloadSelectedCloudGames(cloudGameIds);
 }
 
 //=== Schema Migration and Validation ===//
@@ -356,6 +463,8 @@ const gameService = {
   getGameById,
   updateGame,
   deleteGame,
+  getUserCloudGamesList,
+  downloadSelectedCloudGames,
   downloadUserCloudGames,
   // New schema functions
   migrateGameToNewSchema,

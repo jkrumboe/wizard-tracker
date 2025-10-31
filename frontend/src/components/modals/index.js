@@ -1,5 +1,6 @@
 // Modal Components exports
 export { default as AddGameTemplateModal } from './AddGameTemplateModal.jsx';
+export { default as CloudGameSelectModal } from './CloudGameSelectModal.jsx';
 export { default as CreateGameModal } from './CreateGameModal.jsx';
 export { default as GameMenuModal } from './GameMenuModal.jsx';
 export { default as ImportGamePlayerSelectModal } from './ImportGamePlayerSelectModal.jsx';
