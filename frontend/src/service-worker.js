@@ -1,5 +1,5 @@
 // Service Worker for KeepWiz PWA
-const CACHE_NAME = "keep-wiz-v1.2.10"
+const CACHE_NAME = "keep-wiz-v1.2.11"
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png"]
 
 // Install event - cache assets
@@ -14,6 +14,12 @@ self.addEventListener("install", (event) => {
 
 // Fetch event - serve from cache if available
 self.addEventListener("fetch", (event) => {
+  // Skip cross-origin requests (like Google Analytics, external APIs, etc.)
+  const url = new URL(event.request.url);
+  if (url.origin !== location.origin) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request).then((response) => {
       // Cache hit - return response

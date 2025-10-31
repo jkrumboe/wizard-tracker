@@ -1,13 +1,13 @@
 // Service Worker for KeepWiz PWA - Automatic Updates + Offline Sync
-const CACHE_NAME = "keep-wiz-v1.2.10" // Increment version for updates
+const CACHE_NAME = "keep-wiz-v1.2.11" // Increment version for updates
 const API_CACHE_NAME = "keep-wiz-api-v1"
 const urlsToCache = [
   "/", 
   "/index.html", 
   "/manifest.json",
   "/manifest.webmanifest", 
-  "/icons/logo-192.png?v=2",
-  "/icons/logo-512.png?v=2",
+  "/icons/logo-192.png?v=3",
+  "/icons/logo-512.png?v=3",
   "/logo.png"
 ]
 
@@ -96,6 +96,11 @@ function isWriteOperation(url, method) {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+  
+  // Skip cross-origin requests (like Google Analytics, external APIs, etc.)
+  if (url.origin !== location.origin) {
+    return;
+  }
   
   // Handle write operations when offline
   if (isWriteOperation(url.pathname, request.method)) {
