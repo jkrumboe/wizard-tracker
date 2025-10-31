@@ -77,7 +77,15 @@ export async function getUserCloudGamesList() {
     return allGames.map(cloudGame => {
       const gameData = cloudGame.gameData || {};
       const localId = cloudGame.localId || cloudGame.id;
-      const existingGame = LocalGameStorage.loadGame(localId);
+      
+      // Check if game exists locally by localId OR by cloudGameId
+      const allLocalGames = LocalGameStorage.getAllSavedGames();
+      const existsByLocalId = !!allLocalGames[localId];
+      const existsByCloudId = Object.values(allLocalGames).some(game => 
+        game.cloudGameId === cloudGame.id || 
+        game.gameState?.cloudGameId === cloudGame.id
+      );
+      const existsLocally = existsByLocalId || existsByCloudId;
       
       return {
         cloudId: cloudGame.id,
@@ -89,7 +97,7 @@ export async function getUserCloudGamesList() {
         total_rounds: gameData.total_rounds || gameData.gameState?.total_rounds || 0,
         isPaused: gameData.isPaused || gameData.gameState?.isPaused || false,
         gameFinished: gameData.gameFinished || gameData.gameState?.gameFinished || false,
-        existsLocally: !!existingGame,
+        existsLocally: existsLocally,
         rawData: cloudGame // Keep raw data for download
       };
     });
@@ -137,10 +145,16 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
         const cloudGame = cloudGameMeta.rawData;
         const localId = cloudGame.localId || cloudGame.id;
         
-        // Check if game already exists locally by checking the games object directly
+        // Check if game already exists locally - check by localId AND cloudGameId
         const allLocalGames = LocalGameStorage.getAllSavedGames();
-        if (allLocalGames[localId]) {
-          console.debug(`Game ${localId} already exists locally, skipping`);
+        const existsByLocalId = !!allLocalGames[localId];
+        const existsByCloudId = Object.values(allLocalGames).some(game => 
+          game.cloudGameId === cloudGame.id || 
+          game.gameState?.cloudGameId === cloudGame.id
+        );
+        
+        if (existsByLocalId || existsByCloudId) {
+          console.debug(`Game ${localId} (cloud ID: ${cloudGame.id}) already exists locally, skipping`);
           skipped++;
           continue;
         }

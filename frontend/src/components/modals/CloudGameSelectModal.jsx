@@ -20,7 +20,9 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
     try {
       const { getUserCloudGamesList } = await import('@/shared/api/gameService');
       const games = await getUserCloudGamesList();
-      setCloudGames(games);
+      // Filter out games that already exist locally
+      const availableGames = games.filter(game => !game.existsLocally);
+      setCloudGames(availableGames);
     } catch (err) {
       setError(err.message);
       console.error('Error loading cloud games:', err);
@@ -40,8 +42,8 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
   };
 
   const selectAll = () => {
-    const notLocalGames = cloudGames.filter(g => !g.existsLocally);
-    setSelectedGames(new Set(notLocalGames.map(g => g.cloudId)));
+    // Select all games (already filtered to not include local games)
+    setSelectedGames(new Set(cloudGames.map(g => g.cloudId)));
   };
 
   const deselectAll = () => {
@@ -141,37 +143,19 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                   <div
                     key={game.cloudId}
                     className={`player-selection-item ${selectedGames.has(game.cloudId) ? 'selected' : ''}`}
-                    onClick={() => !game.existsLocally && toggleGameSelection(game.cloudId)}
+                    onClick={() => toggleGameSelection(game.cloudId)}
                     style={{ 
-                      cursor: game.existsLocally ? 'not-allowed' : 'pointer',
-                      opacity: game.existsLocally ? 0.6 : 1
+                      cursor: 'pointer'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', minWidth: '24px' }}>
-                      {game.existsLocally ? (
-                        <span style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: 'var(--success-color)',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '14px',
-                          fontWeight: 'bold'
-                        }} title="Already exists locally">
-                          ✓
-                        </span>
-                      ) : (
-                        <input
-                          type="checkbox"
-                          checked={selectedGames.has(game.cloudId)}
-                          onChange={() => toggleGameSelection(game.cloudId)}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={selectedGames.has(game.cloudId)}
+                        onChange={() => toggleGameSelection(game.cloudId)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                      />
                     </div>
 
                     <div className="player-info" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
@@ -218,7 +202,6 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                       
                       <div className="player-score">
                         Rounds: {game.total_rounds} | Date: {new Date(game.created_at).toLocaleDateString()}
-                        {game.existsLocally && ' | Already Downloaded'}
                       </div>
                     </div>
                   </div>
