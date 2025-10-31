@@ -4,7 +4,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { OnlineProtectedRoute, AuthProtectedRoute } from "@/components/common"
+import { OnlineProtectedRoute, AuthProtectedRoute, UpdateNotification } from "@/components/common"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 
 // Lazy load pages for better performance
@@ -147,6 +147,7 @@ function App() {
           <OnlineStatusProvider>
             <UserProvider>
               <AutoLogoutHandler />
+              <UpdateNotification />
               <GameStateProvider>
                 <URLImportHandler />
                 <Navbar />
