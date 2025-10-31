@@ -42,6 +42,9 @@ const UpdateNotification = () => {
         // Show loading screen
         setIsUpdating(true);
 
+        // Set global flag to signal update is in progress
+        window.__PWA_UPDATE_IN_PROGRESS = true;
+
         try {
           // Wait a moment to ensure the service worker is ready
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -60,6 +63,8 @@ const UpdateNotification = () => {
           // The controllerchange event will trigger the reload
         } catch (error) {
           console.error('Update failed:', error);
+          // Clear the flag on error
+          window.__PWA_UPDATE_IN_PROGRESS = false;
           // Force reload as fallback after a delay
           setTimeout(() => {
             window.location.reload();

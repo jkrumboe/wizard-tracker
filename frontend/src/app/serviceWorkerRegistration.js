@@ -60,6 +60,12 @@ export function register() {
       return;
     }
 
+    // Skip automatic reload if UpdateNotification component is handling the update
+    if (window.__PWA_UPDATE_IN_PROGRESS) {
+      console.debug('Update in progress via UpdateNotification - skipping automatic reload');
+      return;
+    }
+
     controllerChangeHandled = true;
     isReloading = true;
     console.debug('New service worker activated - reloading...');
