@@ -116,6 +116,9 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
   }
 
   try {
+    // Get current user ID
+    const currentUserId = LocalGameStorage.getCurrentUserId();
+    
     // Get all cloud games first
     const cloudGamesList = await getUserCloudGamesList();
     
@@ -137,10 +140,10 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
         const cloudGame = cloudGameMeta.rawData;
         const localId = cloudGame.localId || cloudGame.id;
         
-        // Check if game already exists locally
-        const existingGame = LocalGameStorage.loadGame(localId);
-        
-        if (existingGame) {
+        // Check if game already exists locally by checking the games object directly
+        const allLocalGames = LocalGameStorage.getAllSavedGames();
+        if (allLocalGames[localId]) {
+          console.debug(`Game ${localId} already exists locally, skipping`);
           skipped++;
           continue;
         }
@@ -148,92 +151,82 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
         // Extract the actual game data from cloud game
         const cloudGameData = cloudGame.gameData || cloudGame;
         
-        // Check if the cloud game already has the proper structure (previously uploaded)
-        // If it has a gameState object, use the cloud data as-is
-        let gameToSave;
+        // Determine the source of truth for game data
+        const gameState = cloudGameData.gameState || {};
+        const players = gameState.players || cloudGameData.players || [];
+        const roundData = gameState.roundData || cloudGameData.round_data || cloudGameData.roundData || [];
+        const currentRound = gameState.currentRound || roundData.length;
+        const totalRounds = cloudGameData.total_rounds || cloudGameData.totalRounds || gameState.maxRounds || 0;
         
-        if (cloudGameData.gameState && typeof cloudGameData.gameState === 'object' && !Array.isArray(cloudGameData.gameState)) {
-          // Game was uploaded with proper structure, use it directly
-          gameToSave = {
-            id: localId,
-            name: cloudGameData.name || `Game ${new Date(cloudGame.createdAt).toLocaleDateString()}`,
-            gameState: {
-              ...cloudGameData.gameState,
-              gameId: localId,
-              isLocal: true,
-            },
-            savedAt: cloudGame.createdAt || cloudGameData.savedAt,
-            lastPlayed: cloudGame.updatedAt || cloudGame.createdAt || cloudGameData.lastPlayed,
-            playerCount: cloudGameData.playerCount || cloudGameData.gameState?.players?.length || 0,
-            roundsCompleted: cloudGameData.roundsCompleted || cloudGameData.gameState?.currentRound || 0,
-            totalRounds: cloudGameData.totalRounds || cloudGameData.gameState?.maxRounds || 0,
-            mode: cloudGameData.mode || cloudGameData.gameState?.mode || 'Local',
-            gameFinished: cloudGameData.gameFinished ?? cloudGameData.gameState?.gameFinished ?? false,
-            isPaused: cloudGameData.isPaused ?? cloudGameData.gameState?.isPaused ?? false,
-            cloudGameId: cloudGame.id,
-            uploadedToCloud: true,
-            downloadedFromCloud: true,
-            created_at: cloudGame.createdAt || cloudGameData.created_at,
-            winner_id: cloudGameData.winner_id || cloudGameData.gameState?.winner_id,
-            final_scores: cloudGameData.final_scores || cloudGameData.gameState?.final_scores || {},
-            player_ids: cloudGameData.player_ids || cloudGameData.gameState?.player_ids || [],
-            round_data: cloudGameData.round_data || cloudGameData.gameState?.roundData || [],
-            total_rounds: cloudGameData.total_rounds || cloudGameData.totalRounds || cloudGameData.gameState?.maxRounds || 0,
-            duration_seconds: cloudGameData.duration_seconds || 0,
-            is_local: true
-          };
-        } else {
-          // Legacy format or direct game data - reconstruct proper structure
-          const players = cloudGameData.players || [];
-          const roundData = cloudGameData.round_data || cloudGameData.roundData || [];
-          const totalRounds = cloudGameData.total_rounds || cloudGameData.totalRounds || 0;
-          const isFinished = cloudGameData.gameFinished || (roundData.length >= totalRounds && totalRounds > 0);
-          
-          gameToSave = {
-            id: localId,
-            name: cloudGameData.name || `Game ${new Date(cloudGame.createdAt).toLocaleDateString()}`,
-            gameState: {
-              players: players,
-              currentRound: roundData.length,
-              maxRounds: totalRounds,
-              roundData: roundData,
-              gameStarted: true,
-              gameFinished: isFinished,
-              mode: cloudGameData.mode || 'Local',
-              isLocal: true,
-              isPaused: cloudGameData.isPaused ?? false,
-              referenceDate: cloudGameData.created_at || cloudGame.createdAt,
-              gameId: localId,
-              winner_id: cloudGameData.winner_id,
-              final_scores: cloudGameData.final_scores || {},
-              player_ids: cloudGameData.player_ids || players.map(p => p.id)
-            },
-            savedAt: cloudGame.createdAt,
-            lastPlayed: cloudGame.updatedAt || cloudGame.createdAt,
-            playerCount: players.length,
-            roundsCompleted: roundData.length,
-            totalRounds: totalRounds,
-            mode: cloudGameData.mode || 'Local',
-            gameFinished: isFinished,
-            isPaused: cloudGameData.isPaused ?? false,
-            cloudGameId: cloudGame.id,
-            uploadedToCloud: true,
-            downloadedFromCloud: true,
-            created_at: cloudGame.createdAt || cloudGameData.created_at,
-            winner_id: cloudGameData.winner_id,
-            final_scores: cloudGameData.final_scores || {},
-            player_ids: cloudGameData.player_ids || players.map(p => p.id),
-            round_data: roundData,
-            total_rounds: totalRounds,
-            duration_seconds: cloudGameData.duration_seconds || 0,
-            is_local: true
-          };
-        }
+        // Determine if game is actually finished based on rounds completed
+        // A game is finished if currentRound >= totalRounds or if it explicitly has a winner
+        const hasWinner = !!(cloudGameData.winner_id || gameState.winner_id);
+        const allRoundsPlayed = currentRound >= totalRounds && totalRounds > 0;
+        const isActuallyFinished = hasWinner || allRoundsPlayed || cloudGameData.gameFinished === true;
+        
+        console.debug(`Processing cloud game ${localId}:`, {
+          currentRound,
+          totalRounds,
+          hasWinner,
+          allRoundsPlayed,
+          isActuallyFinished,
+          cloudGameDataFinished: cloudGameData.gameFinished,
+          cloudGameDataPaused: cloudGameData.isPaused
+        });
+        
+        // Build the proper game structure
+        const gameToSave = {
+          id: localId,
+          name: cloudGameData.name || `Game ${new Date(cloudGame.createdAt).toLocaleDateString()}`,
+          gameState: {
+            players: players,
+            currentRound: currentRound,
+            maxRounds: totalRounds,
+            roundData: roundData,
+            gameStarted: true,
+            gameFinished: isActuallyFinished,
+            mode: cloudGameData.mode || gameState.mode || 'Local',
+            isLocal: true,
+            isPaused: isActuallyFinished ? false : (cloudGameData.isPaused ?? gameState.isPaused ?? false),
+            referenceDate: cloudGameData.created_at || gameState.referenceDate || cloudGame.createdAt,
+            gameId: localId,
+            winner_id: cloudGameData.winner_id || gameState.winner_id,
+            final_scores: cloudGameData.final_scores || gameState.final_scores || {},
+            player_ids: cloudGameData.player_ids || gameState.player_ids || players.map(p => p.id)
+          },
+          savedAt: cloudGame.createdAt || cloudGameData.savedAt,
+          lastPlayed: cloudGame.updatedAt || cloudGame.createdAt || cloudGameData.lastPlayed,
+          playerCount: players.length,
+          roundsCompleted: currentRound,
+          totalRounds: totalRounds,
+          mode: cloudGameData.mode || 'Local',
+          gameFinished: isActuallyFinished,
+          isPaused: isActuallyFinished ? false : (cloudGameData.isPaused ?? false),
+          cloudGameId: cloudGame.id,
+          uploadedToCloud: true,
+          downloadedFromCloud: true,
+          created_at: cloudGame.createdAt || cloudGameData.created_at,
+          winner_id: cloudGameData.winner_id || gameState.winner_id,
+          final_scores: cloudGameData.final_scores || gameState.final_scores || {},
+          player_ids: cloudGameData.player_ids || gameState.player_ids || players.map(p => p.id),
+          round_data: roundData,
+          total_rounds: totalRounds,
+          duration_seconds: cloudGameData.duration_seconds || 0,
+          is_local: true,
+          userId: currentUserId // Add userId for proper filtering
+        };
 
         // Save to local storage directly (don't use saveGame as it expects different parameters)
         const allGames = LocalGameStorage.getAllSavedGames();
         allGames[localId] = gameToSave;
         localStorage.setItem('wizard_games', JSON.stringify(allGames));
+        
+        console.debug(`Saved game ${localId} to localStorage:`, {
+          isPaused: gameToSave.isPaused,
+          gameFinished: gameToSave.gameFinished,
+          playerCount: gameToSave.playerCount,
+          rounds: `${gameToSave.roundsCompleted}/${gameToSave.totalRounds}`
+        });
         
         // Mark as uploaded to prevent re-uploading
         LocalGameStorage.markGameAsUploaded(localId, cloudGame.id);
