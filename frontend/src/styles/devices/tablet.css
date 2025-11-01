@@ -152,7 +152,7 @@
         width: 100%;
         padding: var(--spacing-md);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
+        /* box-shadow: var(--shadow); */
         height: 100%;
         max-height: 70vh;
     }
@@ -178,11 +178,11 @@
         flex: 1;
         min-width: 300px;
         max-width: 350px;
-        padding: var(--spacing-sm);
+        padding: var(--spacing-xs) var(--spacing-sm);
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow);
-        height: 100%;
         margin-bottom: var(--spacing-xs);
+        align-self: stretch;
     }
 
     .actions-game-history {
@@ -202,8 +202,34 @@
     }
 
     .game-history {
-        height: 100%;
         flex-direction: row;
+        align-items: stretch;
+        flex-wrap: wrap;
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* Show 2 rows of 2 cards each (4 cards total) before scrolling */
+        /* Approximate calculation: 2 rows × card height + gaps + padding */
+        max-height: calc(2 * (120px + var(--spacing-xs)) + var(--spacing-md));
+        gap: var(--spacing-md);
+    }
+
+    /* Scrollbar styling for tablet game-history */
+    .game-history::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .game-history::-webkit-scrollbar-track {
+        background: var(--card-background-alt);
+        border-radius: var(--radius-md);
+    }
+
+    .game-history::-webkit-scrollbar-thumb {
+        background: var(--primary-light);
+        border-radius: var(--radius-md);
+    }
+
+    .game-history::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-color);
     }
 
     /* Settings */
@@ -609,5 +635,17 @@
         padding-left: 80px !important;
         width: 80%;
         margin: 0 auto;
-   }
+    }
+
+    .profile-container {
+        margin: 15vh 0;
+    }
+
+    .profile-header {
+        gap: var(--spacing-lg);
+    }
+
+    .stats-graph {
+        padding: 0;
+    }
 }

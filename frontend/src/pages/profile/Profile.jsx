@@ -260,7 +260,7 @@ return (
 
       {/* Header section with buttons positioned at top corners */}
       <div className="profile-header">
-        <div className="toggle-section" style={{ display: window.innerWidth > 768 ? 'none' : 'flex' }}>
+        <div className="toggle-section" >
           <button
             className="game-control-btn"
             onClick={() => {
@@ -274,7 +274,7 @@ return (
             </button>
         </div>
 
-      <img src={currentPlayer?.avatar || defaultAvatar} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
+        <img src={currentPlayer?.avatar || defaultAvatar} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
 
         {canEdit && (
           <button
@@ -287,66 +287,28 @@ return (
 
     
       <div className="player-info">
-          <div className="player-name-tags">
-              <h1>{currentPlayer?.display_name || currentPlayer?.name || "Unknown Player"}</h1>
-              {/* Only show tags container if we have tags */}
-              {Array.isArray(tags) && tags.length > 0 &&
-              <div className="tags-container">
-                {tags.map(tag => (
-                  <span key={tag.id || tag.name} className="tag">{tag.name}</span>
-                ))}
-              </div>
-              }
+        <div className="player-name-tags">
+            <h1>{currentPlayer?.display_name || currentPlayer?.name || "Unknown Player"}</h1>
+            {/* Only show tags container if we have tags */}
+            {Array.isArray(tags) && tags.length > 0 &&
+            <div className="tags-container">
+              {tags.map(tag => (
+                <span key={tag.id || tag.name} className="tag">{tag.name}</span>
+              ))}
             </div>
-          <div className="stats-summary">
-            <StatCard 
-              title="Games" 
-              value={calculatedStats.totalGames}
-            />
-            <StatCard 
-              title="Win Rate" 
-              value={`${calculatedStats.winRate}%`}
-            />
+            }
           </div>
-        </div>
-
-        {/* Desktop Tab Navigation */}
-        {window.innerWidth > 768 && (
-          <div className="profile-tabs" style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-            <button
-              onClick={() => setActiveTab('performance')}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'performance' ? '3px solid var(--primary-color)' : '3px solid transparent',
-                color: activeTab === 'performance' ? 'var(--primary-color)' : 'var(--text-color)',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: activeTab === 'performance' ? '600' : '400',
-                transition: 'all 0.2s'
-              }}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('recentGames')}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'recentGames' ? '3px solid var(--primary-color)' : '3px solid transparent',
-                color: activeTab === 'recentGames' ? 'var(--primary-color)' : 'var(--text-color)',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                fontWeight: activeTab === 'recentGames' ? '600' : '400',
-                transition: 'all 0.2s'
-              }}
-            >
-              Recent Games
-            </button>
-          </div>
-        )}
+        {/* <div className="stats-summary">
+          <StatCard 
+            title="Games" 
+            value={calculatedStats.totalGames}
+          />
+          <StatCard 
+            title="Win Rate" 
+            value={`${calculatedStats.winRate}%`}
+          />
+        </div> */}
+      </div>
 
         {activeTab === 'performance' && (
           <div className="stats-graph">
@@ -404,8 +366,8 @@ return (
         )}
 
         {activeTab === 'recentGames' && (
-          <div className="recent-games" style={{ padding: 'var(--spacing-md) 0' }}>
-            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+          <div className="recent-games">
+            <div className="section-header">
               <h2>Recent Games</h2>
               <button 
                 className="filter-button"
