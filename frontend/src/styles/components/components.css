@@ -1169,8 +1169,8 @@
   }
   
   .selected-players-wrapper {
-    height: 27vh;
-    max-height: 27vh;
+    height: 42vh;
+    /* max-height: 27vh; */
     position: relative;
     padding-right: var(--spacing-xs);
   }
