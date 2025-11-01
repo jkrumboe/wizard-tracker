@@ -22,6 +22,8 @@
 
 .filter-group {
   width: 50%;
+  min-width: 0; /* Allow flex item to shrink below content size */
+  flex: 1;
 }
 
 .filter-group:last-child {
@@ -110,7 +112,7 @@
 
 .filter-input,
 .filter-select {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background-color: var(--input-background, var(--card-background));
@@ -118,10 +120,19 @@
   font-size: 0.95rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-input[type="date"] {
+  min-width: 100%;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .filter-select {
-    width: 100%;
+  cursor: pointer;
 }
 
 .filter-input:focus,
@@ -136,14 +147,11 @@
   opacity: 0.6;
 }
 
-.filter-select {
-  cursor: pointer;
-}
-
 .filter-group-row {
   display: flex;
-  flex: row;
-  gap: var(--spacing-lg);
+  flex-direction: row;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 
 .modal-footer {
@@ -174,7 +182,30 @@
   }
 
   .filter-group-row {
-    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .filter-group {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .filter-input,
+  .filter-select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .filter-input[type="date"] {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  /* Ensure date input calendar icon is visible */
+  .filter-input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.8;
+    padding: 4px;
   }
 
   .modal-footer {

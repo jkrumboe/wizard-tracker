@@ -85,7 +85,6 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
       <div className="modal-container game-filter-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>
-            <FilterIcon size={24} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
             Filter Games
           </h2>
           <button className="close-btn" onClick={onClose} aria-label="Close Filter">
