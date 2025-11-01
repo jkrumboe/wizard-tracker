@@ -51,7 +51,8 @@ router.post('/register', async (req, res, next) => {
       user: {
         id: user._id,
         username: user.username,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        profilePicture: user.profilePicture || null
       }
     });
   } catch (error) {
@@ -94,7 +95,8 @@ router.post('/login', async (req, res, next) => {
       user: {
         id: user._id,
         username: user.username,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        profilePicture: user.profilePicture || null
       }
     });
   } catch (error) {
@@ -110,8 +112,133 @@ router.get('/me', auth, async (req, res, next) => {
       user: {
         id: req.user._id,
         username: req.user.username,
-        createdAt: req.user.createdAt
+        createdAt: req.user.createdAt,
+        profilePicture: req.user.profilePicture || null
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /users/me/profile-picture - Update profile picture (protected route)
+router.put('/me/profile-picture', auth, async (req, res, next) => {
+  try {
+    const { profilePicture } = req.body;
+
+    // 1. Validate profile picture data exists
+    if (!profilePicture || typeof profilePicture !== 'string') {
+      return res.status(400).json({ error: 'Valid profile picture data is required' });
+    }
+
+    // 2. Check if it's a valid base64 data URL with proper format
+    if (!profilePicture.startsWith('data:image/')) {
+      return res.status(400).json({ error: 'Profile picture must be a valid image data URL' });
+    }
+
+    // 3. Validate image type (whitelist only safe formats)
+    const allowedTypes = [
+      'data:image/jpeg',
+      'data:image/jpg', 
+      'data:image/png',
+      'data:image/gif',
+      'data:image/webp'
+    ];
+    
+    const hasValidType = allowedTypes.some(type => profilePicture.startsWith(type));
+    if (!hasValidType) {
+      return res.status(400).json({ error: 'Only JPEG, PNG, GIF, and WebP images are allowed' });
+    }
+
+    // 4. Validate base64 format
+    const base64Regex = /^data:image\/(jpeg|jpg|png|gif|webp);base64,/;
+    if (!base64Regex.test(profilePicture)) {
+      return res.status(400).json({ error: 'Invalid base64 image format' });
+    }
+
+    // 5. Extract and validate base64 data
+    const base64Data = profilePicture.split(',')[1];
+    if (!base64Data || base64Data.length === 0) {
+      return res.status(400).json({ error: 'Empty image data' });
+    }
+
+    // 6. Validate base64 encoding
+    const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Pattern.test(base64Data)) {
+      return res.status(400).json({ error: 'Invalid base64 encoding' });
+    }
+
+    // 7. Check size limits
+    const minSize = 100; // Minimum ~75 bytes original
+    const maxSize = 10485760; // ~7.5MB original (10MB base64)
+    
+    if (profilePicture.length < minSize) {
+      return res.status(400).json({ error: 'Image file is too small or corrupted' });
+    }
+    
+    if (profilePicture.length > maxSize) {
+      return res.status(400).json({ error: 'Profile picture is too large (max 5MB)' });
+    }
+
+    // 8. Additional security: Check for common malicious patterns
+    const suspiciousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /onerror=/i,
+      /onload=/i,
+      /<iframe/i,
+      /<object/i,
+      /<embed/i
+    ];
+    
+    if (suspiciousPatterns.some(pattern => pattern.test(profilePicture))) {
+      return res.status(400).json({ error: 'Invalid image content detected' });
+    }
+
+    // Update the profile picture
+    req.user.profilePicture = profilePicture;
+    await req.user.save();
+
+    res.json({
+      message: 'Profile picture updated successfully',
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        createdAt: req.user.createdAt,
+        profilePicture: req.user.profilePicture
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /users/me/profile-picture - Delete profile picture (protected route)
+router.delete('/me/profile-picture', auth, async (req, res, next) => {
+  try {
+    // Remove the profile picture
+    req.user.profilePicture = null;
+    await req.user.save();
+
+    res.json({
+      message: 'Profile picture deleted successfully',
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        createdAt: req.user.createdAt,
+        profilePicture: null
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/me/profile-picture - Get profile picture URL (protected route)
+router.get('/me/profile-picture', auth, async (req, res, next) => {
+  try {
+    res.json({
+      profilePicture: req.user.profilePicture || null
     });
   } catch (error) {
     next(error);
@@ -166,7 +293,8 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       user: {
         id: req.user._id,
         username: req.user.username,
-        createdAt: req.user.createdAt
+        createdAt: req.user.createdAt,
+        profilePicture: req.user.profilePicture || null
       }
     });
   } catch (error) {

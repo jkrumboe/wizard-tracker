@@ -9,6 +9,7 @@ import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 
 // Lazy load pages for better performance
 const Profile = lazy(() => import("@/pages/profile/Profile"))
+const ProfileEdit = lazy(() => import("@/pages/profile/ProfileEdit"))
 const Leaderboard = lazy(() => import("@/pages/profile/Leaderboard"))
 const Stats = lazy(() => import("@/pages/profile/Stats"))
 const Settings = lazy(() => import("@/pages/Settings"))
@@ -158,6 +159,11 @@ function App() {
                   <Route path="/profile" element={
                     <AuthProtectedRoute>
                       <Profile />
+                    </AuthProtectedRoute>
+                  } />
+                  <Route path="/profile/edit" element={
+                    <AuthProtectedRoute>
+                      <ProfileEdit />
                     </AuthProtectedRoute>
                   } />
                   <Route path="/profile/:id" element={

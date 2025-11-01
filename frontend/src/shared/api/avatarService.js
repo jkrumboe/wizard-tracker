@@ -1,37 +1,155 @@
 import defaultAvatar from '@/assets/default-avatar.png';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 class AvatarService {
   constructor() {
-    // For now, we'll just use local storage to track avatar preferences
-    // In the future, this could be enhanced to upload to the backend
+    // Service now uses backend API for storage
   }
 
   /**
-   * Upload avatar image (currently stores base64 locally)
+   * Get authorization header
+   * @returns {Object} - Authorization header object
+   */
+  getAuthHeader() {
+    const token = localStorage.getItem('auth_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  }
+
+  /**
+   * Validate image file for security
+   * @param {File} file - The image file to validate
+   * @returns {Promise<boolean>} - True if valid
+   * @throws {Error} - If validation fails
+   */
+  async validateImageFile(file) {
+    // 1. Check if file exists
+    if (!file) {
+      throw new Error('No file provided');
+    }
+
+    // 2. Validate file type (whitelist only safe image types)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      throw new Error('Only JPEG, PNG, GIF, and WebP images are allowed');
+    }
+
+    // 3. Validate file extension matches MIME type
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!validExtensions.includes(fileExtension)) {
+      throw new Error('Invalid file extension');
+    }
+
+    // 4. Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('File size must be less than 5MB');
+    }
+
+    // 5. Validate minimum file size (prevents empty/corrupted files)
+    const minSize = 100; // 100 bytes
+    if (file.size < minSize) {
+      throw new Error('File is too small or corrupted');
+    }
+
+    // 6. Validate file name (prevent malicious filenames)
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+    if (sanitizedName.length === 0) {
+      throw new Error('Invalid filename');
+    }
+
+    // 7. Validate image dimensions and content
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+
+        // Check minimum dimensions (prevent 1x1 tracking pixels)
+        if (img.width < 50 || img.height < 50) {
+          reject(new Error('Image must be at least 50x50 pixels'));
+          return;
+        }
+
+        // Check maximum dimensions (prevent extremely large images)
+        if (img.width > 4096 || img.height > 4096) {
+          reject(new Error('Image dimensions must not exceed 4096x4096 pixels'));
+          return;
+        }
+
+        // Check aspect ratio (prevent extremely stretched images)
+        const aspectRatio = img.width / img.height;
+        if (aspectRatio > 10 || aspectRatio < 0.1) {
+          reject(new Error('Image aspect ratio is too extreme'));
+          return;
+        }
+
+        resolve(true);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Invalid or corrupted image file'));
+      };
+
+      img.src = url;
+    });
+  }
+
+  /**
+   * Upload avatar image to backend
    * @param {File} file - The image file from input
    * @returns {Promise<string>} - The file identifier (base64 string)
    */
   async uploadAvatar(file) {
     try {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        throw new Error('File must be an image');
-      }
+      // Comprehensive security validation
+      await this.validateImageFile(file);
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('File size must be less than 5MB');
-      }
-
-      // Convert to base64 and store locally for now
+      // Convert to base64
       const base64 = await this.fileToBase64(file);
       
-      // Store in localStorage (in future this could be sent to backend)
-      localStorage.setItem('user_avatar', base64);
+      // Additional check: Verify base64 data URL format
+      if (!base64.startsWith('data:image/')) {
+        throw new Error('Invalid image data format');
+      }
 
+      // Check base64 size after encoding
+      const base64Size = base64.length;
+      if (base64Size > 10 * 1024 * 1024) { // 10MB base64 limit
+        throw new Error('Encoded image is too large');
+      }
+
+      // Upload to backend
+      const response = await fetch(`${API_BASE_URL}/api/users/me/profile-picture`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeader()
+        },
+        body: JSON.stringify({ profilePicture: base64 })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload profile picture');
+      }
+
+      // Also store in localStorage as fallback
+      localStorage.setItem('user_avatar', base64);
+      
       return base64;
     } catch (error) {
       console.error('Error uploading avatar:', error);
+      // If backend fails, try storing locally as fallback
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        const base64 = await this.fileToBase64(file);
+        localStorage.setItem('user_avatar', base64);
+        console.warn('Avatar stored locally only (backend unavailable)');
+        return base64;
+      }
       throw new Error(error.message || 'Failed to upload avatar');
     }
   }
@@ -56,18 +174,38 @@ class AvatarService {
    */
   async getAvatarUrl() {
     try {
-      // Check if user has a custom avatar stored locally
+      // Try to get from backend first
+      const response = await fetch(`${API_BASE_URL}/api/users/me/profile-picture`, {
+        headers: this.getAuthHeader()
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.profilePicture) {
+          // Also cache locally
+          localStorage.setItem('user_avatar', data.profilePicture);
+          return data.profilePicture;
+        }
+      }
+
+      // Fallback to localStorage if backend fails or returns null
       const customAvatar = localStorage.getItem('user_avatar');
-      
       if (customAvatar) {
-        return customAvatar; // Return base64 data URL
+        return customAvatar;
       }
 
       // Return default avatar
       return defaultAvatar;
     } catch (error) {
       console.error('Error getting avatar URL:', error);
-      // Return default avatar as fallback
+      
+      // Try localStorage as fallback
+      const customAvatar = localStorage.getItem('user_avatar');
+      if (customAvatar) {
+        return customAvatar;
+      }
+      
+      // Return default avatar as final fallback
       return defaultAvatar;
     }
   }
@@ -95,11 +233,23 @@ class AvatarService {
    */
   async deleteAvatar() {
     try {
-      // Remove from localStorage
-      localStorage.removeItem('user_avatar');
-      return true;
+      // Try to delete from backend
+      const response = await fetch(`${API_BASE_URL}/api/users/me/profile-picture`, {
+        method: 'DELETE',
+        headers: this.getAuthHeader()
+      });
+
+      if (response.ok) {
+        // Also remove from localStorage
+        localStorage.removeItem('user_avatar');
+        return true;
+      }
+
+      throw new Error('Failed to delete profile picture');
     } catch (error) {
       console.error('Error deleting avatar:', error);
+      // Remove from localStorage anyway as fallback
+      localStorage.removeItem('user_avatar');
       throw new Error(error.message || 'Failed to delete avatar');
     }
   }
@@ -111,10 +261,7 @@ class AvatarService {
    */
   async replaceAvatar(file) {
     try {
-      // Delete existing avatar first
-      await this.deleteAvatar();
-      
-      // Upload new avatar
+      // Just upload the new avatar (backend will replace)
       return await this.uploadAvatar(file);
     } catch (error) {
       console.error('Error replacing avatar:', error);

@@ -12,6 +12,12 @@ const userSchema = new mongoose.Schema({
   passwordHash: {
     type: String,
     required: [true, 'Password is required']
+  },
+  profilePicture: {
+    type: String,
+    default: null,
+    // Base64 encoded image data
+    maxlength: [10485760, 'Profile picture cannot exceed 10MB'] // ~7.5MB after base64 encoding
   }
 }, {
   timestamps: true
