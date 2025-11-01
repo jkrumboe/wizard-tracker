@@ -133,8 +133,8 @@
 .advanced-stats {
   background-color: var(--background-color);
   border-radius: 10px;
-  padding: 1rem;
-  margin-top: 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-sm);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   width: 100%;
 }
@@ -164,8 +164,6 @@
 
 /* Bidding Style Card Styling */
 .bidding-style-card {
-  border-radius: 10px;
-  margin: 0.5rem 0;
   display: flex;
   flex-direction: column;
   align-items: center;

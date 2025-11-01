@@ -4,7 +4,7 @@
   box-shadow: var(--shadow);
   overflow-x: auto;
   position: relative;
-  padding: var(--spacing-sm);
+  /* padding: var(--spacing-sm); */
   border-radius: var(--radius-lg);
   /* Improve scrolling experience */
   scrollbar-width: thin;
@@ -71,7 +71,7 @@
   box-shadow: none;
   /* Ensure the background fills the entire cell */
   isolation: isolate;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
 }
 
 .round-number {

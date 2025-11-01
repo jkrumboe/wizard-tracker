@@ -1,23 +1,52 @@
 /* Styling for Tablets*/ 
-@media (orientation: landscape) {
-    
-    /* Custom scrollbar styling for webkit browsers */
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+@media (orientation: landscape){
+
+    /* Ensure modals are not affected by body padding */
+    .modal-overlay {
+        left: 0;
+        margin-left: 0;
     }
-    
-    ::-webkit-scrollbar-track {
-        border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        border-radius: 3px;
+
+    /* Adjust containers */
+    .game-details-container,
+    .settings-container,
+    .home-container,
+    .game-in-progress {
+        padding-left: var(--spacing-md);
+        width: 100%;
     }
 
     /* Game Details*/
+    .game-details-header {
+        display: flex !important;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-md);
+    }
+
+    .game-details-header .back-link {
+        position: relative;
+        left: 0;
+        top: 0;
+    }
+
+    .settings-button.share-button {
+        padding: 0 !important;
+    }
+
+    .game-details-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .results-table {
+        max-height: 75dvh;
+        overflow-y: auto;
+    }
+
     .game-summary {
         gap: var(--spacing-md);
+        /* overflow-y: auto; */
     }
 
     .scorecard-table {
@@ -27,10 +56,8 @@
         border-spacing: 0;
     }
 
-    .scorecard-table th,
-    .scorecard-table td {
-        padding-top: var(--spacing-xs);
-        padding-bottom: var(--spacing-xs);
+    .scorecard-table th {
+        padding: var(--spacing-xs) !important;
     }
 
     .scorecard-table th:first-child,
@@ -74,6 +101,18 @@
         flex: 0 0 40%;
     }
 
+    /* Make charts smaller in landscape mode */
+    .chart-wrapper {
+        height: 220px !important;
+        max-height: 220px;
+        padding: 0 !important;
+    }
+
+    .chart-title {
+        font-size: 1rem;
+        margin: var(--spacing-xs) 0;
+    }
+
     .main-container {
         align-items: center;
     }
@@ -106,7 +145,7 @@
 
     .home-header {
         width: 100%;
-        margin-bottom: var(--spacing-lg);
+        margin-bottom: var(--spacing-md);
     }
 
     .recent-games {
@@ -115,12 +154,14 @@
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow);
         height: 100%;
+        max-height: 70vh;
     }
 
     .results-section {
         display: flex;
         flex-direction: column;
         align-items: center;
+        padding: var(--spacing-md) var(--spacing-sm);
         width: 50%;
         height: 100%;
     }
@@ -171,7 +212,7 @@
         flex-direction: row;
         flex-wrap: wrap;
         gap: var(--spacing-md);
-        justify-content: center;
+        /* justify-content: center; */
         width: 100%;
     }
 
@@ -184,7 +225,7 @@
         flex-direction: row;
         flex-wrap: wrap;
         overflow-y: auto;
-        max-height: 400px;
+        /* max-height: 400px; */
         gap: var(--spacing-md);
         width: 100%;
     }
@@ -208,6 +249,7 @@
 
     .setup-section {
         width: 100%;
+        margin: 0;
     }
 
     .setup-section .selected-players-wrapper {
@@ -222,10 +264,6 @@
         width: 100%;
     }
 
-    .game-in-progress {
-        width: 80%;
-    }
-
     .paused-game-item{
         width: 50%;
     }
@@ -238,17 +276,38 @@
 
     .settings-button {
         width: 100%;
-        max-width: 200px;
         justify-content: center;
-        margin: 0 auto;
+    }
+
+    .settings-button.danger-button {
+        width: 35% !important;
+    }
+
+    .player-actions {
+        margin-top: var(--spacing-sm);
     }
 
     .new-game-actions {
-        width: 40%;
-        margin-top: 5vh;
+        width: 30%;
+        margin: auto 0;
         display: flex;
         flex-direction: column;
         align-items: center;
+        position: relative;
+    }
+    
+    .inputPlayerName {
+        width: 100% !important;
+    }
+
+    .settings-actions {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: unset !important;
+    }
+
+    .cloud-sync-actions {
+        width: 100%;
     }
 
     /* New Games Page */
@@ -267,14 +326,284 @@
         width: 100%;
     }    
 
+    .start-game-btn {
+        position: relative;
+        width: 150px !important;
+        height: 150px !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Reserve space for error message to prevent button from moving */
+    .new-game-actions .error-message {
+        position: absolute;
+        top: 10rem;
+        margin: 0;
+        text-align: center;
+    }
+
+    /* Tablet Styles */
+
+     .table-game-header {
+        margin-bottom: var(--spacing-md) !important;
+    }
+
+    .table-game-header button {
+        width: 100%;
+        justify-content: center;
+    }
+
     /* Game in Progress */
     .player-row {
         padding: 0; 
     }
 
-    /* .score-table th,
-    .score-table td {
-        padding-top: 0;
-        padding-bottom: 0;
-    } */
+    /* Hide stats subtabs in landscape - show both views */
+    .game-in-progress .stats-subtabs {
+        display: none !important;
+    }
+
+    /* Restructure to show both chart and player details side by side */
+    .game-in-progress .tab-panel {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .game-in-progress .game-stats-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+        grid-template-areas: 
+            "chart details";
+        width: 100%;
+        height: auto;
+        margin: 0;
+        align-items: start;
+    }
+
+    /* Force both views to display */
+    .game-in-progress .stats-chart-container {
+        grid-area: chart;
+        display: block !important;
+        max-height: 65vh;
+        overflow-y: auto;
+        height: fit-content;
+    }
+
+    .game-in-progress .results-table {
+        grid-area: details;
+        display: block !important;
+        max-height: 65vh;
+        height: fit-content;
+        overflow-y: auto;
+        margin: 0 !important;
+        align-self: start;
+    }
+
+    .storage-cloud-grid {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        gap: var(--spacing-md);
+    }
+
+    .storage-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--spacing-lg);
+    }
+
+}
+
+@media (orientation: landscape) and (max-width: 950px) {
+    /* Move navbar to left side in landscape mode */
+    .bottom-navbar {
+        flex-direction: column ;
+        justify-content: flex-start ;
+        left: 0;
+        right: auto;
+        bottom: 0;
+        top: 0;
+        width: 60px;
+        height: 100vh;
+        border-top: none;
+        border-right: 1px solid var(--border-color);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        padding: 0;
+    }
+
+    .bottom-nav-item {
+        width: 100%;
+        padding: var(--spacing-md) var(--spacing-xs);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .bottom-nav-item .nav-icon {
+        font-size: 1.5rem;
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .bottom-nav-item span {
+        font-size: 0.7rem;
+    }
+
+    .main-container {
+        padding-left: 70px !important;
+        padding-bottom: 0 !important;
+    }
+
+    h1 {
+        font-size: 1.2rem !important;
+    }
+
+    h2 {
+        font-size: 1rem !important;
+    }
+
+    .adv-stats-btn {
+        font-size: 0.75rem !important;
+        padding: var(--spacing-xs) var(--spacing-sm) !important;
+    }
+
+    .score-col {
+        margin: 0 !important;
+        font-size: 1rem !important;
+    }
+
+    .results-row .rank-col {
+        flex: 0 0 10%;
+        font-weight: bold;
+    }
+
+    .game-details-container {
+        padding-top: var(--spacing-md) !important;
+    }
+
+    .modal-header {
+        padding: var(--spacing-sm);
+    }
+
+    .modal-content {
+        max-width: none;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .filter-section  {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--spacing-lg);
+    }
+
+    .filter-section-title {
+        border: none;
+    }
+
+    .filter-group-row,
+    .player-input-container {
+        margin: 0;
+        width: 80%;
+        gap: var(--spacing-lg);
+    }
+
+    .add-player-btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.9rem;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: auto;
+        flex: 1;
+        gap: var(--spacing-md);
+    }
+
+    .filter-group label {
+        margin: 0;
+        white-space: nowrap;
+        margin-right: var(--spacing-xs);
+    }
+
+    .filter-input,
+    .filter-select {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .filter-input[type="date"] {
+       min-width: 50%;
+    }
+    
+    .player-tags {
+        display: flex;
+        flex-direction: row;
+        width: 30%;
+        height: 30px;
+        overflow-x: scroll;
+        gap: var(--spacing-xs);
+        margin: 0;
+    }
+
+    .game-in-progress .game-bottom-section {
+        bottom: var(--spacing-sm) !important;
+    }
+
+    .paused-games-section {
+        height: 100vh !important;
+        max-height: 70vh !important;
+    }
+
+    .paused-games-list {
+        max-height: 100%;
+    }
+
+    /* Make chart even smaller for small landscape devices */
+    .game-in-progress .chart-wrapper {
+        height: 180px !important;
+        max-height: 180px;
+    }
+
+    /* Adjust stats container for smaller screens */
+    .game-in-progress .game-stats-container {
+        height: auto;
+        max-height: 70vh;
+    }
+
+    /* Make results table smaller in small landscape */
+    .game-in-progress .results-table {
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+
+    .game-in-progress .stats-chart-container {
+        max-height: 50vh;
+        border: 1px solid var(--border-color);
+    }
+
+    .player-scores {
+        width: 90%;
+        margin: 0 auto;
+    }
+
+    .game-in-progress .game-stats-container h2 {
+        display: none;
+    }  
+
+    .finish-btn {
+        width: 80%;
+        margin: 0 auto;
+        padding: var(--spacing-xs) var(--spacing-sm) !important;
+    }
+
+    .template-name-row {
+        margin-right: var(--spacing-md);
+    }
+
+   
 }

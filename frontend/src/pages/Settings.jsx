@@ -986,7 +986,7 @@ const Settings = () => {
         </div>
 
         <div className="settings-section">
-          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+          <div className="section-header" >
             <h2>Saved Games</h2>
             <button 
               className="filter-button"

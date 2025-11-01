@@ -405,26 +405,26 @@ const GameDetails = () => {
         )} */}
         
         <div className="game-details-header">
-          <div className="game-header-top">
-            <Link to="/" className="back-link">
-              <ArrowLeftIcon className="back-icon" />
-            </Link>
-            <h1 id="header-game-detail-badge">Game Details </h1>
-            <div className="toggle-section">
-              {!isLandscape  && (
-                <button
-                  className="game-control-btn"
-                  id="game-toggle-details"
-                  onClick={() => setActiveTab(activeTab === 'rounds' ? 'stats' : 'rounds')}
-                  aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
-                  aria-pressed={activeTab === 'stats'}
-                >
-                  {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <TableIcon size={22} />}
-                </button>
-              )}
-            </div>
+          <Link to="/" className="back-link">
+            <ArrowLeftIcon className="back-icon" />
+          </Link>
+          <div className="toggle-section">
+            {!isLandscape  && (
+              <button
+                className="game-control-btn"
+                id="game-toggle-details"
+                onClick={() => setActiveTab(activeTab === 'rounds' ? 'stats' : 'rounds')}
+                aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
+                aria-pressed={activeTab === 'stats'}
+              >
+                {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <TableIcon size={22} />}
+              </button>
+            )}
           </div>
-          <div className="game-date" style={{ margin: "0 auto" }}>Finished: {formattedDate}</div>
+          <div className="game-header-top">
+            <h1 id="header-game-detail-badge">Game Details </h1>
+          </div>
+          <div className="game-date">Finished: {formattedDate}</div>
           
           {/* Container for mode badge and share button */}
           <div className="badge-controls-container">

@@ -165,6 +165,16 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                   <div className="template-info">
                     <div className="template-name-row">
                       <div className="template-name">{template.name}</div>
+                       <div className="template-meta">
+                        {(() => {
+                          const savedCount = getSavedGamesCount(template.name);
+                          return savedCount > 0 ? (
+                            <span className="template-usage">
+                              {savedCount} saved {savedCount === 1 ? 'game' : 'games'}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
                       <button
                         className="template-action-btn edit-btn-inline"
                         onClick={(e) => handleEditClick(template, e)}
@@ -173,16 +183,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                         <EditIcon size={16} />
                       </button>
                     </div>
-                    <div className="template-meta">
-                      {(() => {
-                        const savedCount = getSavedGamesCount(template.name);
-                        return savedCount > 0 ? (
-                          <span className="template-usage">
-                            {savedCount} saved {savedCount === 1 ? 'game' : 'games'}
-                          </span>
-                        ) : null;
-                      })()}
-                    </div>
+                   
                   </div>
                   <div className="template-actions">
                     <button

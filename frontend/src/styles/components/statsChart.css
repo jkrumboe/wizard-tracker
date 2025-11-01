@@ -8,6 +8,7 @@
 .chart-controls {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .chart-type-selector {
@@ -23,6 +24,7 @@
   color: var(--text-color);
   border-radius: var(--radius-md);
   padding: 0.35rem 0.75rem;
+  margin: 0;
   font-size: 0.9rem;
   text-align: center;
 }
@@ -30,7 +32,7 @@
 .player-toggles {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  /* gap: var(--spacing-sm); */
 }
 
 .player-toggle-header {

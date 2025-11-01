@@ -14,7 +14,7 @@
 /* Only adjust font size for many players, not the width */
 .wizard-scorecard[data-player-count="5"] .player-header-name,
 .wizard-scorecard[data-player-count="6"] .player-header-name {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 /* Adjustments for score cells based on player count */

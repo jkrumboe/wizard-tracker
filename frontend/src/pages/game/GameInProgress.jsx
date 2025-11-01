@@ -44,6 +44,7 @@ const GameInProgress = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
   const [isRecovering, setIsRecovering] = useState(false) // Track recovery state
+  const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches)
   
   // Refs to store current values for event handlers
   const gameStateRef = useRef(gameState)
@@ -54,6 +55,17 @@ const GameInProgress = () => {
     gameStateRef.current = gameState
     pauseGameRef.current = pauseGame
   }, [gameState, pauseGame])
+  
+  // Listen for orientation changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(orientation: landscape)')
+    const handleOrientationChange = (e) => {
+      setIsLandscape(e.matches)
+    }
+    
+    mediaQuery.addEventListener('change', handleOrientationChange)
+    return () => mediaQuery.removeEventListener('change', handleOrientationChange)
+  }, [])
   
   // Function to toggle player stats visibility
   const togglePlayerStats = (playerId) => {
@@ -636,35 +648,40 @@ const GameInProgress = () => {
               </button>
             </div>
             
-            {statsSubTab === 'chart' ? (
-              <StatsChart 
-                playersData={detailedStats} 
-                roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
-              />
-            ) : (
+            {/* Show both views in landscape, otherwise show based on selected tab */}
+            {(statsSubTab === 'chart' || isLandscape) && (
+              <div className="stats-chart-container">
+                <StatsChart 
+                  playersData={detailedStats} 
+                  roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
+                />
+              </div>
+            )}
+            
+            {(statsSubTab === 'details' || isLandscape) && (
               <div className="results-table">
-              {detailedStats.map((playerStats, index) => (
-                <div key={playerStats.id} className="results-row">
-                  <div className="top-result-row">
-                    <div className="rank-col">{index + 1}</div>
-                    <div className="player-col">
-                      <div className="player-info">
-                        <span>{playerStats.name}</span>
+                {detailedStats.map((playerStats, index) => (
+                  <div key={playerStats.id} className="results-row">
+                    <div className="top-result-row">
+                      <div className="rank-col">{index + 1}</div>
+                      <div className="player-col">
+                        <div className="player-info">
+                          <span>{playerStats.name}</span>
+                        </div>
                       </div>
+                      <div className="score-col">{playerStats.totalPoints || 0}</div>
+                      <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
+                        {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
+                      </button>
                     </div>
-                    <div className="score-col">{playerStats.totalPoints || 0}</div>
-                    <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
-                      {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
-                    </button>
-                </div>
-                  
-                  <AdvancedStats 
-                    playerStats={playerStats} 
-                    isVisible={selectedPlayerId === playerStats.id} 
-                  />
-                </div>
-              ))}
-            </div>
+                    
+                    <AdvancedStats 
+                      playerStats={playerStats} 
+                      isVisible={selectedPlayerId === playerStats.id} 
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

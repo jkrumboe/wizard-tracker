@@ -56,7 +56,7 @@
   
   .player-tags {
     display: flex;
-    flex-wrap: wrap;
+    /* flex-wrap: wrap; */
     gap: var(--spacing-xs);
   }
 
@@ -326,11 +326,13 @@
   .game-details-header {
     display: grid;
     /* flex-direction: column; */
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     background-color: var(--card-background);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
+    align-items: center;
+    justify-items: center;
   }
 
   .game-details-header h1 {
@@ -441,7 +443,8 @@
 .stats-subtabs {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-xxxl);
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-sm);
 }
 
 .stats-subtab-btn {
@@ -449,7 +452,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-color);
-  padding: var(--spacing-sm) 0;
+  padding: var(--spacing-xs) 0;
   /* margin: 0 var(--spacing-md); */
   cursor: pointer;
   font-weight: 500;
@@ -1722,7 +1725,6 @@
   .advanced-stats {
     flex-basis: 100%;
     overflow-y: visible;
-    padding-bottom: var(--spacing-md);
   }
 
   .bid-stats {
@@ -1822,7 +1824,6 @@
 
 .advanced-stats {
   overflow-y: visible;
-  padding-bottom: var(--spacing-md);
 }
 
 .stats-section {
@@ -1855,6 +1856,7 @@
     .game-summary {
       display: flex;
       flex-direction: row;
+      gap: var(--spacing-md);
     }
 
     /* .players-section{
@@ -2218,14 +2220,6 @@
     font-size: 0.7rem;
   }
 }
-
-/* Media query for desktop */
-@media (min-width: 769px) {
-  .tab-panel {
-    margin-bottom: var(--spacing-lg);
-  }
-}
-
  
 /* Home page - Recent Games section */
 .recent-games {
@@ -2258,6 +2252,7 @@
 /* Scrollbar styling for game-history */
 .game-history::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 .game-history::-webkit-scrollbar-track {
@@ -2465,11 +2460,11 @@
 } */
 
 .game-header-top {
-  position: relative;
+  /* position: relative; */
   /* top: 100%; */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  /* display: flex; */
+  /* justify-content: space-between; */
+  /* align-items: center; */
 }
 
 #game-toggle-details {
@@ -3037,6 +3032,11 @@
   
   #toggle-button-profile {
     padding: var(--spacing-xs);
+  }
+
+  .game-header-top {
+    gap: var(--spacing-sm);
+    justify-content: space-between;
   }
 }
 

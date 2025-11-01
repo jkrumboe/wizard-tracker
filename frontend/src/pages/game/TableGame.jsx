@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
-import PlayerNameInput from "../../components/ui/PlayerNameInput";
 import { SyncStatusIndicator } from "../../components/game";
 import { useUser } from "../../shared/hooks/useUser";
 import "../../styles/components/TableGame.css";
@@ -11,7 +10,13 @@ const MIN_PLAYERS = 2;
 
 const TableGame = () => {
   const { user } = useUser(); // Get the logged-in user
-  const [rows, setRows] = useState(12);
+  
+  const [rows, setRows] = useState(() => {
+    const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
+    const initialRows = isSmallLandscape ? 4 : 12;
+    console.log('Initial rows state:', { isSmallLandscape, initialRows, windowWidth: window.innerWidth, orientation: window.screen.orientation?.type });
+    return initialRows;
+  });
   
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
@@ -69,7 +74,20 @@ const TableGame = () => {
         // Only restore if we have valid data
         if (gameState.currentGameId && gameState.players) {
           setPlayers(gameState.players);
-          setRows(gameState.rows);
+          // Check if we should adjust rows based on current orientation
+          const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
+          const hasData = gameState.players.some(player => 
+            player.points.some(point => point !== "" && point !== undefined && point !== null)
+          );
+          // Only adjust rows if no data or use saved rows
+          let restoredRows;
+          if (hasData) {
+            restoredRows = gameState.rows;
+          } else {
+            restoredRows = isSmallLandscape ? 4 : 12;
+          }
+          console.log('Restoring game state:', { isSmallLandscape, hasData, savedRows: gameState.rows, restoredRows });
+          setRows(restoredRows);
           setCurrentGameName(gameState.currentGameName);
           setCurrentGameId(gameState.currentGameId);
           setShowTemplateSelector(false);
@@ -80,6 +98,23 @@ const TableGame = () => {
       }
     }
   }, []); // Only run once on mount
+
+  // Listen for orientation changes and adjust rows
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(orientation: landscape) and (max-width: 950px)');
+    const handleOrientationChange = (e) => {
+      // Only update rows if we're starting a new game (no data entered yet)
+      const hasData = players.some(player => 
+        player.points.some(point => point !== "" && point !== undefined && point !== null)
+      );
+      if (!hasData) {
+        setRows(e.matches ? 4 : 12);
+      }
+    };
+    
+    mediaQuery.addEventListener('change', handleOrientationChange);
+    return () => mediaQuery.removeEventListener('change', handleOrientationChange);
+  }, [players]);
 
   // Update refs when values change
   useEffect(() => {
@@ -349,7 +384,11 @@ const TableGame = () => {
       { name: "Player 2", points: [] },
       { name: "Player 3", points: [] }
     ]);
-    setRows(12);
+    // Set rows based on current orientation
+    const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
+    const newRows = isSmallLandscape ? 8 : 12;
+    console.log('Setting rows on template select:', { isSmallLandscape, newRows });
+    setRows(newRows);
   };
 
   const handleCreateNewGame = (newGameName) => {
@@ -453,11 +492,12 @@ const TableGame = () => {
               {players.map((player, idx) => (
                 <th key={idx}>
                   <div className="table-game-player-header">
-                    <PlayerNameInput
+                    <input
                       value={player.name}
                       onChange={(e) => handleNameChange(idx, e.target.value)}
                       className="table-game-player-input"
                       placeholder={`Player ${idx + 1}`}
+                      type="text"
                     />
                   </div>
                 </th>
