@@ -45,6 +45,7 @@
     }
 
     .game-summary {
+        display: flex;
         gap: var(--spacing-md);
         /* overflow-y: auto; */
     }
@@ -638,7 +639,7 @@
     }
 
     .profile-container {
-        margin: 15vh 0;
+        margin-top: 15vh;
     }
 
     .profile-header {
@@ -647,5 +648,15 @@
 
     .stats-graph {
         padding: 0;
+    }
+
+    .scorecard-table td {
+        padding: 0;
+    }
+
+    .chart-wrapper {
+        max-width: 220px;
+        width: 100%;
+        padding: 0 !important;
     }
 }
