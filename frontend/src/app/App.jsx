@@ -135,6 +135,11 @@ function URLImportHandler() {
 
 function App() {
   useEffect(() => {
+    // Log app version
+    // eslint-disable-next-line no-undef
+    const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
+    console.log(`KeepWiz v${appVersion}`);
+    
     // Register service worker for PWA functionality
     register()
     

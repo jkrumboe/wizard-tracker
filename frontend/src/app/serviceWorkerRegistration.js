@@ -1,6 +1,9 @@
 // Enhanced service worker registration with custom update UI
 let isReloading = false;
 let updateCheckInProgress = false;
+let lastUpdateCheck = 0;
+const UPDATE_CHECK_INTERVAL = 300000; // 5 minutes
+const MIN_UPDATE_CHECK_DELAY = 10000; // 10 seconds minimum between checks
 
 export function register() {
   if (!("serviceWorker" in navigator)) {
@@ -21,24 +24,66 @@ export function register() {
       .then((registration) => {
         console.debug("ServiceWorker registration successful with scope: ", registration.scope)
 
-        // Check for updates only once every 5 minutes when page is visible
-        // This prevents constant update checks that cause multiple prompts
-        setInterval(() => {
-          if (document.visibilityState === 'visible' && !updateCheckInProgress) {
-            updateCheckInProgress = true;
-            registration.update().finally(() => {
-              // Reset after 10 seconds to prevent rapid successive checks
+        // Throttled update checker
+        const checkForUpdate = () => {
+          const now = Date.now();
+          const timeSinceLastCheck = now - lastUpdateCheck;
+          
+          // Skip if checked recently or if update is in progress
+          if (timeSinceLastCheck < MIN_UPDATE_CHECK_DELAY || updateCheckInProgress) {
+            console.debug('Skipping update check - too soon or already in progress');
+            return;
+          }
+          
+          // Skip if page is not visible
+          if (document.visibilityState !== 'visible') {
+            return;
+          }
+          
+          // Skip if an update is already being processed
+          const updateState = localStorage.getItem('pwa_update_state');
+          if (updateState === 'updating' || updateState === 'completed') {
+            console.debug('Skipping update check - update already in progress or completed');
+            return;
+          }
+          
+          updateCheckInProgress = true;
+          lastUpdateCheck = now;
+          
+          console.debug('Checking for service worker updates...');
+          
+          registration.update()
+            .then(() => {
+              console.debug('Update check completed');
+            })
+            .catch((error) => {
+              console.error('Update check failed:', error);
+            })
+            .finally(() => {
+              // Reset after a delay to prevent rapid successive checks
               setTimeout(() => {
                 updateCheckInProgress = false;
-              }, 10000);
+              }, MIN_UPDATE_CHECK_DELAY);
             });
+        };
+
+        // Check for updates periodically (5 minutes)
+        setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL);
+        
+        // Also check when page becomes visible (e.g., user switches back to tab)
+        // but with throttling
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            // Delay slightly to avoid rapid checks
+            setTimeout(checkForUpdate, 2000);
           }
-        }, 300000); // 5 minutes
+        });
 
         // Listen for updates - the UpdateNotification component will handle the UI
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
+            console.debug('New service worker detected, installing...');
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 console.debug('New version available - UpdateNotification component will handle the update.');
@@ -57,6 +102,7 @@ export function register() {
   let controllerChangeHandled = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (isReloading || controllerChangeHandled) {
+      console.debug('Controller change already handled, skipping');
       return;
     }
 
@@ -64,6 +110,17 @@ export function register() {
     if (window.__PWA_UPDATE_IN_PROGRESS) {
       console.debug('Update in progress via UpdateNotification - skipping automatic reload');
       return;
+    }
+    
+    // Skip if update was recently completed (prevents loop)
+    const updateState = localStorage.getItem('pwa_update_state');
+    const updateTimestamp = localStorage.getItem('pwa_update_timestamp');
+    if (updateState === 'completed' && updateTimestamp) {
+      const timeSinceUpdate = Date.now() - parseInt(updateTimestamp, 10);
+      if (timeSinceUpdate < 5000) {
+        console.debug('Update recently completed, skipping reload');
+        return;
+      }
     }
 
     controllerChangeHandled = true;

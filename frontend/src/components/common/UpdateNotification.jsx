@@ -6,11 +6,20 @@ import '@/styles/components/update-notification.css';
  * 
  * Shows a loading screen during PWA updates to prevent multiple reload prompts.
  * Automatically applies updates without user interaction for a smoother experience.
+ * 
+ * Uses localStorage to track update state across page reloads to prevent infinite loops.
  */
+
+// Storage keys for tracking update state
+const UPDATE_STATE_KEY = 'pwa_update_state';
+const LAST_VERSION_KEY = 'pwa_last_version';
+const UPDATE_TIMESTAMP_KEY = 'pwa_update_timestamp';
+
 const UpdateNotification = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const updateInProgressRef = useRef(false);
   const hasShownUpdateRef = useRef(false);
+  const controllerChangeHandledRef = useRef(false);
 
   useEffect(() => {
     // Only run in production
@@ -18,10 +27,53 @@ const UpdateNotification = () => {
       return;
     }
 
+    // Check if we just completed an update (prevents infinite loop)
+    const updateState = localStorage.getItem(UPDATE_STATE_KEY);
+    const updateTimestamp = localStorage.getItem(UPDATE_TIMESTAMP_KEY);
+    const now = Date.now();
+    
+    // If an update was applied less than 10 seconds ago, skip this check
+    if (updateState === 'completed' && updateTimestamp) {
+      const timeSinceUpdate = now - parseInt(updateTimestamp, 10);
+      if (timeSinceUpdate < 10000) {
+        console.debug('Update recently completed, skipping update check');
+        // Clear the state after cooldown
+        setTimeout(() => {
+          localStorage.removeItem(UPDATE_STATE_KEY);
+          localStorage.removeItem(UPDATE_TIMESTAMP_KEY);
+        }, 10000 - timeSinceUpdate);
+        return;
+      }
+    }
+
     // Prevent multiple updates from being processed
     if (updateInProgressRef.current || hasShownUpdateRef.current) {
       return;
     }
+
+    const getCurrentSWVersion = async () => {
+      if (!navigator.serviceWorker.controller) {
+        return null;
+      }
+      
+      try {
+        const messageChannel = new MessageChannel();
+        return new Promise((resolve) => {
+          messageChannel.port1.onmessage = (event) => {
+            resolve(event.data.version);
+          };
+          navigator.serviceWorker.controller.postMessage(
+            { type: 'GET_VERSION' },
+            [messageChannel.port2]
+          );
+          // Timeout after 1 second
+          setTimeout(() => resolve(null), 1000);
+        });
+      } catch (error) {
+        console.debug('Could not get SW version:', error);
+        return null;
+      }
+    };
 
     const handleUpdateFound = async (registration) => {
       // Prevent duplicate update handling
@@ -34,11 +86,20 @@ const UpdateNotification = () => {
         return;
       }
 
+      // Check if this is actually a new version
+      const currentVersion = localStorage.getItem(LAST_VERSION_KEY);
+      const swVersion = await getCurrentSWVersion();
+      
+      console.debug(`Update check - Current: ${currentVersion}, SW: ${swVersion}`);
+
       // Mark that we're handling an update
       updateInProgressRef.current = true;
       hasShownUpdateRef.current = true;
 
       const applyUpdate = async () => {
+        // Set state to 'updating' in localStorage
+        localStorage.setItem(UPDATE_STATE_KEY, 'updating');
+        
         // Show loading screen
         setIsUpdating(true);
 
@@ -63,8 +124,9 @@ const UpdateNotification = () => {
           // The controllerchange event will trigger the reload
         } catch (error) {
           console.error('Update failed:', error);
-          // Clear the flag on error
+          // Clear the flags on error
           window.__PWA_UPDATE_IN_PROGRESS = false;
+          localStorage.removeItem(UPDATE_STATE_KEY);
           // Force reload as fallback after a delay
           setTimeout(() => {
             window.location.reload();
@@ -104,14 +166,40 @@ const UpdateNotification = () => {
       });
 
       // Listen for controller change (when new service worker takes over)
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
+      navigator.serviceWorker.addEventListener('controllerchange', async () => {
+        // Prevent multiple controllerchange events
+        if (controllerChangeHandledRef.current) {
+          console.debug('Controller change already handled, ignoring');
+          return;
+        }
+
         // Only reload if we initiated the update
-        if (updateInProgressRef.current) {
+        if (updateInProgressRef.current || localStorage.getItem(UPDATE_STATE_KEY) === 'updating') {
+          controllerChangeHandledRef.current = true;
+          
           console.debug('Service worker updated, reloading page...');
-          // Small delay to show the loading screen
+          
+          // Mark update as completed before reload
+          localStorage.setItem(UPDATE_STATE_KEY, 'completed');
+          localStorage.setItem(UPDATE_TIMESTAMP_KEY, Date.now().toString());
+          
+          // Get and store the new version
+          const newVersion = await getCurrentSWVersion();
+          if (newVersion) {
+            localStorage.setItem(LAST_VERSION_KEY, newVersion);
+          }
+          
+          // Small delay to show the loading screen, then reload
           setTimeout(() => {
             window.location.reload();
           }, 500);
+        }
+      });
+
+      // Store the current version on first load
+      getCurrentSWVersion().then(version => {
+        if (version && !localStorage.getItem(LAST_VERSION_KEY)) {
+          localStorage.setItem(LAST_VERSION_KEY, version);
         }
       });
     }

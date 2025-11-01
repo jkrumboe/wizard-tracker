@@ -1,12 +1,18 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import { VitePWA } from "vite-plugin-pwa"
+import fs from 'fs'
+
+// Read version from package.json
+const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
+const APP_VERSION = packageJson.version
 
 // https://vitejs.dev/config/
 export default defineConfig({
   envDir: '../', // Look for .env files in the root directory
   define: {
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC'),
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
   build: {
     // Enable minification
@@ -106,6 +112,24 @@ export default defineConfig({
         ],
       },
     }),
+    // Post-process to inject version in service worker after build
+    {
+      name: 'inject-sw-version',
+      enforce: 'post',
+      closeBundle() {
+        // Inject version into the service worker in dist folder
+        const distSwPath = './dist/service-worker.js'
+        if (fs.existsSync(distSwPath)) {
+          let swContent = fs.readFileSync(distSwPath, 'utf-8')
+          swContent = swContent.replace(
+            /"__APP_VERSION__"/g,
+            `"${APP_VERSION}"`
+          )
+          fs.writeFileSync(distSwPath, swContent)
+          console.log(`✓ Injected version ${APP_VERSION} into service worker`)
+        }
+      }
+    }
   ],
   resolve: {
     alias: {

@@ -1,6 +1,9 @@
 // Service Worker for KeepWiz PWA - Automatic Updates + Offline Sync
-const CACHE_NAME = "keep-wiz-v1.3" // Increment version for updates
-const API_CACHE_NAME = "keep-wiz-api-v1"
+// Version is injected during build process
+const APP_VERSION = "__APP_VERSION__" // Will be replaced during build
+const CACHE_NAME = `keep-wiz-v${APP_VERSION}`
+const API_CACHE_NAME = `keep-wiz-api-v${APP_VERSION}`
+const UPDATE_APPLIED_KEY = `sw-update-applied-${APP_VERSION}`
 const urlsToCache = [
   "/", 
   "/index.html", 
@@ -26,7 +29,7 @@ const WRITE_API_PATTERNS = [
 
 // Install event - cache assets and skip waiting for immediate activation
 self.addEventListener("install", (event) => {
-  console.debug('Service Worker installing...');
+  console.debug(`Service Worker installing version ${APP_VERSION}...`);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.debug("Opened cache")
@@ -45,20 +48,32 @@ self.addEventListener("install", (event) => {
 
 // Activate event - clean up old caches and take control immediately
 self.addEventListener("activate", (event) => {
-  console.debug('Service Worker activating...');
+  console.debug(`Service Worker activating version ${APP_VERSION}...`);
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
-            console.debug('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
+              console.debug('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Store the current version in cache to track updates
+      caches.open(CACHE_NAME).then(cache => {
+        return cache.put(
+          new Request('/sw-version'),
+          new Response(APP_VERSION, {
+            headers: { 'Content-Type': 'text/plain' }
+          })
+        );
+      })
+    ]).then(() => {
       // Take control of all clients immediately
-      console.debug('Service Worker taking control of all clients');
+      console.debug(`Service Worker v${APP_VERSION} taking control of all clients`);
       return self.clients.claim();
     })
   );
@@ -67,8 +82,13 @@ self.addEventListener("activate", (event) => {
 // Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.debug('Received SKIP_WAITING message');
+    console.debug(`Received SKIP_WAITING message for version ${APP_VERSION}`);
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    console.debug(`Sending version ${APP_VERSION}`);
+    event.ports[0].postMessage({ version: APP_VERSION });
   }
   
   if (event.data && event.data.type === 'CLEAR_CACHE') {
