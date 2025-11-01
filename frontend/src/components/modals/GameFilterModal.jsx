@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, FilterIcon, PlusIcon } from '@/components/ui/Icon';
+import PlayerNameInput from '@/components/ui/PlayerNameInput';
 import '@/styles/components/modal.css';
 import '@/styles/components/GameFilterModal.css';
 
@@ -96,9 +97,8 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
           <div className="filter-section">
             <h3 className="filter-section-title">Players</h3>
                 <div className="player-input-container">
-                    <input
+                    <PlayerNameInput
                     id="playerName"
-                    type="text"
                     className="filter-input"
                     placeholder="Enter player name..."
                     value={playerInput}

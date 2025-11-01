@@ -8,6 +8,7 @@ import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { GripVertical } from 'lucide-react';
 import { XIcon, DiceIcon } from '@/components/ui/Icon';
+import PlayerNameInput from '@/components/ui/PlayerNameInput';
 import {
   DndContext,
   closestCenter,
@@ -79,11 +80,12 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
         </span>
       </div>
       
-      <input 
+      <PlayerNameInput 
         className="inputPlayerName" 
         value={player.name} 
-        inputMode="text" 
         onChange={(e) => onNameChange(player.id, e)}
+        placeholder={`Player ${index + 1}`}
+        inputMode="text"
       />
       <button 
         className="remove-btn" 
