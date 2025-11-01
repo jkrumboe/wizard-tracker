@@ -1,6 +1,5 @@
 import defaultAvatar from '@/assets/default-avatar.png';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_BASE_URL } from './config.js';
 
 class AvatarService {
   constructor() {

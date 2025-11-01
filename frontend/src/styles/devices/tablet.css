@@ -605,5 +605,9 @@
         margin-right: var(--spacing-md);
     }
 
-   
+    .profile-edit-container {
+        padding-left: 80px !important;
+        width: 80%;
+        margin: 0 auto;
+   }
 }
