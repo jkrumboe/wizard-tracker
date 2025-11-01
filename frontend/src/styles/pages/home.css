@@ -12,6 +12,44 @@
   color: var(--text-color);
 }
 
+/* Filter button styling */
+.filter-button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  position: relative;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  height: 32px;
+  width: 32px;
+}
+
+.filter-button:hover {
+  background: var(--primary-color-dark, #2563eb);
+  transform: translateY(-1px);
+}
+
+.filter-button:active {
+  transform: translateY(0);
+}
+
+.filter-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--danger-color, red);
+  border-radius: 50%;
+  border: 2px solid var(--card-background);
+  font-size: 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .section-header {

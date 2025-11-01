@@ -3,8 +3,10 @@ import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
+import GameFilterModal from '@/components/modals/GameFilterModal'
 import { useUser } from '@/shared/hooks/useUser'
-import { StatIcon, EditIcon, CalendarIcon, XIcon } from "@/components/ui/Icon"
+import { StatIcon, EditIcon, CalendarIcon, XIcon, FilterIcon } from "@/components/ui/Icon"
+import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
 
 // Temporarily remove playerService imports since they're not implemented yet
 // import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
@@ -37,6 +39,17 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState('');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState(getDefaultFilters());
+
+  // Apply filters to games
+  const filteredGames = useMemo(() => {
+    return filterGames(allGames, filters);
+  }, [allGames, filters]);
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
 
   // Create player object from user data if this is own profile
   const currentPlayer = useMemo(() => {
@@ -731,18 +744,61 @@ if (editing) {
 
         {activeTab === 'recentGames' && (
           <div className="recent-games" style={{ padding: 'var(--spacing-md) 0' }}>
-            <h2>Recent Games</h2>
+            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+              <h2>Recent Games</h2>
+              <button 
+                className="filter-button"
+                onClick={() => setShowFilterModal(true)}
+                aria-label="Filter games"
+                style={{
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 'var(--spacing-xs) var(--spacing-sm)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--spacing-xs)',
+                  position: 'relative'
+                }}
+              >
+                <FilterIcon size={20} />
+                {hasActiveFilters(filters) && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '12px',
+                    height: '12px',
+                    background: 'var(--danger-color, red)',
+                    borderRadius: '50%',
+                    border: '2px solid var(--card-background)'
+                  }} />
+                )}
+              </button>
+            </div>
             <div className="games-list">
-              {allGames.length > 0 ? (
-                allGames.map(game => (
+              {filteredGames.length > 0 ? (
+                filteredGames.map(game => (
                   <GameHistoryItem key={game.id} game={game} />
                 ))
+              ) : allGames.length > 0 ? (
+                <div className="empty-message">No games match your filters</div>
               ) : (
                 <div className="empty-message">No games found</div>
               )}
             </div>
           </div>
         )}
+
+        {/* Filter Modal */}
+        <GameFilterModal
+          isOpen={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          onApplyFilters={handleApplyFilters}
+          initialFilters={filters}
+        />
       </div>
     </div>
   )

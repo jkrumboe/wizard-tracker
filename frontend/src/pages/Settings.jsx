@@ -1,21 +1,23 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon, FilterIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
+import GameFilterModal from '@/components/modals/GameFilterModal';
 import authService from '@/shared/api/authService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
 import { checkGameSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
+import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
 import '@/styles/pages/settings.css';
 import "@/styles/components/offline-notification.css";
 
@@ -34,9 +36,24 @@ const Settings = () => {
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
   const [showCloudGameSelectModal, setShowCloudGameSelectModal] = useState(false); // Cloud game select modal
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState(getDefaultFilters());
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
   const { isOnline } = useOnlineStatus();
+
+  // Convert saved games object to array and apply filters
+  const filteredGames = useMemo(() => {
+    const gamesArray = Object.entries(savedGames).map(([id, game]) => ({
+      ...game,
+      id
+    }));
+    return filterGames(gamesArray, filters);
+  }, [savedGames, filters]);
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
 
   const checkForImportedGames = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -969,13 +986,44 @@ const Settings = () => {
         </div>
 
         <div className="settings-section">
-          <div className="section-header">
+          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
             <h2>Saved Games</h2>
+            <button 
+              className="filter-button"
+              onClick={() => setShowFilterModal(true)}
+              aria-label="Filter games"
+              style={{
+                background: 'var(--primary-color)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--spacing-xs) var(--spacing-sm)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-xs)',
+                position: 'relative'
+              }}
+            >
+              <FilterIcon size={20} />
+              {hasActiveFilters(filters) && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  width: '12px',
+                  height: '12px',
+                  background: 'var(--danger-color, red)',
+                  borderRadius: '50%',
+                  border: '2px solid var(--card-background)'
+                }} />
+              )}
+            </button>
           </div>
-          {Object.keys(savedGames).length > 0 ? (
+          {filteredGames.length > 0 ? (
             <div className="game-history">
-              {Object.entries(savedGames).map(([gameId, game]) => (
-                <div key={gameId} className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
+              {filteredGames.map((game) => (
+                <div key={game.id} className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
                   <div className="settings-card-content">
                     <div className="settings-card-header">
                       <div className="game-info">
@@ -994,7 +1042,7 @@ const Settings = () => {
                       <div className="actions-game-history">
                         <div className="bottom-actions-game-history">
                           {(() => {
-                            const syncStatus = gameSyncStatuses[gameId];
+                            const syncStatus = gameSyncStatuses[game.id];
                             const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
                             const badgeClass = status.toLowerCase().replace(' ', '-');
                             return (
@@ -1013,7 +1061,7 @@ const Settings = () => {
                       <div className="settings-card-actions">
                         <button 
                           className={`delete-game-button${!isOnline ? ' offline' : ''}`}
-                          onClick={() => handleDeleteGame(gameId)}
+                          onClick={() => handleDeleteGame(game.id)}
                           aria-label="Delete game"
                         >
                           <TrashIcon size={25} />
@@ -1021,7 +1069,7 @@ const Settings = () => {
                         
                         {/* Conditionally show upload or share button based on sync status - only when app is online */}
                         {isOnline && (() => {
-                          const syncStatus = gameSyncStatuses[gameId];
+                          const syncStatus = gameSyncStatuses[game.id];
                           const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
                           const isGameSynced = status === 'Synced';
                           const needsUpload = status === 'Local';
@@ -1031,25 +1079,25 @@ const Settings = () => {
                             // Show share button for synced games that are not imported
                             return (
                               <button 
-                                className={`cloud-upload-game-button share-button ${sharingGames.has(gameId) ? 'sharing' : ''}`}
+                                className={`cloud-upload-game-button share-button ${sharingGames.has(game.id) ? 'sharing' : ''}`}
                                 onClick={() => {
                                   // Check authentication and navigate to login if needed
                                   if (!user) {
                                     navigate('/login');
                                     return;
                                   }
-                                  handleShareGame(gameId, game);
+                                  handleShareGame(game.id, game);
                                 }}
-                                aria-label={sharingGames.has(gameId) ? "Sharing..." : "Share game"}
-                                disabled={game.isPaused || sharingGames.has(gameId)}
+                                aria-label={sharingGames.has(game.id) ? "Sharing..." : "Share game"}
+                                disabled={game.isPaused || sharingGames.has(game.id)}
                                 title={
-                                  sharingGames.has(gameId) ? 'Creating share link...' :
+                                  sharingGames.has(game.id) ? 'Creating share link...' :
                                   game.isPaused ? 'Cannot share paused games' :
                                   !user ? 'Click to sign in and share games' :
                                   'Share game'
                                 }
                               >
-                                {sharingGames.has(gameId) ? (
+                                {sharingGames.has(game.id) ? (
                                   <span className="share-spinner" aria-label="Sharing..." />
                                 ) : (
                                   <ShareIcon size={25} />
@@ -1070,12 +1118,12 @@ const Settings = () => {
                             );
                           } else if (needsUpload && !isImportedGame) {
                             // Show upload button for local games that are not imported
-                            const isUploaded = LocalGameStorage.isGameUploaded(gameId);
+                            const isUploaded = LocalGameStorage.isGameUploaded(game.id);
                             return (
                               <button 
-                                className={`cloud-upload-game-button ${uploadingGames.has(gameId) ? 'uploading' : ''} ${game.isPaused || isUploaded ? 'disabled' : ''}`}
+                                className={`cloud-upload-game-button ${uploadingGames.has(game.id) ? 'uploading' : ''} ${game.isPaused || isUploaded ? 'disabled' : ''}`}
                                 onClick={async () => {
-                                  if (uploadingGames.has(gameId) || isUploaded) return; // Prevent double-click or duplicate upload
+                                  if (uploadingGames.has(game.id) || isUploaded) return; // Prevent double-click or duplicate upload
                                   
                                   // Check authentication and navigate to login if needed
                                   if (!user) {
@@ -1083,9 +1131,9 @@ const Settings = () => {
                                     return;
                                   }
                                   
-                                  setUploadingGames(prev => new Set([...prev, gameId]));
+                                  setUploadingGames(prev => new Set([...prev, game.id]));
                                   try {
-                                    const result = await uploadSingleGameToCloud(gameId, game);
+                                    const result = await uploadSingleGameToCloud(game.id, game);
                                     setMessage({ text: result.isDuplicate ? `Game was already uploaded - marked as synced!` : `Game uploaded to cloud successfully!`, type: 'success' });
                                     // Only reload local state and sync status once
                                     await loadSavedGames();
@@ -1094,22 +1142,22 @@ const Settings = () => {
                                   } finally {
                                     setUploadingGames(prev => {
                                       const newSet = new Set(prev);
-                                      newSet.delete(gameId);
+                                      newSet.delete(game.id);
                                       return newSet;
                                     });
                                   }
                                 }}
-                                aria-label={uploadingGames.has(gameId) ? "Uploading..." : "Upload to cloud"}
-                                disabled={game.isPaused || uploadingGames.has(gameId) || isUploaded}
+                                aria-label={uploadingGames.has(game.id) ? "Uploading..." : "Upload to cloud"}
+                                disabled={game.isPaused || uploadingGames.has(game.id) || isUploaded}
                                 title={
-                                  uploadingGames.has(gameId) ? 'Uploading game...' :
+                                  uploadingGames.has(game.id) ? 'Uploading game...' :
                                   isUploaded ? 'Already uploaded' :
                                   game.isPaused ? 'Cannot upload paused games' :
                                   !user ? 'Click to sign in and upload to cloud' :
                                   'Upload to cloud'
                                 }
                               >
-                                {uploadingGames.has(gameId) ? (
+                                {uploadingGames.has(game.id) ? (
                                   <span className="share-spinner" aria-label="Uploading..." />
                                 ) : (
                                   <CloudIcon size={25} />
@@ -1124,6 +1172,8 @@ const Settings = () => {
                 </div>
               ))}
             </div>
+          ) : Object.keys(savedGames).length > 0 ? (
+            <p className="no-games">No games match your filters.</p>
           ) : (
             <p className="no-games">No saved games found.</p>
           )}
@@ -1209,6 +1259,13 @@ const Settings = () => {
           isOpen={showCloudGameSelectModal}
           onClose={() => setShowCloudGameSelectModal(false)}
           onDownload={handleDownloadSelectedGames}
+        />
+
+        <GameFilterModal
+          isOpen={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          onApplyFilters={handleApplyFilters}
+          initialFilters={filters}
         />
       </div>
   );

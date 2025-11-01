@@ -1,0 +1,184 @@
+/* Game Filter Modal Styles */
+.game-filter-modal {
+  max-width: 600px;
+}
+
+.filter-section {
+  margin-bottom: var(--spacing-sm);
+}
+
+.filter-section:last-child {
+  margin-bottom: 0;
+}
+
+.filter-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0;
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.filter-group {
+  width: 50%;
+}
+
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.player-input-container {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.player-input-container .filter-input {
+  flex: 1;
+}
+
+.add-player-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  min-width: 44px;
+}
+
+.add-player-btn:hover:not(:disabled) {
+  background: var(--primary-color-dark, #2563eb);
+}
+
+.add-player-btn:disabled {
+  background: var(--border-color);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.player-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.player-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--primary-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.remove-player-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  transition: background-color 0.2s ease;
+}
+
+.remove-player-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.filter-input,
+.filter-select {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--input-background, var(--card-background));
+  color: var(--text-color);
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin: 0;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+}
+
+.filter-input::placeholder {
+  color: var(--text-light);
+  opacity: 0.6;
+}
+
+.filter-select {
+  cursor: pointer;
+}
+
+.filter-group-row {
+  display: flex;
+  flex: row;
+  gap: var(--spacing-sm);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+
+.modal-footer .modal-button {
+  flex: 1;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .filter-input,
+  .filter-select {
+    background-color: var(--card-background-alt, #2a2a2a);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .game-filter-modal {
+    width: 95%;
+    max-height: 85vh;
+  }
+
+  .filter-group-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-footer .modal-button {
+    width: 100%;
+  }
+}

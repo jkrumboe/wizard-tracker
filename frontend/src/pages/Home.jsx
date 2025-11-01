@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
+import GameFilterModal from '@/components/modals/GameFilterModal'
 import { getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
+import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
+import { FilterIcon } from '@/components/ui/Icon'
 import "@/styles/components/offline-notification.css"
 import "@/styles/pages/home.css"
 
@@ -12,10 +15,17 @@ const Home = () => {
   const location = useLocation()
   // const { isOnline } = useOnlineStatus()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
-  const [recentLocalGames, setRecentLocalGames] = useState([])
+  const [allGames, setAllGames] = useState([])
   const [showLoadDialog, setShowLoadDialog] = useState(false)
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [filters, setFilters] = useState(getDefaultFilters())
   // const [offlineMessage, setOfflineMessage] = useState('')
   
+  // Apply filters to games
+  const filteredGames = useMemo(() => {
+    return filterGames(allGames, filters);
+  }, [allGames, filters]);
+
   const handleLoadGame = async (gameId) => {
     try {
       const success = await loadSavedGame(gameId)
@@ -29,6 +39,10 @@ const Home = () => {
       return false
     }
   }
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
 
   // Check for offline mode redirect
   useEffect(() => {
@@ -47,15 +61,15 @@ const Home = () => {
   useEffect(() => {
     const fetchLocalGames = async () => {
       try {
-        const localGames = await getRecentLocalGames(10);
+        const localGames = await getRecentLocalGames(100);
         const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
           ...game,
           created_at: game.created_at || new Date().toISOString()
         })) : [];
-        setRecentLocalGames(formattedLocalGames);
+        setAllGames(formattedLocalGames);
       } catch (error) {
         console.error('Error fetching local games:', error);
-        setRecentLocalGames([]);
+        setAllGames([]);
       }
     };
     fetchLocalGames();
@@ -86,16 +100,23 @@ const Home = () => {
       <section className="recent-games">
         <div className="section-header">
           <h2>Finished Games</h2>
+          <button 
+            className="filter-button"
+            onClick={() => setShowFilterModal(true)}
+            aria-label="Filter games"
+          >
+            <FilterIcon size={20} />
+            {hasActiveFilters(filters) && <span className="filter-badge">•</span>}
+          </button>
         </div>
-        {recentLocalGames.length > 0 ? (
+        {filteredGames.length > 0 ? (
           <div className="game-history">
-            {recentLocalGames
-              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-              // .slice(0, 6)
-              .map(game => (
-                <GameHistoryItem key={game.id} game={game} />
-              ))}
+            {filteredGames.map(game => (
+              <GameHistoryItem key={game.id} game={game} />
+            ))}
           </div>
+        ) : allGames.length > 0 ? (
+          <div className="empty-message">No games match your filters</div>
         ) : (
           <div className="empty-message">No games found</div>
         )}
@@ -107,6 +128,14 @@ const Home = () => {
         onClose={() => setShowLoadDialog(false)}
         onLoadGame={handleLoadGame}
         getSavedGames={getSavedGames}
+      />
+
+      {/* Filter Modal */}
+      <GameFilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={filters}
       />
     </div>
   )
