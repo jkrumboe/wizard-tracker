@@ -140,7 +140,7 @@
 .filter-group-row {
   display: flex;
   flex: row;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-lg);
 }
 
 .modal-footer {

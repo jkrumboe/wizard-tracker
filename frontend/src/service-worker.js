@@ -1,5 +1,5 @@
 // Service Worker for KeepWiz PWA
-const CACHE_NAME = "keep-wiz-v1.2.17"
+const CACHE_NAME = "keep-wiz-v1.2.17.1"
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png"]
 
 // Install event - cache assets
