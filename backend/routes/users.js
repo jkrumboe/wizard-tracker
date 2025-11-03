@@ -162,21 +162,28 @@ router.put('/me/profile-picture', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Empty image data' });
     }
 
-    // 6. Validate base64 encoding
+    // 6. Validate base64 encoding (allow whitespace which will be cleaned)
+    // Remove any whitespace/newlines that might be in the base64 string
+    const cleanBase64 = base64Data.replace(/\s/g, '');
     const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
-    if (!base64Pattern.test(base64Data)) {
+    if (!base64Pattern.test(cleanBase64)) {
       return res.status(400).json({ error: 'Invalid base64 encoding' });
     }
 
-    // 7. Check size limits
+    // Reconstruct the profile picture with cleaned base64
+    const mimeType = profilePicture.split(',')[0];
+    const cleanedProfilePicture = `${mimeType},${cleanBase64}`;
+    
+    // 7. Check size limits (use cleaned version for accurate size check)
+    // 7. Check size limits (use cleaned version for accurate size check)
     const minSize = 100; // Minimum ~75 bytes original
     const maxSize = 10485760; // ~7.5MB original (10MB base64)
     
-    if (profilePicture.length < minSize) {
+    if (cleanedProfilePicture.length < minSize) {
       return res.status(400).json({ error: 'Image file is too small or corrupted' });
     }
     
-    if (profilePicture.length > maxSize) {
+    if (cleanedProfilePicture.length > maxSize) {
       return res.status(400).json({ error: 'Profile picture is too large (max 5MB)' });
     }
 
@@ -191,12 +198,12 @@ router.put('/me/profile-picture', auth, async (req, res, next) => {
       /<embed/i
     ];
     
-    if (suspiciousPatterns.some(pattern => pattern.test(profilePicture))) {
+    if (suspiciousPatterns.some(pattern => pattern.test(cleanedProfilePicture))) {
       return res.status(400).json({ error: 'Invalid image content detected' });
     }
 
-    // Update the profile picture
-    req.user.profilePicture = profilePicture;
+    // Update the profile picture (use cleaned version)
+    req.user.profilePicture = cleanedProfilePicture;
     await req.user.save();
 
     res.json({
