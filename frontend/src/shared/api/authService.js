@@ -1,28 +1,54 @@
 import { API_ENDPOINTS } from './config.js';
 import { onlineStatusService } from './onlineStatusService';
+import { sessionCache } from '../utils/sessionCache';
 
 class AuthService {
   constructor() {
     this.currentUser = null;
-    this.token = this.getStoredToken();
-  }
-
-  // Store token in localStorage
-  setToken(token) {
-    this.token = token;
-    localStorage.setItem('auth_token', token);
-  }
-
-  // Get token from localStorage
-  getStoredToken() {
-    return localStorage.getItem('auth_token');
-  }
-
-  // Remove token from localStorage
-  clearToken() {
     this.token = null;
-    localStorage.removeItem('auth_token');
+    this.initialized = false;
+  }
+
+  // Initialize auth service and restore session
+  async initialize() {
+    if (this.initialized) return;
+    
+    try {
+      // Try to restore token and user from session cache
+      this.token = await sessionCache.get('auth_token');
+      this.currentUser = await sessionCache.get('auth_user');
+      
+      if (this.token) {
+        console.debug('🔓 Auth service initialized with cached session');
+      }
+      
+      this.initialized = true;
+    } catch (error) {
+      console.debug('Error initializing auth service:', error);
+      this.initialized = true;
+    }
+  }
+
+  // Store token in session cache
+  async setToken(token) {
+    this.token = token;
+    await sessionCache.set('auth_token', token, { persist: true });
+  }
+
+  // Get token from session cache
+  async getStoredToken() {
+    if (!this.token) {
+      this.token = await sessionCache.get('auth_token');
+    }
+    return this.token;
+  }
+
+  // Remove token from session cache
+  async clearToken() {
+    this.token = null;
     this.currentUser = null;
+    await sessionCache.remove('auth_token');
+    await sessionCache.remove('auth_user');
   }
 
   // Get authorization headers
@@ -55,8 +81,8 @@ class AuthService {
 
       const data = await response.json();
       
-      // Store the token
-      this.setToken(data.token);
+      // Store the token in session cache
+      await this.setToken(data.token);
       
       // Store user data in a format compatible with existing frontend code
       this.currentUser = {
@@ -67,6 +93,9 @@ class AuthService {
         username: data.user.username,
         createdAt: data.user.createdAt
       };
+
+      // Persist user data to session cache
+      await sessionCache.set('auth_user', this.currentUser, { persist: true });
 
       console.debug('🔓 Login successful for:', email);
       return this.currentUser;
@@ -96,8 +125,8 @@ class AuthService {
 
       const data = await response.json();
       
-      // Store the token
-      this.setToken(data.token);
+      // Store the token in session cache
+      await this.setToken(data.token);
       
       // Store user data in a format compatible with existing frontend code
       this.currentUser = {
@@ -108,6 +137,9 @@ class AuthService {
         username: data.user.username,
         createdAt: data.user.createdAt
       };
+
+      // Persist user data to session cache
+      await sessionCache.set('auth_user', this.currentUser, { persist: true });
 
       console.debug('🔓 Registration successful for:', email);
       return this.currentUser;
@@ -141,17 +173,32 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      // If we have a stored user and valid token, return it
+      // Ensure auth service is initialized
+      await this.initialize();
+      
+      // If we have a cached user and valid token, return it
       if (this.currentUser && this.token) {
-        console.debug('🔓 Current user:', this.currentUser.email || this.currentUser.username);
+        console.debug('🔓 Current user (cached):', this.currentUser.email || this.currentUser.username);
+        return this.currentUser;
+      }
+      
+      // Try to restore from session cache
+      const cachedUser = await sessionCache.get('auth_user');
+      const cachedToken = await sessionCache.get('auth_token');
+      
+      if (cachedUser && cachedToken) {
+        this.currentUser = cachedUser;
+        this.token = cachedToken;
+        console.debug('🔓 Current user (recovered):', this.currentUser.email || this.currentUser.username);
         return this.currentUser;
       }
       
       // Try to verify token with backend if we have one
-      if (this.token) {
+      if (this.token || cachedToken) {
         const user = await this.verifyToken();
         if (user) {
           this.currentUser = user;
+          await sessionCache.set('auth_user', user, { persist: true });
           return user;
         }
       }
@@ -160,7 +207,7 @@ class AuthService {
       return null;
     } catch {
       console.debug('🔒 No current user session');
-      this.clearToken();
+      await this.clearToken();
       return null;
     }
   }
@@ -168,6 +215,12 @@ class AuthService {
   // Method to verify token with backend
   async verifyToken() {
     try {
+      await this.initialize();
+      
+      if (!this.token) {
+        this.token = await sessionCache.get('auth_token');
+      }
+      
       if (!this.token) return null;
       
       // Call the /me endpoint to verify token and get current user
@@ -178,7 +231,7 @@ class AuthService {
 
       if (!response.ok) {
         // Token is invalid or expired
-        this.clearToken();
+        await this.clearToken();
         return null;
       }
 
@@ -193,10 +246,13 @@ class AuthService {
         createdAt: data.user.createdAt
       };
       
+      // Persist to session cache
+      await sessionCache.set('auth_user', this.currentUser, { persist: true });
+      
       return this.currentUser;
     } catch (error) {
       console.debug('Token verification failed:', error);
-      this.clearToken();
+      await this.clearToken();
       return null;
     }
   }
@@ -212,13 +268,38 @@ class AuthService {
   }
 
   clearLocalSession() {
-    // Clear any stored session data locally without making server calls
-    // This is useful when switching to offline mode
+    // Clear session cache but keep it available for recovery
+    // This is useful when switching to offline mode temporarily
     try {
-      this.clearToken();
-      console.debug('🔄 Local session data cleared');
+      // Don't actually clear the cache, just mark as offline session
+      sessionCache.set('session_mode', 'offline', { persist: true });
+      console.debug('🔄 Session marked as offline (data preserved)');
     } catch (error) {
-      console.debug('Error clearing local session:', error);
+      console.debug('Error marking session offline:', error);
+    }
+  }
+
+  async restoreLocalSession() {
+    // Restore session when coming back online
+    try {
+      const mode = await sessionCache.get('session_mode');
+      
+      if (mode === 'offline') {
+        // Restore from cache
+        this.token = await sessionCache.get('auth_token');
+        this.currentUser = await sessionCache.get('auth_user');
+        
+        if (this.token && this.currentUser) {
+          await sessionCache.set('session_mode', 'online', { persist: true });
+          console.debug('🔄 Session restored from offline mode');
+          return this.currentUser;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.debug('Error restoring session:', error);
+      return null;
     }
   }
 
@@ -243,9 +324,20 @@ class AuthService {
 
   async checkAuthStatus() {
     try {
-      // Simple check: if navigator is offline, skip auth check
+      // Ensure initialized
+      await this.initialize();
+      
+      // Simple check: if navigator is offline, try to restore from cache
       if (!navigator.onLine) {
-        console.debug('🔒 Browser is offline - skipping auth check');
+        console.debug('🔒 Browser is offline - checking cached auth');
+        const cachedUser = await sessionCache.get('auth_user');
+        const cachedToken = await sessionCache.get('auth_token');
+        
+        if (cachedUser && cachedToken) {
+          this.currentUser = cachedUser;
+          this.token = cachedToken;
+          return cachedUser;
+        }
         return null;
       }
       
@@ -257,31 +349,40 @@ class AuthService {
         ]);
         
         if (!statusCheck.online) {
-          console.debug('🔒 App is in offline mode - skipping auth check');
+          console.debug('🔒 App is in offline mode - checking cached auth');
+          const cachedUser = await sessionCache.get('auth_user');
+          const cachedToken = await sessionCache.get('auth_token');
+          
+          if (cachedUser && cachedToken) {
+            this.currentUser = cachedUser;
+            this.token = cachedToken;
+            return cachedUser;
+          }
           return null;
         }
       } catch {
-        // If status check times out, assume offline for safety
-        console.debug('🔒 Status check timed out - assuming offline mode');
+        // If status check times out, check cache
+        console.debug('🔒 Status check timed out - checking cached auth');
+        const cachedUser = await sessionCache.get('auth_user');
+        const cachedToken = await sessionCache.get('auth_token');
+        
+        if (cachedUser && cachedToken) {
+          this.currentUser = cachedUser;
+          this.token = cachedToken;
+          return cachedUser;
+        }
         return null;
       }
       
       return await this.getCurrentUser();
     } catch {
-      return null;
-    }
-  }
-
-  initialize() {
-    // Initialize the auth service - restore token and user from storage
-    try {
-      this.token = this.getStoredToken();
-      if (this.token) {
-        // We'll verify the token when getCurrentUser is called
-        console.debug('🔓 Auth service initialized with stored token');
+      // Try cache as fallback
+      const cachedUser = await sessionCache.get('auth_user');
+      if (cachedUser) {
+        this.currentUser = cachedUser;
+        return cachedUser;
       }
-    } catch (error) {
-      console.debug('Error initializing auth service:', error);
+      return null;
     }
   }
 

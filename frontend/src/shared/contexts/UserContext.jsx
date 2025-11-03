@@ -3,6 +3,8 @@ import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { LocalUserProfileService, LocalGameStorage, LocalTableGameStorage } from '../api'
+import { stateRecovery } from '../utils/stateRecovery'
+import { sessionCache } from '../utils/sessionCache'
 
 export const UserContext = createContext(undefined)
 
@@ -12,12 +14,69 @@ export function UserProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const { isOnline } = useOnlineStatus()
   
+  // Register state recovery for user session
+  useEffect(() => {
+    stateRecovery.registerStateProvider(
+      'userSession',
+      () => ({ user, player }),
+      (state) => {
+        if (state.user) {
+          setUser(state.user);
+          console.debug('🔄 Recovered user session:', state.user.email || state.user.username);
+        }
+        if (state.player) {
+          setPlayer(state.player);
+        }
+      }
+    );
+    
+    return () => {
+      stateRecovery.unregisterStateProvider('userSession');
+    };
+  }, [user, player]);
+  
+  // Save user session on changes
+  useEffect(() => {
+    if (user) {
+      stateRecovery.saveState('userSession', { user, player }, { persist: true });
+    }
+  }, [user, player]);
+  
   // Initialize user authentication check only on initial load
   useEffect(() => {
     const checkAuthenticationStatus = async () => {
       try {
-        // Always check authentication on initial load - don't depend on online status
-        // The online status check might fail if the collection isn't set up yet
+        // Initialize auth service first
+        await authService.initialize();
+        
+        // Try to recover user session from cache first
+        const recoveredState = await stateRecovery.recoverState('userSession');
+        if (recoveredState && recoveredState.user) {
+          setUser(recoveredState.user);
+          if (recoveredState.player) {
+            setPlayer(recoveredState.player);
+          }
+          setLoading(false);
+          
+          // Verify session in background if online
+          if (navigator.onLine) {
+            authService.checkAuthStatus().then(userFromServer => {
+              if (userFromServer && userFromServer.id === recoveredState.user.id) {
+                // Session is still valid
+                console.debug('✅ Cached session verified');
+              } else if (!userFromServer) {
+                // Session expired, keep cached user but mark as offline
+                console.debug('⚠️ Session expired, keeping cached user for offline mode');
+              }
+            }).catch(() => {
+              // Network error, keep cached session
+              console.debug('⚠️ Cannot verify session, keeping cached user');
+            });
+          }
+          return;
+        }
+        
+        // No cached session, check with server
         console.debug('🔓 Checking authentication status on app startup')
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {
@@ -55,17 +114,22 @@ export function UserProvider({ children }) {
     checkAuthenticationStatus()
   }, []) // Intentionally exclude isOnline to prevent auto-login on mode switch
 
-  // Handle online status changes - clear user session when going offline  
+  // Handle online status changes - DON'T clear user session, just mark mode
   useEffect(() => {
     if (!isOnline && user) {
-      console.debug('🔒 Switching to offline mode - clearing user session')
-      authService.clearLocalSession() // Clear any stored session data
-      LocalUserProfileService.clearCurrentUser() // Clear current user in local profile service
-      setUser(null)
-      setPlayer(null)
+      console.debug('🔒 Switching to offline mode - preserving user session')
+      // Mark session as offline but don't clear it
+      authService.clearLocalSession() // This now just marks as offline
+      sessionCache.set('offline_mode', true, { persist: true });
+    } else if (isOnline && user) {
+      console.debug('🔓 Switching to online mode - restoring session')
+      // Try to restore session
+      authService.restoreLocalSession().catch(() => {
+        console.debug('No session to restore');
+      });
+      sessionCache.set('offline_mode', false, { persist: true });
     }
-    // Note: We don't auto-login when switching to online mode
-    // Users must manually log in after switching to online mode
+    // Note: We preserve user data across online/offline transitions
   }, [isOnline, user])
 
   // Fetch player data when user is set

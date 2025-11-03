@@ -4,7 +4,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { OnlineProtectedRoute, AuthProtectedRoute, UpdateNotification } from "@/components/common"
+import { OnlineProtectedRoute, AuthProtectedRoute, UpdateNotification, NetworkRecoveryHandler } from "@/components/common"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 
 // Lazy load pages for better performance
@@ -193,6 +193,10 @@ function App() {
                   <Route path="/shared/:shareId" element={<SharedGamePage />} />
                   </Routes>
                 </Suspense>
+                {/* Network Recovery Handler - monitors connection and restores state */}
+                <NetworkRecoveryHandler />
+                {/* Update Notification - shows when new version is available */}
+                <UpdateNotification />
                 </div>
               </GameStateProvider>
             </UserProvider>

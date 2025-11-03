@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
 import { createGame } from "@/shared/api/gameService"
 import { LocalGameStorage } from "@/shared/api"
+import { stateRecovery } from "@/shared/utils/stateRecovery"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
@@ -34,10 +35,48 @@ export function GameStateProvider({ children }) {
     autoUploadMessage: null // Message to show user
   })
 
+  // Register state recovery for game state
+  useEffect(() => {
+    stateRecovery.registerStateProvider(
+      'gameState',
+      () => gameState,
+      (state) => {
+        // Only restore if there's an active game
+        if (state && state.gameStarted) {
+          setGameState(state);
+          console.debug('🔄 Recovered game state');
+        }
+      }
+    );
+    
+    return () => {
+      stateRecovery.unregisterStateProvider('gameState');
+    };
+  }, [gameState]);
+  
+  // Auto-persist game state on changes (with debouncing via stateRecovery)
+  useEffect(() => {
+    if (gameState.gameStarted && !gameState.gameFinished) {
+      // Save with debouncing - will auto-save after 2 seconds of inactivity
+      stateRecovery.saveState('gameState', gameState, { 
+        persist: true,
+        indexedDB: false // Use localStorage for game state (fast access)
+      });
+    }
+  }, [gameState]);
+
   // Restore current game only when specifically accessing /game/current
   useEffect(() => {
-    const restoreCurrentGame = () => {
+    const restoreCurrentGame = async () => {
       try {
+        // First try to recover from state recovery service (handles disconnections)
+        const recoveredGame = await stateRecovery.recoverState('gameState');
+        if (recoveredGame && recoveredGame.gameStarted && !recoveredGame.gameFinished) {
+          setGameState(recoveredGame);
+          console.debug('🔄 Recovered active game from cache');
+          return;
+        }
+        
         // Only restore if we're on the game current route
         const currentPath = window.location.pathname;
         if (currentPath !== '/game/current') {
@@ -75,6 +114,9 @@ export function GameStateProvider({ children }) {
         console.error('Error restoring current game:', error);
       }
     };
+
+    // Restore game state
+    restoreCurrentGame();
 
     // Clean up old auto-saves when app starts
     const cleanupAutoSaves = () => {
