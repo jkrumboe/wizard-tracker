@@ -1159,9 +1159,9 @@
   }
   
   .setup-section{
-    background-color: var(--card-background);
+    background-color: transparent;
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
+    padding: var(--spacing-md) 0;
     /* box-shadow: var(--shadow); */
     margin-bottom: var(--spacing-md);
   }

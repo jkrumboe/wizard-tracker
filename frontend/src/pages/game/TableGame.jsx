@@ -295,8 +295,9 @@ const TableGame = () => {
 
   const handlePointChange = (playerIdx, rowIdx, value) => {
     const updated = [...players];
-    if (value === "") {
-      updated[playerIdx].points[rowIdx] = "";
+    if (value === "" || value === "-") {
+      // Allow empty string or lone minus sign for typing negative numbers
+      updated[playerIdx].points[rowIdx] = value === "" ? "" : value;
     } else {
       const parsed = parseInt(value, 10);
       updated[playerIdx].points[rowIdx] = isNaN(parsed) ? "" : parsed;
@@ -510,12 +511,12 @@ const TableGame = () => {
                 {players.map((player, playerIdx) => (
                   <td key={playerIdx}>
                     <input
-                      type="tel"
+                      type="text"
                       value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
                       onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
                       className="table-game-point-input"
                       inputMode="numeric"
-                      pattern="[0-9]*"
+                      pattern="-?[0-9]*"
                     />
                   </td>
                 ))}
