@@ -86,11 +86,38 @@ const UpdateNotification = () => {
         return;
       }
 
+      // Get the version from the new service worker
+      const getWorkerVersion = async (worker) => {
+        try {
+          const messageChannel = new MessageChannel();
+          return new Promise((resolve) => {
+            messageChannel.port1.onmessage = (event) => {
+              resolve(event.data.version);
+            };
+            worker.postMessage(
+              { type: 'GET_VERSION' },
+              [messageChannel.port2]
+            );
+            // Timeout after 1 second
+            setTimeout(() => resolve(null), 1000);
+          });
+        } catch (error) {
+          console.debug('Could not get worker version:', error);
+          return null;
+        }
+      };
+
       // Check if this is actually a new version
-      const currentVersion = localStorage.getItem(LAST_VERSION_KEY);
-      const swVersion = await getCurrentSWVersion();
+      const currentVersion = await getCurrentSWVersion();
+      const newVersion = await getWorkerVersion(worker);
       
-      console.debug(`Update check - Current: ${currentVersion}, SW: ${swVersion}`);
+      console.debug(`Update check - Current: ${currentVersion}, New: ${newVersion}`);
+
+      // Only proceed if we have a new version that's different from the current one
+      if (!newVersion || (currentVersion && newVersion === currentVersion)) {
+        console.debug('No new version detected, skipping update');
+        return;
+      }
 
       // Mark that we're handling an update
       updateInProgressRef.current = true;
@@ -149,17 +176,20 @@ const UpdateNotification = () => {
 
     // Check for existing service worker registration
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then((registration) => {
+      navigator.serviceWorker.getRegistration().then(async (registration) => {
         if (registration) {
           // Check if there's already a waiting worker
           if (registration.waiting && !hasShownUpdateRef.current) {
-            handleUpdateFound(registration);
+            // Verify it's actually a new version before showing update
+            await handleUpdateFound(registration);
           }
 
           // Listen for new updates
-          registration.addEventListener('updatefound', () => {
+          registration.addEventListener('updatefound', async () => {
             if (!hasShownUpdateRef.current) {
-              handleUpdateFound(registration);
+              // Wait a moment for the new worker to be ready
+              await new Promise(resolve => setTimeout(resolve, 100));
+              await handleUpdateFound(registration);
             }
           });
         }

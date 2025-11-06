@@ -7,6 +7,7 @@ The PWA update notification was showing in an infinite loop on mobile devices an
 2. **No update state persistence** - State was lost across page reloads
 3. **Multiple `controllerchange` events** - Mobile browsers trigger this event multiple times
 4. **No cooldown period** - Updates could be re-triggered immediately after completing
+5. **False positive updates** - Update screen showing even when no new version was available
 
 ## Solution
 
@@ -39,6 +40,11 @@ const UPDATE_TIMESTAMP_KEY = 'pwa_update_timestamp';   // Unix timestamp
 - **Controller change guard**: Prevents processing multiple `controllerchange` events
 - **Update in progress flag**: Global flag prevents concurrent updates
 
+### 6. Version Verification
+- **Actual version comparison**: Update screen only shows when a genuinely new version is detected
+- **Worker version checking**: Queries both active and waiting service workers for their versions
+- **Skip false positives**: If versions match, update process is skipped entirely
+
 ## Files Modified
 
 ### Frontend
@@ -51,6 +57,8 @@ const UPDATE_TIMESTAMP_KEY = 'pwa_update_timestamp';   // Unix timestamp
    - Added localStorage-based state persistence
    - Added 10-second cooldown mechanism
    - Added version checking via service worker messaging
+   - **Added version verification for waiting/installing workers**
+   - **Only shows update screen when versions actually differ**
    - Prevents multiple `controllerchange` event handling
 
 3. **`frontend/src/app/serviceWorkerRegistration.js`**
@@ -96,8 +104,10 @@ npm run build:with-version
 ### Update Flow
 1. Service worker detects a new version is available
 2. `UpdateNotification` component checks localStorage for recent updates
-3. If no recent update (>10 seconds ago), proceed with update
-4. Set `UPDATE_STATE_KEY` to 'updating' in localStorage
+3. If no recent update (>10 seconds ago), proceed with version check
+4. **Compare current service worker version with waiting/installing worker version**
+5. **Only proceed if versions are different**
+6. Set `UPDATE_STATE_KEY` to 'updating' in localStorage
 5. Show loading screen to user
 6. Clear all caches
 7. Tell service worker to skip waiting
