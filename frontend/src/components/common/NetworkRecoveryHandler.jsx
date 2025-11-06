@@ -177,14 +177,14 @@ export function NetworkRecoveryHandler() {
 
   return (
     <>
-      {showRecoveryNotification && (
+      {/* {showRecoveryNotification && (
         <Notification
           type="info"
           message={recoveryMessage}
           onClose={() => setShowRecoveryNotification(false)}
           duration={0} // Manual control via setTimeout
         />
-      )}
+      )} */}
     </>
   );
 }

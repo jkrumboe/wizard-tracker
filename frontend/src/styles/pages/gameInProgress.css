@@ -45,12 +45,12 @@
 }
 
 .game-in-progress .score-table td:nth-child(2) {
-  width: 12%;
+  width: 17%;
   padding: var(--spacing-sm) 0;
 }
 
 .game-in-progress .score-table td:nth-child(3) {
-  width: 12%;
+  width: 17%;
   padding: var(--spacing-sm) 0;
 }
 
