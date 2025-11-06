@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getPlayerById } from "@/shared/api/playerService";
+import { TrophyIcon, UsersIcon } from "@/components/ui/Icon";
 
 const GameHistoryItem = ({ game }) => {
   const [playerDetails, setPlayerDetails] = useState({});
@@ -99,13 +100,20 @@ const GameHistoryItem = ({ game }) => {
     <div className="game-card">
       {/* <div className="game-rounds"></div> */}
         <div className="game-info">
-          <div className="game-winner">
-            Winner: {playerDetails[winner_id]?.name || "Not determined"}
+          <div className="game-name">
+            {game.game_name || "Wizard"}
+            <div className="game-winner">
+              <TrophyIcon size={12} /> Winner: {playerDetails[winner_id]?.name || "Not determined"}
+            </div>
           </div>
-          <div>Rounds: {total_rounds}</div>
+          {game.isUploaded ? (
+              <span className="mode-badge synced" title="Synced to Cloud">Synced</span>
+            ) : (
+              <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>{game_mode || 'Local'}</span>
+            )}
         </div>
         <div className="game-players">
-            Players:{" "}
+            <UsersIcon size={12} />{" "}
             {game.gameState && game.gameState.players 
               ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
               : game.is_local && game.players
@@ -122,19 +130,14 @@ const GameHistoryItem = ({ game }) => {
                   : "No players"}
         </div>
         <div className="actions-game-history">
+          <div className="bottom-actions-game-history">
+            <div className="game-rounds">Rounds: {total_rounds}</div>
+            <div className="game-date"> {formattedDate}
+            </div>
+          </div>
           <Link to={`/game/${id}`} className="game-details">
             View Details
           </Link>
-          <div className="bottom-actions-game-history">
-            {game.isUploaded ? (
-              <span className="mode-badge synced" title="Synced to Cloud">Synced</span>
-            ) : (
-              <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>{game_mode || 'Local'}</span>
-            )}
-            <div className="game-date">
-              Finished: {formattedDate}
-            </div>
-          </div>
         </div>
     </div>
   );

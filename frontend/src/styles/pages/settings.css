@@ -53,10 +53,20 @@
 
 .settings-section {
   background-color: var(--card-background);
+  /* border: 1px solid var(--border-color); */
   border-radius: 12px;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   box-shadow: var(--shadow-sm);
+}
+.settings-section:has(.game-history) {
+  background-color: transparent;
+  flex: 1; /* Allow it to grow within home-container */
+  min-height: 0; /* Important for flex scrolling */
+  display: flex;
+  flex-direction: column;
+  box-shadow: none;
+  padding: 0;
 }
 
 .settings-section h2 {
@@ -325,15 +335,6 @@
   font-weight: 500;
 }
 
-.game-players {
-  font-size: 0.85rem;
-  color: var(--text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 95%;
-}
-
 .game-status {
   padding: 2px 8px;
   border-radius: 12px;
@@ -363,11 +364,17 @@
 }
 
 /* When offline, make delete-game-button take full height of its container */
-.delete-game-button.offline,
-.delete-game-button.table {
+.delete-game-button.offline{
   height: 100%;
   flex: 1 1 auto;
   align-self: stretch;
+}
+
+.delete-game-button#table {
+  height: 100%;
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: 100%; /* Ensure it takes full height */
 }
 
 .settings-section  .game-actions {
@@ -548,15 +555,15 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  height: 100%;
+  align-self: stretch; /* Stretch to full height of parent */
 }
 
 .settings-card-content {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch; /* Changed from center to stretch */
   justify-content: space-between;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
 }
 
 /* App Info Section */

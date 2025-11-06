@@ -7,7 +7,7 @@ import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon, FilterIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon, FilterIcon, UsersIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
@@ -1026,21 +1026,11 @@ const Settings = () => {
                   <div className="settings-card-content">
                     <div className="settings-card-header">
                       <div className="game-info">
-                        <div className="game-winner">
-                          {game.isPaused ? 'Paused Game' : 'Finished Game'}
-                          
-                        </div>                  
-                        <div>Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
-                      </div>
-                      <div className="game-players">
-                        Players:{" "}
-                        {game.gameState?.players 
-                          ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                          : "No players"}
-                      </div>
-                      <div className="actions-game-history">
-                        <div className="bottom-actions-game-history">
-                          {(() => {
+                        <div className="game-name">
+                          Wizard
+                          {game.isPaused ? ' | Paused' : ''}
+                        </div>
+                        {(() => {
                             const syncStatus = gameSyncStatuses[game.id];
                             const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
                             const badgeClass = status.toLowerCase().replace(' ', '-');
@@ -1049,7 +1039,17 @@ const Settings = () => {
                                 {status}
                               </span>
                             );
-                          })()}
+                          })()}              
+                      </div>
+                      <div className="game-players">
+                        <UsersIcon size={12} />{" "}
+                        {game.gameState?.players 
+                          ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                          : "No players"}
+                      </div>
+                      <div className="actions-game-history">
+                        <div className="bottom-actions-game-history">
+                          <div className="game-rounds">Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
                           <div className="game-date">
                             {formatDate(game.lastPlayed)}
                           </div>
@@ -1190,19 +1190,20 @@ const Settings = () => {
                   <div className="settings-card-content">
                     <div className="settings-card-header">
                       <div className="game-info">
-                        <div className="game-winner">
-                          Table Game - {game.name}
-                        </div>                  
-                        <div>Rounds: {game.totalRounds}</div>
+                        <div className="game-name">
+                          {game.name}
+                        </div>
+                        <span className="mode-badge table">
+                          Table
+                        </span>                
                       </div>
                       <div className="game-players">
-                        Players: {game.players.join(", ")}
+                        <UsersIcon size={12} />{" "}
+                        {game.players.join(", ")}
                       </div>
                       <div className="actions-game-history">
                         <div className="bottom-actions-game-history">
-                          <span className="mode-badge table">
-                            Table
-                          </span>
+                          <div>Rounds: {game.totalRounds}</div>
                           <div className="game-date">
                             {formatDate(game.lastPlayed)}
                           </div>
@@ -1212,7 +1213,8 @@ const Settings = () => {
                     
                     <div className="settings-card-actions">
                       <button 
-                        className="delete-game-button table"
+                        className="delete-game-button"
+                        id='table'
                         onClick={() => handleDeleteGame(game.id, true)}
                         aria-label="Delete table game"
                       >
