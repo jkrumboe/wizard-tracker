@@ -195,8 +195,6 @@ function App() {
                 </Suspense>
                 {/* Network Recovery Handler - monitors connection and restores state */}
                 <NetworkRecoveryHandler />
-                {/* Update Notification - shows when new version is available */}
-                <UpdateNotification />
                 </div>
               </GameStateProvider>
             </UserProvider>
