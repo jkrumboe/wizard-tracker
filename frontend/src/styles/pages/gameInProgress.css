@@ -257,6 +257,52 @@
   border: 1px solid var(--error-color);
 }
 
+/* Trick Reducer Switch Styles */
+.trick-reducer-container {
+  margin: var(--spacing-md) auto;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--card-background);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  max-width: 600px;
+}
+
+.trick-reducer-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  user-select: none;
+  flex-wrap: wrap;
+}
+
+.trick-reducer-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.trick-reducer-text {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.trick-reducer-info {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--primary-color);
+  font-weight: 600;
+  background-color: var(--background-secondary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--primary-color);
+}
+
 .total-calls {
   color: var(--text-color) !important;
   font-weight: 600 !important;

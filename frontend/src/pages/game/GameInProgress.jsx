@@ -17,7 +17,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
 import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon, SettingsIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -49,6 +49,7 @@ const GameInProgress = () => {
   const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
   const [isRecovering, setIsRecovering] = useState(false) // Track recovery state
   const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches)
+  const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
   
   // Refs to store current values for event handlers
   const gameStateRef = useRef(gameState)
@@ -70,6 +71,11 @@ const GameInProgress = () => {
     mediaQuery.addEventListener('change', handleOrientationChange)
     return () => mediaQuery.removeEventListener('change', handleOrientationChange)
   }, [])
+  
+  // Reset trick count reducer when round changes
+  useEffect(() => {
+    setReduceTrickCount(false)
+  }, [gameState.currentRound])
   
   // Function to toggle player stats visibility
   const togglePlayerStats = (playerId) => {
@@ -467,7 +473,9 @@ const GameInProgress = () => {
   // Check if all made values are entered and total correctly
   const allMadeEntered = currentRound?.players.every(player => player.made !== null) || false;
   const totalMade = currentRound?.players.reduce((sum, player) => sum + (player.made || 0), 0) || 0;
-  const madeValuesCorrect = allMadeEntered && totalMade === currentRound?.round;
+  // When reduceTrickCount is enabled, expect one less trick (for cards where current trick doesn't count)
+  const expectedTricks = reduceTrickCount ? (currentRound?.round || 0) - 1 : (currentRound?.round || 0);
+  const madeValuesCorrect = allMadeEntered && totalMade === expectedTricks;
 
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
@@ -714,6 +722,21 @@ const GameInProgress = () => {
           </div>
         </div>
       )}
+
+      {/* Trick Count Reducer Switch - for cards where current trick doesn't count */}
+      <div className="trick-reducer-container">
+        <label className="trick-reducer-label">
+          <input
+            type="checkbox"
+            checked={reduceTrickCount}
+            onChange={(e) => setReduceTrickCount(e.target.checked)}
+            className="trick-reducer-checkbox"
+          />
+          <span className="trick-reducer-text">
+            Bombe<BombIcon size={18} />
+          </span>
+        </label>
+      </div>
 
       {/* Top Section with Controls */}
       <div className="game-bottom-section">
