@@ -3,6 +3,7 @@
   width: 100%;
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
 }
 
 .chart-controls {

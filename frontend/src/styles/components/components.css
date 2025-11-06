@@ -399,10 +399,10 @@
   }
 
   .results-section {
-    background-color: var(--card-background);
+    background-color: transparent;
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    box-shadow: var(--shadow);
+    /* padding: var(--spacing-md); */
+    /* box-shadow: var(--shadow); */
   }
   
   .rounds-section {

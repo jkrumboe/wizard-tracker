@@ -68,6 +68,7 @@
   flex-direction: column;
   box-shadow: none;
   padding: 0;
+  max-height: 40dvh;
 }
 
 .settings-section:has(.table-game-card) {
