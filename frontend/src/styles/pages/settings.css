@@ -59,6 +59,7 @@
   margin-bottom: var(--spacing-md);
   box-shadow: var(--shadow-sm);
 }
+
 .settings-section:has(.game-history) {
   background-color: transparent;
   flex: 1; /* Allow it to grow within home-container */
@@ -67,6 +68,10 @@
   flex-direction: column;
   box-shadow: none;
   padding: 0;
+}
+
+.settings-section:has(.table-game-card) {
+  max-height: 40dvh;
 }
 
 .settings-section h2 {
