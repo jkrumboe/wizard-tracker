@@ -250,6 +250,19 @@ export function GameStateProvider({ children }) {
       // Reorder players if needed
       if (settings.playerOrder) {
         updatedPlayers = settings.playerOrder.map(idx => updatedPlayers[idx]);
+        
+        // Also update the players in roundData to match the new order
+        const updatedRoundData = prevState.roundData.map(round => ({
+          ...round,
+          players: settings.playerOrder.map(idx => round.players[idx])
+        }));
+
+        return {
+          ...prevState,
+          players: updatedPlayers,
+          maxRounds: settings.maxRounds,
+          roundData: updatedRoundData
+        };
       }
 
       return {
@@ -474,7 +487,29 @@ export function GameStateProvider({ children }) {
         const currentRoundIndex = prevState.currentRound - 1;
         const currentRoundData = updatedRoundData[currentRoundIndex];
         const nextRoundIndex = currentRoundIndex + 1;
-        const nextRoundData = {...updatedRoundData[nextRoundIndex]};
+        
+        // Check if the next round exists, if not create it
+        let nextRoundData;
+        if (updatedRoundData[nextRoundIndex]) {
+          nextRoundData = {...updatedRoundData[nextRoundIndex]};
+        } else {
+          // Create a new round if it doesn't exist (happens when max rounds is extended)
+          const roundNumber = nextRoundIndex + 1;
+          nextRoundData = {
+            round: roundNumber,
+            players: prevState.players.map(player => ({
+              id: player.id,
+              name: player.name,
+              call: null,
+              made: null,
+              score: 0,
+              totalScore: 0,
+              isDealer: player.isDealer || false,
+              isCaller: player.isCaller || false
+            }))
+          };
+          updatedRoundData.push(nextRoundData);
+        }
         
         // Update the totalScore for each player in the next round
         if (nextRoundData && nextRoundData.players) {

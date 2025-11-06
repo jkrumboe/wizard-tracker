@@ -498,6 +498,9 @@ export class LocalGameStorage {
       games[gameId].lastPlayed = new Date().toISOString();
       games[gameId].roundsCompleted = gameState.currentRound - 1;
       
+      // Always update totalRounds to reflect current maxRounds
+      games[gameId].totalRounds = gameState.maxRounds || gameState.totalRounds || 0;
+      
       // If the game has transitioned from paused to finished, update metadata
       if (gameState.gameFinished && games[gameId].isPaused) {
         games[gameId].isPaused = false;

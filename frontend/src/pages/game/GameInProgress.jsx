@@ -30,6 +30,7 @@ const GameInProgress = () => {
     finishGame, 
     resetGame,
     saveGame,
+    autoSaveGame,
     pauseGame,
     leaveGame,
     loadSavedGame,
@@ -461,12 +462,12 @@ const GameInProgress = () => {
 
   const detailedStats = calculateDetailedGameStats();
 
-  const totalCalls = currentRound.players.reduce((sum, player) => sum + (player.call || 0), 0);
+  const totalCalls = currentRound?.players.reduce((sum, player) => sum + (player.call || 0), 0) || 0;
   
   // Check if all made values are entered and total correctly
-  const allMadeEntered = currentRound.players.every(player => player.made !== null);
-  const totalMade = currentRound.players.reduce((sum, player) => sum + (player.made || 0), 0);
-  const madeValuesCorrect = allMadeEntered && totalMade === currentRound.round;
+  const allMadeEntered = currentRound?.players.every(player => player.made !== null) || false;
+  const totalMade = currentRound?.players.reduce((sum, player) => sum + (player.made || 0), 0) || 0;
+  const madeValuesCorrect = allMadeEntered && totalMade === currentRound?.round;
 
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
@@ -518,9 +519,15 @@ const GameInProgress = () => {
     // Update game state using the context function
     updateGameSettings(settings);
     
-    // Auto-save the updated game state
+    // Save to update the existing game or create a new save
     setTimeout(() => {
-      saveGame();
+      if (gameState.gameId) {
+        // Update existing saved game
+        autoSaveGame();
+      } else {
+        // Create a new saved game with the updated settings
+        saveGame(`Game - Round ${gameState.currentRound}/${settings.maxRounds}`, true);
+      }
     }, 100); // Small delay to ensure state is updated
   };
 
