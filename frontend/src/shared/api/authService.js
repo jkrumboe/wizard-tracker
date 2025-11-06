@@ -18,6 +18,15 @@ class AuthService {
       this.token = await sessionCache.get('auth_token');
       this.currentUser = await sessionCache.get('auth_user');
       
+      // Fallback to localStorage if not in sessionCache
+      if (!this.token) {
+        this.token = localStorage.getItem('auth_token');
+        if (this.token) {
+          // Sync to sessionCache for consistency
+          await sessionCache.set('auth_token', this.token, { persist: true });
+        }
+      }
+      
       if (this.token) {
         console.debug('🔓 Auth service initialized with cached session');
       }
@@ -33,12 +42,18 @@ class AuthService {
   async setToken(token) {
     this.token = token;
     await sessionCache.set('auth_token', token, { persist: true });
+    // Also store in localStorage for backwards compatibility with existing code
+    localStorage.setItem('auth_token', token);
   }
 
   // Get token from session cache
   async getStoredToken() {
     if (!this.token) {
       this.token = await sessionCache.get('auth_token');
+      // Fallback to localStorage
+      if (!this.token) {
+        this.token = localStorage.getItem('auth_token');
+      }
     }
     return this.token;
   }
@@ -49,6 +64,8 @@ class AuthService {
     this.currentUser = null;
     await sessionCache.remove('auth_token');
     await sessionCache.remove('auth_user');
+    // Also clear from localStorage
+    localStorage.removeItem('auth_token');
   }
 
   // Get authorization headers

@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import { API_BASE_URL } from './config.js';
+import { sessionCache } from '../utils/sessionCache';
 
 /**
  * Create axios instance for sync operations
@@ -21,8 +22,15 @@ export const syncApiClient = axios.create({
  * Add request interceptor to include auth token
  */
 syncApiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
+  async (config) => {
+    // Try to get token from sessionCache first (IndexedDB)
+    let token = await sessionCache.get('auth_token');
+    
+    // Fallback to localStorage for backwards compatibility
+    if (!token) {
+      token = localStorage.getItem('auth_token');
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
