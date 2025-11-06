@@ -272,8 +272,17 @@ const Settings = () => {
   };
 
   useEffect(() => {
-    loadSavedGames();
-    calculateStorageUsage();
+    // Only load games if user is logged in
+    if (user) {
+      loadSavedGames();
+      calculateStorageUsage();
+    } else {
+      // Clear games when user logs out
+      setSavedGames({});
+      setSavedTableGames([]);
+      setGameSyncStatuses({});
+    }
+    
     checkForImportedGames();
     cleanupExpiredShareKeys();
     
@@ -286,7 +295,7 @@ const Settings = () => {
       localStorage.removeItem('import_error');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Keep empty dependency array and handle URL changes elsewhere
+  }, [user]); // Re-run when user changes (login/logout)
 
   // Load user avatar when user is available
   useEffect(() => {

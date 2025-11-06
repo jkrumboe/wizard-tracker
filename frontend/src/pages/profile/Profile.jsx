@@ -67,6 +67,8 @@ useEffect(() => {
         if (!isOwnProfile) {
           setError("Viewing other users' profiles is not yet supported");
         }
+        // Clear games when user logs out
+        setAllGames([]);
         return;
       }
 

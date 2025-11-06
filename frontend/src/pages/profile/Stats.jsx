@@ -28,6 +28,8 @@ const Stats = () => {
     const fetchData = async () => {
       try {
         if (!currentPlayer) {
+          // Clear games when user logs out
+          setAllGames([]);
           return;
         }
 

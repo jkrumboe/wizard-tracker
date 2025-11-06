@@ -5,6 +5,7 @@ import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import GameFilterModal from '@/components/modals/GameFilterModal'
 import { getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
+import { useUser } from '@/shared/hooks/useUser'
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
 import { FilterIcon } from '@/components/ui/Icon'
 import "@/styles/components/offline-notification.css"
@@ -14,6 +15,7 @@ const Home = () => {
   const navigate = useNavigate()
   const location = useLocation()
   // const { isOnline } = useOnlineStatus()
+  const { user } = useUser()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [allGames, setAllGames] = useState([])
   const [showLoadDialog, setShowLoadDialog] = useState(false)
@@ -72,8 +74,15 @@ const Home = () => {
         setAllGames([]);
       }
     };
-    fetchLocalGames();
-  }, []);
+    
+    // Only fetch games if there's a user, otherwise clear the list
+    // This prevents showing all users' games when logged out
+    if (user) {
+      fetchLocalGames();
+    } else {
+      setAllGames([]);
+    }
+  }, [user]); // Re-fetch games when user changes (e.g., after login/logout)
 
   // Check for offline message from navigation state
   useEffect(() => {
