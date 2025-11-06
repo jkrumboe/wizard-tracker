@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon } from '@/components/Icon';
-import '@/styles/notification.css';
+import { XIcon } from './Icon.jsx';
+import '@/styles/components/notification.css';
 
 const Notification = ({ message, type = 'info', duration = 5000, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
