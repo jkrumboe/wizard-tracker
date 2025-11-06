@@ -14,8 +14,8 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  font-size: 0.8rem;
-  padding: 3px var(--spacing-sm) ;
+  font-size: 0.7rem;
+  padding: 3px var(--spacing-sm);
   font-weight: bold;
   color: var(--text-color);
   flex-shrink: 0;
