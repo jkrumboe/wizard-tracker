@@ -4,6 +4,7 @@ export { default as CloudGameSelectModal } from './CloudGameSelectModal.jsx';
 export { default as CreateGameModal } from './CreateGameModal.jsx';
 export { default as GameFilterModal } from './GameFilterModal.jsx';
 export { default as GameMenuModal } from './GameMenuModal.jsx';
+export { default as GameSettingsModal } from './GameSettingsModal.jsx';
 export { default as ImportGamePlayerSelectModal } from './ImportGamePlayerSelectModal.jsx';
 export { default as LoadGameDialog } from './LoadGameDialog.jsx';
 export { default as LoadTableGameDialog } from './LoadTableGameDialog.jsx';

@@ -100,7 +100,8 @@
 }
 
 /* Back button styling */
-.game-in-progress .back-btn {
+.game-in-progress .back-btn,
+.game-in-progress .settings-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -113,13 +114,25 @@
   border-radius: var(--radius-md);
 }
 
-.game-in-progress .back-btn:hover {
+.game-in-progress .back-btn:hover,
+.game-in-progress .settings-btn:hover {
   background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.game-in-progress .back-btn:hover {
   transform: translateX(-2px);
+}
+
+.game-in-progress .settings-btn:hover {
+  transform: rotate(45deg);
 }
 
 .game-in-progress .back-btn:active {
   transform: translateX(-4px) scale(0.95);
+}
+
+.game-in-progress .settings-btn:active {
+  transform: rotate(45deg) scale(0.95);
 }
 
 /* Game stats container styling */

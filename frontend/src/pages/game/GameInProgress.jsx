@@ -7,6 +7,7 @@ import { useGameStateContext } from "@/shared/hooks/useGameState"
 import SaveGameDialog from "@/components/modals/SaveGameDialog"
 import LoadGameDialog from "@/components/modals/LoadGameDialog"
 import GameMenuModal from "@/components/modals/GameMenuModal"
+import GameSettingsModal from "@/components/modals/GameSettingsModal"
 import PauseConfirmationModal from "@/components/modals/PauseConfirmationModal"
 import PerformanceMetric from "@/components/common/PerformanceMetric"
 import { SyncStatusIndicator } from "@/components/game"
@@ -16,7 +17,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
 import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon, SettingsIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -40,6 +41,7 @@ const GameInProgress = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [showGameMenuModal, setShowGameMenuModal] = useState(false)
+  const [showGameSettingsModal, setShowGameSettingsModal] = useState(false)
   const [showPauseModal, setShowPauseModal] = useState(false)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
@@ -510,6 +512,33 @@ const GameInProgress = () => {
     navigate(-1); // Go back to previous page
   };
 
+  // Handle game settings update
+  const handleUpdateSettings = (settings) => {
+    // Update dealer and caller
+    const updatedPlayers = gameState.players.map((player, index) => ({
+      ...player,
+      isDealer: index === settings.dealerIndex,
+      isCaller: index === settings.callerIndex
+    }));
+
+    // Reorder players if needed
+    let finalPlayers = updatedPlayers;
+    if (settings.playerOrder) {
+      finalPlayers = settings.playerOrder.map(idx => updatedPlayers[idx]);
+    }
+
+    // Update game state with new settings
+    const updatedGameState = {
+      ...gameState,
+      players: finalPlayers,
+      maxRounds: settings.maxRounds
+    };
+
+    // Use the update function from context (we'll add this)
+    // For now, we can save and reload
+    saveGame(updatedGameState, true); // Force save
+  };
+
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
@@ -526,6 +555,13 @@ const GameInProgress = () => {
         <span className="total-calls">
           Calls: {totalCalls} |  {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
         </span>
+        <button 
+          className="settings-btn"
+          onClick={() => setShowGameSettingsModal(true)}
+          title="Game Settings"
+        >
+          <SettingsIcon size={24} />
+        </button>
         {/* <SyncStatusIndicator 
           gameId={gameState.id || gameState.localId}
           showDetails={false}
@@ -770,6 +806,14 @@ const GameInProgress = () => {
         onConfirm={handlePauseGame}
         currentRound={gameState.currentRound}
         maxRounds={gameState.maxRounds}
+      />
+
+      {/* Game Settings Modal */}
+      <GameSettingsModal
+        isOpen={showGameSettingsModal}
+        onClose={() => setShowGameSettingsModal(false)}
+        gameState={gameState}
+        onUpdateSettings={handleUpdateSettings}
       />
     </div>
   )
