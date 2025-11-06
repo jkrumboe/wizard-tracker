@@ -1,5 +1,22 @@
 #!/usr/bin/env node
 
+/**
+ * Update Version Script
+ * 
+ * This script updates the version number across all important files in the project:
+ * - All package.json files (root, frontend, backend)
+ * - .env file (VITE_APP_VERSION)
+ * - Service worker files (cache names)
+ * - README.md version badge
+ * - Docker workflow files
+ * - docker-compose.yml
+ * 
+ * Usage:
+ *   npm run update-version
+ * 
+ * The version is read from .env or VITE_APP_VERSION environment variable
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -100,6 +117,66 @@ function updateDockerWorkflow(version) {
   }
 }
 
+// Update package.json files
+function updatePackageJsonFiles(version) {
+  const packageFiles = [
+    path.join(__dirname, '../../package.json'),        // Root package.json
+    path.join(__dirname, '../package.json'),           // Frontend package.json
+    path.join(__dirname, '../../backend/package.json') // Backend package.json
+  ];
+
+  packageFiles.forEach(filePath => {
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const packageJson = JSON.parse(content);
+        packageJson.version = version;
+        fs.writeFileSync(filePath, JSON.stringify(packageJson, null, 2) + '\n');
+        const relativePath = path.relative(path.join(__dirname, '../..'), filePath);
+        console.debug(`✅ Updated version in ${relativePath} to ${version}`);
+      }
+    } catch (error) {
+      console.error(`Error updating ${filePath}:`, error);
+    }
+  });
+}
+
+// Update docker-compose.yml
+function updateDockerCompose(version) {
+  const composePath = path.join(__dirname, '../../docker-compose.yml');
+  try {
+    if (fs.existsSync(composePath)) {
+      let content = fs.readFileSync(composePath, 'utf8');
+      content = content.replace(
+        /VITE_APP_VERSION:\s*\$\{VITE_APP_VERSION:-[^}]+\}/,
+        `VITE_APP_VERSION: \${VITE_APP_VERSION:-${version}}`
+      );
+      fs.writeFileSync(composePath, content);
+      console.debug(`✅ Updated version in docker-compose.yml to ${version}`);
+    }
+  } catch (error) {
+    console.error('Error updating docker-compose.yml:', error);
+  }
+}
+
+// Update .env file
+function updateEnvFile(version) {
+  const envPath = path.join(__dirname, '../../.env');
+  try {
+    if (fs.existsSync(envPath)) {
+      let content = fs.readFileSync(envPath, 'utf8');
+      content = content.replace(
+        /VITE_APP_VERSION\s*=\s*"?[^"\s]+"?/,
+        `VITE_APP_VERSION=${version}`
+      );
+      fs.writeFileSync(envPath, content);
+      console.debug(`✅ Updated version in .env to ${version}`);
+    }
+  } catch (error) {
+    console.error('Error updating .env:', error);
+  }
+}
+
 // Main function
 function main() {
   let version = getVersion();
@@ -120,11 +197,14 @@ function main() {
 
   console.debug(`🔄 Updating all version references to ${version}...`);
   
+  updatePackageJsonFiles(version);
+  updateEnvFile(version);
   updateServiceWorkerVersion(version);
   updateReadmeBadge(version);
   updateDockerWorkflow(version);
+  updateDockerCompose(version);
   
-  console.debug(`✅ Version update complete! All files now use version ${version}`);
+  console.debug(`\n✅ Version update complete! All files now use version ${version}`);
 }
 
 main();
