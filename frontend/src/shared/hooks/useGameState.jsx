@@ -237,6 +237,29 @@ export function GameStateProvider({ children }) {
       };
     });
   }, [])
+
+  // Update game settings (dealer, caller, player order, max rounds)
+  const updateGameSettings = useCallback((settings) => {
+    setGameState((prevState) => {
+      let updatedPlayers = prevState.players.map((player, index) => ({
+        ...player,
+        isDealer: index === settings.dealerIndex,
+        isCaller: index === settings.callerIndex
+      }));
+
+      // Reorder players if needed
+      if (settings.playerOrder) {
+        updatedPlayers = settings.playerOrder.map(idx => updatedPlayers[idx]);
+      }
+
+      return {
+        ...prevState,
+        players: updatedPlayers,
+        maxRounds: settings.maxRounds
+      };
+    });
+  }, [])
+
     // Helper function to recalculate all scores after a round update
   const recalculateScores = useCallback((roundData, changedRoundIndex) => {
     const updatedRoundData = [...roundData];
@@ -841,6 +864,7 @@ export function GameStateProvider({ children }) {
         setMode,
         updatePlayerName,
         reorderPlayers,
+        updateGameSettings,
         getLocalGames,
         removeLocalGame,
         saveGame,

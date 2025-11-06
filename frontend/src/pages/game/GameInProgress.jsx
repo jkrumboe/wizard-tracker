@@ -34,7 +34,8 @@ const GameInProgress = () => {
     leaveGame,
     loadSavedGame,
     getSavedGames,
-    recoverGameState
+    recoverGameState,
+    updateGameSettings
   } = useGameStateContext()
   
   const [activeTab, setActiveTab] = useState('game')
@@ -514,29 +515,13 @@ const GameInProgress = () => {
 
   // Handle game settings update
   const handleUpdateSettings = (settings) => {
-    // Update dealer and caller
-    const updatedPlayers = gameState.players.map((player, index) => ({
-      ...player,
-      isDealer: index === settings.dealerIndex,
-      isCaller: index === settings.callerIndex
-    }));
-
-    // Reorder players if needed
-    let finalPlayers = updatedPlayers;
-    if (settings.playerOrder) {
-      finalPlayers = settings.playerOrder.map(idx => updatedPlayers[idx]);
-    }
-
-    // Update game state with new settings
-    const updatedGameState = {
-      ...gameState,
-      players: finalPlayers,
-      maxRounds: settings.maxRounds
-    };
-
-    // Use the update function from context (we'll add this)
-    // For now, we can save and reload
-    saveGame(updatedGameState, true); // Force save
+    // Update game state using the context function
+    updateGameSettings(settings);
+    
+    // Auto-save the updated game state
+    setTimeout(() => {
+      saveGame();
+    }, 100); // Small delay to ensure state is updated
   };
 
   return (

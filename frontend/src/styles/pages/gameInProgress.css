@@ -112,6 +112,7 @@
   color: var(--primary-color);
   transition: all 0.2s ease;
   border-radius: var(--radius-md);
+  box-shadow: none;
 }
 
 .game-in-progress .back-btn:hover,
@@ -269,9 +270,9 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--border-color);
   font-weight: 500;
-  font-size: 1em;
+  font-size: 0.9rem;
   border-radius: var(--radius-sm);
-  width: 100%;
+  width: 30%;
 }
 
 .round-number {
