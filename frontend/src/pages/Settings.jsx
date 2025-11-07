@@ -864,8 +864,11 @@ const Settings = () => {
           {!useSystemTheme && (
             <>
               <div className="settings-option" style={{ marginBottom: 'var(--spacing-sm)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Theme</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
                 </div>
               </div>
 

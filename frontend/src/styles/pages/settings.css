@@ -96,7 +96,6 @@
 
 .checkbox-label {
   display: flex;
-  padding-left: var(--spacing-sm);
   font-weight: 500;
   cursor: pointer;
   width: 100%;

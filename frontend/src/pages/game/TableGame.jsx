@@ -18,6 +18,8 @@ const TableGame = () => {
     return initialRows;
   });
   
+  const [activeTab, setActiveTab] = useState('table'); // 'table' or 'scoreboard'
+  
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
     const firstPlayerName = user?.username || user?.name || "Player 1";
@@ -484,100 +486,150 @@ const TableGame = () => {
             </button>
           </div>
 
-          
-      <div className="table-game-scroll">
-        <table className="table-game-table">
-          <thead>
-            {/* Player Names Row */}
-            <tr>
-              {players.map((player, idx) => (
-                <th key={idx}>
-                  <div className="table-game-player-header">
-                    <input
-                      value={player.name}
-                      onChange={(e) => handleNameChange(idx, e.target.value)}
-                      className="table-game-player-input"
-                      placeholder={`Player ${idx + 1}`}
-                      type="text"
-                    />
-                  </div>
-                </th>
+      {/* Conditional Content Display */}
+      {activeTab === 'table' ? (
+        <div className="table-game-scroll">
+          <table className="table-game-table">
+            <thead>
+              {/* Player Names Row */}
+              <tr>
+                {players.map((player, idx) => (
+                  <th key={idx}>
+                    <div className="table-game-player-header">
+                      <input
+                        value={player.name}
+                        onChange={(e) => handleNameChange(idx, e.target.value)}
+                        className="table-game-player-input"
+                        placeholder={`Player ${idx + 1}`}
+                        type="text"
+                      />
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(rows)].map((_, rowIdx) => (
+                <tr key={rowIdx}>
+                  {players.map((player, playerIdx) => (
+                    <td key={playerIdx}>
+                      <input
+                        type="text"
+                        value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
+                        onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
+                        className="table-game-point-input"
+                        inputMode="numeric"
+                        pattern="-?[0-9]*"
+                      />
+                    </td>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[...Array(rows)].map((_, rowIdx) => (
-              <tr key={rowIdx}>
-                {players.map((player, playerIdx) => (
-                  <td key={playerIdx}>
-                    <input
-                      type="text"
-                      value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
-                      onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
-                      className="table-game-point-input"
-                      inputMode="numeric"
-                      pattern="-?[0-9]*"
-                    />
+              <tr>
+                <td colSpan={players.length}>
+                  <button
+                    className="table-game-add-row-inline"
+                    title="Add Row"
+                    onClick={addRow}
+                  >
+                    Add Row
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                {players.map((player, idx) => (
+                  <td key={idx} className="table-game-total">
+                    {getTotal(player)}
                   </td>
                 ))}
               </tr>
-            ))}
-            <tr>
-              <td colSpan={players.length}>
-                <button
-                  className="table-game-add-row-inline"
-                  title="Add Row"
-                  onClick={addRow}
-                >
-                  Add Row
-                </button>
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              {players.map((player, idx) => (
-                <td key={idx} className="table-game-total">
-                  {getTotal(player)}
-                </td>
-              ))}
-            </tr>
-            {/* Controls Row */}
-            <tr className="table-game-controls-row">
-              {players.map((_, idx) => (
-                <td key={`controls-${idx}`} className="table-game-controls-cell">
-                  <div className="table-game-controls">
-                    <button
-                      className={`table-game-control-btn table-game-move-btn ${idx === 0 ? 'disabled' : ''}`}
-                      title="Move Left"
-                      onClick={() => movePlayerLeft(idx)}
-                      disabled={idx === 0}
-                    >
-                      <ArrowLeftIcon size={16} />
-                    </button>
-                    {players.length > MIN_PLAYERS && (
+              {/* Controls Row */}
+              <tr className="table-game-controls-row">
+                {players.map((_, idx) => (
+                  <td key={`controls-${idx}`} className="table-game-controls-cell">
+                    <div className="table-game-controls">
                       <button
-                        className="table-game-control-btn table-game-remove-btn"
-                        title="Remove Player"
-                        onClick={() => removePlayer(idx)}
+                        className={`table-game-control-btn table-game-move-btn ${idx === 0 ? 'disabled' : ''}`}
+                        title="Move Left"
+                        onClick={() => movePlayerLeft(idx)}
+                        disabled={idx === 0}
                       >
-                        <XIcon size={16} />
+                        <ArrowLeftIcon size={16} />
                       </button>
-                    )}
-                    <button
-                      className={`table-game-control-btn table-game-move-btn ${idx === players.length - 1 ? 'disabled' : ''}`}
-                      title="Move Right"
-                      onClick={() => movePlayerRight(idx)}
-                      disabled={idx === players.length - 1}
-                    >
-                      <ArrowRightIcon size={16} />
-                    </button>
+                      {players.length > MIN_PLAYERS && (
+                        <button
+                          className="table-game-control-btn table-game-remove-btn"
+                          title="Remove Player"
+                          onClick={() => removePlayer(idx)}
+                        >
+                          <XIcon size={16} />
+                        </button>
+                      )}
+                      <button
+                        className={`table-game-control-btn table-game-move-btn ${idx === players.length - 1 ? 'disabled' : ''}`}
+                        title="Move Right"
+                        onClick={() => movePlayerRight(idx)}
+                        disabled={idx === players.length - 1}
+                      >
+                        <ArrowRightIcon size={16} />
+                      </button>
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      ) : (
+        <div className="table-game-scoreboard">
+          <h2 className="scoreboard-title">Scoreboard</h2>
+          <div className="scoreboard-list">
+            {players
+              .map((player, idx) => ({
+                ...player,
+                total: getTotal(player),
+                originalIndex: idx
+              }))
+              .sort((a, b) => b.total - a.total) // Sort by total descending (biggest to smallest)
+              .map((player, index, array) => {
+                // Calculate rank with proper tie handling
+                let rank = 1;
+                
+                // Count how many players have a higher score
+                for (let i = 0; i < index; i++) {
+                  if (array[i].total > player.total) {
+                    rank++;
+                  }
+                }
+                
+                return (
+                  <div key={player.originalIndex} className="scoreboard-item" data-rank={rank}>
+                    <div className="scoreboard-rank">#{rank}</div>
+                    <div className="scoreboard-player-name">{player.name || `Player ${player.originalIndex + 1}`}</div>
+                    <div className="scoreboard-score">{player.total}</div>
                   </div>
-                </td>
-              ))}
-            </tr>
-          </tfoot>
-        </table>
+                );
+              })}
+          </div>
+        </div>
+      )}
+          
+      {/* Tab Switcher */}
+      <div className="table-game-tab-switcher">
+        <button
+          className={`table-game-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
+          onClick={() => setActiveTab('table')}
+        >
+          Table View
+        </button>
+        <button
+          className={`table-game-tab-btn ${activeTab === 'scoreboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('scoreboard')}
+        >
+          Scoreboard
+        </button>
       </div>
         </>
       )}
