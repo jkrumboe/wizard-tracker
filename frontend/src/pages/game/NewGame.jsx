@@ -65,7 +65,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
     <div 
       ref={setNodeRef}
       style={style}
-      className={`player-item ${isDragging ? 'dragging' : ''}`}
+      className={`player-item ${isDragging ? 'dragging' : ''} ${player.isVerified ? 'verified' : ''}`}
       {...attributes}
     >
       <div
@@ -86,6 +86,13 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
         onChange={(e) => onNameChange(player.id, e)}
         placeholder={`Player ${index + 1}`}
       />
+      
+      {player.isVerified && (
+        <span className="verified-badge" title="Registered user">
+          ✓
+        </span>
+      )}
+      
       <button 
         className="remove-btn" 
         onClick={(e) => {
@@ -109,7 +116,7 @@ const NewGame = () => {
     gameState, 
     addPlayer, 
     removePlayer, 
-    updatePlayerName, 
+    updatePlayerNameWithLookup, 
     reorderPlayers,
     startGame, 
     setMaxRounds, 
@@ -209,8 +216,8 @@ const NewGame = () => {
   useEffect(() => {
     // Only add user once, if we have a logged-in user and haven't auto-added them yet
     if (user && user.username && !hasAutoAddedUser && gameState.players.length === 0 && !gameState.gameStarted) {
-      // Add the logged-in user as the first player
-      addPlayer(user.username);
+      // Add the logged-in user as the first player with their MongoDB user ID and mark as verified
+      addPlayer(user.username, user.id, true);
       setHasAutoAddedUser(true); // Mark that we've added the user
     }
   }, [user, hasAutoAddedUser, gameState.players.length, gameState.gameStarted, addPlayer]);
@@ -239,7 +246,8 @@ const NewGame = () => {
 
   const handlePlayerNameChange = (playerId, e) => {
     const newName = e.target.value
-    updatePlayerName(playerId, newName)
+    // Use the lookup version which will try to find a registered user
+    updatePlayerNameWithLookup(playerId, newName)
   }
 
   const handleRemovePlayer = (playerId) => {

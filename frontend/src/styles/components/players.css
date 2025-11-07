@@ -43,6 +43,42 @@
     border-color: var(--primary-color);
 }
 
+.player-item.verified {
+    border-color: var(--success-color);
+    background: linear-gradient(135deg, var(--card-background-alt) 0%, rgba(34, 197, 94, 0.05) 100%);
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: var(--success-color);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: var(--spacing-xs);
+    animation: verifiedPulse 0.5s ease-in-out;
+}
+
+@keyframes verifiedPulse {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 .player-number {
     display: flex;
     align-items: center;

@@ -75,6 +75,43 @@ class UserService {
       throw new Error(error.message || 'Failed to get user');
     }
   }
+
+  async lookupUserByUsername(username) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      return { found: false };
+    }
+
+    try {
+      const endpoint = API_ENDPOINTS.users.lookup(username);
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 404) {
+        return { found: false };
+      }
+
+      if (!response.ok) {
+        console.warn('Failed to lookup user:', response.status);
+        return { found: false };
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      // Network error - backend not available
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        return { found: false };
+      }
+      console.error('Error looking up user:', error);
+      return { found: false };
+    }
+  }
 }
 
 export const userService = new UserService();

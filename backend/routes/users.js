@@ -121,6 +121,40 @@ router.get('/me', auth, async (req, res, next) => {
   }
 });
 
+// GET /users/lookup/:username - Look up user by username (public endpoint for game player lookup)
+router.get('/lookup/:username', async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+
+    // Case-insensitive username lookup
+    const user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') } 
+    }).select('_id username createdAt');
+
+    if (!user) {
+      return res.status(404).json({ 
+        found: false,
+        message: 'User not found' 
+      });
+    }
+
+    res.json({
+      found: true,
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // PUT /users/me/profile-picture - Update profile picture (protected route)
 router.put('/me/profile-picture', auth, async (req, res, next) => {
   try {

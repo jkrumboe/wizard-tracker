@@ -1146,8 +1146,8 @@
     }
 
     .selected-players-wrapper {
-      height: 150px !important; 
-      max-height: 150px !important;
+      height: 45vh !important; 
+      max-height: 45vh !important;
     }
   }
   
@@ -1160,7 +1160,7 @@
   .setup-section{
     background-color: transparent;
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md) 0;
+    /* padding: var(--spacing-md) 0; */
     /* box-shadow: var(--shadow); */
     margin-bottom: var(--spacing-md);
   }
@@ -1218,10 +1218,11 @@
   }
   
   .selected-players-wrapper {
-    height: 42vh;
+    height: 45vh;
     /* max-height: 27vh; */
     position: relative;
     padding-right: var(--spacing-xs);
+    margin: auto 0;
   }
 
   .selected-players {

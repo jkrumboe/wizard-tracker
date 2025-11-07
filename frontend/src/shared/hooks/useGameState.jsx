@@ -165,10 +165,10 @@ export function GameStateProvider({ children }) {
   }, [gameState]);
 
   // Add a player to the game
-  const addPlayer = useCallback((customName = null) => {
+  const addPlayer = useCallback((customName = null, userId = null, isVerified = false) => {
     setGameState((prevState) => {
-      // Generate a unique ID based on timestamp and random number
-      const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();
+      // Use MongoDB user ID if provided, otherwise generate a unique ID based on timestamp and random number
+      const uniqueId = userId || (Date.now().toString() + Math.floor(Math.random() * 1000).toString());
       
       let playerName;
       
@@ -193,7 +193,11 @@ export function GameStateProvider({ children }) {
         }
       }
 
-      const player = { id: uniqueId, name: playerName };
+      const player = { 
+        id: uniqueId, 
+        name: playerName,
+        isVerified: isVerified || false // Track if this player is a verified user
+      };
       
       return {
         ...prevState,
@@ -223,6 +227,58 @@ export function GameStateProvider({ children }) {
       };
     });
   }, [])
+
+  // Update player's name with async user lookup
+  const updatePlayerNameWithLookup = useCallback(async (playerId, newName) => {
+    // Import userService dynamically to avoid circular dependencies
+    const { userService } = await import('@/shared/api/userService');
+    
+    // First, update the name immediately
+    updatePlayerName(playerId, newName);
+    
+    // Then lookup the user asynchronously
+    try {
+      const result = await userService.lookupUserByUsername(newName);
+      
+      if (result.found && result.user) {
+        // Update the player with verified user ID
+        setGameState((prevState) => {
+          const updatedPlayers = prevState.players.map(player => 
+            player.id === playerId 
+              ? { 
+                  ...player, 
+                  id: result.user.id, // Update to MongoDB user ID
+                  name: result.user.username, // Use exact username from DB
+                  isVerified: true 
+                }
+              : player
+          );
+          
+          return {
+            ...prevState,
+            players: updatedPlayers,
+          };
+        });
+        return { found: true, userId: result.user.id };
+      } else {
+        // User not found - mark as unverified
+        setGameState((prevState) => {
+          const updatedPlayers = prevState.players.map(player => 
+            player.id === playerId ? { ...player, isVerified: false } : player
+          );
+          
+          return {
+            ...prevState,
+            players: updatedPlayers,
+          };
+        });
+        return { found: false };
+      }
+    } catch (error) {
+      console.warn('Error looking up user:', error);
+      return { found: false };
+    }
+  }, [updatePlayerName])
 
   // Reorder players (for drag and drop)
   const reorderPlayers = useCallback((startIndex, endIndex) => {
@@ -898,6 +954,7 @@ export function GameStateProvider({ children }) {
         setMaxRounds,
         setMode,
         updatePlayerName,
+        updatePlayerNameWithLookup,
         reorderPlayers,
         updateGameSettings,
         getLocalGames,

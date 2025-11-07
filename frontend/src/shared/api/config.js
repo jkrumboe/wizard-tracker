@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
   },
   users: {
     updateName: (id) => `${API_BASE_URL}/api/users/${id}/name`,
+    lookup: (username) => `${API_BASE_URL}/api/users/lookup/${encodeURIComponent(username)}`,
   }
 };
 
