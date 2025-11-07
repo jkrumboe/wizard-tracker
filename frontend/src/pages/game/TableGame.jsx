@@ -13,7 +13,7 @@ const TableGame = () => {
   
   const [rows, setRows] = useState(() => {
     const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
-    const initialRows = isSmallLandscape ? 4 : 12;
+    const initialRows = isSmallLandscape ? 4 : 10;
     console.log('Initial rows state:', { isSmallLandscape, initialRows, windowWidth: window.innerWidth, orientation: window.screen.orientation?.type });
     return initialRows;
   });
@@ -86,7 +86,7 @@ const TableGame = () => {
           if (hasData) {
             restoredRows = gameState.rows;
           } else {
-            restoredRows = isSmallLandscape ? 4 : 12;
+            restoredRows = isSmallLandscape ? 4 : 10;
           }
           console.log('Restoring game state:', { isSmallLandscape, hasData, savedRows: gameState.rows, restoredRows });
           setRows(restoredRows);
@@ -110,7 +110,7 @@ const TableGame = () => {
         player.points.some(point => point !== "" && point !== undefined && point !== null)
       );
       if (!hasData) {
-        setRows(e.matches ? 4 : 12);
+        setRows(e.matches ? 4 : 10);
       }
     };
     
@@ -360,7 +360,7 @@ const TableGame = () => {
     try {
       if (gameData && gameData.players) {
         setPlayers(gameData.players);
-        setRows(gameData.rows || 12);
+        setRows(gameData.rows || 10);
         setShowTemplateSelector(false);
         
         // Set the game name and ID from the loaded game
@@ -389,7 +389,7 @@ const TableGame = () => {
     ]);
     // Set rows based on current orientation
     const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
-    const newRows = isSmallLandscape ? 8 : 12;
+    const newRows = isSmallLandscape ? 8 : 10;
     console.log('Setting rows on template select:', { isSmallLandscape, newRows });
     setRows(newRows);
   };
