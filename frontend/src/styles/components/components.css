@@ -490,7 +490,6 @@
   display: flex;
   justify-content: center;
   gap: var(--spacing-xl);
-  margin-bottom: var(--spacing-sm);
 }
 
 .stats-subtab-btn {
@@ -3523,7 +3522,6 @@
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  margin-bottom: var(--spacing-lg);
 }
 
 .game-stats-container h2 {

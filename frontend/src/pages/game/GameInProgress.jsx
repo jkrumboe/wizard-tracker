@@ -667,8 +667,6 @@ const GameInProgress = () => {
       {activeTab === 'stats' && (
         <div className="tab-panel">
           <div className="game-stats-container">
-            <h2>Player Statistics</h2>
-            
             <div className="stats-subtabs">
               <button 
                 className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
