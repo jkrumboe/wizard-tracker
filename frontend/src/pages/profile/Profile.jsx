@@ -87,7 +87,7 @@ useEffect(() => {
           user.id,
           user.name,
           user.username,
-          user.$id // Appwrite user ID
+          user.$id // user ID
         ].filter(Boolean); // Remove any null/undefined values
         
         // Filter games to only include games where the current user ACTUALLY PLAYED
