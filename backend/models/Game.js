@@ -41,4 +41,7 @@ const gameSchema = new mongoose.Schema({
 // Index for faster queries by user and creation date
 gameSchema.index({ userId: 1, createdAt: -1 });
 
+// Index for faster queries by player IDs in gameData
+gameSchema.index({ 'gameData.player_ids': 1 });
+
 module.exports = mongoose.model('Game', gameSchema);

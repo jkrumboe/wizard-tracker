@@ -240,12 +240,25 @@ router.get('/', auth, async (req, res, next) => {
     // Get userId from authenticated user
     const userId = req.user._id;
 
-    const games = await Game.find({ userId })
+    // Query for games where:
+    // 1. User is the owner (userId matches), OR
+    // 2. User is a player (userId appears in gameData.player_ids array)
+    const games = await Game.find({
+      $or: [
+        { userId: userId },
+        { 'gameData.player_ids': userId.toString() }
+      ]
+    })
       .sort({ createdAt: sortDirection })
       .skip(skip)
       .limit(limitNum);
     
-    const totalGames = await Game.countDocuments({ userId });
+    const totalGames = await Game.countDocuments({
+      $or: [
+        { userId: userId },
+        { 'gameData.player_ids': userId.toString() }
+      ]
+    });
 
     res.json({
       games: games.map(game => ({
