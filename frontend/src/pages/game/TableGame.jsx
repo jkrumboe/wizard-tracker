@@ -518,7 +518,7 @@ const TableGame = () => {
                         value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
                         onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
                         className="table-game-point-input"
-                        inputMode="numeric"
+                        // inputMode="numeric"
                         pattern="-?[0-9]*"
                       />
                     </td>
