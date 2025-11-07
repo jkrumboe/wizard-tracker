@@ -417,7 +417,7 @@ const GameDetails = () => {
                 aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
                 aria-pressed={activeTab === 'stats'}
               >
-                {activeTab === 'rounds' ? <BarChartIcon size={22} /> : <TableIcon size={22} />}
+                {activeTab === 'rounds' ? <BarChartIcon size={32} /> : <TableIcon size={32} />}
               </button>
             )}
           </div>
