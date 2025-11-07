@@ -789,9 +789,7 @@ const Settings = () => {
           </div>
         )} */}
 
-        <div className="settings-section">
-          <h2>Profile</h2>
-          
+        <div className="settings-section">          
           {/* Profile Picture Section */}
           {isOnline && (
             <div className="settings-option">
