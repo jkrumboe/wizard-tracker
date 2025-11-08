@@ -22,7 +22,6 @@
 .game-details-header .back-link {
   position: absolute;
   left: var(--spacing-md);
-  top: 20%;
   z-index: 3;
   display: flex;
   align-items: center;

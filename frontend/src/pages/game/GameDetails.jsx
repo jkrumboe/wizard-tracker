@@ -417,12 +417,9 @@ const GameDetails = () => {
                 aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
                 aria-pressed={activeTab === 'stats'}
               >
-                {activeTab === 'rounds' ? <BarChartIcon size={32} /> : <TableIcon size={32} />}
+                {activeTab === 'rounds' ? <BarChartIcon size={24} /> : <TableIcon size={24} />}
               </button>
             )}
-          </div>
-          <div className="game-header-top">
-            <h1 id="header-game-detail-badge">Game Details </h1>
           </div>
           <div className="game-date">Finished: {formattedDate}</div>
           
