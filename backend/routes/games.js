@@ -284,7 +284,7 @@ router.get('/', auth, async (req, res, next) => {
 });
 
 // GET /games/stats - Get user's game statistics (example: count, latest, etc.)
-router.get('/stats', async (req, res, next) => {
+router.get('/stats', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
     const totalGames = await Game.countDocuments({ userId });

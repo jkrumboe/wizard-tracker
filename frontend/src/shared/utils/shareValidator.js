@@ -36,7 +36,14 @@ export class ShareValidator {
       // Decode the data
       let decodedData;
       try {
-        decodedData = decodeURIComponent(escape(atob(encodedData)));
+        // Use TextDecoder for proper UTF-8 decoding instead of deprecated escape()
+        const binaryString = atob(encodedData);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const decoder = new TextDecoder('utf-8');
+        decodedData = decoder.decode(bytes);
       } catch (decodeError) {
         console.warn('Decode error:', decodeError.message);
         return { isValid: false, error: 'Invalid encoding format' };

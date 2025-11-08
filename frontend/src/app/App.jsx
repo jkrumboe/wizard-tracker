@@ -51,7 +51,14 @@ function URLImportHandler() {
       
       if (importGameParam) {
         try {
-          const jsonData = decodeURIComponent(escape(atob(importGameParam)));
+          // Use TextDecoder for proper UTF-8 decoding instead of deprecated escape()
+          const binaryString = atob(importGameParam);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const decoder = new TextDecoder('utf-8');
+          const jsonData = decoder.decode(bytes);
           const compactGameData = JSON.parse(jsonData);
           
           // Convert compact data back to full game format - make it consistent with self-created games
