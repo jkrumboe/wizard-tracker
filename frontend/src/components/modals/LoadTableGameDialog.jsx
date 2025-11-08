@@ -121,14 +121,19 @@ const LoadTableGameDialog = ({
                     <div className="saved-game-details">
                       <span className="game-detail">
                         <UsersIcon size={14} />
-                        {game.playerCount} players
+                        {/* {game.playerCount} */}
                       </span>
-                      <span className="game-detail">
-                        <CalendarIcon size={14} />
-                        {formatDate(game.lastPlayed)}
-                      </span>
-                      <span className="game-detail">
-                        Rounds: {game.totalRounds}
+                      {game.players && game.players.length > 0 && (
+                        <span className="game-detail">
+                          {game.players.join(', ')}
+                        </span>
+                      )}
+                      <span className="game-detail" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: 'var(--spacing-lg)' }}>
+                        Rounds: {game.totalRounds} 
+                        <span className="game-detail">
+                          <CalendarIcon size={14} />
+                          {formatDate(game.lastPlayed)}
+                        </span>
                       </span>
                     </div>
                   </div>
