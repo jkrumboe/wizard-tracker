@@ -20,6 +20,11 @@ const TableGame = () => {
   
   const [activeTab, setActiveTab] = useState('table'); // 'table' or 'scoreboard'
   
+  // Game settings
+  const [targetNumber, setTargetNumber] = useState(null);
+  const [lowIsBetter, setLowIsBetter] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
+  
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
     const firstPlayerName = user?.username || user?.name || "Player 1";
@@ -44,6 +49,9 @@ const TableGame = () => {
   const currentGameNameRef = useRef(currentGameName);
   const currentGameIdRef = useRef(currentGameId);
   const showTemplateSelectorRef = useRef(showTemplateSelector);
+  const targetNumberRef = useRef(targetNumber);
+  const lowIsBetterRef = useRef(lowIsBetter);
+  const gameFinishedRef = useRef(gameFinished);
 
   // Persist game ID to sessionStorage whenever it changes
   useEffect(() => {
@@ -61,11 +69,14 @@ const TableGame = () => {
         players,
         rows,
         currentGameName,
-        currentGameId
+        currentGameId,
+        targetNumber,
+        lowIsBetter,
+        gameFinished
       };
       sessionStorage.setItem('currentTableGameState', JSON.stringify(gameState));
     }
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector]);
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
   // Restore game state from sessionStorage on mount (after HMR)
   useEffect(() => {
@@ -92,6 +103,9 @@ const TableGame = () => {
           setRows(restoredRows);
           setCurrentGameName(gameState.currentGameName);
           setCurrentGameId(gameState.currentGameId);
+          setTargetNumber(gameState.targetNumber || null);
+          setLowIsBetter(gameState.lowIsBetter || false);
+          setGameFinished(gameState.gameFinished || false);
           setShowTemplateSelector(false);
           console.debug('🔄 Restored game state from session after HMR');
         }
@@ -125,7 +139,10 @@ const TableGame = () => {
     currentGameNameRef.current = currentGameName;
     currentGameIdRef.current = currentGameId;
     showTemplateSelectorRef.current = showTemplateSelector;
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector]);
+    targetNumberRef.current = targetNumber;
+    lowIsBetterRef.current = lowIsBetter;
+    gameFinishedRef.current = gameFinished;
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
   // Debug: Log when players data changes
   useEffect(() => {
@@ -160,7 +177,10 @@ const TableGame = () => {
           const gameData = {
             players: players,
             rows: rows,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            targetNumber: targetNumber,
+            lowIsBetter: lowIsBetter,
+            gameFinished: gameFinished
           };
           
           const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -174,7 +194,9 @@ const TableGame = () => {
             LocalTableGameStorage.updateTableGame(currentGameId, {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
-              name: name
+              name: name,
+              targetNumber: targetNumber,
+              lowIsBetter: lowIsBetter
             });
             console.debug(`💾 Periodic auto-save: "${name}" (ID: ${currentGameId})`);
           }
@@ -185,7 +207,7 @@ const TableGame = () => {
     }, 5000); // Save every 5 seconds
     
     return () => clearInterval(autoSaveInterval);
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector]);
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
   // Auto-save game when navigating away or closing tab
   useEffect(() => {
@@ -200,6 +222,9 @@ const TableGame = () => {
       const currentName = currentGameNameRef.current;
       const currentId = currentGameIdRef.current;
       const isShowingTemplateSelector = showTemplateSelectorRef.current;
+      const currentTargetNumber = targetNumberRef.current;
+      const currentLowIsBetter = lowIsBetterRef.current;
+      const currentGameFinished = gameFinishedRef.current;
       
       console.debug('💾 Silent save on unmount:', {
         currentId,
@@ -213,7 +238,10 @@ const TableGame = () => {
           const gameData = {
             players: currentPlayers,
             rows: currentRows,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            targetNumber: currentTargetNumber,
+            lowIsBetter: currentLowIsBetter,
+            gameFinished: currentGameFinished
           };
 
           const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -227,7 +255,9 @@ const TableGame = () => {
             LocalTableGameStorage.updateTableGame(currentId, {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
-              name: name
+              name: name,
+              targetNumber: currentTargetNumber,
+              lowIsBetter: currentLowIsBetter
             });
             console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId})`);
           }
@@ -240,12 +270,15 @@ const TableGame = () => {
 
   // Auto-save on browser close/refresh
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
+    const handleBeforeUnload = () => {
       const currentPlayers = playersRef.current;
       const currentRows = rowsRef.current;
       const currentName = currentGameNameRef.current;
       const currentId = currentGameIdRef.current;
       const isShowingTemplateSelector = showTemplateSelectorRef.current;
+      const currentTargetNumber = targetNumberRef.current;
+      const currentLowIsBetter = lowIsBetterRef.current;
+      const currentGameFinished = gameFinishedRef.current;
       
       console.debug('💾 Silent save on browser close:', {
         isShowingTemplateSelector,
@@ -258,7 +291,10 @@ const TableGame = () => {
           const gameData = {
             players: currentPlayers,
             rows: currentRows,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            targetNumber: currentTargetNumber,
+            lowIsBetter: currentLowIsBetter,
+            gameFinished: currentGameFinished
           };
 
           const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -272,7 +308,9 @@ const TableGame = () => {
             LocalTableGameStorage.updateTableGame(currentId, {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
-              name: name
+              name: name,
+              targetNumber: currentTargetNumber,
+              lowIsBetter: currentLowIsBetter
             });
             console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId})`);
           }
@@ -356,6 +394,28 @@ const TableGame = () => {
     return player.points.reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
   };
 
+  // Check if any player has reached or exceeded the target
+  const hasReachedTarget = () => {
+    if (!targetNumber || gameFinished) return false;
+    
+    return players.some(player => {
+      const total = getTotal(player);
+      if (lowIsBetter) {
+        return total <= targetNumber;
+      } else {
+        return total >= targetNumber;
+      }
+    });
+  };
+
+  const handleFinishGame = () => {
+    if (window.confirm('Are you sure you want to finish this game? This will mark it as complete.')) {
+      setGameFinished(true);
+      saveGame();
+      alert('Game finished! The final scores have been saved.');
+    }
+  };
+
   const loadGame = (gameData) => {
     try {
       if (gameData && gameData.players) {
@@ -369,6 +429,11 @@ const TableGame = () => {
         setCurrentGameName(loadedGameName);
         setCurrentGameId(loadedGameId);
         
+        // Load game settings
+        setTargetNumber(gameData.targetNumber || null);
+        setLowIsBetter(gameData.lowIsBetter || false);
+        setGameFinished(gameData.gameFinished || false);
+        
         console.debug(`Loaded game: "${loadedGameName}" (ID: ${loadedGameId})`);
       }
     } catch (error) {
@@ -376,9 +441,12 @@ const TableGame = () => {
     }
   };
 
-  const handleSelectTemplate = (templateName) => {
+  const handleSelectTemplate = (templateName, settings = {}) => {
     setCurrentGameName(templateName);
     setCurrentGameId(null); // New game, no ID yet
+    setTargetNumber(settings.targetNumber || null);
+    setLowIsBetter(settings.lowIsBetter || false);
+    setGameFinished(false);
     setShowTemplateSelector(false);
     // Reset the game state with the logged-in user as the first player
     const firstPlayerName = user?.username || user?.name || "Player 1";
@@ -394,13 +462,13 @@ const TableGame = () => {
     setRows(newRows);
   };
 
-  const handleCreateNewGame = (newGameName) => {
+  const handleCreateNewGame = (newGameName, settings = {}) => {
     if (newGameName && newGameName.trim()) {
       const trimmedName = newGameName.trim();
-      // Save as a template
-      LocalTableGameTemplate.saveTemplate(trimmedName);
+      // Save as a template with settings
+      LocalTableGameTemplate.saveTemplate(trimmedName, settings);
       // Start the game with this name
-      handleSelectTemplate(trimmedName);
+      handleSelectTemplate(trimmedName, settings);
     }
   };
 
@@ -408,6 +476,9 @@ const TableGame = () => {
     setShowTemplateSelector(true);
     setCurrentGameName("");
     setCurrentGameId(null);
+    setTargetNumber(null);
+    setLowIsBetter(false);
+    setGameFinished(false);
     // Clear session storage
     sessionStorage.removeItem('currentTableGameId');
     sessionStorage.removeItem('currentTableGameState');
@@ -418,7 +489,10 @@ const TableGame = () => {
       const gameData = {
         players: players,
         rows: rows,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        targetNumber: targetNumber,
+        lowIsBetter: lowIsBetter,
+        gameFinished: gameFinished
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -428,7 +502,9 @@ const TableGame = () => {
         LocalTableGameStorage.updateTableGame(currentGameId, {
           gameData: gameData,
           lastPlayed: new Date().toISOString(),
-          name: name
+          name: name,
+          targetNumber: targetNumber,
+          lowIsBetter: lowIsBetter
         });
         console.debug(`Updated existing game: "${name}" (ID: ${currentGameId})`);
         alert(`Game "${name}" updated successfully!`);
@@ -464,6 +540,7 @@ const TableGame = () => {
               <ArrowLeftCircleIcon size={20} />
               Back
             </button>
+            
             <button
               className="table-game-add-player-above"
               title="Add Player"
@@ -592,15 +669,28 @@ const TableGame = () => {
                 total: getTotal(player),
                 originalIndex: idx
               }))
-              .sort((a, b) => b.total - a.total) // Sort by total descending (biggest to smallest)
+              .sort((a, b) => {
+                // Sort based on scoring preference
+                if (lowIsBetter) {
+                  return a.total - b.total; // Ascending (low to high)
+                } else {
+                  return b.total - a.total; // Descending (high to low)
+                }
+              })
               .map((player, index, array) => {
                 // Calculate rank with proper tie handling
                 let rank = 1;
                 
-                // Count how many players have a higher score
+                // Count how many players have a better score
                 for (let i = 0; i < index; i++) {
-                  if (array[i].total > player.total) {
-                    rank++;
+                  if (lowIsBetter) {
+                    if (array[i].total < player.total) {
+                      rank++;
+                    }
+                  } else {
+                    if (array[i].total > player.total) {
+                      rank++;
+                    }
                   }
                 }
                 
@@ -616,21 +706,31 @@ const TableGame = () => {
         </div>
       )}
           
-      {/* Tab Switcher */}
-      <div className="table-game-tab-switcher">
-        <button
-          className={`table-game-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
-          onClick={() => setActiveTab('table')}
-        >
-          Table View
-        </button>
-        <button
-          className={`table-game-tab-btn ${activeTab === 'scoreboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('scoreboard')}
-        >
-          Scoreboard
-        </button>
-      </div>
+        {/* Tab Switcher */}
+        <div className="table-game-tab-switcher">
+          <button
+            className={`table-game-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
+            onClick={() => setActiveTab('table')}
+          >
+            Table View
+          </button>
+          <button
+            className={`table-game-tab-btn ${activeTab === 'scoreboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('scoreboard')}
+          >
+            Scoreboard
+          </button>
+        </div>
+
+          {targetNumber && hasReachedTarget() && !gameFinished && (
+            <button
+              className="table-game-finish-btn"
+              onClick={handleFinishGame}
+              title="Finish Game"
+            >
+              Finish Game
+            </button>
+          )}
         </>
       )}
     </div>

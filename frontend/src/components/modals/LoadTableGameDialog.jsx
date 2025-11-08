@@ -35,7 +35,7 @@ const LoadTableGameDialog = ({
     if (isOpen) {
       loadSavedGames();
     }
-  }, [isOpen]);
+  }, [isOpen, filterByGameName]);
 
   const handleLoadGame = async (gameId) => {
     setLoading(true);
@@ -146,9 +146,9 @@ const LoadTableGameDialog = ({
                       }}
                       className="icon-btn"
                       disabled={loading}
-                      title="Load Game"
+                      title={game.gameFinished ? "View Game" : "Resume Game"}
                     >
-                      Resume
+                      {game.gameFinished ? "View" : "Resume"}
                     </button>
                     {onDeleteGame && (
                       <button

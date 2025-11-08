@@ -38,8 +38,10 @@ export class LocalTableGameStorage {
         playerCount: gameData.players ? gameData.players.length : 0,
         totalRounds: gameData.rows || 0,
         gameType: 'table',
-        gameFinished: true,
-        userId: currentUserId // Add userId to track ownership
+        gameFinished: gameData.gameFinished || false,
+        userId: currentUserId, // Add userId to track ownership
+        targetNumber: gameData.targetNumber || null, // Target score to finish game
+        lowIsBetter: gameData.lowIsBetter || false // Scoring preference
       };
 
       // Get existing storage
@@ -166,7 +168,7 @@ export class LocalTableGameStorage {
             playerCount: game.playerCount || 0,
             totalRounds: game.totalRounds || 0,
             gameType: 'table',
-            gameFinished: true,
+            gameFinished: game.gameFinished || false,
             userId: game.userId,
             players: game.gameData && game.gameData.players ? 
               game.gameData.players.map(p => p.name) : []

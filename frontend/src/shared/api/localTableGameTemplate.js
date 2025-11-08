@@ -9,9 +9,10 @@ export class LocalTableGameTemplate {
   /**
    * Save a new game template
    * @param {string} gameName - The game name to save as a template
+   * @param {Object} settings - Optional game settings (targetNumber, lowIsBetter)
    * @returns {string} - The template ID
    */
-  static saveTemplate(gameName) {
+  static saveTemplate(gameName, settings = {}) {
     const templateId = this.generateTemplateId();
     const timestamp = new Date().toISOString();
     
@@ -21,7 +22,9 @@ export class LocalTableGameTemplate {
         name: gameName.trim(),
         createdAt: timestamp,
         lastUsed: timestamp,
-        usageCount: 0
+        usageCount: 0,
+        targetNumber: settings.targetNumber || null,
+        lowIsBetter: settings.lowIsBetter || false
       };
 
       const existingTemplates = this.getAllTemplates();
@@ -40,13 +43,23 @@ export class LocalTableGameTemplate {
    * Update an existing template
    * @param {string} templateId - The template ID to update
    * @param {string} newName - The new name for the template
+   * @param {Object} settings - Optional game settings (targetNumber, lowIsBetter)
    */
-  static updateTemplate(templateId, newName) {
+  static updateTemplate(templateId, newName, settings = {}) {
     try {
       const templates = this.getAllTemplates();
       
       if (templates[templateId]) {
         templates[templateId].name = newName.trim();
+        
+        // Update settings if provided
+        if (settings.targetNumber !== undefined) {
+          templates[templateId].targetNumber = settings.targetNumber;
+        }
+        if (settings.lowIsBetter !== undefined) {
+          templates[templateId].lowIsBetter = settings.lowIsBetter;
+        }
+        
         localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));
         return true;
       }

@@ -497,7 +497,7 @@
   display: flex;
   gap: var(--spacing-md);
   justify-content: center;
-  margin: var(--spacing-lg) 0;
+  margin: var(--spacing-md) 0;
   border-radius: var(--radius-md);
 }
 
@@ -614,6 +614,17 @@
   padding: var(--spacing-xs) var(--spacing-md);
   background: var(--bg-secondary);
   border-radius: var(--radius-sm);
+}
+
+.table-game-finish-btn {
+  background-color: var(--success-color);
+  color: var(--text-white);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
 }
 
 /* .scoreboard-item[data-rank="1"] .scoreboard-score {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlayIcon, EditIcon, TrashIcon, PlusIcon, UploadIcon } from '@/components/ui/Icon';
+import { PlayIcon, EditIcon, TrashIcon, PlusIcon, ListIcon } from '@/components/ui/Icon';
 import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import LoadTableGameDialog from '@/components/modals/LoadTableGameDialog';
@@ -7,10 +7,10 @@ import '@/styles/components/GameTemplateSelector.css';
 
 const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => {
   const [templates, setTemplates] = useState([]);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [editName, setEditName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [filterGameName, setFilterGameName] = useState(null);
 
@@ -31,29 +31,25 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   const handleSelectTemplate = (template) => {
     // Record usage
     LocalTableGameTemplate.recordTemplateUsage(template.id);
-    onSelectTemplate(template.name);
+    onSelectTemplate(template.name, {
+      targetNumber: template.targetNumber,
+      lowIsBetter: template.lowIsBetter
+    });
   };
 
   const handleEditClick = (template, e) => {
     e.stopPropagation();
-    setEditingTemplate(template.id);
-    setEditName(template.name);
+    setEditingTemplate(template);
+    setShowEditModal(true);
   };
 
-  const handleSaveEdit = (templateId, e) => {
-    e.stopPropagation();
-    if (editName.trim()) {
-      LocalTableGameTemplate.updateTemplate(templateId, editName.trim());
+  const handleSaveEdit = (gameName, settings) => {
+    if (editingTemplate) {
+      LocalTableGameTemplate.updateTemplate(editingTemplate.id, gameName, settings);
       loadTemplates();
+      setShowEditModal(false);
       setEditingTemplate(null);
-      setEditName('');
     }
-  };
-
-  const handleCancelEdit = (e) => {
-    e.stopPropagation();
-    setEditingTemplate(null);
-    setEditName('');
   };
 
   const handleDeleteClick = (templateId, e) => {
@@ -71,8 +67,10 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     setShowDeleteConfirm(null);
   };
 
-  const handleCreateNewGame = (gameName) => {
-    onCreateNew(gameName);
+  const handleCreateNewGame = (gameName, settings) => {
+    // Save as template with settings
+    LocalTableGameTemplate.saveTemplate(gameName, settings);
+    onCreateNew(gameName, settings);
   };
 
   const handleLoadGame = (gameData) => {
@@ -125,95 +123,58 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
             <div
               key={template.id}
               className="template-item"
-              onClick={() => !editingTemplate && handleSelectTemplate(template)}
+              onClick={() => handleSelectTemplate(template)}
             >
-              {editingTemplate === template.id ? (
-                <div className="template-edit-mode" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="template-edit-input"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSaveEdit(template.id, e);
-                      } else if (e.key === 'Escape') {
-                        handleCancelEdit(e);
-                      }
-                    }}
-                  />
-                  <div className="template-edit-actions">
-                    <button
-                      className="template-edit-btn save-btn"
-                      onClick={(e) => handleSaveEdit(template.id, e)}
-                      title="Save"
-                    >
-                      Save
-                    </button>
-                    <button
-                      className="template-edit-btn cancel-btn"
-                      onClick={handleCancelEdit}
-                      title="Cancel"
-                    >
-                      Cancel
-                    </button>
+              <div className="template-info">
+                <div className="template-name-row">
+                  <div className="template-name">{template.name}</div>
+                   <div className="template-meta">
+                    {(() => {
+                      const savedCount = getSavedGamesCount(template.name);
+                      return savedCount > 0 ? (
+                        <span className="template-usage">
+                          {savedCount} saved {savedCount === 1 ? 'game' : 'games'}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
+                  <button
+                    className="template-action-btn edit-btn-inline"
+                    onClick={(e) => handleEditClick(template, e)}
+                    title="Edit Name"
+                  >
+                    <EditIcon size={16} />
+                  </button>
                 </div>
-              ) : (
-                <>
-                  <div className="template-info">
-                    <div className="template-name-row">
-                      <div className="template-name">{template.name}</div>
-                       <div className="template-meta">
-                        {(() => {
-                          const savedCount = getSavedGamesCount(template.name);
-                          return savedCount > 0 ? (
-                            <span className="template-usage">
-                              {savedCount} saved {savedCount === 1 ? 'game' : 'games'}
-                            </span>
-                          ) : null;
-                        })()}
-                      </div>
-                      <button
-                        className="template-action-btn edit-btn-inline"
-                        onClick={(e) => handleEditClick(template, e)}
-                        title="Edit Name"
-                      >
-                        <EditIcon size={16} />
-                      </button>
-                    </div>
-                   
-                  </div>
-                  <div className="template-actions">
-                    <button
-                      className="template-action-btn play-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectTemplate(template);
-                      }}
-                      title="Start New Game"
-                    >
-                      New Game
-                    </button>
-                    <button
-                      className="template-action-btn continue-btn"
-                      onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
-                      title="Continue Saved Game"
-                      disabled={getSavedGamesCount(template.name) === 0}
-                    >
-                      <UploadIcon size={18} />
-                    </button>
-                    <button
-                      className="template-action-btn delete-btn"
-                      onClick={(e) => handleDeleteClick(template.id, e)}
-                      title="Delete Game Type"
-                    >
-                      <TrashIcon size={18} />
-                    </button>
-                  </div>
-                </>
-              )}
+               
+              </div>
+              <div className="template-actions">
+                <button
+                  className="template-action-btn play-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectTemplate(template);
+                  }}
+                  title="Start New Game"
+                >
+                  New Game
+                </button>
+                <button
+                  className="template-action-btn continue-btn"
+                  onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
+                  title="View Saved Games"
+                  disabled={getSavedGamesCount(template.name) === 0}
+                >
+                  <ListIcon size={18} />
+                </button>
+                <button
+                  className="template-action-btn delete-btn"
+                  onClick={(e) => handleDeleteClick(template.id, e)}
+                  title="Delete Game Type"
+                >
+                  <TrashIcon size={18} />
+                </button>
+              </div>
             </div>
           ))
         ) : (
@@ -236,6 +197,18 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleCreateNewGame}
+      />
+
+      {/* Edit Game Template Modal */}
+      <AddGameTemplateModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTemplate(null);
+        }}
+        onSave={handleSaveEdit}
+        editMode={true}
+        initialData={editingTemplate}
       />
 
       {/* Load Table Game Dialog */}
