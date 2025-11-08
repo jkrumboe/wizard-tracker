@@ -183,13 +183,16 @@ const GameInProgress = () => {
     
     // Use a small delay to avoid infinite loops
     const timer = setTimeout(() => {
+      // When reduceTrickCount is enabled, expect one less trick (for cards where current trick doesn't count)
+      const expectedTricks = reduceTrickCount ? currentRound.round - 1 : currentRound.round;
+      
       // Calculate total tricks already allocated by other players who have entered their made values
       const totalMadeByOthers = currentRound.players.reduce((sum, p) => {
         return p.made !== null ? sum + p.made : sum;
       }, 0);
 
-      // If all tricks are allocated (total made equals round cards)
-      if (totalMadeByOthers === currentRound.round) {
+      // If all tricks are allocated (total made equals expected tricks)
+      if (totalMadeByOthers === expectedTricks) {
         // Set remaining players who haven't entered made values to 0
         currentRound.players.forEach(player => {
           if (player.made === null) {
@@ -200,7 +203,7 @@ const GameInProgress = () => {
     }, 100); // Small delay to avoid render conflicts
     
     return () => clearTimeout(timer);
-  }, [gameState.roundData, gameState.currentRound, updateMade]);
+  }, [gameState.roundData, gameState.currentRound, updateMade, reduceTrickCount]);
 
   // Log page reload and navigation events
   useEffect(() => {
