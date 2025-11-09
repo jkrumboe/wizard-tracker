@@ -17,7 +17,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
 import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -50,6 +50,7 @@ const GameInProgress = () => {
   const [isRecovering, setIsRecovering] = useState(false) // Track recovery state
   const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches)
   const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
+  const [increaseCallMax, setIncreaseCallMax] = useState(false) // For Wolke - allows one more call than round max
   
   // Refs to store current values for event handlers
   const gameStateRef = useRef(gameState)
@@ -75,6 +76,7 @@ const GameInProgress = () => {
   // Reset trick count reducer when round changes
   useEffect(() => {
     setReduceTrickCount(false)
+    setIncreaseCallMax(false)
   }, [gameState.currentRound])
   
   // Function to toggle player stats visibility
@@ -487,12 +489,12 @@ const GameInProgress = () => {
     // Find players who have not made a call yet
     const uncalledPlayers = players.filter(p => p.call === null);
     // Only restrict the last player to call
-    if (uncalledPlayers.length !== 1) return "not 0";
+    if (uncalledPlayers.length !== 1) return "0";
     // The forbidden call is the value that would make totalCalls == currentRound.round
     const forbiddenCall = currentRound.round - totalCalls;
     // Only restrict if forbiddenCall is within valid range
     if (forbiddenCall >= 0 && forbiddenCall <= currentRound.round) {
-      return `not ${forbiddenCall}`;
+      return `${forbiddenCall}`;
     }
     return 0;
   };
@@ -556,7 +558,13 @@ const GameInProgress = () => {
           Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
         </span>
         <span className="total-calls">
-          Calls: {totalCalls} |  {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
+          <div>
+            Calls: {totalCalls}
+          </div> 
+          |  
+          <div className={`illegal-calls ${(currentRound?.round - totalCalls) < 0 ? 'free' : ''}`}>
+            {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
+          </div>
         </span>
         <button 
           className="settings-btn"
@@ -606,8 +614,8 @@ const GameInProgress = () => {
                       placeholder="0"
                       onChange={(e) => updateCall(player.id, parseInt(e.target.value) || '')}
                       min={0}
-                      max={currentRound.round}
-                      title={`${player.name}'s Call`}
+                      max={increaseCallMax ? currentRound.round + 1 : currentRound.round}
+                      title={`${player.name}'s Call (Max: ${increaseCallMax ? currentRound.round + 1 : currentRound.round})`}
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
@@ -724,7 +732,7 @@ const GameInProgress = () => {
         </div>
       )}
 
-      {/* Trick Count Reducer Switch - for cards where current trick doesn't count */}
+      {/* Trick Count Reducer and Call Max Increaser */}
       <div className="trick-reducer-container">
         <label className="trick-reducer-label">
           <input
@@ -735,6 +743,17 @@ const GameInProgress = () => {
           />
           <span className="trick-reducer-text">
             Bombe<BombIcon size={18} />
+          </span>
+        </label>
+        <label className="trick-reducer-label">
+          <input
+            type="checkbox"
+            checked={increaseCallMax}
+            onChange={(e) => setIncreaseCallMax(e.target.checked)}
+            className="trick-reducer-checkbox"
+          />
+          <span className="trick-reducer-text">
+            Wolke<CloudIcon size={18} />
           </span>
         </label>
       </div>
