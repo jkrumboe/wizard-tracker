@@ -79,6 +79,24 @@ const GameInProgress = () => {
     setIncreaseCallMax(false)
   }, [gameState.currentRound])
   
+  // When Wolke is disabled, clamp any calls that exceed the normal round max
+  useEffect(() => {
+    if (!increaseCallMax && gameState.currentRound > 0) {
+      const currentRoundIndex = gameState.currentRound - 1;
+      const currentRound = gameState.roundData[currentRoundIndex];
+      
+      if (currentRound) {
+        const maxAllowed = currentRound.round;
+        
+        currentRound.players.forEach((player) => {
+          if (player.call !== null && player.call > maxAllowed) {
+            updateCall(player.id, maxAllowed);
+          }
+        });
+      }
+    }
+  }, [increaseCallMax, gameState.currentRound, gameState.roundData, updateCall]);
+  
   // Function to toggle player stats visibility
   const togglePlayerStats = (playerId) => {
     setSelectedPlayerId(prev => prev === playerId ? null : playerId)
@@ -612,7 +630,12 @@ const GameInProgress = () => {
                       className="rounds-input"
                       value={player.call !== null ? player.call : ''}
                       placeholder="0"
-                      onChange={(e) => updateCall(player.id, parseInt(e.target.value) || '')}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        const maxAllowed = increaseCallMax ? currentRound.round + 1 : currentRound.round;
+                        const clampedValue = Math.max(0, Math.min(value, maxAllowed));
+                        updateCall(player.id, clampedValue);
+                      }}
                       min={0}
                       max={increaseCallMax ? currentRound.round + 1 : currentRound.round}
                       title={`${player.name}'s Call (Max: ${increaseCallMax ? currentRound.round + 1 : currentRound.round})`}

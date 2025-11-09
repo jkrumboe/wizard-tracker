@@ -430,7 +430,8 @@ export function GameStateProvider({ children }) {
       if (playerIndex !== -1) {
         const updatedPlayers = [...currentRound.players]
         const player = { ...updatedPlayers[playerIndex] };
-        const validCall = Math.max(0, Math.min(call, currentRound.round));
+        // Allow calls up to round + 1 to support special rules like "Wolke"
+        const validCall = Math.max(0, Math.min(call, currentRound.round + 1));
         
         player.call = validCall;
         
