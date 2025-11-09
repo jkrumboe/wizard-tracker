@@ -444,12 +444,39 @@ const TableGame = () => {
   };
 
   const handleFinishGame = () => {
-    if (window.confirm('Are you sure you want to finish this game? This will mark it as complete.')) {
-      setGameFinished(true);
-      saveGame();
-      alert('Game finished! The final scores have been saved.');
-    }
+    setGameFinished(true);
+    saveGame();
   };
+
+  const handleEditGame = () => {
+    setGameFinished(false);
+    // Auto-save with the updated status
+    setTimeout(() => saveGame(), 100);
+  };
+
+  // Check if target is reached and auto-finish/unfinish based on scores
+  useEffect(() => {
+    if (targetNumber && !gameFinished) {
+      // Game is in progress, check if we should auto-mark as ready to finish
+      // (This is just for showing the finish button, actual finishing is manual)
+    } else if (targetNumber && gameFinished) {
+      // Game is finished, check if scores changed and target is no longer reached
+      const targetStillReached = players.some(player => {
+        const total = getTotal(player);
+        if (lowIsBetter) {
+          return total <= targetNumber;
+        } else {
+          return total >= targetNumber;
+        }
+      });
+      
+      if (!targetStillReached) {
+        // Target no longer reached, automatically unfinish the game
+        setGameFinished(false);
+        console.debug('⚠️ Target no longer reached, game marked as in progress');
+      }
+    }
+  }, [players, targetNumber, gameFinished, lowIsBetter]);
 
   const loadGame = (gameData) => {
     try {
@@ -557,7 +584,7 @@ const TableGame = () => {
           lowIsBetter: lowIsBetter
         });
         console.debug(`Updated existing game: "${name}" (ID: ${currentGameId})`);
-        alert(`Game "${name}" updated successfully!`);
+        // alert(`Game "${name}" updated successfully!`);
       } else {
         // Create new save and store the ID
         const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
@@ -595,6 +622,7 @@ const TableGame = () => {
               className="table-game-add-player-above"
               title="Add Player"
               onClick={() => insertPlayer(players.length)}
+              disabled={gameFinished}
             >
               Add Player
             </button>
@@ -629,6 +657,7 @@ const TableGame = () => {
                         className="table-game-player-input"
                         placeholder={`Player ${idx + 1}`}
                         type="text"
+                        disabled={gameFinished}
                       />
                     </div>
                   </th>
@@ -647,6 +676,7 @@ const TableGame = () => {
                         className="table-game-point-input"
                         // inputMode="numeric"
                         pattern="-?[0-9]*"
+                        disabled={gameFinished}
                       />
                     </td>
                   ))}
@@ -658,6 +688,7 @@ const TableGame = () => {
                     className="table-game-add-row-inline"
                     title="Add Row"
                     onClick={addRow}
+                    disabled={gameFinished}
                   >
                     Add Row
                   </button>
@@ -678,10 +709,10 @@ const TableGame = () => {
                   <td key={`controls-${idx}`} className="table-game-controls-cell">
                     <div className="table-game-controls">
                       <button
-                        className={`table-game-control-btn table-game-move-btn ${idx === 0 ? 'disabled' : ''}`}
+                        className={`table-game-control-btn table-game-move-btn ${idx === 0 || gameFinished ? 'disabled' : ''}`}
                         title="Move Left"
                         onClick={() => movePlayerLeft(idx)}
-                        disabled={idx === 0}
+                        disabled={idx === 0 || gameFinished}
                       >
                         <ArrowLeftIcon size={16} />
                       </button>
@@ -690,15 +721,16 @@ const TableGame = () => {
                           className="table-game-control-btn table-game-remove-btn"
                           title="Remove Player"
                           onClick={() => removePlayer(idx)}
+                          disabled={gameFinished}
                         >
                           <XIcon size={16} />
                         </button>
                       )}
                       <button
-                        className={`table-game-control-btn table-game-move-btn ${idx === players.length - 1 ? 'disabled' : ''}`}
+                        className={`table-game-control-btn table-game-move-btn ${idx === players.length - 1 || gameFinished ? 'disabled' : ''}`}
                         title="Move Right"
                         onClick={() => movePlayerRight(idx)}
-                        disabled={idx === players.length - 1}
+                        disabled={idx === players.length - 1 || gameFinished}
                       >
                         <ArrowRightIcon size={16} />
                       </button>
@@ -779,6 +811,16 @@ const TableGame = () => {
               title="Finish Game"
             >
               Finish Game
+            </button>
+          )}
+          
+          {gameFinished && (
+            <button
+              className="table-game-edit-btn"
+              onClick={handleEditGame}
+              title="Edit Game"
+            >
+              Edit Game
             </button>
           )}
         </>

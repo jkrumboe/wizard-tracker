@@ -616,7 +616,8 @@
   border-radius: var(--radius-sm);
 }
 
-.table-game-finish-btn {
+.table-game-finish-btn,
+.table-game-edit-btn {
   background-color: var(--success-color);
   color: var(--text-white);
   padding: 0.5rem 1rem;
@@ -624,7 +625,12 @@
   border: none;
   cursor: pointer;
   font-weight: bold;
+  margin-top: var(--spacing-sm);
   width: 100%;
+}
+
+.table-game-edit-btn {
+  background-color: var(--secondary-color);
 }
 
 /* .scoreboard-item[data-rank="1"] .scoreboard-score {
