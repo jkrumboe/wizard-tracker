@@ -46,12 +46,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-.template-item:hover:not(:has(.template-edit-mode)) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-color);
-}
-
 .template-info {
   flex: 1;
   min-width: 0;
@@ -382,10 +376,6 @@
 
   .template-action-btn.play-btn {
     flex: 1;
-  }
-
-  .template-name {
-    font-size: 1.125rem;
   }
 
   .template-selector-actions {

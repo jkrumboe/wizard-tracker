@@ -128,7 +128,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
             <div
               key={template.id}
               className="template-item"
-              onClick={() => handleSelectTemplate(template)}
             >
               <div className="template-info">
                 <div className="template-name-row">
