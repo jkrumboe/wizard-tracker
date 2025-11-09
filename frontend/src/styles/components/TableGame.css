@@ -45,6 +45,12 @@
   border-radius: 0;
   box-sizing: border-box;
 }
+
+.table-game-add-row-inline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* TableGame styles */
 .table-game-container {
   width: 100%;
@@ -100,9 +106,9 @@
   gap: var(--spacing-xs);
 }
 
-.table-game-add-player-above:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
+.table-game-add-player-above:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .table-game-save-btn {
@@ -190,6 +196,11 @@
 .table-game-controls-row {
   background: var(--bg-secondary);
   border-top: 2px solid var(--border-color);
+}
+
+.table-game-controls-row.disabled {
+  display: none;
+  cursor: not-allowed;
 }
 
 .table-game-controls-cell {
@@ -329,6 +340,12 @@
   min-width: 32px;
   max-width: 48px;
   border: none !important;
+}
+
+.table-game-total.disabled {
+    font-size: 1.1rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--border-color) !important;
 }
 
 /* Save Game Section */

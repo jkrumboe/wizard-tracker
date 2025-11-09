@@ -698,13 +698,13 @@ const TableGame = () => {
             <tfoot>
               <tr>
                 {players.map((player, idx) => (
-                  <td key={idx} className="table-game-total">
+                  <td key={idx} className={`table-game-total ${gameFinished ? 'disabled' : ''}`}>
                     {getTotal(player)}
                   </td>
                 ))}
               </tr>
               {/* Controls Row */}
-              <tr className="table-game-controls-row">
+              <tr className={`table-game-controls-row ${gameFinished ? 'disabled' : ''}`}>
                 {players.map((_, idx) => (
                   <td key={`controls-${idx}`} className="table-game-controls-cell">
                     <div className="table-game-controls">
