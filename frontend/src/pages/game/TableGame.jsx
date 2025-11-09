@@ -107,6 +107,7 @@ const TableGame = () => {
           setLowIsBetter(gameState.lowIsBetter || false);
           setGameFinished(gameState.gameFinished || false);
           setShowTemplateSelector(false);
+          setActiveTab('table'); // Always start at table view
           console.debug('🔄 Restored game state from session after HMR');
         }
       } catch (error) {
@@ -456,6 +457,7 @@ const TableGame = () => {
         setPlayers(gameData.players);
         setRows(gameData.rows || 10);
         setShowTemplateSelector(false);
+        setActiveTab('table'); // Always start at table view
         
         // Set the game name and ID from the loaded game
         const loadedGameName = gameData.gameName || "Loaded Game";
@@ -495,6 +497,7 @@ const TableGame = () => {
     setLowIsBetter(settings.lowIsBetter || false);
     setGameFinished(false);
     setShowTemplateSelector(false);
+    setActiveTab('table'); // Always start at table view
     // Reset the game state with the logged-in user as the first player
     const firstPlayerName = user?.username || user?.name || "Player 1";
     setPlayers([
