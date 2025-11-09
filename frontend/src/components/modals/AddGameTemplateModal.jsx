@@ -58,7 +58,7 @@ const AddGameTemplateModal = ({ isOpen, onClose, onSave, editMode = false, initi
   return (
     <div className="add-game-modal-overlay" onClick={onClose}>
       <div className="add-game-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="add-game-modal-header">
+        <div className="modal-header">
           <h2>{editMode ? 'Edit Game Type' : 'Create New Game'}</h2>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={20} />
@@ -100,7 +100,7 @@ const AddGameTemplateModal = ({ isOpen, onClose, onSave, editMode = false, initi
             className="game-name-input"
           />
           
-          <div style={{ marginTop: '1rem' }}>
+          <div>
             <label className="game-name-label">
               Scoring Preference:
             </label>
