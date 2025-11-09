@@ -49,6 +49,11 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       loadTemplates();
       setShowEditModal(false);
       setEditingTemplate(null);
+      
+      // Dispatch event to notify active games that template was updated
+      window.dispatchEvent(new CustomEvent('templateUpdated', { 
+        detail: { templateName: gameName, settings } 
+      }));
     }
   };
 

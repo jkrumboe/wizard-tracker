@@ -144,6 +144,40 @@ const TableGame = () => {
     gameFinishedRef.current = gameFinished;
   }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
+  // Sync game settings with template when game is active or template changes
+  useEffect(() => {
+    const syncSettingsFromTemplate = () => {
+      if (!showTemplateSelector && currentGameName) {
+        // Find the template for the current game
+        const templates = LocalTableGameTemplate.getAllTemplates();
+        const matchingTemplate = Object.values(templates).find(t => t.name === currentGameName);
+        
+        if (matchingTemplate) {
+          // Update game settings if template settings have changed
+          const templateTarget = matchingTemplate.targetNumber || null;
+          const templateLowIsBetter = matchingTemplate.lowIsBetter || false;
+          
+          if (templateTarget !== targetNumber || templateLowIsBetter !== lowIsBetter) {
+            setTargetNumber(templateTarget);
+            setLowIsBetter(templateLowIsBetter);
+            console.debug(`🔄 Updated game settings from template: target=${templateTarget}, lowIsBetter=${templateLowIsBetter}`);
+          }
+        }
+      }
+    };
+
+    // Listen for template update events
+    window.addEventListener('templateUpdated', syncSettingsFromTemplate);
+    
+    // Also check on window focus (in case template was edited in another tab)
+    window.addEventListener('focus', syncSettingsFromTemplate);
+    
+    return () => {
+      window.removeEventListener('templateUpdated', syncSettingsFromTemplate);
+      window.removeEventListener('focus', syncSettingsFromTemplate);
+    };
+  }, [currentGameName, showTemplateSelector, targetNumber, lowIsBetter]);
+
   // Debug: Log when players data changes
   useEffect(() => {
     if (!showTemplateSelector) {
@@ -429,9 +463,22 @@ const TableGame = () => {
         setCurrentGameName(loadedGameName);
         setCurrentGameId(loadedGameId);
         
-        // Load game settings
-        setTargetNumber(gameData.targetNumber || null);
-        setLowIsBetter(gameData.lowIsBetter || false);
+        // Try to sync with template settings first
+        const templates = LocalTableGameTemplate.getAllTemplates();
+        const matchingTemplate = Object.values(templates).find(t => t.name === loadedGameName);
+        
+        if (matchingTemplate) {
+          // Use template settings (they might have been updated since game was saved)
+          setTargetNumber(matchingTemplate.targetNumber || null);
+          setLowIsBetter(matchingTemplate.lowIsBetter || false);
+          console.debug(`📋 Synced game settings from template: target=${matchingTemplate.targetNumber}, lowIsBetter=${matchingTemplate.lowIsBetter}`);
+        } else {
+          // Fall back to saved game settings if template not found
+          setTargetNumber(gameData.targetNumber || null);
+          setLowIsBetter(gameData.lowIsBetter || false);
+          console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
+        }
+        
         setGameFinished(gameData.gameFinished || false);
         
         console.debug(`Loaded game: "${loadedGameName}" (ID: ${loadedGameId})`);
