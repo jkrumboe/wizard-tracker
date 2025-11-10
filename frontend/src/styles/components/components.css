@@ -1136,6 +1136,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
+  gap: var(--spacing-sm);
 }
 
   /* For really small phones */
@@ -1158,10 +1159,12 @@
   }
   
   .setup-section{
+    display: flex;
+    flex-direction: column;
+  
     background-color: transparent;
     border-radius: var(--radius-lg);
-    /* padding: var(--spacing-md) 0; */
-    /* box-shadow: var(--shadow); */
+    gap: var(--spacing-md);
     margin-bottom: var(--spacing-md);
   }
   
@@ -1366,7 +1369,6 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-sm);
-    margin-left: var(--spacing-md);
     background-color: var(--primary-color);
     color: var(--text-white);
     border: none;
@@ -1387,7 +1389,6 @@
 
   .randomizer-btn:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
   }
 
   .randomizer-btn:disabled {
@@ -2047,7 +2048,7 @@
 .tab-controls {
   display: flex;
   justify-content: center;
-  margin-bottom: var(--spacing-md);
+  /* margin-bottom: var(--spacing-md); */
   border-radius: var(--radius-lg);
   gap: var(--spacing-sm);
 }
@@ -2335,7 +2336,7 @@
   /* padding: var(--spacing-md); */
   border-radius: var(--radius-lg);
   /* box-shadow: var(--shadow); */
-  margin-bottom: var(--spacing-md);
+  /* margin-bottom: var(--spacing-md); */
 }
 
 .home-header h1 {
@@ -2359,7 +2360,7 @@
   }
   
   .home-header {
-    margin-bottom: var(--spacing-md);
+    /* margin-bottom: var(--spacing-md); */
   }
   
   .home-header h1 {

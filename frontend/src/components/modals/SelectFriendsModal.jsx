@@ -1,0 +1,136 @@
+import React, { useState, useEffect } from 'react';
+import { XIcon, UsersIcon, CheckMarkIcon } from '@/components/ui/Icon';
+import { localFriendsService } from '@/shared/api';
+import '@/styles/components/modal.css';
+import '@/styles/components/select-friends-modal.css';
+
+const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers = [] }) => {
+  const [friends, setFriends] = useState([]);
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadFriends();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const loadFriends = async () => {
+    setLoading(true);
+    try {
+      const friendsList = await localFriendsService.getAllFriends();
+      
+      // Filter out friends who are already added as players
+      const availableFriends = friendsList.filter(friend => 
+        !alreadySelectedPlayers.some(player => 
+          player.userId === friend.id || player.name === friend.username
+        )
+      );
+      
+      setFriends(availableFriends);
+    } catch (err) {
+      console.error('Error loading friends:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleFriendSelection = (friend) => {
+    setSelectedFriends(prev => {
+      const isSelected = prev.some(f => f.id === friend.id);
+      if (isSelected) {
+        return prev.filter(f => f.id !== friend.id);
+      } else {
+        return [...prev, friend];
+      }
+    });
+  };
+
+  const handleConfirm = () => {
+    onConfirm(selectedFriends);
+    setSelectedFriends([]);
+    onClose();
+  };
+
+  const handleClose = () => {
+    setSelectedFriends([]);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-container select-friends-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>
+            <UsersIcon size={20} />
+            Select Friends
+          </h2>
+          <button className="close-btn" onClick={handleClose}>
+            <XIcon size={20} />
+          </button>
+        </div>
+
+        <div className="modal-content">
+          {loading ? (
+            <div className="loading-message">Loading friends...</div>
+          ) : friends.length === 0 ? (
+            <div className="empty-message">
+              No friends available. Add friends first from the home page.
+            </div>
+          ) : (
+            <div className="friends-selection-list">
+              {friends.map(friend => {
+                const isSelected = selectedFriends.some(f => f.id === friend.id);
+                return (
+                  <div 
+                    key={friend.id} 
+                    className={`friend-selection-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => toggleFriendSelection(friend)}
+                  >
+                    <div className="friend-selection-info">
+                      {friend.profilePicture ? (
+                        <img 
+                          src={friend.profilePicture} 
+                          alt={friend.username}
+                          className="friend-selection-avatar"
+                        />
+                      ) : (
+                        <div className="friend-selection-avatar-placeholder">
+                          {friend.username[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div className="friend-selection-details">
+                        <div className="friend-selection-name">{friend.username}</div>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="selection-checkmark">
+                        <CheckMarkIcon size={20} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button 
+            type="button" 
+            onClick={handleConfirm} 
+            className="confirm-button"
+            disabled={selectedFriends.length === 0}
+          >
+            Add {selectedFriends.length > 0 ? `(${selectedFriends.length})` : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SelectFriendsModal;

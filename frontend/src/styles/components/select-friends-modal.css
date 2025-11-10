@@ -1,0 +1,158 @@
+/* Select Friends Modal Styles */
+.select-friends-modal {
+  max-width: 500px;
+  max-height: 80vh;
+}
+
+.select-friends-modal .modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.select-friends-modal .modal-content {
+    min-height: 30dvh;
+}
+
+.friends-selection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.friend-selection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--card-bg, #2d3748);
+  border: 2px solid var(--border-color, #4a5568);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.friend-selection-item:hover {
+  background: var(--card-hover-bg, #374151);
+  border-color: var(--primary-color, #4299e1);
+}
+
+.friend-selection-item.selected {
+  background: var(--primary-color-alpha, rgba(66, 153, 225, 0.2));
+  border-color: var(--primary-color, #4299e1);
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+}
+
+.friend-selection-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.friend-selection-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color, #4a5568);
+}
+
+.friend-selection-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-color, #4299e1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border: 2px solid var(--border-color, #4a5568);
+}
+
+.friend-selection-details {
+  flex: 1;
+}
+
+.friend-selection-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.selection-checkmark {
+  color: var(--primary-color, #4299e1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary-color, #4299e1);
+  border-radius: 50%;
+  color: white;
+}
+
+.loading-message,
+.empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary, #a0aec0);
+  font-size: 1rem;
+}
+
+.confirm-button {
+  background: var(--primary-color, #4299e1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.confirm-button:hover:not(:disabled) {
+  background: var(--primary-color-dark, #2563eb);
+  transform: translateY(-1px);
+}
+
+.confirm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background: var(--border-color);
+  color: var(--text-color);
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.cancel-button:hover {
+  background: var(--card-background-alt);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .select-friends-modal {
+    width: 95%;
+  }
+  
+  .friend-selection-avatar,
+  .friend-selection-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+}

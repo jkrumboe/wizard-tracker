@@ -532,9 +532,8 @@ html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
 }
 
 .addPlayer {
-  width: 80%;
+  width: 100%;
   background: transparent;
-  margin: 0 10%;
   border: 3px solid var(--primary-color);
   color: var(--primary-color);
   font-size: 1.4rem;

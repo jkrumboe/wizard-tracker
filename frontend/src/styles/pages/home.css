@@ -16,7 +16,7 @@
 .friends-section {
   display: flex;
   justify-content: center;
-  margin: var(--spacing-sm) 0;
+  margin: var(--spacing-md) 0;
   width: 100%;
 }
 

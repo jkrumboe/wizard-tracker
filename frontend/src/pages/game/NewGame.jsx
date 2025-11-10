@@ -6,8 +6,9 @@ import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
 import { LocalGameStorage } from "@/shared/api"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import { SelectFriendsModal } from '@/components/modals';
 import { GripVertical } from 'lucide-react';
-import { XIcon, DiceIcon } from '@/components/ui/Icon';
+import { XIcon, DiceIcon, UsersIcon } from '@/components/ui/Icon';
 import {
   DndContext,
   closestCenter,
@@ -87,11 +88,11 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
         placeholder={`Player ${index + 1}`}
       />
       
-      {player.isVerified && (
+      {/* {player.isVerified && (
         <span className="verified-badge" title="Registered user">
           ✓
         </span>
-      )}
+      )} */}
       
       <button 
         className="remove-btn" 
@@ -134,6 +135,7 @@ const NewGame = () => {
   const [gameToDelete, setGameToDelete] = useState(null)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [hasAutoAddedUser, setHasAutoAddedUser] = useState(false)
+  const [showSelectFriendsModal, setShowSelectFriendsModal] = useState(false)
   
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -296,6 +298,23 @@ const NewGame = () => {
     }
   }
 
+  // Handle adding friends to the player list
+  const handleAddFriends = (selectedFriends) => {
+    selectedFriends.forEach(friend => {
+      addPlayer(friend.username, friend.id, true);
+    });
+    
+    // Scroll to bottom after adding friends
+    setTimeout(() => {
+      if (selectedPlayersRef.current) {
+        selectedPlayersRef.current.scrollTo({
+          top: selectedPlayersRef.current.scrollHeight,
+          behavior: 'smooth'
+        })
+      }
+    }, 100);
+  }
+
   // Handle showing delete confirmation dialog
   const handleDeleteGame = (gameId) => {
     setGameToDelete(gameId);
@@ -447,8 +466,24 @@ const NewGame = () => {
               </div>
 
               <div className="player-actions">
+                <button 
+                  className="randomizer-btn" 
+                  onClick={handleRandomizePlayers}
+                  title="Randomize player order"
+                  aria-label="Randomize player order"
+                  disabled={gameState.players.length < 3}
+                >
+                  <DiceIcon size={25} />
+                </button>
                 <button className="addPlayer" onClick={handleAddPlayer}>
                   +
+                </button>
+                <button 
+                  className="add-friends-btn" 
+                  onClick={() => setShowSelectFriendsModal(true)}
+                  title="Add friends to game"
+                >
+                  <UsersIcon size={20} />
                 </button>
               </div>
               
@@ -472,15 +507,6 @@ const NewGame = () => {
                           Recommended: {recommendedRounds} rounds
                     </div>
                   </div>
-                  <button 
-                    className="randomizer-btn" 
-                    onClick={handleRandomizePlayers}
-                    title="Randomize player order"
-                    aria-label="Randomize player order"
-                    disabled={gameState.players.length < 3}
-                  >
-                    <DiceIcon size={25} />
-                  </button>
                 </div>
               </div>
             </div>
@@ -569,6 +595,13 @@ const NewGame = () => {
         onClose={() => setShowConfirmDialog(false)}
         onConfirm={handleConfirmDelete}
         deleteAll={false}
+      />
+
+      <SelectFriendsModal
+        isOpen={showSelectFriendsModal}
+        onClose={() => setShowSelectFriendsModal(false)}
+        onConfirm={handleAddFriends}
+        alreadySelectedPlayers={gameState.players}
       />
     </div>
   )
