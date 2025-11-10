@@ -20,23 +20,20 @@ const DeleteConfirmationModal = ({
           </button>
         </div>
         <div className="modal-content">
-          <h3>
+          <h3 style={{margin: 0}}>
             {deleteAll
               ? 'Are you sure you want to delete all local storage data?'
               : 'Are you sure you want to delete this game?'}
           </h3>
-          <p className="delete-description">
-            This action cannot be undone.
-          </p>
-          <div className="modal-actions">
+        </div>
+        <div className="modal-actions">
             <button className="modal-button secondary" onClick={onClose}>
               Cancel
             </button>
             <button className="modal-button danger" onClick={onConfirm}>
-              {deleteAll ? 'Clear All Data' : 'Delete Game'}
+              {deleteAll ? 'Clear All Data' : 'Delete'}
             </button>
           </div>
-        </div>
       </div>
     </div>
   );

@@ -73,7 +73,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
       <div className="modal-container cloud-game-select-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         <div className="modal-header">
           <h2>
-            Download Cloud Games
+            Cloud Games
           </h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
@@ -208,8 +208,9 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 ))}
               </div>
             </>
-          )}
-          <div className="modal-actions">
+          )} 
+          </div>
+        <div className="modal-actions">
             <button className="modal-button secondary" onClick={onClose}>
                 Cancel
             </button>
@@ -228,8 +229,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
             >
                 Download 
             </button>
-            </div>
-        </div>
+          </div>
       </div>
     </div>
   );

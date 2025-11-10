@@ -669,10 +669,20 @@ const Settings = () => {
       return;
     }
     
+    // Get wizard games
     const gameEntries = Object.entries(savedGames);
     const uploadableGames = gameEntries.filter(([, game]) => !game.isPaused);
     
-    if (uploadableGames.length === 0) {
+    // Get table games
+    const allTableGames = LocalTableGameStorage.getAllSavedTableGames();
+    const tableGameEntries = Object.entries(allTableGames);
+    const uploadableTableGames = tableGameEntries.filter(([, game]) => 
+      game.gameFinished && !LocalTableGameStorage.isGameUploaded(game.id)
+    );
+    
+    const totalUploadable = uploadableGames.length + uploadableTableGames.length;
+    
+    if (totalUploadable === 0) {
       setMessage({ text: 'No games available for upload.', type: 'error' });
       return;
     }
@@ -681,7 +691,7 @@ const Settings = () => {
       uploading: true, 
       progress: 'Starting upload...', 
       uploadedCount: 0, 
-      totalCount: uploadableGames.length 
+      totalCount: totalUploadable 
     });
 
     let successful = 0;
@@ -689,13 +699,14 @@ const Settings = () => {
     const errors = [];
 
     try {
+      // Upload wizard games
       for (let i = 0; i < uploadableGames.length; i++) {
         const [gameId, gameData] = uploadableGames[i];
         
         setCloudSyncStatus(prev => ({
           ...prev,
-          progress: `Uploading game ${i + 1} of ${uploadableGames.length}...`,
-          uploadedCount: i
+          progress: `Uploading wizard game ${i + 1} of ${uploadableGames.length}...`,
+          uploadedCount: successful
         }));
 
         try {
@@ -703,7 +714,26 @@ const Settings = () => {
           successful++;
         } catch (error) {
           failed++;
-          errors.push(`Game ${gameId}: ${error.message}`);
+          errors.push(`Wizard Game ${gameId}: ${error.message}`);
+        }
+      }
+
+      // Upload table games
+      for (let i = 0; i < uploadableTableGames.length; i++) {
+        const [gameId, gameData] = uploadableTableGames[i];
+        
+        setCloudSyncStatus(prev => ({
+          ...prev,
+          progress: `Uploading table game ${i + 1} of ${uploadableTableGames.length}...`,
+          uploadedCount: successful
+        }));
+
+        try {
+          await uploadSingleTableGameToCloud(gameId, gameData);
+          successful++;
+        } catch (error) {
+          failed++;
+          errors.push(`Table Game ${gameId}: ${error.message}`);
         }
       }
 
@@ -983,10 +1013,20 @@ const Settings = () => {
                   onClick={handleBulkCloudSync}
                   disabled={
                     cloudSyncStatus.uploading || 
-                    Object.values(savedGames).filter(game => !game.isPaused).length === 0 ||
-                    Object.entries(savedGames)
-                      .filter(([, game]) => !game.isPaused)
-                      .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced')
+                    (
+                      // Check wizard games
+                      Object.values(savedGames).filter(game => !game.isPaused).length === 0 &&
+                      // Check table games
+                      savedTableGames.filter(game => game.gameFinished && !LocalTableGameStorage.isGameUploaded(game.id)).length === 0
+                    ) ||
+                    (
+                      // All wizard games are synced
+                      Object.entries(savedGames)
+                        .filter(([, game]) => !game.isPaused)
+                        .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced') &&
+                      // All table games are synced
+                      savedTableGames.every(game => LocalTableGameStorage.isGameUploaded(game.id) || !game.gameFinished)
+                    )
                   }
                 >
                   {cloudSyncStatus.uploading ? (
