@@ -85,6 +85,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
         value={player.name} 
         inputMode="text" 
         onChange={(e) => onNameChange(player.id, e)}
+        onFocus={(e) => e.target.select()}
         placeholder={`Player ${index + 1}`}
       />
       
