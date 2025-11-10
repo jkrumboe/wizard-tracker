@@ -525,13 +525,25 @@ const TableGame = () => {
     setGameFinished(false);
     setShowTemplateSelector(false);
     setActiveTab('table'); // Always start at table view
-    // Reset the game state with the logged-in user as the first player
-    const firstPlayerName = user?.username || user?.name || "Player 1";
-    setPlayers([
-      { name: firstPlayerName, points: [] },
-      { name: "Player 2", points: [] },
-      { name: "Player 3", points: [] }
-    ]);
+    
+    // Check if playerNames are provided in settings
+    if (settings.playerNames && Array.isArray(settings.playerNames) && settings.playerNames.length > 0) {
+      // Use the provided player names
+      const newPlayers = settings.playerNames.map(name => ({
+        name: name,
+        points: []
+      }));
+      setPlayers(newPlayers);
+    } else {
+      // Reset the game state with the logged-in user as the first player
+      const firstPlayerName = user?.username || user?.name || "Player 1";
+      setPlayers([
+        { name: firstPlayerName, points: [] },
+        { name: "Player 2", points: [] },
+        { name: "Player 3", points: [] }
+      ]);
+    }
+    
     // Set rows based on current orientation
     const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
     const newRows = isSmallLandscape ? 8 : 10;

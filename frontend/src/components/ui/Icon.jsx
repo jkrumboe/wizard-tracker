@@ -35,6 +35,7 @@ export const UserIcon = (props) => <Icon name="User" {...props} />;
 export const SettingsIcon = (props) => <Icon name="Settings" {...props} />;
 export const HomeIcon = (props) => <Icon name="Home" {...props} />;
 export const PlusIcon = (props) => <Icon name="Plus" {...props} />;
+export const MinusIcon = (props) => <Icon name="Minus" {...props} />;
 export const EditIcon = (props) => <Icon name="Edit" {...props} />;
 export const TrashIcon = (props) => <Icon name="Trash2" {...props} />;
 export const SearchIcon = (props) => <Icon name="Search" {...props} />;

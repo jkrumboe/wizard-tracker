@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     minlength: [3, 'Username must be at least 3 characters long'],
-    maxlength: [50, 'Username cannot exceed 50 characters']
+    maxlength: [20, 'Username cannot exceed 20 characters']
   },
   passwordHash: {
     type: String,
@@ -18,7 +18,11 @@ const userSchema = new mongoose.Schema({
     default: null,
     // Base64 encoded image data
     maxlength: [10485760, 'Profile picture cannot exceed 10MB'] // ~7.5MB after base64 encoding
-  }
+  },
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 }, {
   timestamps: true
 });

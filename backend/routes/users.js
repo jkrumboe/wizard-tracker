@@ -343,4 +343,120 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
   }
 });
 
+// GET /users/all - Get all users (protected route)
+router.get('/all', auth, async (req, res, next) => {
+  try {
+    // Get all users but exclude password and limit data
+    const users = await User.find()
+      .select('_id username createdAt profilePicture')
+      .sort({ username: 1 });
+
+    res.json({
+      users: users.map(user => ({
+        id: user._id.toString(),
+        username: user.username,
+        createdAt: user.createdAt,
+        profilePicture: user.profilePicture || null
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/:userId/friends - Get user's friends list (protected route)
+router.get('/:userId/friends', auth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Verify the user is requesting their own friends
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only view your own friends list' });
+    }
+
+    const user = await User.findById(userId).populate('friends', '_id username createdAt profilePicture');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      friends: user.friends.map(friend => ({
+        id: friend._id.toString(),
+        username: friend.username,
+        createdAt: friend.createdAt,
+        profilePicture: friend.profilePicture || null
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /users/:userId/friends/:friendId - Add a friend (protected route)
+router.post('/:userId/friends/:friendId', auth, async (req, res, next) => {
+  try {
+    const { userId, friendId } = req.params;
+
+    // Verify the user is adding friends to their own list
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only manage your own friends list' });
+    }
+
+    // Can't add yourself as a friend
+    if (userId === friendId) {
+      return res.status(400).json({ error: 'You cannot add yourself as a friend' });
+    }
+
+    // Check if friend exists
+    const friend = await User.findById(friendId);
+    if (!friend) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if already friends
+    if (req.user.friends.includes(friendId)) {
+      return res.status(400).json({ error: 'User is already in your friends list' });
+    }
+
+    // Add friend
+    req.user.friends.push(friendId);
+    await req.user.save();
+
+    res.json({
+      message: 'Friend added successfully',
+      friend: {
+        id: friend._id.toString(),
+        username: friend.username,
+        createdAt: friend.createdAt,
+        profilePicture: friend.profilePicture || null
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /users/:userId/friends/:friendId - Remove a friend (protected route)
+router.delete('/:userId/friends/:friendId', auth, async (req, res, next) => {
+  try {
+    const { userId, friendId } = req.params;
+
+    // Verify the user is removing friends from their own list
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only manage your own friends list' });
+    }
+
+    // Remove friend
+    req.user.friends = req.user.friends.filter(id => id.toString() !== friendId);
+    await req.user.save();
+
+    res.json({
+      message: 'Friend removed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

@@ -1,0 +1,240 @@
+/* Friends Modal Styles */
+.friends-modal {
+  max-width: 600px;
+  max-height: 80vh;
+}
+
+.modal-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-color, #2d3748);
+  border-radius: none !important
+}
+
+.friends-modal .tab-btn {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--input-bg, #2d3748);
+  border: 1px solid var(--border-color, #4a5568);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.search-bar svg {
+  color: var(--text-secondary, #a0aec0);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.95rem;
+}
+
+.search-bar input::placeholder {
+  color: var(--text-secondary, #a0aec0);
+}
+
+.friends-list,
+.users-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.friend-item,
+.user-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--card-bg, #2d3748);
+  border: 1px solid var(--border-color, #4a5568);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.friend-item:hover,
+.user-item:hover {
+  background: var(--card-hover-bg, #374151);
+  border-color: var(--primary-color, #4299e1);
+}
+
+.friend-info,
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.friend-avatar,
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color, #4a5568);
+}
+
+.friend-avatar-placeholder,
+.user-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-color, #4299e1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  border: 2px solid var(--border-color, #4a5568);
+}
+
+.friend-details,
+.user-details {
+  flex: 1;
+}
+
+.friend-name,
+.user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 0.25rem;
+}
+
+.friend-date,
+.user-date {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0aec0);
+}
+
+.remove-friend-btn,
+.add-friend-btn {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-friend-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.remove-friend-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.05);
+}
+
+.add-friend-btn {
+  background: rgba(66, 153, 225, 0.1);
+  color: var(--primary-color, #4299e1);
+}
+
+.add-friend-btn:hover:not(:disabled) {
+  background: rgba(66, 153, 225, 0.2);
+  transform: scale(1.05);
+}
+
+.add-friend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.add-friend-btn.loading {
+  background: rgba(66, 153, 225, 0.15);
+}
+
+.add-friend-btn.added {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* Small spinner for add friend button */
+.spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(66, 153, 225, 0.2);
+  border-top-color: var(--primary-color, #4299e1);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary, #a0aec0);
+  font-size: 0.95rem;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary, #a0aec0);
+  font-size: 0.95rem;
+}
+
+.error-message {
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  white-space: pre-line;
+}
+
+.success-message {
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #10b981;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}

@@ -32,6 +32,10 @@ export const API_ENDPOINTS = {
   users: {
     updateName: (id) => `${API_BASE_URL}/api/users/${id}/name`,
     lookup: (username) => `${API_BASE_URL}/api/users/lookup/${encodeURIComponent(username)}`,
+    all: `${API_BASE_URL}/api/users/all`,
+    friends: (userId) => `${API_BASE_URL}/api/users/${userId}/friends`,
+    addFriend: (userId, friendId) => `${API_BASE_URL}/api/users/${userId}/friends/${friendId}`,
+    removeFriend: (userId, friendId) => `${API_BASE_URL}/api/users/${userId}/friends/${friendId}`,
   }
 };
 

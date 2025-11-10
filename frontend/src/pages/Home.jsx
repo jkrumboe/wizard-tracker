@@ -3,11 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import GameFilterModal from '@/components/modals/GameFilterModal'
+import FriendsModal from '@/components/modals/FriendsModal'
 import { getRecentLocalGames } from '@/shared/api/gameService'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useUser } from '@/shared/hooks/useUser'
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
-import { FilterIcon } from '@/components/ui/Icon'
+import { FilterIcon, UsersIcon } from '@/components/ui/Icon'
 import "@/styles/components/offline-notification.css"
 import "@/styles/pages/home.css"
 
@@ -20,6 +21,7 @@ const Home = () => {
   const [allGames, setAllGames] = useState([])
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
+  const [showFriendsModal, setShowFriendsModal] = useState(false)
   const [filters, setFilters] = useState(getDefaultFilters())
   // const [offlineMessage, setOfflineMessage] = useState('')
   
@@ -106,6 +108,17 @@ const Home = () => {
         </div>
       )} */}
 
+      <div className="friends-section">
+        <button 
+          className="friends-button"
+          onClick={() => setShowFriendsModal(true)}
+          aria-label="Manage friends"
+        >
+          <UsersIcon size={20} />
+          <span>Friends</span>
+        </button>
+      </div>
+
       <section className="recent-games">
         <div className="section-header">
           <h2>Finished Games</h2>
@@ -145,6 +158,12 @@ const Home = () => {
         onClose={() => setShowFilterModal(false)}
         onApplyFilters={handleApplyFilters}
         initialFilters={filters}
+      />
+
+      {/* Friends Modal */}
+      <FriendsModal
+        isOpen={showFriendsModal}
+        onClose={() => setShowFriendsModal(false)}
       />
     </div>
   )

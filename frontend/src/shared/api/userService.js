@@ -112,6 +112,159 @@ class UserService {
       return { found: false };
     }
   }
+
+  async getAllUsers() {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      console.warn('⚠️ Skipping backend call - no VITE_API_BASE_URL configured');
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('❌ No auth token found');
+        throw new Error('Not authenticated');
+      }
+
+      console.log('📡 Fetching all users from:', API_ENDPOINTS.users.all);
+      const response = await fetch(API_ENDPOINTS.users.all, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to get users' }));
+        console.error('❌ Backend error:', error);
+        throw new Error(error.message || error.error || 'Failed to get users');
+      }
+
+      const result = await response.json();
+      console.log('✅ Received users:', result);
+      return result.users || [];
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        console.error('❌ Network error - backend not reachable');
+        return [];
+      }
+      console.error('❌ Error getting users:', error);
+      return [];
+    }
+  }
+
+  async getFriends(userId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = API_ENDPOINTS.users.friends(userId);
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to get friends' }));
+        throw new Error(error.message || error.error || 'Failed to get friends');
+      }
+
+      const result = await response.json();
+      return result.friends || [];
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        return [];
+      }
+      console.error('Error getting friends:', error);
+      return [];
+    }
+  }
+
+  async addFriend(userId, friendId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = API_ENDPOINTS.users.addFriend(userId, friendId);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to add friend' }));
+        throw new Error(error.message || error.error || 'Failed to add friend');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error adding friend:', error);
+      throw error;
+    }
+  }
+
+  async removeFriend(userId, friendId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = API_ENDPOINTS.users.removeFriend(userId, friendId);
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to remove friend' }));
+        throw new Error(error.message || error.error || 'Failed to remove friend');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error removing friend:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

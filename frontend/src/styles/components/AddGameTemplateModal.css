@@ -28,9 +28,11 @@
 .add-game-modal {
   background: var(--card-background);
   border-radius: var(--radius-lg);
-  padding: 0;
   max-width: 500px;
   width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s ease-out;
   border: 1px solid var(--border-color);
@@ -53,6 +55,7 @@
   justify-content: space-between;
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .add-game-modal-header h2 {
@@ -86,6 +89,9 @@
   flex-direction: column;
   gap: var(--spacing-sm);
   padding: var(--spacing-md);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .game-name-label {
@@ -136,6 +142,8 @@
   padding: var(--spacing-lg);
   border-top: 1px solid var(--border-color);
   justify-content: flex-end;
+  flex-shrink: 0;
+  background: var(--card-background);
 }
 
 .modal-btn {

@@ -107,7 +107,7 @@
 
 .template-action-btn.play-btn {
   color: var(--primary-color);
-  flex: 0 0 55%;
+  flex: 0 0 45%;
   border-color: var(--primary-color);
 }
 
@@ -117,9 +117,21 @@
   box-shadow: var(--shadow-sm);
 }
 
+.template-action-btn.start-with-friends-btn {
+  color: var(--success-color, #10b981);
+  flex: 0 0 15%;
+  padding: var(--spacing-sm);
+  border-color: var(--success-color, #10b981);
+}
+
+.template-action-btn.start-with-friends-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  transform: scale(1.05);
+}
+
 .template-action-btn.continue-btn {
   color: var(--secondary-color);
-  flex: 0 0 20%;
+  flex: 0 0 15%;
   border-color: var(--secondary-color);
 }
 

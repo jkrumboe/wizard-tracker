@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { PlayIcon, EditIcon, TrashIcon, PlusIcon, ListIcon } from '@/components/ui/Icon';
+import { PlayIcon, EditIcon, TrashIcon, PlusIcon, ListIcon, UsersIcon } from '@/components/ui/Icon';
 import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import LoadTableGameDialog from '@/components/modals/LoadTableGameDialog';
+import StartTableGameModal from '@/components/modals/StartTableGameModal';
 import '@/styles/components/GameTemplateSelector.css';
 
 const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => {
@@ -13,6 +14,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [filterGameName, setFilterGameName] = useState(null);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   useEffect(() => {
     loadTemplates();
@@ -115,6 +118,22 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     }
   };
 
+  const handleStartWithFriends = (template, e) => {
+    e.stopPropagation();
+    setSelectedTemplate(template);
+    setShowStartModal(true);
+  };
+
+  const handleStartGameWithPlayers = (playerNames, settings) => {
+    if (selectedTemplate) {
+      // Pass the player names to the parent component
+      onSelectTemplate(selectedTemplate.name, {
+        ...settings,
+        playerNames: playerNames
+      });
+    }
+  };
+
   return (
     <div className="game-template-selector">
       <div className="template-selector-header">
@@ -155,11 +174,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
               <div className="template-actions">
                 <button
                   className="template-action-btn play-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSelectTemplate(template);
-                  }}
-                  title="Start New Game"
+                  onClick={(e) => handleStartWithFriends(template, e)}
+                  title="Start with Friends, New Game"
                 >
                   New Game
                 </button>
@@ -225,6 +241,21 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         onLoadGame={handleLoadGame}
         onDeleteGame={handleDeleteSavedGame}
         filterByGameName={filterGameName}
+      />
+
+      {/* Start Table Game with Friends Modal */}
+      <StartTableGameModal
+        isOpen={showStartModal}
+        onClose={() => {
+          setShowStartModal(false);
+          setSelectedTemplate(null);
+        }}
+        onStart={handleStartGameWithPlayers}
+        templateName={selectedTemplate?.name || ''}
+        templateSettings={{
+          targetNumber: selectedTemplate?.targetNumber,
+          lowIsBetter: selectedTemplate?.lowIsBetter
+        }}
       />
 
       {/* Delete Confirmation Modal */}

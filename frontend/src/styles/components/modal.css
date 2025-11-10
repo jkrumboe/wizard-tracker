@@ -19,7 +19,8 @@
   width: 80%;
   max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-lg);
   animation: modalFadeIn 0.3s ease;
 }
@@ -39,6 +40,7 @@
   align-items: center;
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -67,6 +69,9 @@
 
 .modal-content {
   padding: var(--spacing-md);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .game-menu-content {
@@ -91,10 +96,12 @@
 .modal-actions {
     display: flex;
     justify-content: space-between;
-    width: 100%;
-    margin: var(--spacing-md) 0;
-    margin-bottom: 0;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    background: var(--card-background);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 
@@ -135,16 +142,6 @@
   color: var(--text-muted);
   margin-top: var(--spacing-md);
   font-size: 0.9rem;
-}
-
-.modal-content {
-  border-radius: var(--radius-lg);
-  padding-top: var(--spacing-sm);
-  max-width: 500px;
-  width: 100%;
-  max-height: 80dvh;
-  overflow-y: auto;
-  margin: 0 auto;
 }
 
 /* Import Game Player Selection Modal */
@@ -226,20 +223,17 @@
 
 /* Game Settings Modal */
 .game-settings-modal {
-  background-color: var(--card-background);
-  border-radius: var(--radius-lg);
-  width: 90%;
   max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: modalFadeIn 0.3s ease;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .game-settings-modal .modal-body {
-  max-height: 60vh;
+  flex: 1;
   overflow-y: auto;
   padding: var(--spacing-md);
+  min-height: 0;
 }
 
 .setting-section {
