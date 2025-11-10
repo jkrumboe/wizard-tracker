@@ -2,6 +2,7 @@
 export { default as authService } from './authService.js';
 export { default as avatarService } from './avatarService.js';
 export { default as gameService } from './gameService.js';
+export * from './tableGameService.js';
 export { LocalGameStorage } from './localGameStorage.js';
 export { LocalTableGameStorage } from './localTableGameStorage.js';
 export { LocalTableGameTemplate } from './localTableGameTemplate.js';

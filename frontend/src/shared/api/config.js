@@ -29,6 +29,11 @@ export const API_ENDPOINTS = {
     getById: (id) => `${API_BASE_URL}/api/games/${id}`,
     stats: `${API_BASE_URL}/api/games/stats`,
   },
+  tableGames: {
+    list: `${API_BASE_URL}/api/table-games`,
+    create: `${API_BASE_URL}/api/table-games`,
+    getById: (id) => `${API_BASE_URL}/api/table-games/${id}`,
+  },
   users: {
     updateName: (id) => `${API_BASE_URL}/api/users/${id}/name`,
     lookup: (username) => `${API_BASE_URL}/api/users/lookup/${encodeURIComponent(username)}`,

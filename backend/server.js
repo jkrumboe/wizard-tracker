@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const userRoutes = require('./routes/users');
 const gameRoutes = require('./routes/games');
+const tableGameRoutes = require('./routes/tableGames');
 const onlineRoutes = require('./routes/online');
 const gameSyncRoutes = require('./routes/gameSync');
 const errorHandler = require('./middleware/errorHandler');
@@ -46,6 +47,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
+app.use('/api/table-games', tableGameRoutes);
 app.use('/api/games', gameSyncRoutes); // Game sync endpoints
 app.use('/api/online', onlineRoutes);
 

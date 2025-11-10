@@ -330,6 +330,7 @@ const Settings = () => {
   const loadSavedGames = useCallback(async () => {
     // First migrate games to ensure they have upload tracking properties
     LocalGameStorage.migrateGamesForUploadTracking();
+    LocalTableGameStorage.migrateGamesForUploadTracking();
     
     const allGames = LocalGameStorage.getAllSavedGames();
     setSavedGames(allGames);
@@ -513,6 +514,37 @@ const Settings = () => {
           setGameSyncStatuses(syncStatuses);
         }
         return { success: true, cloudGameId: result.game.id };
+      }
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Upload single table game to cloud
+  const uploadSingleTableGameToCloud = async (gameId, gameData) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      navigate('/login');
+      return { success: false, error: 'You must be logged in to upload table games to the cloud. Please sign in and try again.', requiresAuth: true };
+    }
+
+    // Prevent uploading if already uploaded
+    if (LocalTableGameStorage.isGameUploaded(gameId)) {
+      return { success: false, error: 'Table game already uploaded', isDuplicate: true };
+    }
+
+    try {
+      const { createTableGame } = await import('@/shared/api/tableGameService');
+      const result = await createTableGame(gameData, gameId);
+      
+      if (result.duplicate) {
+        LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
+        await loadSavedGames();
+        return { success: true, isDuplicate: true, cloudGameId: result.game._id };
+      } else {
+        LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
+        await loadSavedGames();
+        return { success: true, cloudGameId: result.game._id };
       }
     } catch (error) {
       return { success: false, error: error.message };
@@ -1195,7 +1227,10 @@ const Settings = () => {
           </div>
           {savedTableGames.length > 0 ? (
             <div className="game-history">
-              {savedTableGames.map((game) => (
+              {savedTableGames.map((game) => {
+                const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
+                
+                return (
                 <div key={game.id} className="game-card table-game-card">
                   <div className="settings-card-content">
                     <div className="settings-card-header">
@@ -1203,9 +1238,16 @@ const Settings = () => {
                         <div className="game-name">
                           {game.name}
                         </div>
-                        <span className="mode-badge table">
-                          Table
-                        </span>                
+                          {isUploaded && (
+                            <span className="mode-badge synced" title="Synced to Cloud">
+                              Synced
+                            </span>
+                          )}
+                          {!isUploaded && (
+                            <span className="mode-badge table">
+                              Local
+                            </span>
+                          )}               
                       </div>
                       <div className="game-players">
                         <UsersIcon size={12} />{" "}
@@ -1230,10 +1272,61 @@ const Settings = () => {
                       >
                         <TrashIcon size={25} />
                       </button>
+                      
+                      {/* Upload button for table games */}
+                      {isOnline && !isUploaded && game.gameFinished && (
+                        <button 
+                          className={`cloud-upload-game-button ${uploadingGames.has(game.id) ? 'uploading' : ''}`}
+                          onClick={async () => {
+                            if (uploadingGames.has(game.id)) return;
+                            
+                            if (!user) {
+                              navigate('/login');
+                              return;
+                            }
+                            
+                            setUploadingGames(prev => new Set([...prev, game.id]));
+                            try {
+                              const fullGame = LocalTableGameStorage.getAllSavedTableGames()[game.id];
+                              const result = await uploadSingleTableGameToCloud(game.id, fullGame);
+                              setMessage({ 
+                                text: result.isDuplicate 
+                                  ? 'Table game was already uploaded - marked as synced!' 
+                                  : 'Table game uploaded to cloud successfully!', 
+                                type: 'success' 
+                              });
+                              await loadSavedGames();
+                            } catch (error) {
+                              setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                            } finally {
+                              setUploadingGames(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(game.id);
+                                return newSet;
+                              });
+                            }
+                          }}
+                          aria-label={uploadingGames.has(game.id) ? "Uploading..." : "Upload to cloud"}
+                          disabled={uploadingGames.has(game.id)}
+                          title={
+                            uploadingGames.has(game.id) ? 'Uploading table game...' :
+                            !game.gameFinished ? 'Cannot upload unfinished table games' :
+                            !user ? 'Click to sign in and upload to cloud' :
+                            'Upload to cloud'
+                          }
+                        >
+                          {uploadingGames.has(game.id) ? (
+                            <span className="share-spinner" aria-label="Uploading..." />
+                          ) : (
+                            <CloudIcon size={25} />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="no-games">No table games found.</p>

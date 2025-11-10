@@ -41,7 +41,10 @@ export class LocalTableGameStorage {
         gameFinished: gameData.gameFinished || false,
         userId: currentUserId, // Add userId to track ownership
         targetNumber: gameData.targetNumber || null, // Target score to finish game
-        lowIsBetter: gameData.lowIsBetter || false // Scoring preference
+        lowIsBetter: gameData.lowIsBetter || false, // Scoring preference
+        isUploaded: false, // Track if uploaded to cloud
+        cloudGameId: null, // Cloud game ID after upload
+        cloudLookupKey: null // Lookup key for duplicate detection
       };
 
       // Get existing storage
@@ -300,4 +303,77 @@ export class LocalTableGameStorage {
     
     return migratedCount;
   }
+
+  /**
+   * Mark a table game as uploaded to cloud
+   * @param {string} gameId - The game ID
+   * @param {string} cloudGameId - The cloud game ID
+   * @param {string} cloudLookupKey - The cloud lookup key for duplicate detection
+   */
+  static markGameAsUploaded(gameId, cloudGameId, cloudLookupKey = null) {
+    const games = this.getAllSavedTableGamesAllUsers();
+    if (games[gameId]) {
+      games[gameId].isUploaded = true;
+      games[gameId].cloudGameId = cloudGameId;
+      games[gameId].cloudLookupKey = cloudLookupKey;
+      games[gameId].uploadedAt = new Date().toISOString();
+      localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(games));
+    }
+  }
+
+  /**
+   * Check if a table game has been uploaded to cloud
+   * @param {string} gameId - The game ID
+   * @returns {boolean} - True if game has been uploaded
+   */
+  static isGameUploaded(gameId) {
+    const games = this.getAllSavedTableGames();
+    return games[gameId] && games[gameId].isUploaded === true;
+  }
+
+  /**
+   * Get the cloud game ID for an uploaded table game
+   * @param {string} gameId - The local game ID
+   * @returns {string|null} - The cloud game ID or null if not uploaded
+   */
+  static getCloudGameId(gameId) {
+    const games = this.getAllSavedTableGames();
+    return games[gameId] && games[gameId].cloudGameId ? games[gameId].cloudGameId : null;
+  }
+
+  /**
+   * Migrate existing table games to add upload tracking properties
+   */
+  static migrateGamesForUploadTracking() {
+    const games = this.getAllSavedTableGamesAllUsers();
+    let migrationNeeded = false;
+    
+    for (const gameId in games) {
+      const game = games[gameId];
+      
+      // Add missing upload tracking properties
+      if (game.isUploaded === undefined) {
+        game.isUploaded = false;
+        migrationNeeded = true;
+      }
+      
+      if (game.cloudGameId === undefined) {
+        game.cloudGameId = null;
+        migrationNeeded = true;
+      }
+      
+      if (game.cloudLookupKey === undefined) {
+        game.cloudLookupKey = null;
+        migrationNeeded = true;
+      }
+    }
+    
+    if (migrationNeeded) {
+      localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(games));
+      console.debug('✅ Migrated table games for upload tracking');
+    }
+    
+    return games;
+  }
 }
+

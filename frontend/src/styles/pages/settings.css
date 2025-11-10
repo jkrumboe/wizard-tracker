@@ -375,13 +375,6 @@
   align-self: stretch;
 }
 
-.delete-game-button#table {
-  height: 100%;
-  flex: 1 1 auto;
-  align-self: stretch;
-  min-height: 100%; /* Ensure it takes full height */
-}
-
 .settings-section  .game-actions {
   display: flex;
   align-items: center;
