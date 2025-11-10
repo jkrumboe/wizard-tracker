@@ -136,6 +136,7 @@ const NewGame = () => {
   const [message, setMessage] = useState({ text: '', type: '' })
   const [hasAutoAddedUser, setHasAutoAddedUser] = useState(false)
   const [showSelectFriendsModal, setShowSelectFriendsModal] = useState(false)
+  const [totalCards, setTotalCards] = useState(60)
   
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -391,9 +392,9 @@ const NewGame = () => {
     }
   }
 
-  // Calculate the recommended rounds once (memoized)
+  // Calculate the recommended rounds based on total cards and player count
   const recommendedRounds = gameState.players.length > 2 && gameState.players.length <= 6 
-    ? Math.floor(60 / gameState.players.length)
+    ? Math.floor(totalCards / gameState.players.length)
     : 20; // Default max
 
   const normalizeDate = (date) => {
@@ -490,18 +491,34 @@ const NewGame = () => {
               <div className="settings-group">
                 <div className="setting-item">
                   <div className="setting-content">
-                    <div id="rounds">
-                      <label htmlFor="rounds-input">Number of Rounds:</label>
-                      <input
-                        id="rounds-input"
-                        type="tel"
-                        value={gameState.maxRounds}
-                        onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
-                        min={1}
-                        max={recommendedRounds ? recommendedRounds : 20}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
+                    <div className="game-settings-input">
+                      
+                      <div id="rounds">
+                        <label htmlFor="rounds-input">Number of Rounds:</label>
+                        <input
+                          id="rounds-input"
+                          type="tel"
+                          value={gameState.maxRounds}
+                          onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
+                          min={1}
+                          max={recommendedRounds ? recommendedRounds : 20}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                      </div>
+                      <div id="cards">
+                          <label htmlFor="cards-input">Cards:</label>
+                          <input
+                            id="cards-input"
+                            type="tel"
+                            value={totalCards}
+                            onChange={(e) => setTotalCards(parseInt(e.target.value) || 60)}
+                            min={1}
+                            max={100}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                          />
+                      </div>
                     </div>
                     <div className="rounds-hint">
                           Recommended: {recommendedRounds} rounds
