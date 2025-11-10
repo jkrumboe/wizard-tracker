@@ -1,7 +1,9 @@
 /* Friends Modal Styles */
 .friends-modal {
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 60vh;
+  min-height: 400px;
+  height: 60vh;
 }
 
 .modal-tabs {
@@ -67,11 +69,12 @@
 
 .friends-list,
 .users-list {
-  max-height: 400px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .friend-item,

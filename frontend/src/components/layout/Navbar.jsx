@@ -28,10 +28,10 @@ const GamesMenu = ({ show, onClose }) => {
             <TrophyIcon size={18} style={{ marginRight: 8 }} /> Leaderboard
           </Link> */}
           <Link to="/new-game" className="modal-button" onClick={onClose}>
-            <GamepadIcon size={18} style={{ marginRight: 8 }} /> Wizard
+            <GamepadIcon size={24} style={{ marginRight: 8 }} /> Wizard
           </Link>
           <Link to="/table" className="modal-button" onClick={onClose}>
-            <UsersIcon size={18} style={{ marginRight: 8 }} /> Table
+            <UsersIcon size={24} style={{ marginRight: 8 }} /> Table
           </Link>
         </div>
       </div>

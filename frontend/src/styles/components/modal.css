@@ -81,11 +81,13 @@
 }
 
 .modal-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--button-background);
   color: var(--text-color);
   border-radius: var(--radius-md);
-  padding:var(--spacing-sm) 0;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
