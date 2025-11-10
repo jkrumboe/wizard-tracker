@@ -58,6 +58,14 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
     onClose();
   };
 
+  const handleSelectAll = () => {
+    setSelectedFriends([...friends]);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedFriends([]);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -81,7 +89,28 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
               No friends available. Add friends first from the home page.
             </div>
           ) : (
-            <div className="friends-selection-list">
+            <>
+              {/* Select All / Deselect All buttons */}
+              <div className="selection-controls">
+                <button 
+                  type="button" 
+                  className="selection-control-btn"
+                  onClick={handleSelectAll}
+                  disabled={selectedFriends.length === friends.length}
+                >
+                  Select All
+                </button>
+                <button 
+                  type="button" 
+                  className="selection-control-btn"
+                  onClick={handleDeselectAll}
+                  disabled={selectedFriends.length === 0}
+                >
+                  Deselect All
+                </button>
+              </div>
+
+              <div className="friends-selection-list">
               {friends.map(friend => {
                 const isSelected = selectedFriends.some(f => f.id === friend.id);
                 return (
@@ -115,10 +144,14 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
                 );
               })}
             </div>
+            </>
           )}
         </div>
 
         <div className="modal-actions">
+          <button type="button" onClick={handleClose} className="cancel-button">
+            Cancel
+          </button>
           <button 
             type="button" 
             onClick={handleConfirm} 

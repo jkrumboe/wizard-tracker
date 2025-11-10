@@ -10,7 +10,36 @@
   gap: 0.5rem;
 }
 
-.select-friends-modal .modal-content {
+.selection-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.selection-control-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: var(--card-bg, #2d3748);
+  border: 1px solid var(--border-color, #4a5568);
+  border-radius: 6px;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selection-control-btn:hover:not(:disabled) {
+  background: var(--primary-color, #4299e1);
+  border-color: var(--primary-color, #4299e1);
+}
+
+.selection-control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.friends-selection-list {
     min-height: 30dvh;
 }
 

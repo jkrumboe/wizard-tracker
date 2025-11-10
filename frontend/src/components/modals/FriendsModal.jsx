@@ -17,6 +17,8 @@ const FriendsModal = ({ isOpen, onClose }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [addingFriendId, setAddingFriendId] = useState(null); // Track which friend is being added
   const [addedFriendIds, setAddedFriendIds] = useState(new Set()); // Track recently added friends
+  const [usersCache, setUsersCache] = useState(null); // Cache all users to avoid reloading
+  const [friendToRemove, setFriendToRemove] = useState(null); // Track friend pending removal confirmation
 
   useEffect(() => {
     if (isOpen) {
@@ -40,10 +42,20 @@ const FriendsModal = ({ isOpen, onClose }) => {
         return;
       }
       
-      loadAllUsers();
+      // Only load if we don't have cached users
+      if (!usersCache) {
+        loadAllUsers();
+      } else {
+        // Use cached users but filter again based on current friends
+        const friendIds = friends.map(f => f.id);
+        const filteredUsers = usersCache.filter(u => 
+          u.id !== user?.id && !friendIds.includes(u.id)
+        );
+        setAllUsers(filteredUsers);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, activeTab, user]);
+  }, [isOpen, activeTab, user, usersCache, friends]);
 
   const loadFriends = async () => {
     try {
@@ -66,8 +78,12 @@ const FriendsModal = ({ isOpen, onClose }) => {
       if (!users || users.length === 0) {
         setError('No users found. This could mean:\n1. The backend server is not running\n2. No other users are registered\n3. You need to restart the dev server to pick up .env changes');
         setAllUsers([]);
+        setUsersCache([]);
         return;
       }
+      
+      // Cache all users
+      setUsersCache(users);
       
       // Filter out current user and already added friends
       const friendIds = friends.map(f => f.id);
@@ -131,20 +147,22 @@ const FriendsModal = ({ isOpen, onClose }) => {
   };
 
   const handleRemoveFriend = async (friendId) => {
-    if (!confirm('Are you sure you want to remove this friend?')) {
-      return;
-    }
+    setFriendToRemove(friendId);
+  };
+
+  const confirmRemoveFriend = async () => {
+    if (!friendToRemove) return;
 
     setError('');
     setSuccessMessage('');
     try {
       // Remove from local storage
-      await localFriendsService.removeFriend(friendId);
+      await localFriendsService.removeFriend(friendToRemove);
       
       // Try to sync with backend if online
       if (user?.id) {
         try {
-          await userService.removeFriend(user.id, friendId);
+          await userService.removeFriend(user.id, friendToRemove);
         } catch (backendError) {
           // Ignore backend errors, friend is removed locally
           console.warn('Could not sync friend removal to backend:', backendError);
@@ -158,7 +176,13 @@ const FriendsModal = ({ isOpen, onClose }) => {
       setTimeout(() => setSuccessMessage(''), 2000);
     } catch (err) {
       setError(err.message || 'Failed to remove friend');
+    } finally {
+      setFriendToRemove(null);
     }
+  };
+
+  const cancelRemoveFriend = () => {
+    setFriendToRemove(null);
   };
 
   const filteredFriends = friends.filter(friend =>
@@ -322,6 +346,24 @@ const FriendsModal = ({ isOpen, onClose }) => {
             </div>
           )}
         </div>
+
+        {/* Confirmation Dialog Overlay */}
+        {friendToRemove && (
+          <div className="confirmation-overlay" onClick={cancelRemoveFriend}>
+            <div className="confirmation-dialog" onClick={(e) => e.stopPropagation()}>
+              <h3>Remove Friend?</h3>
+              <p>Are you sure you want to remove this friend?</p>
+              <div className="confirmation-actions">
+                <button className="cancel-btn" onClick={cancelRemoveFriend}>
+                  Cancel
+                </button>
+                <button className="confirm-btn danger" onClick={confirmRemoveFriend}>
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
