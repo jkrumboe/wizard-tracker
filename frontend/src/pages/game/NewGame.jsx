@@ -393,9 +393,9 @@ const NewGame = () => {
   }
 
   // Calculate the recommended rounds based on total cards and player count
-  const recommendedRounds = gameState.players.length > 2 && gameState.players.length <= 6 
+  const recommendedRounds = gameState.players.length >= 3
     ? Math.floor(totalCards / gameState.players.length)
-    : 20; // Default max
+    : 20; // Default when less than 2 players
 
   const normalizeDate = (date) => {
     if (!date) return "Unbekanntes Datum";
