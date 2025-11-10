@@ -231,9 +231,10 @@ const TableGame = () => {
               lastPlayed: new Date().toISOString(),
               name: name,
               targetNumber: targetNumber,
-              lowIsBetter: lowIsBetter
+              lowIsBetter: lowIsBetter,
+              gameFinished: gameFinished
             });
-            console.debug(`💾 Periodic auto-save: "${name}" (ID: ${currentGameId})`);
+            console.debug(`💾 Periodic auto-save: "${name}" (ID: ${currentGameId}, finished: ${gameFinished})`);
           }
         } catch (error) {
           console.error('❌ Periodic auto-save failed:', error);
@@ -292,9 +293,10 @@ const TableGame = () => {
               lastPlayed: new Date().toISOString(),
               name: name,
               targetNumber: currentTargetNumber,
-              lowIsBetter: currentLowIsBetter
+              lowIsBetter: currentLowIsBetter,
+              gameFinished: currentGameFinished
             });
-            console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId})`);
+            console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId}, finished: ${currentGameFinished})`);
           }
         } catch (error) {
           console.error('❌ Failed to save on navigation:', error);
@@ -345,9 +347,10 @@ const TableGame = () => {
               lastPlayed: new Date().toISOString(),
               name: name,
               targetNumber: currentTargetNumber,
-              lowIsBetter: currentLowIsBetter
+              lowIsBetter: currentLowIsBetter,
+              gameFinished: currentGameFinished
             });
-            console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId})`);
+            console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId}, finished: ${currentGameFinished})`);
           }
         } catch (error) {
           console.error('❌ Failed to save on browser close:', error);
@@ -593,9 +596,10 @@ const TableGame = () => {
           lastPlayed: new Date().toISOString(),
           name: name,
           targetNumber: targetNumber,
-          lowIsBetter: lowIsBetter
+          lowIsBetter: lowIsBetter,
+          gameFinished: gameFinished
         });
-        console.debug(`Updated existing game: "${name}" (ID: ${currentGameId})`);
+        console.debug(`Updated existing game: "${name}" (ID: ${currentGameId}, finished: ${gameFinished})`);
         // alert(`Game "${name}" updated successfully!`);
       } else {
         // Create new save and store the ID
