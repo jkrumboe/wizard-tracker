@@ -38,6 +38,7 @@ const Settings = () => {
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
+  const [checkingForUpdates, setCheckingForUpdates] = useState(false);
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
   const { isOnline } = useOnlineStatus();
@@ -464,6 +465,70 @@ const Settings = () => {
 
   const handleThemeModeChange = (e) => {
     setUseSystemTheme(e.target.checked);
+  };
+
+  const handleCheckForUpdates = async () => {
+    if (!('serviceWorker' in navigator)) {
+      setMessage({ text: 'Service Worker not supported in this browser', type: 'error' });
+      return;
+    }
+
+    setCheckingForUpdates(true);
+    setMessage({ text: 'Checking for updates...', type: 'info' });
+
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      
+      if (!registration) {
+        setCheckingForUpdates(false);
+        setMessage({ text: 'No service worker registered', type: 'error' });
+        return;
+      }
+
+      // Force an update check
+      await registration.update();
+
+      // Wait a bit to see if an update is found
+      setTimeout(() => {
+        if (registration.waiting) {
+          // Update is available and waiting
+          setCheckingForUpdates(false);
+          setMessage({ 
+            text: '✅ Update available! The page will reload to apply the update.', 
+            type: 'success' 
+          });
+          
+          // Send message to service worker to skip waiting
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          
+          // Reload the page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else if (registration.installing) {
+          // Update is installing
+          setCheckingForUpdates(false);
+          setMessage({ 
+            text: '📥 Update is being installed...', 
+            type: 'info' 
+          });
+        } else {
+          // No update available
+          setCheckingForUpdates(false);
+          setMessage({ 
+            text: '✅ You are running the latest version!', 
+            type: 'success' 
+          });
+        }
+      }, 2000);
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      setCheckingForUpdates(false);
+      setMessage({ 
+        text: 'Failed to check for updates. Please try again later.', 
+        type: 'error' 
+      });
+    }
   };
 
   const clearMessage = () => {
@@ -998,14 +1063,6 @@ const Settings = () => {
           )}
 
           <div className="settings-actions">
-            {/* <button className="settings-button refresh-button" onClick={() => {
-              loadSavedGames();
-              calculateStorageUsage();
-              setMessage({ text: 'Storage information refreshed.', type: 'info' });
-            }}>
-              <RefreshIcon size={18} />
-              Refresh Storage
-            </button> */}
             {isOnline && user && (
               <div className="cloud-sync-actions">
                 <button 
@@ -1375,7 +1432,16 @@ const Settings = () => {
 
         {/* App Info Section */}
         <div className="settings-section app-info-section" >
-          <h3 className="settings-section-title">App Information</h3>
+          <h3 className="settings-section-title">App Information
+            <button 
+              className={`settings-button-update`}
+              onClick={handleCheckForUpdates}
+              disabled={checkingForUpdates}
+              title="Check for app updates"
+            >
+              <RefreshIcon size={18} />Check for Updates
+            </button>
+          </h3>
           <div className="settings-card info-card">
             <div className="info-grid">
               <div className="info-item">

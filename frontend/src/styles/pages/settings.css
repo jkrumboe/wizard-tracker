@@ -237,6 +237,24 @@
   background-color: var(--card-background-alt);
 }
 
+.settings-button-update {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  padding: 4px var(--spacing-sm);
+  transform: none;
+  border: none;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  justify-content: space-between;
+}
+
 .danger-button {
   color: var(--danger-color);
 }
