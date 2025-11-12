@@ -600,11 +600,11 @@ const FriendsModal = ({ isOpen, onClose }) => {
                         </div>
                       </div>
                       <button
-                        className={`add-friend-btn ${
-                          hasPendingRequest ? 'pending' : ''
-                        } ${addingFriendId === userItem.id ? 'loading' : ''} ${
-                          addedFriendIds.has(userItem.id) ? 'added' : ''
-                        }`}
+                        className={`add-friend-btn
+                          ${hasPendingRequest ? 'pending' : ''}
+                          ${addingFriendId === userItem.id ? 'loading' : ''}
+                          ${addedFriendIds.has(userItem.id) ? 'added' : ''}
+                        `}
                         onClick={() => hasPendingRequest 
                           ? handleCancelRequest(pendingRequest.id)
                           : handleSendFriendRequest(userItem)

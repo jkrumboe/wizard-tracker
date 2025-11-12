@@ -48,14 +48,14 @@
   width: 15px;
   height: 15px;
   padding: 0 6px;
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .tab-badge.highlight {
-  background: var(--error-color, #ef4444);
+  background: var(--error-color);
   color: white;
   animation: pulse-badge 3s ease-in-out infinite;
 }
@@ -190,6 +190,8 @@
 .remove-friend-btn,
 .add-friend-btn,
 .cancel-request-btn {
+  max-width: 36px;
+  max-height: 36px;
   padding: 0.5rem;
   border: none;
   border-radius: 6px;
@@ -203,14 +205,13 @@
 
 .remove-friend-btn,
 .cancel-request-btn {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--error-color);
 }
 
 .remove-friend-btn:hover,
 .cancel-request-btn:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.2);
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 
 .cancel-request-btn:disabled {
@@ -221,7 +222,7 @@
 
 .add-friend-btn {
   background: rgba(66, 153, 225, 0.1);
-  color: var(--primary-color, #4299e1);
+  color: var(--primary-color);
 }
 
 .add-friend-btn:hover:not(:disabled) {
@@ -307,8 +308,8 @@
 
 /* Small spinner for add friend button */
 .spinner-small {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   border: 2px solid rgba(66, 153, 225, 0.2);
   border-top-color: var(--primary-color, #4299e1);
   border-radius: 50%;
