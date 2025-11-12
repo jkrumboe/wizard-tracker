@@ -24,6 +24,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
   const [processingRequestId, setProcessingRequestId] = useState(null);
   const [hasNewRequest, setHasNewRequest] = useState(false);
   const [previousRequestCount, setPreviousRequestCount] = useState(0);
+  const [previousSentRequestIds, setPreviousSentRequestIds] = useState(new Set());
 
   const loadFriendRequests = useCallback(async () => {
     if (!user?.id) return;
@@ -55,10 +56,11 @@ const FriendsModal = ({ isOpen, onClose }) => {
 
     const pollInterval = setInterval(() => {
       loadFriendRequests();
+      syncCloudFriendsToLocal(); // Also sync friends from cloud
     }, 3000); // Poll every 3 seconds
 
     return () => clearInterval(pollInterval);
-  }, [isOpen, user?.id, loadFriendRequests]);
+  }, [isOpen, user?.id, loadFriendRequests, syncCloudFriendsToLocal]);
 
   // Detect new friend requests and show notification
   useEffect(() => {
@@ -70,6 +72,31 @@ const FriendsModal = ({ isOpen, onClose }) => {
     }
     setPreviousRequestCount(receivedRequests.length);
   }, [receivedRequests.length, previousRequestCount]);
+
+  // Detect when sent requests are accepted (they disappear from sent list)
+  // This means someone accepted our friend request, so reload friends list
+  useEffect(() => {
+    if (sentRequests.length === 0 && previousSentRequestIds.size === 0) {
+      // Initial state, just set the IDs
+      setPreviousSentRequestIds(new Set(sentRequests.map(req => req.id)));
+      return;
+    }
+
+    const currentSentRequestIds = new Set(sentRequests.map(req => req.id));
+    
+    // Check if any previous sent requests are now missing (they were accepted or rejected)
+    const missingRequests = [...previousSentRequestIds].filter(id => !currentSentRequestIds.has(id));
+    
+    if (missingRequests.length > 0) {
+      // A sent request disappeared, meaning it was likely accepted
+      // Immediately sync friends from cloud
+      console.log('Sent request(s) were processed, syncing friends from cloud...');
+      syncCloudFriendsToLocal();
+    }
+    
+    // Update the tracking set
+    setPreviousSentRequestIds(currentSentRequestIds);
+  }, [sentRequests, previousSentRequestIds, syncCloudFriendsToLocal]);
 
   useEffect(() => {
     if (isOpen && activeTab === 'add') {
@@ -112,6 +139,34 @@ const FriendsModal = ({ isOpen, onClose }) => {
       setError('Failed to load friends');
     }
   };
+
+  const syncCloudFriendsToLocal = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Get friends from cloud
+      const cloudFriends = await userService.getFriends(user.id);
+      
+      if (cloudFriends.length > 0) {
+        // Get current local friends
+        const localFriends = await localFriendsService.getAllFriends();
+        const localFriendIds = new Set(localFriends.map(f => f.id));
+        
+        // Add any cloud friends that aren't in local storage
+        for (const cloudFriend of cloudFriends) {
+          if (!localFriendIds.has(cloudFriend.id)) {
+            console.log('Syncing new friend from cloud to local:', cloudFriend.username);
+            await localFriendsService.addFriend(cloudFriend);
+          }
+        }
+        
+        // Reload friends list to show updates
+        await loadFriends();
+      }
+    } catch (err) {
+      console.warn('Could not sync friends from cloud:', err);
+    }
+  }, [user?.id]);
 
   const loadAllUsers = async () => {
     setLoading(true);

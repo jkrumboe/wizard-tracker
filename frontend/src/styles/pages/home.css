@@ -42,7 +42,7 @@
 }
 
 .friends-button:hover {
-  background: var(--primary-color-dark);
+  /* background: var(--primary-color-dark); */
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -68,10 +68,9 @@
   width: 32px;
 }
 
-.filter-button:hover {
-  background: var(--primary-color-dark, #2563eb);
+/* .filter-button:hover {
   transform: translateY(-1px);
-}
+} */
 
 .filter-button:active {
   transform: translateY(0);
