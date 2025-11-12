@@ -570,7 +570,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-md);
+  justify-content: space-between;
+  gap: var(--spacing-sm);
   align-self: stretch; /* Stretch to full height of parent */
 }
 
@@ -582,9 +583,16 @@
   gap: var(--spacing-md);
 }
 
+.settings-section:has(.game-history) {
+  /* background-color: red; */
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+}
+
 /* App Info Section */
 .app-info-section {
-  /* margin-top: var(--spacing-xl); */
   border: 1px solid var(--border-color);
 }
 
