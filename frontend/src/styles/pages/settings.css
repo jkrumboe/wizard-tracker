@@ -433,7 +433,7 @@
 }
 
 .confirm-button, .cancel-button {
-  padding: var(--spacing-sm) 0;
+  padding: var(--spacing-sm);
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
