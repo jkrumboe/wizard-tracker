@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const FriendRequest = require('../models/FriendRequest');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -447,12 +448,314 @@ router.delete('/:userId/friends/:friendId', auth, async (req, res, next) => {
       return res.status(403).json({ error: 'You can only manage your own friends list' });
     }
 
-    // Remove friend
+    // Remove friend from current user's list
     req.user.friends = req.user.friends.filter(id => id.toString() !== friendId);
     await req.user.save();
 
+    // Also remove current user from the other user's friends list (mutual unfriend)
+    const friend = await User.findById(friendId);
+    if (friend) {
+      friend.friends = friend.friends.filter(id => id.toString() !== userId);
+      await friend.save();
+    }
+
     res.json({
       message: 'Friend removed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ============ FRIEND REQUEST ROUTES ============
+
+// POST /users/:userId/friend-requests - Send a friend request (protected route)
+router.post('/:userId/friend-requests', auth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { receiverId } = req.body;
+
+    // Verify the user is sending from their own account
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only send friend requests from your own account' });
+    }
+
+    // Can't send request to yourself
+    if (userId === receiverId) {
+      return res.status(400).json({ error: 'You cannot send a friend request to yourself' });
+    }
+
+    // Check if receiver exists
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if already friends
+    if (req.user.friends.includes(receiverId)) {
+      return res.status(400).json({ error: 'You are already friends with this user' });
+    }
+
+    // Check if there's already a pending request between these users
+    const existingRequest = await FriendRequest.findOne({
+      $or: [
+        { sender: userId, receiver: receiverId, status: 'pending' },
+        { sender: receiverId, receiver: userId, status: 'pending' }
+      ]
+    });
+
+    if (existingRequest) {
+      if (existingRequest.sender.toString() === userId) {
+        return res.status(400).json({ error: 'You already sent a friend request to this user' });
+      } else {
+        return res.status(400).json({ error: 'This user already sent you a friend request. Check your pending requests.' });
+      }
+    }
+
+    // Create new friend request
+    const friendRequest = new FriendRequest({
+      sender: userId,
+      receiver: receiverId,
+      status: 'pending'
+    });
+
+    await friendRequest.save();
+
+    // Populate sender info for response
+    await friendRequest.populate('sender', '_id username profilePicture createdAt');
+    await friendRequest.populate('receiver', '_id username profilePicture createdAt');
+
+    res.status(201).json({
+      message: 'Friend request sent successfully',
+      friendRequest: {
+        id: friendRequest._id.toString(),
+        sender: {
+          id: friendRequest.sender._id.toString(),
+          username: friendRequest.sender.username,
+          profilePicture: friendRequest.sender.profilePicture || null,
+          createdAt: friendRequest.sender.createdAt
+        },
+        receiver: {
+          id: friendRequest.receiver._id.toString(),
+          username: friendRequest.receiver.username,
+          profilePicture: friendRequest.receiver.profilePicture || null,
+          createdAt: friendRequest.receiver.createdAt
+        },
+        status: friendRequest.status,
+        createdAt: friendRequest.createdAt
+      }
+    });
+  } catch (error) {
+    // Handle duplicate request error
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Friend request already exists' });
+    }
+    next(error);
+  }
+});
+
+// GET /users/:userId/friend-requests/received - Get received friend requests (protected route)
+router.get('/:userId/friend-requests/received', auth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Verify the user is requesting their own friend requests
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only view your own friend requests' });
+    }
+
+    const requests = await FriendRequest.find({
+      receiver: userId,
+      status: 'pending'
+    })
+    .populate('sender', '_id username profilePicture createdAt')
+    .sort({ createdAt: -1 });
+
+    res.json({
+      requests: requests.map(req => ({
+        id: req._id.toString(),
+        sender: {
+          id: req.sender._id.toString(),
+          username: req.sender.username,
+          profilePicture: req.sender.profilePicture || null,
+          createdAt: req.sender.createdAt
+        },
+        status: req.status,
+        createdAt: req.createdAt
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/:userId/friend-requests/sent - Get sent friend requests (protected route)
+router.get('/:userId/friend-requests/sent', auth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Verify the user is requesting their own friend requests
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only view your own friend requests' });
+    }
+
+    const requests = await FriendRequest.find({
+      sender: userId,
+      status: 'pending'
+    })
+    .populate('receiver', '_id username profilePicture createdAt')
+    .sort({ createdAt: -1 });
+
+    res.json({
+      requests: requests.map(req => ({
+        id: req._id.toString(),
+        receiver: {
+          id: req.receiver._id.toString(),
+          username: req.receiver.username,
+          profilePicture: req.receiver.profilePicture || null,
+          createdAt: req.receiver.createdAt
+        },
+        status: req.status,
+        createdAt: req.createdAt
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /users/:userId/friend-requests/:requestId/accept - Accept a friend request (protected route)
+router.post('/:userId/friend-requests/:requestId/accept', auth, async (req, res, next) => {
+  try {
+    const { userId, requestId } = req.params;
+
+    // Verify the user is accepting their own friend request
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only accept your own friend requests' });
+    }
+
+    // Find the friend request
+    const friendRequest = await FriendRequest.findById(requestId)
+      .populate('sender', '_id username profilePicture createdAt')
+      .populate('receiver', '_id username profilePicture createdAt');
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    // Verify the current user is the receiver
+    if (friendRequest.receiver._id.toString() !== userId) {
+      return res.status(403).json({ error: 'You can only accept friend requests sent to you' });
+    }
+
+    // Check if request is still pending
+    if (friendRequest.status !== 'pending') {
+      return res.status(400).json({ error: 'This friend request has already been processed' });
+    }
+
+    // Update request status
+    friendRequest.status = 'accepted';
+    await friendRequest.save();
+
+    // Add both users to each other's friends list
+    const sender = await User.findById(friendRequest.sender._id);
+    const receiver = await User.findById(friendRequest.receiver._id);
+
+    if (!sender.friends.includes(receiver._id)) {
+      sender.friends.push(receiver._id);
+      await sender.save();
+    }
+
+    if (!receiver.friends.includes(sender._id)) {
+      receiver.friends.push(sender._id);
+      await receiver.save();
+    }
+
+    res.json({
+      message: 'Friend request accepted',
+      friend: {
+        id: friendRequest.sender._id.toString(),
+        username: friendRequest.sender.username,
+        profilePicture: friendRequest.sender.profilePicture || null,
+        createdAt: friendRequest.sender.createdAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /users/:userId/friend-requests/:requestId/reject - Reject a friend request (protected route)
+router.post('/:userId/friend-requests/:requestId/reject', auth, async (req, res, next) => {
+  try {
+    const { userId, requestId } = req.params;
+
+    // Verify the user is rejecting their own friend request
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only reject your own friend requests' });
+    }
+
+    // Find the friend request
+    const friendRequest = await FriendRequest.findById(requestId);
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    // Verify the current user is the receiver
+    if (friendRequest.receiver.toString() !== userId) {
+      return res.status(403).json({ error: 'You can only reject friend requests sent to you' });
+    }
+
+    // Check if request is still pending
+    if (friendRequest.status !== 'pending') {
+      return res.status(400).json({ error: 'This friend request has already been processed' });
+    }
+
+    // Update request status
+    friendRequest.status = 'rejected';
+    await friendRequest.save();
+
+    res.json({
+      message: 'Friend request rejected'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /users/:userId/friend-requests/:requestId - Cancel a sent friend request (protected route)
+router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next) => {
+  try {
+    const { userId, requestId } = req.params;
+
+    // Verify the user is canceling their own friend request
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only cancel your own friend requests' });
+    }
+
+    // Find the friend request
+    const friendRequest = await FriendRequest.findById(requestId);
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    // Verify the current user is the sender
+    if (friendRequest.sender.toString() !== userId) {
+      return res.status(403).json({ error: 'You can only cancel friend requests you sent' });
+    }
+
+    // Check if request is still pending
+    if (friendRequest.status !== 'pending') {
+      return res.status(400).json({ error: 'This friend request has already been processed' });
+    }
+
+    // Delete the request
+    await FriendRequest.findByIdAndDelete(requestId);
+
+    res.json({
+      message: 'Friend request cancelled'
     });
   } catch (error) {
     next(error);

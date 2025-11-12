@@ -265,6 +265,227 @@ class UserService {
       throw error;
     }
   }
+
+  // ============ FRIEND REQUEST METHODS ============
+
+  async sendFriendRequest(userId, receiverId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friend-requests`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ receiverId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to send friend request' }));
+        throw new Error(error.message || error.error || 'Failed to send friend request');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error sending friend request:', error);
+      throw error;
+    }
+  }
+
+  async getReceivedFriendRequests(userId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friend-requests/received`;
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to get friend requests' }));
+        throw new Error(error.message || error.error || 'Failed to get friend requests');
+      }
+
+      const result = await response.json();
+      return result.requests || [];
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        return [];
+      }
+      console.error('Error getting received friend requests:', error);
+      return [];
+    }
+  }
+
+  async getSentFriendRequests(userId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friend-requests/sent`;
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to get sent requests' }));
+        throw new Error(error.message || error.error || 'Failed to get sent requests');
+      }
+
+      const result = await response.json();
+      return result.requests || [];
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        return [];
+      }
+      console.error('Error getting sent friend requests:', error);
+      return [];
+    }
+  }
+
+  async acceptFriendRequest(userId, requestId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friend-requests/${requestId}/accept`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to accept friend request' }));
+        throw new Error(error.message || error.error || 'Failed to accept friend request');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error accepting friend request:', error);
+      throw error;
+    }
+  }
+
+  async rejectFriendRequest(userId, requestId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friend-requests/${requestId}/reject`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to reject friend request' }));
+        throw new Error(error.message || error.error || 'Failed to reject friend request');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error rejecting friend request:', error);
+      throw error;
+    }
+  }
+
+  async cancelFriendRequest(userId, requestId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friend-requests/${requestId}`;
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to cancel friend request' }));
+        throw new Error(error.message || error.error || 'Failed to cancel friend request');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error canceling friend request:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

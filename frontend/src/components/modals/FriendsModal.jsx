@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { XIcon, UsersIcon, PlusIcon, TrashIcon, SearchIcon, CheckMarkIcon } from '@/components/ui/Icon';
+import React, { useState, useEffect, useCallback } from 'react';
+import { XIcon, UsersIcon, PlusIcon, TrashIcon, SearchIcon, CheckMarkIcon, ClockIcon } from '@/components/ui/Icon';
 import { localFriendsService } from '@/shared/api';
 import { userService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
@@ -8,23 +8,68 @@ import '@/styles/components/friends-modal.css';
 
 const FriendsModal = ({ isOpen, onClose }) => {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState('friends'); // 'friends' or 'add'
+  const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'add', 'received', 'sent'
   const [friends, setFriends] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [addingFriendId, setAddingFriendId] = useState(null); // Track which friend is being added
-  const [addedFriendIds, setAddedFriendIds] = useState(new Set()); // Track recently added friends
-  const [usersCache, setUsersCache] = useState(null); // Cache all users to avoid reloading
-  const [friendToRemove, setFriendToRemove] = useState(null); // Track friend pending removal confirmation
+  // const [successMessage, setSuccessMessage] = useState('');
+  const [addingFriendId, setAddingFriendId] = useState(null);
+  const [addedFriendIds, setAddedFriendIds] = useState(new Set());
+  const [usersCache, setUsersCache] = useState(null);
+  const [friendToRemove, setFriendToRemove] = useState(null);
+  const [processingRequestId, setProcessingRequestId] = useState(null);
+  const [hasNewRequest, setHasNewRequest] = useState(false);
+  const [previousRequestCount, setPreviousRequestCount] = useState(0);
+
+  const loadFriendRequests = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const [received, sent] = await Promise.all([
+        userService.getReceivedFriendRequests(user.id),
+        userService.getSentFriendRequests(user.id)
+      ]);
+      setReceivedRequests(received);
+      setSentRequests(sent);
+    } catch (err) {
+      console.error('Error loading friend requests:', err);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (isOpen) {
       loadFriends();
+      if (user?.id) {
+        loadFriendRequests();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, user?.id, loadFriendRequests]);
+
+  // Poll for new friend requests every 3 seconds when modal is open
+  useEffect(() => {
+    if (!isOpen || !user?.id) return;
+
+    const pollInterval = setInterval(() => {
+      loadFriendRequests();
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [isOpen, user?.id, loadFriendRequests]);
+
+  // Detect new friend requests and show notification
+  useEffect(() => {
+    if (receivedRequests.length > previousRequestCount && previousRequestCount > 0) {
+      setHasNewRequest(true);
+      // Auto-clear the notification after 5 seconds
+      const timer = setTimeout(() => setHasNewRequest(false), 5000);
+      return () => clearTimeout(timer);
+    }
+    setPreviousRequestCount(receivedRequests.length);
+  }, [receivedRequests.length, previousRequestCount]);
 
   useEffect(() => {
     if (isOpen && activeTab === 'add') {
@@ -46,7 +91,8 @@ const FriendsModal = ({ isOpen, onClose }) => {
       if (!usersCache) {
         loadAllUsers();
       } else {
-        // Use cached users but filter again based on current friends
+        // Use cached users but filter only current user and existing friends
+        // Keep users with pending sent requests (they'll show a waiting icon)
         const friendIds = friends.map(f => f.id);
         const filteredUsers = usersCache.filter(u => 
           u.id !== user?.id && !friendIds.includes(u.id)
@@ -55,7 +101,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, activeTab, user, usersCache, friends]);
+  }, [isOpen, activeTab, user, usersCache, friends, sentRequests]);
 
   const loadFriends = async () => {
     try {
@@ -86,6 +132,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
       setUsersCache(users);
       
       // Filter out current user and already added friends
+      // Keep users with pending sent requests (they'll show a waiting icon)
       const friendIds = friends.map(f => f.id);
       const filteredUsers = users.filter(u => 
         u.id !== user?.id && !friendIds.includes(u.id)
@@ -100,50 +147,124 @@ const FriendsModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleAddFriend = async (friendUser) => {
+  const handleSendFriendRequest = async (receiverUser) => {
     setError('');
-    setSuccessMessage('');
-    setAddingFriendId(friendUser.id); // Show loading spinner
+    // setSuccessMessage('');
+    setAddingFriendId(receiverUser.id);
     
     try {
-      // Add to local storage
-      await localFriendsService.addFriend(friendUser);
-      
-      // Try to sync with backend if online
-      if (user?.id) {
-        try {
-          await userService.addFriend(user.id, friendUser.id);
-        } catch (backendError) {
-          // Ignore backend errors, friend is saved locally
-          console.warn('Could not sync friend to backend:', backendError);
-        }
+      if (!user?.id) {
+        throw new Error('You must be logged in to send friend requests');
       }
 
+      await userService.sendFriendRequest(user.id, receiverUser.id);
+      
       // Show checkmark briefly
-      setAddedFriendIds(prev => new Set([...prev, friendUser.id]));
+      setAddedFriendIds(prev => new Set([...prev, receiverUser.id]));
       setAddingFriendId(null);
       
-      // Update friends list
-      await loadFriends();
+      // Reload friend requests to update the UI
+      await loadFriendRequests();
       
-      // Remove the user from the allUsers list immediately
-      setAllUsers(prevUsers => prevUsers.filter(u => u.id !== friendUser.id));
-      
-      setSuccessMessage(`${friendUser.username} added to friends!`);
+      // setSuccessMessage(`Friend request sent to ${receiverUser.username}!`);
       
       // Clear success message and checkmark after 2 seconds
       setTimeout(() => {
-        setSuccessMessage('');
+        // setSuccessMessage('');
         setAddedFriendIds(prev => {
           const newSet = new Set(prev);
-          newSet.delete(friendUser.id);
+          newSet.delete(receiverUser.id);
           return newSet;
         });
       }, 2000);
     } catch (err) {
       setAddingFriendId(null);
-      setError(err.message || 'Failed to add friend');
+      setError(err.message || 'Failed to send friend request');
     }
+  };
+
+  const handleAcceptRequest = async (request) => {
+    setError('');
+    // setSuccessMessage('');
+    setProcessingRequestId(request.id);
+    
+    try {
+      if (!user?.id) {
+        throw new Error('You must be logged in');
+      }
+
+      await userService.acceptFriendRequest(user.id, request.id);
+      
+      // Add friend to local storage
+      await localFriendsService.addFriend(request.sender);
+      
+      // Reload friends and requests
+      await loadFriends();
+      await loadFriendRequests();
+      
+      // setSuccessMessage(`You are now friends with ${request.sender.username}!`);
+      // setTimeout(() => setSuccessMessage(''), 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to accept friend request');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleRejectRequest = async (request) => {
+    setError('');
+    // setSuccessMessage('');
+    setProcessingRequestId(request.id);
+    
+    try {
+      if (!user?.id) {
+        throw new Error('You must be logged in');
+      }
+
+      await userService.rejectFriendRequest(user.id, request.id);
+      
+      // Reload requests
+      await loadFriendRequests();
+      
+      // setSuccessMessage('Friend request rejected');
+      // setTimeout(() => setSuccessMessage(''), 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to reject friend request');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleCancelRequest = async (requestOrUser) => {
+    setError('');
+    // setSuccessMessage('');
+    
+    // Handle both request object and user object
+    const requestId = requestOrUser.id || requestOrUser;
+    
+    setProcessingRequestId(requestId);
+    
+    try {
+      if (!user?.id) {
+        throw new Error('You must be logged in');
+      }
+
+      await userService.cancelFriendRequest(user.id, requestId);
+      
+      // Reload requests to update the UI
+      await loadFriendRequests();
+      
+      // setSuccessMessage(`Friend request to ${username || 'user'} cancelled`);
+      // setTimeout(() => setSuccessMessage(''), 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to cancel friend request');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const getPendingRequestForUser = (userId) => {
+    return sentRequests.find(req => req.receiver.id === userId);
   };
 
   const handleRemoveFriend = async (friendId) => {
@@ -154,7 +275,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
     if (!friendToRemove) return;
 
     setError('');
-    setSuccessMessage('');
+    // setSuccessMessage('');
     try {
       // Remove from local storage
       await localFriendsService.removeFriend(friendToRemove);
@@ -169,11 +290,11 @@ const FriendsModal = ({ isOpen, onClose }) => {
         }
       }
 
-      setSuccessMessage('Friend removed');
+      // setSuccessMessage('Friend removed');
       await loadFriends();
       
       // Clear success message after 2 seconds
-      setTimeout(() => setSuccessMessage(''), 2000);
+      // setTimeout(() => setSuccessMessage(''), 2000);
     } catch (err) {
       setError(err.message || 'Failed to remove friend');
     } finally {
@@ -191,6 +312,10 @@ const FriendsModal = ({ isOpen, onClose }) => {
 
   const filteredUsers = allUsers.filter(user =>
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredReceivedRequests = receivedRequests.filter(request =>
+    request.sender.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (!isOpen) return null;
@@ -214,10 +339,26 @@ const FriendsModal = ({ isOpen, onClose }) => {
               setActiveTab('friends');
               setSearchQuery('');
               setError('');
-              setSuccessMessage('');
+              // setSuccessMessage('');
             }}
           >
-            My Friends ({friends.length})
+            My Friends
+            {friends.length > 0 && <span className="tab-badge">{friends.length}</span>}
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'received' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('received');
+              setSearchQuery('');
+              setError('');
+              // setSuccessMessage('');
+            }}
+          >
+            {/* <ClockIcon size={16} /> */}
+            Requests
+            {receivedRequests.length > 0 && (
+              <span className="tab-badge highlight">{receivedRequests.length}</span>
+            )}
           </button>
           <button
             className={`tab-btn ${activeTab === 'add' ? 'active' : ''}`}
@@ -225,23 +366,35 @@ const FriendsModal = ({ isOpen, onClose }) => {
               setActiveTab('add');
               setSearchQuery('');
               setError('');
-              setSuccessMessage('');
+              // setSuccessMessage('');
             }}
           >
-            <PlusIcon size={16} /> Add Friend
+            {/* <PlusIcon size={16} /> */}
+            Add Friend
           </button>
         </div>
 
         <div className="modal-content">
           {error && <div className="error-message">{error}</div>}
-          {successMessage && <div className="success-message">{successMessage}</div>}
+          {/* {successMessage && <div className="success-message">{successMessage}</div>} */}
+          
+          {hasNewRequest && activeTab !== 'received' && (
+            <div className="new-request-notification" onClick={() => setActiveTab('received')}>
+              <ClockIcon size={18} />
+              <span>You have new friend request{receivedRequests.length > 1 ? 's' : ''}! Click to view.</span>
+            </div>
+          )}
 
           {/* Search bar */}
           <div className="search-bar">
             <SearchIcon size={18} />
             <input
               type="text"
-              placeholder={activeTab === 'friends' ? 'Search friends...' : 'Search users...'}
+              placeholder={
+                activeTab === 'friends' ? 'Search friends...' : 
+                activeTab === 'received' ? 'Search requests...' :
+                'Search users...'
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -273,9 +426,9 @@ const FriendsModal = ({ isOpen, onClose }) => {
                       )}
                       <div className="friend-details">
                         <div className="friend-name">{friend.username}</div>
-                        <div className="friend-date">
+                        {/* <div className="friend-date">
                           Added {new Date(friend.addedAt).toLocaleDateString()}
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                     <button
@@ -285,6 +438,63 @@ const FriendsModal = ({ isOpen, onClose }) => {
                     >
                       <TrashIcon size={18} />
                     </button>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : activeTab === 'received' ? (
+            <div className="requests-list">
+              {filteredReceivedRequests.length === 0 ? (
+                <div className="empty-message">
+                  {receivedRequests.length === 0 
+                    ? 'No pending friend requests'
+                    : 'No requests match your search'
+                  }
+                </div>
+              ) : (
+                filteredReceivedRequests.map(request => (
+                  <div key={request.id} className="request-item">
+                    <div className="request-info">
+                      {request.sender.profilePicture ? (
+                        <img 
+                          src={request.sender.profilePicture} 
+                          alt={request.sender.username}
+                          className="request-avatar"
+                        />
+                      ) : (
+                        <div className="request-avatar-placeholder">
+                          {request.sender.username[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div className="request-details">
+                        <div className="request-name">{request.sender.username}</div>
+                        {/* <div className="request-date">
+                          Sent {new Date(request.createdAt).toLocaleDateString()}
+                        </div> */}
+                      </div>
+                    </div>
+                    <div className="request-actions">
+                      <button
+                        className="accept-btn"
+                        onClick={() => handleAcceptRequest(request)}
+                        disabled={processingRequestId === request.id}
+                        title="Accept request"
+                      >
+                        {processingRequestId === request.id ? (
+                          <div className="spinner-small"></div>
+                        ) : (
+                          <CheckMarkIcon size={18} />
+                        )}
+                      </button>
+                      <button
+                        className="reject-btn"
+                        onClick={() => handleRejectRequest(request)}
+                        disabled={processingRequestId === request.id}
+                        title="Reject request"
+                      >
+                        <XIcon size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -305,43 +515,62 @@ const FriendsModal = ({ isOpen, onClose }) => {
                   }
                 </div>
               ) : (
-                filteredUsers.map(userItem => (
-                  <div key={userItem.id} className="user-item">
-                    <div className="user-info">
-                      {userItem.profilePicture ? (
-                        <img 
-                          src={userItem.profilePicture} 
-                          alt={userItem.username}
-                          className="user-avatar"
-                        />
-                      ) : (
-                        <div className="user-avatar-placeholder">
-                          {userItem.username[0].toUpperCase()}
-                        </div>
-                      )}
-                      <div className="user-details">
-                        <div className="user-name">{userItem.username}</div>
-                        <div className="user-date">
-                          Joined {new Date(userItem.createdAt).toLocaleDateString()}
+                filteredUsers.map(userItem => {
+                  const pendingRequest = getPendingRequestForUser(userItem.id);
+                  const hasPendingRequest = !!pendingRequest;
+                  
+                  return (
+                    <div key={userItem.id} className="user-item">
+                      <div className="user-info">
+                        {userItem.profilePicture ? (
+                          <img 
+                            src={userItem.profilePicture} 
+                            alt={userItem.username}
+                            className="user-avatar"
+                          />
+                        ) : (
+                          <div className="user-avatar-placeholder">
+                            {userItem.username[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className="user-details">
+                          <div className="user-name">{userItem.username}</div>
+                          {/* <div className="user-date">
+                            {hasPendingRequest 
+                              ? `Request sent ${new Date(pendingRequest.createdAt).toLocaleDateString()}`
+                              : `Joined ${new Date(userItem.createdAt).toLocaleDateString()}`
+                            }
+                          </div> */}
                         </div>
                       </div>
+                      <button
+                        className={`add-friend-btn ${
+                          hasPendingRequest ? 'pending' : ''
+                        } ${addingFriendId === userItem.id ? 'loading' : ''} ${
+                          addedFriendIds.has(userItem.id) ? 'added' : ''
+                        }`}
+                        onClick={() => hasPendingRequest 
+                          ? handleCancelRequest(pendingRequest.id)
+                          : handleSendFriendRequest(userItem)
+                        }
+                        title={hasPendingRequest ? "Cancel friend request" : "Send friend request"}
+                        disabled={addingFriendId === userItem.id || addedFriendIds.has(userItem.id) || processingRequestId === pendingRequest?.id}
+                      >
+                        {processingRequestId === pendingRequest?.id ? (
+                          <div className="spinner-small"></div>
+                        ) : addingFriendId === userItem.id ? (
+                          <div className="spinner-small"></div>
+                        ) : addedFriendIds.has(userItem.id) ? (
+                          <CheckMarkIcon size={18} />
+                        ) : hasPendingRequest ? (
+                          <ClockIcon size={18} />
+                        ) : (
+                          <PlusIcon size={18} />
+                        )}
+                      </button>
                     </div>
-                    <button
-                      className={`add-friend-btn ${addingFriendId === userItem.id ? 'loading' : ''} ${addedFriendIds.has(userItem.id) ? 'added' : ''}`}
-                      onClick={() => handleAddFriend(userItem)}
-                      title="Add friend"
-                      disabled={addingFriendId === userItem.id || addedFriendIds.has(userItem.id)}
-                    >
-                      {addingFriendId === userItem.id ? (
-                        <div className="spinner-small"></div>
-                      ) : addedFriendIds.has(userItem.id) ? (
-                        <CheckMarkIcon size={18} />
-                      ) : (
-                        <PlusIcon size={18} />
-                      )}
-                    </button>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
