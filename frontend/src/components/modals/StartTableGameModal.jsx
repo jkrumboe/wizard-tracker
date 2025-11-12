@@ -180,7 +180,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                   const availableFriends = getAvailableFriends();
                   
                   return (
-                    <div key={index} className="player-row">
+                    <div key={index} className="player-row-start">
                       <label className="player-label">Player {index + 1}</label>
                       <div className="player-controls">
                         <input
