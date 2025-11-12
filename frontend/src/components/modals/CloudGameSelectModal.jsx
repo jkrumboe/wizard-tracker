@@ -116,8 +116,6 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 gap: 'var(--spacing-sm)', 
                 alignItems: 'center', 
                 marginBottom: 'var(--spacing-md)',
-                paddingBottom: 'var(--spacing-sm)',
-                borderBottom: '1px solid var(--border-color)'
               }}>
                 <button 
                   onClick={selectAll} 
@@ -159,7 +157,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                     </div>
 
                     <div className="player-info" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
+                      {/* <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
                         {game.isPaused ? (
                           <span style={{ 
                             padding: '2px 8px', 
@@ -188,7 +186,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                             color: 'white'
                           }}>IN PROGRESS</span>
                         )}
-                      </div>
+                      </div> */}
 
                       <div className="player-name">
                         Players: {game.players.map(p => p.name).join(', ')}
@@ -211,9 +209,9 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
           )} 
           </div>
         <div className="modal-actions">
-            <button className="modal-button secondary" onClick={onClose}>
+            {/* <button className="modal-button secondary" onClick={onClose}>
                 Cancel
-            </button>
+            </button> */}
             <button
                 className="modal-button primary"
                 onClick={handleDownload}
@@ -223,6 +221,8 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 alignItems: 'center', 
                 justifyContent: 'center',
                 gap: 'var(--spacing-xs)',
+                width: '100%',
+                fontSize: '1rem',
                 opacity: selectedGames.size === 0 ? 0.5 : 1,
                 cursor: selectedGames.size === 0 ? 'not-allowed' : 'pointer'
                 }}

@@ -67,7 +67,7 @@
   top: 0;
   left: 0;
   z-index: 101; /* Higher than round-number to stay on top */
-  width: 80px;
+  width: 60px;
   box-shadow: none;
   /* Ensure the background fills the entire cell */
   isolation: isolate;
@@ -240,6 +240,6 @@
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 60px;
+    width: 30px;
   }
 }

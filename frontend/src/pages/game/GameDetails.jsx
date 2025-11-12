@@ -530,7 +530,7 @@ const GameDetails = () => {
                 <table className="scorecard-table">
                   <thead>
                     <tr>
-                      <th className="round-header sticky-cell">Round</th>
+                      <th className="round-header sticky-cell"/>
                       {sortedPlayers.map(player => (
                         <th key={player.id} className="player-header">
                           <div className="player-header-name">{player.name}</div>
