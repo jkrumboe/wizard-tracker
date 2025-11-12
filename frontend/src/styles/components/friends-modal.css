@@ -420,10 +420,10 @@
 }
 
 .confirmation-dialog {
-  background: var(--card-background, #1a202c);
+  background: var(--card-background);
   border-radius: 12px;
   padding: 1.5rem;
-  max-width: 400px;
+  max-width: 70%;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: confirmDialogFadeIn 0.2s ease;
@@ -442,20 +442,19 @@
 
 .confirmation-dialog h3 {
   margin: 0 0 0.75rem 0;
-  color: var(--text-primary, #ffffff);
+  color: var(--primary-color);
   font-size: 1.25rem;
 }
 
 .confirmation-dialog p {
   margin: 0 0 1.5rem 0;
-  color: var(--text-secondary, #a0aec0);
   font-size: 0.95rem;
 }
 
 .confirmation-actions {
   display: flex;
   gap: 0.75rem;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 
 .confirmation-actions .cancel-btn,
@@ -470,21 +469,21 @@
 }
 
 .confirmation-actions .cancel-btn {
-  background: var(--border-color, #4a5568);
+  background: var(--border-color);
   color: var(--text-primary, #ffffff);
 }
 
 .confirmation-actions .cancel-btn:hover {
-  background: var(--text-muted, #718096);
+  background: var(--text-muted);
 }
 
 .confirmation-actions .confirm-btn {
-  background: var(--primary-color, #4299e1);
+  background: var(--primary-color);
   color: white;
 }
 
 .confirmation-actions .confirm-btn.danger {
-  background: var(--error-color, #ef4444);
+  background: var(--error-color);
 }
 
 .confirmation-actions .confirm-btn:hover {
