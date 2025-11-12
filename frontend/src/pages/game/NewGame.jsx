@@ -495,7 +495,7 @@ const NewGame = () => {
                     <div className="game-settings-input">
                       
                       <div id="rounds">
-                        <label htmlFor="rounds-input">Number of Rounds:</label>
+                        <label htmlFor="rounds-input">Rounds:</label>
                         <input
                           id="rounds-input"
                           type="tel"
