@@ -3,10 +3,6 @@
   max-width: 600px;
 }
 
-.filter-section {
-  margin-bottom: var(--spacing-sm);
-}
-
 .filter-section:last-child {
   margin-bottom: 0;
 }
@@ -112,6 +108,7 @@
 
 .filter-input,
 .filter-select {
+  min-height: 32px;
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
