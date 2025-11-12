@@ -47,8 +47,14 @@ const LoadTableGameDialog = ({
       if (savedGame) {
         const gameData = LocalTableGameStorage.loadTableGame(gameId);
         if (gameData) {
-          // Pass gameData, game name, and game ID
-          onLoadGame({ ...gameData, gameName: savedGame.name, gameId: gameId });
+          // Pass gameData with metadata from the saved game object
+          // The gameFinished flag can be in either gameData or the savedGame object
+          onLoadGame({ 
+            ...gameData, 
+            gameName: savedGame.name, 
+            gameId: gameId,
+            gameFinished: savedGame.gameFinished || gameData.gameFinished || false
+          });
           onClose();
         }
       }

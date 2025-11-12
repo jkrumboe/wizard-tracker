@@ -448,13 +448,74 @@ const TableGame = () => {
 
   const handleFinishGame = () => {
     setGameFinished(true);
-    saveGame();
+    // Save with the updated finished status
+    try {
+      const gameData = {
+        players: players,
+        rows: rows,
+        timestamp: new Date().toISOString(),
+        targetNumber: targetNumber,
+        lowIsBetter: lowIsBetter,
+        gameFinished: true // Explicitly set to true
+      };
+
+      const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      
+      if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
+        LocalTableGameStorage.updateTableGame(currentGameId, {
+          gameData: gameData,
+          lastPlayed: new Date().toISOString(),
+          name: name,
+          targetNumber: targetNumber,
+          lowIsBetter: lowIsBetter,
+          gameFinished: true
+        });
+        console.debug(`Game finished and saved: "${name}" (ID: ${currentGameId})`);
+      } else {
+        const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+        setCurrentGameId(newGameId);
+        console.debug(`Game finished and saved as new: "${name}" (ID: ${newGameId})`);
+      }
+    } catch (error) {
+      console.error("Error saving finished game:", error);
+      alert("Failed to save game. Please try again.");
+    }
   };
 
   const handleEditGame = () => {
     setGameFinished(false);
-    // Auto-save with the updated status
-    setTimeout(() => saveGame(), 100);
+    // Save with the updated finished status
+    try {
+      const gameData = {
+        players: players,
+        rows: rows,
+        timestamp: new Date().toISOString(),
+        targetNumber: targetNumber,
+        lowIsBetter: lowIsBetter,
+        gameFinished: false // Explicitly set to false
+      };
+
+      const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      
+      if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
+        LocalTableGameStorage.updateTableGame(currentGameId, {
+          gameData: gameData,
+          lastPlayed: new Date().toISOString(),
+          name: name,
+          targetNumber: targetNumber,
+          lowIsBetter: lowIsBetter,
+          gameFinished: false
+        });
+        console.debug(`Game reopened for editing: "${name}" (ID: ${currentGameId})`);
+      } else {
+        const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+        setCurrentGameId(newGameId);
+        console.debug(`Game saved for editing: "${name}" (ID: ${newGameId})`);
+      }
+    } catch (error) {
+      console.error("Error saving game for editing:", error);
+      alert("Failed to save game. Please try again.");
+    }
   };
 
   // Check if target is reached and auto-finish/unfinish based on scores

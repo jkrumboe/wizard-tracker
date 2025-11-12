@@ -108,7 +108,12 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       if (savedGame) {
         const gameData = LocalTableGameStorage.loadTableGame(gamesForTemplate[0].id);
         if (gameData) {
-          handleLoadGame({ ...gameData, gameName: savedGame.name, gameId: gamesForTemplate[0].id });
+          handleLoadGame({ 
+            ...gameData, 
+            gameName: savedGame.name, 
+            gameId: gamesForTemplate[0].id,
+            gameFinished: savedGame.gameFinished || gameData.gameFinished || false
+          });
         }
       }
     } else {
