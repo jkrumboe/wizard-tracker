@@ -6,6 +6,15 @@
   height: 60vh;
 }
 
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--spacing-sm);
+  gap: var(--spacing-md);
+  box-sizing: border-box;
+}
+
 .modal-tabs {
   display: flex;
   width: 100%;
@@ -19,8 +28,7 @@
   border: none;
   border-radius: 0;
   color: var(--text-color);
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -28,7 +36,7 @@
   justify-content: center;
   gap: 0.5rem;
   box-shadow: none;
-  /* padding: var(--spacing-md); */
+  padding: var(--spacing-sm) 4px;
 }
 
 .tab-btn:hover:not(:disabled) {
@@ -79,7 +87,6 @@
   background: var(--input-background);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  margin-bottom: 1rem;
 }
 
 .search-bar svg {
