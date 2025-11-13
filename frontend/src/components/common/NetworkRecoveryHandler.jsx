@@ -3,6 +3,7 @@
  * 
  * Component that monitors network status and handles automatic session recovery
  * when connection is restored or when transitioning between online/offline modes.
+ * Shows non-intrusive notification when network is lost without disrupting the UI.
  */
 
 import { useEffect, useState } from 'react';
@@ -15,34 +16,79 @@ import { Notification } from '@/components/ui';
  * NetworkRecoveryHandler - Handles automatic recovery during network changes
  */
 export function NetworkRecoveryHandler() {
-  const { isOnline } = useOnlineStatus();
+  const { isOnline, hasNetworkConnectivity, networkIssue } = useOnlineStatus();
   const [showRecoveryNotification, setShowRecoveryNotification] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState('');
   const [previousOnlineState, setPreviousOnlineState] = useState(isOnline);
+  const [previousNetworkState, setPreviousNetworkState] = useState(hasNetworkConnectivity);
 
   useEffect(() => {
-    // Detect transition from offline to online
-    if (isOnline && !previousOnlineState) {
-      handleReconnection();
-    } else if (!isOnline && previousOnlineState) {
-      handleDisconnection();
+    // Detect network connectivity loss (browser offline)
+    if (hasNetworkConnectivity && !previousNetworkState) {
+      handleNetworkRestored();
+    } else if (!hasNetworkConnectivity && previousNetworkState) {
+      handleNetworkLost();
+    }
+    
+    // Detect backend online status change (not network issue)
+    if (isOnline && !previousOnlineState && !networkIssue) {
+      handleBackendReconnection();
+    } else if (!isOnline && previousOnlineState && !networkIssue) {
+      handleBackendDisconnection();
     }
     
     setPreviousOnlineState(isOnline);
-  }, [isOnline, previousOnlineState]);
+    setPreviousNetworkState(hasNetworkConnectivity);
+  }, [isOnline, hasNetworkConnectivity, networkIssue, previousOnlineState, previousNetworkState]);
 
   /**
-   * Handle disconnection event
+   * Handle network connectivity loss (browser offline)
    */
-  const handleDisconnection = async () => {
-    console.debug('📡 Network disconnected - saving state...');
+  const handleNetworkLost = async () => {
+    console.debug('📡 Network connection lost - preserving all data...');
+    
+    // Save all state immediately
+    await stateRecovery.saveAllState({ immediate: true });
+    await sessionCache.set('last_online_time', Date.now(), { persist: true });
+    
+    // Show non-intrusive notification
+    // setRecoveryMessage('📡 No internet connection. Your data is safe and will sync when connection returns.');
+    // setShowRecoveryNotification(true);
+    
+    // Keep notification visible until network returns
+  };
+
+  /**
+   * Handle network connectivity restored (browser online)
+   */
+  const handleNetworkRestored = async () => {
+    console.debug('📡 Network connection restored');
+    
+    // Show brief notification
+    setRecoveryMessage('✅ Internet connection restored');
+    setShowRecoveryNotification(true);
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      setShowRecoveryNotification(false);
+    }, 3000);
+    
+    // Update last online time
+    await sessionCache.set('last_online_time', Date.now(), { persist: true });
+  };
+
+  /**
+   * Handle backend disconnection (intentional offline mode)
+   */
+  const handleBackendDisconnection = async () => {
+    console.debug('📡 Backend went offline - saving state...');
     
     // Save all state immediately
     await stateRecovery.saveAllState({ immediate: true });
     await sessionCache.set('last_online_time', Date.now(), { persist: true });
     
     // Show notification
-    setRecoveryMessage('You are now offline. Your data will be preserved.');
+    setRecoveryMessage('Backend is offline for maintenance. Your data will be preserved.');
     setShowRecoveryNotification(true);
     
     // Auto-hide after 5 seconds
@@ -52,10 +98,10 @@ export function NetworkRecoveryHandler() {
   };
 
   /**
-   * Handle reconnection event
+   * Handle backend reconnection
    */
-  const handleReconnection = async () => {
-    console.debug('📡 Network reconnected - attempting recovery...');
+  const handleBackendReconnection = async () => {
+    console.debug('📡 Backend reconnected - attempting recovery...');
     
     try {
       // Check if there's recoverable state
@@ -177,13 +223,36 @@ export function NetworkRecoveryHandler() {
 
   return (
     <>
-      {/* {showRecoveryNotification && (
+      {showRecoveryNotification && (
         <Notification
           type="info"
           message={recoveryMessage}
           onClose={() => setShowRecoveryNotification(false)}
           duration={0} // Manual control via setTimeout
         />
+      )}
+      
+      {/* Persistent network status indicator when offline */}
+      {/* {!hasNetworkConnectivity && (
+        <div style={{
+          position: 'fixed',
+          top: '60px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#ff9800',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          fontSize: '14px',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>📡</span>
+          <span>No internet connection - Working offline</span>
+        </div>
       )} */}
     </>
   );

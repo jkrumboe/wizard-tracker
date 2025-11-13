@@ -1,25 +1,24 @@
 "use client"
 
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute, UpdateNotification, NetworkRecoveryHandler } from "@/components/common"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 
-// Lazy load pages for better performance
+// Eagerly import critical pages that should work offline
+import Settings from "@/pages/Settings"
+import { NewGame, GameDetails, GameInProgress, TableGame } from "@/pages/game"
+
+// Lazy load less critical pages for better performance
 const Profile = lazy(() => import("@/pages/profile/Profile"))
 const ProfileEdit = lazy(() => import("@/pages/profile/ProfileEdit"))
 const Leaderboard = lazy(() => import("@/pages/profile/Leaderboard"))
 const Stats = lazy(() => import("@/pages/profile/Stats"))
-const Settings = lazy(() => import("@/pages/Settings"))
-const NewGame = lazy(() => import("@/pages/game").then(module => ({ default: module.NewGame })))
-const GameDetails = lazy(() => import("@/pages/game").then(module => ({ default: module.GameDetails })))
-const GameInProgress = lazy(() => import("@/pages/game").then(module => ({ default: module.GameInProgress })))
 const Lobby = lazy(() => import("@/pages/game").then(module => ({ default: module.Lobby })))
 const MultiplayerGame = lazy(() => import("@/pages/game").then(module => ({ default: module.MultiplayerGame })))
 const GameRoom = lazy(() => import("@/pages/game").then(module => ({ default: module.GameRoom })))
-const TableGame = lazy(() => import("@/pages/game").then(module => ({ default: module.TableGame })))
 const Login = lazy(() => import("@/pages/auth/Login"))
 const SharedGamePage = lazy(() => import("@/pages/shared/SharedGamePage"))
 import { register } from "./serviceWorkerRegistration"
@@ -140,6 +139,65 @@ function URLImportHandler() {
   return null;
 }
 
+// Error Boundary for lazy loading failures
+class LazyLoadErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    // Check if it's a lazy loading error
+    if (error.message?.includes('Failed to fetch dynamically imported module')) {
+      return { hasError: true, error };
+    }
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Lazy loading error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Show a friendly error message
+      return (
+        <div style={{
+          padding: '40px 20px',
+          textAlign: 'center',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          <h2 style={{ color: '#ff6b6b', marginBottom: '20px' }}>
+            ⚠️ Unable to Load Page
+          </h2>
+          <p style={{ marginBottom: '20px', lineHeight: '1.6' }}>
+            {navigator.onLine 
+              ? 'This page failed to load. This might be a temporary issue.'
+              : 'This page cannot be loaded while offline. Please check your internet connection and try again.'}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function App() {
   useEffect(() => {
     // Log app version
@@ -165,41 +223,43 @@ function App() {
                 <URLImportHandler />
                 <Navbar />
                 <div className="main-container">
-                <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                  <Route path="/profile" element={
-                    <AuthProtectedRoute>
-                      <Profile />
-                    </AuthProtectedRoute>
-                  } />
-                  <Route path="/profile/edit" element={
-                    <AuthProtectedRoute>
-                      <ProfileEdit />
-                    </AuthProtectedRoute>
-                  } />
-                  <Route path="/profile/:id" element={
-                    <AuthProtectedRoute>
-                      <Profile />
-                    </AuthProtectedRoute>
-                  } />
-                  <Route path="/account" element={<Navigate to="/profile" replace />} />
-                  {/* <Route path="/leaderboard" element={<Leaderboard />} /> */}
-                  <Route path="/stats/:name" element={<Stats />} />
-                  <Route path="/profile/stats" element={<Stats />} />
-                  <Route path="/new-game" element={<NewGame />} />
-                  <Route path="/table" element={<TableGame />} />
-                  <Route path="/game/:id" element={<GameDetails />} />
-                  <Route path="/game/current" element={<GameInProgress />} />
-                  <Route path="/login" element= {
-                    <OnlineProtectedRoute>
-                      <Login />
-                    </OnlineProtectedRoute>
-                  }/>
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/shared/:shareId" element={<SharedGamePage />} />
-                  </Routes>
-                </Suspense>
+                <LazyLoadErrorBoundary>
+                  <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                    <Route path="/profile" element={
+                      <AuthProtectedRoute>
+                        <Profile />
+                      </AuthProtectedRoute>
+                    } />
+                    <Route path="/profile/edit" element={
+                      <AuthProtectedRoute>
+                        <ProfileEdit />
+                      </AuthProtectedRoute>
+                    } />
+                    <Route path="/profile/:id" element={
+                      <AuthProtectedRoute>
+                        <Profile />
+                      </AuthProtectedRoute>
+                    } />
+                    <Route path="/account" element={<Navigate to="/profile" replace />} />
+                    {/* <Route path="/leaderboard" element={<Leaderboard />} /> */}
+                    <Route path="/stats/:name" element={<Stats />} />
+                    <Route path="/profile/stats" element={<Stats />} />
+                    <Route path="/new-game" element={<NewGame />} />
+                    <Route path="/table" element={<TableGame />} />
+                    <Route path="/game/:id" element={<GameDetails />} />
+                    <Route path="/game/current" element={<GameInProgress />} />
+                    <Route path="/login" element= {
+                      <OnlineProtectedRoute>
+                        <Login />
+                      </OnlineProtectedRoute>
+                    }/>
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/shared/:shareId" element={<SharedGamePage />} />
+                    </Routes>
+                  </Suspense>
+                </LazyLoadErrorBoundary>
                 {/* Network Recovery Handler - monitors connection and restores state */}
                 <NetworkRecoveryHandler />
                 </div>

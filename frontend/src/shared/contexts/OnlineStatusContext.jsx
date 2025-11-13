@@ -5,7 +5,9 @@ import { onlineStatusService } from '../api/onlineStatusService';
 const OnlineStatusContext = createContext({
   isOnline: false, // Start as offline until we know for sure
   lastUpdated: null,
-  message: 'Checking online status...'
+  message: 'Checking online status...',
+  hasNetworkConnectivity: true,
+  networkIssue: false
 });
 
 // Provider component
@@ -13,7 +15,9 @@ export function OnlineStatusProvider({ children }) {
   const [onlineStatus, setOnlineStatus] = useState({
     isOnline: false, // Start as offline until we know for sure
     lastUpdated: null,
-    message: 'Checking online status...'
+    message: 'Checking online status...',
+    hasNetworkConnectivity: true,
+    networkIssue: false
   });
 
   useEffect(() => {
@@ -22,7 +26,9 @@ export function OnlineStatusProvider({ children }) {
       setOnlineStatus({
         isOnline: status.online,
         lastUpdated: status.lastUpdated,
-        message: status.message
+        message: status.message,
+        hasNetworkConnectivity: status.hasNetworkConnectivity ?? true,
+        networkIssue: status.networkIssue ?? false
       });
     });
 
@@ -31,7 +37,9 @@ export function OnlineStatusProvider({ children }) {
       setOnlineStatus({
         isOnline: status.online,
         lastUpdated: status.lastUpdated,
-        message: status.message
+        message: status.message,
+        hasNetworkConnectivity: status.hasNetworkConnectivity ?? true,
+        networkIssue: status.networkIssue ?? false
       });
     });
 

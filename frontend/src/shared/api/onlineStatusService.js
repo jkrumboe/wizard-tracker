@@ -12,24 +12,46 @@ class OnlineStatusService {
     this._checkInterval = 15000; // Check every 15 seconds for better responsiveness
     this._listeners = [];
     this._intervalId = null;
+    this._hasNetworkConnectivity = navigator.onLine; // Browser's network status
     
     // Start periodic checking
     this._startPeriodicCheck();
     
     // Add window focus listener to check status when user returns
     this._addWindowFocusListener();
+    
+    // Monitor browser's network connectivity
+    this._addNetworkListeners();
   }
   
   /**
    * Get the current online status
    * @param {boolean} forceCheck - Whether to force a fresh check
-   * @returns {Promise<{online: boolean, lastUpdated: string, message: string}>}
+   * @returns {Promise<{online: boolean, lastUpdated: string, message: string, hasNetworkConnectivity: boolean}>}
    */
   async getStatus(forceCheck = false) {
     // If we have a cached status and it's recent, use it
     const now = Date.now();
     if (!forceCheck && this._onlineStatus && this._lastChecked && (now - this._lastChecked < this._checkInterval)) {
-      return this._onlineStatus;
+      return {
+        ...this._onlineStatus,
+        hasNetworkConnectivity: this._hasNetworkConnectivity
+      };
+    }
+    
+    // If there's no network connectivity at the browser level, 
+    // don't mark backend as offline - just note the network issue
+    if (!this._hasNetworkConnectivity) {
+      const networkDownStatus = {
+        online: this._onlineStatus?.online ?? true, // Preserve last known backend status
+        lastUpdated: new Date().toISOString(),
+        message: 'No internet connection. Working in offline mode with cached data.',
+        hasNetworkConnectivity: false,
+        networkIssue: true
+      };
+      
+      // Don't update the main status, just return this state
+      return networkDownStatus;
     }
     
     try {
@@ -50,34 +72,38 @@ class OnlineStatusService {
           lastUpdated: data.lastUpdated,
           message: data.message || (data.online ? 
             'All features are available' : 
-            'Online features are currently disabled for maintenance')
+            'Online features are currently disabled for maintenance'),
+          hasNetworkConnectivity: true,
+          networkIssue: false
         };
 
         this._updateStatus(status);
         return status;
       } else {
-        // If the endpoint fails, fall back to offline mode
-        const offlineStatus = {
-          online: false,
+        // If the endpoint fails, preserve last known status
+        const fallbackStatus = {
+          online: this._onlineStatus?.online ?? true,
           lastUpdated: new Date().toISOString(),
-          message: 'Unable to check online status - operating in offline mode'
+          message: 'Cannot reach server. Using cached data.',
+          hasNetworkConnectivity: true,
+          networkIssue: true
         };
         
-        this._updateStatus(offlineStatus);
-        return offlineStatus;
+        return fallbackStatus;
       }
     } catch (error) {
       console.error('Error checking online status:', error);
       
-      // If we can't reach the server, assume offline
-      const offlineStatus = { 
-        online: false, 
+      // Network error - preserve last known backend status
+      const errorStatus = { 
+        online: this._onlineStatus?.online ?? true, // Don't assume offline
         lastUpdated: new Date().toISOString(),
-        message: 'Unable to connect to server. Operating in offline mode.'
+        message: 'Cannot connect to server. Working with cached data.',
+        hasNetworkConnectivity: this._hasNetworkConnectivity,
+        networkIssue: true
       };
       
-      this._updateStatus(offlineStatus);
-      return offlineStatus;
+      return errorStatus;
     }
   }
   
@@ -255,6 +281,35 @@ class OnlineStatusService {
         if (!document.hidden) {
           this.getStatus(true);
         }
+      });
+    }
+  }
+  
+  /**
+   * Add browser network connectivity listeners
+   * @private
+   */
+  _addNetworkListeners() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        console.debug('📡 Browser detected network connection restored');
+        this._hasNetworkConnectivity = true;
+        // Force a status check when network comes back
+        this.getStatus(true);
+      });
+      
+      window.addEventListener('offline', () => {
+        console.debug('📡 Browser detected network connection lost');
+        this._hasNetworkConnectivity = false;
+        // Notify listeners about network loss (but don't change backend status)
+        const networkDownStatus = {
+          online: this._onlineStatus?.online ?? true,
+          lastUpdated: new Date().toISOString(),
+          message: 'No internet connection. Working in offline mode with cached data.',
+          hasNetworkConnectivity: false,
+          networkIssue: true
+        };
+        this._notifyListeners(networkDownStatus);
       });
     }
   }
