@@ -33,6 +33,7 @@ A full-stack application for tracking and managing Wizard and card game scores, 
 
 - [Frontend Setup Guide](frontend/README.md)
 - [Backend Setup Guide](backend/README.md)
+- [Logging Guide](LOGGING.md) - Log formats, analysis, and monitoring
 
 ## Contributing
 
