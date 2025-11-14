@@ -6,6 +6,10 @@
 
 A full-stack application for tracking and managing Wizard and card game scores, player statistics.
 
+[![Live Site](https://img.shields.io/badge/Live%20Site-wizard.jkrumboe.dev-brightgreen)](https://wizard.jkrumboe.dev/)
+
+<!-- Visit the Website: [wizard.jkrumboe.dev](https://wizard.jkrumboe.dev/) -->
+
 ## Features
 
 - Track player stats and game history
