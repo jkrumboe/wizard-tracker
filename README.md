@@ -23,6 +23,7 @@ A full-stack application for tracking and managing Wizard and card game scores, 
 ### Core Documentation
 
 - **[Setup Guide](SETUP.md)** - Installation and deployment instructions
+- **[NPM Scripts Reference](SCRIPTS.md)** - Complete guide to all available npm commands
 - **[Development Guide](DEVELOPMENT.md)** - Development workflow, testing, and best practices
 - **[Architecture Overview](ARCHITECTURE.md)** - System design, data flow, and technical architecture
 - **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project

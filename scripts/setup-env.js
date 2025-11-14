@@ -3,14 +3,34 @@
 /**
  * Environment Setup Script
  * Generates secure JWT secret and updates .env file
- * Run this script on each deployment or update
+ * Run this script before first deployment or when rotating secrets
  */
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// ANSI color codes
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+};
+
 const ENV_PATH = path.join(__dirname, '..', '.env');
+
+function log(message, type = 'info') {
+  const icons = {
+    success: `${colors.green}✓${colors.reset}`,
+    error: `${colors.red}✗${colors.reset}`,
+    warning: `${colors.yellow}⚠${colors.reset}`,
+    info: `${colors.cyan}ℹ${colors.reset}`,
+  };
+  console.log(`${icons[type]} ${message}`);
+}
 
 function generateJWTSecret() {
   return crypto.randomBytes(64).toString('hex');
@@ -20,65 +40,62 @@ function updateEnvFile() {
   try {
     // Check if .env file exists
     if (!fs.existsSync(ENV_PATH)) {
-      console.error('.env file not found at:', ENV_PATH);
-      console.debug('Please copy .env.example to .env first');
+      log('.env file not found', 'error');
+      log('Please run: npm run init', 'info');
+      log('Or copy .env.example to .env manually', 'info');
       process.exit(1);
     }
 
     // Read current .env content
     let envContent = fs.readFileSync(ENV_PATH, 'utf8');
     
-    // Generate new JWT secret
-    const newJWTSecret = generateJWTSecret();
+    // Check if JWT_SECRET already has a secure value
+    const currentSecretMatch = envContent.match(/JWT_SECRET=(.+)/);
+    if (currentSecretMatch && currentSecretMatch[1].length > 32 && !currentSecretMatch[1].includes('your-secret-key-here')) {
+      log('JWT_SECRET already configured', 'warning');
+      const readline = require('readline');
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      
+      rl.question(`${colors.yellow}Do you want to generate a new secret? (y/N): ${colors.reset}`, (answer) => {
+        rl.close();
+        if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+          log('Keeping existing JWT_SECRET', 'info');
+          process.exit(0);
+        }
+        generateAndUpdate(envContent);
+      });
+      return;
+    }
     
-    // Update JWT_SECRET in the content
-    envContent = envContent.replace(
-      /JWT_SECRET=.*/,
-      `JWT_SECRET=${newJWTSecret}`
-    );
-    
-    // Write updated content back to .env
-    fs.writeFileSync(ENV_PATH, envContent);
-    
-    console.debug('Environment setup completed!');
-    console.debug('New JWT secret generated and updated in .env file');
-    console.debug('Make sure to restart your application to use the new secret');
+    generateAndUpdate(envContent);
     
   } catch (error) {
-    console.error('Error updating .env file:', error.message);
+    log(`Error updating .env file: ${error.message}`, 'error');
     process.exit(1);
   }
 }
 
-// Add this to package.json scripts
-function updatePackageJson() {
-  const packageJsonPath = path.join(__dirname, '..', 'package.json');
+function generateAndUpdate(envContent) {
+  // Generate new JWT secret
+  const newJWTSecret = generateJWTSecret();
   
-  if (fs.existsSync(packageJsonPath)) {
-    try {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-      
-      if (!packageJson.scripts) {
-        packageJson.scripts = {};
-      }
-      
-      packageJson.scripts['setup-env'] = 'node scripts/setup-env.js';
-      packageJson.scripts['update-secrets'] = 'node scripts/setup-env.js';
-      
-      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      console.debug('Updated package.json with setup scripts');
-    } catch (error) {
-      console.debug('Could not update package.json:', error.message);
-    }
-  }
+  // Update JWT_SECRET in the content
+  envContent = envContent.replace(
+    /JWT_SECRET=.*/,
+    `JWT_SECRET=${newJWTSecret}`
+  );
+  
+  // Write updated content back to .env
+  fs.writeFileSync(ENV_PATH, envContent);
+  
+  log('New JWT secret generated and saved to .env', 'success');
+  log('Keep this secret secure and never commit it to version control', 'warning');
+  log('Restart your application to use the new secret', 'info');
 }
 
 // Main execution
-console.debug('Setting up Wizard Tracker environment...');
+console.log(`${colors.bright}${colors.cyan}Wizard Tracker - Environment Setup${colors.reset}\n`);
 updateEnvFile();
-updatePackageJson();
-
-console.debug('\n Next steps:');
-console.debug('1. Run: npm run setup-env (anytime you need new secrets)');
-console.debug('2. For Docker: docker compose down && docker compose up -d');
-console.debug('3. For local dev: npm run dev (in frontend) and npm start (in backend)');
