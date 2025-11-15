@@ -883,7 +883,7 @@ const TableGame = () => {
 
           {targetNumber && hasReachedTarget() && !gameFinished && (
             <button
-              className="table-game-finish-btn"
+              className="finish-btn"
               onClick={handleFinishGame}
               title="Finish Game"
             >

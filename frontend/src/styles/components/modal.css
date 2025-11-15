@@ -227,12 +227,13 @@
 .game-settings-modal {
   width: 80%;
   max-width: 80%;
-  max-height: 80vh;
+  max-height: 75vh;
   display: flex;
   flex-direction: column;
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
-  padding: 0;
+  padding: 0 !important;
+  gap: 0 !important;
 }
 
 .game-settings-modal .modal-body {
@@ -256,7 +257,7 @@
 
 .setting-section h3 {
   color: var(--primary-color);
-  margin-bottom: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
   font-size: 1.1rem;
 }
 
