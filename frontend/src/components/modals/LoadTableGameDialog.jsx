@@ -69,8 +69,14 @@ const LoadTableGameDialog = ({
     if (window.confirm(`Are you sure you want to delete "${gameName}"? This action cannot be undone.`)) {
       try {
         LocalTableGameStorage.deleteTableGame(gameId);
-        // Refresh the list
-        const games = LocalTableGameStorage.getSavedTableGamesList();
+        // Refresh the list with the current filter
+        let games = LocalTableGameStorage.getSavedTableGamesList();
+        
+        // Re-apply filter if it exists
+        if (filterByGameName) {
+          games = games.filter(game => game.name === filterByGameName);
+        }
+        
         setSavedGames(games);
         if (selectedGameId === gameId) {
           setSelectedGameId(null);
@@ -100,7 +106,7 @@ const LoadTableGameDialog = ({
     <div className="modal-overlay">
       <div className="modal-container">
         <div className="modal-header">
-          <h2>Load Table Game</h2>
+          <h2>{filterByGameName || 'Table'} Games</h2>
           <button className="close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={20} />
           </button>
