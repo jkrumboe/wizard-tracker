@@ -108,8 +108,12 @@ const GameInProgress = () => {
       // Clear game state backup since game is finished
       sessionStorage.removeItem('gameStateBackup');
       sessionStorage.removeItem('gameInProgressVisited');
-      resetGame(); 
-      navigate("/")
+      
+      // Wait a moment to allow the upload notification to show before resetting and navigating
+      setTimeout(() => {
+        resetGame(); 
+        navigate("/")
+      }, 2000); // 2 second delay to show the upload status
     }
   }
 
@@ -598,11 +602,11 @@ const GameInProgress = () => {
       </div>
 
       {/* Auto-upload notification */}
-      {gameState.autoUploadStatus && (
+      {/* {gameState.autoUploadStatus && (
         <div className={`auto-upload-notification ${gameState.autoUploadStatus}`}>
           <span>{gameState.autoUploadMessage}</span>
         </div>
-      )}
+      )} */}
 
       {isLastRound && isRoundComplete && (
         <button className="finish-btn" onClick={handleFinishGame}>

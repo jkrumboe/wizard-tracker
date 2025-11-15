@@ -446,7 +446,7 @@ const TableGame = () => {
     });
   };
 
-  const handleFinishGame = () => {
+  const handleFinishGame = async () => {
     setGameFinished(true);
     // Save with the updated finished status
     try {
@@ -460,6 +460,7 @@ const TableGame = () => {
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      let savedGameId = currentGameId;
       
       if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
         LocalTableGameStorage.updateTableGame(currentGameId, {
@@ -474,7 +475,30 @@ const TableGame = () => {
       } else {
         const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
         setCurrentGameId(newGameId);
+        savedGameId = newGameId;
         console.debug(`Game finished and saved as new: "${name}" (ID: ${newGameId})`);
+      }
+
+      // Auto-upload to cloud if user is authenticated
+      const token = localStorage.getItem('auth_token');
+      if (token && savedGameId) {
+        try {
+          // Check if already uploaded
+          if (!LocalTableGameStorage.isGameUploaded(savedGameId)) {
+            console.debug('Auto-uploading finished table game to cloud...');
+            const { createTableGame } = await import('@/shared/api/tableGameService');
+            const result = await createTableGame(gameData, savedGameId);
+            
+            // Backend returns game._id for table games (full document)
+            if (result && result.game && result.game._id) {
+              LocalTableGameStorage.markGameAsUploaded(savedGameId, result.game._id);
+              console.debug(`✅ Table game auto-uploaded to cloud (ID: ${result.game._id})`);
+            }
+          }
+        } catch (uploadError) {
+          // Silent fail for auto-upload - game is still saved locally
+          console.warn('Auto-upload failed (game saved locally):', uploadError.message);
+        }
       }
     } catch (error) {
       console.error("Error saving finished game:", error);

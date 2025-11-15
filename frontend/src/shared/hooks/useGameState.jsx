@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from "rea
 import { createGame } from "@/shared/api/gameService"
 import { LocalGameStorage } from "@/shared/api"
 import { stateRecovery } from "@/shared/utils/stateRecovery"
+import { getSyncManager } from "@/shared/sync/syncManager"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
@@ -664,11 +665,30 @@ export function GameStateProvider({ children }) {
       };
       const savedGameId = LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
 
-      // Only attempt cloud sync if user is authenticated
+      // Always attempt cloud sync/upload when user is authenticated
       const token = localStorage.getItem('auth_token');
       if (token) {
         try {
-          await createGame(gameData, savedGameId);
+          // Upload game to database
+          const result = await createGame(gameData, savedGameId);
+          
+          // Mark game as uploaded in local storage
+          if (result && result.game && result.game.id) {
+            LocalGameStorage.markGameAsUploaded(savedGameId, result.game.id);
+            console.debug('✅ Game marked as uploaded (cloud ID:', result.game.id, ')');
+          }
+          
+          // Also trigger sync manager to ensure all pending events are synced
+          try {
+            const syncManager = getSyncManager();
+            if (savedGameId) {
+              await syncManager.syncGame(savedGameId, { force: true });
+              console.debug('✅ Game synced via sync manager');
+            }
+          } catch (syncError) {
+            console.warn('Sync manager not available or sync failed:', syncError);
+          }
+          
           setGameState((prevState) => ({
             ...prevState,
             autoUploadStatus: 'success',
