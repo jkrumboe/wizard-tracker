@@ -53,7 +53,6 @@
 
 .settings-section {
   background-color: var(--card-background);
-  /* border: 1px solid var(--border-color); */
   border-radius: 12px;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
@@ -62,8 +61,8 @@
 
 .settings-section:has(.game-history) {
   background-color: transparent;
-  flex: 1; /* Allow it to grow within home-container */
-  min-height: 0; /* Important for flex scrolling */
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   box-shadow: none;
@@ -135,7 +134,7 @@
 
 .theme-button.active {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--text-white);
   box-shadow: 0 2px 8px rgba(53, 99, 233, 0.3);
 }
 
@@ -387,7 +386,7 @@
   align-self: stretch;
 }
 
-.settings-section  .game-actions {
+.settings-section .game-actions {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -770,19 +769,19 @@
 
 .settings-button.online {
   background-color: var(--warning-color);
-  color: white;
+  color: var(--text-white);
   border-color: var(--warning-color);
 }
 
 .settings-button.offline {
   background-color: var(--success-color);
-  color: white;
+  color: var(--text-white);
   border-color: var(--success-color);
 }
 
 .settings-button.success {
   background-color: var(--success-color);
-  color: white;
+  color: var(--text-white);
   border-color: var(--success-color);
 }
 
@@ -796,7 +795,7 @@
 
 .settings-button.warning {
   background-color: var(--warning-color);
-  color: white;
+  color: var(--text-white);
   border-color: var(--warning-color);
 }
 

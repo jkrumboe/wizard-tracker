@@ -1131,7 +1131,7 @@ const Settings = () => {
               aria-label="Filter games"
               style={{
                 background: 'var(--primary-color)',
-                color: 'white',
+                color: 'var(--text-white)',
                 border: 'none',
                 borderRadius: 'var(--radius-md)',
                 padding: 'var(--spacing-xs) var(--spacing-sm)',

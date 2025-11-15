@@ -81,7 +81,7 @@
   height: 48px;
   border-radius: 50%;
   background: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   display: flex;
   align-items: center;
   justify-content: center;
