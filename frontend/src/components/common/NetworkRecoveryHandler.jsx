@@ -115,8 +115,8 @@ export function NetworkRecoveryHandler() {
           console.debug(`✅ Recovered ${recovered.length} states:`, recovered);
           
           // Show success notification
-          setRecoveryMessage(`Welcome back! Your session has been restored.`);
-          setShowRecoveryNotification(true);
+          // setRecoveryMessage(`Welcome back! Your session has been restored.`);
+          // setShowRecoveryNotification(true);
           
           // Auto-hide after 5 seconds
           setTimeout(() => {
