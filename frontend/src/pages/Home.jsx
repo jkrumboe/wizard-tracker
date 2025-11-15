@@ -9,7 +9,6 @@ import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useUser } from '@/shared/hooks/useUser'
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
 import { FilterIcon, UsersIcon } from '@/components/ui/Icon'
-import "@/styles/components/offline-notification.css"
 import "@/styles/pages/home.css"
 
 const Home = () => {
@@ -101,12 +100,6 @@ const Home = () => {
         <h1>KeepWiz</h1>
         <p>Track your Wizard card game stats and performance</p>
       </header>
-
-      {/* {offlineMessage && (
-        <div className="offline-notification">
-          <div className="offline-message">{offlineMessage}</div>
-        </div>
-      )} */}
 
       <div className="friends-section">
         <button 

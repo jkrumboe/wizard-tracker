@@ -3,22 +3,18 @@
  * 
  * Component that monitors network status and handles automatic session recovery
  * when connection is restored or when transitioning between online/offline modes.
- * Shows non-intrusive notification when network is lost without disrupting the UI.
  */
 
 import { useEffect, useState } from 'react';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { stateRecovery } from '@/shared/utils/stateRecovery';
 import { sessionCache } from '@/shared/utils/sessionCache';
-import { Notification } from '@/components/ui';
 
 /**
  * NetworkRecoveryHandler - Handles automatic recovery during network changes
  */
 export function NetworkRecoveryHandler() {
   const { isOnline, hasNetworkConnectivity, networkIssue } = useOnlineStatus();
-  const [showRecoveryNotification, setShowRecoveryNotification] = useState(false);
-  const [recoveryMessage, setRecoveryMessage] = useState('');
   const [previousOnlineState, setPreviousOnlineState] = useState(isOnline);
   const [previousNetworkState, setPreviousNetworkState] = useState(hasNetworkConnectivity);
 
@@ -50,12 +46,6 @@ export function NetworkRecoveryHandler() {
     // Save all state immediately
     await stateRecovery.saveAllState({ immediate: true });
     await sessionCache.set('last_online_time', Date.now(), { persist: true });
-    
-    // Show non-intrusive notification
-    // setRecoveryMessage('📡 No internet connection. Your data is safe and will sync when connection returns.');
-    // setShowRecoveryNotification(true);
-    
-    // Keep notification visible until network returns
   };
 
   /**
@@ -63,15 +53,6 @@ export function NetworkRecoveryHandler() {
    */
   const handleNetworkRestored = async () => {
     console.debug('📡 Network connection restored');
-    
-    // Show brief notification
-    setRecoveryMessage('✅ Internet connection restored');
-    setShowRecoveryNotification(true);
-    
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      setShowRecoveryNotification(false);
-    }, 3000);
     
     // Update last online time
     await sessionCache.set('last_online_time', Date.now(), { persist: true });
@@ -86,15 +67,6 @@ export function NetworkRecoveryHandler() {
     // Save all state immediately
     await stateRecovery.saveAllState({ immediate: true });
     await sessionCache.set('last_online_time', Date.now(), { persist: true });
-    
-    // Show notification
-    setRecoveryMessage('Backend is offline for maintenance. Your data will be preserved.');
-    setShowRecoveryNotification(true);
-    
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-      setShowRecoveryNotification(false);
-    }, 5000);
   };
 
   /**
@@ -113,41 +85,16 @@ export function NetworkRecoveryHandler() {
         
         if (recovered.length > 0) {
           console.debug(`✅ Recovered ${recovered.length} states:`, recovered);
-          
-          // Show success notification
-          // setRecoveryMessage(`Welcome back! Your session has been restored.`);
-          // setShowRecoveryNotification(true);
-          
-          // Auto-hide after 5 seconds
-          setTimeout(() => {
-            setShowRecoveryNotification(false);
-          }, 5000);
         }
       } else {
         // No recovery needed
         console.debug('✅ Back online - no recovery needed');
-        
-        // Just show brief notification
-        setRecoveryMessage('Back online');
-        setShowRecoveryNotification(true);
-        
-        setTimeout(() => {
-          setShowRecoveryNotification(false);
-        }, 3000);
       }
       
       // Update last online time
       await sessionCache.set('last_online_time', Date.now(), { persist: true });
     } catch (error) {
       console.error('Error during reconnection recovery:', error);
-      
-      // Show error notification
-      setRecoveryMessage('Reconnected, but some data may not have been restored.');
-      setShowRecoveryNotification(true);
-      
-      setTimeout(() => {
-        setShowRecoveryNotification(false);
-      }, 5000);
     }
   };
 
@@ -165,13 +112,6 @@ export function NetworkRecoveryHandler() {
           if (hasStaleState) {
             console.debug('🔄 Detected stale state, attempting recovery...');
             await stateRecovery.attemptRecovery();
-            
-            setRecoveryMessage('Your session has been restored.');
-            setShowRecoveryNotification(true);
-            
-            setTimeout(() => {
-              setShowRecoveryNotification(false);
-            }, 4000);
           }
         }
       }
@@ -198,16 +138,7 @@ export function NetworkRecoveryHandler() {
           
           if (hasRecentState) {
             console.debug('🔄 Found recent state on mount, attempting recovery...');
-            const recovered = await stateRecovery.attemptRecovery();
-            
-            if (recovered.length > 0) {
-              setRecoveryMessage('Your previous session has been restored.');
-              setShowRecoveryNotification(true);
-              
-              setTimeout(() => {
-                setShowRecoveryNotification(false);
-              }, 5000);
-            }
+            await stateRecovery.attemptRecovery();
           }
         }
       } catch (error) {
@@ -221,41 +152,7 @@ export function NetworkRecoveryHandler() {
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <>
-      {showRecoveryNotification && (
-        <Notification
-          type="info"
-          message={recoveryMessage}
-          onClose={() => setShowRecoveryNotification(false)}
-          duration={0} // Manual control via setTimeout
-        />
-      )}
-      
-      {/* Persistent network status indicator when offline */}
-      {/* {!hasNetworkConnectivity && (
-        <div style={{
-          position: 'fixed',
-          top: '60px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#ff9800',
-          color: 'white',
-          padding: '8px 16px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          fontSize: '14px',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <span>📡</span>
-          <span>No internet connection - Working offline</span>
-        </div>
-      )} */}
-    </>
-  );
+  return null;
 }
 
 export default NetworkRecoveryHandler;

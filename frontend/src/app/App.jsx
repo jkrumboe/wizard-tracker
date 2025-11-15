@@ -4,7 +4,7 @@ import { useEffect, lazy, Suspense, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { OnlineProtectedRoute, AuthProtectedRoute, UpdateNotification, NetworkRecoveryHandler } from "@/components/common"
+import { OnlineProtectedRoute, AuthProtectedRoute, NetworkRecoveryHandler } from "@/components/common"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 
 // Eagerly import critical pages that should work offline
@@ -215,7 +215,6 @@ function App() {
           <OnlineStatusProvider>
             <UserProvider>
               <AutoLogoutHandler />
-              <UpdateNotification />
               <GameStateProvider>
                 <URLImportHandler />
                 <Navbar />

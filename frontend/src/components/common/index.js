@@ -5,5 +5,4 @@ export { default as OnlineProtectedRoute } from './OnlineProtectedRoute.jsx';
 export { default as AuthProtectedRoute } from './AuthProtectedRoute.jsx';
 export { default as PerformanceMetric } from './PerformanceMetric.jsx';
 export { default as AutoLogoutHandler } from './AutoLogoutHandler.jsx';
-export { default as UpdateNotification } from './UpdateNotification.jsx';
 export { default as NetworkRecoveryHandler } from './NetworkRecoveryHandler.jsx';

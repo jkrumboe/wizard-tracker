@@ -19,7 +19,6 @@ import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
 import '@/styles/pages/settings.css';
-import "@/styles/components/offline-notification.css";
 
 const Settings = () => {
   const navigate = useNavigate();

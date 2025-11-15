@@ -104,7 +104,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
     return () => clearInterval(pollInterval);
   }, [isOpen, user?.id, loadFriendRequests, syncCloudFriendsToLocal]);
 
-  // Detect new friend requests and show notification
+  // Detect new friend requests
   useEffect(() => {
     if (receivedRequests.length > previousRequestCount && previousRequestCount > 0) {
       setHasNewRequest(true);
