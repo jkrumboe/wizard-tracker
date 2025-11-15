@@ -138,11 +138,11 @@
 }
 
 /* Different colored sparkles for more magic */
-.sparkle-1 { background: #ffae33; box-shadow: 0 0 10px #ffae33; }
-.sparkle-2 { background: #60a5fa; box-shadow: 0 0 10px #60a5fa; }
-.sparkle-3 { background: #34d399; box-shadow: 0 0 10px #34d399; }
-.sparkle-6 { background: #f472b6; box-shadow: 0 0 10px #f472b6; }
-.sparkle-7 { background: #c084fc; box-shadow: 0 0 10px #c084fc; }
+.sparkle-1 { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+.sparkle-2 { background: #8b5cf6; box-shadow: 0 0 10px #8b5cf6; }
+.sparkle-3 { background: #14b8a6; box-shadow: 0 0 10px #14b8a6; }
+.sparkle-6 { background: #a78bfa; box-shadow: 0 0 10px #a78bfa; }
+.sparkle-7 { background: #2dd4bf; box-shadow: 0 0 10px #2dd4bf; }
 
 .sparkle::before {
   content: '';

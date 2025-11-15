@@ -227,14 +227,14 @@
 }
 
 .table-game-remove-btn {
-  background: #ff4444 !important;
+  background: var(--danger-color) !important;
   color: var(--text-white);
-  border-color: #ff4444;
+  border-color: var(--danger-color);
 }
 
 .table-game-remove-btn:hover {
-  background: #cc0000 !important;
-  border-color: #cc0000;
+  background: var(--danger-color-dark) !important;
+  border-color: var(--danger-color-dark);
 }
 
 .table-game-player-input {
@@ -266,8 +266,8 @@
 
 .table-game-add-player,
 .table-game-add-row {
-  background: #4f8cff;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--text-white);
   border: none;
   border-radius: 4px;
   font-size: 1.2rem;
@@ -277,8 +277,8 @@
 }
   .table-game-add-player,
   .table-game-add-row {
-    background: #4f8cff;
-    color: #fff;
+    background: var(--primary-color);
+    color: var(--text-white);
     border: none;
     font-size: 1.2rem;
     cursor: pointer;
@@ -308,7 +308,7 @@
 
 .table-game-add-player:hover,
 .table-game-add-row:hover {
-  background: #2563eb;
+  background: var(--primary-dark);
 }
 
 .table-game-total {

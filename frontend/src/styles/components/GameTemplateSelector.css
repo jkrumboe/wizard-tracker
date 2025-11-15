@@ -174,7 +174,7 @@
 }
 
 .template-edit-btn.save-btn:hover {
-  background: #2563eb;
+  background: var(--primary-dark);
   transform: translateY(-1px);
 }
 
@@ -224,7 +224,7 @@
 }
 
 .create-new-btn:hover {
-  background: #2563eb;
+  background: var(--primary-dark);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -318,7 +318,7 @@
 }
 
 .delete-modal-btn.confirm:hover {
-  background: #dc2626;
+  background: var(--danger-color-dark);
 }
 
 /* Responsive Design */
