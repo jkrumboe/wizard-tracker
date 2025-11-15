@@ -171,11 +171,6 @@
     min-width: 60px;
 }
 
-.player-actions .addPlayer:hover {
-    background-color: var(--primary-dark);
-    transform: scale(1.05);
-}
-
 .player-actions .add-friends-btn {
     display: flex;
     align-items: center;
@@ -189,11 +184,6 @@
     transition: all 0.2s ease;
     min-width: 50px;
     height: 48px;
-}
-
-.player-actions .add-friends-btn:hover {
-    background-color: var(--primary-dark);
-    transform: scale(1.05);
 }
 
 .player-actions .add-friends-btn:focus {

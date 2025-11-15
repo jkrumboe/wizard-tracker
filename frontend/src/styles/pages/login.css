@@ -44,11 +44,6 @@
     outline: none;
     box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.15);
   }
-
-  .login-form input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
   
   .submit-btn {
     width: 100%;
@@ -75,11 +70,6 @@
   .switch-btn:hover:not(:disabled) {
     opacity: 0.8;
     text-decoration: underline;
-  }
-
-  .switch-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
   
   .error-message {

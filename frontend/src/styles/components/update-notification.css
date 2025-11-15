@@ -169,7 +169,7 @@
 }
 
 .update-notification {
-  background: var(--card-bg, #1f2937);
+  background: var(--card-background);
   border-radius: 1rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   max-width: 28rem;
@@ -186,13 +186,13 @@
 .update-notification-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary, #f9fafb);
+  color: var(--text-color);
   margin: 0 0 0.75rem 0;
 }
 
 .update-notification-message {
   font-size: 0.9375rem;
-  color: var(--text-secondary, #d1d5db);
+  color: var(--text-color);
   margin: 0;
   line-height: 1.5;
 }
@@ -216,13 +216,13 @@
 }
 
 .update-notification-button:focus-visible {
-  outline: 2px solid var(--primary-color, #3b82f6);
+  outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }
 
 .update-notification-button-secondary {
   background: transparent;
-  color: var(--primary-color, #60a5fa);
+  color: var(--primary-color);
   border: 1px solid rgba(96, 165, 250, 0.3);
 }
 
@@ -236,13 +236,13 @@
 }
 
 .update-notification-button-primary {
-  background: var(--primary-color, #3b82f6);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-color);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
 }
 
 .update-notification-button-primary:hover {
-  background: var(--primary-hover, #2563eb);
+  background: var(--primary-hover);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
 }
 

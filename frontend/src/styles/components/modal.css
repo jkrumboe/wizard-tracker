@@ -1,4 +1,9 @@
-/* Modal Components */
+/* ============================================
+   MODAL COMPONENTS
+   Base styles for all modal dialogs
+   ============================================ */
+
+/* Modal Overlay - Backdrop */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -34,6 +39,7 @@
   to { transform: rotate(360deg); }
 }
 
+/* Modal Header */
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -67,6 +73,7 @@
   color: var(--text-color);
 }
 
+/* Modal Body/Content */
 .modal-content {
   padding: var(--spacing-md);
   overflow-y: auto;
@@ -95,17 +102,17 @@
   width: 50%;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md);
-    border-top: 1px solid var(--border-color);
-    flex-shrink: 0;
-    background: var(--card-background);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+.modal-actions,
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background: var(--card-background);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
-
 
 .modal-button.primary {
   background-color: var(--primary-color);
@@ -232,8 +239,8 @@
   flex-direction: column;
   background-color: var(--card-background);
   border-radius: var(--radius-lg);
-  padding: 0 !important;
-  gap: 0 !important;
+  padding: 0;
+  gap: 0;
 }
 
 .game-settings-modal .modal-body {
@@ -247,12 +254,12 @@
 }
 
 .setting-section {
-  /* margin-bottom: var(--spacing-sm); */
-  /* padding-bottom: var(--spacing-sm); */
+  margin-bottom: var(--spacing-sm);
 }
 
 .setting-section:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
 .setting-section h3 {
@@ -284,11 +291,6 @@
 .round-control-btn:hover:not(:disabled) {
   background-color: var(--primary-dark);
   transform: scale(1.05);
-}
-
-.round-control-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .round-input {
@@ -407,9 +409,4 @@
   background-color: var(--primary-color);
   color: var(--text-color);
   border-color: var(--primary-color);
-}
-
-.order-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }

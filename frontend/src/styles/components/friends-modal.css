@@ -10,7 +10,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: var(--spacing-sm);
   gap: var(--spacing-md);
   box-sizing: border-box;
 }
@@ -101,6 +100,8 @@
   outline: none;
   color: var(--text-color);
   font-size: 0.95rem;
+  padding: var(--spacing-xs);
+  border-radius: 8px;
 }
 
 .search-bar input::placeholder {
@@ -215,51 +216,17 @@
   color: var(--error-color);
 }
 
-.remove-friend-btn:hover,
-.cancel-request-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
-  /* transform: scale(1.05); */
-}
-
-.cancel-request-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
 .add-friend-btn {
   background: rgba(66, 153, 225, 0.1);
   color: var(--primary-color);
 }
 
-.add-friend-btn:hover:not(:disabled) {
-  background: rgba(66, 153, 225, 0.2);
-  transform: scale(1.05);
-}
-
-.add-friend-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.add-friend-btn.loading {
-  background: rgba(66, 153, 225, 0.15);
-}
-
 .add-friend-btn.added {
-  background: rgba(16, 185, 129, 0.1);
   color: #10b981;
 }
 
 .add-friend-btn.pending {
-  background: rgba(251, 191, 36, 0.1);
   color: #f59e0b;
-}
-
-.add-friend-btn.pending:hover:not(:disabled) {
-  background: rgba(251, 191, 36, 0.2);
-  transform: scale(1.05);
 }
 
 /* Request action buttons */
@@ -286,31 +253,9 @@
   color: #10b981;
 }
 
-.accept-btn:hover:not(:disabled) {
-  background: rgba(16, 185, 129, 0.2);
-  transform: scale(1.05);
-}
-
-.accept-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
 .reject-btn {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
-}
-
-.reject-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
-  transform: scale(1.05);
-}
-
-.reject-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
 }
 
 /* Small spinner for add friend button */
@@ -318,7 +263,7 @@
   width: 15px;
   height: 15px;
   border: 2px solid rgba(66, 153, 225, 0.2);
-  border-top-color: var(--primary-color, #4299e1);
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -332,14 +277,14 @@
 .empty-message {
   text-align: center;
   padding: 2rem;
-  color: var(--text-secondary, #a0aec0);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
 .loading-message {
   text-align: center;
   padding: 2rem;
-  color: var(--text-secondary, #a0aec0);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -388,7 +333,7 @@
 }
 
 .new-request-notification svg {
-  color: var(--primary-color, #3b82f6);
+  color: var(--primary-color);
   flex-shrink: 0;
 }
 
@@ -478,7 +423,7 @@
 
 .confirmation-actions .cancel-btn {
   background: var(--border-color);
-  color: var(--text-primary, #ffffff);
+  color: var(--text-color);
 }
 
 .confirmation-actions .cancel-btn:hover {
@@ -487,7 +432,7 @@
 
 .confirmation-actions .confirm-btn {
   background: var(--primary-color);
-  color: white;
+  color: var(--text-color);
 }
 
 .confirmation-actions .confirm-btn.danger {

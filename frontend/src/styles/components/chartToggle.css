@@ -18,22 +18,10 @@
   font-size: 0.9rem;
   transform: none !important;
   box-shadow: none !important;
-  /* transition: all 0.2s ease; */
-}
-
-/* .chart-toggle-btn:hover {
-  background-color: var(--button-hover);
-} */
-
-.chart-toggle-btn.active {
-  /* background-color: var(--primary-color); */
-  color: var(--text-color);
-  /* border-color: var(--primary-color); */
+  transition: all 0.2s ease;
 }
 
 .chart-view-container {
-  /* margin-top: var(--spacing-sm); */
-  /* margin-bottom: var(--spacing-md); */
   min-height: 100%;
 }
 

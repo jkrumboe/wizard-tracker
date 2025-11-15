@@ -510,10 +510,6 @@
   color: var(--text-color);
 }
 
-.stats-subtab-btn:hover:not(.active) {
-  background-color: var(--card-background);
-}
-
   /* Responsive adjustments for smaller screens */
   @media (max-width: 480px) {
     .results-row .rank-col {
@@ -805,19 +801,6 @@
     transition: all 0.2s;
   }
 
-  .profile-edit-header .save-button:hover:not(:disabled) {
-    background-color: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-  }
-
-  .profile-edit-header .save-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
   .edit-avatar {
     display: none;
   }
@@ -906,7 +889,7 @@
 
   .profile-edit-header .settings-message.success {
     background-color: rgba(34, 197, 94, 0.1);
-    color: var(--success-color, #22c55e);
+    color: var(--success-color);
     border: 1px solid rgba(34, 197, 94, 0.3);
   }
 
@@ -934,11 +917,6 @@
     height: 30px;
     width: 30px;
   }
-
-  .close-button-edit:hover {
-    background: var(--border-color);
-    color: var(--text-color);
-  }
   
   /* Stats Page */
   .stats-container {
@@ -960,28 +938,6 @@
     flex-wrap: wrap;
     gap: var(--spacing-sm);
     margin: var(--spacing-md) 0;
-  }
-  
-  .filter-btn {
-    flex: 1;
-    background-color: var(--card-background);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    padding: var(--spacing-sm);
-    font-size: 0.8rem;
-    border-radius: var(--radius-md);
-    min-width: 70px;
-    transition: all 0.2s;
-  }
-  
-  .filter-btn:hover {
-    border-color: var(--primary-light);
-  }
-  
-  .filter-btn.active {
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    border-color: var(--primary-color);
   }
   
   .stats-summary {
@@ -1050,35 +1006,6 @@
     border-bottom: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
   }
-  
- /* Confirm Button */
-/* .confirm-button {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  border: none;
-  padding: 0.75rem;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-} */
-
-/* Secondary Button Variant */
-.btn.btn-secondary {
-  background-color: var(--card-background-alt);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
-
-.btn.btn-secondary:hover {
-  background-color: var(--border-color);
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-}
-
-.btn.btn-secondary:active {
-  transform: translateY(0);
-}
 
 /* Animations */
 @keyframes fadeIn {
@@ -1173,24 +1100,6 @@
     transition: all 0.2s;
   }
   
-  .player-result {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-bottom: 1px solid var(--border-color);
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .player-result:last-child {
-    border-bottom: none;
-  }
-  
-  .player-result:hover {
-    background-color: rgba(53, 99, 233, 0.05);
-  }
-  
   .no-results {
     padding: var(--spacing-md);
     text-align: center;
@@ -1275,26 +1184,9 @@
     transition: all 0.2s ease;
     flex-shrink: 0;
     padding: 0;
-    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-    opacity: 0.8;
     transform: scale(0.9);
   }
-  
-  .player-item:hover .remove-btn {
-    opacity: 1;
-    transform: scale(1);
-  }
-  
-  .remove-btn:hover {
-    background: #dc2626;
-    transform: scale(1.1) !important;
-    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
-  }
-  
-  .remove-btn:active {
-    transform: scale(0.95) !important;
-  }
-  
+
   .setting-item {
     display: flex;
     align-items: center;
@@ -1373,29 +1265,6 @@
     height: 50px;
   }
 
-  .randomizer-btn:hover {
-    background-color: var(--primary-dark);
-  }
-
-  .randomizer-btn:hover:not(:disabled) {
-    transform: scale(0.95);
-  }
-
-  .randomizer-btn:focus {
-    outline: none;
-  }
-
-  .randomizer-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: var(--border-color);
-  }
-
-  .randomizer-btn:disabled:hover {
-    background-color: var(--border-color);
-    transform: none;
-  }
-
   .rounds-hint {
     font-size: 0.8rem;
     color: var(--text-color);
@@ -1419,18 +1288,6 @@
     font-size: 1.1rem;
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
     box-shadow: none !important;
-  }
-
-  .start-game-btn:disabled {
-    background-color: transparent;
-    cursor: not-allowed;
-    border: 1px solid var(--primary-color);
-  }
-  
-  .start-game-btn:hover:not(:disabled) {
-    background-color: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
   }
 
   /* Dropdown Styling */
@@ -1640,12 +1497,6 @@
     font-weight: 600;
     font-size: 1.1rem;
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-  }
-  
-  .finish-btn:hover {
-    background-color: #0da271;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
   }
 
   /* Leaderboard Styles */
@@ -2683,7 +2534,7 @@
 }
 
 .dialog-btn.danger:hover {
-  background-color: var(--error-dark, #dc2626);
+  background-color: var(--error-dark);
 }
 
 .dialog-btn:disabled {
@@ -2808,15 +2659,8 @@
   cursor: pointer;
 }
 
-.saved-game-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-light);
-}
-
 .saved-game-item.selected {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .saved-game-info {
@@ -2924,10 +2768,6 @@
 .cancel-button {
   background-color: var(--border-color);
   color: var(--text-color);
-}
-
-.cancel-button:hover {
-  background-color: var(--card-background-alt);
 }
 
 .confirm-button .danger-button {
@@ -3261,7 +3101,7 @@
 }
 
 .dialog-btn.danger:hover {
-  background-color: var(--error-dark, #dc2626);
+  background-color: var(--error-dark);
 }
 
 .dialog-btn:disabled {
@@ -3373,30 +3213,6 @@
   scrollbar-color: var(--primary-light) var(--card-background-alt);
 }
 
-.saved-game-item {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: var(--card-background);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.saved-game-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-light);
-}
-
-.saved-game-item.selected {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
 .saved-game-info {
   flex: 1;
   margin-bottom: var(--spacing-md);
@@ -3460,35 +3276,6 @@
 .saved-game-actions .icon-btn.danger:hover {
   background: rgba(239, 68, 68, 0.1);
   transform: translateY(-1px);
-}
-
-.icon-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--radius-sm);
-  transition: background-color 0.2s;
-  color: var(--text-light);
-}
-
-.icon-btn:hover {
-  background-color: var(--card-background-alt);
-  color: var(--text-color);
-}
-
-.icon-btn.danger {
-  color: var(--error-color);
-}
-
-.icon-btn.danger:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-.empty-saved-games {
-  text-align: center;
-  padding: var(--spacing-xl);
-  color: var(--text-light);
 }
 
 /* Animations */

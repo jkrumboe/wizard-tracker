@@ -16,15 +16,14 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: var(--bg-secondary, #1e1e1e);
-  border: 1px solid var(--border-color, #333);
+  background: var(--background-color);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   margin-top: 4px;
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   list-style: none;
-  padding: 4px 0;
   margin-left: 0;
 }
 
@@ -32,18 +31,13 @@
   padding: 10px 16px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  color: var(--text-primary, #fff);
+  color: var(--text-color);
   font-size: 14px;
 }
 
-.player-suggestion-item:hover,
-.player-suggestion-item.selected {
-  background-color: var(--accent-color, #4a90e2);
-  color: #fff;
-}
-
-.player-suggestion-item:active {
-  background-color: var(--accent-dark, #357abd);
+.player-suggestion-item:hover {
+  background-color: var(--primary-hover);
+  color: var(--text-color);
 }
 
 /* Scrollbar styling for suggestions list */
@@ -56,37 +50,10 @@
 }
 
 .player-suggestions-list::-webkit-scrollbar-thumb {
-  background: var(--border-color, #555);
+  background: var(--border-color);
   border-radius: 3px;
 }
 
 .player-suggestions-list::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary, #777);
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .player-suggestions-list {
-    background: #2a2a2a;
-    border-color: #444;
-  }
-}
-
-/* Light mode adjustments */
-@media (prefers-color-scheme: light) {
-  .player-suggestions-list {
-    background: #ffffff;
-    border-color: #ddd;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .player-suggestion-item {
-    color: #333;
-  }
-
-  .player-suggestion-item:hover,
-  .player-suggestion-item.selected {
-    background-color: #4a90e2;
-    color: #fff;
-  }
+  background: var(--text-muted);
 }

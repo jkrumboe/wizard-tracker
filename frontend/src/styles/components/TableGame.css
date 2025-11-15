@@ -45,12 +45,6 @@
   border-radius: 0;
   box-sizing: border-box;
 }
-
-.table-game-add-row-inline:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* TableGame styles */
 .table-game-container {
   width: 100%;
@@ -105,12 +99,6 @@
   align-items: center;
   gap: var(--spacing-xs);
 }
-
-.table-game-add-player-above:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .table-game-save-btn {
   display: flex;
   align-items: center;
@@ -250,11 +238,6 @@
 
 .table-game-remove-btn:hover {
   background: #cc0000 !important;
-  border-color: #cc0000;
-}
-
-.table-game-remove-btn:hover {
-  background: #cc0000;
   border-color: #cc0000;
 }
 

@@ -46,7 +46,7 @@
 
 .add-player-btn {
   background: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   border: none;
   border-radius: var(--radius-md);
   padding: var(--spacing-sm);
@@ -58,19 +58,8 @@
   min-width: 44px;
 }
 
-.add-player-btn:hover:not(:disabled) {
-  background: var(--primary-color-dark, #2563eb);
-}
-
-.add-player-btn:disabled {
-  background: var(--border-color);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
 .player-tags {
   display: flex;
-  /* flex-wrap: wrap; */
   gap: var(--spacing-xs);
   margin-top: var(--spacing-sm);
 }
@@ -80,7 +69,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   background: var(--primary-color);
-  color: white;
+  color: var(--text-color);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
   font-size: 0.9rem;
@@ -88,22 +77,17 @@
 }
 
 .remove-player-btn {
-  background: none;
-  border: none;
-  color: white;
+  background: var(--card-background-alt);
+  border: 1px solid  var(--border-color);
+  color: var(--text-color);
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   width: 20px;
   height: 20px;
   transition: background-color 0.2s ease;
-}
-
-.remove-player-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .filter-input,
@@ -151,23 +135,11 @@
   margin-top: var(--spacing-sm);
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--border-color);
-}
-
-.modal-footer .modal-button {
-  flex: 1;
-}
-
 /* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .filter-input,
   .filter-select {
-    background-color: var(--card-background-alt, #2a2a2a);
+    background-color: var(--card-background-alt);
   }
 }
 

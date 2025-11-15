@@ -51,14 +51,9 @@
 }
 
 .count-btn:hover:not(:disabled) {
-  background: var(--primary-color, #4299e1);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-color);
   transform: scale(1.05);
-}
-
-.count-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }
 
 .player-count-display {
@@ -91,7 +86,7 @@
   gap: 0.125rem;
   padding: var(--spacing-sm);
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color, #4a5568);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
 }
 
@@ -109,17 +104,11 @@
 .player-name-input {
   flex: 1;
   padding: 0.5rem 0.75rem;
-  background: var(--input-bg, #1a202c);
-  border: 1px solid var(--border-color, #4a5568);
+  background: var(--input-background);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-color);
   font-size: 0.95rem;
-}
-
-.player-name-input:focus {
-  outline: none;
-  border-color: var(--primary-color, #4299e1);
-  background: var(--input-focus-bg, #2d3748);
 }
 
 .friend-select-wrapper {
@@ -128,10 +117,10 @@
 
 .friend-select-btn {
   padding: 0.5rem 0.75rem;
-  background: var(--input-bg, #1a202c);
-  border: 1px solid var(--border-color, #4a5568);
+  background: var(--input-background);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: var(--primary-color, #4299e1);
+  color: var(--primary-color);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -140,9 +129,9 @@
 }
 
 .friend-select-btn:hover {
-  background: var(--primary-color, #4299e1);
-  color: white;
-  border-color: var(--primary-color, #4299e1);
+  background: var(--primary-color);
+  color: var(--text-color);
+  border-color: var(--primary-color);
 }
 
 .friend-dropdown {
@@ -152,8 +141,8 @@
   min-width: 200px;
   max-height: 300px;
   overflow-y: auto;
-  background: var(--card-bg, #2d3748);
-  border: 1px solid var(--border-color, #4a5568);
+  background: var(--card-background-alt);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 1000;
@@ -162,14 +151,14 @@
 .friend-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
 .friend-dropdown-item:hover {
-  background: var(--hover-bg, #4a5568);
+  background: var(--primary-hover);
 }
 
 .friend-dropdown-avatar {
@@ -229,17 +218,17 @@
 
 .setting-item {
   /* font-size: 0.8rem; */
-  color: var(--text-secondary, #a0aec0);
+  color: var(--text-muted);
   margin: 0;
 }
 
 .setting-item strong {
-  color: var(--text-primary, #ffffff);
+  color: var(--primary-color);
 }
 
 .start-button {
-  background: var(--primary-color, #4299e1);
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-color);
   border: none;
   border-radius: 6px;
   padding: 0.75rem 1.5rem;
@@ -255,13 +244,12 @@
 }
 
 .start-button:hover {
-  background: var(--primary-color-dark, #2563eb);
-  transform: translateY(-2px);
+  background: var(--primary-dark);
 }
 
 .loading-message {
   text-align: center;
   padding: 2rem;
-  color: var(--text-secondary, #a0aec0);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }

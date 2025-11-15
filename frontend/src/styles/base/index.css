@@ -9,7 +9,6 @@
 
 html, body {
   height: 100%;
-  /* overflow-y: auto; */
 }
 
 :root {
@@ -31,6 +30,9 @@ html, body {
   --primary-light: #93c5fd;
   --secondary-color: #8b5cf6;
   --accent-color: #f59e0b;
+
+  /* Hover */
+  --primary-hover: #a4c7ff0a;
   
   /* Status colors */
   --success-color: #059669;
@@ -44,6 +46,7 @@ html, body {
   --info-color: #0891b2;
   --info-rgb: 8, 145, 178;
   --error-color: #dc2626;
+  --error-dark: #b91c1c;
   
   /* Text colors */
   --text-color: #111827;
@@ -74,6 +77,9 @@ html, body {
   --primary-light: #93c5fd;
   --secondary-color: #a78bfa;
   --accent-color: #fbbf24;
+
+  /* Hover */
+  --primary-hover: #60a5fa1a;
   
   /* Status colors */
   --success-color: #10b981;
@@ -86,6 +92,7 @@ html, body {
   --info-color: #38bdf8;
   --info-rgb: 56, 189, 248;
   --error-color: #f87171;
+  --error-dark: #ef4444;
   
   /* Text colors */
   --text-color: #f9fafb;
@@ -225,49 +232,40 @@ h2::after {
 button,
 .btn {
   padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background-color: var(--card-background);
   box-shadow: var(--shadow);
   color: var(--text-color);
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   font-size: 0.875rem;
-  border: 1px solid var(--border-color);
 }
 
 button:hover:not(:disabled),
 .btn:hover:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.98);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-color);
 }
 
-button:disabled {
+button:disabled,
+.btn:disabled {
   cursor: not-allowed;
+  transform: none;
+  opacity: 0.5;
 }
 
 .btn-primary {
   background-color: var(--primary-color);
   color: var(--text-white);
+  border-color: var(--primary-color);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-dark);
-  transform: scale(0.95);
+  transform: scale(0.98);
   box-shadow: var(--shadow);
-}
-
-html:not([data-theme="dark"]) .btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  border: none;
-  box-shadow: var(--shadow);
-}
-
-html:not([data-theme="dark"]) .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary-dark));
-  box-shadow: var(--shadow-lg);
 }
 
 .btn-secondary {
@@ -280,22 +278,8 @@ html:not([data-theme="dark"]) .btn-primary:hover:not(:disabled) {
   background-color: var(--primary-color);
   color: var(--text-white);
   border-color: var(--primary-color);
-  transform: scale(0.95);
+  transform: scale(0.98);
   box-shadow: var(--shadow);
-}
-
-html:not([data-theme="dark"]) .btn-secondary {
-  background-color: var(--card-background);
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
-  box-shadow: var(--shadow);
-}
-
-html:not([data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: var(--text-white);
-  transform: scale(0.95);
-  box-shadow: var(--shadow-lg);
 }
 
 .btn-accent {
@@ -643,25 +627,4 @@ html:not([data-theme="dark"]) .inputPlayerName {
 html:not([data-theme="dark"]) .inputPlayerName:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
-}
-
-/* Enhanced button styling for light mode */
-html:not([data-theme="dark"]) button,
-html:not([data-theme="dark"]) .btn {
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow);
-}
-
-html:not([data-theme="dark"]) button:hover:not(:disabled),
-html:not([data-theme="dark"]) .btn:hover:not(:disabled) {
-  background-color: var(--card-background-light);
-  border-color: var(--primary-color);
-  box-shadow: var(--shadow-lg);
-}
-
-/* Winner section enhancement */
-html:not([data-theme="dark"]) [class^="Winner"] {
-  color: var(--primary-dark);
-  font-weight: 600;
 }

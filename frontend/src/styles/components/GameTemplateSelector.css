@@ -111,49 +111,14 @@
   border-color: var(--primary-color);
 }
 
-.template-action-btn.play-btn:hover {
-  background: rgba(59, 130, 246, 0.1);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.template-action-btn.start-with-friends-btn {
-  color: var(--success-color, #10b981);
-  flex: 0 0 15%;
-  padding: var(--spacing-sm);
-  border-color: var(--success-color, #10b981);
-}
-
-.template-action-btn.start-with-friends-btn:hover {
-  background: rgba(16, 185, 129, 0.1);
-  transform: scale(1.05);
-}
-
 .template-action-btn.continue-btn {
   color: var(--secondary-color);
   flex: 0 0 15%;
   border-color: var(--secondary-color);
 }
 
-.template-action-btn.continue-btn:hover {
-  background: rgba(139, 92, 246, 0.1);
-  box-shadow: var(--shadow-sm);
-}
-
-.template-action-btn.continue-btn:disabled,
-.template-action-btn.continue-btn[disabled] {
-  cursor: not-allowed;
-  opacity: 0.3;
-  box-shadow: none;
-}
-
 .template-action-btn.edit-btn-inline {
   padding: var(--spacing-sm);
-}
-
-.template-action-btn.edit-btn-inline:hover {
-  background: rgba(251, 191, 36, 0.1);
-  transform: scale(1.1);
 }
 
 .template-action-btn.delete-btn {
@@ -161,11 +126,6 @@
   flex: 0 0 15%;
   padding: var(--spacing-sm);
   border: 1px solid var(--error-color);
-}
-
-.template-action-btn.delete-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  transform: scale(1.05);
 }
 
 /* Edit Mode */
