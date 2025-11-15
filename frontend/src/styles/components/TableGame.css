@@ -81,11 +81,6 @@
   justify-content: center;
 }
 
-.back-to-templates-btn:hover {
-  background: var(--text-muted);
-  transform: translateX(-2px);
-}
-
 .table-game-add-player-above {
   background: var(--primary-color);
   color: var(--text-color);
@@ -99,6 +94,7 @@
   align-items: center;
   gap: var(--spacing-xs);
 }
+
 .table-game-save-btn {
   display: flex;
   align-items: center;
@@ -515,7 +511,6 @@
 }
 
 .table-game-tab-btn:hover {
-  background: var(--border-color);
   border-color: var(--primary-color);
 }
 

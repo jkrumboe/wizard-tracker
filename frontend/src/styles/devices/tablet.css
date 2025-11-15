@@ -181,7 +181,7 @@
         max-width: 350px;
         padding: var(--spacing-xs) var(--spacing-sm);
         border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
+        /* box-shadow: var(--shadow); */
         margin-bottom: var(--spacing-xs);
         align-self: stretch;
     }

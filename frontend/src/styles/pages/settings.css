@@ -56,7 +56,7 @@
   border-radius: 12px;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
-  box-shadow: var(--shadow-sm);
+  /* box-shadow: var(--shadow-sm); */
 }
 
 .settings-section:has(.game-history) {
@@ -660,7 +660,7 @@
 .cloud-sync-button:disabled {
   background-color: var(--muted-color) !important;
   color: var(--text-muted) !important;
-  border: 1px solid var(--primary-color) !important;
+  border: 2px solid var(--primary-color) !important;
   cursor: not-allowed;
 }
 

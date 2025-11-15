@@ -122,7 +122,7 @@
     transition: all 0.2s ease;
     gap: var(--spacing-xs);
     min-width: 0; /* Prevent overflow */
-    box-shadow: var(--shadow-sm);
+    /* box-shadow: var(--shadow-sm); */
   }
   
   .game-date {
@@ -214,6 +214,10 @@
     border-radius: var(--radius-sm);
     font-size: 0.8rem;
     font-weight: 500;
+  }
+
+  html:not([data-theme="dark"]) .mode-badge.local {
+    background-color: var(--text-muted);
   }
 
   .mode-badge.online {

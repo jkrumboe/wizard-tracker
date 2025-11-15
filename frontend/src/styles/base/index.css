@@ -25,28 +25,27 @@ html, body {
 
 
   /* Light theme (default) */
-  --primary-color: #a4c7ff;
-  --primary-dark: #1d4ed8;
+  --primary-color: #60a5fa;
+  --primary-dark: #3b82f6;
   --primary-light: #93c5fd;
-  --secondary-color: #8b5cf6;
-  --accent-color: #f59e0b;
+  --secondary-color: #a78bfa;
+  --accent-color: #fbbf24;
 
   /* Hover */
   --primary-hover: #a4c7ff0a;
   
   /* Status colors */
-  --success-color: #059669;
-  --success-color-dark: #047857;
-  --success-rgb: 5, 150, 105;
-  --danger-color: #dc2626;
-  --danger-rgb: 220, 38, 38;
-  --danger-color-dark: #b91c1c;
-  --warning-color: #d97706;
-  --warning-rgb: 217, 119, 6;
-  --info-color: #0891b2;
-  --info-rgb: 8, 145, 178;
-  --error-color: #dc2626;
-  --error-dark: #b91c1c;
+  --success-color: #10b981;
+  --success-rgb: 16, 185, 129;
+  --danger-color: #ff1818;
+  --danger-rgb: 248, 113, 113;
+  --danger-color-dark: #ef4444;
+  --warning-color: #fbbf24;
+  --warning-rgb: 251, 191, 36;
+  --info-color: #38bdf8;
+  --info-rgb: 56, 189, 248;
+  --error-color: #fd4747;
+  --error-dark: #ef4444;
   
   /* Text colors */
   --text-color: #111827;
@@ -55,18 +54,17 @@ html, body {
   --text-muted: #6b7280;
   
   /* Background colors */
-  --background-color: #d5d9dc;
-  --background-rgb: 241, 245, 249; /* RGB values for background color */
+  --background-color: #ebebeb;
   --card-background: #ffffff;
   --card-background-light: #e2e8f0;
-  --card-background-alt: #cbd5e1;
+  --card-background-alt: #b9c1cc;
   --disabled-background: #d1d5db;
   --disabled-background-dark: #9ca3af;
-  --input-background: #ffffff;
+  --input-background: #ebebeb;
   --error-background: #fef2f2;
   
   /* Border colors */
-  --border-color: #cbd5e1;
+  --border-color: #b4b4b4;
   --border-light: #e2e8f0;
 }
 
@@ -102,7 +100,6 @@ html, body {
   
   /* Background colors */
   --background-color: #0f172a;
-  --background-rgb: 15, 23, 42; /* RGB values for background color in dark mode */
   --card-background: #1e293b;
   --card-background-light: #334155;
   --card-background-alt: #475569;
@@ -245,8 +242,8 @@ button,
 
 button:hover:not(:disabled),
 .btn:hover:not(:disabled) {
-  transform: scale(0.98);
-  box-shadow: var(--shadow-lg);
+  transform: scale(0.95);
+  /* box-shadow: var(--shadow-lg); */
   border-color: var(--primary-color);
 }
 
@@ -517,7 +514,7 @@ button:disabled,
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  background-color: var(--card-background);
+  background-color: var(--input-background);
   color: var(--text-color);
   font-size: 1rem;
   width: 50%;
@@ -619,7 +616,7 @@ html:not([data-theme="dark"]) textarea:focus {
 /* Specific styling for the inputPlayerName in light theme */
 html:not([data-theme="dark"]) .inputPlayerName {
   border: 1px solid var(--border-color);
-  background-color: var(--card-background);
+  background-color: var(--input-background);
   transition: border-color 0.2s, box-shadow 0.2s;
   box-shadow: var(--shadow-sm);
 }
