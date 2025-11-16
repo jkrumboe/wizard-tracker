@@ -15,6 +15,7 @@ dist-ssr
 # Environment variables
 .env
 .env.*
+.creds
 !.env.template
 !.env.example
 # Keep the development env file template

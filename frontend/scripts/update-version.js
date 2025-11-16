@@ -21,6 +21,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import process from 'process';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -177,6 +178,52 @@ function updateEnvFile(version) {
   }
 }
 
+// Generate a random hex string
+function generateRandomHex(length) {
+  return crypto.randomBytes(length).toString('hex');
+}
+
+// Generate a secure random password
+function generateRandomPassword(length = 24) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  const bytes = crypto.randomBytes(length);
+  for (let i = 0; i < length; i++) {
+    password += chars[bytes[i] % chars.length];
+  }
+  return password;
+}
+
+// Update .creds file with new randomly generated security credentials
+function updateCredsFile(version) {
+  const credsPath = path.join(__dirname, '../../.creds');
+  
+  try {
+    // Generate new random credentials
+    const jwtSecret = generateRandomHex(64); // 128 character hex string
+    const mongoUser = 'admin';
+    const mongoPass = `WizardTracker${new Date().getFullYear()}!${generateRandomHex(8)}`;
+
+    // Create .creds content
+    const credsContent = `# Security Credentials for Wizard Tracker v${version}
+# Generated: ${new Date().toISOString()}
+# DO NOT commit this file to version control!
+
+# JWT Secret Key (used for authentication tokens)
+JWT_SECRET=${jwtSecret}
+
+# MongoDB Admin Interface Credentials
+ME_CONFIG_BASICAUTH_USERNAME=${mongoUser}
+ME_CONFIG_BASICAUTH_PASSWORD=${mongoPass}
+`;
+
+    fs.writeFileSync(credsPath, credsContent);
+    console.debug(`✅ Generated new security credentials in .creds for version ${version}`);
+  } catch (error) {
+    console.error('Error updating .creds:', error);
+  }
+}
+
 // Main function
 function main() {
   let version = getVersion();
@@ -199,6 +246,7 @@ function main() {
   
   updatePackageJsonFiles(version);
   updateEnvFile(version);
+  updateCredsFile(version);
   updateServiceWorkerVersion(version);
   updateReadmeBadge(version);
   updateDockerWorkflow(version);
