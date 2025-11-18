@@ -102,6 +102,10 @@
   width: 50%;
 }
 
+.games-menu-content {
+  padding-top: var(--spacing-sm) !important;
+}
+
 .games-menu-content .modal-button {
   font-size: 1.5rem;
 }
