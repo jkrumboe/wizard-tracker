@@ -137,7 +137,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container start-table-game-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Start Table Game: {templateName}</h2>
+          <h2>Start {templateName}</h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
           </button>

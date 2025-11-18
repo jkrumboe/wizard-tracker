@@ -13,7 +13,7 @@
 .selection-controls {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-sm);
 }
 
 .selection-control-btn {
@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  padding: var(--spacing-sm) var(--spacing-xs);
   background: var(--card-background-alt);
   border: 2px solid var(--border-color);
   border-radius: 8px;
