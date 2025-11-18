@@ -34,3 +34,5 @@ frontend/src/docs/
 *.njsproj
 *.sln
 *.sw?
+
+voiceInput.md

@@ -99,6 +99,12 @@
   padding: 0 var(--spacing-md);
 }
 
+.player-name {
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: left;
+}
+
 /* Back button styling */
 .game-in-progress .back-btn,
 .game-in-progress .settings-btn {
@@ -315,7 +321,7 @@
   gap: var(--spacing-sm);
   color: var(--text-color) !important;
   font-weight: 600 !important;
-  box-shadow: var(--shadow-lg);
+  /* box-shadow: var(--shadow-lg); */
 }
 
 .illegal-calls {
@@ -355,9 +361,14 @@
 }
 
 .round-number {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   color: var(--text-color) !important;
   font-weight: 600 !important;
   box-shadow: var(--shadow-lg);
+  width: 100% !important;
 }
 
 .score-table {

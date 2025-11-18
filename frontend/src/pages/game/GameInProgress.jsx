@@ -577,16 +577,16 @@ const GameInProgress = () => {
           <ArrowLeftCircleIcon size={28} />
         </button>
         <span className="round-number">
-          Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
-        </span>
-        <span className="total-calls">
-          <div>
-            Calls: {totalCalls}
-          </div> 
+          Rounds {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
+          <div className="total-calls">
+            <div>
+              Calls: {totalCalls}
+            </div>
           |  
           <div className={`illegal-calls ${(currentRound?.round - totalCalls) < 0 ? 'free' : ''}`}>
             {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
           </div>
+          </div> 
         </span>
         <button 
           className="settings-btn"
