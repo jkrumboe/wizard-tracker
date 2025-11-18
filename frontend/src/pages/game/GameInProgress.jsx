@@ -769,28 +769,48 @@ const GameInProgress = () => {
 
       {/* Trick Count Reducer and Call Max Increaser */}
       <div className="trick-reducer-container">
-        <label className="trick-reducer-label">
-          <input
-            type="checkbox"
-            checked={reduceTrickCount}
-            onChange={(e) => setReduceTrickCount(e.target.checked)}
-            className="trick-reducer-checkbox"
-          />
+        <button 
+          className={`trick-reducer-label bomb ${reduceTrickCount ? 'active' : ''}`}
+          onClick={(e) => {
+            if (!reduceTrickCount) {
+              // First time activating - trigger animation
+              e.currentTarget.classList.remove('activated');
+              setTimeout(() => setReduceTrickCount(true), 10);
+            } else {
+              // Deactivating
+              setReduceTrickCount(false);
+            }
+          }}
+          onAnimationEnd={(e) => {
+            // Mark as activated after first animation
+            e.currentTarget.classList.add('activated');
+          }}
+        >
           <span className="trick-reducer-text">
             Bombe<BombIcon size={18} />
           </span>
-        </label>
-        <label className="trick-reducer-label">
-          <input
-            type="checkbox"
-            checked={increaseCallMax}
-            onChange={(e) => setIncreaseCallMax(e.target.checked)}
-            className="trick-reducer-checkbox"
-          />
+        </button>
+        <button 
+          className={`trick-reducer-label cloud ${increaseCallMax ? 'active' : ''}`}
+          onClick={(e) => {
+            if (!increaseCallMax) {
+              // First time activating - trigger animation
+              e.currentTarget.classList.remove('activated');
+              setTimeout(() => setIncreaseCallMax(true), 10);
+            } else {
+              // Deactivating
+              setIncreaseCallMax(false);
+            }
+          }}
+          onAnimationEnd={(e) => {
+            // Mark as activated after first animation
+            e.currentTarget.classList.add('activated');
+          }}
+        >
           <span className="trick-reducer-text">
             Wolke<CloudIcon size={18} />
           </span>
-        </label>
+        </button>
       </div>
 
       {/* Top Section with Controls */}

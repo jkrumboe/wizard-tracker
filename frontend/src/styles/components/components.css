@@ -2294,7 +2294,7 @@
     background-color: var(--disabled-background-dark);
     opacity: 0.6;
     cursor: not-allowed;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color);
     box-shadow: none;
   }
   
