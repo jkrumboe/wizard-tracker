@@ -2099,7 +2099,6 @@
 
 .bottom-nav-item .nav-icon {
   font-size: 1.5rem;
-  margin-bottom: var(--spacing-xs);
 }
 
 .bottom-nav-item span {
@@ -2151,6 +2150,22 @@
   flex: 1; /* Allow it to grow and fill available space */
   min-height: 0; /* Important for flex children to be scrollable */
   gap: var(--spacing-md);
+  position: relative;
+}
+
+/* Add fade effect at the bottom of the list */
+.game-history::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--background-color) 85%);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Scrollbar styling for game-history */

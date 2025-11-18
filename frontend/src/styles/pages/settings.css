@@ -586,8 +586,8 @@
 .settings-section:has(.game-history) {
   /* background-color: red; */
   margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
+  padding-left: 4px;
+  border-bottom: 2px solid var(--border-color);
   border-radius: 0;
 }
 
