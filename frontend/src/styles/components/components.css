@@ -445,6 +445,7 @@
     display: flex;
     align-items: center;
     padding: var(--spacing-sm);
+    background-color: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
     flex-direction: column;
@@ -536,7 +537,7 @@
   }
   
   .results-row:nth-child(even) {
-    background-color: var(--card-background-alt);
+    background-color: var(--card-background);
   }
   
   .results-row:last-child {
@@ -1405,9 +1406,13 @@
     overflow: hidden;
     box-shadow: var(--shadow);
   }
+
+  .score-table tr.player-row {
+    background-color: var(--background-color);
+  }
   
   .score-table tr:nth-child(even) {
-    background-color: var(--card-background-alt);
+    background-color: var(--card-background);
   }
   
   .score-table {
@@ -1724,7 +1729,6 @@
 }
 
 .stats-section {
-  margin-bottom: var(--spacing-sm);
   width: 100%;
 }
 
@@ -3327,12 +3331,6 @@
 }
 
 /* Game Stats Styles */
-.game-stats-container {
-  padding: var(--spacing-md);
-  background-color: var(--card-background);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-}
 
 .game-stats-container h2 {
   color: var(--primary-color);

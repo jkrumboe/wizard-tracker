@@ -131,12 +131,16 @@
 }
 
 .advanced-stats {
-  background-color: var(--background-color);
+  display: flex;
+  flex-direction: column;
+
+  /* background-color: var(--background-color); */
   border-radius: 10px;
   padding: var(--spacing-sm) var(--spacing-md);
-  margin-top: var(--spacing-sm);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* margin-top: var(--spacing-sm); */
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
   width: 100%;
+  gap: var(--spacing-sm);
 }
 
 .advanced-stats h3 {
@@ -279,13 +283,10 @@
 
 /* Additional Stats Styling */
 .additional-stats {
-  background-color: var(--card-background);
+  background-color: var(--card-background-alt);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: var(--spacing-sm);
-  margin: var(--spacing-sm) 0;
-  margin-bottom: 0;
-  /* padding-bottom: 0; */
   display: flex;
   flex-direction: row;
   justify-content: center;

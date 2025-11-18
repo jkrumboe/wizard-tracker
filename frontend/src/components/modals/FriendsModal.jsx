@@ -141,14 +141,14 @@ const FriendsModal = ({ isOpen, onClose }) => {
     if (isOpen && activeTab === 'add') {
       // Check if user is logged in before trying to load users
       if (!user) {
-        setError('You must be logged in to add friends from the cloud.');
+        setError('You must be logged in to add friends.');
         setLoading(false);
         return;
       }
       
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        setError('You must be logged in to add friends from the cloud.');
+        setError('You must be logged in to add friends.');
         setLoading(false);
         return;
       }

@@ -767,51 +767,53 @@ const GameInProgress = () => {
         </div>
       )}
 
-      {/* Trick Count Reducer and Call Max Increaser */}
-      <div className="trick-reducer-container">
-        <button 
-          className={`trick-reducer-label bomb ${reduceTrickCount ? 'active' : ''}`}
-          onClick={(e) => {
-            if (!reduceTrickCount) {
-              // First time activating - trigger animation
-              e.currentTarget.classList.remove('activated');
-              setTimeout(() => setReduceTrickCount(true), 10);
-            } else {
-              // Deactivating
-              setReduceTrickCount(false);
-            }
-          }}
-          onAnimationEnd={(e) => {
-            // Mark as activated after first animation
-            e.currentTarget.classList.add('activated');
-          }}
-        >
-          <span className="trick-reducer-text">
-            Bombe<BombIcon size={18} />
-          </span>
-        </button>
-        <button 
-          className={`trick-reducer-label cloud ${increaseCallMax ? 'active' : ''}`}
-          onClick={(e) => {
-            if (!increaseCallMax) {
-              // First time activating - trigger animation
-              e.currentTarget.classList.remove('activated');
-              setTimeout(() => setIncreaseCallMax(true), 10);
-            } else {
-              // Deactivating
-              setIncreaseCallMax(false);
-            }
-          }}
-          onAnimationEnd={(e) => {
-            // Mark as activated after first animation
-            e.currentTarget.classList.add('activated');
-          }}
-        >
-          <span className="trick-reducer-text">
-            Wolke<CloudIcon size={18} />
-          </span>
-        </button>
-      </div>
+      {/* Trick Count Reducer and Call Max Increaser - Only show when game tab is active */}
+      {activeTab === 'game' && (
+        <div className="trick-reducer-container">
+          <button 
+            className={`trick-reducer-label bomb ${reduceTrickCount ? 'active' : ''}`}
+            onClick={(e) => {
+              if (!reduceTrickCount) {
+                // First time activating - trigger animation
+                e.currentTarget.classList.remove('activated');
+                setTimeout(() => setReduceTrickCount(true), 10);
+              } else {
+                // Deactivating
+                setReduceTrickCount(false);
+              }
+            }}
+            onAnimationEnd={(e) => {
+              // Mark as activated after first animation
+              e.currentTarget.classList.add('activated');
+            }}
+          >
+            <span className="trick-reducer-text">
+              Bomb<BombIcon size={18} />
+            </span>
+          </button>
+          <button 
+            className={`trick-reducer-label cloud ${increaseCallMax ? 'active' : ''}`}
+            onClick={(e) => {
+              if (!increaseCallMax) {
+                // First time activating - trigger animation
+                e.currentTarget.classList.remove('activated');
+                setTimeout(() => setIncreaseCallMax(true), 10);
+              } else {
+                // Deactivating
+                setIncreaseCallMax(false);
+              }
+            }}
+            onAnimationEnd={(e) => {
+              // Mark as activated after first animation
+              e.currentTarget.classList.add('activated');
+            }}
+          >
+            <span className="trick-reducer-text">
+              Cloud<CloudIcon size={18} />
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Top Section with Controls */}
       <div className="game-bottom-section">

@@ -35,12 +35,10 @@
   width: 100%;
 }
 
-.game-in-progress .score-table td {
+.game-in-progress .score-table td,
+.game-in-progress .score-table th  {
   overflow: hidden;
-}
-
-.game-in-progress .score-table th {
-  overflow: hidden;
+  /* background-color: var(--card-background); */
 }
 
 /* Table header styling */
@@ -172,7 +170,7 @@
 
 /* Game stats container styling */
 .game-in-progress .game-stats-container {
-  padding-top: var(--spacing-sm);
+  /* padding-top: var(--spacing-sm); */
 }
 
 .game-in-progress .game-stats-container h2 {

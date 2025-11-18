@@ -79,30 +79,9 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
 
   return (
     <div className="advanced-stats">
-        <div className="stats-section"> 
-            <div className="stats-section-title">Game Performance</div>
-            <div className="stats-cards">
-          <div className="additional-stats">
-                <div className="stat-row">
-                    <span className="stat-label">Correct Bids:</span>
-                    <span className="stat-value">{Math.round(normalizedStats.correctBids)}</span>
-                </div>
-                <div className="stat-row">
-                    <span className="stat-label">Total Tricks Won:</span>
-                    <span className="stat-value">{Math.round(normalizedStats.totalTricks)}</span>
-                </div>
-                </div>
-            </div>
-        </div>
-      
       <div className="stats-section">
-        <div className="stats-section-title">Additional Stats</div>
         <div className="stats-cards">
           <div className="additional-stats">
-            {/* <div className="stat-row">
-              <span className="stat-label">Best Streak:</span>
-              <span className="stat-value">{normalizedStats.maxConsecutiveCorrect}</span>
-            </div> */}
             <div className="stat-row">
                 <span className="stat-label">Highest Round:</span>
                 <span className="stat-value">{Math.round(normalizedStats.bestRound)}</span>
@@ -114,32 +93,10 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
           </div>
         </div>
       </div>
-      
-      <div className="stats-section">
-        <div className="stats-section-title">Bidding Precision</div>
-        <div className="stats-cards">
-          <PerformanceMetric 
-            label="Average Score" 
-            value={normalizedStats.avgPoints} 
-            targetMin={10} 
-            targetMax={20}
-            isBadWhenAboveMax={false}
-          />
-          <PerformanceMetric 
-            label="Bid Accuracy" 
-            value={parseFloat(normalizedStats.bidAccuracy || 0)} 
-            targetMin={40} 
-            targetMax={75}
-            isPercentage={true}
-            isBadWhenAboveMax={false} 
-          />
-        </div>
-      </div>
 
       <div className="stats-section">
-        <div className="stats-section-title">Bidding Tendency</div>
-        <div className="stats-cards">
-          <div className="bidding-style-card">
+          <div className="stats-cards">
+            <div className="bidding-style-card">
             <div className="bidding-style-value">
               {biddingStats ? (
                 <div>
@@ -171,6 +128,19 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
               </>
             )}
           </div>
+        </div>
+      </div>
+      
+      <div className="stats-section">
+        <div className="stats-cards">
+          <PerformanceMetric 
+            label="Bid Accuracy" 
+            value={parseFloat(normalizedStats.bidAccuracy || 0)} 
+            targetMin={40} 
+            targetMax={75}
+            isPercentage={true}
+            isBadWhenAboveMax={false} 
+          />
         </div>
       </div>
     </div>
