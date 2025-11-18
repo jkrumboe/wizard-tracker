@@ -34,7 +34,7 @@
     padding: var(--spacing-sm);
   }
   
-  .game-in-progress {
-    padding-bottom: calc(var(--bottom-nav-height) + 100px); /* More space on mobile */
-  }
+  /* .game-in-progress {
+    padding-bottom: calc(var(--bottom-nav-height) + 100px);
+  } */
 }

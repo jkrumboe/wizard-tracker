@@ -39,23 +39,51 @@
   overflow: hidden;
 }
 
+.game-in-progress .score-table th {
+  overflow: hidden;
+}
+
+/* Table header styling */
+.game-in-progress .score-table thead {
+  background-color: var(--card-background);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.game-in-progress .score-table th {
+  padding: var(--spacing-sm) var(--spacing-xs);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.game-in-progress .score-table th.player-header {
+  text-align: left;
+  padding-left: var(--spacing-sm);
+}
+
 /* Fixed column widths */
-.game-in-progress .score-table td:nth-child(1) {
+.game-in-progress .score-table td:nth-child(1),
+.game-in-progress .score-table th:nth-child(1) {
   width: 50%;
 }
 
-.game-in-progress .score-table td:nth-child(2) {
+.game-in-progress .score-table td:nth-child(2),
+.game-in-progress .score-table th:nth-child(2) {
   width: 17%;
   padding: var(--spacing-sm) 0;
 }
 
-.game-in-progress .score-table td:nth-child(3) {
+.game-in-progress .score-table td:nth-child(3),
+.game-in-progress .score-table th:nth-child(3) {
   width: 17%;
   padding: var(--spacing-sm) 0;
 }
 
-.game-in-progress .score-table td:nth-child(4) {
-  width: 12%;
+.game-in-progress .score-table td:nth-child(4),
+.game-in-progress .score-table th:nth-child(4) {
+  width: 14%;
   align-content: center;
 }
 

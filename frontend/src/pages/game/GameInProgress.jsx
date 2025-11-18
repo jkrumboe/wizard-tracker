@@ -577,7 +577,7 @@ const GameInProgress = () => {
           <ArrowLeftCircleIcon size={28} />
         </button>
         <span className="round-number">
-          Rounds {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
+          Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
           <div className="total-calls">
             <div>
               Calls: {totalCalls}
@@ -618,6 +618,14 @@ const GameInProgress = () => {
         <div className="tab-panel">
           <div className="player-scores">
             <table className="score-table">
+              <thead>
+                <tr>
+                  <th className="player-header">Player</th>
+                  <th className="input-header">Calls</th>
+                  <th className="input-header">Made</th>
+                  <th className="score-header">Score</th>
+                </tr>
+              </thead>
               <tbody>
               {currentRound?.players.map((player) => (
                 <tr key={player.id} className={`player-row ${player.id === dealer?.id ? 'dealer' : ''} ${player.id === caller?.id ? 'caller' : ''}`}>

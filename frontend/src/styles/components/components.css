@@ -1325,11 +1325,11 @@
     padding-bottom: 0;
   } */
 
-  @media (max-height: 780px) {
+  /* @media (max-height: 780px) {
     .game-in-progress {
       height: 100vh;
     }
-  }
+  } */
   
   .game-header {
     display: flex;
