@@ -24,24 +24,20 @@ const PauseConfirmationModal = ({
             <XIcon size={20} />
           </button>
         </div>
-        
         <div className="modal-content">
-          <h3>Are you sure you want to pause the current game?</h3>
+          <strong>Are you sure you want to pause the current game?</strong>
           <p className="pause-description">
             Your game progress will be saved and you can resume it later from the Paused Games tab in the New Game page.
           </p>
-
-          <div className="modal-actions">
-          <button className="modal-button secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="modal-button primary" onClick={handleConfirm}>
-            Pause Game
-          </button>
         </div>
-        </div>
-        
-        
+        <div className="modal-actions">
+            <button className="modal-button secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button className="modal-button primary" onClick={handleConfirm}>
+              Pause
+            </button>
+          </div>
       </div>
     </div>
   );
