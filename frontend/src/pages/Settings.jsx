@@ -919,7 +919,7 @@ const Settings = () => {
           {/* Profile Picture Section */}
           {isOnline && (
             <div className="settings-option">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <Link to={user ? "/profile" : "/login"} style={{ textDecoration: 'none' }}>
                     <img

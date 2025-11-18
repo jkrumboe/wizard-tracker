@@ -93,6 +93,13 @@
     margin: 0 var(--spacing-sm);
 }
 
+.settings-option .checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  justify-content: center;
+}
+
 .checkbox-label {
   display: flex;
   font-weight: 500;
