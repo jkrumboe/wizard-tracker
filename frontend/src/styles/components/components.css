@@ -663,10 +663,12 @@
   }
   
   .profile-content {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     background-color: var(--card-background);
     padding: var(--spacing-md);
     border-radius: var(--radius-lg);
+    height: calc(85dvh - var(--bottom-nav-height));
   }
   
   .stats-graph,
@@ -707,7 +709,7 @@
   }
   
   .games-list {
-    max-height: 300px;
+    /* max-height: 300px; */
     overflow-y: auto;
     gap: var(--spacing-sm);
   }

@@ -147,16 +147,18 @@
   grid-column: 1 / span 2;
 }
 
-.round-bid ,
-.round-made ,
+.round-bid,
+.round-made,
 .round-score {
   color: var(--text-color);
   background-color: var(--card-background-alt);
-  font-weight: 600 ;
+  font-weight: 600;
   font-size: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 24px;
+  min-width: 100%;
 }
 
 .round-score {
@@ -271,6 +273,6 @@
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 35px;
+    width: 30px;
   }
 }

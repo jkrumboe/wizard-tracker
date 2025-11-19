@@ -15,9 +15,10 @@ import "@/styles/utils/performanceMetrics.css"
 import "@/styles/pages/stats.css"
 import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
+import "@/styles/components/scorecard.css"
 import StatsChart from "@/components/game/StatsChart";
 import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon, TableIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -495,6 +496,9 @@ const GameInProgress = () => {
 
   const detailedStats = calculateDetailedGameStats();
 
+  // Helper function to compare IDs regardless of type (string vs number)
+  const compareIds = (id1, id2) => String(id1) === String(id2);
+
   const totalCalls = currentRound?.players.reduce((sum, player) => sum + (player.call || 0), 0) || 0;
   
   // Check if all made values are entered and total correctly
@@ -726,6 +730,12 @@ const GameInProgress = () => {
               >
                 Player Details
               </button>
+              <button 
+                className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
+                onClick={() => setStatsSubTab('table')}
+              >
+                Table
+              </button>
             </div>
             
             {/* Show both views in landscape, otherwise show based on selected tab */}
@@ -761,6 +771,67 @@ const GameInProgress = () => {
                     />
                   </div>
                 ))}
+              </div>
+            )}
+
+            {(statsSubTab === 'table' || isLandscape) && (
+              <div className="rounds-section">
+                <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length}>
+                  <table className="scorecard-table">
+                    <thead>
+                      <tr>
+                        <th className="round-header sticky-cell"/>
+                        {detailedStats.map(player => (
+                          <th key={player.id} className="player-header">
+                            <div className="player-header-name">{player.name}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gameState.roundData.slice(0, currentRoundIndex + 1).map((round, index) => (
+                        <tr key={index} className="round-row">
+                          <td className="round-number sticky-cell">{index + 1}</td>
+                          {detailedStats.map(player => {
+                            const playerRound = round.players.find(p => compareIds(p.id, player.id));
+                            
+                            // Determine bid status for color-coding
+                            let bidStatusClass = '';
+                            if (playerRound) {
+                              if (playerRound.call === playerRound.made) {
+                                bidStatusClass = 'correct-bid';
+                              } else if (playerRound.made > playerRound.call) {
+                                bidStatusClass = 'over-bid';
+                              } else {
+                                bidStatusClass = 'under-bid';
+                              }
+                            }
+                            
+                            return (
+                              <td key={player.id} className="player-round-cell">
+                                {playerRound && (
+                                  <div className="player-round-data">
+                                    <div className="round-score">{playerRound.score}</div>
+                                    <div className="round-bid">{playerRound.call}</div>
+                                    <div className={`round-made ${bidStatusClass}`}>{playerRound.made}</div>
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                      <tr className="total-row">
+                        <td className="total-label sticky-cell">Total</td>
+                        {detailedStats.map(player => (
+                          <td key={player.id} className="total-score">
+                            {player.totalPoints}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

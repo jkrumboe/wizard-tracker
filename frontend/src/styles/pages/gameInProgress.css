@@ -686,3 +686,23 @@
 .score-table th:last-child {
   border-top-right-radius: var(--radius-lg);
 }
+
+.scorecard-table .round-score {
+  font-size: 1rem;
+}
+
+/* Table view within stats section */
+.game-in-progress .stats-subtabs ~ .rounds-section {
+  margin-top: var(--spacing-md);
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.game-in-progress .stats-subtabs ~ .rounds-section .wizard-scorecard {
+  margin: 0;
+}
+
+.game-in-progress .stats-subtabs ~ .rounds-section .scorecard-table {
+  min-width: 100%;
+}
