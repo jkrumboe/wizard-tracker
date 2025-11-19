@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
-import { SyncStatusIndicator } from "../../components/game";
 import { useUser } from "../../shared/hooks/useUser";
 import "../../styles/components/TableGame.css";
 

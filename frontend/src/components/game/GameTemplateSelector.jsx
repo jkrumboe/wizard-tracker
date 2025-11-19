@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlayIcon, EditIcon, TrashIcon, PlusIcon, ListIcon, UsersIcon } from '@/components/ui/Icon';
+import { EditIcon, TrashIcon, PlusIcon, ListIcon } from '@/components/ui/Icon';
 import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import LoadTableGameDialog from '@/components/modals/LoadTableGameDialog';
@@ -29,15 +29,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   const getSavedGamesCount = (templateName) => {
     const allSavedGames = LocalTableGameStorage.getSavedTableGamesList();
     return allSavedGames.filter(game => game.name === templateName).length;
-  };
-
-  const handleSelectTemplate = (template) => {
-    // Record usage
-    LocalTableGameTemplate.recordTemplateUsage(template.id);
-    onSelectTemplate(template.name, {
-      targetNumber: template.targetNumber,
-      lowIsBetter: template.lowIsBetter
-    });
   };
 
   const handleEditClick = (template, e) => {
