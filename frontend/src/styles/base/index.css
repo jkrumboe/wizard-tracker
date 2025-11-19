@@ -123,7 +123,7 @@ html, body {
 :root {
   /* Layout */
   --top-nav-height: 60px;
-  --bottom-nav-height: 65px;
+  --bottom-nav-height: 70px;
 
   /* Border radius */
   --radius-sm: 0.25rem;
