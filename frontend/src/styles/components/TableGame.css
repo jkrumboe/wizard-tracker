@@ -52,7 +52,7 @@
   height: 100%;
   margin: 0 auto;
   padding: 0;
-  margin: 1rem 0;
+  margin-top: var(--spacing-md);
   overflow-x: auto;
 }
 

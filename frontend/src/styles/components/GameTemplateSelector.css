@@ -6,7 +6,6 @@
   /* padding: var(--spacing-md); */
   /* background-color: var(--card-background); */
   border-radius: var(--radius-lg);
-  height: 100%;
 }
 
 .template-selector-header {
@@ -30,7 +29,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  min-height: 200px;
+  max-height: calc(70vh - var(--bottom-nav-height));
+  overflow: scroll;
+  padding: 0 4px;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .template-item {
