@@ -17,10 +17,12 @@
   border-collapse: separate;
   border-spacing: 0;
   border-radius: var(--radius-lg);
+  border-color: transparent;
 }
 
 .scorecard-table tbody {
   border-radius: var(--radius-lg);
+  border-color: transparent;
 }
 
 .scorecard-table th, 
@@ -73,6 +75,18 @@
   /* Ensure the background fills the entire cell */
   isolation: isolate;
   font-size: 1.1rem;
+  border-right: none;
+}
+
+.round-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -1px;
+  bottom: 0;
+  width: 2px;
+  z-index: 11;
+  background-color: transparent !important;
 }
 
 .round-number {
@@ -113,6 +127,8 @@
   grid-template-columns: 1fr 1fr;
   /* gap: 0.05rem; */
   border: 1px solid var(--card-background);
+  border-top: none;
+  border-left: none;
 }
 
 .player-round-data > :nth-child(1) {
@@ -153,7 +169,7 @@
 }
 
 .total-label {
-  background-color: var(--primary-color);
+  background-color: var(--card-background);
   color: var(--text-color);
   position: sticky;
   left: 0;
@@ -161,7 +177,7 @@
   padding: 0 !important;
   box-shadow: none;
   isolation: isolate;
-  border-right: 1px solid var(--primary-color);
+  /* border-right: 1px solid var(--primary-color); */
 }
 
 .total-score {
@@ -204,10 +220,11 @@
   content: '';
   position: absolute;
   top: 0;
-  right: 0;
+  right: -1px;
   bottom: 0;
   width: 2px;
   z-index: 11;
+  /* background-color: var(--primary-color); */
 }
 
 /* Special corner case - top left cell */
@@ -242,6 +259,6 @@
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 30px;
+    width: 35px;
   }
 }
