@@ -493,8 +493,8 @@
 
 .stats-subtabs {
   display: flex;
-  justify-content: center;
-  gap: var(--spacing-xl);
+  justify-content: space-between;
+  gap: var(--spacing-md);
 }
 
 .stats-subtab-btn {
@@ -502,8 +502,9 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   color: var(--text-color);
-  padding: var(--spacing-xs) 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
   /* margin: 0 var(--spacing-md); */
+  font-size: 0.8rem;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
