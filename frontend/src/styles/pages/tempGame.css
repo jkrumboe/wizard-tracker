@@ -1068,7 +1068,7 @@
 }
 
 .game-container .rounds-input {
-  width: 50px;
+  /* width: 50px; */
   padding: var(--spacing-xs);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
