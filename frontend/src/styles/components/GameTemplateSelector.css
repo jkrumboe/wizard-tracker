@@ -3,8 +3,8 @@
 .game-template-selector {
   max-width: 800px;
   margin: 0 auto;
-  padding: var(--spacing-md);
-  background-color: var(--card-background);
+  /* padding: var(--spacing-md); */
+  /* background-color: var(--card-background); */
   border-radius: var(--radius-lg);
   height: 100%;
 }
