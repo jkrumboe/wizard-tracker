@@ -59,8 +59,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "prompt",
+      // Use injectManifest to use custom service worker
+      strategies: 'generateSW',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Clean up outdated caches
+        cleanupOutdatedCaches: true,
+        // Don't fail on precache errors (for old assets)
+        skipWaiting: false,
+        clientsClaim: true,
+        // Ignore precache errors for assets that don't exist
+        ignoreURLParametersMatching: [/^v/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -70,6 +79,9 @@ export default defineConfig({
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           },
@@ -81,11 +93,31 @@ export default defineConfig({
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Cache all JS/CSS assets with network-first strategy
+            urlPattern: /\.(?:js|css)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'assets-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           }
         ],
-        maximumFileSizeToCacheInBytes: 3145728 // 3MB
+        maximumFileSizeToCacheInBytes: 3145728, // 3MB
+        // Handle precache errors gracefully
+        navigateFallback: null
       },
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {
