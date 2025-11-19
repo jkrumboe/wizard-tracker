@@ -51,19 +51,26 @@ const GameHistoryItem = ({ game }) => {
 
   if (!game) return null;
   
+  // Check if this is a table game
+  const isTableGame = game.gameType === 'table';
+  
   // Extract data from either format
   const id = game.id;
-  const created_at = game.created_at || game.savedAt || new Date().toISOString();
-  const player_ids = game.player_ids || 
-                   (game.gameState && game.gameState.player_ids) || 
-                   (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || [];
+  const created_at = game.created_at || game.savedAt || game.lastPlayed || new Date().toISOString();
+  
+  // For table games, get players from the game data
+  const player_ids = isTableGame 
+    ? (game.players || [])
+    : (game.player_ids || 
+       (game.gameState && game.gameState.player_ids) || 
+       (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || []);
   
   // Find winner_id from various possible locations
   const winner_id = game.winner_id || 
                  (game.gameState && game.gameState.winner_id) ||
                  (game.gameState && game.gameState.roundData && determineWinner(game.gameState));
   
-  const game_mode = game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local";
+  const game_mode = isTableGame ? game.name : (game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local");
   const total_rounds = game.total_rounds || game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0;
   
   const formattedDate = new Date(created_at).toLocaleString("en-DE", {
@@ -101,33 +108,37 @@ const GameHistoryItem = ({ game }) => {
       {/* <div className="game-rounds"></div> */}
         <div className="game-info">
           <div className="game-name">
-            {game.game_name || "Wizard"}
+            {isTableGame ? game.name : (game.game_name || "Wizard")}
             <div className="game-winner">
-              <TrophyIcon size={12} /> Winner: {playerDetails[winner_id]?.name || "Not determined"}
+              <TrophyIcon size={12} /> Winner: {isTableGame ? game.winner_name : (playerDetails[winner_id]?.name || "Not determined")}
             </div>
           </div>
           {game.isUploaded ? (
-              <span className="mode-badge synced" title="Synced to Cloud">Synced</span>
-            ) : (
-              <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>{game_mode || 'Local'}</span>
-            )}
+            <span className="mode-badge synced" title="Synced to Cloud">Synced</span>
+          ) : isTableGame ? (
+            <span className="mode-badge table">Table Game</span>
+          ) : (
+            <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>{game_mode || 'Local'}</span>
+          )}
         </div>
         <div className="game-players">
             <UsersIcon size={12} />{" "}
-            {game.gameState && game.gameState.players 
-              ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-              : game.is_local && game.players
-                ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
-                  ? game.players.join(", ") 
-                  : game.players.map(player => player.name || "Unknown Player").join(", ")
-                : Array.isArray(player_ids)
-                  ? player_ids
-                      .map(
-                        (playerId) =>
-                          playerDetails[playerId]?.name || "Unknown Player"
-                      )
-                      .join(", ")
-                  : "No players"}
+            {isTableGame
+              ? Array.isArray(game.players) ? game.players.join(", ") : "No players"
+              : game.gameState && game.gameState.players 
+                ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                : game.is_local && game.players
+                  ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
+                    ? game.players.join(", ") 
+                    : game.players.map(player => player.name || "Unknown Player").join(", ")
+                  : Array.isArray(player_ids)
+                    ? player_ids
+                        .map(
+                          (playerId) =>
+                            playerDetails[playerId]?.name || "Unknown Player"
+                        )
+                        .join(", ")
+                    : "No players"}
         </div>
         <div className="actions-game-history">
           <div className="bottom-actions-game-history">
@@ -135,7 +146,7 @@ const GameHistoryItem = ({ game }) => {
             <div className="game-date"> {formattedDate}
             </div>
           </div>
-          <Link to={`/game/${id}`} className="game-details">
+          <Link to={isTableGame ? `/table/${id}` : `/game/${id}`} className="game-details">
             View Details
           </Link>
         </div>

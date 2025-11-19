@@ -201,6 +201,16 @@ export class LocalTableGameStorage {
   }
 
   /**
+   * Get a specific table game by ID
+   * @param {string} gameId - The game ID to retrieve
+   * @returns {Object|null} - The saved game object or null if not found
+   */
+  static getTableGameById(gameId) {
+    const games = this.getAllSavedTableGames();
+    return games[gameId] || null;
+  }
+
+  /**
    * Generate a unique game ID
    * @returns {string} - Unique game ID
    */

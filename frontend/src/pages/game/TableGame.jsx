@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
@@ -9,6 +10,8 @@ const MIN_PLAYERS = 2;
 
 const TableGame = () => {
   const { user } = useUser(); // Get the logged-in user
+  const { id } = useParams();
+  const navigate = useNavigate();
   
   const [rows, setRows] = useState(() => {
     const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
@@ -80,7 +83,12 @@ const TableGame = () => {
   // Restore game state from sessionStorage on mount (after HMR)
   useEffect(() => {
     const savedState = sessionStorage.getItem('currentTableGameState');
-    if (savedState && showTemplateSelector) {
+    
+    // Only restore if:
+    // 1. We have saved state
+    // 2. We're on the template selector
+    // 3. There's NO gameId in URL (meaning this is HMR restore, not a fresh navigation)
+    if (savedState && showTemplateSelector && !id) {
       try {
         const gameState = JSON.parse(savedState);
         // Only restore if we have valid data
@@ -114,6 +122,57 @@ const TableGame = () => {
       }
     }
   }, []); // Only run once on mount
+
+  // Check for gameId in URL parameters and load that game
+  useEffect(() => {
+    if (id) {
+      // Only load if we're currently showing the template selector AND don't have this game loaded already
+      if (showTemplateSelector || currentGameId !== id) {
+        // Load the game from storage
+        const savedGame = LocalTableGameStorage.getTableGameById(id);
+        if (savedGame) {
+          const gameData = savedGame.gameData;
+          
+          // Set all the state to display the game
+          setPlayers(gameData.players);
+          setRows(gameData.rows || 10);
+          setShowTemplateSelector(false);
+          setActiveTab('table');
+          setCurrentGameName(savedGame.name);
+          setCurrentGameId(savedGame.id);
+          
+          // Try to sync with template settings first
+          const templates = LocalTableGameTemplate.getAllTemplates();
+          const matchingTemplate = Object.values(templates).find(t => t.name === savedGame.name);
+          
+          if (matchingTemplate) {
+            setTargetNumber(matchingTemplate.targetNumber || null);
+            setLowIsBetter(matchingTemplate.lowIsBetter || false);
+            console.debug(`📋 Synced game settings from template: target=${matchingTemplate.targetNumber}, lowIsBetter=${matchingTemplate.lowIsBetter}`);
+          } else {
+            setTargetNumber(gameData.targetNumber || null);
+            setLowIsBetter(gameData.lowIsBetter || false);
+            console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
+          }
+          
+          setGameFinished(savedGame.gameFinished || false);
+          console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id})`);
+        }
+      }
+    } else {
+      // No ID in URL - show template selector if we're currently viewing a game
+      if (!showTemplateSelector) {
+        setShowTemplateSelector(true);
+        setCurrentGameName("");
+        setCurrentGameId(null);
+        setTargetNumber(null);
+        setLowIsBetter(false);
+        setGameFinished(false);
+        sessionStorage.removeItem('currentTableGameId');
+        sessionStorage.removeItem('currentTableGameState');
+      }
+    }
+  }, [id, showTemplateSelector, currentGameId]);
 
   // Listen for orientation changes and adjust rows
   useEffect(() => {
@@ -376,8 +435,8 @@ const TableGame = () => {
       // Allow empty string or lone minus sign for typing negative numbers
       updated[playerIdx].points[rowIdx] = value === "" ? "" : value;
     } else {
-      const parsed = parseInt(value, 10);
-      updated[playerIdx].points[rowIdx] = isNaN(parsed) ? "" : parsed;
+      const parsed = Number.parseInt(value, 10);
+      updated[playerIdx].points[rowIdx] = Number.isNaN(parsed) ? "" : parsed;
       
       // Fill all empty cells above this row with 0
       for (let i = 0; i < rowIdx; i++) {
@@ -428,7 +487,7 @@ const TableGame = () => {
   };
 
   const getTotal = (player) => {
-    return player.points.reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
+    return player.points.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0);
   };
 
   // Check if any player has reached or exceeded the target
@@ -489,7 +548,7 @@ const TableGame = () => {
             const result = await createTableGame(gameData, savedGameId);
             
             // Backend returns game._id for table games (full document)
-            if (result && result.game && result.game._id) {
+            if (result?.game?._id) {
               LocalTableGameStorage.markGameAsUploaded(savedGameId, result.game._id);
               console.debug(`✅ Table game auto-uploaded to cloud (ID: ${result.game._id})`);
             }
@@ -567,37 +626,9 @@ const TableGame = () => {
 
   const loadGame = (gameData) => {
     try {
-      if (gameData && gameData.players) {
-        setPlayers(gameData.players);
-        setRows(gameData.rows || 10);
-        setShowTemplateSelector(false);
-        setActiveTab('table'); // Always start at table view
-        
-        // Set the game name and ID from the loaded game
-        const loadedGameName = gameData.gameName || "Loaded Game";
-        const loadedGameId = gameData.gameId || null;
-        setCurrentGameName(loadedGameName);
-        setCurrentGameId(loadedGameId);
-        
-        // Try to sync with template settings first
-        const templates = LocalTableGameTemplate.getAllTemplates();
-        const matchingTemplate = Object.values(templates).find(t => t.name === loadedGameName);
-        
-        if (matchingTemplate) {
-          // Use template settings (they might have been updated since game was saved)
-          setTargetNumber(matchingTemplate.targetNumber || null);
-          setLowIsBetter(matchingTemplate.lowIsBetter || false);
-          console.debug(`📋 Synced game settings from template: target=${matchingTemplate.targetNumber}, lowIsBetter=${matchingTemplate.lowIsBetter}`);
-        } else {
-          // Fall back to saved game settings if template not found
-          setTargetNumber(gameData.targetNumber || null);
-          setLowIsBetter(gameData.lowIsBetter || false);
-          console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
-        }
-        
-        setGameFinished(gameData.gameFinished || false);
-        
-        console.debug(`Loaded game: "${loadedGameName}" (ID: ${loadedGameId})`);
+      if (gameData?.gameId) {
+        // Navigate to the game with its ID
+        navigate(`/table/${gameData.gameId}`);
       }
     } catch (error) {
       console.error("Error loading table game:", error);
@@ -605,41 +636,37 @@ const TableGame = () => {
   };
 
   const handleSelectTemplate = (templateName, settings = {}) => {
-    setCurrentGameName(templateName);
-    setCurrentGameId(null); // New game, no ID yet
-    setTargetNumber(settings.targetNumber || null);
-    setLowIsBetter(settings.lowIsBetter || false);
-    setGameFinished(false);
-    setShowTemplateSelector(false);
-    setActiveTab('table'); // Always start at table view
+    // Create a new game
+    const firstPlayerName = user?.username || user?.name || "Player 1";
+    const initialPlayers = settings.playerNames && Array.isArray(settings.playerNames) && settings.playerNames.length > 0
+      ? settings.playerNames.map(name => ({ name: name, points: [] }))
+      : [
+          { name: firstPlayerName, points: [] },
+          { name: "Player 2", points: [] },
+          { name: "Player 3", points: [] }
+        ];
     
-    // Check if playerNames are provided in settings
-    if (settings.playerNames && Array.isArray(settings.playerNames) && settings.playerNames.length > 0) {
-      // Use the provided player names
-      const newPlayers = settings.playerNames.map(name => ({
-        name: name,
-        points: []
-      }));
-      setPlayers(newPlayers);
-    } else {
-      // Reset the game state with the logged-in user as the first player
-      const firstPlayerName = user?.username || user?.name || "Player 1";
-      setPlayers([
-        { name: firstPlayerName, points: [] },
-        { name: "Player 2", points: [] },
-        { name: "Player 3", points: [] }
-      ]);
-    }
-    
-    // Set rows based on current orientation
     const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
     const newRows = isSmallLandscape ? 8 : 10;
-    console.log('Setting rows on template select:', { isSmallLandscape, newRows });
-    setRows(newRows);
+    
+    const gameData = {
+      players: initialPlayers,
+      rows: newRows,
+      timestamp: new Date().toISOString(),
+      targetNumber: settings.targetNumber || null,
+      lowIsBetter: settings.lowIsBetter || false,
+      gameFinished: false
+    };
+    
+    // Save the new game and get the ID
+    const newGameId = LocalTableGameStorage.saveTableGame(gameData, templateName);
+    
+    // Navigate to the new game
+    navigate(`/table/${newGameId}`);
   };
 
   const handleCreateNewGame = (newGameName, settings = {}) => {
-    if (newGameName && newGameName.trim()) {
+    if (newGameName?.trim()) {
       const trimmedName = newGameName.trim();
       // Save as a template with settings
       LocalTableGameTemplate.saveTemplate(trimmedName, settings);
@@ -649,15 +676,8 @@ const TableGame = () => {
   };
 
   const handleBackToTemplates = () => {
-    setShowTemplateSelector(true);
-    setCurrentGameName("");
-    setCurrentGameId(null);
-    setTargetNumber(null);
-    setLowIsBetter(false);
-    setGameFinished(false);
-    // Clear session storage
-    sessionStorage.removeItem('currentTableGameId');
-    sessionStorage.removeItem('currentTableGameState');
+    // Navigate back to where the user came from
+    navigate(-1);
   };
 
   const saveGame = () => {
@@ -684,7 +704,6 @@ const TableGame = () => {
           gameFinished: gameFinished
         });
         console.debug(`Updated existing game: "${name}" (ID: ${currentGameId}, finished: ${gameFinished})`);
-        // alert(`Game "${name}" updated successfully!`);
       } else {
         // Create new save and store the ID
         const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);

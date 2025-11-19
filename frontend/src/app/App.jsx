@@ -244,6 +244,7 @@ function App() {
                     <Route path="/profile/stats" element={<Stats />} />
                     <Route path="/new-game" element={<NewGame />} />
                     <Route path="/table" element={<TableGame />} />
+                    <Route path="/table/:id" element={<TableGame />} />
                     <Route path="/game/:id" element={<GameDetails />} />
                     <Route path="/game/current" element={<GameInProgress />} />
                     <Route path="/login" element= {

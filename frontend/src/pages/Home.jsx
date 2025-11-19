@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import GameFilterModal from '@/components/modals/GameFilterModal'
 import FriendsModal from '@/components/modals/FriendsModal'
 import { getRecentLocalGames } from '@/shared/api/gameService'
+import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useUser } from '@/shared/hooks/useUser'
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
@@ -18,6 +19,7 @@ const Home = () => {
   const { user } = useUser()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [allGames, setAllGames] = useState([])
+  const [loading, setLoading] = useState(false)
   const [showLoadDialog, setShowLoadDialog] = useState(false)
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showFriendsModal, setShowFriendsModal] = useState(false)
@@ -63,16 +65,73 @@ const Home = () => {
 
   useEffect(() => {
     const fetchLocalGames = async () => {
+      setLoading(true);
       try {
+        // Fetch regular wizard games
         const localGames = await getRecentLocalGames(100);
         const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
           ...game,
           created_at: game.created_at || new Date().toISOString()
         })) : [];
-        setAllGames(formattedLocalGames);
+        
+        // Fetch table games
+        const tableGames = LocalTableGameStorage.getSavedTableGamesList();
+        const formattedTableGames = tableGames
+          .filter(game => game.gameFinished) // Only show finished table games
+          .map(game => {
+            // Get the full game data to calculate winner
+            const fullGame = LocalTableGameStorage.getTableGameById(game.id);
+            const gameData = fullGame?.gameData;
+            
+            // Calculate winner based on scores
+            let winnerName = "Not determined";
+            if (gameData?.players && Array.isArray(gameData.players)) {
+              const playersWithScores = gameData.players.map(player => {
+                const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
+                return { ...player, total };
+              });
+              
+              if (playersWithScores.length > 0) {
+                // Check if low score is better from game settings
+                const lowIsBetter = gameData.lowIsBetter || false;
+                const winner = playersWithScores.reduce((best, current) => {
+                  if (!best) return current;
+                  if (lowIsBetter) {
+                    return current.total < best.total ? current : best;
+                  } else {
+                    return current.total > best.total ? current : best;
+                  }
+                }, null);
+                
+                winnerName = winner?.name || "Not determined";
+              }
+            }
+            
+            // Check if uploaded
+            const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
+            
+            return {
+              ...game,
+              created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
+              gameType: 'table',
+              winner_name: winnerName,
+              isUploaded: isUploaded
+            };
+          });
+        
+        // Combine and sort by date
+        const allGames = [...formattedLocalGames, ...formattedTableGames].sort((a, b) => {
+          const dateA = new Date(a.created_at || a.lastPlayed || a.savedAt);
+          const dateB = new Date(b.created_at || b.lastPlayed || b.savedAt);
+          return dateB - dateA;
+        });
+        
+        setAllGames(allGames);
       } catch (error) {
         console.error('Error fetching local games:', error);
         setAllGames([]);
+      } finally {
+        setLoading(false);
       }
     };
     
@@ -82,6 +141,7 @@ const Home = () => {
       fetchLocalGames();
     } else {
       setAllGames([]);
+      setLoading(false);
     }
   }, [user]); // Re-fetch games when user changes (e.g., after login/logout)
 
@@ -130,10 +190,16 @@ const Home = () => {
               <GameHistoryItem key={game.id} game={game} />
             ))}
           </div>
-        ) : allGames.length > 0 ? (
-          <div className="empty-message">No games match your filters</div>
+        ) : loading ? (
+          <div className="loading-message">📊 Loading games...</div>
         ) : (
-          <div className="empty-message">No games found</div>
+          <>
+            {allGames.length > 0 ? (
+              <div className="empty-message">No games match your filters</div>
+            ) : (
+              <div className="empty-message">No games found</div>
+            )}
+          </>
         )}
       </section>
 
