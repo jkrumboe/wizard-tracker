@@ -2714,8 +2714,19 @@
 
 .game-detail {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-xs);
+}
+
+.game-detail svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  align-self: flex-start;
+}
+
+.game-detail span {
+  line-height: 1.2;
+  align-items: flex-start;
 }
 
 .saved-game-actions {
