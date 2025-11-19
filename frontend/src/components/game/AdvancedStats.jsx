@@ -108,7 +108,7 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
                   )}
                 </div>
               ) : (
-                <span className="no-data">No Data</span>
+                <span className="no-data">Play more to see bidding stats</span>
               )}
             </div>
             
