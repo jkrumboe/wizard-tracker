@@ -76,7 +76,6 @@
     color: var(--error-color);
     margin-bottom: var(--spacing-md);
     text-align: center;
-    padding: var(--spacing-md);
     background-color: rgba(239, 68, 68, 0.1);
     border: 1px solid var(--error-color);
     border-radius: var(--radius-md);
