@@ -576,7 +576,7 @@ const GameInProgress = () => {
         >
           <ArrowLeftCircleIcon size={28} />
         </button>
-        <span className="round-number">
+        <span className="game-info-header">
           Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
           <div className="total-calls">
             <div>

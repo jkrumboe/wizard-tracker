@@ -638,7 +638,7 @@
   width: 30%;
 }
 
-.round-number {
+.game-info-header {
   display: flex;
   flex-direction: row;
   align-items: center;

@@ -40,6 +40,7 @@
   width: 70px; 
   min-width: 70px; 
   max-width: 70px;
+  padding: 0 !important;
 }
 
 .player-header-name {
@@ -47,7 +48,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
-  font-size: 1.3rem;
+  font-size: 1rem;
 }
 
 /* Adjust for 4-6 players - corrected media query */
@@ -86,6 +87,7 @@
   box-shadow: none;
   /* Ensure the background fills the entire cell */
   isolation: isolate;
+  text-align: center;
 }
 
 .player-round-cell {
