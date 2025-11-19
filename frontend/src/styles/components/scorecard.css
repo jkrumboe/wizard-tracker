@@ -159,6 +159,18 @@
   align-items: center;
 }
 
+.round-score {
+  font-size: 0.65rem;
+}
+
+.round-score.positive {
+  color: var(--success-color);
+}
+
+.round-score.negative {
+  color: var(--error-color);
+}
+
 .score .round-score {
   background-color: transparent;
 }

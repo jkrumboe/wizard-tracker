@@ -58,7 +58,7 @@
 
 .game-in-progress .score-table th.player-header {
   text-align: left;
-  padding-left: var(--spacing-sm);
+  padding-left: var(--spacing-sm) !important;
 }
 
 /* Fixed column widths */
@@ -70,13 +70,13 @@
 .game-in-progress .score-table td:nth-child(2),
 .game-in-progress .score-table th:nth-child(2) {
   width: 17%;
-  padding: var(--spacing-sm) 0;
+  padding: var(--spacing-xs) 0;
 }
 
 .game-in-progress .score-table td:nth-child(3),
 .game-in-progress .score-table th:nth-child(3) {
   width: 17%;
-  padding: var(--spacing-sm) 0;
+  padding: var(--spacing-xs) 0;
 }
 
 .game-in-progress .score-table td:nth-child(4),

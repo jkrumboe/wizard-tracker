@@ -25,7 +25,7 @@ import "@/styles/components/chartToggle.css"
 import "@/styles/pages/settings.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, DownloadIcon, TableIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, UsersIcon, TableIcon } from "@/components/ui/Icon"
 
 const GameDetails = () => {
   // Helper function to compare IDs regardless of type (string vs number)
@@ -445,8 +445,8 @@ const GameDetails = () => {
                   onClick={() => setShowChart(!showChart)}
                   aria-label={showChart ? "Show table view" : "Show chart view"}
                 >
-                  {showChart ? "Table View" : "Chart View"}
-                  {showChart ? <GamepadIcon size={18} /> : <ChartLineIcon size={18} />}
+                  {showChart ? "Players" : "Chart"}
+                  {showChart ? <UsersIcon size={18} /> : <ChartLineIcon size={18} />}
                 </button>
               </div>
 

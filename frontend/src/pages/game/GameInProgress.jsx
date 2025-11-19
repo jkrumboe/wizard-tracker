@@ -17,7 +17,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import StatsChart from "@/components/game/StatsChart";
 import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
+import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -823,7 +823,7 @@ const GameInProgress = () => {
             className="game-control-btn"
             onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
           >
-            {activeTab === 'game' ? <BarChartIcon size={27} /> : <GamepadIcon size={27} />}
+            {activeTab === 'game' ? <BarChartIcon size={27} /> : <UsersIcon size={27} />}
           </button>
         </div>
 
