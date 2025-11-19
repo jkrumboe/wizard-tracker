@@ -1386,6 +1386,9 @@
   }
   
   .nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-color: var(--primary-color);
     color: var(--text-color);
     padding: var(--spacing-sm) var(--spacing-md);
@@ -2418,11 +2421,11 @@
 }
 
 #prevRoundBtn {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 #nextRoundBtn {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .toggle-text {
@@ -2987,7 +2990,7 @@
 
 #prevRoundBtn,
 #nextRoundBtn {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0.6rem 1.1rem;
   border: none;
 }
 
