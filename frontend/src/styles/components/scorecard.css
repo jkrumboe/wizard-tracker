@@ -169,7 +169,7 @@
 }
 
 .total-label {
-  background-color: var(--card-background);
+  background-color: var(--primary-color);
   color: var(--text-color);
   position: sticky;
   left: 0;
