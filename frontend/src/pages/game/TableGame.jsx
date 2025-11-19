@@ -644,8 +644,8 @@ const TableGame = () => {
       const trimmedName = newGameName.trim();
       // Save as a template with settings
       LocalTableGameTemplate.saveTemplate(trimmedName, settings);
-      // Start the game with this name
-      handleSelectTemplate(trimmedName, settings);
+      // Don't auto-start the game, just close the selector to show the new template
+      // User can manually click "New Game" when they're ready
     }
   };
 

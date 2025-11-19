@@ -76,9 +76,10 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   };
 
   const handleCreateNewGame = (gameName, settings) => {
-    // Save as template with settings
-    LocalTableGameTemplate.saveTemplate(gameName, settings);
+    // Just pass to parent - parent will handle saving the template
     onCreateNew(gameName, settings);
+    // Reload templates to show the new one
+    loadTemplates();
   };
 
   const handleLoadGame = (gameData) => {
