@@ -135,10 +135,9 @@ const LoadTableGameDialog = ({
                         <span className="game-detail">
                           <UsersIcon size={14} />
                           <span>{game.players.join(', ')}</span>
-                          
                         </span>
                       )}
-                      <span className="game-detail" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: 'var(--spacing-lg)', width: '100%' }}>
+                      <span className="game-detail" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', gap: 'var(--spacing-lg)', width: '100%', color: 'white' }}>
                         Rounds: {game.totalRounds} 
                         <span className="game-detail">
                           <CalendarIcon size={14} />

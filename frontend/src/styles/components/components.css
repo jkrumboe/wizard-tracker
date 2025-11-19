@@ -3255,14 +3255,14 @@
 
 .saved-game-info {
   flex: 1;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .saved-game-name {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-color);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .saved-game-details {
@@ -3287,7 +3287,7 @@
 
 .saved-game-actions .icon-btn {
   flex: 1;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   font-weight: 600;
   cursor: pointer;
@@ -3298,7 +3298,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .saved-game-actions .icon-btn:hover {
