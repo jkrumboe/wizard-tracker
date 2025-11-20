@@ -17,7 +17,7 @@
             "label": "Start Frontend Dev",
             "type": "shell",
             "command": "cmd",
-            "args": ["/C", "npm run dev -- --port 3000"],
+            "args": ["/C", "npm run dev -- --host"],
             "options": {
                 "cwd": "${workspaceFolder}/frontend"
             },
