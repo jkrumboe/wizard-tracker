@@ -1,6 +1,6 @@
 {
   "name": "wizard-tracker-backend",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "Backend API for Wizard Tracker game",
   "main": "server.js",
   "scripts": {
