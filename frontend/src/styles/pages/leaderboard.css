@@ -42,7 +42,7 @@
 .search-input {
   flex: 1;
   margin: 0;
-  min-width: 65%;
+  min-width: 70%;
   width: 100%;
   padding: 0 12px;
   border: 1px solid var(--border);

@@ -95,8 +95,13 @@ export async function getTableGameById(gameId) {
     throw new Error('Your session has expired. Please sign in again.');
   }
 
+  if (res.status === 404) {
+    throw new Error('Table game not found (404)');
+  }
+
   if (!res.ok) {
-    throw new Error('Failed to fetch table game');
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to fetch table game');
   }
 
   const data = await res.json();

@@ -340,19 +340,24 @@ const Settings = () => {
     
     // Verify uploaded table games still exist on server
     if (isOnline && user) {
+      const { getTableGameById } = await import('@/shared/api/tableGameService');
       for (const game of tableGames) {
         if (game.isUploaded && game.cloudGameId) {
           try {
-            const { getTableGameById } = await import('@/shared/api/tableGameService');
             await getTableGameById(game.cloudGameId);
             // Game exists on server, keep upload status
           } catch (error) {
             // Game doesn't exist on server anymore, clear upload status
-            if (error.message.includes('not found') || error.message.includes('404')) {
+            const isNotFound = error.message.includes('not found') || 
+                              error.message.includes('404') ||
+                              error.message.includes('Not Found');
+            if (isNotFound) {
               console.debug(`[Settings] Table game ${game.id} not found on server, clearing upload status`);
               LocalTableGameStorage.clearUploadStatus(game.id);
               game.isUploaded = false;
               game.cloudGameId = null;
+            } else {
+              console.debug(`[Settings] Error checking table game ${game.id}:`, error.message);
             }
           }
         }
