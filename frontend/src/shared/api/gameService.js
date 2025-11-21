@@ -70,20 +70,32 @@ export async function getUserCloudGamesList() {
     let hasMore = true;
     
     while (hasMore) {
-      const res = await fetch(`${API_ENDPOINTS.games.list}?page=${currentPage}&limit=100&sortOrder=desc`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      try {
+        const res = await fetch(`${API_ENDPOINTS.games.list}?page=${currentPage}&limit=100&sortOrder=desc`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (res.status === 401) {
+          throw new Error('Your session has expired. Please sign in again.');
         }
-      });
-      
-      if (!res.ok) {
-        throw new Error('Failed to fetch cloud games');
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to fetch cloud games (${res.status})`);
+        }
+        
+        const data = await res.json();
+        allGames = allGames.concat(data.games || []);
+        hasMore = data.pagination?.hasNextPage || false;
+        currentPage++;
+      } catch (fetchError) {
+        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
+          throw new Error('Network error: Unable to connect to server. Please check your internet connection.');
+        }
+        throw fetchError;
       }
-      
-      const data = await res.json();
-      allGames = allGames.concat(data.games || []);
-      hasMore = data.pagination?.hasNextPage || false;
-      currentPage++;
     }
 
     // Return games with useful metadata for selection
@@ -116,6 +128,12 @@ export async function getUserCloudGamesList() {
     });
   } catch (error) {
     console.error('Error fetching cloud games list:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      token: token ? 'present' : 'missing',
+      endpoint: API_ENDPOINTS.games.list
+    });
     throw error;
   }
 }
