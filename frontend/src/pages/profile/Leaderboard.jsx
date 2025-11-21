@@ -187,17 +187,17 @@ const Leaderboard = () => {
               >
                 Win% {sortBy === 'winRate' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
-              <div 
+              {/* <div 
                 className={`games-col ${sortBy === 'totalGames' ? 'sorted' : ''}`}
                 onClick={() => handleSort('totalGames')}
               >
                 Games {sortBy === 'totalGames' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </div>
+              </div> */}
               <div 
                 className={`score-col ${sortBy === 'avgScore' ? 'sorted' : ''}`}
                 onClick={() => handleSort('avgScore')}
               >
-                Avg Score {sortBy === 'avgScore' && (sortOrder === 'asc' ? '↑' : '↓')}
+                Ø Score {sortBy === 'avgScore' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
             </div>
 
@@ -219,7 +219,7 @@ const Leaderboard = () => {
                     </div>
                     <div className="wins-col">{player.wins}</div>
                     <div className="winrate-col">{player.winRate}%</div>
-                    <div className="games-col">{player.totalGames}</div>
+                    {/* <div className="games-col">{player.totalGames}</div> */}
                     <div className="score-col">{player.avgScore}</div>
                   </div>
                 ) : (

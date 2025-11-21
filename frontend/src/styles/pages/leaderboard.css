@@ -87,7 +87,7 @@
 .leaderboard-header,
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 60px 2fr 100px 100px 100px 120px;
+  grid-template-columns: 60px 2fr 100px 100px 120px;
   padding: 16px;
   align-items: center;
   gap: 12px;
@@ -138,7 +138,7 @@
 
 .player-name {
   font-weight: 400;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .rank-col {
@@ -170,6 +170,7 @@
 .score-col {
   text-align: center;
   font-weight: 500;
+  font-size: 1rem;
 }
 
 .winrate-col {
@@ -281,7 +282,7 @@
 @media (max-width: 768px) {
   .leaderboard-header,
   .leaderboard-row {
-    grid-template-columns: 50px 1.5fr 80px 80px 80px 100px;
+    grid-template-columns: 50px 1.5fr 80px 80px 100px;
     padding: 8px 4px;
     gap: 8px;
     font-size: 0.9rem;
@@ -312,17 +313,36 @@
 @media (max-width: 480px) {
   .leaderboard-header,
   .leaderboard-row {
-    grid-template-columns: 40px 1fr 60px 60px;
-    gap: 6px;
-    font-size: 0.85rem;
-  }
-
-  .games-col,
-  .score-col {
-    display: none;
+    grid-template-columns: 40px 1fr 50px 50px 60px;
+    gap: 4px;
+    padding: 6px 6px;
+    font-size: 0.9rem;
   }
 
   .leaderboard-container {
     padding: 10px;
+  }
+
+  .leaderboard-container h1 {
+    font-size: 1.75rem;
+  }
+
+  .rank-col {
+    font-size: 0.9rem;
+  }
+
+  .medal {
+    font-size: 1.1rem;
+  }
+
+  /* .player-name {
+    font-size: 0.9rem;
+  } */
+
+  .wins-col,
+  .winrate-col,
+  .games-col,
+  .score-col {
+    font-size: 0.9rem;
   }
 }
