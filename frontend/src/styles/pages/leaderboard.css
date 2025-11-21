@@ -119,6 +119,7 @@
 .leaderboard-row {
   border-bottom: 1px solid var(--border);
   transition: background-color 0.2s;
+  min-height: 45px;
 }
 
 .leaderboard-row:hover {
@@ -130,7 +131,7 @@
 }
 
 .leaderboard-row.empty-row {
-  opacity: 0.3;
+  /* opacity: 0.3; */
   pointer-events: none;
 }
 
