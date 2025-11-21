@@ -945,23 +945,25 @@ const Settings = () => {
                     </Link>
                   </div>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    background: 'none',
-                    cursor: 'pointer',
-                    padding: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--error-color)',
-                    border: '1px solid var(--error-color)',
-                  }}
-                  title="Sign Out"
-                  aria-label="Sign Out"
-                >
-                  <LogOutIcon size={24} />
-                </button>
+                {user && (
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      background: 'none',
+                      cursor: 'pointer',
+                      padding: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--error-color)',
+                      border: '1px solid var(--error-color)',
+                    }}
+                    title="Sign Out"
+                    aria-label="Sign Out"
+                  >
+                    <LogOutIcon size={24} />
+                  </button>
+                )}
               </div>
             </div>
           )}
