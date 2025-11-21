@@ -205,19 +205,33 @@ router.get('/leaderboard', async (req, res, next) => {
     
     // Process Table games
     tableGames.forEach(game => {
-      const gameData = game.gameData;
+      // Table games have nested structure: gameData.gameData
+      const outerGameData = game.gameData;
+      const gameData = outerGameData?.gameData || outerGameData;
+      
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
         return;
       }
 
-      const gameMode = game.name || gameData.name || 'Table Game'; // Use the table game name
+      const gameMode = game.name || outerGameData?.name || gameData.name || 'Table Game';
       
-      const finalScores = gameData.final_scores || {};
+      // Table games store points arrays, not final_scores
+      // Calculate final scores from points arrays
+      const finalScores = {};
+      gameData.players.forEach((player, index) => {
+        const playerId = `player_${index}`; // Use index as ID since table games don't have player IDs
+        const points = player.points || [];
+        const totalScore = points.reduce((sum, p) => {
+          const parsed = parseFloat(p);
+          return sum + (isNaN(parsed) ? 0 : parsed);
+        }, 0);
+        finalScores[playerId] = totalScore;
+      });
       
       // Find winner (highest or lowest score depending on lowIsBetter)
       let winnerId = null;
       if (Object.keys(finalScores).length > 0) {
-        const lowIsBetter = game.lowIsBetter || gameData.lowIsBetter || false;
+        const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
         const scores = Object.entries(finalScores);
         if (lowIsBetter) {
           winnerId = scores.reduce((min, curr) => curr[1] < min[1] ? curr : min)[0];
@@ -226,8 +240,8 @@ router.get('/leaderboard', async (req, res, next) => {
         }
       }
 
-      gameData.players.forEach(player => {
-        const playerId = player.id;
+      gameData.players.forEach((player, index) => {
+        const playerId = `player_${index}`;
         const playerName = player.name;
         
         if (!playerName) return;
@@ -253,8 +267,7 @@ router.get('/leaderboard', async (req, res, next) => {
         
         stats.totalGames++;
         
-        const isWinner = playerId === winnerId || 
-                        (winnerId && gameData.players.find(p => p.id === winnerId)?.name === playerName);
+        const isWinner = playerId === winnerId;
         
         if (isWinner) {
           stats.wins++;
