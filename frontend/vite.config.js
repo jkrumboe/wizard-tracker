@@ -59,17 +59,21 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "prompt",
-      // Use injectManifest to use custom service worker
       strategies: 'generateSW',
+      injectRegister: 'auto',
+      // Add devOptions to test SW in dev mode
+      devOptions: {
+        enabled: false
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Clean up outdated caches
         cleanupOutdatedCaches: true,
-        // Don't fail on precache errors (for old assets)
         skipWaiting: false,
         clientsClaim: true,
-        // Ignore precache errors for assets that don't exist
         ignoreURLParametersMatching: [/^v/],
+        navigateFallback: null,
+        sourcemap: false,
+        // Handle precache installation with better error recovery
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

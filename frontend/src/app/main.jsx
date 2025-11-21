@@ -10,6 +10,35 @@ import "@/styles/components/multi-player-scorecard.css" // Enhanced scorecard st
 // Initialize offline sync system
 import { createSyncManager } from "@/shared/sync/syncManager"
 import { syncApiClient } from "@/shared/api"
+import { wasServiceWorkerForceUpdated, clearServiceWorkerUpdateFlag, forceServiceWorkerUpdate } from "@/shared/utils/swCleanup"
+
+// Handle service worker precache errors
+if (wasServiceWorkerForceUpdated()) {
+  // Clear the flag after successful reload
+  clearServiceWorkerUpdateFlag();
+  console.log('Service worker was force updated and page reloaded');
+}
+
+// Listen for unhandled promise rejections (like SW precache errors)
+window.addEventListener('unhandledrejection', (event) => {
+  // Check if it's a Workbox precaching error
+  if (event.reason && 
+      (event.reason.message?.includes('bad-precaching-response') || 
+       event.reason.name === 'bad-precaching-response')) {
+    console.warn('Detected service worker precache error, will force update on next visit');
+    event.preventDefault(); // Prevent the error from being logged
+    
+    // Store flag to force SW update on next visit
+    localStorage.setItem('sw_needs_cleanup', 'true');
+  }
+});
+
+// Check if SW needs cleanup from previous visit
+if (localStorage.getItem('sw_needs_cleanup') === 'true') {
+  localStorage.removeItem('sw_needs_cleanup');
+  console.log('Forcing service worker cleanup due to previous precache error');
+  forceServiceWorkerUpdate();
+}
 
 // Create and initialize sync manager
 let syncManager;
