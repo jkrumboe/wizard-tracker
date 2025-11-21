@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
-import { useUser } from '@/shared/hooks/useUser'
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
+// import { useUser } from '@/shared/hooks/useUser'
+// import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from '@/components/ui/Icon'
 
@@ -24,14 +24,14 @@ const GamesMenu = ({ show, onClose }) => {
           </button>
         </div>
         <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-          <Link to="/leaderboard" className="modal-button" onClick={onClose}>
-            <TrophyIcon size={24} style={{ marginRight: 8 }} /> Leaderboard
-          </Link>
           <Link to="/new-game" className="modal-button" onClick={onClose}>
             <GamepadIcon size={24} style={{ marginRight: 8 }} /> Wizard
           </Link>
           <Link to="/table" className="modal-button" onClick={onClose}>
             <UsersIcon size={24} style={{ marginRight: 8 }} /> Table
+          </Link>
+          <Link to="/leaderboard" className="modal-button" onClick={onClose}>
+            <TrophyIcon size={24} style={{ marginRight: 8 }} /> Leaderboard
           </Link>
         </div>
       </div>
@@ -41,8 +41,8 @@ const GamesMenu = ({ show, onClose }) => {
 import "@/styles/components/components.css"
 
 const Navbar = () => {
-  const { user } = useUser()
-  const { isOnline } = useOnlineStatus()
+  // const { user } = useUser()
+  // const { isOnline } = useOnlineStatus()
   const location = useLocation()
   // Add state for Games menu
   const [showGamesMenu, setShowGamesMenu] = useState(false);

@@ -130,9 +130,24 @@ router.get('/leaderboard', async (req, res, next) => {
     
     console.log(`[GET /api/games/leaderboard] Found ${wizardGames.length} wizard games, ${tableGames.length} table games`);
     
+    // Debug: Log first few table game names
+    if (tableGames.length > 0) {
+      console.log('[DEBUG] First 5 table game names:', tableGames.slice(0, 5).map(g => ({ 
+        name: g.name, 
+        gameDataName: g.gameData?.name,
+        id: g._id 
+      })));
+    }
+    
     // Calculate player statistics grouped by NAME (not ID)
     const playerStats = {};
     const gameTypeSet = new Set(['all', 'Wizard']); // Start with 'all' and 'Wizard'
+    
+    // First, collect all available game types from table games
+    tableGames.forEach(game => {
+      const gameMode = game.name || game.gameData?.name || 'Table Game';
+      gameTypeSet.add(gameMode);
+    });
     
     // Process Wizard games
     wizardGames.forEach(game => {
@@ -210,7 +225,7 @@ router.get('/leaderboard', async (req, res, next) => {
       }
 
       const gameMode = game.name || gameData.name || 'Table Game'; // Use the table game name
-      gameTypeSet.add(gameMode); // Add to available game types
+      console.log(`[DEBUG] Processing table game: ${gameMode}`);
       
       const finalScores = gameData.final_scores || {};
       
@@ -305,8 +320,10 @@ router.get('/leaderboard', async (req, res, next) => {
     });
 
     // Get unique game types
+    console.log('[DEBUG] gameTypeSet before conversion:', Array.from(gameTypeSet));
     const gameTypes = Array.from(gameTypeSet).sort();
-
+    
+    console.log(`[GET /api/games/leaderboard] Game types:`, gameTypes);
     console.log(`[GET /api/games/leaderboard] Sending ${leaderboard.length} players, ${gameTypes.length} game types`);
 
     res.json({

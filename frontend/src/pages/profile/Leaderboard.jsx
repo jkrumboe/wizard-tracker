@@ -5,7 +5,7 @@ import "@/styles/pages/leaderboard.css"
 const Leaderboard = () => {
   const [players, setPlayers] = useState([])
   const [gameTypes, setGameTypes] = useState(['all'])
-  const [selectedGameType, setSelectedGameType] = useState('all')
+  const [selectedGameType, setSelectedGameType] = useState('Wizard') // Default to Wizard
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sortBy, setSortBy] = useState('wins')
@@ -154,7 +154,7 @@ const Leaderboard = () => {
         >
           {gameTypes.map(type => (
             <option key={type} value={type}>
-              {type === 'all' ? 'Game Types' : type}
+              {type === 'all' ? 'All Game Types' : type}
             </option>
           ))}
         </select>
