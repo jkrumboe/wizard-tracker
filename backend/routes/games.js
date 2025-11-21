@@ -108,6 +108,145 @@ router.post('/', auth, async (req, res, next) => {
   }
 });
 
+// GET /games/leaderboard - Calculate leaderboard from all games
+// IMPORTANT: This must come BEFORE /:id route to avoid conflicts
+router.get('/leaderboard', auth, async (req, res, next) => {
+  console.log('[GET /api/games/leaderboard] Request received', { 
+    query: req.query,
+    userId: req.user?._id 
+  });
+  
+  try {
+    const { gameType } = req.query;
+    
+    // Build query filter
+    const query = {};
+    if (gameType && gameType !== 'all') {
+      query['gameData.mode'] = gameType;
+    }
+
+    console.log('[GET /api/games/leaderboard] Fetching games with query:', query);
+    
+    // Get all games
+    const games = await Game.find(query);
+    
+    console.log(`[GET /api/games/leaderboard] Found ${games.length} games`);
+    
+    // Calculate player statistics grouped by NAME (not ID)
+    const playerStats = {};
+    
+    games.forEach(game => {
+      const gameData = game.gameData;
+      if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
+        return;
+      }
+
+      const gameMode = gameData.mode || 'Local';
+      const winnerId = gameData.winner_id;
+      const finalScores = gameData.final_scores || {};
+
+      gameData.players.forEach(player => {
+        const playerId = player.id;
+        const playerName = player.name;
+        
+        // Skip players without a name
+        if (!playerName) return;
+
+        // Use NAME as the key to group same players with different IDs
+        // Initialize player stats if first time seeing this name
+        if (!playerStats[playerName]) {
+          playerStats[playerName] = {
+            id: playerName, // Use name as unique identifier
+            name: playerName,
+            totalGames: 0,
+            wins: 0,
+            totalScore: 0,
+            gameTypes: {},
+            lastPlayed: game.createdAt
+          };
+        }
+
+        const stats = playerStats[playerName];
+        
+        // Update basic stats
+        stats.totalGames++;
+        
+        // Check if this player won (compare by ID if available, otherwise by name)
+        const isWinner = playerId === winnerId || 
+                        (winnerId && gameData.players.find(p => p.id === winnerId)?.name === playerName);
+        
+        if (isWinner) {
+          stats.wins++;
+        }
+        
+        // Add score if available
+        if (finalScores[playerId] !== undefined) {
+          stats.totalScore += finalScores[playerId];
+        }
+
+        // Track by game type
+        if (!stats.gameTypes[gameMode]) {
+          stats.gameTypes[gameMode] = {
+            games: 0,
+            wins: 0,
+            totalScore: 0
+          };
+        }
+        stats.gameTypes[gameMode].games++;
+        if (isWinner) {
+          stats.gameTypes[gameMode].wins++;
+        }
+        if (finalScores[playerId] !== undefined) {
+          stats.gameTypes[gameMode].totalScore += finalScores[playerId];
+        }
+
+        // Update last played
+        if (new Date(game.createdAt) > new Date(stats.lastPlayed)) {
+          stats.lastPlayed = game.createdAt;
+        }
+      });
+    });
+
+    // Convert to array and calculate derived stats
+    const leaderboard = Object.values(playerStats).map(player => {
+      const winRate = player.totalGames > 0 
+        ? ((player.wins / player.totalGames) * 100).toFixed(1) 
+        : 0;
+      const avgScore = player.totalGames > 0 
+        ? (player.totalScore / player.totalGames).toFixed(1) 
+        : 0;
+
+      return {
+        ...player,
+        winRate: parseFloat(winRate),
+        avgScore: parseFloat(avgScore)
+      };
+    });
+
+    // Sort by wins, then win rate, then total games
+    leaderboard.sort((a, b) => {
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+      return b.totalGames - a.totalGames;
+    });
+
+    // Get unique game types
+    const gameTypes = ['all', ...new Set(games.map(g => g.gameData?.mode).filter(Boolean))];
+
+    console.log(`[GET /api/games/leaderboard] Sending ${leaderboard.length} players, ${gameTypes.length} game types`);
+
+    res.json({
+      leaderboard,
+      gameTypes,
+      totalGames: games.length
+    });
+  } catch (error) {
+    console.error('[GET /api/games/leaderboard] Error:', error);
+    console.error('[GET /api/games/leaderboard] Error stack:', error.stack);
+    res.status(500).json({ error: error.message, details: error.stack });
+  }
+});
+
 // GET /games/:id - Get a game by MongoDB _id
 router.get('/:id', async (req, res) => {
   try {

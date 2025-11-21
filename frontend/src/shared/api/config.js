@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
     create: `${API_BASE_URL}/api/games`,
     getById: (id) => `${API_BASE_URL}/api/games/${id}`,
     stats: `${API_BASE_URL}/api/games/stats`,
+    leaderboard: `${API_BASE_URL}/api/games/leaderboard`,
   },
   tableGames: {
     list: `${API_BASE_URL}/api/table-games`,

@@ -355,7 +355,7 @@ return (
                 to="/profile/stats"
                 className="view-all-stats"
                 style={{
-                  color: 'var(--primary-color)',
+                  color: 'var(--primary)',
                   fontSize: '0.875rem',
                   display: 'inline-block',
                   marginTop: '0.5rem'
@@ -376,7 +376,7 @@ return (
                 onClick={() => setShowFilterModal(true)}
                 aria-label="Filter games"
                 style={{
-                  background: 'var(--primary-color)',
+                  background: 'var(--primary)',
                   color: 'var(--text-white)',
                   border: 'none',
                   borderRadius: 'var(--radius-md)',
@@ -398,7 +398,7 @@ return (
                     height: '12px',
                     background: 'var(--danger-color, red)',
                     borderRadius: '50%',
-                    border: '2px solid var(--card-background)'
+                    border: '2px solid var(--card-bg)'
                   }} />
                 )}
               </button>

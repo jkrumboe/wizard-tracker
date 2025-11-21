@@ -12,7 +12,7 @@
     scroll-behavior: smooth;
     /* justify-content: center; */
     scrollbar-width: thin;
-    scrollbar-color: var(--primary-light) var(--card-background-alt);
+    scrollbar-color: var(--primary-light) var(--card-bg-alt);
     position: relative; /* Ensure proper containment for drag operations */
     min-height: fit-content; /* Ensure minimum boundaries */
 }
@@ -21,10 +21,10 @@
     display: flex;
     align-items: center;
     padding: var(--spacing-xs) var(--spacing-sm);
-    background-color: var(--card-background-alt);
+    background-color: var(--card-bg-alt);
     border-radius: var(--radius-lg);
     margin: 0 var(--spacing-xs);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     font-weight: 600;
     gap: var(--spacing-sm);
     max-height: 3rem;
@@ -40,7 +40,7 @@
 }
 
 .player-item:hover {
-    border-color: var(--primary-color);
+    border-color: var(--primary);
 }
 
 .player-item.verified {
@@ -83,8 +83,8 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    background-color: var(--primary-color);
-    color: var(--text-color);
+    background-color: var(--primary);
+    color: var(--text);
     border-radius: var(--radius-md);
     font-size: 0.8rem;
     font-weight: 600;
@@ -106,7 +106,7 @@
 
 .drag-handle:active {
     cursor: grabbing;
-    color: var(--primary-color);
+    color: var(--primary);
 }
 
 /* Mobile touch improvements */
@@ -141,8 +141,8 @@
     flex: 1;
     padding: var(--spacing-xs);
     border-radius: var(--radius-sm);
-    background-color: var(--input-background);
-    color: var(--text-color);
+    background-color: var(--input-bg);
+    color: var(--text);
     border: 1px solid var(--border-light);
     align-content: center;
     text-align: center;
@@ -159,8 +159,8 @@
 }
 
 .player-actions .addPlayer {
-    background-color: var(--primary-color);
-    color: var(--text-color);
+    background-color: var(--primary);
+    color: var(--text);
     border: none;
     border-radius: var(--radius-md);
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -176,8 +176,8 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-sm);
-    background-color: var(--primary-color);
-    color: var(--text-color);
+    background-color: var(--primary);
+    color: var(--text);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -200,7 +200,7 @@
 /* Visual feedback for drop zones */
 .player-item[data-over] {
     background-color: rgba(53, 99, 233, 0.1);
-    border-color: var(--primary-color);
+    border-color: var(--primary);
 }
 
 /* Scrollbar styling for player list */
@@ -209,7 +209,7 @@
 }
 
 .player-list::-webkit-scrollbar-track {
-  background: var(--card-background-alt);
+  background: var(--card-bg-alt);
   border-radius: var(--radius-md);
 }
 
@@ -219,7 +219,7 @@
 }
 
 .player-list::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-color);
+  background: var(--primary);
 }
 
 /* Responsive styling for different player counts */

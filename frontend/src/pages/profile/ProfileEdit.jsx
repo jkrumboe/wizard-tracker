@@ -248,7 +248,7 @@ const ProfileEdit = () => {
         </div>
 
         <small style={{ 
-          color: 'var(--text-color)', 
+          color: 'var(--text)', 
           fontSize: '0.85rem',
           display: 'block',
           alignSelf: 'center',

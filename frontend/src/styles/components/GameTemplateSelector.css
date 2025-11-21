@@ -4,7 +4,7 @@
   max-width: 800px;
   margin: 0 auto;
   /* padding: var(--spacing-md); */
-  /* background-color: var(--card-background); */
+  /* background-color: var(--card-bg); */
   border-radius: var(--radius-lg);
 }
 
@@ -15,7 +15,7 @@
 .template-selector-header h2 {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--text);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -32,7 +32,7 @@
   max-height: calc(70vh - var(--bottom-nav-height));
   overflow: scroll;
   padding: 0 4px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--border);
 }
 
 .template-item {
@@ -40,8 +40,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md);
-  background: var(--card-background);
-  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -62,7 +62,7 @@
 .template-name {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text);
   word-wrap: break-word;
   flex: 1;
 }
@@ -94,7 +94,7 @@
   justify-content: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -108,15 +108,15 @@
 }
 
 .template-action-btn.play-btn {
-  color: var(--primary-color);
+  color: var(--primary);
   flex: 0 0 45%;
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
 .template-action-btn.continue-btn {
-  color: var(--secondary-color);
+  color: var(--secondary);
   flex: 0 0 15%;
-  border-color: var(--secondary-color);
+  border-color: var(--secondary);
 }
 
 .template-action-btn.edit-btn-inline {
@@ -140,17 +140,17 @@
 
 .template-edit-input {
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-sm);
-  background: var(--input-background);
-  color: var(--text-color);
+  background: var(--input-bg);
+  color: var(--text);
   font-size: 1rem;
   outline: none;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .template-edit-input:focus {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.7);
 }
 
@@ -171,8 +171,8 @@
 }
 
 .template-edit-btn.save-btn {
-  background: var(--primary-color);
-  color: var(--text-color);
+  background: var(--primary);
+  color: var(--text);
 }
 
 .template-edit-btn.save-btn:hover {
@@ -181,8 +181,8 @@
 }
 
 .template-edit-btn.cancel-btn {
-  background: var(--border-color);
-  color: var(--text-color);
+  background: var(--border);
+  color: var(--text);
 }
 
 .template-edit-btn.cancel-btn:hover {
@@ -221,7 +221,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-sm);
-  background: var(--primary-color);
+  background: var(--primary);
   color: var(--text);
 }
 
@@ -251,7 +251,7 @@
 }
 
 .delete-modal {
-  background: var(--card-background);
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   max-width: 400px;
@@ -274,12 +274,12 @@
 .delete-modal h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--text);
   margin-bottom: var(--spacing-md);
 }
 
 .delete-modal p {
-  color: var(--text-color);
+  color: var(--text);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -306,8 +306,8 @@
 }
 
 .delete-modal-btn.cancel {
-  background: var(--border-color);
-  color: var(--text-color);
+  background: var(--border);
+  color: var(--text);
 }
 
 .delete-modal-btn.cancel:hover {
@@ -316,11 +316,11 @@
 
 .delete-modal-btn.confirm {
   background: var(--error-color);
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .delete-modal-btn.confirm:hover {
-  background: var(--danger-color-dark);
+  background: var(--danger-dark);
 }
 
 /* Responsive Design */

@@ -10,7 +10,7 @@
 #game-performance p {
   display: flex;
   flex-direction: column;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: 10px;
   padding: var(--spacing-xs);
   margin: var(--spacing-xs);
@@ -32,7 +32,7 @@
 }
 
 .metric-label {
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .metric-value {
@@ -47,11 +47,11 @@
 
 .metric-bar-container {
   height: 10px;
-  background-color: var(--background-color);
+  background-color: var(--bg-color);
   overflow: visible;
   margin-bottom: var(--spacing-sm);
   position: relative;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   /* border-radius: var(--radius-sm); */
 }
 
@@ -60,7 +60,7 @@
   top: -3px;
   height: 14px;
   width: 2px;
-  background-color: var(--text-color);
+  background-color: var(--text);
   z-index: 2;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.2);
@@ -71,7 +71,7 @@
   top: 14px;
   transform: translateX(-50%);
   font-size: 0.7rem;
-  color: var(--text-color);
+  color: var(--text);
   white-space: nowrap;
   font-weight: 500;
 }
@@ -134,7 +134,7 @@
   display: flex;
   flex-direction: column;
 
-  /* background-color: var(--background-color); */
+  /* background-color: var(--bg-color); */
   border-radius: 10px;
   padding: var(--spacing-sm) 0;
   /* margin-top: var(--spacing-sm); */
@@ -146,17 +146,17 @@
 .advanced-stats h3 {
   margin-top: 0;
   color: black;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
 
 .stats-section-title {
   font-size: 1.1rem;
-  color: var(--text-color);
+  color: var(--text);
   font-weight: 500;
   /* padding-bottom: var(--spacing-xs); */
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 
 .stats-cards {
@@ -175,7 +175,7 @@
 
 .bidding-style-label {
   font-size: 0.9rem;
-  color: var(--text-color);
+  color: var(--text);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -187,7 +187,7 @@
 
 .bidding-stats {
   font-size: 0.85rem;
-  color: var(--text-color);
+  color: var(--text);
   display: flex;
   gap: 0.5rem;
   align-items: center;
@@ -239,7 +239,7 @@
 }
 
 .metric-with-description {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: 10px;
   padding: 1rem;
   margin: 0.5rem 0;
@@ -248,7 +248,7 @@
 
 .metric-with-description .metric-description {
   font-size: 0.8rem;
-  color: var(--text-color);
+  color: var(--text);
   margin-top: 0.5rem;
   font-style: italic;
   text-align: center;
@@ -283,8 +283,8 @@
 
 /* Additional Stats Styling */
 .additional-stats {
-  background-color: var(--card-background-alt);
-  border: 1px solid var(--border-color);
+  background-color: var(--card-bg-alt);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--spacing-xs);
   display: flex;
@@ -307,7 +307,7 @@
 }
 
 .stat-label {
-  color: var(--text-color);
+  color: var(--text);
   font-size: 0.9rem;
 }
 
@@ -317,7 +317,7 @@
 }
 
 .stat-value.highlight {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.1rem;
 }
 
@@ -330,7 +330,7 @@
 }
 
 .stat-explanation {
-  color: var(--text-color);
+  color: var(--text);
   font-size: 0.8rem;
   font-style: italic;
   margin-left: auto;
@@ -341,7 +341,7 @@
 
 /* Make the stat cards look more consistent in GameInProgress */
 .player-stat-card {
-  background-color: var(--background-color);
+  background-color: var(--bg-color);
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
@@ -351,7 +351,7 @@
 .player-stat-name {
   margin-top: 0;
   margin-bottom: var(--spacing-md);
-  color: var(--text-color);
-  border-bottom: 1px solid var(--primary-color);
+  color: var(--text);
+  border-bottom: 1px solid var(--primary);
   padding-bottom: var(--spacing-xs);
 }

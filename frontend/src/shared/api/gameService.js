@@ -39,6 +39,24 @@ export async function getRecentGames(_limit = 5) {
   return data.games || [];
 }
 
+// Get leaderboard data
+export async function getLeaderboard(gameType = 'all') {
+  const token = localStorage.getItem('auth_token');
+  const url = gameType && gameType !== 'all' 
+    ? `${API_ENDPOINTS.games.leaderboard}?gameType=${encodeURIComponent(gameType)}`
+    : API_ENDPOINTS.games.leaderboard;
+  
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  if (!res.ok) throw new Error('Failed to fetch leaderboard');
+  const data = await res.json();
+  return data;
+}
+
 /**
  * Get list of cloud games for the logged-in user (metadata only)
  * @returns {Promise<Array>} List of cloud games with metadata

@@ -41,7 +41,7 @@
 }
 
 .round-made {
-  border-top: 1px solid var(--card-background);
+  border-top: 1px solid var(--card-bg);
 }
 
 .round-row .round-score {
@@ -81,5 +81,5 @@
 }
 
 .wizard-scorecard::-webkit-scrollbar-track {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
 }

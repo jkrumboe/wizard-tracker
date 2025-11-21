@@ -17,7 +17,7 @@
 .game-container .results-table {
   width: 100%;
   margin-top: var(--spacing-md);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -28,14 +28,14 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
   position: relative;
   flex-direction: row;
   flex-wrap: nowrap;
 }
 
 .game-container .results-row:nth-child(even) {
-  background-color: var(--card-background-alt);
+  background-color: var(--card-bg-alt);
 }
 
 .game-container .results-row:last-child {
@@ -77,8 +77,8 @@
   flex: 0 0 25%;
   min-width: 80px;
   max-width: 100px;
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   border: none;
   border-radius: var(--radius-md);
   padding: 8px 12px;
@@ -96,7 +96,7 @@
   padding: var(--spacing-md);
   display: flex;
   justify-content: space-between;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-md);
   box-shadow: var(--shadow);
@@ -108,7 +108,7 @@
 }
 
 .game-container .game-stats-container h2 {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.5rem;
 }
 
@@ -132,8 +132,8 @@
   margin-bottom: var(--spacing-md);
   bottom: calc(var(--bottom-nav-height) + 60px);
   z-index: 99;
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   border: none;
   border-radius: var(--radius-md);
   padding: 10px 20px;
@@ -167,11 +167,11 @@
 }
 
 .game-stats span {
-  background-color: var(--card-background-alt);
-  color: var(--text-color);
+  background-color: var(--card-bg-alt);
+  color: var(--text);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   font-weight: 500;
 }
 
@@ -189,7 +189,7 @@
 
 .leave-button {
   background-color: var(--error-color);
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .loading-spinner {
@@ -203,8 +203,8 @@
 .spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid var(--border-color);
-  border-top: 3px solid var(--primary-color);
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--primary);
   border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
   margin-bottom: var(--spacing-lg);
@@ -220,7 +220,7 @@
 
 /* Enhanced waiting room styling */
 .waiting-phase {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   margin: var(--spacing-lg);
@@ -231,7 +231,7 @@
 }
 
 .waiting-phase h2 {
-  color: var(--primary-color);
+  color: var(--primary);
   margin-bottom: var(--spacing-md);
   font-size: 1.8rem;
 }
@@ -261,8 +261,8 @@
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-sm);
-  background-color: var(--card-background-alt);
-  border: 1px solid var(--border-color);
+  background-color: var(--card-bg-alt);
+  border: 1px solid var(--border);
   transition: all 0.2s ease;
   position: relative;
 }
@@ -357,7 +357,7 @@
 .leave-button {
   padding: var(--spacing-md) var(--spacing-lg);
   background-color: var(--error-color);
-  color: var(--text-color);
+  color: var(--text);
   border: none;
   border-radius: var(--radius-md);
   font-weight: 600;
@@ -376,7 +376,7 @@
 .copy-link-container {
   display: flex;
   margin-top: var(--spacing-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -385,14 +385,14 @@
   flex: 1;
   padding: var(--spacing-sm);
   border: none;
-  background-color: var(--card-background-light);
-  color: var(--text-color);
+  background-color: var(--card-bg-light);
+  color: var(--text);
 }
 
 .copy-link-button {
   padding: var(--spacing-sm) var(--spacing-lg);
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   border: none;
   cursor: pointer;
   font-weight: 500;
@@ -420,7 +420,7 @@
 .retry-button,
 .back-button {
   background-color: var(--error-color);
-  color: var(--text-color);
+  color: var(--text);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -432,8 +432,8 @@
 }
 
 .back-button {
-  background-color: var(--border-color);
-  color: var(--text-color);
+  background-color: var(--border);
+  color: var(--text);
 }
 
 .retry-button:hover {
@@ -442,7 +442,7 @@
 }
 
 .back-button:hover {
-  background-color: var(--card-background-light);
+  background-color: var(--card-bg-light);
 }
 
 .game-content {
@@ -452,12 +452,12 @@
 }
 
 .game-status {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   text-align: center;
   box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .game-status h2 {
@@ -468,11 +468,11 @@
 }
 
 .players-section {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl) var(--spacing-xl);
   box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   gap: var(--spacing-lg);
 }
 
@@ -495,7 +495,7 @@
   transform: translateX(-50%);
   width: 40px;
   height: 3px;
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
 
 .players-grid {
@@ -506,12 +506,12 @@
 
 .player-card.current-player {
   border-color: var(--accent-color);
-  background-color: var(--card-background-light);
+  background-color: var(--card-bg-light);
   box-shadow: 0 0 3px rgba(251, 191, 36, 0.1);
 }
 
 .player-card:hover {
-  background-color: var(--card-background-alt);
+  background-color: var(--card-bg-alt);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
@@ -522,7 +522,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: var(--text-color);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -558,20 +558,20 @@
 
 .ready-status.ready {
   background-color: var(--ready-color);
-  color: var(--text-color);
+  color: var(--text);
   border-color: transparent;
 }
 
 .ready-status.not-ready {
   background-color: var(--not-ready-color);
-  color: var(--text-color);
+  color: var(--text);
   border-color: transparent;
 }
 
 .player-game-info {
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
 }
 
 .player-actions {
@@ -588,11 +588,11 @@
 }
 
 .game-actions-section {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   text-align: center;
 }
 
@@ -616,12 +616,12 @@
 
 .ready-button.ready {
   background-color: var(--error-color);
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .ready-button.not-ready {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
 }
 
 .ready-button:hover {
@@ -635,17 +635,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   padding: var(--spacing-sm);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   min-height: 44px; /* Ensure touch-friendly size */
 }
 
 .call-section .label,
 .tricks-section .label {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text);
   flex-shrink: 0;
   margin-right: var(--spacing-sm);
 }
@@ -667,10 +667,10 @@
 .inline-number-input {
   width: 60px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-md);
-  background-color: var(--background-color);
-  color: var(--text-color);
+  background-color: var(--bg-color);
+  color: var(--text);
   font-size: 1.1em;
   font-weight: 600;
   text-align: center;
@@ -680,7 +680,7 @@
 }
 
 .inline-number-input:focus {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.7);
 }
 
@@ -694,7 +694,7 @@
   margin-top: var(--spacing-lg);
   overflow-x: auto;
   border-radius: var(--radius-lg);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   box-shadow: var(--shadow-lg);
 }
 
@@ -705,14 +705,14 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .score-table th,
 .score-table td {
   padding: var(--spacing-md);
   text-align: center;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
   transition: all 0.2s ease;
   position: relative;
   vertical-align: middle;
@@ -720,7 +720,7 @@
 
 .score-table th {
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--text);
   font-size: 1.1em;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -738,7 +738,7 @@
 
 .player-row {
   cursor: pointer;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   position: relative;
   padding: var(--spacing-md) 0;
   transition: background-color 0.2s;
@@ -759,7 +759,7 @@
 }
 
 .player-name {
-  color: var(--text-color);
+  color: var(--text);
   align-items: center;
   line-height: 1.3;
 }
@@ -774,7 +774,7 @@
 
 .you-badge,
 .host-badge {
-  color: var(--primary-color);
+  color: var(--primary);
   padding: 2px 8px;
   border-radius: var(--radius-full);
   font-size: 0.75em;
@@ -784,8 +784,8 @@
 }
 
 .turn-indicator {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-  color: var(--text-color);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: var(--text);
   padding: 4px 12px;
   border-radius: var(--radius-full);
   font-size: 0.8em;
@@ -847,10 +847,10 @@
 .tricks-input {
   width: 80px;
   padding: var(--spacing-sm);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-md);
-  background-color: var(--background-color);
-  color: var(--text-color);
+  background-color: var(--bg-color);
+  color: var(--text);
   font-size: 1.1em;
   font-weight: 600;
   text-align: center;
@@ -861,7 +861,7 @@
 
 .call-input:focus,
 .tricks-input:focus {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.7);
 }
 
@@ -883,7 +883,7 @@
 
 .call-value,
 .made-value {
-  color: var(--primary-color);
+  color: var(--primary);
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
@@ -906,9 +906,9 @@
 .score-container .total-value {
   font-size: 0.9em;
   font-weight: 600;
-  color: var(--text-color);
-  background: linear-gradient(135deg, var(--card-background-alt) 0%, var(--card-background-light) 100%);
-  border: 1px solid var(--border-color);
+  color: var(--text);
+  background: linear-gradient(135deg, var(--card-bg-alt) 0%, var(--card-bg-light) 100%);
+  border: 1px solid var(--border);
   border-radius: var(--radius-full);
   padding: 2px 8px;
   text-align: center;
@@ -916,11 +916,11 @@
 }
 
 .total-value {
-  color: var(--text-color);
+  color: var(--text);
   font-weight: 800;
   font-size: 1.3em;
-  background: linear-gradient(135deg, var(--card-background-alt) 0%, var(--card-background-light) 100%);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--card-bg-alt) 0%, var(--card-bg-light) 100%);
+  border: 1px solid var(--border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -946,10 +946,10 @@
 
 .round-info span {
   text-align: center;
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-bg);
+  color: var(--text);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   font-weight: 500;
   font-size: 1em;
   border-radius: var(--radius-sm);
@@ -957,7 +957,7 @@
 }
 
 .round-number {
-  color: var(--text-color) !important;
+  color: var(--text) !important;
   font-weight: 600 !important;
   box-shadow: var(--shadow-lg);
 }
@@ -974,8 +974,8 @@
 }
 
 .randomize-button {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
-  color: var(--text-color);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: var(--text);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
@@ -990,11 +990,11 @@
 .randomize-button:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
 }
 
 .randomize-button:disabled {
-  background: var(--border-color);
+  background: var(--border);
   color: var(--text-muted);
   cursor: not-allowed;
   transform: none;
@@ -1011,7 +1011,7 @@
   justify-content: center;
   height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
   padding: var(--spacing-lg);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
 }
 
 /* Player scores table styling */
@@ -1024,13 +1024,13 @@
   width: 100%;
   border-collapse: collapse;
   margin-bottom: var(--spacing-md);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 } */
 
 /* .game-container .player-row {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 } */
 
 /* .game-container .player-row:last-child {
@@ -1051,16 +1051,16 @@
 }
 
 .game-container .dealer-badge {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: 0.7rem;
 }
 
 .game-container .host-badge {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   margin-left: var(--spacing-xs);
@@ -1071,10 +1071,10 @@
   /* width: 50px; */
   padding: var(--spacing-xs);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   text-align: center;
-  background-color: var(--input-background);
-  color: var(--text-color);
+  background-color: var(--input-bg);
+  color: var(--text);
 }
 
 .game-container .score {
@@ -1113,8 +1113,8 @@
 }
 
 .game-container .game-control-btn {
-  background-color: var(--card-background);
-  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -1126,12 +1126,12 @@
 }
 
 .game-container .game-control-btn:hover {
-  background-color: var(--card-background-hover);
+  background-color: var(--card-bg-hover);
 }
 
 .game-container .nav-btn {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -1162,7 +1162,7 @@
 .game-container .advanced-stats {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--card-background-light);
+  background-color: var(--card-bg-light);
   border-radius: var(--radius-md);
   margin-top: var(--spacing-sm);
   border-top: 1px solid var(--border-light);
@@ -1174,7 +1174,7 @@
 
 .game-container .stats-section-title {
   font-size: 0.95rem;
-  color: var(--text-color);
+  color: var(--text);
   opacity: 0.8;
   border-bottom: 1px solid var(--border-light);
   padding-bottom: 4px;
@@ -1200,7 +1200,7 @@
 
 .game-container .stats-cards#game-performance span {
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 /* Bidding style card */
@@ -1219,7 +1219,7 @@
   display: flex;
   width: 100%;
   height: 8px;
-  background-color: var(--border-color);
+  background-color: var(--border);
   border-radius: 4px;
   overflow: hidden;
   margin: 4px 0;
@@ -1234,7 +1234,7 @@
 }
 
 .game-container .over-segment {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
 
 .game-container .under-segment {

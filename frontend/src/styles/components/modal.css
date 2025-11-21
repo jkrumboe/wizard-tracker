@@ -19,7 +19,7 @@
 }
 
 .modal-container {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   width: 80%;
   max-width: 500px;
@@ -45,13 +45,13 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .modal-header h2 {
   margin: 0;
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.5rem;
 }
 
@@ -61,7 +61,7 @@
   justify-content: center;
   padding: var(--spacing-xs);
   background: transparent;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   color: var(--text-muted);
   cursor: pointer;
   border-radius: var(--radius-sm);
@@ -69,8 +69,8 @@
 }
 
 .close-btn:hover {
-  background: var(--border-color);
-  color: var(--text-color);
+  background: var(--border);
+  color: var(--text);
 }
 
 /* Modal Body/Content */
@@ -92,7 +92,7 @@
   align-items: center;
   justify-content: center;
   background-color: var(--button-background);
-  color: var(--text-color);
+  color: var(--text);
   border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 500;
@@ -116,18 +116,18 @@
   justify-content: space-between;
   gap: var(--spacing-md);
   padding: var(--spacing-md);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
-  background: var(--card-background);
+  background: var(--card-bg);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .modal-button.primary {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
 
 .modal-button.secondary {
-  background-color: var(--input-background);
+  background-color: var(--input-bg);
 }
 
 .modal-button.danger {
@@ -162,7 +162,7 @@
 
 /* Import Game Player Selection Modal */
 .modal-description {
-  color: var(--text-color);
+  color: var(--text);
   margin-bottom: var(--spacing-lg);
   line-height: 1.5;
   text-align: center;
@@ -176,12 +176,12 @@
   background-color: var(--background-accent);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
-  color: var(--text-color);
+  color: var(--text);
   font-size: 0.9rem;
 }
 
 .current-user-info strong {
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .player-selection-list {
@@ -203,20 +203,20 @@
 }
 
 .player-selection-item:hover {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   background-color: var(--background-accent);
 }
 
 .player-selection-item.selected {
-  border-color: var(--primary-color);
-  background-color: var(--primary-color-alpha);
+  border-color: var(--primary);
+  background-color: var(--primary-alpha);
 }
 
 .player-selection-item input[type="radio"] {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: var(--primary-color);
+  accent-color: var(--primary);
 }
 
 .player-info {
@@ -229,11 +229,11 @@
 
 .player-name {
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .player-score {
-  color: var(--text-color);
+  color: var(--text);
   font-size: 0.9rem;
 }
 
@@ -244,7 +244,7 @@
   max-height: 75vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 0;
   gap: 0 !important;
@@ -270,7 +270,7 @@
 }
 
 .setting-section h3 {
-  color: var(--primary-color);
+  color: var(--primary);
   margin-bottom: var(--spacing-sm);
   font-size: 1.1rem;
 }
@@ -283,8 +283,8 @@
 }
 
 .round-control-btn {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   border: none;
   border-radius: var(--radius-md);
   padding: var(--spacing-sm) var(--spacing-md);
@@ -304,10 +304,10 @@
   width: 80px;
   text-align: center;
   padding: var(--spacing-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background-color: var(--input-background);
-  color: var(--text-color);
+  background-color: var(--input-bg);
+  color: var(--text);
   font-size: 1.2rem;
   font-weight: bold;
 }
@@ -330,21 +330,21 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .dealer-option:hover {
-  background-color: var(--card-background-alt);
-  border-color: var(--primary-color);
+  background-color: var(--card-bg-alt);
+  border-color: var(--primary);
 }
 
 .dealer-option input[type="radio"] {
   width: 20px;
   height: 20px;
-  accent-color: var(--primary-color);
+  accent-color: var(--primary);
   cursor: pointer;
 }
 
@@ -353,8 +353,8 @@
 }
 
 .dealer-option .badge {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
@@ -376,14 +376,14 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
 }
 
 .player-position {
   font-weight: bold;
-  color: var(--primary-color);
+  color: var(--primary);
   min-width: 30px;
   text-align: center;
   font-size: 1.1rem;
@@ -400,8 +400,8 @@
 }
 
 .order-btn {
-  background-color: var(--card-background-alt);
-  border: 1px solid var(--border-color);
+  background-color: var(--card-bg-alt);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-xs);
   cursor: pointer;
@@ -409,11 +409,11 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .order-btn:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  border-color: var(--primary-color);
+  background-color: var(--primary);
+  color: var(--text);
+  border-color: var(--primary);
 }

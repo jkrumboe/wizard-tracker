@@ -239,7 +239,7 @@ function App() {
                       </AuthProtectedRoute>
                     } />
                     <Route path="/account" element={<Navigate to="/profile" replace />} />
-                    {/* <Route path="/leaderboard" element={<Leaderboard />} /> */}
+                    <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/stats/:name" element={<Stats />} />
                     <Route path="/profile/stats" element={<Stats />} />
                     <Route path="/new-game" element={<NewGame />} />

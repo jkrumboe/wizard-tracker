@@ -4,8 +4,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--background-color);
-    color: var(--text-color);
+    background: var(--bg-color);
+    color: var(--text);
     z-index: 9998; /* Lower than PWA loading to prevent conflicts */
     transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -36,7 +36,7 @@
 .particle {
     position: absolute;
     width: 2px; height: 2px;
-    background: var(--primary-color);
+    background: var(--primary);
     border-radius: 50%;
     animation: twinkle linear infinite;
     opacity: 0.6;
@@ -67,7 +67,7 @@
 
 .app-name {
     font-size: 2.5rem; font-weight: 700; margin: 0 0 0.5rem;
-    color: var(--primary-color);
+    color: var(--primary);
     animation: titleGlow 3s ease-in-out infinite alternate;
 }
 
@@ -93,14 +93,14 @@
     margin-top: 2rem;
     width: 60px;
     height: 60px;
-    background: var(--primary-color);
+    background: var(--primary);
     clip-path: polygon(
         50% 0%, 60% 35%, 98% 35%, 68% 57%,
         79% 91%, 50% 70%, 21% 91%, 32% 57%,
         2% 35%, 40% 35%
     );
     animation: rotateRune 2.5s linear infinite;
-    box-shadow: 0 0 12px var(--primary-color);
+    box-shadow: 0 0 12px var(--primary);
 }
 @keyframes rotateRune {
     from { transform: rotate(0deg); }

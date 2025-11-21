@@ -24,9 +24,9 @@ const GamesMenu = ({ show, onClose }) => {
           </button>
         </div>
         <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-          {/* <Link to="/leaderboard" className="modal-button" onClick={onClose}>
-            <TrophyIcon size={18} style={{ marginRight: 8 }} /> Leaderboard
-          </Link> */}
+          <Link to="/leaderboard" className="modal-button" onClick={onClose}>
+            <TrophyIcon size={24} style={{ marginRight: 8 }} /> Leaderboard
+          </Link>
           <Link to="/new-game" className="modal-button" onClick={onClose}>
             <GamepadIcon size={24} style={{ marginRight: 8 }} /> Wizard
           </Link>

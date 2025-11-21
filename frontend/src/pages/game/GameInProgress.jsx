@@ -352,7 +352,7 @@ const GameInProgress = () => {
                       marginRight: '10px', 
                       padding: '10px 20px', 
                       backgroundColor: isRecovering ? '#ccc' : '#007bff', 
-                      color: 'var(--text-color)', 
+                      color: 'var(--text)', 
                       border: 'none', 
                       borderRadius: '4px',
                       cursor: isRecovering ? 'not-allowed' : 'pointer'

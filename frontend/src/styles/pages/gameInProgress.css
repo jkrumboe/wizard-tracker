@@ -17,16 +17,16 @@
   font-size: 0.7rem;
   padding: 3px var(--spacing-sm);
   font-weight: bold;
-  color: var(--text-color);
+  color: var(--text);
   flex-shrink: 0;
 }
 
 .dealer-badge {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
 
 .caller-badge {
-  background-color: var(--secondary-color);
+  background-color: var(--secondary);
 }
 
 /* Fix table column widths to prevent jumpiness */
@@ -38,12 +38,12 @@
 .game-in-progress .score-table td,
 .game-in-progress .score-table th  {
   overflow: hidden;
-  /* background-color: var(--card-background); */
+  /* background-color: var(--card-bg); */
 }
 
 /* Table header styling */
 .game-in-progress .score-table thead {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-bottom: 2px solid var(--border-light);
 }
 
@@ -52,7 +52,7 @@
   text-align: center;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text);
   opacity: 0.8;
 }
 
@@ -113,7 +113,7 @@
 .game-in-progress .results-table {
   width: 100%;
   margin-top: var(--spacing-md);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -140,7 +140,7 @@
 
 .player-name {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text);
   text-align: left;
 }
 
@@ -154,7 +154,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-color);
+  color: var(--primary);
   transition: all 0.2s ease;
   border-radius: var(--radius-md);
   box-shadow: none;
@@ -162,7 +162,7 @@
 
 .game-in-progress .back-btn:hover,
 .game-in-progress .settings-btn:hover {
-  background-color: rgba(var(--primary-color-rgb), 0.1);
+  background-color: rgba(var(--primary-rgb), 0.1);
 }
 
 .game-in-progress .back-btn:hover {
@@ -187,7 +187,7 @@
 }
 
 .game-in-progress .game-stats-container h2 {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.5rem;
 }
 
@@ -226,7 +226,7 @@
 
 .game-in-progress .stats-section-title {
   font-size: 0.95rem;
-  color: var(--text-color);
+  color: var(--text);
   opacity: 0.8;
   border-bottom: 1px solid var(--border-light);
   padding-bottom: 4px;
@@ -268,7 +268,7 @@
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text);
   z-index: 1000;
   min-width: 200px;
   text-align: center;
@@ -277,8 +277,8 @@
 }
 
 .auto-upload-notification.uploading {
-  background-color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  background-color: var(--primary);
+  border: 1px solid var(--primary);
 }
 
 .auto-upload-notification.success {
@@ -294,7 +294,7 @@
 .auto-upload-notification.warning {
   background-color: var(--warning-color);
   border: 1px solid var(--warning-color);
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .auto-upload-notification.error {
@@ -315,7 +315,7 @@
 .trick-reducer-label {
   display: flex;
   align-items: center;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -590,18 +590,18 @@
   gap: var(--spacing-xs);
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .trick-reducer-info {
   margin-left: auto;
   font-size: 0.85rem;
-  color: var(--primary-color);
+  color: var(--primary);
   font-weight: 600;
   background-color: var(--background-secondary);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--primary);
 }
 
 .total-calls {
@@ -610,7 +610,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-sm);
-  color: var(--text-color) !important;
+  color: var(--text) !important;
   font-weight: 600 !important;
   /* box-shadow: var(--shadow-lg); */
 }
@@ -641,10 +641,10 @@
 
 .round-info span {
   text-align: center;
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-bg);
+  color: var(--text);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   font-weight: 500;
   font-size: 0.9rem;
   border-radius: var(--radius-sm);
@@ -656,7 +656,7 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  color: var(--text-color) !important;
+  color: var(--text) !important;
   font-weight: 600 !important;
   box-shadow: var(--shadow-lg);
   width: 100% !important;
@@ -669,14 +669,14 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .score-table th,
 .score-table td {
   /* padding: var(--spacing-md); */
   text-align: center;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
   transition: all 0.2s ease;
   position: relative;
   vertical-align: middle;
@@ -684,7 +684,7 @@
 
 .score-table th {
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--text);
   font-size: 1.1em;
   text-transform: uppercase;
   letter-spacing: 0.8px;

@@ -11,7 +11,7 @@
 .game-details-header {
   display: grid;
   /* margin-bottom: var(--spacing-lg); */
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-color);
+  color: var(--primary);
   font-weight: 500;
   transition: color 0.2s;
   padding: var(--spacing-xs) 0;
@@ -45,7 +45,7 @@
 /* .game-summary {
   position: relative;
   z-index: 2;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
@@ -91,17 +91,17 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: transparent ;
-  color: var(--primary-color);
+  color: var(--primary);
   flex: 1;
   max-width: 120px;
   box-shadow: none;
 }
 
 .badge-controls-container .settings-button:hover {
-  /* background-color: var(--primary-color); */
+  /* background-color: var(--primary); */
   color: var(--text-white);
   box-shadow: none;
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--primary);
 }
 
 .game-controls .settings-button {
@@ -117,7 +117,7 @@
 }
 
 .settings-button .download-button {
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 /* Message styles for game details */
@@ -132,7 +132,7 @@
 /* Medal colors for top 3 ranks */
 
 .rank-col {
-    color: var(--primary-color)
+    color: var(--primary)
 }
 
 .rank-col.gold {

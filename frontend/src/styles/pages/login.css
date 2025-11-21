@@ -6,11 +6,11 @@
     align-items: center;
     justify-content: center;
     min-height: 85vh;
-    background-color: var(--background-color);
+    background-color: var(--bg-color);
   }
   
   .login-form {
-    background-color: var(--card-background);
+    background-color: var(--card-bg);
     padding: var(--spacing-xl);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
@@ -33,14 +33,14 @@
   .login-form input {
     width: 100%;
     padding: var(--spacing-sm);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     font-size: 0.9rem;
     transition: all 0.2s ease;
   }
   
   .login-form input:focus {
-    border-color: var(--primary-color);
+    border-color: var(--primary);
     outline: none;
     box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.15);
   }
@@ -55,7 +55,7 @@
   }
 
   .switch-btn {
-    color: var(--primary-color);
+    color: var(--primary);
     border: none;
     background-color: transparent;
     padding: var(--spacing-sm) 0;

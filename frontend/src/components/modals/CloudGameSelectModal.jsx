@@ -84,8 +84,8 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
           {loading && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
               <div style={{ 
-                border: '3px solid var(--border-color)', 
-                borderTopColor: 'var(--primary-color)', 
+                border: '3px solid var(--border)', 
+                borderTopColor: 'var(--primary)', 
                 borderRadius: '50%', 
                 width: '40px', 
                 height: '40px', 
@@ -131,7 +131,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 >
                   Deselect All
                 </button>
-                <span style={{ marginLeft: 'auto', fontWeight: '500', color: 'var(--primary-color)' }}>
+                <span style={{ marginLeft: 'auto', fontWeight: '500', color: 'var(--primary)' }}>
                   {selectedGames.size} selected
                 </span>
               </div>

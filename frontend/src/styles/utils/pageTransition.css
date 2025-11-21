@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, var(--background-color) 0%, var(--card-background) 50%, var(--card-background-alt) 100%);
+  background: linear-gradient(135deg, var(--bg-color) 0%, var(--card-bg) 50%, var(--card-bg-alt) 100%);
   overflow: hidden;
 }
 
@@ -85,7 +85,7 @@
   transform: translateX(-50%);
   width: 80px;
   height: 15px;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   border-radius: 50px;
   box-shadow: 0 4px 20px rgba(96, 165, 250, 0.4);
 }
@@ -99,7 +99,7 @@
   height: 0;
   border-left: 30px solid transparent;
   border-right: 30px solid transparent;
-  border-bottom: 70px solid var(--primary-color);
+  border-bottom: 70px solid var(--primary);
   filter: drop-shadow(0 4px 15px rgba(96, 165, 250, 0.3));
   animation: wiggle 2s ease-in-out infinite;
 }
@@ -315,8 +315,8 @@
   position: absolute;
   width: 30px;
   height: 40px;
-  background: linear-gradient(135deg, var(--card-background) 0%, var(--card-background-light) 100%);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--card-bg-light) 100%);
+  border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   animation: cardFloat 4s ease-in-out infinite;
@@ -328,7 +328,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 16px;
   font-weight: bold;
 }
@@ -367,14 +367,14 @@
   position: relative;
   width: 100%;
   height: 6px;
-  background: var(--border-color);
+  background: var(--border);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-light));
+  background: linear-gradient(90deg, var(--primary), var(--accent-color), var(--primary-light));
   background-size: 200% 100%;
   border-radius: 3px;
   animation: progressFill 2s ease-in-out infinite, gradientShift 3s ease-in-out infinite;
@@ -400,11 +400,11 @@
 }
 
 .loading-title {
-  color: var(--text-color);
+  color: var(--text);
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 var(--spacing-sm) 0;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light), var(--accent-color));
+  background: linear-gradient(135deg, var(--primary), var(--primary-light), var(--accent-color));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

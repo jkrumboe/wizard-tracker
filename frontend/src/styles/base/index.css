@@ -25,10 +25,10 @@ html, body {
 
 
   /* Light theme (default) */
-  --primary-color: #60a5fa;
+  --primary: #60a5fa;
   --primary-dark: #3b82f6;
   --primary-light: #93c5fd;
-  --secondary-color: #a78bfa;
+  --secondary: #a78bfa;
   --accent-color: #fbbf24;
 
   /* Hover */
@@ -39,7 +39,7 @@ html, body {
   --success-rgb: 16, 185, 129;
   --danger-color: #ff1818;
   --danger-rgb: 248, 113, 113;
-  --danger-color-dark: #ef4444;
+  --danger-dark: #ef4444;
   --warning-color: #fbbf24;
   --warning-rgb: 251, 191, 36;
   --info-color: #38bdf8;
@@ -48,32 +48,32 @@ html, body {
   --error-dark: #ef4444;
   
   /* Text colors */
-  --text-color: #111827;
+  --text: #111827;
   --text-light: #4b5563;
   --text-white: #ffffff;
   --text-muted: #6b7280;
   
   /* Background colors */
-  --background-color: #ebebeb;
-  --card-background: #ffffff;
-  --card-background-light: #e2e8f0;
-  --card-background-alt: #b9c1cc;
-  --disabled-background: #d1d5db;
-  --disabled-background-dark: #9ca3af;
-  --input-background: #ebebeb;
-  --error-background: #fef2f2;
+  --bg-color: #ebebeb;
+  --card-bg: #ffffff;
+  --card-bg-light: #e2e8f0;
+  --card-bg-alt: #b9c1cc;
+  --disabled-bg: #d1d5db;
+  --disabled-bg-dark: #9ca3af;
+  --input-bg: #ebebeb;
+  --error-bg: #fef2f2;
   
   /* Border colors */
-  --border-color: #b4b4b4;
+  --border: #b4b4b4;
   --border-light: #e2e8f0;
 }
 
 /* Dark theme */
 [data-theme="dark"] {
-  --primary-color: #60a5fa;
+  --primary: #60a5fa;
   --primary-dark: #3b82f6;
   --primary-light: #93c5fd;
-  --secondary-color: #a78bfa;
+  --secondary: #a78bfa;
   --accent-color: #fbbf24;
 
   /* Hover */
@@ -84,7 +84,7 @@ html, body {
   --success-rgb: 16, 185, 129;
   --danger-color: #f87171;
   --danger-rgb: 248, 113, 113;
-  --danger-color-dark: #ef4444;
+  --danger-dark: #ef4444;
   --warning-color: #fbbf24;
   --warning-rgb: 251, 191, 36;
   --info-color: #38bdf8;
@@ -93,23 +93,23 @@ html, body {
   --error-dark: #ef4444;
   
   /* Text colors */
-  --text-color: #f9fafb;
+  --text: #f9fafb;
   --text-light: #d1d5db;
   --text-white: #ffffff;
   --text-muted: #9ca3af;
   
   /* Background colors */
-  --background-color: #0f172a;
-  --card-background: #1e293b;
-  --card-background-light: #334155;
-  --card-background-alt: #475569;
-  --disabled-background: #64748b;
-  --disabled-background-dark: #1e293b;
-  --input-background: #334155;
-  --error-background: #7f1d1d;
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --card-bg-light: #334155;
+  --card-bg-alt: #475569;
+  --disabled-bg: #64748b;
+  --disabled-bg-dark: #1e293b;
+  --input-bg: #334155;
+  --error-bg: #7f1d1d;
   
   /* Border colors */
-  --border-color: #475569;
+  --border: #475569;
   --border-light: #64748b;
   --border-dark: #334155;
   
@@ -150,8 +150,8 @@ body {
     "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--background-color);
-  color: var(--text-color);
+  background-color: var(--bg-color);
+  color: var(--text);
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   line-height: 1.5;
   margin: 0;
@@ -166,7 +166,7 @@ code {
 }
 
 a {
-  color: var(--primary-color);
+  color: var(--primary);
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -193,7 +193,7 @@ h6 {
   margin-bottom: var(--spacing-md);
   font-weight: 600;
   line-height: 1.2;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 h1 {
@@ -220,8 +220,8 @@ h2::after {
   left: 0;
   width: 60px;
   height: 4px;
-  background-color: var(--primary-color);
-  background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+  background-color: var(--primary);
+  background: linear-gradient(to right, var(--primary), var(--primary-light));
   border-radius: 2px;
 }
 
@@ -229,11 +229,11 @@ h2::after {
 button,
 .btn {
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   box-shadow: var(--shadow);
-  color: var(--text-color);
+  color: var(--text);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -244,7 +244,7 @@ button:hover:not(:disabled),
 .btn:hover:not(:disabled) {
   transform: scale(0.95);
   /* box-shadow: var(--shadow-lg); */
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
 button:disabled,
@@ -255,9 +255,9 @@ button:disabled,
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
   color: var(--text-white);
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -266,22 +266,22 @@ button:disabled,
 }
 
 .btn-secondary {
-  background-color: var(--card-background);
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  background-color: var(--card-bg);
+  color: var(--primary);
+  border: 1px solid var(--primary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
   color: var(--text-white);
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   transform: scale(0.98);
   box-shadow: var(--shadow);
 }
 
 .btn-accent {
   background-color: var(--accent-color);
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .btn-accent:hover:not(:disabled) {
@@ -307,7 +307,7 @@ button:disabled,
 }
 
 .btn-error:hover:not(:disabled) {
-  background-color: var(--danger-color-dark);
+  background-color: var(--danger-dark);
   transform: scale(0.95);
   box-shadow: var(--shadow);
 }
@@ -324,8 +324,8 @@ button:disabled,
 }
 
 .loading {
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-bg);
+  color: var(--text);
   box-shadow: var(--shadow);
 }
 
@@ -355,7 +355,7 @@ button:disabled,
 
 /* Navbar styles */
 .navbar {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   height: 64px;
   width: 100%;
   display: flex;
@@ -364,7 +364,7 @@ button:disabled,
   position: sticky;
   top: 0;
   z-index: 999;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
 
@@ -378,7 +378,7 @@ button:disabled,
 }
 
 .navbar-logo {
-  color: var(--text-color);
+  color: var(--text);
   font-weight: bold;
   font-size: 1.5rem;
 }
@@ -393,7 +393,7 @@ button:disabled,
   position: relative;
   width: 24px;
   height: 2px;
-  background-color: var(--text-color);
+  background-color: var(--text);
   transition: all 0.3s;
 }
 
@@ -403,7 +403,7 @@ button:disabled,
   position: absolute;
   width: 24px;
   height: 2px;
-  background-color: var(--text-color);
+  background-color: var(--text);
   transition: all 0.3s;
 }
 
@@ -438,7 +438,7 @@ button:disabled,
   opacity: 0;
   visibility: hidden;
   transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   box-shadow: var(--shadow);
   z-index: 1;
 }
@@ -461,7 +461,7 @@ button:disabled,
   text-decoration: none;
   padding: 0 var(--spacing-md);
   height: 100%;
-  color: var(--text-color);
+  color: var(--text);
   position: relative;
 }
 
@@ -477,14 +477,14 @@ button:disabled,
 /* Home Page */
 .home-header {
   text-align: center;
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   padding: var(--spacing-md);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
 
 .home-header h1 {
-  color: var(--primary-color);
+  color: var(--primary);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -496,26 +496,26 @@ button:disabled,
 .empty-message {
   text-align: center;
   padding: var(--spacing-xl);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: var(--radius-lg);
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .addPlayer {
   width: 100%;
   background: transparent;
-  border: 3px solid var(--primary-color);
-  color: var(--primary-color);
+  border: 3px solid var(--primary);
+  color: var(--primary);
   font-size: 1.4rem;
   padding: 0;
 }
 
 .inputPlayerName {
   padding: var(--spacing-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background-color: var(--input-background);
-  color: var(--text-color);
+  background-color: var(--input-bg);
+  color: var(--text);
   font-size: 1rem;
   width: 50%;
 }
@@ -563,9 +563,9 @@ html:not([data-theme="dark"]) .home-header,
 html:not([data-theme="dark"]) .game-item,
 html:not([data-theme="dark"]) .player-item,
 html:not([data-theme="dark"]) .paused-game-item {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
 }
 
 html:not([data-theme="dark"]) .card:hover,
@@ -574,24 +574,24 @@ html:not([data-theme="dark"]) .player-item:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-3px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
 html:not([data-theme="dark"]) .home-header {
   background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
 
 /* Navbar enhancement for light theme */
 html:not([data-theme="dark"]) .top-navbar .navbar-logo {
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 /* Bottom navbar enhancement for light theme */
 html:not([data-theme="dark"]) .bottom-navbar {
-  background-color: var(--card-background);
-  border-top: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--border);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -599,29 +599,29 @@ html:not([data-theme="dark"]) .bottom-navbar {
 html:not([data-theme="dark"]) input,
 html:not([data-theme="dark"]) select,
 html:not([data-theme="dark"]) textarea {
-  border: 1px solid var(--border-color);
-  background-color: var(--card-background);
-  color: var(--text-color);
+  border: 1px solid var(--border);
+  background-color: var(--card-bg);
+  color: var(--text);
   box-shadow: var(--shadow-sm);
 }
 
 html:not([data-theme="dark"]) input:focus,
 html:not([data-theme="dark"]) select:focus,
 html:not([data-theme="dark"]) textarea:focus {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
   outline: none;
 }
 
 /* Specific styling for the inputPlayerName in light theme */
 html:not([data-theme="dark"]) .inputPlayerName {
-  border: 1px solid var(--border-color);
-  background-color: var(--input-background);
+  border: 1px solid var(--border);
+  background-color: var(--input-bg);
   transition: border-color 0.2s, box-shadow 0.2s;
   box-shadow: var(--shadow-sm);
 }
 
 html:not([data-theme="dark"]) .inputPlayerName:focus {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
 }

@@ -3,8 +3,8 @@
   display: inline-block;
   width: 22px;
   height: 22px;
-  border: 3px solid var(--border-color);
-  border-top: 3px solid var(--primary-color);
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   vertical-align: middle;
@@ -43,7 +43,7 @@
   align-items: center;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-xl);
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .settings-header h1 {
@@ -52,7 +52,7 @@
 }
 
 .settings-section {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: 12px;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
@@ -78,7 +78,7 @@
   font-size: 1.3rem;
   margin-top: 0;
   margin-bottom: var(--spacing-sm);
-  color: var(--text-color);
+  color: var(--text);
   padding-bottom: var(--spacing-sm);
 }
 
@@ -119,7 +119,7 @@
   border: none;
   border-radius: var(--radius-md);
   background-color: transparent;
-  color: var(--text-color);
+  color: var(--text);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -140,7 +140,7 @@
 }
 
 .theme-button.active {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
   color: var(--text-white);
   box-shadow: 0 2px 8px rgba(53, 99, 233, 0.3);
 }
@@ -156,7 +156,7 @@
 }
 
 .option-description {
-  color: var(--text-color);
+  color: var(--text);
   font-size: 0.9rem;
   margin-top: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
@@ -180,10 +180,10 @@
 .storage-cloud-grid h3 {
   font-size: 1.1rem;
   margin-bottom: var(--spacing-sm);
-  color: var(--text-color);
+  color: var(--text);
   text-align: center;
   padding-bottom: var(--spacing-xs);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 
 .storage-metric {
@@ -206,7 +206,7 @@
 .storage-value {
   font-size: 1.5rem;
   font-weight: bold;
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 /* Settings Actions */
@@ -238,17 +238,17 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-color);
-  /* border: 2px solid var(--border-color); */
-  background-color: var(--card-background-alt);
+  color: var(--text);
+  /* border: 2px solid var(--border); */
+  background-color: var(--card-bg-alt);
 }
 
 .settings-button-update {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  background-color: var(--secondary-color);
-  color: var(--text-color);
+  background-color: var(--secondary);
+  color: var(--text);
   padding: 4px var(--spacing-sm);
   transform: none;
   border: none;
@@ -274,14 +274,14 @@
 
 .export-button {
   background-color: transparent ;
-  color: var(--primary-color);
+  color: var(--primary);
   padding:var(--spacing-sm);
   width: 50%;
 }
 
 .import-button {
   background-color: transparent ;
-  color: var(--primary-color);
+  color: var(--primary);
   position: relative;
   overflow: hidden;
   padding:var(--spacing-sm);
@@ -291,7 +291,7 @@
 /* Share Game Button */
 .share-game-button {
   background-color: transparent;
-  color: var(--primary-color);
+  color: var(--primary);
   border: none;
   border-radius: 6px;
   padding: 8px;
@@ -308,9 +308,9 @@
 
 /* Download Game Button */
 .download-game-button {
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
+  background: var(--bg-color);
+  border: 1px solid var(--border);
+  color: var(--text);
   border-radius: 6px;
   padding: var(--spacing-sm);
   cursor: pointer;
@@ -342,10 +342,10 @@
   justify-content: space-between;
   padding: var(--spacing-sm);
   border-radius: 8px;
-  background-color: var(--card-background-alt);
+  background-color: var(--card-bg-alt);
   margin: var(--spacing-sm) var(--spacing-xs);
   transition: all 0.2s ease;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .game-info {
@@ -375,8 +375,8 @@
 }
 
 .delete-game-button {
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  border: 1px solid var(--border);
   cursor: pointer;
   padding: var(--spacing-xs);
   border-radius: 4px;
@@ -418,7 +418,7 @@
 }
 
 .confirm-dialog {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   border-radius: 12px;
   padding: var(--spacing-lg);
   width: 90%;
@@ -444,8 +444,8 @@
 }
 
 .cancel-button {
-  background-color: var(--border-color);
-  color: var(--text-color);
+  background-color: var(--border);
+  color: var(--text);
 }
 
 .confirm-button.danger-button {
@@ -497,7 +497,7 @@
 }
 
 .no-games {
-  color: var(--text-color);
+  color: var(--text);
   font-style: italic;
   text-align: center;
   padding: var(--spacing-md);
@@ -513,7 +513,7 @@
 
 .share-info p {
   margin: 0 0 var(--spacing-sm) 0;
-  color: var(--text-color);
+  color: var(--text);
   line-height: 1.5;
 }
 
@@ -522,7 +522,7 @@
 }
 
 .share-info strong {
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 /* Animations */
@@ -587,17 +587,17 @@
   /* background-color: red; */
   margin-bottom: var(--spacing-md);
   padding-left: 4px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--border);
   border-radius: 0;
 }
 
 /* App Info Section */
 .app-info-section {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .info-card {
-  background: var(--card-background);
+  background: var(--card-bg);
   border-radius: 8px;
 }
 
@@ -619,13 +619,13 @@
 
 .info-label {
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--text);
   font-size: 0.9rem;
 }
 
 .info-value {
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 0.9rem;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 }
@@ -645,7 +645,7 @@
 
 .logout-btn {
   background-color: var(--danger-color);
-  color: var(--text-color);
+  color: var(--text);
   font-size: 1.2rem !important;
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg) !important;
@@ -660,28 +660,28 @@
 
 /* Cloud Sync Styles */
 .cloud-sync-button {
-  background-color: var(--primary-color) !important;
+  background-color: var(--primary) !important;
   color: var(--text-white) !important;
 }
 
 .cloud-sync-button:disabled {
   background-color: var(--muted-color) !important;
   color: var(--text-muted) !important;
-  border: 2px solid var(--primary-color) !important;
+  border: 2px solid var(--primary) !important;
   cursor: not-allowed;
 }
 
 .upload-progress {
   margin: var(--spacing-md) 0;
   padding: var(--spacing-sm);
-  background-color: var(--background-color);
+  background-color: var(--bg-color);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .progress-text {
   font-size: 0.9rem;
-  color: var(--text-color);
+  color: var(--text);
   margin-bottom: var(--spacing-xs);
   font-weight: 500;
 }
@@ -697,7 +697,7 @@
 
 .progress-fill {
   height: 100%;
-  background-color: var(--primary-color);
+  background-color: var(--primary);
   transition: width 0.3s ease;
 }
 
@@ -708,10 +708,10 @@
 }
 
 .cloud-upload-game-button {
-  /* background-color: var(--primary-color) !important; */
-  background: var(--background-color);
-  border: 1px solid var(--border-color);
-  color: var(--primary-color) !important;
+  /* background-color: var(--primary) !important; */
+  background: var(--bg-color);
+  border: 1px solid var(--border);
+  color: var(--primary) !important;
   border-radius: var(--radius-sm) !important;
   padding: var(--spacing-xs) ;
   cursor: pointer;
@@ -738,9 +738,9 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md);
-  background-color: var(--card-background-alt);
+  background-color: var(--card-bg-alt);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
 }
 
 .control-info {
@@ -752,7 +752,7 @@
 
 .control-label {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--text);
   font-size: 1rem;
 }
 
@@ -821,7 +821,7 @@
   border: 1px solid var(--info-color);
   border-radius: var(--radius-md);
   font-size: 0.85rem;
-  color: var(--text-color);
+  color: var(--text);
 }
 
 .settings-note code {
@@ -834,17 +834,17 @@
 
 /* Table Game Specific Styles */
 .table-game-card {
-  border-color: var(--secondary-color);
+  border-color: var(--secondary);
 }
 
 .table-game-card .game-winner {
-  color: var(--secondary-color);
+  color: var(--secondary);
 }
 
 .mode-badge.table {
-  background-color: var(--secondary-color);
+  background-color: var(--secondary);
   color: var(--text-white);
-  border-color: var(--secondary-color);
+  border-color: var(--secondary);
 }
 
 @media (max-width: 768px) {

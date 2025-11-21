@@ -1,6 +1,6 @@
 /* Wizard Scorecard Styles */
 .wizard-scorecard {
-  background-color: var(--card-background);
+  background-color: var(--card-bg);
   box-shadow: var(--shadow);
   overflow-x: auto;
   position: relative;
@@ -8,7 +8,7 @@
   border-radius: var(--radius-lg);
   /* Improve scrolling experience */
   scrollbar-width: thin;
-  scrollbar-color: var(--border-light) var(--card-background);
+  scrollbar-color: var(--border-light) var(--card-bg);
 }
 
 .scorecard-table {
@@ -29,12 +29,12 @@
 .scorecard-table td {
   padding: 0.75rem;
   text-align: center;
-  /* border: 1px solid var(--border-color); */
+  /* border: 1px solid var(--border); */
 }
 
 .player-header {
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-bg);
+  color: var(--text);
   font-weight: 600;
   position: sticky;
   top: 0;
@@ -63,8 +63,8 @@
 }
 
 .round-header {
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-bg);
+  color: var(--text);
   font-weight: 600;
   position: sticky;
   top: 0;
@@ -90,8 +90,8 @@
 }
 
 .round-number {
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-bg);
+  color: var(--text);
   font-weight: 600;
   font-size: 1.3rem;
   position: sticky;
@@ -105,7 +105,7 @@
 }
 
 .player-round-cell {
-  background-color: var(--card-background) ;
+  background-color: var(--card-bg) ;
   padding-left: 0 !important;
   padding-right: 0 !important;
   transition: background-color 0.2s;
@@ -118,7 +118,7 @@
 }
 
 /* .player-round-cell:hover {
-  background-color: var(--input-background);
+  background-color: var(--input-bg);
 } */
 
 .player-round-data {
@@ -126,7 +126,7 @@
   grid-template-rows: auto auto;
   grid-template-columns: 1fr 1fr;
   /* gap: 0.05rem; */
-  border: 1px solid var(--card-background);
+  border: 1px solid var(--card-bg);
   border-top: none;
   border-left: none;
 }
@@ -139,7 +139,7 @@
 .player-round-data > :nth-child(2) {
   grid-row: 1;
   grid-column: 2;
-  border-left: 1px solid var(--card-background);
+  border-left: 1px solid var(--card-bg);
 }
 
 .player-round-data > :nth-child(3) {
@@ -150,8 +150,8 @@
 .round-bid,
 .round-made,
 .round-score {
-  color: var(--text-color);
-  background-color: var(--card-background-alt);
+  color: var(--text);
+  background-color: var(--card-bg-alt);
   font-weight: 600;
   font-size: 1rem;
   display: flex;
@@ -178,25 +178,25 @@
 }
 
 .total-row {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
   font-weight: 700;
 }
 
 .total-label {
-  background-color: var(--primary-color);
-  color: var(--text-color);
+  background-color: var(--primary);
+  color: var(--text);
   position: sticky;
   left: 0;
   z-index: 9;
   padding: 0 !important;
   box-shadow: none;
   isolation: isolate;
-  /* border-right: 1px solid var(--primary-color); */
+  /* border-right: 1px solid var(--primary); */
 }
 
 .total-score {
   height: 24px;
-  color: var(--text-color);
+  color: var(--text);
   font-weight: bold;
   font-size: 1.1rem;
   padding: 0 !important;
@@ -238,12 +238,12 @@
   bottom: 0;
   width: 2px;
   z-index: 11;
-  /* background-color: var(--primary-color); */
+  /* background-color: var(--primary); */
 }
 
 /* Special corner case - top left cell */
 .round-header {
-  background-color: var(--card-background) !important;
+  background-color: var(--card-bg) !important;
 }
 
 /* Common styles for all sticky cells */
@@ -253,7 +253,7 @@
   /* Remove box shadows in favor of a consistent border */
   box-shadow: none !important;
   /* Apply a consistent right border that stays with the cell */
-  /* border-right: 1px solid var(--border-color) !important; */
+  /* border-right: 1px solid var(--border) !important; */
   z-index: 11;
   /* Critical fix: ensure the border stays with the cell */
   background-clip: padding-box;

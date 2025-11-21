@@ -931,7 +931,7 @@ const Settings = () => {
                         borderRadius: '50%',
                         objectFit: 'cover',
                         cursor: 'pointer',
-                        border: '1px solid var(--primary-color)'
+                        border: '1px solid var(--primary)'
                       }}
                     />
                   </Link>
@@ -939,7 +939,7 @@ const Settings = () => {
                     <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
                     <Link 
                       to={user ? "/profile/edit" : "/login"}
-                      style={{ fontSize: '14px', color: 'var(--primary-color)' }}
+                      style={{ fontSize: '14px', color: 'var(--primary)' }}
                     >
                       {user ? 'Edit Profile' : 'Login'}
                     </Link>
@@ -1132,7 +1132,7 @@ const Settings = () => {
               onClick={() => setShowFilterModal(true)}
               aria-label="Filter games"
               style={{
-                background: 'var(--primary-color)',
+                background: 'var(--primary)',
                 color: 'var(--text-white)',
                 border: 'none',
                 borderRadius: 'var(--radius-md)',
@@ -1154,7 +1154,7 @@ const Settings = () => {
                   height: '12px',
                   background: 'var(--danger-color, red)',
                   borderRadius: '50%',
-                  border: '2px solid var(--card-background)'
+                  border: '2px solid var(--card-bg)'
                 }} />
               )}
             </button>
