@@ -110,38 +110,38 @@ router.post('/', auth, async (req, res, next) => {
 
 // GET /games/leaderboard - Calculate leaderboard from all games
 // IMPORTANT: This must come BEFORE /:id route to avoid conflicts
-router.get('/leaderboard', auth, async (req, res, next) => {
+// PUBLIC ENDPOINT - No authentication required
+router.get('/leaderboard', async (req, res, next) => {
   console.log('[GET /api/games/leaderboard] Request received', { 
-    query: req.query,
-    userId: req.user?._id 
+    query: req.query
   });
   
   try {
     const { gameType } = req.query;
     
-    // Build query filter
-    const query = {};
-    if (gameType && gameType !== 'all') {
-      query['gameData.mode'] = gameType;
-    }
-
-    console.log('[GET /api/games/leaderboard] Fetching games with query:', query);
+    // Fetch both Wizard games and Table games
+    const TableGame = require('../models/TableGame');
     
-    // Get all games
-    const games = await Game.find(query);
+    // Get wizard games (from Game collection)
+    const wizardGames = await Game.find({});
     
-    console.log(`[GET /api/games/leaderboard] Found ${games.length} games`);
+    // Get table games (from TableGame collection)
+    const tableGames = await TableGame.find({});
+    
+    console.log(`[GET /api/games/leaderboard] Found ${wizardGames.length} wizard games, ${tableGames.length} table games`);
     
     // Calculate player statistics grouped by NAME (not ID)
     const playerStats = {};
+    const gameTypeSet = new Set(['all', 'Wizard']); // Start with 'all' and 'Wizard'
     
-    games.forEach(game => {
+    // Process Wizard games
+    wizardGames.forEach(game => {
       const gameData = game.gameData;
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
         return;
       }
 
-      const gameMode = gameData.mode || 'Local';
+      const gameMode = 'Wizard'; // All games from Game collection are Wizard
       const winnerId = gameData.winner_id;
       const finalScores = gameData.final_scores || {};
 
@@ -152,11 +152,15 @@ router.get('/leaderboard', auth, async (req, res, next) => {
         // Skip players without a name
         if (!playerName) return;
 
+        // Filter by game type if specified
+        if (gameType && gameType !== 'all' && gameType !== gameMode) {
+          return;
+        }
+
         // Use NAME as the key to group same players with different IDs
-        // Initialize player stats if first time seeing this name
         if (!playerStats[playerName]) {
           playerStats[playerName] = {
-            id: playerName, // Use name as unique identifier
+            id: playerName,
             name: playerName,
             totalGames: 0,
             wins: 0,
@@ -168,10 +172,8 @@ router.get('/leaderboard', auth, async (req, res, next) => {
 
         const stats = playerStats[playerName];
         
-        // Update basic stats
         stats.totalGames++;
         
-        // Check if this player won (compare by ID if available, otherwise by name)
         const isWinner = playerId === winnerId || 
                         (winnerId && gameData.players.find(p => p.id === winnerId)?.name === playerName);
         
@@ -179,18 +181,12 @@ router.get('/leaderboard', auth, async (req, res, next) => {
           stats.wins++;
         }
         
-        // Add score if available
         if (finalScores[playerId] !== undefined) {
           stats.totalScore += finalScores[playerId];
         }
 
-        // Track by game type
         if (!stats.gameTypes[gameMode]) {
-          stats.gameTypes[gameMode] = {
-            games: 0,
-            wins: 0,
-            totalScore: 0
-          };
+          stats.gameTypes[gameMode] = { games: 0, wins: 0, totalScore: 0 };
         }
         stats.gameTypes[gameMode].games++;
         if (isWinner) {
@@ -200,7 +196,85 @@ router.get('/leaderboard', auth, async (req, res, next) => {
           stats.gameTypes[gameMode].totalScore += finalScores[playerId];
         }
 
-        // Update last played
+        if (new Date(game.createdAt) > new Date(stats.lastPlayed)) {
+          stats.lastPlayed = game.createdAt;
+        }
+      });
+    });
+    
+    // Process Table games
+    tableGames.forEach(game => {
+      const gameData = game.gameData;
+      if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
+        return;
+      }
+
+      const gameMode = game.name || gameData.name || 'Table Game'; // Use the table game name
+      gameTypeSet.add(gameMode); // Add to available game types
+      
+      const finalScores = gameData.final_scores || {};
+      
+      // Find winner (highest or lowest score depending on lowIsBetter)
+      let winnerId = null;
+      if (Object.keys(finalScores).length > 0) {
+        const lowIsBetter = game.lowIsBetter || gameData.lowIsBetter || false;
+        const scores = Object.entries(finalScores);
+        if (lowIsBetter) {
+          winnerId = scores.reduce((min, curr) => curr[1] < min[1] ? curr : min)[0];
+        } else {
+          winnerId = scores.reduce((max, curr) => curr[1] > max[1] ? curr : max)[0];
+        }
+      }
+
+      gameData.players.forEach(player => {
+        const playerId = player.id;
+        const playerName = player.name;
+        
+        if (!playerName) return;
+
+        // Filter by game type if specified
+        if (gameType && gameType !== 'all' && gameType !== gameMode) {
+          return;
+        }
+
+        if (!playerStats[playerName]) {
+          playerStats[playerName] = {
+            id: playerName,
+            name: playerName,
+            totalGames: 0,
+            wins: 0,
+            totalScore: 0,
+            gameTypes: {},
+            lastPlayed: game.createdAt
+          };
+        }
+
+        const stats = playerStats[playerName];
+        
+        stats.totalGames++;
+        
+        const isWinner = playerId === winnerId || 
+                        (winnerId && gameData.players.find(p => p.id === winnerId)?.name === playerName);
+        
+        if (isWinner) {
+          stats.wins++;
+        }
+        
+        if (finalScores[playerId] !== undefined) {
+          stats.totalScore += finalScores[playerId];
+        }
+
+        if (!stats.gameTypes[gameMode]) {
+          stats.gameTypes[gameMode] = { games: 0, wins: 0, totalScore: 0 };
+        }
+        stats.gameTypes[gameMode].games++;
+        if (isWinner) {
+          stats.gameTypes[gameMode].wins++;
+        }
+        if (finalScores[playerId] !== undefined) {
+          stats.gameTypes[gameMode].totalScore += finalScores[playerId];
+        }
+
         if (new Date(game.createdAt) > new Date(stats.lastPlayed)) {
           stats.lastPlayed = game.createdAt;
         }
@@ -231,14 +305,14 @@ router.get('/leaderboard', auth, async (req, res, next) => {
     });
 
     // Get unique game types
-    const gameTypes = ['all', ...new Set(games.map(g => g.gameData?.mode).filter(Boolean))];
+    const gameTypes = Array.from(gameTypeSet).sort();
 
     console.log(`[GET /api/games/leaderboard] Sending ${leaderboard.length} players, ${gameTypes.length} game types`);
 
     res.json({
       leaderboard,
       gameTypes,
-      totalGames: games.length
+      totalGames: wizardGames.length + tableGames.length
     });
   } catch (error) {
     console.error('[GET /api/games/leaderboard] Error:', error);

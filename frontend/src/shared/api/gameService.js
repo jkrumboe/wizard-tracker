@@ -39,18 +39,13 @@ export async function getRecentGames(_limit = 5) {
   return data.games || [];
 }
 
-// Get leaderboard data
+// Get leaderboard data (public endpoint - no auth required)
 export async function getLeaderboard(gameType = 'all') {
-  const token = localStorage.getItem('auth_token');
   const url = gameType && gameType !== 'all' 
     ? `${API_ENDPOINTS.games.leaderboard}?gameType=${encodeURIComponent(gameType)}`
     : API_ENDPOINTS.games.leaderboard;
   
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  });
+  const res = await fetch(url);
   
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
   const data = await res.json();

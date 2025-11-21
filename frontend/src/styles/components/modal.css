@@ -108,7 +108,10 @@
 
 .games-menu-content .modal-button {
   font-size: 1.5rem;
+  width: 100%;
 }
+
+
 
 .modal-actions,
 .modal-footer {
