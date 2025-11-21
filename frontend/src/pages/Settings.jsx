@@ -337,6 +337,28 @@ const Settings = () => {
     
     // Load table games
     const tableGames = LocalTableGameStorage.getSavedTableGamesList();
+    
+    // Verify uploaded table games still exist on server
+    if (isOnline && user) {
+      for (const game of tableGames) {
+        if (game.isUploaded && game.cloudGameId) {
+          try {
+            const { getTableGameById } = await import('@/shared/api/tableGameService');
+            await getTableGameById(game.cloudGameId);
+            // Game exists on server, keep upload status
+          } catch (error) {
+            // Game doesn't exist on server anymore, clear upload status
+            if (error.message.includes('not found') || error.message.includes('404')) {
+              console.debug(`[Settings] Table game ${game.id} not found on server, clearing upload status`);
+              LocalTableGameStorage.clearUploadStatus(game.id);
+              game.isUploaded = false;
+              game.cloudGameId = null;
+            }
+          }
+        }
+      }
+    }
+    
     setSavedTableGames(tableGames);
     
     // Check sync status for each game
@@ -497,13 +519,30 @@ const Settings = () => {
             type: 'success' 
           });
           
+          // Listen for the controller change before reloading
+          let controllerChanged = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!controllerChanged) {
+              controllerChanged = true;
+              console.debug('New service worker activated, reloading...');
+              // Give a moment for the new SW to take control
+              setTimeout(() => {
+                window.location.reload();
+              }, 100);
+            }
+          });
+          
           // Send message to service worker to skip waiting
+          // Note: The SW already calls skipWaiting() on install, but this is a fallback
           registration.waiting.postMessage({ type: 'SKIP_WAITING' });
           
-          // Reload the page after a short delay
+          // Fallback reload in case controllerchange doesn't fire
           setTimeout(() => {
-            window.location.reload();
-          }, 1500);
+            if (!controllerChanged) {
+              console.debug('Fallback reload after timeout');
+              window.location.reload();
+            }
+          }, 3000);
         } else if (registration.installing) {
           // Update is installing
           setCheckingForUpdates(false);
@@ -592,11 +631,6 @@ const Settings = () => {
       return { success: false, error: 'You must be logged in to upload table games to the cloud. Please sign in and try again.', requiresAuth: true };
     }
 
-    // Prevent uploading if already uploaded
-    if (LocalTableGameStorage.isGameUploaded(gameId)) {
-      return { success: false, error: 'Table game already uploaded', isDuplicate: true };
-    }
-
     try {
       const { createTableGame } = await import('@/shared/api/tableGameService');
       const result = await createTableGame(gameData, gameId);
@@ -611,6 +645,12 @@ const Settings = () => {
         return { success: true, cloudGameId: result.game._id };
       }
     } catch (error) {
+      // If error suggests game was deleted from server, clear upload status
+      if (error.message.includes('not found') || error.message.includes('404')) {
+        console.debug('[Settings] Game not found on server, clearing upload status');
+        LocalTableGameStorage.clearUploadStatus(gameId);
+        await loadSavedGames();
+      }
       return { success: false, error: error.message };
     }
   };

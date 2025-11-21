@@ -154,7 +154,7 @@ const Leaderboard = () => {
         >
           {gameTypes.map(type => (
             <option key={type} value={type}>
-              {type === 'all' ? 'All Game Types' : type}
+              {type === 'all' ? 'All Games' : type}
             </option>
           ))}
         </select>

@@ -30,6 +30,9 @@ const WRITE_API_PATTERNS = [
 // Install event - cache assets and skip waiting for immediate activation
 self.addEventListener("install", (event) => {
   console.debug(`Service Worker installing version ${APP_VERSION}...`);
+  // Skip waiting immediately to activate the new service worker as soon as it's installed
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.debug("Opened cache")

@@ -342,6 +342,22 @@ export class LocalTableGameStorage {
   }
 
   /**
+   * Clear upload status for a table game (e.g., when deleted from cloud)
+   * @param {string} gameId - The game ID
+   */
+  static clearUploadStatus(gameId) {
+    const games = this.getAllSavedTableGamesAllUsers();
+    if (games[gameId]) {
+      games[gameId].isUploaded = false;
+      games[gameId].cloudGameId = null;
+      games[gameId].cloudLookupKey = null;
+      games[gameId].uploadedAt = null;
+      localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(games));
+      console.debug(`[LocalTableGameStorage] Cleared upload status for game ${gameId}`);
+    }
+  }
+
+  /**
    * Get the cloud game ID for an uploaded table game
    * @param {string} gameId - The local game ID
    * @returns {string|null} - The cloud game ID or null if not uploaded
