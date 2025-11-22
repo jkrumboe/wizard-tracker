@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter } from 'recharts';
 import StatCard from '@/components/ui/StatCard';
+import "@/styles/pages/performancestats.css";
 
 const COLORS = ['#1DBF73', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
@@ -348,7 +349,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
   if (!stats) return null;
 
   return (
-    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--spacing-md)', gap: 'var(--spacing-md)' }}>
+    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--spacing-sm)', gap: 'var(--spacing-md)' }}>
       <h2 style={{ margin: '0' }}>Performance Statistics</h2>
       
       {/* Section Navigation */}
@@ -490,16 +491,30 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
               </div>
             )}
           </div>
+        </>
+      )}
+
+      {/* INSIGHTS SECTION */}
+      {activeSection === 'insights' && (
+        <>
+          {/* Performance Metrics */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: 'var(--spacing-md)'
+          }}>
+            <StatCard title="Bid Accuracy" value={`${stats.bidAccuracy}%`} />
+            <StatCard title="Perfect Games" value={stats.perfectBids} />
+            <StatCard title="Comeback Wins" value={stats.comebackWins} />
+            <StatCard title="Dominant Wins" value={stats.dominantWins} />
+            <StatCard title="Best Score" value={stats.bestGame?.score || 0} />
+            <StatCard title="Worst Score" value={stats.worstGame?.score || 0} />
+          </div>
 
           {/* Score Performance Over Time */}
-          <div style={{ 
-            background: 'var(--card-bg)',
-            padding: 'var(--spacing-lg)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border)'
-          }}>
-            <h3 style={{ marginBottom: 'var(--spacing-md)' }}>Score Progression</h3>
-            <ResponsiveContainer width="100%" height={250}>
+          <div>
+            <h3>Score Progression</h3>
+            <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={stats.performanceOverTime}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis 
@@ -533,14 +548,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
           </div>
 
           {/* Win Rate Over Time */}
-          <div style={{
-            background: 'var(--card-bg)',
-            padding: 'var(--spacing-lg)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border)'
-          }}>
-            <h3 style={{ marginBottom: 'var(--spacing-md)' }}>Win Rate Progression</h3>
-            <ResponsiveContainer width="100%" height={250}>
+          <div>
+            <h3>Win Rate Progression</h3>
+            <ResponsiveContainer width="100%" height={200}>
               <LineChart data={stats.performanceOverTime}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis 
@@ -577,122 +587,14 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
         </>
       )}
 
-      {/* INSIGHTS SECTION */}
-      {activeSection === 'insights' && (
-        <>
-          {/* Performance Metrics */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: 'var(--spacing-md)'
-          }}>
-            <StatCard title="Bid Accuracy" value={`${stats.bidAccuracy}%`} />
-            <StatCard title="Perfect Games" value={stats.perfectBids} />
-            <StatCard title="Comeback Wins" value={stats.comebackWins} />
-            <StatCard title="Dominant Wins" value={stats.dominantWins} />
-            <StatCard title="Best Score" value={stats.bestGame?.score || 0} />
-            <StatCard title="Worst Score" value={stats.worstGame?.score || 0} />
-          </div>
-
-          {/* Performance by Player Count */}
-          {stats.playerCountData.length > 0 && (
-            <div style={{
-              background: 'var(--card-bg)',
-              padding: 'var(--spacing-lg)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)'
-            }}>
-              <h3 style={{ marginBottom: 'var(--spacing-md)' }}>Performance by Player Count</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={stats.playerCountData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="playerCount" stroke="var(--text)" tick={{ fill: 'var(--text)' }} />
-                  <YAxis stroke="var(--text)" tick={{ fill: 'var(--text)' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--card-bg)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-lg)',
-                      color: 'var(--text)'
-                    }}
-                  />
-                  <Legend wrapperStyle={{ color: 'var(--text)' }} />
-                  <Bar dataKey="winRate" fill="#1DBF73" name="Win Rate %" />
-                  <Bar dataKey="avgScore" fill="#4F46E5" name="Avg Score" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Day of Week Performance */}
-          {/* {stats.dayOfWeekData.length > 0 && (
-            <div style={{
-              background: 'var(--card-bg)',
-              padding: 'var(--spacing-lg)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)'
-            }}>
-              <h3 style={{ marginBottom: 'var(--spacing-md)' }}>Best Days to Play</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={stats.dayOfWeekData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" stroke="var(--text)" tick={{ fill: 'var(--text)' }} />
-                  <YAxis stroke="var(--text)" tick={{ fill: 'var(--text)' }} label={{ value: 'Win Rate %', angle: -90, position: 'insideLeft', fill: 'var(--text)' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--card-bg)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-lg)',
-                      color: 'var(--text)'
-                    }}
-                  />
-                  <Bar dataKey="winRate" fill="#F59E0B">
-                    {stats.dayOfWeekData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )} */}
-
-          {/* Hourly Performance */}
-          {/* {stats.hourlyData.length > 0 && (
-            <div style={{
-              background: 'var(--card-bg)',
-              padding: 'var(--spacing-lg)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)'
-            }}>
-              <h3 style={{ marginBottom: 'var(--spacing-md)' }}>Best Times to Play</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={stats.hourlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="hour" stroke="var(--text)" tick={{ fill: 'var(--text)' }} />
-                  <YAxis stroke="var(--text)" tick={{ fill: 'var(--text)' }} label={{ value: 'Win Rate %', angle: -90, position: 'insideLeft', fill: 'var(--text)' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--card-bg)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-lg)',
-                      color: 'var(--text)'
-                    }}
-                  />
-                  <Line type="monotone" dataKey="winRate" stroke="#06B6D4" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )} */}
-        </>
-      )}
-
       {/* OPPONENTS SECTION */}
       {activeSection === 'opponents' && (
-        <>
-          <h3 style={{ margin: '0' }}>Head-to-Head Records</h3>
+        <div className="head-to-head">
+          {/* <h3>Head-to-Head</h3> */}
           {stats.topOpponents.length > 0 ? (
             <div style={{
               display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: 'var(--spacing-md)'
             }}>
               {stats.topOpponents.map((opponent, idx) => (
@@ -707,12 +609,12 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
                 }}>
                   <div>
                     <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>{opponent.name}</div>
-                    <div style={{ fontSize: '0.875rem', opacity: 0.8, marginTop: '0.25rem' }}>
-                      {opponent.games} games played
+                    <div style={{ fontSize: '0.875rem', opacity: 0.8}}>
+                      {opponent.games} games
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '600', color: opponent.winRate >= 50 ? '#1DBF73' : '#FF5C5C' }}>
+                    <div style={{ fontWeight: '700', color: opponent.winRate >= 50 ? '#1DBF73' : '#FF5C5C' }}>
                       {opponent.winRate}%
                     </div>
                     <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>
@@ -727,13 +629,13 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
               No opponent data available yet
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ACHIEVEMENTS SECTION */}
       {activeSection === 'achievements' && (
         <>
-          <h3 style={{ margin: '0' }}>Your Achievements</h3>
+          {/* <h3 style={{ margin: '0' }}>Your Achievements</h3> */}
           {stats.achievements.length > 0 ? (
             <div style={{
               display: 'grid',
@@ -772,21 +674,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: 'var(--spacing-md)'
-          }}>
-            <div style={{
-              background: 'var(--card-bg)',
-              padding: 'var(--spacing-md)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)'
-            }}>
-              <div style={{ color: 'var(--text)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                Total Rounds Played
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '600' }}>
-                {stats.totalRounds}
-              </div>
-            </div>
-            
+          }}>            
             <div style={{
               background: 'var(--card-bg)',
               padding: 'var(--spacing-md)',

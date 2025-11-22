@@ -209,7 +209,7 @@ const PerformanceStats = ({ games, currentPlayer }) => {
 
   if (!games || games.length === 0) {
     return (
-      <div className="performance-stats-container" style={{ padding: 'var(--spacing-md)' }}>
+      <div className="performance-stats-container" style={{ padding: 'var(--spacing-sm)' }}>
         <h2>Performance Statistics</h2>
         <div className="empty-message" style={{ textAlign: 'center', color: 'var(--text)' }}>
           No games played yet. Start playing to see your performance statistics!
@@ -219,7 +219,7 @@ const PerformanceStats = ({ games, currentPlayer }) => {
   }
 
   return (
-    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--spacing-md)', gap: 'var(--spacing-md)' }}>
+    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--spacing-sm)', gap: 'var(--spacing-md)' }}>
       <h2 style={{ margin: '0' }}>Performance Statistics</h2>
       
       {/* Overall Stats Grid */}
