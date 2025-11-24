@@ -36,3 +36,4 @@ frontend/src/docs/
 *.sw?
 
 voiceInput.md
+ts.md
