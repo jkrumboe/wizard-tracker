@@ -21,15 +21,42 @@ if (wasServiceWorkerForceUpdated()) {
 
 // Listen for unhandled promise rejections (like SW precache errors)
 window.addEventListener('unhandledrejection', (event) => {
-  // Check if it's a Workbox precaching error
-  if (event.reason && 
-      (event.reason.message?.includes('bad-precaching-response') || 
-       event.reason.name === 'bad-precaching-response')) {
-    console.warn('Detected service worker precache error, will force update on next visit');
+  const error = event.reason;
+  
+  // Check if it's a Workbox precaching error (various formats)
+  const isPrecacheError = error && (
+    error.message?.includes('bad-precaching-response') ||
+    error.name === 'bad-precaching-response' ||
+    (typeof error === 'string' && error.includes('bad-precaching-response'))
+  );
+  
+  if (isPrecacheError) {
+    console.warn('Detected service worker precache error from old Workbox version');
     event.preventDefault(); // Prevent the error from being logged
     
-    // Store flag to force SW update on next visit
+    // Store flag to show recovery UI
+    localStorage.setItem('sw_precache_error', 'true');
+    
+    // Also set the legacy flag for cleanup
     localStorage.setItem('sw_needs_cleanup', 'true');
+    
+    // Force a page reload to show the recovery UI
+    window.location.reload();
+  }
+});
+
+// Listen for regular errors too (old Workbox might throw synchronously)
+window.addEventListener('error', (event) => {
+  const error = event.error;
+  const message = event.message || '';
+  
+  // Check for Workbox errors
+  if (message.includes('bad-precaching-response') || 
+      message.includes('workbox') ||
+      error?.name === 'bad-precaching-response') {
+    console.warn('Detected synchronous service worker error');
+    localStorage.setItem('sw_precache_error', 'true');
+    window.location.reload();
   }
 });
 

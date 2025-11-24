@@ -11,23 +11,34 @@ const APP_VERSION = "__APP_VERSION__" // Will be replaced during build
 const API_CACHE_NAME = `keep-wiz-api-v${APP_VERSION}`
 
 // Precache and route assets with error recovery
-try {
-  // This will be replaced by Vite PWA plugin with the actual manifest
-  precacheAndRoute(self.__WB_MANIFEST || []);
-  cleanupOutdatedCaches();
-  console.debug(`Service Worker v${APP_VERSION} precaching complete`);
-} catch (error) {
-  console.error('Precaching failed:', error);
-  // Clear potentially corrupted caches
-  self.addEventListener('activate', (event) => {
-    event.waitUntil(
-      caches.keys().then((cacheNames) => {
-        console.warn('Clearing all caches due to precache error');
-        return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-      })
-    );
-  });
-}
+// Wrap in function to handle gracefully
+const setupPrecaching = async () => {
+  try {
+    // This will be replaced by Vite PWA plugin with the actual manifest
+    precacheAndRoute(self.__WB_MANIFEST || [], {
+      // Ignore errors for individual URLs - don't fail entire precache
+      ignoreURLParametersMatching: [/^v/, /^_/],
+    });
+    cleanupOutdatedCaches();
+    console.debug(`Service Worker v${APP_VERSION} precaching complete`);
+  } catch (error) {
+    console.error('Precaching failed:', error);
+    
+    // On error, clear ALL caches to force fresh state
+    // This handles the case where old SW has stale manifest
+    try {
+      const cacheNames = await caches.keys();
+      console.warn(`Clearing ${cacheNames.length} caches due to precache error`);
+      await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+      console.debug('Cache cleanup complete, app will use network for all requests');
+    } catch (cleanupError) {
+      console.error('Cache cleanup also failed:', cleanupError);
+    }
+  }
+};
+
+// Execute precaching setup
+setupPrecaching();
 
 // API endpoints that should be cached for offline access
 const API_CACHE_PATTERNS = [
@@ -73,6 +84,18 @@ self.addEventListener("install", (event) => {
   console.debug(`Service Worker installing version ${APP_VERSION}...`);
   // Skip waiting immediately to activate the new service worker
   self.skipWaiting();
+  
+  // Notify clients that a new version is installing
+  event.waitUntil(
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'SW_INSTALLING',
+          version: APP_VERSION
+        });
+      });
+    })
+  );
 });
 
 // Activate event - clean up old caches and take control immediately

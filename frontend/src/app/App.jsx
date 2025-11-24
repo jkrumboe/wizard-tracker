@@ -6,6 +6,7 @@ import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute, NetworkRecoveryHandler } from "@/components/common"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
+import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
 // Eagerly import critical pages that should work offline
 import Settings from "@/pages/Settings"
@@ -215,6 +216,7 @@ function App() {
           <OnlineStatusProvider>
             <UserProvider>
               <AutoLogoutHandler />
+              <ServiceWorkerErrorRecovery />
               <GameStateProvider>
                 <URLImportHandler />
                 <Navbar />
