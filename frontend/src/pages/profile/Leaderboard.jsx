@@ -82,12 +82,34 @@ const Leaderboard = () => {
         break;
       case 'wins':
       default:
-        aVal = a.wins;
-        bVal = b.wins;
-        break;
+        // Primary sort by wins
+        if (a.wins !== b.wins) {
+          return sortOrder === 'asc' ? a.wins - b.wins : b.wins - a.wins;
+        }
+        // Tiebreaker 1: win rate
+        if (a.winRate !== b.winRate) {
+          return b.winRate - a.winRate;
+        }
+        // Tiebreaker 2: average score
+        if (a.avgScore !== b.avgScore) {
+          return b.avgScore - a.avgScore;
+        }
+        // Tiebreaker 3: total games
+        return b.totalGames - a.totalGames;
     }
     
-    return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+    // For non-wins sorting, apply the primary sort
+    if (aVal !== bVal) {
+      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+    
+    // Tiebreaker for other sorts: use wins as secondary sort
+    if (a.wins !== b.wins) {
+      return b.wins - a.wins;
+    }
+    
+    // Final tiebreaker: win rate
+    return b.winRate - a.winRate;
   })
 
   const totalPages = Math.ceil(sortedPlayers.length / playersPerPage)

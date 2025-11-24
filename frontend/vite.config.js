@@ -120,8 +120,6 @@ export default defineConfig({
           }
         ],
         maximumFileSizeToCacheInBytes: 3145728, // 3MB
-        // Handle precache errors gracefully
-        navigateFallback: null
       },
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {

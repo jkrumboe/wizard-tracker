@@ -45,11 +45,23 @@ export async function getLeaderboard(gameType = 'all') {
     ? `${API_ENDPOINTS.games.leaderboard}?gameType=${encodeURIComponent(gameType)}`
     : API_ENDPOINTS.games.leaderboard;
   
-  const res = await fetch(url);
-  
-  if (!res.ok) throw new Error('Failed to fetch leaderboard');
-  const data = await res.json();
-  return data;
+  try {
+    const res = await fetch(url);
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to fetch leaderboard (${res.status})`);
+    }
+    
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    // Handle network errors
+    if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+      throw new Error('Unable to connect to server. Please ensure the backend is running on port 5000.');
+    }
+    throw error;
+  }
 }
 
 /**
