@@ -59,16 +59,22 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "prompt",
-      strategies: 'generateSW',
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'service-worker.js',
       injectRegister: 'auto',
       // Add devOptions to test SW in dev mode
       devOptions: {
         enabled: false
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        injectionPoint: 'self.__WB_MANIFEST',
+        maximumFileSizeToCacheInBytes: 3145728,
+      },
+      workbox: {
         cleanupOutdatedCaches: true,
-        skipWaiting: false,
+        skipWaiting: true,
         clientsClaim: true,
         ignoreURLParametersMatching: [/^v/],
         navigateFallback: null,
@@ -150,8 +156,9 @@ export default defineConfig({
     {
       name: 'inject-sw-version',
       enforce: 'post',
-      closeBundle() {
+      writeBundle() {
         // Inject version into the service worker in dist folder
+        // VitePWA with injectManifest outputs to dist/service-worker.js
         const distSwPath = './dist/service-worker.js'
         if (fs.existsSync(distSwPath)) {
           let swContent = fs.readFileSync(distSwPath, 'utf-8')
@@ -161,6 +168,8 @@ export default defineConfig({
           )
           fs.writeFileSync(distSwPath, swContent)
           console.log(`✓ Injected version ${APP_VERSION} into service worker`)
+        } else {
+          console.warn(`⚠️  Service worker not found at ${distSwPath}`)
         }
       }
     }

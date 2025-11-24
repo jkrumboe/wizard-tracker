@@ -1,18 +1,33 @@
 // Service Worker for KeepWiz PWA - Automatic Updates + Offline Sync
+// Uses Workbox for precaching with error recovery
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import { registerRoute } from 'workbox-routing';
+import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+import { ExpirationPlugin } from 'workbox-expiration';
+
 // Version is injected during build process
 const APP_VERSION = "__APP_VERSION__" // Will be replaced during build
-const CACHE_NAME = `keep-wiz-v${APP_VERSION}`
 const API_CACHE_NAME = `keep-wiz-api-v${APP_VERSION}`
-const UPDATE_APPLIED_KEY = `sw-update-applied-${APP_VERSION}`
-const urlsToCache = [
-  "/", 
-  "/index.html", 
-  "/manifest.json",
-  "/manifest.webmanifest", 
-  "/icons/logo-192.png?v=3",
-  "/icons/logo-512.png?v=3",
-  "/logo.png"
-]
+
+// Precache and route assets with error recovery
+try {
+  // This will be replaced by Vite PWA plugin with the actual manifest
+  precacheAndRoute(self.__WB_MANIFEST || []);
+  cleanupOutdatedCaches();
+  console.debug(`Service Worker v${APP_VERSION} precaching complete`);
+} catch (error) {
+  console.error('Precaching failed:', error);
+  // Clear potentially corrupted caches
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        console.warn('Clearing all caches due to precache error');
+        return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+      })
+    );
+  });
+}
 
 // API endpoints that should be cached for offline access
 const API_CACHE_PATTERNS = [
@@ -27,26 +42,37 @@ const WRITE_API_PATTERNS = [
   /\/api\/games\/\w+$/
 ];
 
-// Install event - cache assets and skip waiting for immediate activation
+// Workbox Runtime Caching Strategies
+
+// Cache Google Fonts with CacheFirst strategy
+registerRoute(
+  ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+  new CacheFirst({
+    cacheName: 'google-fonts-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }), // 1 year
+    ],
+  })
+);
+
+// Cache images with CacheFirst strategy
+registerRoute(
+  ({ request }) => request.destination === 'image',
+  new CacheFirst({
+    cacheName: 'images-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }), // 30 days
+    ],
+  })
+);
+
+// Install event - Workbox handles precaching, we just skip waiting
 self.addEventListener("install", (event) => {
   console.debug(`Service Worker installing version ${APP_VERSION}...`);
-  // Skip waiting immediately to activate the new service worker as soon as it's installed
+  // Skip waiting immediately to activate the new service worker
   self.skipWaiting();
-  
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.debug("Opened cache")
-      // Cache files individually to handle failures gracefully
-      return Promise.allSettled(
-        urlsToCache.map(url => 
-          cache.add(url).catch(err => {
-            console.warn(`Failed to cache ${url}:`, err);
-            return null;
-          })
-        )
-      );
-    })
-  );
 });
 
 // Activate event - clean up old caches and take control immediately
@@ -54,26 +80,20 @@ self.addEventListener("activate", (event) => {
   console.debug(`Service Worker activating version ${APP_VERSION}...`);
   event.waitUntil(
     Promise.all([
-      // Clean up old caches
+      // Workbox cleanupOutdatedCaches handles most cleanup, but we also clean our custom API cache
       caches.keys().then((cacheNames) => {
         return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
+          cacheNames
+            .filter((cacheName) => {
+              // Keep current API cache and Workbox caches
+              return cacheName.startsWith('keep-wiz-api-') && cacheName !== API_CACHE_NAME;
+            })
+            .map((cacheName) => {
               console.debug('Deleting old cache:', cacheName);
               return caches.delete(cacheName);
-            }
-          })
+            })
         );
       }),
-      // Store the current version in cache to track updates
-      caches.open(CACHE_NAME).then(cache => {
-        return cache.put(
-          new Request('/sw-version'),
-          new Response(APP_VERSION, {
-            headers: { 'Content-Type': 'text/plain' }
-          })
-        );
-      })
     ]).then(() => {
       // Take control of all clients immediately
       console.debug(`Service Worker v${APP_VERSION} taking control of all clients`);
@@ -115,7 +135,7 @@ function isWriteOperation(url, method) {
          WRITE_API_PATTERNS.some(pattern => pattern.test(url));
 }
 
-// Fetch event - network first for API, cache first for assets
+// Fetch event - Custom handling for API requests (Workbox handles precached assets)
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -137,33 +157,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   
-  // Handle static assets with cache-first strategy
-  event.respondWith(cacheFirstStrategy(request));
+  // Let Workbox handle precached assets (static files)
+  // No need to explicitly handle them here
 });
-
-// Cache-first strategy for static assets
-async function cacheFirstStrategy(request) {
-  const cachedResponse = await caches.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const response = await fetch(request);
-    
-    if (response && response.status === 200 && response.type === "basic") {
-      const responseToCache = response.clone();
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, responseToCache);
-    }
-    
-    return response;
-  } catch (error) {
-    console.error('Fetch failed:', error);
-    throw error;
-  }
-}
 
 // Network-first strategy for API requests
 async function networkFirstStrategy(request) {

@@ -17,12 +17,11 @@ export function register() {
   }
 
   window.addEventListener("load", () => {
-    const swUrl = `${window.location.origin}/service-worker.js`
-
-    navigator.serviceWorker
-      .register(swUrl)
+    // VitePWA with injectManifest registers service-worker.js automatically
+    // We just need to listen for the registration and handle updates
+    navigator.serviceWorker.ready
       .then((registration) => {
-        console.debug("ServiceWorker registration successful with scope: ", registration.scope)
+        console.debug("ServiceWorker ready with scope: ", registration.scope)
 
         // Throttled update checker
         const checkForUpdate = () => {
@@ -93,7 +92,7 @@ export function register() {
         });
       })
       .catch((error) => {
-        console.error("ServiceWorker registration failed: ", error)
+        console.error("ServiceWorker ready failed: ", error)
       })
   })
 
