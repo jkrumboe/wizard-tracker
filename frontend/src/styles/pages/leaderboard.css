@@ -61,6 +61,7 @@
   padding: 4px;
   margin: 0;
   text-align: center;
+  text-align-last: center;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--card-bg);
@@ -68,7 +69,6 @@
   font-size: 1rem;
   cursor: pointer;
   flex: 1;
-  text-align: center;
 }
 
 .game-type-select:focus {
