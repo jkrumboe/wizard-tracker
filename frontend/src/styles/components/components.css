@@ -2150,7 +2150,7 @@
   overflow-y: auto;
   flex: 1; /* Allow it to grow and fill available space */
   min-height: 0; /* Important for flex children to be scrollable */
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   position: relative;
 }
 

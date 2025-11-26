@@ -20,8 +20,7 @@
 .swipeable-card-container {
   position: relative;
   overflow: hidden;
-  margin-bottom: var(--spacing-sm);
-  min-height: 100px;
+  min-height: 101px;
 }
 
 .swipeable-card-content {
@@ -32,6 +31,8 @@
   -webkit-user-select: none;
   user-select: none;
   touch-action: pan-y;
+  position: relative;
+  z-index: 1;
 }
 
 .swipeable-card-content .game-card {
@@ -42,6 +43,8 @@
   display: flex;
   align-items: stretch;
   gap: var(--spacing-xs);
+  padding-left: var(--spacing-xs);
+  z-index: 0;
 }
 
 .swipe-action-button {

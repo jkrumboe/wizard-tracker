@@ -150,7 +150,6 @@ const SwipeableGameCard = ({
     <div 
       ref={cardRef}
       className="swipeable-card-container"
-      style={{ position: 'relative', overflow: 'hidden' }}
     >
       {/* Action buttons revealed on swipe */}
       <div className="swipe-actions" style={{
