@@ -126,7 +126,6 @@
   border-radius: 12px;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
-  /* box-shadow: var(--shadow-sm); */
 }
 
 .settings-section:has(.game-history),
@@ -245,10 +244,6 @@
   gap: var(--spacing-lg);
 }
 
-/* .storage-cloud-grid .storage-info {
-  display: block;
-} */
-
 .storage-cloud-grid h3 {
   font-size: 1.1rem;
   margin-bottom: var(--spacing-sm);
@@ -278,7 +273,6 @@
 }
 
 .storage-value {
-  /* font-size: 1.5rem; */
   font-weight: bold;
   color: var(--primary);
 }
@@ -313,7 +307,6 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text);
-  /* border: 2px solid var(--border); */
   background-color: var(--card-bg-alt);
 }
 
@@ -487,6 +480,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease-in-out;
 }
@@ -535,9 +529,6 @@
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
-  padding: var(--spacing-md);
-  border-radius: 8px;
-  margin-bottom: var(--spacing-lg);
   animation: fadeIn 0.3s ease-in-out;
   padding: var(--spacing-md);
   border-radius: 8px;
@@ -665,7 +656,6 @@
 }
 
 .info-card {
-  /* background: var(--card-bg); */
   border-radius: 8px;
 }
 
@@ -776,7 +766,6 @@
 }
 
 .cloud-upload-game-button {
-  /* background-color: var(--primary) !important; */
   background: var(--bg-color);
   border: 1px solid var(--border);
   color: var(--primary) !important;

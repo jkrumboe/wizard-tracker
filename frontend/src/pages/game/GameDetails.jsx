@@ -6,13 +6,10 @@ import { useParams, useNavigate } from "react-router-dom"
 // Services
 import { getGameById } from "@/shared/api/gameService"
 import { getPlayerById } from "@/shared/api/playerService"
-import { LocalGameStorage } from '@/shared/api';
 // Utilities
-import { ShareValidator } from '@/shared/utils/shareValidator';
 import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing';
 import { ensureGameSynced } from '@/shared/utils/ensureGameSynced';
 // Components
-import PerformanceMetric from "@/components/common/PerformanceMetric"
 import StatsChart from "@/components/game/StatsChart"
 import { AdvancedStats } from "@/components/game"
 // Assets
@@ -25,7 +22,7 @@ import "@/styles/components/chartToggle.css"
 import "@/styles/pages/settings.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon, BarChartIcon, GamepadIcon, ChartLineIcon, ShareIcon, UsersIcon, TableIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, BarChartIcon, ChartLineIcon, ShareIcon, UsersIcon, TableIcon } from "@/components/ui/Icon"
 
 const GameDetails = () => {
   // Helper function to compare IDs regardless of type (string vs number)
