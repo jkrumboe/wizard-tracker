@@ -7,10 +7,11 @@ import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, RefreshIcon, CloudIcon, ShareIcon, LogOutIcon, FilterIcon, UsersIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
+import { SwipeableGameCard } from '@/components/common';
 import authService from '@/shared/api/authService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
@@ -1206,155 +1207,98 @@ const Settings = () => {
           </div>
           {filteredGames.length > 0 ? (
             <div className="game-history">
-              {filteredGames.map((game) => (
-                <div key={game.id} className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
-                  <div className="settings-card-content">
-                    <div className="settings-card-header">
-                      <div className="game-info">
-                        <div className="game-name">
-                          Wizard
-                          {game.isPaused ? ' | Paused' : ''}
+              {filteredGames.map((game) => {
+                const syncStatus = gameSyncStatuses[game.id];
+                const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
+                const isGameSynced = status === 'Synced';
+                const needsUpload = status === 'Local';
+                const isImportedGame = game.isImported || game.isShared || game.originalGameId;
+                const isUploaded = LocalGameStorage.isGameUploaded(game.id);
+                const badgeClass = status.toLowerCase().replace(' ', '-');
+
+                // Determine which actions to show
+                const showSync = isOnline && needsUpload && !isImportedGame;
+                const showShare = isOnline && isGameSynced && !isImportedGame;
+
+                return (
+                  <SwipeableGameCard
+                    key={game.id}
+                    onDelete={() => handleDeleteGame(game.id)}
+                    onSync={showSync ? async () => {
+                      if (uploadingGames.has(game.id) || isUploaded) return;
+                      
+                      if (!user) {
+                        navigate('/login');
+                        return;
+                      }
+                      
+                      setUploadingGames(prev => new Set([...prev, game.id]));
+                      try {
+                        const result = await uploadSingleGameToCloud(game.id, game);
+                        setMessage({ text: result.isDuplicate ? `Game was already uploaded - marked as synced!` : `Game uploaded to cloud successfully!`, type: 'success' });
+                        await loadSavedGames();
+                      } catch (error) {
+                        setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                      } finally {
+                        setUploadingGames(prev => {
+                          const newSet = new Set(prev);
+                          newSet.delete(game.id);
+                          return newSet;
+                        });
+                      }
+                    } : undefined}
+                    onShare={showShare ? () => {
+                      if (!user) {
+                        navigate('/login');
+                        return;
+                      }
+                      handleShareGame(game.id, game);
+                    } : undefined}
+                    detailsPath={`/game/${game.id}`}
+                    isUploading={uploadingGames.has(game.id)}
+                    isSharing={sharingGames.has(game.id)}
+                    showSync={showSync}
+                    showShare={showShare}
+                    syncTitle={
+                      uploadingGames.has(game.id) ? 'Uploading game...' :
+                      isUploaded ? 'Already uploaded' :
+                      game.isPaused ? 'Cannot upload paused games' :
+                      !user ? 'Click to sign in and upload to cloud' :
+                      'Upload to cloud'
+                    }
+                    disableSync={game.isPaused || uploadingGames.has(game.id) || isUploaded}
+                    disableShare={game.isPaused || sharingGames.has(game.id)}
+                  >
+                    <div className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
+                      <div className="settings-card-header">
+                        <div className="game-info">
+                          <div className="game-name">
+                            Wizard
+                            {game.isPaused ? ' | Paused' : ''}
+                          </div>
+                          <span className={`mode-badge ${badgeClass}`}>
+                            {status}
+                          </span>
                         </div>
-                        {(() => {
-                            const syncStatus = gameSyncStatuses[game.id];
-                            const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
-                            const badgeClass = status.toLowerCase().replace(' ', '-');
-                            return (
-                              <span className={`mode-badge ${badgeClass}`}>
-                                {status}
-                              </span>
-                            );
-                          })()}              
-                      </div>
-                      <div className="game-players">
-                        <UsersIcon size={12} />{" "}
-                        {game.gameState?.players 
-                          ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                          : "No players"}
-                      </div>
-                      <div className="actions-game-history">
-                        <div className="bottom-actions-game-history">
-                          <div className="game-rounds">Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
-                          <div className="game-date">
-                            {formatDate(game.lastPlayed)}
+                        <div className="game-players">
+                          <UsersIcon size={12} />{" "}
+                          {game.gameState?.players 
+                            ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                            : "No players"}
+                        </div>
+                        <div className="actions-game-history">
+                          <div className="bottom-actions-game-history">
+                            <div className="game-rounds">Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
+                            <div className="game-date">
+                              {formatDate(game.lastPlayed)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      </div>
-                    
-                      <div className="settings-card-actions">
-                        <button 
-                          className={`delete-game-button${!isOnline ? ' offline' : ''}`}
-                          onClick={() => handleDeleteGame(game.id)}
-                          aria-label="Delete game"
-                        >
-                          <TrashIcon size={25} />
-                        </button>
-                        
-                        {/* Conditionally show upload or share button based on sync status - only when app is online */}
-                        {isOnline && (() => {
-                          const syncStatus = gameSyncStatuses[game.id];
-                          const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
-                          const isGameSynced = status === 'Synced';
-                          const needsUpload = status === 'Local';
-                          const isImportedGame = game.isImported || game.isShared || game.originalGameId;
-                          
-                          if (isGameSynced && !isImportedGame) {
-                            // Show share button for synced games that are not imported
-                            return (
-                              <button 
-                                className={`cloud-upload-game-button share-button ${sharingGames.has(game.id) ? 'sharing' : ''}`}
-                                onClick={() => {
-                                  // Check authentication and navigate to login if needed
-                                  if (!user) {
-                                    navigate('/login');
-                                    return;
-                                  }
-                                  handleShareGame(game.id, game);
-                                }}
-                                aria-label={sharingGames.has(game.id) ? "Sharing..." : "Share game"}
-                                disabled={game.isPaused || sharingGames.has(game.id)}
-                                title={
-                                  sharingGames.has(game.id) ? 'Creating share link...' :
-                                  game.isPaused ? 'Cannot share paused games' :
-                                  !user ? 'Click to sign in and share games' :
-                                  'Share game'
-                                }
-                              >
-                                {sharingGames.has(game.id) ? (
-                                  <span className="share-spinner" aria-label="Sharing..." />
-                                ) : (
-                                  <ShareIcon size={25} />
-                                )}
-                              </button>
-                            );
-                          } else if (isGameSynced && isImportedGame) {
-                            // Show a disabled button with tooltip for imported games
-                            return (
-                              <button 
-                                className="cloud-upload-game-button share-button disabled"
-                                disabled={true}
-                                title="Imported games cannot be shared"
-                                aria-label="Cannot share imported game"
-                              >
-                                <ShareIcon size={25} />
-                              </button>
-                            );
-                          } else if (needsUpload && !isImportedGame) {
-                            // Show upload button for local games that are not imported
-                            const isUploaded = LocalGameStorage.isGameUploaded(game.id);
-                            return (
-                              <button 
-                                className={`cloud-upload-game-button ${uploadingGames.has(game.id) ? 'uploading' : ''} ${game.isPaused || isUploaded ? 'disabled' : ''}`}
-                                onClick={async () => {
-                                  if (uploadingGames.has(game.id) || isUploaded) return; // Prevent double-click or duplicate upload
-                                  
-                                  // Check authentication and navigate to login if needed
-                                  if (!user) {
-                                    navigate('/login');
-                                    return;
-                                  }
-                                  
-                                  setUploadingGames(prev => new Set([...prev, game.id]));
-                                  try {
-                                    const result = await uploadSingleGameToCloud(game.id, game);
-                                    setMessage({ text: result.isDuplicate ? `Game was already uploaded - marked as synced!` : `Game uploaded to cloud successfully!`, type: 'success' });
-                                    // Only reload local state and sync status once
-                                    await loadSavedGames();
-                                  } catch (error) {
-                                    setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                                  } finally {
-                                    setUploadingGames(prev => {
-                                      const newSet = new Set(prev);
-                                      newSet.delete(game.id);
-                                      return newSet;
-                                    });
-                                  }
-                                }}
-                                aria-label={uploadingGames.has(game.id) ? "Uploading..." : "Upload to cloud"}
-                                disabled={game.isPaused || uploadingGames.has(game.id) || isUploaded}
-                                title={
-                                  uploadingGames.has(game.id) ? 'Uploading game...' :
-                                  isUploaded ? 'Already uploaded' :
-                                  game.isPaused ? 'Cannot upload paused games' :
-                                  !user ? 'Click to sign in and upload to cloud' :
-                                  'Upload to cloud'
-                                }
-                              >
-                                {uploadingGames.has(game.id) ? (
-                                  <span className="share-spinner" aria-label="Uploading..." />
-                                ) : (
-                                  <CloudIcon size={25} />
-                                )}
-                              </button>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </div>
-                  </div>
-                </div>
-              ))}
+                    </div>
+                  </SwipeableGameCard>
+                );
+              })}
             </div>
           ) : Object.keys(savedGames).length > 0 ? (
             <p className="no-games">No games match your filters.</p>
@@ -1372,15 +1316,58 @@ const Settings = () => {
             <div className="game-history">
               {savedTableGames.map((game) => {
                 const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
+                const showSync = isOnline && !isUploaded && game.gameFinished;
                 
                 return (
-                <div key={game.id} className="game-card table-game-card">
-                  <div className="settings-card-content">
-                    <div className="settings-card-header">
-                      <div className="game-info">
-                        <div className="game-name">
-                          {game.name}
-                        </div>
+                  <SwipeableGameCard
+                    key={game.id}
+                    onDelete={() => handleDeleteGame(game.id, true)}
+                    onSync={showSync ? async () => {
+                      if (uploadingGames.has(game.id)) return;
+                      
+                      if (!user) {
+                        navigate('/login');
+                        return;
+                      }
+                      
+                      setUploadingGames(prev => new Set([...prev, game.id]));
+                      try {
+                        const fullGame = LocalTableGameStorage.getAllSavedTableGames()[game.id];
+                        const result = await uploadSingleTableGameToCloud(game.id, fullGame);
+                        setMessage({ 
+                          text: result.isDuplicate 
+                            ? 'Table game was already uploaded - marked as synced!' 
+                            : 'Table game uploaded to cloud successfully!', 
+                          type: 'success' 
+                        });
+                        await loadSavedGames();
+                      } catch (error) {
+                        setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                      } finally {
+                        setUploadingGames(prev => {
+                          const newSet = new Set(prev);
+                          newSet.delete(game.id);
+                          return newSet;
+                        });
+                      }
+                    } : undefined}
+                    detailsPath={`/table/${game.id}`}
+                    isUploading={uploadingGames.has(game.id)}
+                    showSync={showSync}
+                    syncTitle={
+                      uploadingGames.has(game.id) ? 'Uploading table game...' :
+                      !game.gameFinished ? 'Cannot upload unfinished table games' :
+                      !user ? 'Click to sign in and upload to cloud' :
+                      'Upload to cloud'
+                    }
+                    disableSync={uploadingGames.has(game.id)}
+                  >
+                    <div className="game-card table-game-card">
+                      <div className="settings-card-header">
+                        <div className="game-info">
+                          <div className="game-name">
+                            {game.name}
+                          </div>
                           {isUploaded && (
                             <span className="mode-badge synced" title="Synced to Cloud">
                               Synced
@@ -1391,83 +1378,22 @@ const Settings = () => {
                               Local
                             </span>
                           )}               
-                      </div>
-                      <div className="game-players">
-                        <UsersIcon size={12} />{" "}
-                        {game.players.join(", ")}
-                      </div>
-                      <div className="actions-game-history">
-                        <div className="bottom-actions-game-history">
-                          <div>Rounds: {game.totalRounds}</div>
-                          <div className="game-date">
-                            {formatDate(game.lastPlayed)}
+                        </div>
+                        <div className="game-players">
+                          <UsersIcon size={12} />{" "}
+                          {game.players.join(", ")}
+                        </div>
+                        <div className="actions-game-history">
+                          <div className="bottom-actions-game-history">
+                            <div>Rounds: {game.totalRounds}</div>
+                            <div className="game-date">
+                              {formatDate(game.lastPlayed)}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="settings-card-actions">
-                      <button 
-                        className="delete-game-button"
-                        id='table'
-                        onClick={() => handleDeleteGame(game.id, true)}
-                        aria-label="Delete table game"
-                      >
-                        <TrashIcon size={25} />
-                      </button>
-                      
-                      {/* Upload button for table games */}
-                      {isOnline && !isUploaded && game.gameFinished && (
-                        <button 
-                          className={`cloud-upload-game-button ${uploadingGames.has(game.id) ? 'uploading' : ''}`}
-                          onClick={async () => {
-                            if (uploadingGames.has(game.id)) return;
-                            
-                            if (!user) {
-                              navigate('/login');
-                              return;
-                            }
-                            
-                            setUploadingGames(prev => new Set([...prev, game.id]));
-                            try {
-                              const fullGame = LocalTableGameStorage.getAllSavedTableGames()[game.id];
-                              const result = await uploadSingleTableGameToCloud(game.id, fullGame);
-                              setMessage({ 
-                                text: result.isDuplicate 
-                                  ? 'Table game was already uploaded - marked as synced!' 
-                                  : 'Table game uploaded to cloud successfully!', 
-                                type: 'success' 
-                              });
-                              await loadSavedGames();
-                            } catch (error) {
-                              setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                            } finally {
-                              setUploadingGames(prev => {
-                                const newSet = new Set(prev);
-                                newSet.delete(game.id);
-                                return newSet;
-                              });
-                            }
-                          }}
-                          aria-label={uploadingGames.has(game.id) ? "Uploading..." : "Upload to cloud"}
-                          disabled={uploadingGames.has(game.id)}
-                          title={
-                            uploadingGames.has(game.id) ? 'Uploading table game...' :
-                            !game.gameFinished ? 'Cannot upload unfinished table games' :
-                            !user ? 'Click to sign in and upload to cloud' :
-                            'Upload to cloud'
-                          }
-                        >
-                          {uploadingGames.has(game.id) ? (
-                            <span className="share-spinner" aria-label="Uploading..." />
-                          ) : (
-                            <CloudIcon size={25} />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  </SwipeableGameCard>
                 );
               })}
             </div>

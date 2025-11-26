@@ -16,6 +16,73 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Swipeable Card Styles */
+.swipeable-card-container {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+}
+
+.swipeable-card-content {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.swipeable-card-content .game-card {
+  margin-bottom: 0;
+}
+
+.swipe-actions {
+  display: flex;
+  align-items: stretch;
+  padding-left: var(--spacing-xs);
+  gap: var(--spacing-xs);
+}
+
+.swipe-action-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  color: var(--text);
+  font-weight: 600;
+  margin: 0 auto;
+}
+
+.swipe-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.swipe-action-button.view-action {
+  background-color: var(--secondary);
+  color: var(--text);
+}
+
+.swipe-action-button.sync-action {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.swipe-action-button.share-action {
+  background-color: var(--primary);
+  color: var(--text);
+}
+
+.swipe-action-button.delete-action {
+  background-color: var(--danger-color);
+  color: var(--text);
+}
+
 /* Authentication required message */
 .auth-required-message {
   padding: var(--spacing-sm) var(--spacing-md);
