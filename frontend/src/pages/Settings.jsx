@@ -955,11 +955,6 @@ const Settings = () => {
 
   return (
       <div className="settings-container">
-        {/* {message.text && (
-          <div className={`settings-message ${message.type}`}>
-            {message.text}
-          </div>
-        )} */}
 
         <div className="settings-section" style={{border: '1px solid var(--border)'}}>          
           {/* Profile Picture Section */}
@@ -1170,7 +1165,7 @@ const Settings = () => {
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header" >
             <h2>Wizard Games</h2>
             <button 
@@ -1308,7 +1303,7 @@ const Settings = () => {
         </div>
 
         {/* Table Games Section */}
-        <div className="settings-section">
+        <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header">
             <h2>Table Games</h2>
           </div>
@@ -1403,7 +1398,7 @@ const Settings = () => {
         </div>
 
         {/* App Info Section */}
-        <div className="settings-section app-info-section" >
+        <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <h3 className="settings-section-title">App Information
             <button 
               className={`settings-button-update`}

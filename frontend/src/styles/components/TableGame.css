@@ -620,7 +620,6 @@
   border: none;
   cursor: pointer;
   font-weight: bold;
-  margin-top: var(--spacing-sm);
   width: 100%;
 }
 

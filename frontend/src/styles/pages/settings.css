@@ -658,17 +658,10 @@
 }
 
 .settings-section:has(.game-history) {
-  /* background-color: red; */
   margin-bottom: var(--spacing-md);
   padding-left: 4px;
   border-bottom: 2px solid var(--border);
   border-radius: 0;
-}
-
-/* App Info Section */
-.app-info-section {
-  background-color: transparent;
-  padding: 0;
 }
 
 .info-card {
