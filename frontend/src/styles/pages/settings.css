@@ -126,7 +126,9 @@
   /* box-shadow: var(--shadow-sm); */
 }
 
-.settings-section:has(.game-history) {
+.settings-section:has(.game-history),
+.settings-section:has(.table-game-card),
+.settings-section:has(.storage-cloud-grid) {
   background-color: transparent;
   flex: 1;
   min-height: 0;
@@ -263,6 +265,8 @@
   flex-grow: 1;
 }
 
+
+
 @media (max-width: 768px) {
   .storage-cloud-grid {
     grid-template-columns: 1fr;
@@ -271,7 +275,7 @@
 }
 
 .storage-value {
-  font-size: 1.5rem;
+  /* font-size: 1.5rem; */
   font-weight: bold;
   color: var(--primary);
 }
@@ -660,11 +664,12 @@
 
 /* App Info Section */
 .app-info-section {
-  border: 1px solid var(--border);
+  background-color: transparent;
+  padding: 0;
 }
 
 .info-card {
-  background: var(--card-bg);
+  /* background: var(--card-bg); */
   border-radius: 8px;
 }
 
@@ -679,7 +684,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-sm);
-  background: var(--background-subtle);
+  background: var(--card-bg);
   border-radius: 6px;
   border: 1px solid var(--border-light);
 }

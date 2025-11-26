@@ -961,7 +961,7 @@ const Settings = () => {
           </div>
         )} */}
 
-        <div className="settings-section">          
+        <div className="settings-section" style={{border: '1px solid var(--border)'}}>          
           {/* Profile Picture Section */}
           {isOnline && (
             <div className="settings-option">
@@ -1172,7 +1172,7 @@ const Settings = () => {
 
         <div className="settings-section">
           <div className="section-header" >
-            <h2>Saved Games</h2>
+            <h2>Wizard Games</h2>
             <button 
               className="filter-button"
               onClick={() => setShowFilterModal(true)}
