@@ -21,6 +21,7 @@
   position: relative;
   overflow: hidden;
   margin-bottom: var(--spacing-sm);
+  min-height: 100px;
 }
 
 .swipeable-card-content {
@@ -40,7 +41,6 @@
 .swipe-actions {
   display: flex;
   align-items: stretch;
-  padding-left: var(--spacing-xs);
   gap: var(--spacing-xs);
 }
 
@@ -53,9 +53,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 40px;
+  max-width: 56px;
   color: var(--text);
   font-weight: 600;
-  margin: 0 auto;
+  padding: 0;
 }
 
 .swipe-action-button:disabled {

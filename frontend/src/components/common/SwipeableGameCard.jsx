@@ -29,7 +29,17 @@ const SwipeableGameCard = ({
   const cardRef = useRef(null);
 
   const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe
-  const MAX_SWIPE = 180; // Maximum swipe distance to reveal actions (increased for 4 buttons)
+  const ACTION_BUTTON_WIDTH = 45; // Width of each action button in pixels
+  
+  // Calculate dynamic max swipe based on number of visible actions
+  const visibleActionsCount = [
+    !!detailsPath, // View button
+    showSync,
+    showShare,
+    true // Delete button (always shown)
+  ].filter(Boolean).length;
+  
+  const MAX_SWIPE = visibleActionsCount * ACTION_BUTTON_WIDTH;
 
   // Handle touch/mouse start
   const handleStart = (clientX) => {

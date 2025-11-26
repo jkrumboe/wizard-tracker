@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, Link } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 
 // Services
 import { getGameById } from "@/shared/api/gameService"
@@ -32,6 +32,7 @@ const GameDetails = () => {
   const compareIds = (id1, id2) => String(id1) === String(id2);
   
   const { id } = useParams()
+  const navigate = useNavigate()
   const [game, setGame] = useState(null)
   const [playerDetails, setPlayerDetails] = useState({})
   const [loading, setLoading] = useState(true)
@@ -405,9 +406,13 @@ const GameDetails = () => {
         )} */}
         
         <div className="game-details-header">
-          <Link to="/" className="back-link">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="back-link"
+            aria-label="Go back"
+          >
             <ArrowLeftIcon className="back-icon" />
-          </Link>
+          </button>
           <div className="toggle-section">
             {!isLandscape  && (
               <button
@@ -421,13 +426,13 @@ const GameDetails = () => {
               </button>
             )}
           </div>
-          <div className="game-date">Finished: {formattedDate}</div>
+          <div className="game-date">{formattedDate}</div>
           
           {/* Container for mode badge and share button */}
           <div className="badge-controls-container">
             {/* {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>} */}
             <button className="settings-button share-button" onClick={handleShareGame}>
-              <ShareIcon size={20} />
+              <ShareIcon size={24} />
               Share
             </button>
           </div>
