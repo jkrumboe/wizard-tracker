@@ -37,7 +37,8 @@ router.post('/', auth, async (req, res, next) => {
     }
 
     // Extract metadata from gameData
-    const name = gameData.name || `Table Game - ${new Date().toLocaleDateString()}`;
+    const gameTypeName = gameData.gameName || gameData.gameTypeName || null;
+    const name = gameTypeName || gameData.name || `Table Game - ${new Date().toLocaleDateString()}`;
     const players = gameData.players || [];
     const playerCount = players.length;
     const totalRounds = gameData.rows || 0;
@@ -50,6 +51,7 @@ router.post('/', auth, async (req, res, next) => {
       userId,
       localId,
       name,
+      gameTypeName,
       gameData,
       gameType: 'table',
       gameFinished,

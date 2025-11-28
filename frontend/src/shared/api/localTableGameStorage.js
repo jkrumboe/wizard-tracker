@@ -31,7 +31,8 @@ export class LocalTableGameStorage {
       // Create a saved table game object
       const savedGame = {
         id: gameId,
-        name: gameName || `Table Game - ${new Date().toLocaleDateString()}`,
+        name: gameData.gameName || gameName || `Table Game - ${new Date().toLocaleDateString()}`,
+        gameTypeName: gameData.gameName || null, // Store actual game type separately
         gameData: gameData,
         savedAt: timestamp,
         lastPlayed: timestamp,

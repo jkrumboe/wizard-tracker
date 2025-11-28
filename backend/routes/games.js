@@ -131,8 +131,10 @@ router.get('/leaderboard', async (req, res, next) => {
     
     // First, collect all available game types from table games
     tableGames.forEach(game => {
-      const gameMode = game.name || game.gameData?.name || 'Table Game';
-      gameTypeSet.add(gameMode);
+      const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
+      if (gameMode && gameMode !== 'Table Game') {
+        gameTypeSet.add(gameMode);
+      }
     });
     
     // Process Wizard games
@@ -213,7 +215,7 @@ router.get('/leaderboard', async (req, res, next) => {
         return;
       }
 
-      const gameMode = game.name || outerGameData?.name || gameData.name || 'Table Game';
+      const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
       
       // Table games store points arrays, not final_scores
       // Calculate final scores from points arrays

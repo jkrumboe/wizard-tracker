@@ -273,7 +273,8 @@ const TableGame = () => {
             timestamp: new Date().toISOString(),
             targetNumber: targetNumber,
             lowIsBetter: lowIsBetter,
-            gameFinished: gameFinished
+            gameFinished: gameFinished,
+            gameName: currentGameName
           };
           
           const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -335,7 +336,8 @@ const TableGame = () => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
-            gameFinished: currentGameFinished
+            gameFinished: currentGameFinished,
+            gameName: currentName
           };
 
           const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -389,7 +391,8 @@ const TableGame = () => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
-            gameFinished: currentGameFinished
+            gameFinished: currentGameFinished,
+            gameName: currentName
           };
 
           const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -514,7 +517,8 @@ const TableGame = () => {
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
-        gameFinished: true // Explicitly set to true
+        gameFinished: true, // Explicitly set to true
+        gameName: currentGameName
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -574,7 +578,8 @@ const TableGame = () => {
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
-        gameFinished: false // Explicitly set to false
+        gameFinished: false, // Explicitly set to false
+        gameName: currentGameName
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -655,7 +660,8 @@ const TableGame = () => {
       timestamp: new Date().toISOString(),
       targetNumber: settings.targetNumber || null,
       lowIsBetter: settings.lowIsBetter || false,
-      gameFinished: false
+      gameFinished: false,
+      gameName: templateName
     };
     
     // Save the new game and get the ID
@@ -688,7 +694,8 @@ const TableGame = () => {
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
-        gameFinished: gameFinished
+        gameFinished: gameFinished,
+        gameName: currentGameName
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;

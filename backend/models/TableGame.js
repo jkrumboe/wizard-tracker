@@ -17,6 +17,10 @@ const tableGameSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Game name is required']
   },
+  gameTypeName: {
+    type: String,
+    default: null
+  },
   gameData: {
     type: Object,
     required: [true, 'Game data is required'],
