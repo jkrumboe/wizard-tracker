@@ -181,6 +181,10 @@
     flex: 1; /* Allow it to grow and shrink within available space */
     overflow: hidden; /* Ensure content doesn't overflow */
     line-height: 1.4;
+    max-height: 3em; /* Limit to approximately 2-3 lines */
+    text-overflow: ellipsis;
+    white-space: normal; /* Allow wrapping */
+    word-break: break-word; /* Break long words if needed */
   }
   
   .game-rounds {

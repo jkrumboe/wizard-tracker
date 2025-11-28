@@ -21,6 +21,7 @@
   position: relative;
   overflow: hidden;
   min-height: 101px;
+  max-height: 150px; /* Prevent cards from growing too tall */
 }
 
 .swipeable-card-content {
@@ -628,6 +629,8 @@
   justify-content: center;
   gap: var(--spacing-sm);
   width: 100%;
+  min-height: 0; /* Allow flex items to shrink */
+  overflow: hidden; /* Prevent content from overflowing */
 }
 
 .settings-card-actions {
