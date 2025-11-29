@@ -147,31 +147,40 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
           )}
 
           {!loading && !error && cloudGames.length > 0 && (
-            <>
+            <div>
               <div style={{ 
-                display: 'flex', 
-                gap: 'var(--spacing-sm)', 
+                display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center', 
-                marginBottom: 'var(--spacing-md)',
+                marginBottom: 'var(--spacing-sm)',
               }}>
-                <button 
-                  onClick={selectAll} 
-                  className="modal-button secondary"
-                  style={{ width: 'auto', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.9rem' }}
-                >
-                  Select All New
-                </button>
-                <button 
-                  onClick={deselectAll} 
-                  className="modal-button secondary"
-                  style={{ width: 'auto', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.9rem' }}
-                >
-                  Deselect All
-                </button>
-                <span style={{ marginLeft: 'auto', fontWeight: '500', color: 'var(--primary)' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: 'var(--spacing-md)', 
+                  alignItems: 'center', 
+                  width: '100%',
+                  justifyContent: 'center',
+                }}>
+                  <button 
+                    onClick={selectAll} 
+                    className="modal-button secondary"
+                    style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.9rem' }}
+                  >
+                    Select All New
+                  </button>
+                  <button 
+                    onClick={deselectAll} 
+                    className="modal-button secondary"
+                    style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.9rem' }}
+                  >
+                    Deselect All
+                  </button>
+                </div>
+                <span style={{ margin: '0 auto', fontWeight: '500', color: 'var(--primary)' }}>
                   {selectedGames.size} selected
                 </span>
               </div>
+                
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
                 {cloudGames.map((game) => (
@@ -227,7 +236,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )} 
           </div>
         <div className="modal-actions">
