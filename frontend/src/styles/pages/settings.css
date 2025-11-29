@@ -20,11 +20,13 @@
 .swipeable-card-container {
   position: relative;
   overflow: hidden;
-  min-height: 101px;
-  max-height: 150px; /* Prevent cards from growing too tall */
+  /* Use min-content to size based on content */
+  height: fit-content;
+  min-height: fit-content;
 }
 
 .swipeable-card-content {
+  display: block;
   background-color: transparent;
   border: none;
   border-radius: 0;
@@ -34,10 +36,12 @@
   touch-action: pan-y;
   position: relative;
   z-index: 1;
+  width: 100%;
 }
 
 .swipeable-card-content .game-card {
   margin-bottom: 0;
+  width: 100%;
 }
 
 .swipe-actions {
