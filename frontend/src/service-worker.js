@@ -4,6 +4,9 @@ const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png"
 
 // Install event - cache assets
 self.addEventListener("install", (event) => {
+  // Skip waiting to activate immediately
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.debug("Opened cache")
@@ -51,17 +54,20 @@ navigator.serviceWorker.addEventListener("controllerchange", () => {
 
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
-  const cacheWhitelist = [CACHE_NAME]
+  // Take control of all clients immediately
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName)
-          }
-        }),
-      )
-    }),
-  )
+    clients.claim().then(() => {
+      const cacheWhitelist = [CACHE_NAME];
+      return caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheWhitelist.indexOf(cacheName) === -1) {
+              return caches.delete(cacheName)
+            }
+          }),
+        )
+      });
+    })
+  );
 })
 
