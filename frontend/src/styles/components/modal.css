@@ -197,7 +197,7 @@
 .player-selection-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);

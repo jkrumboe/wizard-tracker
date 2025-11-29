@@ -903,17 +903,35 @@ const Settings = () => {
     setShowCloudGameSelectModal(true);
   };
 
-  const handleDownloadSelectedGames = async (selectedGameIds) => {
+  const handleDownloadSelectedGames = async ({ wizardGameIds, tableGameIds }) => {
+    const totalCount = wizardGameIds.length + tableGameIds.length;
+    
     setCloudSyncStatus({ 
       uploading: true, 
       progress: 'Downloading selected games...', 
       uploadedCount: 0, 
-      totalCount: selectedGameIds.length
+      totalCount: totalCount
     });
 
     try {
-      const { downloadSelectedCloudGames } = await import('@/shared/api/gameService');
-      const result = await downloadSelectedCloudGames(selectedGameIds);
+      let totalDownloaded = 0;
+      let totalSkipped = 0;
+
+      // Download wizard games
+      if (wizardGameIds.length > 0) {
+        const { downloadSelectedCloudGames } = await import('@/shared/api/gameService');
+        const wizardResult = await downloadSelectedCloudGames(wizardGameIds);
+        totalDownloaded += wizardResult.downloaded;
+        totalSkipped += wizardResult.skipped;
+      }
+
+      // Download table games
+      if (tableGameIds.length > 0) {
+        const { downloadSelectedCloudTableGames } = await import('@/shared/api/tableGameService');
+        const tableResult = await downloadSelectedCloudTableGames(tableGameIds);
+        totalDownloaded += tableResult.downloaded;
+        totalSkipped += tableResult.skipped;
+      }
 
       setCloudSyncStatus({ 
         uploading: false, 
@@ -925,14 +943,14 @@ const Settings = () => {
       // Refresh the saved games list
       loadSavedGames();
 
-      if (result.downloaded > 0) {
+      if (totalDownloaded > 0) {
         setMessage({ 
-          text: `✅ Downloaded ${result.downloaded} games from cloud! (${result.skipped} already existed locally)`, 
+          text: `✅ Downloaded ${totalDownloaded} games from cloud! (${totalSkipped} already existed locally)`, 
           type: 'success' 
         });
-      } else if (result.skipped > 0) {
+      } else if (totalSkipped > 0) {
         setMessage({ 
-          text: `All ${result.skipped} selected games already exist locally`, 
+          text: `All ${totalSkipped} selected games already exist locally`, 
           type: 'info' 
         });
       } else {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { XIcon, UsersIcon } from '@/components/ui/Icon';
+import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
-const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
+const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
   const [cloudGames, setCloudGames] = useState([]);
   const [selectedGames, setSelectedGames] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -10,47 +10,22 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
 
   useEffect(() => {
     if (isOpen) {
-      loadCloudGames();
+      loadCloudTableGames();
     }
   }, [isOpen]);
 
-  const loadCloudGames = async () => {
+  const loadCloudTableGames = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Load both wizard games and table games
-      const { getUserCloudGamesList } = await import('@/shared/api/gameService');
       const { getUserCloudTableGamesList } = await import('@/shared/api/tableGameService');
-      
-      const [wizardGames, tableGames] = await Promise.all([
-        getUserCloudGamesList(),
-        getUserCloudTableGamesList()
-      ]);
-      
-      // Add game type to each game
-      const wizardGamesWithType = wizardGames.map(g => ({ ...g, gameType: 'Wizard' }));
-      const tableGamesWithType = tableGames.map(g => ({ 
-        ...g, 
-        gameType: 'Table',
-        // Ensure these fields are at the top level
-        players: g.players || [],
-        totalRounds: g.totalRounds || 0,
-        gameTypeName: g.gameTypeName || g.name || 'Table Game'
-      }));
-      
-      console.log('Table games with type:', tableGamesWithType);
-      
-      // Combine and filter out games that already exist locally
-      const allGames = [...wizardGamesWithType, ...tableGamesWithType];
-      const availableGames = allGames.filter(game => !game.existsLocally);
-      
-      // Sort by date (newest first)
-      availableGames.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
+      const games = await getUserCloudTableGamesList();
+      // Filter out games that already exist locally
+      const availableGames = games.filter(game => !game.existsLocally);
       setCloudGames(availableGames);
     } catch (err) {
       setError(err.message);
-      console.error('Error loading cloud games:', err);
+      console.error('Error loading cloud table games:', err);
     } finally {
       setLoading(false);
     }
@@ -77,30 +52,9 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
 
   const handleDownload = () => {
     if (selectedGames.size > 0) {
-      // Separate wizard games from table games
-      const selectedGameObjects = Array.from(selectedGames).map(id => 
-        cloudGames.find(g => g.cloudId === id)
-      ).filter(Boolean);
-      
-      const wizardGameIds = selectedGameObjects
-        .filter(g => g.gameType === 'Wizard')
-        .map(g => g.cloudId);
-      const tableGameIds = selectedGameObjects
-        .filter(g => g.gameType === 'Table')
-        .map(g => g.cloudId);
-      
-      onDownload({ wizardGameIds, tableGameIds });
+      onDownload(Array.from(selectedGames));
       onClose();
     }
-  };
-
-  const getWinnerName = (game) => {
-    const winner = game.players?.find(p => p.id === game.winner_id);
-    return winner?.name || 'Unknown';
-  };
-
-  const getWinnerScore = (game) => {
-    return game.final_scores?.[game.winner_id] || 0;
   };
 
   if (!isOpen) return null;
@@ -110,7 +64,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
       <div className="modal-container cloud-game-select-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         <div className="modal-header">
           <h2>
-            Cloud Games
+            Cloud Table Games
           </h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
@@ -129,20 +83,20 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 animation: 'spin 1s linear infinite',
                 margin: '0 auto var(--spacing-md)'
               }}></div>
-              <p>Loading cloud games...</p>
+              <p>Loading cloud table games...</p>
             </div>
           )}
 
           {error && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
               <p style={{ color: 'var(--error-color)', marginBottom: 'var(--spacing-md)' }}>Error: {error}</p>
-              <button className="modal-button primary" onClick={loadCloudGames}>Retry</button>
+              <button className="modal-button primary" onClick={loadCloudTableGames}>Retry</button>
             </div>
           )}
 
           {!loading && !error && cloudGames.length === 0 && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-              <p>No cloud games found</p>
+              <p>No cloud table games found</p>
             </div>
           )}
 
@@ -194,67 +148,65 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                     </div>
 
                     <div className="player-info" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-xs)', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div className="player-name" style={{ fontWeight: '600' }}>
+                        {game.name}
+                      </div>
+                      
+                      {game.gameTypeName && (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          Game Type: {game.gameTypeName}
+                        </div>
+                      )}
+                      
+                      <div className="player-score" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        Players: {game.players.map(p => p.name).join(', ')}
+                      </div>
+                      
+                      {game.gameFinished && (
                         <span style={{ 
                           padding: '2px 8px', 
                           borderRadius: 'var(--radius-sm)', 
                           fontSize: '0.75rem', 
                           fontWeight: '600',
-                          background: game.gameType === 'Wizard' ? 'var(--primary)' : 'var(--info-color)',
-                          color: 'white'
-                        }}>
-                          {game.gameType === 'Table' ? (game.gameTypeName || 'Table Game') : game.gameType}
-                        </span>
-                      </div>
-
-                      <div className="game-players">
-                        <UsersIcon size={12} />{" "} 
-                        {game.players && game.players.length > 0 
-                          ? game.players.map(p => typeof p === 'string' ? p : (p.name || 'Unknown')).join(', ')
-                          : 'No players'}
-                      </div>
-                      
-                      {game.gameType === 'Wizard' && game.gameFinished && (
-                        <div className="player-score">
-                          Winner: {getWinnerName(game)} ({getWinnerScore(game)} pts)
-                        </div>
+                          background: 'var(--success-color)',
+                          color: 'white',
+                          width: 'fit-content'
+                        }}>FINISHED</span>
                       )}
                       
-                      <div className="player-score">
-                        Rounds: {game.totalRounds || game.total_rounds || 0} | Date: {new Date(game.created_at).toLocaleDateString()}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        {new Date(game.created_at).toLocaleDateString()} - {game.playerCount} players, {game.totalRounds} rounds
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </>
-          )} 
-          </div>
-        <div className="modal-actions">
-            {/* <button className="modal-button secondary" onClick={onClose}>
-                Cancel
-            </button> */}
-            <button
-                className="modal-button primary"
-                onClick={handleDownload}
-                disabled={selectedGames.size === 0}
-                style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                gap: 'var(--spacing-xs)',
-                width: '100%',
-                fontSize: '1rem',
-                opacity: selectedGames.size === 0 ? 0.5 : 1,
-                cursor: selectedGames.size === 0 ? 'not-allowed' : 'pointer'
-                }}
-            >
-                Download 
-            </button>
-          </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button 
+            className="modal-button secondary" 
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button 
+            className="modal-button primary" 
+            onClick={handleDownload}
+            disabled={selectedGames.size === 0}
+            style={{
+              opacity: selectedGames.size === 0 ? 0.5 : 1,
+              cursor: selectedGames.size === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Download Selected ({selectedGames.size})
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default CloudGameSelectModal;
+export default CloudTableGameSelectModal;

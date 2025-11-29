@@ -84,7 +84,7 @@ router.get('/', auth, async (req, res, next) => {
     }
 
     const tableGames = await TableGame.find({ userId })
-      .select('_id localId name gameFinished playerCount totalRounds createdAt updatedAt')
+      .select('_id localId name gameTypeName gameData gameFinished playerCount totalRounds createdAt updatedAt')
       .sort({ createdAt: -1 });
 
     res.json({ games: tableGames });
