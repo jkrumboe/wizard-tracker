@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/AddGameTemplateModal.css';
 
-const AddGameTemplateModal = ({ isOpen, onClose, onSave, editMode = false, initialData = null }) => {
+const AddGameTemplateModal = ({ isOpen, onClose, onSave, onSuggest, onSyncToCloud, editMode = false, initialData = null }) => {
   const [gameName, setGameName] = useState('');
   const [targetNumber, setTargetNumber] = useState('');
   const [lowIsBetter, setLowIsBetter] = useState(false);
@@ -66,23 +66,26 @@ const AddGameTemplateModal = ({ isOpen, onClose, onSave, editMode = false, initi
         </div>
 
         <div className="add-game-modal-content">
-          <label htmlFor="game-name-input" className="game-name-label">
-            Enter a name for the new game:
-          </label>
-          <input
-            id="game-name-input"
-            type="text"
-            value={gameName}
-            onChange={(e) => {
-              setGameName(e.target.value);
-              setError('');
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="e.g., Wizard, Poker Night, Friday Games..."
-            className="game-name-input"
-            autoFocus
-          />
+          <div className="add-section">
+            <label htmlFor="game-name-input" className="game-name-label">
+              Enter a name for the new game:
+            </label>
+            <input
+              id="game-name-input"
+              type="text"
+              value={gameName}
+              onChange={(e) => {
+                setGameName(e.target.value);
+                setError('');
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="e.g., Wizard, Poker Night, Friday Games..."
+              className="game-name-input"
+              autoFocus
+            />
+          </div>
 
+          <div className="add-section">
           <label htmlFor="target-number-input" className="game-name-label">
             Target Number (optional):
           </label>
@@ -99,12 +102,13 @@ const AddGameTemplateModal = ({ isOpen, onClose, onSave, editMode = false, initi
             placeholder="e.g., 100, 500..."
             className="game-name-input"
           />
+          </div>
           
-          <div>
+          <div className="add-section">
             <label className="game-name-label">
               Scoring Preference:
             </label>
-            <div className="scoring-prefernce-type" style={{ display: 'flex', marginTop: '0.5rem' }}>
+            <div className="scoring-prefernce-type" style={{ display: 'flex'}}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                 <input
                   type="radio"
@@ -133,6 +137,16 @@ const AddGameTemplateModal = ({ isOpen, onClose, onSave, editMode = false, initi
           <button className="modal-btn cancel-btn" onClick={onClose}>
             Cancel
           </button>
+          {/* {editMode && onSyncToCloud && (
+            <button className="modal-btn sync-btn" onClick={onSyncToCloud}>
+              ☁️ Sync to Cloud
+            </button>
+          )} */}
+          {editMode && onSuggest && (
+            <button className="modal-btn suggest-btn" onClick={onSuggest}>
+              Suggest game type
+            </button>
+          )}
           <button className="modal-btn save-btn" onClick={handleSave}>
             {editMode ? 'Save Changes' : 'Create Game'}
           </button>

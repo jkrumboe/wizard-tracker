@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrashIcon, CloudIcon, ShareIcon, EyeIcon } from '@/components/ui/Icon';
+import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon } from '@/components/ui/Icon';
 import PropTypes from 'prop-types';
 
 /**
@@ -11,11 +11,13 @@ const SwipeableGameCard = ({
   onDelete,
   onSync,
   onShare,
+  onEdit,
   detailsPath,
   isUploading = false,
   isSharing = false,
   showSync = false,
   showShare = false,
+  showEdit = false,
   syncTitle = '',
   disableSync = false,
   disableShare = false,
@@ -34,6 +36,7 @@ const SwipeableGameCard = ({
   // Calculate dynamic max swipe based on number of visible actions
   const visibleActionsCount = [
     !!detailsPath, // View button
+    showEdit,
     showSync,
     showShare,
     true // Delete button (always shown)
@@ -175,6 +178,18 @@ const SwipeableGameCard = ({
           </button>
         )}
 
+        {/* Edit button */}
+        {showEdit && onEdit && (
+          <button
+            className="swipe-action-button edit-action"
+            onClick={(e) => handleActionClick(e, onEdit)}
+            title="Edit template"
+            aria-label="Edit template"
+          >
+            <EditIcon size={24} />
+          </button>
+        )}
+
         {/* Sync/Upload button */}
         {showSync && (
           <button
@@ -244,11 +259,13 @@ SwipeableGameCard.propTypes = {
   onDelete: PropTypes.func.isRequired,
   onSync: PropTypes.func,
   onShare: PropTypes.func,
+  onEdit: PropTypes.func,
   detailsPath: PropTypes.string,
   isUploading: PropTypes.bool,
   isSharing: PropTypes.bool,
   showSync: PropTypes.bool,
   showShare: PropTypes.bool,
+  showEdit: PropTypes.bool,
   syncTitle: PropTypes.string,
   disableSync: PropTypes.bool,
   disableShare: PropTypes.bool,

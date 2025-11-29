@@ -77,6 +77,11 @@
   color: var(--text);
 }
 
+.swipe-action-button.edit-action {
+  background-color: #FFC107;
+  color: #000;
+}
+
 .swipe-action-button.sync-action {
   background-color: var(--primary);
   color: var(--text);

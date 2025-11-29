@@ -1,7 +1,10 @@
 /**
  * Local Table Game Template Storage Service
  * Handles saving, loading, and managing reusable game templates (game names)
+ * Supports both local-only templates and cloud-synced templates
  */
+
+import gameTemplateService from './gameTemplateService';
 
 const LOCAL_TABLE_GAME_TEMPLATES_KEY = "wizardTracker_tableGameTemplates";
 
@@ -179,4 +182,194 @@ export class LocalTableGameTemplate {
     const templates = this.getAllTemplates();
     return Object.keys(templates).length;
   }
+
+  /**
+   * Mark a local template as synced to cloud
+   * @param {string} templateId - Local template ID
+   * @param {string} cloudId - Cloud template ID from backend
+   */
+  static markAsSynced(templateId, cloudId) {
+    try {
+      const templates = this.getAllTemplates();
+      if (templates[templateId]) {
+        templates[templateId].cloudId = cloudId;
+        templates[templateId].isSynced = true;
+        templates[templateId].lastSyncedAt = new Date().toISOString();
+        localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));
+      }
+    } catch (error) {
+      console.error("Error marking template as synced:", error);
+    }
+  }
+
+  /**
+   * Sync a local template to the cloud
+   * Creates or updates the template on the backend
+   * @param {string} templateId - Local template ID
+   * @returns {Promise<Object>} - Cloud template object
+   */
+  static async syncToCloud(templateId) {
+    try {
+      const template = this.getTemplate(templateId);
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
+      const templateData = {
+        localId: template.id,
+        name: template.name,
+        targetNumber: template.targetNumber,
+        lowIsBetter: template.lowIsBetter,
+        description: template.description || ''
+      };
+
+      // If already synced, update; otherwise create
+      let cloudTemplate;
+      if (template.cloudId) {
+        cloudTemplate = await gameTemplateService.updateTemplate(template.cloudId, templateData);
+      } else {
+        cloudTemplate = await gameTemplateService.createTemplate(templateData);
+        this.markAsSynced(templateId, cloudTemplate._id);
+      }
+
+      return cloudTemplate;
+    } catch (error) {
+      console.error("Error syncing template to cloud:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Download cloud templates and merge with local templates
+   * System templates are kept separate, user templates are synced with local
+   * @returns {Promise<Object>} - Object with systemTemplates and userTemplates arrays
+   */
+  static async downloadFromCloud() {
+    try {
+      const allTemplates = await gameTemplateService.getTemplates();
+      
+      // Separate system and user templates
+      const systemTemplates = allTemplates.filter(t => t.type === 'system' && t.isPublic);
+      const userTemplates = allTemplates.filter(t => t.type === 'user');
+
+      // Merge user templates with local storage
+      const localTemplates = this.getAllTemplates();
+      
+      userTemplates.forEach(cloudTemplate => {
+        // Check if we already have this template locally by cloudId or localId
+        const existingLocalTemplate = Object.values(localTemplates).find(
+          local => local.cloudId === cloudTemplate._id || local.id === cloudTemplate.localId
+        );
+
+        if (existingLocalTemplate) {
+          // Update existing local template with cloud data
+          localTemplates[existingLocalTemplate.id] = {
+            ...existingLocalTemplate,
+            name: cloudTemplate.name,
+            targetNumber: cloudTemplate.targetNumber,
+            lowIsBetter: cloudTemplate.lowIsBetter,
+            usageCount: cloudTemplate.usageCount || existingLocalTemplate.usageCount,
+            cloudId: cloudTemplate._id,
+            isSynced: true,
+            lastSyncedAt: new Date().toISOString()
+          };
+        } else {
+          // Add new cloud template to local storage
+          const newLocalId = cloudTemplate.localId || this.generateTemplateId();
+          localTemplates[newLocalId] = {
+            id: newLocalId,
+            name: cloudTemplate.name,
+            targetNumber: cloudTemplate.targetNumber,
+            lowIsBetter: cloudTemplate.lowIsBetter,
+            usageCount: cloudTemplate.usageCount || 0,
+            createdAt: cloudTemplate.createdAt,
+            lastUsed: cloudTemplate.updatedAt || cloudTemplate.createdAt,
+            cloudId: cloudTemplate._id,
+            isSynced: true,
+            lastSyncedAt: new Date().toISOString()
+          };
+        }
+      });
+
+      localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(localTemplates));
+
+      return { systemTemplates, userTemplates };
+    } catch (error) {
+      console.error("Error downloading templates from cloud:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Suggest a template to admin for promotion to system template
+   * @param {string} templateId - Local template ID
+   * @param {string} note - Optional note to admin
+   * @returns {Promise<Object>} - Suggestion object
+   */
+  static async suggestToAdmin(templateId, note = '') {
+    try {
+      const template = this.getTemplate(templateId);
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
+      // Ensure template is synced to cloud first
+      if (!template.cloudId) {
+        const cloudTemplate = await this.syncToCloud(templateId);
+        template.cloudId = cloudTemplate._id;
+      }
+
+      // Submit suggestion
+      const suggestion = await gameTemplateService.suggestTemplate(template.cloudId, note);
+      
+      return suggestion;
+    } catch (error) {
+      console.error("Error suggesting template to admin:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get unsynced templates (local-only templates)
+   * @returns {Array} - Array of templates not yet synced to cloud
+   */
+  static getUnsyncedTemplates() {
+    try {
+      const templates = this.getAllTemplates();
+      return Object.values(templates)
+        .filter(template => !template.isSynced && !template.cloudId);
+    } catch (error) {
+      console.error("Error getting unsynced templates:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Delete template from both local and cloud
+   * @param {string} templateId - Local template ID
+   * @returns {Promise<boolean>} - Success status
+   */
+  static async deleteTemplateEverywhere(templateId) {
+    try {
+      const template = this.getTemplate(templateId);
+      
+      // Delete from cloud if synced
+      if (template && template.cloudId) {
+        try {
+          await gameTemplateService.deleteTemplate(template.cloudId);
+        } catch (cloudError) {
+          console.warn("Error deleting from cloud, will delete locally:", cloudError);
+        }
+      }
+
+      // Delete locally
+      this.deleteTemplate(templateId);
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting template everywhere:", error);
+      throw error;
+    }
+  }
 }
+

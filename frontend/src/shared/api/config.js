@@ -35,6 +35,15 @@ export const API_ENDPOINTS = {
     create: `${API_BASE_URL}/api/table-games`,
     getById: (id) => `${API_BASE_URL}/api/table-games/${id}`,
   },
+  gameTemplates: {
+    list: `${API_BASE_URL}/api/game-templates`,
+    create: `${API_BASE_URL}/api/game-templates`,
+    getById: (id) => `${API_BASE_URL}/api/game-templates/${id}`,
+    suggest: (id) => `${API_BASE_URL}/api/game-templates/${id}/suggest`,
+    adminSuggestions: `${API_BASE_URL}/api/game-templates/admin/suggestions`,
+    approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
+    rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
+  },
   users: {
     updateName: (id) => `${API_BASE_URL}/api/users/${id}/name`,
     lookup: (username) => `${API_BASE_URL}/api/users/lookup/${encodeURIComponent(username)}`,
