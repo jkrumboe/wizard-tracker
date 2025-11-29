@@ -20,7 +20,9 @@
 .swipeable-card-container {
   position: relative;
   overflow: hidden;
-  /* Let content determine height naturally */
+  /* Force container to wrap content height */
+  display: inline-block;
+  width: 100%;
 }
 
 .swipeable-card-content {
