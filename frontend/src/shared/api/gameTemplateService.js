@@ -38,7 +38,8 @@ export const getTemplates = async () => {
       throw new Error(error.error || 'Failed to fetch templates');
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data.templates || [];
   } catch (error) {
     console.error('Error fetching templates:', error);
     throw error;
@@ -52,7 +53,7 @@ export const getTemplates = async () => {
 export const getSystemTemplates = async () => {
   try {
     const templates = await getTemplates();
-    return templates.filter(template => template.type === 'system' && template.isPublic);
+    return Array.isArray(templates) ? templates.filter(template => template.type === 'system' && template.isPublic) : [];
   } catch (error) {
     console.error('Error fetching system templates:', error);
     // Return empty array if not authenticated or error occurs
@@ -67,7 +68,7 @@ export const getSystemTemplates = async () => {
 export const getUserTemplates = async () => {
   try {
     const templates = await getTemplates();
-    return templates.filter(template => template.type === 'user');
+    return Array.isArray(templates) ? templates.filter(template => template.type === 'user') : [];
   } catch (error) {
     console.error('Error fetching user templates:', error);
     // Return empty array if not authenticated or error occurs

@@ -248,6 +248,12 @@ export class LocalTableGameTemplate {
     try {
       const allTemplates = await gameTemplateService.getTemplates();
       
+      // Ensure we have an array
+      if (!Array.isArray(allTemplates)) {
+        console.error('Expected array of templates, got:', allTemplates);
+        return { systemTemplates: [], userTemplates: [] };
+      }
+      
       // Separate system and user templates
       const systemTemplates = allTemplates.filter(t => t.type === 'system' && t.isPublic);
       const userTemplates = allTemplates.filter(t => t.type === 'user');
@@ -316,10 +322,17 @@ export class LocalTableGameTemplate {
       // Ensure template is synced to cloud first
       if (!template.cloudId) {
         const cloudTemplate = await this.syncToCloud(templateId);
-        template.cloudId = cloudTemplate._id;
+        // Reload template from storage to get updated cloudId
+        const updatedTemplate = this.getTemplate(templateId);
+        if (!updatedTemplate || !updatedTemplate.cloudId) {
+          throw new Error('Failed to sync template to cloud');
+        }
+        // Submit suggestion using the cloudId from storage
+        const suggestion = await gameTemplateService.suggestTemplate(updatedTemplate.cloudId, note);
+        return suggestion;
       }
 
-      // Submit suggestion
+      // Submit suggestion with existing cloudId
       const suggestion = await gameTemplateService.suggestTemplate(template.cloudId, note);
       
       return suggestion;

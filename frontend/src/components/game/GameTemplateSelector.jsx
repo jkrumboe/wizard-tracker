@@ -258,7 +258,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                         const savedCount = getSavedGamesCount(template.name);
                         return savedCount > 0 ? (
                           <span className="template-usage">
-                            {savedCount} saved {savedCount === 1 ? 'game' : 'games'}
+                            {savedCount} {savedCount === 1 ? 'game' : 'games'}
                           </span>
                         ) : null;
                       })()}

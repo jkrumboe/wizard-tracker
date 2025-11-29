@@ -1,5 +1,7 @@
 const express = require('express');
-const GameTemplate = require('../models/GameTemplate');
+const SystemGameTemplate = require('../models/SystemGameTemplate');
+const UserGameTemplate = require('../models/UserGameTemplate');
+const TemplateSuggestion = require('../models/TemplateSuggestion');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -9,15 +11,21 @@ router.get('/', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
     
-    // Get system/public templates and user's own templates
-    const templates = await GameTemplate.find({
-      $or: [
-        { type: 'system', isPublic: true },
-        { userId: userId }
-      ]
-    })
-      .select('_id localId name type targetNumber lowIsBetter usageCount description isPublic createdAt updatedAt')
-      .sort({ type: 1, name: 1 }); // System templates first, then alphabetically
+    // Get system templates and user's own templates in parallel
+    const [systemTemplates, userTemplates] = await Promise.all([
+      SystemGameTemplate.find({ isActive: true })
+        .select('_id name targetNumber lowIsBetter usageCount description createdAt updatedAt')
+        .sort({ name: 1 }),
+      UserGameTemplate.find({ userId })
+        .select('_id localId name targetNumber lowIsBetter usageCount description createdAt updatedAt')
+        .sort({ name: 1 })
+    ]);
+
+    // Mark templates with their type for frontend
+    const templates = [
+      ...systemTemplates.map(t => ({ ...t.toObject(), type: 'system', isPublic: true })),
+      ...userTemplates.map(t => ({ ...t.toObject(), type: 'user', isPublic: false }))
+    ];
 
     res.json({ templates });
   } catch (error) {
@@ -38,7 +46,7 @@ router.post('/', auth, async (req, res, next) => {
 
     // Check for duplicate by localId
     if (localId) {
-      const existingByLocalId = await GameTemplate.findOne({ localId, userId });
+      const existingByLocalId = await UserGameTemplate.findOne({ localId, userId });
       if (existingByLocalId) {
         return res.status(200).json({
           message: 'Template already exists (by localId)',
@@ -49,10 +57,9 @@ router.post('/', auth, async (req, res, next) => {
     }
 
     // Check for duplicate by name for this user
-    const existingByName = await GameTemplate.findOne({ 
+    const existingByName = await UserGameTemplate.findOne({ 
       name: name.trim(), 
-      userId,
-      type: 'user'
+      userId
     });
     
     if (existingByName) {
@@ -64,15 +71,13 @@ router.post('/', auth, async (req, res, next) => {
     }
 
     // Create new template
-    const template = new GameTemplate({
+    const template = new UserGameTemplate({
       userId,
       localId,
       name: name.trim(),
-      type: 'user',
       targetNumber: targetNumber || null,
       lowIsBetter: lowIsBetter || false,
-      description: description || '',
-      isPublic: false
+      description: description || ''
     });
 
     await template.save();
@@ -94,7 +99,7 @@ router.put('/:id', auth, async (req, res, next) => {
     const { name, targetNumber, lowIsBetter, description } = req.body;
     const userId = req.user._id;
 
-    const template = await GameTemplate.findOne({ _id: id, userId, type: 'user' });
+    const template = await UserGameTemplate.findOne({ _id: id, userId });
 
     if (!template) {
       return res.status(404).json({ error: 'Template not found or not authorized' });
@@ -123,10 +128,9 @@ router.delete('/:id', auth, async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    const template = await GameTemplate.findOneAndDelete({ 
+    const template = await UserGameTemplate.findOneAndDelete({ 
       _id: id, 
-      userId, 
-      type: 'user' 
+      userId
     });
 
     if (!template) {
@@ -147,10 +151,9 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
     const userId = req.user._id;
 
     // Find the user's template
-    const userTemplate = await GameTemplate.findOne({ 
+    const userTemplate = await UserGameTemplate.findOne({ 
       _id: id, 
-      userId, 
-      type: 'user' 
+      userId
     });
 
     if (!userTemplate) {
@@ -158,10 +161,10 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
     }
 
     // Check if already suggested
-    const existingSuggestion = await GameTemplate.findOne({
-      name: userTemplate.name,
-      type: 'suggested',
-      suggestedBy: userId
+    const existingSuggestion = await TemplateSuggestion.findOne({
+      userTemplateId: id,
+      userId,
+      status: 'pending'
     });
 
     if (existingSuggestion) {
@@ -171,42 +174,40 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
       });
     }
 
-    // Create a suggested template (copy of user template)
-    const suggestedTemplate = new GameTemplate({
+    // Create a template suggestion
+    const suggestion = new TemplateSuggestion({
+      userId,
+      userTemplateId: id,
       name: userTemplate.name,
-      type: 'suggested',
       targetNumber: userTemplate.targetNumber,
       lowIsBetter: userTemplate.lowIsBetter,
       description: userTemplate.description,
-      suggestedBy: userId,
       suggestionNote: suggestionNote || '',
-      approved: false,
-      isPublic: false
+      status: 'pending'
     });
 
-    await suggestedTemplate.save();
+    await suggestion.save();
 
     res.status(201).json({
       message: 'Template suggestion submitted successfully',
-      suggestion: suggestedTemplate
+      suggestion
     });
   } catch (error) {
     next(error);
   }
 });
 
-// GET /api/game-templates/suggestions - Get all suggested templates (admin only)
+// GET /api/game-templates/suggestions - Get all pending template suggestions (admin only)
 router.get('/admin/suggestions', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
     
-    // Check if user is admin (you'll need to implement admin check)
+    // TODO: Check if user is admin
     // For now, we'll just return the suggestions
-    const suggestions = await GameTemplate.find({
-      type: 'suggested',
-      approved: false
+    const suggestions = await TemplateSuggestion.find({
+      status: 'pending'
     })
-      .populate('suggestedBy', 'username email')
+      .populate('userId', 'username email')
       .sort({ createdAt: -1 });
 
     res.json({ suggestions });
@@ -215,35 +216,42 @@ router.get('/admin/suggestions', auth, async (req, res, next) => {
   }
 });
 
-// POST /api/game-templates/suggestions/:id/approve - Approve a suggestion (admin only)
+// POST /api/game-templates/suggestions/:id/approve - Approve a suggestion and create system template (admin only)
 router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
     
-    // Check if user is admin (implement proper admin check)
-    // For now, we'll just proceed
+    // TODO: Check if user is admin
     
-    const suggestion = await GameTemplate.findOne({
+    const suggestion = await TemplateSuggestion.findOne({
       _id: id,
-      type: 'suggested'
+      status: 'pending'
     });
 
     if (!suggestion) {
       return res.status(404).json({ error: 'Suggestion not found' });
     }
 
-    // Convert to system template
-    suggestion.type = 'system';
-    suggestion.isPublic = true;
-    suggestion.approved = true;
-    suggestion.userId = null; // System templates have no owner
+    // Create system template from suggestion
+    const systemTemplate = new SystemGameTemplate({
+      name: suggestion.name,
+      targetNumber: suggestion.targetNumber,
+      lowIsBetter: suggestion.lowIsBetter,
+      description: suggestion.description,
+      isActive: true
+    });
 
+    await systemTemplate.save();
+
+    // Update suggestion status
+    suggestion.status = 'approved';
+    suggestion.reviewedAt = new Date();
     await suggestion.save();
 
     res.json({
       message: 'Template suggestion approved and added to system templates',
-      template: suggestion
+      template: systemTemplate
     });
   } catch (error) {
     next(error);
@@ -254,15 +262,22 @@ router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
 router.delete('/admin/suggestions/:id', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { reviewNote } = req.body;
     
-    const suggestion = await GameTemplate.findOneAndDelete({
+    const suggestion = await TemplateSuggestion.findOne({
       _id: id,
-      type: 'suggested'
+      status: 'pending'
     });
 
     if (!suggestion) {
       return res.status(404).json({ error: 'Suggestion not found' });
     }
+
+    // Update suggestion status instead of deleting
+    suggestion.status = 'rejected';
+    suggestion.reviewedAt = new Date();
+    suggestion.reviewNote = reviewNote || '';
+    await suggestion.save();
 
     res.json({ message: 'Template suggestion rejected' });
   } catch (error) {
