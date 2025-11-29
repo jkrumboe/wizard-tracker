@@ -48,10 +48,6 @@ self.addEventListener("fetch", (event) => {
   )
 })
 
-navigator.serviceWorker.addEventListener("controllerchange", () => {
-  alert("A new version is available. Please refresh the page.");
-});
-
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
   // Take control of all clients immediately
@@ -66,6 +62,16 @@ self.addEventListener("activate", (event) => {
             }
           }),
         )
+      }).then(() => {
+        // Notify all clients that a new version is active
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'SW_ACTIVATED',
+              version: CACHE_NAME
+            });
+          });
+        });
       });
     })
   );

@@ -97,7 +97,6 @@ export function register() {
   })
 
   // Listen for controller change and reload once the update has been applied
-  // Use a flag to ensure we only reload once
   let controllerChangeHandled = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (isReloading || controllerChangeHandled) {
@@ -105,31 +104,12 @@ export function register() {
       return;
     }
 
-    // Skip automatic reload if UpdateNotification component is handling the update
-    if (window.__PWA_UPDATE_IN_PROGRESS) {
-      console.debug('Update in progress via UpdateNotification - skipping automatic reload');
-      return;
-    }
-    
-    // Skip if update was recently completed (prevents loop)
-    const updateState = localStorage.getItem('pwa_update_state');
-    const updateTimestamp = localStorage.getItem('pwa_update_timestamp');
-    if (updateState === 'completed' && updateTimestamp) {
-      const timeSinceUpdate = Date.now() - parseInt(updateTimestamp, 10);
-      if (timeSinceUpdate < 5000) {
-        console.debug('Update recently completed, skipping reload');
-        return;
-      }
-    }
-
     controllerChangeHandled = true;
     isReloading = true;
     console.debug('New service worker activated - reloading...');
     
-    // Small delay to allow the loading screen to show
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    // Immediate reload to show new version
+    window.location.reload();
   });
 }
 
