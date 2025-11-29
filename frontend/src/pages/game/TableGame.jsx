@@ -509,11 +509,34 @@ const TableGame = () => {
 
   const handleFinishGame = async () => {
     setGameFinished(true);
-    // Save with the updated finished status
+    
+    // Calculate the actual number of used rows (find the last row with any data)
+    let actualUsedRows = 0;
+    for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+      const hasDataInRow = players.some(player => {
+        const point = player.points[rowIndex];
+        return point !== "" && point !== undefined && point !== null;
+      });
+      if (hasDataInRow) {
+        actualUsedRows = rowIndex + 1; // +1 because index is 0-based
+      }
+    }
+    
+    // Trim each player's points array to only include used rows
+    const trimmedPlayers = players.map(player => ({
+      ...player,
+      points: player.points.slice(0, actualUsedRows)
+    }));
+    
+    // Update state with trimmed data
+    setPlayers(trimmedPlayers);
+    setRows(actualUsedRows);
+    
+    // Save with the updated finished status and trimmed data
     try {
       const gameData = {
-        players: players,
-        rows: rows,
+        players: trimmedPlayers,
+        rows: actualUsedRows,
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
@@ -531,9 +554,11 @@ const TableGame = () => {
           name: name,
           targetNumber: targetNumber,
           lowIsBetter: lowIsBetter,
-          gameFinished: true
+          gameFinished: true,
+          totalRounds: actualUsedRows,
+          playerCount: trimmedPlayers.length
         });
-        console.debug(`Game finished and saved: "${name}" (ID: ${currentGameId})`);
+        console.debug(`Game finished and saved: "${name}" (ID: ${currentGameId}, actual rounds: ${actualUsedRows})`);
       } else {
         const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
         setCurrentGameId(newGameId);
