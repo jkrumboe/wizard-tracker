@@ -512,59 +512,95 @@ const Settings = () => {
         return;
       }
 
+      // Check if there's already a waiting service worker
+      if (registration.waiting) {
+        setCheckingForUpdates(false);
+        setMessage({ 
+          text: '✅ Update available! Applying update now...', 
+          type: 'success' 
+        });
+        
+        // Post message to activate the waiting service worker
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Wait for controller change and reload
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+        
+        return;
+      }
+
       // Force an update check
       await registration.update();
 
-      // Wait a bit to see if an update is found
-      setTimeout(() => {
-        if (registration.waiting) {
-          // Update is available and waiting
-          setCheckingForUpdates(false);
-          setMessage({ 
-            text: '✅ Update available! The page will reload to apply the update.', 
-            type: 'success' 
-          });
+      // Wait for the update to be detected
+      let updateCheckTimeout;
+      const updatePromise = new Promise((resolve) => {
+        let resolved = false;
+        
+        const checkUpdate = () => {
+          if (resolved) return;
           
-          // Listen for the controller change before reloading
-          let controllerChanged = false;
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!controllerChanged) {
-              controllerChanged = true;
-              console.debug('New service worker activated, reloading...');
-              // Give a moment for the new SW to take control
-              setTimeout(() => {
-                window.location.reload();
-              }, 100);
-            }
-          });
-          
-          // Send message to service worker to skip waiting
-          // Note: The SW already calls skipWaiting() on install, but this is a fallback
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          
-          // Fallback reload in case controllerchange doesn't fire
-          setTimeout(() => {
-            if (!controllerChanged) {
-              console.debug('Fallback reload after timeout');
-              window.location.reload();
-            }
-          }, 3000);
-        } else if (registration.installing) {
-          // Update is installing
-          setCheckingForUpdates(false);
-          setMessage({ 
-            text: '📥 Update is being installed...', 
-            type: 'info' 
-          });
-        } else {
-          // No update available
-          setCheckingForUpdates(false);
-          setMessage({ 
-            text: '✅ You are running the latest version!', 
-            type: 'success' 
-          });
-        }
-      }, 2000);
+          if (registration.waiting) {
+            resolved = true;
+            clearTimeout(updateCheckTimeout);
+            resolve('waiting');
+          } else if (registration.installing) {
+            // Keep checking while installing
+            setTimeout(checkUpdate, 100);
+          } else {
+            // Check a few more times in case update is still propagating
+            setTimeout(() => {
+              if (resolved) return;
+              if (registration.waiting) {
+                resolved = true;
+                clearTimeout(updateCheckTimeout);
+                resolve('waiting');
+              } else {
+                resolved = true;
+                clearTimeout(updateCheckTimeout);
+                resolve('none');
+              }
+            }, 500);
+          }
+        };
+        
+        // Start checking immediately
+        checkUpdate();
+        
+        // Timeout after 5 seconds
+        updateCheckTimeout = setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            resolve(registration.waiting ? 'waiting' : 'none');
+          }
+        }, 5000);
+      });
+
+      const result = await updatePromise;
+      
+      setCheckingForUpdates(false);
+      
+      if (result === 'waiting') {
+        setMessage({ 
+          text: '✅ Update available! Applying update now...', 
+          type: 'success' 
+        });
+        
+        // Post message to activate the waiting service worker
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Wait for controller change and reload
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
+      } else {
+        setMessage({ 
+          text: '✅ You are running the latest version!', 
+          type: 'success' 
+        });
+      }
     } catch (error) {
       console.error('Error checking for updates:', error);
       setCheckingForUpdates(false);

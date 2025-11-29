@@ -133,8 +133,14 @@ const TableGame = () => {
         if (savedGame) {
           const gameData = savedGame.gameData;
           
+          // Ensure players have proper structure with points arrays
+          const loadedPlayers = (gameData.players || []).map(player => ({
+            name: player.name || 'Unknown',
+            points: Array.isArray(player.points) ? player.points : []
+          }));
+          
           // Set all the state to display the game
-          setPlayers(gameData.players);
+          setPlayers(loadedPlayers);
           setRows(gameData.rows || 10);
           setShowTemplateSelector(false);
           setActiveTab('table');
@@ -156,7 +162,9 @@ const TableGame = () => {
           }
           
           setGameFinished(savedGame.gameFinished || false);
-          console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id})`);
+          console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, finished: ${savedGame.gameFinished}`);
+        } else {
+          console.error(`Game with ID ${id} not found in storage`);
         }
       }
     } else {
