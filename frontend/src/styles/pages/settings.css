@@ -19,7 +19,7 @@
 /* Swipeable Card Styles */
 .swipeable-card-container {
   position: relative;
-  overflow: hidden;
+  /* overflow-x: hidden; */
   /* Force container to wrap content height */
   display: inline-block;
   width: 100%;
@@ -41,7 +41,7 @@
 
 .swipeable-card-content .game-card {
   margin-bottom: 0;
-  width: 100%;
+  height: 100%;
 }
 
 .swipe-actions {
