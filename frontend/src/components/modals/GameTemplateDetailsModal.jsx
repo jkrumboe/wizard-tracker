@@ -11,7 +11,7 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
       <div className="game-details-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{template.name}</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
+          <button className="close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={20} />
           </button>
         </div>

@@ -83,7 +83,7 @@
 .template-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   max-height: calc(70vh - var(--bottom-nav-height));
   overflow-y: scroll;
   overflow-x: hidden;

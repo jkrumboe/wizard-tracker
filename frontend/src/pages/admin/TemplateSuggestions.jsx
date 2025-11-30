@@ -3,6 +3,33 @@ import { marked } from 'marked';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import '@/styles/pages/admin.css';
 
+// Simple diff display component
+const DiffView = ({ label, oldValue, newValue }) => {
+  const hasChanged = oldValue !== newValue;
+  
+  if (!hasChanged && !oldValue) return null;
+  
+  return (
+    <div className="diff-item">
+      <label>{label}:</label>
+      {hasChanged ? (
+        <div className="diff-changes">
+          {oldValue !== undefined && (
+            <div className="diff-old">
+              <span className="diff-label">- Old:</span> {oldValue?.toString() || '(empty)'}
+            </div>
+          )}
+          <div className="diff-new">
+            <span className="diff-label">+ New:</span> {newValue?.toString() || '(empty)'}
+          </div>
+        </div>
+      ) : (
+        <span>{newValue?.toString() || oldValue?.toString()}</span>
+      )}
+    </div>
+  );
+};
+
 const TemplateSuggestions = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,46 +130,112 @@ const TemplateSuggestions = () => {
                     <span>{suggestion.userId?.username || 'Unknown'}</span>
                   </div>
 
-                  {suggestion.targetNumber && (
-                    <div className="detail-item">
-                      <label>Target Number:</label>
-                      <span>{suggestion.targetNumber}</span>
-                    </div>
-                  )}
+                  {/* Show diff view for change requests */}
+                  {suggestion.suggestionType === 'change' && suggestion.systemTemplateId ? (
+                    <>
+                      <div className="detail-item full-width">
+                        <label>Modifying Template:</label>
+                        <span className="template-ref">{suggestion.systemTemplateId.name || 'System Template'}</span>
+                      </div>
+                      
+                      <div className="detail-item full-width">
+                        <label>Changes Requested:</label>
+                        <div className="diff-container">
+                          <DiffView 
+                            label="Template Name" 
+                            oldValue={suggestion.systemTemplateId.name}
+                            newValue={suggestion.name}
+                          />
+                          <DiffView 
+                            label="Target Number" 
+                            oldValue={suggestion.systemTemplateId.targetNumber}
+                            newValue={suggestion.targetNumber}
+                          />
+                          <DiffView 
+                            label="Scoring" 
+                            oldValue={suggestion.systemTemplateId.lowIsBetter ? 'Low Score' : 'High Score'}
+                            newValue={suggestion.lowIsBetter ? 'Low Score' : 'High Score'}
+                          />
+                          <DiffView 
+                            label="Description" 
+                            oldValue={suggestion.systemTemplateId.description}
+                            newValue={suggestion.description}
+                          />
+                        </div>
+                      </div>
 
-                  <div className="detail-item">
-                    <label>Scoring:</label>
-                    <span>{suggestion.lowIsBetter ? 'Low Score' : 'High Score'}</span>
-                  </div>
+                      {/* Show markdown diff */}
+                      {(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) && (
+                        <div className="detail-item full-width">
+                          <label>Game Rules Changes:</label>
+                          {suggestion.systemTemplateId.descriptionMarkdown !== suggestion.descriptionMarkdown ? (
+                            <div className="markdown-diff">
+                              {suggestion.systemTemplateId.descriptionMarkdown && (
+                                <div className="markdown-old">
+                                  <h4>Previous Rules:</h4>
+                                  <div 
+                                    className="markdown-preview-admin"
+                                    dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.systemTemplateId.descriptionMarkdown) }}
+                                  />
+                                </div>
+                              )}
+                              {suggestion.descriptionMarkdown && (
+                                <div className="markdown-new">
+                                  <h4>New Rules:</h4>
+                                  <div 
+                                    className="markdown-preview-admin"
+                                    dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown) }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div 
+                              className="markdown-preview-admin"
+                              dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) }}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* Show regular fields for new templates */
+                    <>
+                      {suggestion.targetNumber && (
+                        <div className="detail-item">
+                          <label>Target Number:</label>
+                          <span>{suggestion.targetNumber}</span>
+                        </div>
+                      )}
 
-                  {suggestion.description && (
-                    <div className="detail-item full-width">
-                      <label>Description:</label>
-                      <p>{suggestion.description}</p>
-                    </div>
+                      <div className="detail-item">
+                        <label>Scoring:</label>
+                        <span>{suggestion.lowIsBetter ? 'Low Score' : 'High Score'}</span>
+                      </div>
+
+                      {suggestion.description && (
+                        <div className="detail-item full-width">
+                          <label>Description:</label>
+                          <p>{suggestion.description}</p>
+                        </div>
+                      )}
+
+                      {suggestion.descriptionMarkdown && (
+                        <div className="detail-item full-width">
+                          <label>Game Rules:</label>
+                          <div 
+                            className="markdown-preview-admin"
+                            dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown) }}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {suggestion.suggestionNote && (
                     <div className="detail-item full-width">
                       <label>User's Note:</label>
                       <p className="suggestion-note">{suggestion.suggestionNote}</p>
-                    </div>
-                  )}
-
-                  {suggestion.descriptionMarkdown && (
-                    <div className="detail-item full-width">
-                      <label>Game Rules:</label>
-                      <div 
-                        className="markdown-preview-admin"
-                        dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown) }}
-                      />
-                    </div>
-                  )}
-
-                  {suggestion.suggestionType === 'change' && suggestion.systemTemplateId && (
-                    <div className="detail-item full-width">
-                      <label>Modifying Template:</label>
-                      <span className="template-ref">{suggestion.systemTemplateId.name || 'System Template'}</span>
                     </div>
                   )}
                 </div>

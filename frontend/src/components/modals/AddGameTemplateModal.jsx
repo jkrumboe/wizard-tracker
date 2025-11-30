@@ -119,7 +119,7 @@ const AddGameTemplateModal = ({
       <div className="add-game-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{editMode ? 'Edit Game Type' : 'Create New Game'}</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
+          <button className="close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={20} />
           </button>
         </div>
@@ -206,7 +206,7 @@ const AddGameTemplateModal = ({
             </div>
           </div>
 
-          <div className="add-section">
+          {/* <div className="add-section">
             <label htmlFor="description-input" className="game-name-label">
               Short Description (optional):
             </label>
@@ -218,7 +218,7 @@ const AddGameTemplateModal = ({
               placeholder="Brief description of the game..."
               className="game-name-input"
             />
-          </div>
+          </div> */}
             </>
           )}
 

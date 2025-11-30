@@ -239,16 +239,15 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
             {systemTemplates.map((template) => {
               const isCreator = user && template.createdBy && template.createdBy === user.id;
               const savedCount = getSavedGamesCount(template.name);
-              const hasDetails = !!(template.description || template.descriptionMarkdown);
               
               return (
                 <SwipeableGameCard
                   key={template._id}
                   onEdit={isCreator ? () => handleEditSystemTemplate(template, { stopPropagation: () => {} }) : null}
-                  onViewDetails={hasDetails ? () => handleViewDetails(template, { stopPropagation: () => {} }) : null}
+                  onViewDetails={!isCreator ? () => handleViewDetails(template, { stopPropagation: () => {} }) : null}
                   onDelete={() => {}} 
                   showEdit={isCreator}
-                  showViewDetails={hasDetails && !isCreator}
+                  showViewDetails={!isCreator}
                   showDelete={false}
                 >
                   <div className="template-item">
@@ -280,24 +279,14 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                       >
                         New Game
                       </button>
-                      {savedCount > 0 && (
-                        <button
-                          className="template-action-btn continue-btn"
-                          onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
-                          title="View Saved Games"
-                        >
-                          <ListIcon size={18} />
-                        </button>
-                      )}
-                      {(template.description || template.descriptionMarkdown) && (
-                        <button
-                          className="template-action-btn continue-btn"
-                          onClick={(e) => handleViewDetails(template, e)}
-                          title="View Details"
-                        >
-                          <EyeIcon size={18} />
-                        </button>
-                      )}
+                      <button
+                        className="template-action-btn continue-btn"
+                        onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
+                        title="View Saved Games"
+                        disabled={savedCount === 0}
+                      >
+                        <ListIcon size={18} />
+                      </button>
                     </div>
                   </div>
                 </SwipeableGameCard>
