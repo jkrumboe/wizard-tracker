@@ -105,10 +105,10 @@
   box-shadow: var(--shadow-sm);
 }
 
-.template-item.system-template {
+/* .template-item.system-template {
   border-color: var(--warning);
   background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 193, 7, 0.05) 100%);
-}
+} */
 
 .template-info {
   flex: 1;
@@ -118,6 +118,7 @@
 .template-name-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
 }

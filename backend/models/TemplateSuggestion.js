@@ -11,7 +11,17 @@ const templateSuggestionSchema = new mongoose.Schema({
   userTemplateId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'UserGameTemplate',
-    required: true
+    default: null
+  },
+  systemTemplateId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SystemGameTemplate',
+    default: null
+  },
+  suggestionType: {
+    type: String,
+    enum: ['new', 'change'],
+    default: 'new'
   },
   name: {
     type: String,
@@ -29,6 +39,11 @@ const templateSuggestionSchema = new mongoose.Schema({
   description: {
     type: String,
     default: ''
+  },
+  descriptionMarkdown: {
+    type: String,
+    default: '',
+    maxlength: [5000, 'Description cannot exceed 5000 characters']
   },
   suggestionNote: {
     type: String,

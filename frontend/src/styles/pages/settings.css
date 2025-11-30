@@ -39,6 +39,16 @@
   width: 100%;
 }
 
+/* When card is swiped, prevent clicks on underlying content */
+.swipeable-card-content.is-swiped {
+  pointer-events: none;
+}
+
+/* But allow swipe action buttons to be clicked */
+.swipeable-card-content.is-swiped + .swipe-actions {
+  pointer-events: auto;
+}
+
 .swipeable-card-content .game-card {
   margin-bottom: 0;
   height: 100%;

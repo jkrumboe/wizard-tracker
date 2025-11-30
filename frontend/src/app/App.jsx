@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "r
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
 import { OnlineProtectedRoute, AuthProtectedRoute, NetworkRecoveryHandler } from "@/components/common"
+import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
@@ -262,9 +263,9 @@ function App() {
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/shared/:shareId" element={<SharedGamePage />} />
                     <Route path="/admin" element={
-                      <AuthProtectedRoute>
+                      <AdminProtectedRoute>
                         <AdminLayout />
-                      </AuthProtectedRoute>
+                      </AdminProtectedRoute>
                     }>
                       <Route path="template-suggestions" element={<TemplateSuggestions />} />
                       <Route path="users" element={<UserManagement />} />

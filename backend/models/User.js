@@ -18,11 +18,6 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
-  email: {
-    type: String,
-    sparse: true,
-    trim: true
-  },
   lastLogin: {
     type: Date,
     default: null

@@ -6,6 +6,21 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// GET /api/game-templates/public - Get public system templates (no auth required)
+router.get('/public', async (req, res, next) => {
+  try {
+    const systemTemplates = await SystemGameTemplate.find({ isActive: true })
+      .select('_id name targetNumber lowIsBetter usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+      .sort({ name: 1 });
+
+    res.json({ 
+      templates: systemTemplates.map(t => ({ ...t.toObject(), type: 'system', isPublic: true }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/game-templates - Get all accessible templates (system + user's own)
 router.get('/', auth, async (req, res, next) => {
   try {
@@ -14,10 +29,10 @@ router.get('/', auth, async (req, res, next) => {
     // Get system templates and user's own templates in parallel
     const [systemTemplates, userTemplates] = await Promise.all([
       SystemGameTemplate.find({ isActive: true })
-        .select('_id name targetNumber lowIsBetter usageCount description createdAt updatedAt')
+        .select('_id name targetNumber lowIsBetter usageCount description descriptionMarkdown createdBy createdAt updatedAt')
         .sort({ name: 1 }),
-      UserGameTemplate.find({ userId })
-        .select('_id localId name targetNumber lowIsBetter usageCount description createdAt updatedAt')
+      UserGameTemplate.find({ userId, approvedAsSystemTemplate: false })
+        .select('_id localId name targetNumber lowIsBetter usageCount description descriptionMarkdown approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
         .sort({ name: 1 })
     ]);
 
@@ -36,7 +51,7 @@ router.get('/', auth, async (req, res, next) => {
 // POST /api/game-templates - Create a new user template
 router.post('/', auth, async (req, res, next) => {
   try {
-    const { name, localId, targetNumber, lowIsBetter, description } = req.body;
+    const { name, localId, targetNumber, lowIsBetter, description, descriptionMarkdown } = req.body;
     const userId = req.user._id;
 
     // Validation
@@ -77,7 +92,8 @@ router.post('/', auth, async (req, res, next) => {
       name: name.trim(),
       targetNumber: targetNumber || null,
       lowIsBetter: lowIsBetter || false,
-      description: description || ''
+      description: description || '',
+      descriptionMarkdown: descriptionMarkdown || ''
     });
 
     await template.save();
@@ -96,7 +112,7 @@ router.post('/', auth, async (req, res, next) => {
 router.put('/:id', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, targetNumber, lowIsBetter, description } = req.body;
+    const { name, targetNumber, lowIsBetter, description, descriptionMarkdown } = req.body;
     const userId = req.user._id;
 
     const template = await UserGameTemplate.findOne({ _id: id, userId });
@@ -110,6 +126,7 @@ router.put('/:id', auth, async (req, res, next) => {
     if (targetNumber !== undefined) template.targetNumber = targetNumber;
     if (lowIsBetter !== undefined) template.lowIsBetter = lowIsBetter;
     if (description !== undefined) template.description = description;
+    if (descriptionMarkdown !== undefined) template.descriptionMarkdown = descriptionMarkdown;
 
     await template.save();
 
@@ -147,7 +164,7 @@ router.delete('/:id', auth, async (req, res, next) => {
 router.post('/:id/suggest', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { suggestionNote } = req.body;
+    const { suggestionNote, descriptionMarkdown } = req.body;
     const userId = req.user._id;
 
     // Find the user's template
@@ -178,10 +195,12 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
     const suggestion = new TemplateSuggestion({
       userId,
       userTemplateId: id,
+      suggestionType: 'new',
       name: userTemplate.name,
       targetNumber: userTemplate.targetNumber,
       lowIsBetter: userTemplate.lowIsBetter,
       description: userTemplate.description,
+      descriptionMarkdown: descriptionMarkdown || userTemplate.descriptionMarkdown || '',
       suggestionNote: suggestionNote || '',
       status: 'pending'
     });
@@ -197,7 +216,61 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
   }
 });
 
-// GET /api/game-templates/suggestions - Get all pending template suggestions (admin only)
+// POST /api/game-templates/system/:id/suggest-change - Suggest changes to a system template
+router.post('/system/:id/suggest-change', auth, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, targetNumber, lowIsBetter, description, descriptionMarkdown, suggestionNote } = req.body;
+    const userId = req.user._id;
+
+    // Find the system template
+    const systemTemplate = await SystemGameTemplate.findById(id);
+
+    if (!systemTemplate) {
+      return res.status(404).json({ error: 'System template not found' });
+    }
+
+    // Check if user already has a pending change request for this template
+    const existingSuggestion = await TemplateSuggestion.findOne({
+      systemTemplateId: id,
+      userId,
+      status: 'pending',
+      suggestionType: 'change'
+    });
+
+    if (existingSuggestion) {
+      return res.status(400).json({ 
+        error: 'You have already submitted a change request for this template',
+        suggestion: existingSuggestion
+      });
+    }
+
+    // Create a change request suggestion
+    const suggestion = new TemplateSuggestion({
+      userId,
+      systemTemplateId: id,
+      suggestionType: 'change',
+      name: name || systemTemplate.name,
+      targetNumber: targetNumber !== undefined ? targetNumber : systemTemplate.targetNumber,
+      lowIsBetter: lowIsBetter !== undefined ? lowIsBetter : systemTemplate.lowIsBetter,
+      description: description !== undefined ? description : systemTemplate.description,
+      descriptionMarkdown: descriptionMarkdown !== undefined ? descriptionMarkdown : systemTemplate.descriptionMarkdown,
+      suggestionNote: suggestionNote || '',
+      status: 'pending'
+    });
+
+    await suggestion.save();
+
+    res.status(201).json({
+      message: 'Change request submitted successfully',
+      suggestion
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/game-templates/admin/suggestions - Get all pending template suggestions (admin only)
 router.get('/admin/suggestions', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -207,7 +280,8 @@ router.get('/admin/suggestions', auth, async (req, res, next) => {
     const suggestions = await TemplateSuggestion.find({
       status: 'pending'
     })
-      .populate('userId', 'username email')
+      .populate('userId', 'username')
+      .populate('systemTemplateId', 'name')
       .sort({ createdAt: -1 });
 
     res.json({ suggestions });
@@ -216,7 +290,7 @@ router.get('/admin/suggestions', auth, async (req, res, next) => {
   }
 });
 
-// POST /api/game-templates/suggestions/:id/approve - Approve a suggestion and create system template (admin only)
+// POST /api/game-templates/admin/suggestions/:id/approve - Approve a suggestion (admin only)
 router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -233,16 +307,42 @@ router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
       return res.status(404).json({ error: 'Suggestion not found' });
     }
 
-    // Create system template from suggestion
-    const systemTemplate = new SystemGameTemplate({
-      name: suggestion.name,
-      targetNumber: suggestion.targetNumber,
-      lowIsBetter: suggestion.lowIsBetter,
-      description: suggestion.description,
-      isActive: true
-    });
+    let systemTemplate;
 
-    await systemTemplate.save();
+    if (suggestion.suggestionType === 'change' && suggestion.systemTemplateId) {
+      // Update existing system template
+      systemTemplate = await SystemGameTemplate.findById(suggestion.systemTemplateId);
+      if (!systemTemplate) {
+        return res.status(404).json({ error: 'System template not found' });
+      }
+      
+      systemTemplate.name = suggestion.name;
+      systemTemplate.targetNumber = suggestion.targetNumber;
+      systemTemplate.lowIsBetter = suggestion.lowIsBetter;
+      systemTemplate.description = suggestion.description;
+      systemTemplate.descriptionMarkdown = suggestion.descriptionMarkdown;
+      await systemTemplate.save();
+    } else {
+      // Create new system template
+      systemTemplate = new SystemGameTemplate({
+        name: suggestion.name,
+        targetNumber: suggestion.targetNumber,
+        lowIsBetter: suggestion.lowIsBetter,
+        description: suggestion.description,
+        descriptionMarkdown: suggestion.descriptionMarkdown || '',
+        createdBy: suggestion.userId,
+        isActive: true
+      });
+      await systemTemplate.save();
+
+      // Mark the user's template as approved if it exists
+      if (suggestion.userTemplateId) {
+        await UserGameTemplate.findByIdAndUpdate(suggestion.userTemplateId, {
+          approvedAsSystemTemplate: true,
+          systemTemplateId: systemTemplate._id
+        });
+      }
+    }
 
     // Update suggestion status
     suggestion.status = 'approved';
@@ -250,7 +350,9 @@ router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
     await suggestion.save();
 
     res.json({
-      message: 'Template suggestion approved and added to system templates',
+      message: suggestion.suggestionType === 'change' 
+        ? 'Template changes approved and system template updated'
+        : 'Template suggestion approved and added to system templates',
       template: systemTemplate
     });
   } catch (error) {

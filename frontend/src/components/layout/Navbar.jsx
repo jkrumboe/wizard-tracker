@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
-// import { useUser } from '@/shared/hooks/useUser'
+import { useUser } from '@/shared/hooks/useUser'
 // import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
 import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon, ShieldIcon } from '@/components/ui/Icon'
@@ -12,7 +12,7 @@ import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
 // Modal for Games tab, styled like other modals
-const GamesMenu = ({ show, onClose }) => {
+const GamesMenu = ({ show, onClose, user }) => {
   if (!show) return null;
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -33,9 +33,11 @@ const GamesMenu = ({ show, onClose }) => {
           <Link to="/leaderboard" className="modal-button" onClick={onClose}>
             <TrophyIcon size={24} style={{ marginRight: 8 }} /> Leaderboard
           </Link>
-          <Link to="/admin" className="modal-button" onClick={onClose}>
-            <ShieldIcon size={24} style={{ marginRight: 8 }} /> Admin Panel
-          </Link>
+          {user && user.role === 'admin' && (
+            <Link to="/admin" className="modal-button" onClick={onClose}>
+              <ShieldIcon size={24} style={{ marginRight: 8 }} /> Admin Panel
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -44,13 +46,22 @@ const GamesMenu = ({ show, onClose }) => {
 import "@/styles/components/components.css"
 
 const Navbar = () => {
-  // const { user } = useUser()
+  const { user } = useUser()
   // const { isOnline } = useOnlineStatus()
   const location = useLocation()
   // Add state for Games menu
   const [showGamesMenu, setShowGamesMenu] = useState(false);
   // Close menu on route change
   useEffect(() => { setShowGamesMenu(false); }, [location.pathname]);
+
+  // Debug logging for user role
+  useEffect(() => {
+    if (user) {
+
+      console.log('User:', user);
+      console.log('User object in Navbar:', { username: user.username, role: user.role });
+    }
+  }, [user]);
 
   const isActive = (path) => {
     if (typeof path === 'string') {
@@ -64,7 +75,7 @@ const Navbar = () => {
   return (
     <>
       <nav className="bottom-navbar">
-        <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} />
+        <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} user={user} />
         <div
           className={`bottom-nav-item games-tab ${showGamesMenu ? "active" : ""}`}
           onClick={() => setShowGamesMenu(v => !v)}

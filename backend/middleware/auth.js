@@ -22,6 +22,11 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
+    // Ensure role field exists (for backwards compatibility with old user documents)
+    if (!user.role) {
+      user.role = 'user';
+    }
+
     // Add user to request object
     req.user = user;
     next();

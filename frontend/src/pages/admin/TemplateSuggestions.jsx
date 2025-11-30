@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { marked } from 'marked';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import '@/styles/pages/admin.css';
 
@@ -6,6 +7,14 @@ const TemplateSuggestions = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Configure marked options
+  useEffect(() => {
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+    });
+  }, []);
 
   useEffect(() => {
     loadSuggestions();
@@ -78,6 +87,9 @@ const TemplateSuggestions = () => {
               <div className="suggestion-header">
                 <h2>{suggestion.name}</h2>
                 <div className="suggestion-meta">
+                  <span className={`badge badge-${suggestion.suggestionType || 'new'}`}>
+                    {suggestion.suggestionType === 'change' ? '📝 Change Request' : '✨ New Template'}
+                  </span>
                   <span className="badge">
                     {new Date(suggestion.createdAt).toLocaleDateString()}
                   </span>
@@ -100,7 +112,7 @@ const TemplateSuggestions = () => {
 
                   <div className="detail-item">
                     <label>Scoring:</label>
-                    <span>{suggestion.lowIsBetter ? 'Low Score Wins' : 'High Score Wins'}</span>
+                    <span>{suggestion.lowIsBetter ? 'Low Score' : 'High Score'}</span>
                   </div>
 
                   {suggestion.description && (
@@ -114,6 +126,23 @@ const TemplateSuggestions = () => {
                     <div className="detail-item full-width">
                       <label>User's Note:</label>
                       <p className="suggestion-note">{suggestion.suggestionNote}</p>
+                    </div>
+                  )}
+
+                  {suggestion.descriptionMarkdown && (
+                    <div className="detail-item full-width">
+                      <label>Game Rules:</label>
+                      <div 
+                        className="markdown-preview-admin"
+                        dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown) }}
+                      />
+                    </div>
+                  )}
+
+                  {suggestion.suggestionType === 'change' && suggestion.systemTemplateId && (
+                    <div className="detail-item full-width">
+                      <label>Modifying Template:</label>
+                      <span className="template-ref">{suggestion.systemTemplateId.name || 'System Template'}</span>
                     </div>
                   )}
                 </div>

@@ -27,7 +27,9 @@ export class LocalTableGameTemplate {
         lastUsed: timestamp,
         usageCount: 0,
         targetNumber: settings.targetNumber || null,
-        lowIsBetter: settings.lowIsBetter || false
+        lowIsBetter: settings.lowIsBetter || false,
+        description: settings.description || '',
+        descriptionMarkdown: settings.descriptionMarkdown || ''
       };
 
       const existingTemplates = this.getAllTemplates();
@@ -61,6 +63,12 @@ export class LocalTableGameTemplate {
         }
         if (settings.lowIsBetter !== undefined) {
           templates[templateId].lowIsBetter = settings.lowIsBetter;
+        }
+        if (settings.description !== undefined) {
+          templates[templateId].description = settings.description;
+        }
+        if (settings.descriptionMarkdown !== undefined) {
+          templates[templateId].descriptionMarkdown = settings.descriptionMarkdown;
         }
         
         localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));
@@ -280,7 +288,11 @@ export class LocalTableGameTemplate {
             name: cloudTemplate.name,
             targetNumber: cloudTemplate.targetNumber,
             lowIsBetter: cloudTemplate.lowIsBetter,
+            description: cloudTemplate.description || existingLocalTemplate.description,
+            descriptionMarkdown: cloudTemplate.descriptionMarkdown || existingLocalTemplate.descriptionMarkdown,
             usageCount: cloudTemplate.usageCount || existingLocalTemplate.usageCount,
+            approvedAsSystemTemplate: cloudTemplate.approvedAsSystemTemplate || false,
+            systemTemplateId: cloudTemplate.systemTemplateId || null,
             cloudId: cloudTemplate._id,
             isSynced: true,
             lastSyncedAt: new Date().toISOString()
@@ -293,7 +305,11 @@ export class LocalTableGameTemplate {
             name: cloudTemplate.name,
             targetNumber: cloudTemplate.targetNumber,
             lowIsBetter: cloudTemplate.lowIsBetter,
+            description: cloudTemplate.description || '',
+            descriptionMarkdown: cloudTemplate.descriptionMarkdown || '',
             usageCount: cloudTemplate.usageCount || 0,
+            approvedAsSystemTemplate: cloudTemplate.approvedAsSystemTemplate || false,
+            systemTemplateId: cloudTemplate.systemTemplateId || null,
             createdAt: cloudTemplate.createdAt,
             lastUsed: cloudTemplate.updatedAt || cloudTemplate.createdAt,
             cloudId: cloudTemplate._id,

@@ -22,7 +22,7 @@ export function UserProvider({ children }) {
       (state) => {
         if (state.user) {
           setUser(state.user);
-          console.debug('🔄 Recovered user session:', state.user.email || state.user.username);
+          console.debug('🔄 Recovered user session:', state.user.name || state.user.username);
         }
         if (state.player) {
           setPlayer(state.player);
@@ -88,7 +88,7 @@ export function UserProvider({ children }) {
             userFromServer.username || userFromServer.name,
             {
               name: userFromServer.name,
-              email: userFromServer.email
+              username: userFromServer.username
             }
           );
           
@@ -200,7 +200,7 @@ export function UserProvider({ children }) {
           userFromServer.username || userFromServer.name,
           {
             name: userFromServer.name,
-            email: userFromServer.email
+            username: userFromServer.username
           }
         );
         LocalUserProfileService.setCurrentUser(userFromServer.id);

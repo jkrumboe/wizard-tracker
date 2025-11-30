@@ -1,24 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { EditIcon, TrashIcon, PlusIcon, ListIcon } from '@/components/ui/Icon';
+import { EditIcon, TrashIcon, PlusIcon, ListIcon, EyeIcon } from '@/components/ui/Icon';
 import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import SwipeableGameCard from '@/components/common/SwipeableGameCard';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import LoadTableGameDialog from '@/components/modals/LoadTableGameDialog';
 import StartTableGameModal from '@/components/modals/StartTableGameModal';
+import GameTemplateDetailsModal from '@/components/modals/GameTemplateDetailsModal';
+import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/GameTemplateSelector.css';
 
 const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => {
+  const { user } = useUser();
   const [templates, setTemplates] = useState([]);
   const [systemTemplates, setSystemTemplates] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [editingSystemTemplate, setEditingSystemTemplate] = useState(null);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [filterGameName, setFilterGameName] = useState(null);
   const [showStartModal, setShowStartModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsTemplate, setDetailsTemplate] = useState(null);
 
   useEffect(() => {
     loadTemplates();
@@ -29,16 +35,20 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
 
   const loadTemplates = () => {
     const templatesList = LocalTableGameTemplate.getTemplatesList();
-    setTemplates(templatesList);
+    // Filter out templates that have been approved as system templates
+    const filteredTemplates = templatesList.filter(template => !template.approvedAsSystemTemplate);
+    setTemplates(filteredTemplates);
   };
 
   const loadSystemTemplates = async () => {
     try {
       const systemTemplatesList = await gameTemplateService.getSystemTemplates();
+      console.log('Loaded system templates:', systemTemplatesList);
       setSystemTemplates(systemTemplatesList);
     } catch (error) {
       console.error('Error loading system templates:', error);
-      // If offline or error, continue with local templates only
+      // If offline or error (including not logged in), continue with local templates only
+      setSystemTemplates([]);
     }
   };
 
@@ -171,6 +181,32 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     }
   };
 
+  const handleEditSystemTemplate = (template, e) => {
+    e.stopPropagation();
+    setEditingSystemTemplate(template);
+    setShowEditModal(true);
+  };
+
+  const handleSuggestSystemTemplateChanges = async (updatedData) => {
+    if (editingSystemTemplate) {
+      try {
+        await gameTemplateService.suggestSystemTemplateChanges(editingSystemTemplate._id, updatedData);
+        alert('Change request submitted successfully!');
+        setShowEditModal(false);
+        setEditingSystemTemplate(null);
+      } catch (error) {
+        console.error('Error submitting change request:', error);
+        alert('Failed to submit change request. Please try again.');
+      }
+    }
+  };
+
+  const handleViewDetails = (template, e) => {
+    e.stopPropagation();
+    setDetailsTemplate(template);
+    setShowDetailsModal(true);
+  };
+
   const handleDownloadTemplates = async () => {
     try {
       await LocalTableGameTemplate.downloadFromCloud();
@@ -198,37 +234,75 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       {/* System Templates Section */}
       {systemTemplates.length > 0 && (
         <div className="template-section">
-          <h3 className="template-section-title">System Templates</h3>
+          <h3 className="template-section-title">Templates</h3>
           <div className="template-list">
-            {systemTemplates.map((template) => (
-              <div
-                key={template._id}
-                className="template-item system-template"
-              >
-                <div className="template-info">
-                  <div className="template-name-row">
-                    <div className="template-name">{template.name}</div>
-                    <span className="template-badge system-badge" title="Official system template">⭐ System</span>
+            {systemTemplates.map((template) => {
+              const isCreator = user && template.createdBy && template.createdBy === user.id;
+              const savedCount = getSavedGamesCount(template.name);
+              const hasDetails = !!(template.description || template.descriptionMarkdown);
+              
+              return (
+                <SwipeableGameCard
+                  key={template._id}
+                  onEdit={isCreator ? () => handleEditSystemTemplate(template, { stopPropagation: () => {} }) : null}
+                  onViewDetails={hasDetails ? () => handleViewDetails(template, { stopPropagation: () => {} }) : null}
+                  onDelete={() => {}} 
+                  showEdit={isCreator}
+                  showViewDetails={hasDetails && !isCreator}
+                  showDelete={false}
+                >
+                  <div className="template-item">
+                    <div className="template-info">
+                      <div className="template-name-row">
+                        <div className="template-name">{template.name}</div>
+                        <span className="template-badge system-badge" title="Official system template">System</span>
+                        <div className="template-meta">
+                          {savedCount > 0 && (
+                            <span className="template-usage">
+                              {savedCount} {savedCount === 1 ? 'game' : 'games'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {template.description && (
+                        <div className="template-description">{template.description}</div>
+                      )}
+                    </div>
+                    <div className="template-actions">
+                      <button
+                        className="template-action-btn play-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTemplate(template);
+                          setShowStartModal(true);
+                        }}
+                        title="Start New Game"
+                      >
+                        New Game
+                      </button>
+                      {savedCount > 0 && (
+                        <button
+                          className="template-action-btn continue-btn"
+                          onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
+                          title="View Saved Games"
+                        >
+                          <ListIcon size={18} />
+                        </button>
+                      )}
+                      {(template.description || template.descriptionMarkdown) && (
+                        <button
+                          className="template-action-btn continue-btn"
+                          onClick={(e) => handleViewDetails(template, e)}
+                          title="View Details"
+                        >
+                          <EyeIcon size={18} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {template.description && (
-                    <div className="template-description">{template.description}</div>
-                  )}
-                </div>
-                <div className="template-actions">
-                  <button
-                    className="template-action-btn play-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedTemplate(template);
-                      setShowStartModal(true);
-                    }}
-                    title="Start New Game"
-                  >
-                    New Game
-                  </button>
-                </div>
-              </div>
-            ))}
+                </SwipeableGameCard>
+              );
+            })}
           </div>
         </div>
       )}
@@ -314,12 +388,15 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         onClose={() => {
           setShowEditModal(false);
           setEditingTemplate(null);
+          setEditingSystemTemplate(null);
         }}
-        onSave={handleSaveEdit}
+        onSave={editingSystemTemplate ? undefined : handleSaveEdit}
         onSuggest={editingTemplate ? () => handleSuggestToAdmin(editingTemplate.id) : null}
+        onSuggestChange={editingSystemTemplate ? handleSuggestSystemTemplateChanges : null}
         onSyncToCloud={editingTemplate && (!editingTemplate.isSynced && !editingTemplate.cloudId) ? () => handleSyncToCloud(editingTemplate.id) : null}
         editMode={true}
-        initialData={editingTemplate}
+        initialData={editingSystemTemplate || editingTemplate}
+        isSystemTemplate={!!editingSystemTemplate}
       />
 
       {/* Load Table Game Dialog */}
@@ -373,6 +450,16 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
           </div>
         </div>
       )}
+
+      {/* Game Template Details Modal */}
+      <GameTemplateDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setDetailsTemplate(null);
+        }}
+        template={detailsTemplate}
+      />
     </div>
   );
 };

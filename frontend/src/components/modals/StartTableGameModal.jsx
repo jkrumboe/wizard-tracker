@@ -248,7 +248,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                 {templateSettings.lowIsBetter !== undefined && (
                   <div className="setting-item">
                     <span>Goal: </span>
-                    <p>{templateSettings.lowIsBetter ? 'Low Score Wins' : 'High Score Wins'}</p>
+                    <p>{templateSettings.lowIsBetter ? 'Low Score' : 'High Score'}</p>
                   </div>
                 )}
               </div>

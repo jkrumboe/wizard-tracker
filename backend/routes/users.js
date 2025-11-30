@@ -52,6 +52,7 @@ router.post('/register', async (req, res, next) => {
       user: {
         id: user._id,
         username: user.username,
+        role: user.role || 'user',
         createdAt: user.createdAt,
         profilePicture: user.profilePicture || null
       }
@@ -96,6 +97,7 @@ router.post('/login', async (req, res, next) => {
       user: {
         id: user._id,
         username: user.username,
+        role: user.role || 'user',
         createdAt: user.createdAt,
         profilePicture: user.profilePicture || null
       }
@@ -113,6 +115,7 @@ router.get('/me', auth, async (req, res, next) => {
       user: {
         id: req.user._id,
         username: req.user.username,
+        role: req.user.role || 'user',
         createdAt: req.user.createdAt,
         profilePicture: req.user.profilePicture || null
       }

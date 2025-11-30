@@ -33,6 +33,20 @@ const userGameTemplateSchema = new mongoose.Schema({
   description: {
     type: String,
     default: ''
+  },
+  descriptionMarkdown: {
+    type: String,
+    default: '',
+    maxlength: [5000, 'Description cannot exceed 5000 characters']
+  },
+  approvedAsSystemTemplate: {
+    type: Boolean,
+    default: false
+  },
+  systemTemplateId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SystemGameTemplate',
+    default: null
   }
 }, {
   timestamps: true

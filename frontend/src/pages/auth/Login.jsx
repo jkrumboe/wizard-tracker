@@ -25,7 +25,7 @@ const Login = () => {
     }
     
     try {
-      await authService.login({ email: username, password }); // Using email field for username
+      await authService.login({ username, password });
       // Refresh the user context after successful login
       await refreshAuthStatus();
       
@@ -46,7 +46,7 @@ const Login = () => {
     }
     
     try {
-      await authService.register({ email: username, password });
+      await authService.register({ username: username, password });
       // Refresh the user context after successful registration
       await refreshAuthStatus();
       

@@ -76,17 +76,15 @@ class AuthService {
     };
   }
 
-  async login({ email, password }) {
+  async login({ username, password }) {
     try {
-      // Note: The backend expects 'username' not 'email'
-      // For now, we'll use email as username since the UI uses email field
       const response = await fetch(API_ENDPOINTS.auth.login, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          username: email, // Using email as username for now
+          username,
           password 
         }),
       });
@@ -101,20 +99,20 @@ class AuthService {
       // Store the token in session cache
       await this.setToken(data.token);
       
-      // Store user data in a format compatible with existing frontend code
+      // Store user data matching database schema
       this.currentUser = {
         $id: data.user.id,
         id: data.user.id,
-        name: data.user.username,
-        email: email, // Keep email for compatibility since backend only stores username
         username: data.user.username,
+        role: data.user.role || 'user',
+        profilePicture: data.user.profilePicture || null,
         createdAt: data.user.createdAt
       };
 
       // Persist user data to session cache
       await sessionCache.set('auth_user', this.currentUser, { persist: true });
 
-      console.debug('🔓 Login successful for:', email);
+      console.debug('🔓 Login successful for:', username);
       return this.currentUser;
     } catch (error) {
       console.error('Login error:', error);
@@ -122,7 +120,7 @@ class AuthService {
     }
   }
 
-  async register({ email, password, name }) {
+  async register({ username, password }) {
     try {
       const response = await fetch(API_ENDPOINTS.auth.register, {
         method: 'POST',
@@ -130,7 +128,7 @@ class AuthService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          username: name || email, // Use name as username, fallback to email
+          username,
           password 
         }),
       });
@@ -145,20 +143,20 @@ class AuthService {
       // Store the token in session cache
       await this.setToken(data.token);
       
-      // Store user data in a format compatible with existing frontend code
+      // Store user data matching database schema
       this.currentUser = {
         $id: data.user.id,
         id: data.user.id,
-        name: data.user.username,
-        email: email, // Keep email for compatibility
         username: data.user.username,
+        role: data.user.role || 'user',
+        profilePicture: data.user.profilePicture || null,
         createdAt: data.user.createdAt
       };
 
       // Persist user data to session cache
       await sessionCache.set('auth_user', this.currentUser, { persist: true });
 
-      console.debug('🔓 Registration successful for:', email);
+      console.debug('🔓 Registration successful for:', username);
       return this.currentUser;
     } catch (error) {
       console.error('Registration error:', error);
@@ -195,7 +193,7 @@ class AuthService {
       
       // If we have a cached user and valid token, return it
       if (this.currentUser && this.token) {
-        console.debug('🔓 Current user (cached):', this.currentUser.email || this.currentUser.username);
+        console.debug('🔓 Current user (cached):', this.currentUser.username);
         return this.currentUser;
       }
       
@@ -206,7 +204,7 @@ class AuthService {
       if (cachedUser && cachedToken) {
         this.currentUser = cachedUser;
         this.token = cachedToken;
-        console.debug('🔓 Current user (recovered):', this.currentUser.email || this.currentUser.username);
+        console.debug('🔓 Current user (recovered):', this.currentUser.username);
         return this.currentUser;
       }
       
@@ -258,8 +256,9 @@ class AuthService {
       this.currentUser = {
         $id: data.user.id,
         id: data.user.id,
-        name: data.user.username,
         username: data.user.username,
+        role: data.user.role || 'user',
+        profilePicture: data.user.profilePicture || null,
         createdAt: data.user.createdAt
       };
       
@@ -403,13 +402,12 @@ class AuthService {
     }
   }
 
-  async updateProfile({ name }) {
+  async updateProfile({ username }) {
     try {
       // Update the local user object (fallback for offline mode)
       if (this.currentUser) {
-        this.currentUser.name = name;
-        this.currentUser.username = name; // Keep username in sync with name
-        console.debug('🔄 Profile updated locally:', name);
+        this.currentUser.username = username;
+        console.debug('🔄 Profile updated locally:', username);
         return this.currentUser;
       }
       throw new Error('No user logged in');

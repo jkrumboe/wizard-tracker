@@ -7,6 +7,7 @@ import { API_BASE_URL } from './config';
 const ENDPOINTS = {
   templates: `${API_BASE_URL}/api/game-templates`,
   suggest: (id) => `${API_BASE_URL}/api/game-templates/${id}/suggest`,
+  suggestChange: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/suggest-change`,
   adminSuggestions: `${API_BASE_URL}/api/game-templates/admin/suggestions`,
   approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
   rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
@@ -48,15 +49,27 @@ export const getTemplates = async () => {
 
 /**
  * Get only system templates (public, type='system')
+ * No authentication required
  * @returns {Promise<Array>} Array of system template objects
  */
 export const getSystemTemplates = async () => {
   try {
-    const templates = await getTemplates();
-    return Array.isArray(templates) ? templates.filter(template => template.type === 'system' && template.isPublic) : [];
+    const response = await fetch(`${ENDPOINTS.templates}/public`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch system templates');
+    }
+
+    const data = await response.json();
+    return data.templates || [];
   } catch (error) {
     console.error('Error fetching system templates:', error);
-    // Return empty array if not authenticated or error occurs
+    // Return empty array if error occurs
     return [];
   }
 };
@@ -315,6 +328,41 @@ export const rejectSuggestion = async (id) => {
   }
 };
 
+/**
+ * Suggest changes to a system template
+ * @param {string} id - System template ID
+ * @param {Object} changes - Proposed changes
+ * @param {string} note - Explanation for the changes
+ * @returns {Promise<Object>} Created suggestion
+ */
+export const suggestSystemTemplateChanges = async (id, changes, note) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(ENDPOINTS.suggestChange(id), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...changes, suggestionNote: note }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to submit change request');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error suggesting template changes:', error);
+    throw error;
+  }
+};
+
 export default {
   getTemplates,
   getSystemTemplates,
@@ -323,6 +371,7 @@ export default {
   updateTemplate,
   deleteTemplate,
   suggestTemplate,
+  suggestSystemTemplateChanges,
   getAdminSuggestions,
   approveSuggestion,
   rejectSuggestion,

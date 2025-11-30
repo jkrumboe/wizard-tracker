@@ -12,12 +12,15 @@ const SwipeableGameCard = ({
   onSync,
   onShare,
   onEdit,
+  onViewDetails,
   detailsPath,
   isUploading = false,
   isSharing = false,
   showSync = false,
   showShare = false,
   showEdit = false,
+  showViewDetails = false,
+  showDelete = true,
   syncTitle = '',
   disableSync = false,
   disableShare = false,
@@ -36,10 +39,11 @@ const SwipeableGameCard = ({
   // Calculate dynamic max swipe based on number of visible actions
   const visibleActionsCount = [
     !!detailsPath, // View button
+    showViewDetails, // View details button
     showEdit,
     showSync,
     showShare,
-    true // Delete button (always shown)
+    showDelete // Delete button (optional)
   ].filter(Boolean).length;
   
   const MAX_SWIPE = visibleActionsCount * ACTION_BUTTON_WIDTH;
@@ -58,12 +62,8 @@ const SwipeableGameCard = ({
     const diff = startX.current - clientX;
     const newTranslateX = currentX.current + diff;
 
-    // Only allow left swipe (positive values to move left)
-    if (newTranslateX > 0) {
-      setTranslateX(Math.min(newTranslateX, MAX_SWIPE));
-    } else {
-      setTranslateX(0);
-    }
+    // Clamp between 0 (closed) and MAX_SWIPE (fully open)
+    setTranslateX(Math.max(0, Math.min(newTranslateX, MAX_SWIPE)));
   };
 
   // Handle touch/mouse end
@@ -71,7 +71,9 @@ const SwipeableGameCard = ({
     setIsDragging(false);
 
     // If swiped past threshold, snap to open position
-    if (translateX > SWIPE_THRESHOLD) {
+    // If less than threshold, snap to closed position
+    // Use a smaller threshold for better UX
+    if (translateX > SWIPE_THRESHOLD / 2) {
       setTranslateX(MAX_SWIPE);
       setIsOpen(true);
     } else {
@@ -82,6 +84,13 @@ const SwipeableGameCard = ({
 
   // Touch event handlers
   const handleTouchStart = (e) => {
+    // Don't start drag if touching a button or interactive element
+    const isInteractive = e.target.closest('button') || 
+                          e.target.closest('a') || 
+                          e.target.closest('input') || 
+                          e.target.closest('select');
+    if (isInteractive) return;
+    
     handleStart(e.touches[0].clientX);
   };
 
@@ -118,17 +127,26 @@ const SwipeableGameCard = ({
   // Close swipe when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
+      // Don't close if we're currently dragging or if clicking inside the card
+      if (isDragging) return;
       if (cardRef.current && !cardRef.current.contains(e.target) && isOpen) {
         setTranslateX(0);
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // Add a small delay to prevent immediate closure after swipe
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }, 100);
+    
     return () => {
+      clearTimeout(timeoutId);
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, isDragging]);
 
   // Handle action button clicks
   const handleActionClick = (e, handler) => {
@@ -144,8 +162,13 @@ const SwipeableGameCard = ({
   };
 
   const handleMouseDown = (e) => {
-    // Don't start drag if clicking on a button
-    if (e.target.closest('button') || e.target.closest('a')) return;
+    // Don't start drag if clicking on a button or interactive element
+    const isInteractive = e.target.closest('button') || 
+                          e.target.closest('a') || 
+                          e.target.closest('input') || 
+                          e.target.closest('select');
+    if (isInteractive) return;
+    
     handleStart(e.clientX);
   };
 
@@ -173,6 +196,18 @@ const SwipeableGameCard = ({
             onClick={(e) => handleActionClick(e, () => navigate(detailsPath))}
             title="View game details"
             aria-label="View game details"
+          >
+            <EyeIcon size={24} />
+          </button>
+        )}
+
+        {/* View Details button */}
+        {showViewDetails && onViewDetails && (
+          <button
+            className="swipe-action-button view-action"
+            onClick={(e) => handleActionClick(e, onViewDetails)}
+            title="View template details"
+            aria-label="View template details"
           >
             <EyeIcon size={24} />
           </button>
@@ -225,19 +260,21 @@ const SwipeableGameCard = ({
         )}
 
         {/* Delete button */}
-        <button
-          className="swipe-action-button delete-action"
-          onClick={(e) => handleActionClick(e, onDelete)}
-          title="Delete game"
-          aria-label="Delete game"
-        >
-          <TrashIcon size={24} />
-        </button>
+        {showDelete && onDelete && (
+          <button
+            className="swipe-action-button delete-action"
+            onClick={(e) => handleActionClick(e, onDelete)}
+            title="Delete game"
+            aria-label="Delete game"
+          >
+            <TrashIcon size={24} />
+          </button>
+        )}
       </div>
 
       {/* Main card content */}
       <div
-        className="swipeable-card-content"
+        className={`swipeable-card-content ${translateX > 0 ? 'is-swiped' : ''}`}
         style={{
           transform: `translateX(-${translateX}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s ease',
@@ -256,16 +293,19 @@ const SwipeableGameCard = ({
 
 SwipeableGameCard.propTypes = {
   children: PropTypes.node.isRequired,
-  onDelete: PropTypes.func.isRequired,
+  onDelete: PropTypes.func,
   onSync: PropTypes.func,
   onShare: PropTypes.func,
   onEdit: PropTypes.func,
+  onViewDetails: PropTypes.func,
   detailsPath: PropTypes.string,
   isUploading: PropTypes.bool,
   isSharing: PropTypes.bool,
   showSync: PropTypes.bool,
   showShare: PropTypes.bool,
   showEdit: PropTypes.bool,
+  showViewDetails: PropTypes.bool,
+  showDelete: PropTypes.bool,
   syncTitle: PropTypes.string,
   disableSync: PropTypes.bool,
   disableShare: PropTypes.bool,
