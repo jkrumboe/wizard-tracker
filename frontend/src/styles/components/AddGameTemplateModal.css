@@ -414,6 +414,18 @@
   box-shadow: var(--shadow-md);
 }
 
+.modal-btn.local-changes-btn {
+  background: #9333ea;
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-btn.local-changes-btn:hover {
+  background: #7e22ce;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
 .scoring-prefernce-type {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

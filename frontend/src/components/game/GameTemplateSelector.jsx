@@ -40,6 +40,87 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     setTemplates(filteredTemplates);
   };
 
+  // Check if a local template is a variant of a system template
+  const isLocalVariant = (localTemplate, systemTemplates) => {
+    const systemTemplate = systemTemplates.find(st => st.name === localTemplate.name);
+    if (!systemTemplate) return false;
+    
+    // Check if any settings differ
+    return (
+      localTemplate.targetNumber !== systemTemplate.targetNumber ||
+      localTemplate.lowIsBetter !== systemTemplate.lowIsBetter ||
+      localTemplate.description !== systemTemplate.description ||
+      localTemplate.descriptionMarkdown !== systemTemplate.descriptionMarkdown
+    );
+  };
+
+  // Get templates that don't have a system template with the same name
+  const getUniqueLocalTemplates = () => {
+    const systemTemplateNames = systemTemplates.map(st => st.name);
+    return templates.filter(template => {
+      const hasSystemVersion = systemTemplateNames.includes(template.name);
+      if (!hasSystemVersion) return true;
+      // If there's a system version, only show if it's a local variant
+      return isLocalVariant(template, systemTemplates);
+    });
+  };
+
+  // Handle creating a local copy of a system template
+  const handleMakeLocalChanges = (systemTemplate) => {
+    // Create a local copy with the same settings
+    const localCopy = {
+      name: systemTemplate.name,
+      targetNumber: systemTemplate.targetNumber,
+      lowIsBetter: systemTemplate.lowIsBetter,
+      description: systemTemplate.description || '',
+      descriptionMarkdown: systemTemplate.descriptionMarkdown || ''
+    };
+    
+    // Save it locally
+    LocalTableGameTemplate.saveTemplate(
+      localCopy.name,
+      {
+        targetNumber: localCopy.targetNumber,
+        lowIsBetter: localCopy.lowIsBetter,
+        description: localCopy.description,
+        descriptionMarkdown: localCopy.descriptionMarkdown
+      }
+    );
+    
+    // Reload templates and switch to edit mode
+    loadTemplates();
+    
+    // Open the edit modal with the new local copy
+    setTimeout(() => {
+      const localTemplates = LocalTableGameTemplate.getTemplatesList();
+      const newLocal = localTemplates.find(t => t.name === localCopy.name);
+      if (newLocal) {
+        setEditingTemplate(newLocal);
+        setShowEditModal(true);
+      }
+    }, 100);
+  };
+
+  // Handle syncing a local variant back to system template settings
+  const handleSyncLocalVariant = (localTemplate) => {
+    const systemTemplate = systemTemplates.find(st => st.name === localTemplate.name);
+    if (!systemTemplate) return;
+
+    // Update the local template with system template data
+    LocalTableGameTemplate.saveTemplate(
+      systemTemplate.name,
+      {
+        targetNumber: systemTemplate.targetNumber,
+        lowIsBetter: systemTemplate.lowIsBetter,
+        description: systemTemplate.description || '',
+        descriptionMarkdown: systemTemplate.descriptionMarkdown || ''
+      }
+    );
+
+    // Reload templates
+    loadTemplates();
+  };
+
   const loadSystemTemplates = async () => {
     try {
       const systemTemplatesList = await gameTemplateService.getSystemTemplates();
@@ -187,6 +268,14 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     setShowEditModal(true);
   };
 
+  const handleMakeLocalChangesClick = () => {
+    if (editingSystemTemplate) {
+      handleMakeLocalChanges(editingSystemTemplate);
+      setEditingSystemTemplate(null);
+      setShowEditModal(false);
+    }
+  };
+
   const handleSuggestSystemTemplateChanges = async (updatedData) => {
     if (editingSystemTemplate) {
       try {
@@ -300,56 +389,73 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       <div className="template-section">
         <h3 className="template-section-title">My Templates</h3>
         <div className="template-list">
-        {templates.length > 0 ? (
-          templates.map((template) => (
-            <SwipeableGameCard
-              key={template.id}
-              onDelete={() => confirmDelete(template.id)}
-              onEdit={() => handleEditClick(template, { stopPropagation: () => {} })}
-              onSync={(!template.isSynced && !template.cloudId) ? () => handleSyncToCloud(template.id) : null}
-              showEdit={true}
-              showSync={!template.isSynced && !template.cloudId}
-              syncTitle="Sync to Cloud"
-            >
-              <div className="template-item">
-                <div className="template-info">
-                  <div className="template-name-row">
-                    <div className="template-name">{template.name}</div>
-                     <div className="template-meta">
-                      {(() => {
-                        const savedCount = getSavedGamesCount(template.name);
-                        return savedCount > 0 ? (
-                          <span className="template-usage">
-                            {savedCount} {savedCount === 1 ? 'game' : 'games'}
-                          </span>
-                        ) : null;
-                      })()}
+        {getUniqueLocalTemplates().length > 0 ? (
+          getUniqueLocalTemplates().map((template) => {
+            const isVariant = isLocalVariant(template, systemTemplates);
+            const hasCloudSync = !template.isSynced && !template.cloudId;
+            
+            // Determine sync action and title based on priority
+            let syncAction = null;
+            let syncTitle = "";
+            if (hasCloudSync) {
+              syncAction = () => handleSyncToCloud(template.id);
+              syncTitle = "Sync to Cloud";
+            } else if (isVariant) {
+              syncAction = () => handleSyncLocalVariant(template);
+              syncTitle = "Sync to System";
+            }
+            
+            return (
+              <SwipeableGameCard
+                key={template.id}
+                onDelete={() => confirmDelete(template.id)}
+                onEdit={() => handleEditClick(template, { stopPropagation: () => {} })}
+                onSync={syncAction}
+                showEdit={true}
+                showSync={hasCloudSync || isVariant}
+                syncTitle={syncTitle}
+              >
+                <div className="template-item">
+                  <div className="template-info">
+                    <div className="template-name-row">
+                      <div className="template-name">{template.name}</div>
+                      <div className="template-meta">
+                        {(() => {
+                          const savedCount = getSavedGamesCount(template.name);
+                          return savedCount > 0 ? (
+                            <span className="template-usage">
+                              {savedCount} {savedCount === 1 ? 'game' : 'games'}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
+                      {isVariant && (
+                        <span className="template-badge altered-badge" title="Local variant of system template">Altered</span>
+                      )}
+                      {getTemplateBadge(template)}
                     </div>
-                    {getTemplateBadge(template)}
-
                   </div>
-                 
+                  <div className="template-actions">
+                    <button
+                      className="template-action-btn play-btn"
+                      onClick={(e) => handleStartWithFriends(template, e)}
+                      title="Start with Friends, New Game"
+                    >
+                      New Game
+                    </button>
+                    <button
+                      className="template-action-btn continue-btn"
+                      onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
+                      title="View Saved Games"
+                      disabled={getSavedGamesCount(template.name) === 0}
+                    >
+                      <ListIcon size={18} />
+                    </button>
+                  </div>
                 </div>
-                <div className="template-actions">
-                  <button
-                    className="template-action-btn play-btn"
-                    onClick={(e) => handleStartWithFriends(template, e)}
-                    title="Start with Friends, New Game"
-                  >
-                    New Game
-                  </button>
-                  <button
-                    className="template-action-btn continue-btn"
-                    onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
-                    title="View Saved Games"
-                    disabled={getSavedGamesCount(template.name) === 0}
-                  >
-                    <ListIcon size={18} />
-                  </button>
-                </div>
-              </div>
-            </SwipeableGameCard>
-          ))
+              </SwipeableGameCard>
+            );
+          })
         ) : (
           <div className="no-templates">
             <p>No saved games yet.</p>
@@ -383,6 +489,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         onSave={editingSystemTemplate ? undefined : handleSaveEdit}
         onSuggest={editingTemplate ? () => handleSuggestToAdmin(editingTemplate.id) : null}
         onSuggestChange={editingSystemTemplate ? handleSuggestSystemTemplateChanges : null}
+        onMakeLocalChanges={editingSystemTemplate ? handleMakeLocalChangesClick : null}
         onSyncToCloud={editingTemplate && (!editingTemplate.isSynced && !editingTemplate.cloudId) ? () => handleSyncToCloud(editingTemplate.id) : null}
         editMode={true}
         initialData={editingSystemTemplate || editingTemplate}

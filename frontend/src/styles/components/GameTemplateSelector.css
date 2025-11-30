@@ -154,6 +154,11 @@
   color: #FFC107;
 }
 
+.template-badge.altered-badge {
+  background: rgba(147, 51, 234, 0.2);
+  color: #9333ea;
+}
+
 .template-description {
   font-size: 0.875rem;
   color: var(--text-muted);

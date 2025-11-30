@@ -9,6 +9,7 @@ const AddGameTemplateModal = ({
   onSave, 
   onSuggest, 
   onSuggestChange,
+  onMakeLocalChanges,
   onSyncToCloud, 
   editMode = false, 
   initialData = null,
@@ -281,6 +282,11 @@ const AddGameTemplateModal = ({
           <button className="modal-btn cancel-btn" onClick={onClose}>
             Cancel
           </button>
+          {editMode && isSystemTemplate && onMakeLocalChanges && (
+            <button className="modal-btn local-changes-btn" onClick={onMakeLocalChanges}>
+              Make Local Changes
+            </button>
+          )}
           {editMode && isSystemTemplate && onSuggestChange && (
             <button className="modal-btn suggest-btn" onClick={handleSuggestChange}>
               Request Changes
