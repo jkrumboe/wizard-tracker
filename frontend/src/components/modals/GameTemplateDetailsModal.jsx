@@ -28,8 +28,8 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
                 </div>
               )}
               <div className="detail-item">
-                <label>Scoring:</label>
-                <span>{template.lowIsBetter ? 'Low Score Wins' : 'High Score Wins'}</span>
+                <label>Scoring Target:</label>
+                <span>{template.lowIsBetter ? 'Low Scores' : 'High Scores'}</span>
               </div>
             </div>
           </div>
@@ -45,7 +45,7 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
           {/* Game Rules & Instructions */}
           {template.descriptionMarkdown && template.descriptionMarkdown.trim() && (
             <div className="details-section">
-              <h3>Game Rules & Instructions</h3>
+              {/* <h3>Game Rules & Instructions</h3> */}
               <div 
                 className="markdown-content"
                 dangerouslySetInnerHTML={{ __html: marked.parse(template.descriptionMarkdown) }}
@@ -60,8 +60,8 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
           )}
         </div>
 
-        <div className="game-details-actions">
-          <button className="modal-btn close-btn" onClick={onClose}>
+        <div className="modal-actions">
+          <button className="modal-btn" onClick={onClose}>
             Close
           </button>
         </div>

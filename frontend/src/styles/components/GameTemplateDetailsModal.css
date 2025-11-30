@@ -32,7 +32,7 @@
 .game-details-content {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
   padding: var(--spacing-lg);
   overflow-y: auto;
   flex: 1;
@@ -50,19 +50,23 @@
   font-weight: 600;
   color: var(--text);
   margin: 0;
-  padding-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
   border-bottom: 2px solid var(--border);
 }
 
 .details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-md);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 0.25rem;
 }
 
@@ -98,15 +102,15 @@
 .game-details-content .markdown-content {
   color: var(--text);
   line-height: 1.6;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
 }
 
 .game-details-content .markdown-content h1 {
   font-size: 1.8rem;
   font-weight: 700;
-  margin: 0.5rem 0 1rem 0;
   color: var(--text);
-  border-bottom: 2px solid var(--border);
-  padding-bottom: 0.5rem;
 }
 
 .game-details-content .markdown-content h2 {
@@ -194,14 +198,8 @@
   font-style: italic;
 }
 
-.game-details-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--border);
-  justify-content: flex-end;
-  flex-shrink: 0;
-  background: var(--card-bg);
+.modal-actions .modal-btn {
+  border: 1px solid var(--border);
 }
 
 .close-btn:active {
@@ -217,10 +215,6 @@
 
   .game-details-content {
     padding: var(--spacing-md);
-  }
-
-  .details-grid {
-    grid-template-columns: 1fr;
   }
 
   .details-section h3 {
