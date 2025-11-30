@@ -90,19 +90,11 @@
   flex: 1;
   height: auto;
   padding: var(--spacing-sm);
-  /* background: transparent; */
-  /* border: none; */
-  /* font-size: 0.95rem; */
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   box-shadow: none;
-}
-
-.tab-btn:hover {
-  color: var(--text);
-  background: var(--hover-color, rgba(0, 0, 0, 0.05));
 }
 
 .tab-btn.active {
@@ -178,11 +170,11 @@
   transition: all 0.2s ease;
 }
 
-.markdown-toggle-btn:hover {
+/* .markdown-toggle-btn:hover {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
-}
+} */
 
 .preview-toggle-btn {
   padding: 0.4rem 0.9rem;
@@ -195,13 +187,6 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-sm);
-}
-
-.preview-toggle-btn:hover {
-  background: #2563eb;
-  border-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
 
 .preview-toggle-btn:active {
@@ -365,21 +350,10 @@
   color: var(--text);
 }
 
-.modal-btn.cancel-btn:hover {
-  background: var(--text-muted);
-  transform: translateY(-1px);
-}
-
 .modal-btn.save-btn {
   background: var(--primary);
   color: var(--text);
   box-shadow: var(--shadow-sm);
-}
-
-.modal-btn.save-btn:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
 
 .modal-btn.save-btn:active,
@@ -393,34 +367,16 @@
   box-shadow: var(--shadow-sm);
 }
 
-.modal-btn.sync-btn:hover {
-  background: #1976D2;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
 .modal-btn.suggest-btn {
   background: #FFC107;
   color: #000;
   box-shadow: var(--shadow-sm);
 }
 
-.modal-btn.suggest-btn:hover {
-  background: #FFA000;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
 .modal-btn.local-changes-btn {
   background: #9333ea;
   color: white;
   box-shadow: var(--shadow-sm);
-}
-
-.modal-btn.local-changes-btn:hover {
-  background: #7e22ce;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
 
 .scoring-prefernce-type {
