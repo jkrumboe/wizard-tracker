@@ -241,21 +241,21 @@ const AddGameTemplateModal = ({
                   {showPreview ? 'Edit' : 'Preview'}
                 </button>
               </div>
-              <p className="markdown-hint">
+              {/* <p className="markdown-hint">
                 Explain how the game works. You can use markdown formatting for better organization.
-              </p>
+              </p> */}
               {!showPreview ? (
                 <>
                   <textarea
                     id="description-markdown-input"
                     value={descriptionMarkdown}
                     onChange={(e) => setDescriptionMarkdown(e.target.value)}
-                    placeholder="## Setup&#10;- Each player gets 7 cards&#10;- Place deck in center&#10;&#10;## How to Play&#10;1. First step...&#10;2. Second step...&#10;&#10;## Scoring&#10;- Points are awarded for...&#10;&#10;## Images&#10;![Alt text](https://example.com/image.jpg)"
+                    placeholder="## Setup&#10;- Each player gets 7 cards&#10;- Place deck in center&#10;&#10;## How to Play&#10;1. First step...&#10;2. Second step...&#10;&#10;## Scoring&#10;- Points are awarded for...&#10;&#10;"
                     className="game-markdown-input"
-                    rows="12"
+                    rows="11"
                   />
                   <p className="markdown-hint">
-                    💡 Tip: Use **bold**, *italic*, ## headers, - bullet lists, and ![alt](url) for images
+                    Tip: Use **bold**, *italic*, ## headers, - bullet lists
                   </p>
                 </>
               ) : (
@@ -267,7 +267,7 @@ const AddGameTemplateModal = ({
                     />
                   ) : (
                     <p className="markdown-hint" style={{ padding: '2rem', textAlign: 'center' }}>
-                      No rules written yet. Click "📝 Edit" to add game rules.
+                      No rules written yet. Click "Edit" to add game rules.
                     </p>
                   )}
                 </div>
