@@ -10,7 +10,6 @@ const AddGameTemplateModal = ({
   onSuggest, 
   onSuggestChange,
   onMakeLocalChanges,
-  onSyncToCloud, 
   editMode = false, 
   initialData = null,
   isSystemTemplate = false
@@ -64,9 +63,9 @@ const AddGameTemplateModal = ({
     }
 
     // Parse target number if provided
-    const target = targetNumber.trim() ? parseInt(targetNumber, 10) : null;
+    const target = targetNumber.trim() ? Number.parseInt(targetNumber, 10) : null;
     
-    if (targetNumber.trim() && (isNaN(target) || target <= 0)) {
+    if (targetNumber.trim() && (Number.isNaN(target) || target <= 0)) {
       setError('Target number must be a positive number');
       return;
     }
@@ -88,9 +87,9 @@ const AddGameTemplateModal = ({
       return;
     }
 
-    const target = targetNumber.trim() ? parseInt(targetNumber, 10) : null;
+    const target = targetNumber.trim() ? Number.parseInt(targetNumber, 10) : null;
     
-    if (targetNumber.trim() && (isNaN(target) || target <= 0)) {
+    if (targetNumber.trim() && (Number.isNaN(target) || target <= 0)) {
       setError('Target number must be a positive number');
       return;
     }

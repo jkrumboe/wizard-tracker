@@ -228,7 +228,8 @@ export class LocalTableGameTemplate {
         name: template.name,
         targetNumber: template.targetNumber,
         lowIsBetter: template.lowIsBetter,
-        description: template.description || ''
+        description: template.description || '',
+        descriptionMarkdown: template.descriptionMarkdown || ''
       };
 
       // If already synced, update; otherwise create

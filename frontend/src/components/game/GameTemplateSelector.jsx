@@ -161,15 +161,10 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       setEditingTemplate(null);
       
       // Dispatch event to notify active games that template was updated
-      window.dispatchEvent(new CustomEvent('templateUpdated', { 
+      globalThis.dispatchEvent(new CustomEvent('templateUpdated', { 
         detail: { templateName: gameName, settings } 
       }));
     }
-  };
-
-  const handleDeleteClick = (templateId, e) => {
-    e.stopPropagation();
-    setShowDeleteConfirm(templateId);
   };
 
   const confirmDelete = (templateId) => {
@@ -491,7 +486,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         onSuggest={editingTemplate ? () => handleSuggestToAdmin(editingTemplate.id) : null}
         onSuggestChange={editingSystemTemplate ? handleSuggestSystemTemplateChanges : null}
         onMakeLocalChanges={editingSystemTemplate ? handleMakeLocalChangesClick : null}
-        onSyncToCloud={editingTemplate && (!editingTemplate.isSynced && !editingTemplate.cloudId) ? () => handleSyncToCloud(editingTemplate.id) : null}
         editMode={true}
         initialData={editingSystemTemplate || editingTemplate}
         isSystemTemplate={!!editingSystemTemplate}
