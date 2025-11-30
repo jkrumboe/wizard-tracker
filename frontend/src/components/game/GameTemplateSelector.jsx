@@ -254,7 +254,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                     <div className="template-info">
                       <div className="template-name-row">
                         <div className="template-name">{template.name}</div>
-                        <span className="template-badge system-badge" title="Official system template">System</span>
                         <div className="template-meta">
                           {savedCount > 0 && (
                             <span className="template-usage">
@@ -262,6 +261,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                             </span>
                           )}
                         </div>
+                        <span className="template-badge system-badge" title="Official system template">System</span>
                       </div>
                       {template.description && (
                         <div className="template-description">{template.description}</div>
@@ -315,7 +315,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                 <div className="template-info">
                   <div className="template-name-row">
                     <div className="template-name">{template.name}</div>
-                    {getTemplateBadge(template)}
                      <div className="template-meta">
                       {(() => {
                         const savedCount = getSavedGamesCount(template.name);
@@ -326,6 +325,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                         ) : null;
                       })()}
                     </div>
+                    {getTemplateBadge(template)}
+
                   </div>
                  
                 </div>
