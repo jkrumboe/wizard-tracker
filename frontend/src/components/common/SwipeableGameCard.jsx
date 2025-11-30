@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon } from '@/components/ui/Icon';
+import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon, RotateCcwIcon } from '@/components/ui/Icon';
 import PropTypes from 'prop-types';
 
 /**
@@ -10,6 +10,7 @@ const SwipeableGameCard = ({
   children,
   onDelete,
   onSync,
+  onSyncToSystem,
   onShare,
   onEdit,
   onViewDetails,
@@ -17,12 +18,15 @@ const SwipeableGameCard = ({
   isUploading = false,
   isSharing = false,
   showSync = false,
+  showSyncToSystem = false,
   showShare = false,
   showEdit = false,
   showViewDetails = false,
   showDelete = true,
   syncTitle = '',
+  syncToSystemTitle = '',
   disableSync = false,
+  disableSyncToSystem = false,
   disableShare = false,
 }) => {
   const [translateX, setTranslateX] = useState(0);
@@ -42,6 +46,7 @@ const SwipeableGameCard = ({
     showViewDetails, // View details button
     showEdit,
     showSync,
+    showSyncToSystem,
     showShare,
     showDelete // Delete button (optional)
   ].filter(Boolean).length;
@@ -239,6 +244,19 @@ const SwipeableGameCard = ({
             ) : (
               <CloudIcon size={24} />
             )}
+          </button>
+        )}
+
+        {/* Sync to System button */}
+        {showSyncToSystem && (
+          <button
+            className="swipe-action-button sync-system-action"
+            onClick={(e) => handleActionClick(e, onSyncToSystem)}
+            disabled={disableSyncToSystem}
+            title={syncToSystemTitle}
+            aria-label="Sync to system template"
+          >
+            <RotateCcwIcon size={24} />
           </button>
         )}
 

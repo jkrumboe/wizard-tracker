@@ -97,6 +97,11 @@
   color: var(--text);
 }
 
+.swipe-action-button.sync-system-action {
+  background-color: #9333ea;
+  color: var(--text);
+}
+
 .swipe-action-button.share-action {
   background-color: var(--primary);
   color: var(--text);

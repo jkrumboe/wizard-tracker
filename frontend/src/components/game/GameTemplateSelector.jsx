@@ -104,10 +104,19 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   // Handle syncing a local variant back to system template settings
   const handleSyncLocalVariant = (localTemplate) => {
     const systemTemplate = systemTemplates.find(st => st.name === localTemplate.name);
-    if (!systemTemplate) return;
+    if (!systemTemplate) {
+      console.error('System template not found for:', localTemplate.name);
+      return;
+    }
 
-    // Update the local template with system template data
-    LocalTableGameTemplate.saveTemplate(
+    console.log('Syncing local variant to system template:', {
+      localTemplate,
+      systemTemplate
+    });
+
+    // Update the existing local template with system template data
+    LocalTableGameTemplate.updateTemplate(
+      localTemplate.id,
       systemTemplate.name,
       {
         targetNumber: systemTemplate.targetNumber,
@@ -117,7 +126,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       }
     );
 
-    // Reload templates
+    // Reload templates to reflect changes
     loadTemplates();
   };
 
@@ -394,26 +403,18 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
             const isVariant = isLocalVariant(template, systemTemplates);
             const hasCloudSync = !template.isSynced && !template.cloudId;
             
-            // Determine sync action and title based on priority
-            let syncAction = null;
-            let syncTitle = "";
-            if (hasCloudSync) {
-              syncAction = () => handleSyncToCloud(template.id);
-              syncTitle = "Sync to Cloud";
-            } else if (isVariant) {
-              syncAction = () => handleSyncLocalVariant(template);
-              syncTitle = "Sync to System";
-            }
-            
             return (
               <SwipeableGameCard
                 key={template.id}
                 onDelete={() => confirmDelete(template.id)}
                 onEdit={() => handleEditClick(template, { stopPropagation: () => {} })}
-                onSync={syncAction}
+                onSync={hasCloudSync ? () => handleSyncToCloud(template.id) : null}
+                onSyncToSystem={isVariant ? () => handleSyncLocalVariant(template) : null}
                 showEdit={true}
-                showSync={hasCloudSync || isVariant}
-                syncTitle={syncTitle}
+                showSync={hasCloudSync}
+                showSyncToSystem={isVariant}
+                syncTitle="Sync to Cloud"
+                syncToSystemTitle="Sync to System"
               >
                 <div className="template-item">
                   <div className="template-info">
