@@ -762,4 +762,129 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
   }
 });
 
+// GET /users/admin/all - Get all users with full details (admin only)
+router.get('/admin/all', auth, async (req, res, next) => {
+  try {
+    // TODO: Add admin permission check here
+    // if (!req.user.isAdmin) {
+    //   return res.status(403).json({ error: 'Admin access required' });
+    // }
+
+    const users = await User.find()
+      .select('_id username email createdAt lastLogin profilePicture')
+      .sort({ username: 1 });
+
+    res.json({
+      users: users.map(user => ({
+        _id: user._id.toString(),
+        username: user.username,
+        email: user.email || null,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin || null,
+        profilePicture: user.profilePicture || null
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /users/:userId/username - Update username across all database collections (admin only)
+router.put('/:userId/username', auth, async (req, res, next) => {
+  try {
+    // TODO: Add admin permission check here
+    // if (!req.user.isAdmin) {
+    //   return res.status(403).json({ error: 'Admin access required' });
+    // }
+
+    const { userId } = req.params;
+    const { username } = req.body;
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+
+    const trimmedUsername = username.trim();
+
+    // Check if username already exists (excluding current user)
+    const existingUser = await User.findOne({ 
+      username: trimmedUsername,
+      _id: { $ne: userId }
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    // Get old username before updating
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const oldUsername = user.username;
+
+    // Update username in User collection
+    user.username = trimmedUsername;
+    await user.save();
+
+    // Update username in all Game documents where user is a player
+    const Game = require('../models/Game');
+    await Game.updateMany(
+      { 'players.playerId': userId },
+      { $set: { 'players.$[elem].playerName': trimmedUsername } },
+      { arrayFilters: [{ 'elem.playerId': userId }] }
+    );
+
+    // Update username in all TableGame documents
+    const TableGame = require('../models/TableGame');
+    await TableGame.updateMany(
+      { 'players.playerId': userId },
+      { $set: { 'players.$[elem].playerName': trimmedUsername } },
+      { arrayFilters: [{ 'elem.playerId': userId }] }
+    );
+    await TableGame.updateMany(
+      { 'rounds.scores.playerId': userId },
+      { $set: { 'rounds.$[].scores.$[elem].playerName': trimmedUsername } },
+      { arrayFilters: [{ 'elem.playerId': userId }] }
+    );
+
+    // Update username in UserGameTemplate suggestions
+    const UserGameTemplate = require('../models/UserGameTemplate');
+    await UserGameTemplate.updateMany(
+      { userId },
+      { $set: { userName: trimmedUsername } }
+    );
+
+    // Update username in TemplateSuggestion
+    const TemplateSuggestion = require('../models/TemplateSuggestion');
+    await TemplateSuggestion.updateMany(
+      { userId },
+      { $set: { userName: trimmedUsername } }
+    );
+
+    console.log(`✅ Username updated from "${oldUsername}" to "${trimmedUsername}" across all collections`);
+
+    res.json({
+      message: 'Username updated successfully across all records',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email || null,
+        createdAt: user.createdAt
+      },
+      updatedCollections: [
+        'User',
+        'Game (players)',
+        'TableGame (players and scores)',
+        'UserGameTemplate',
+        'TemplateSuggestion'
+      ]
+    });
+  } catch (error) {
+    console.error('Error updating username:', error);
+    next(error);
+  }
+});
+
 module.exports = router;
+

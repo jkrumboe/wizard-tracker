@@ -228,8 +228,14 @@ export class LocalTableGameTemplate {
       if (template.cloudId) {
         cloudTemplate = await gameTemplateService.updateTemplate(template.cloudId, templateData);
       } else {
-        cloudTemplate = await gameTemplateService.createTemplate(templateData);
-        this.markAsSynced(templateId, cloudTemplate._id);
+        const response = await gameTemplateService.createTemplate(templateData);
+        // Extract template from response object
+        cloudTemplate = response.template || response;
+        const cloudId = cloudTemplate._id;
+        if (!cloudId) {
+          throw new Error('No template ID returned from server');
+        }
+        this.markAsSynced(templateId, cloudId);
       }
 
       return cloudTemplate;

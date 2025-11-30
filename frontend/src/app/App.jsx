@@ -12,6 +12,11 @@ import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRe
 import Settings from "@/pages/Settings"
 import { NewGame, GameDetails, GameInProgress, TableGame } from "@/pages/game"
 
+// Admin pages
+import AdminLayout from "@/pages/admin/AdminLayout"
+import TemplateSuggestions from "@/pages/admin/TemplateSuggestions"
+import UserManagement from "@/pages/admin/UserManagement"
+
 // Lazy load less critical pages for better performance
 const Profile = lazy(() => import("@/pages/profile/Profile"))
 const ProfileEdit = lazy(() => import("@/pages/profile/ProfileEdit"))
@@ -256,6 +261,14 @@ function App() {
                     }/>
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/shared/:shareId" element={<SharedGamePage />} />
+                    <Route path="/admin" element={
+                      <AuthProtectedRoute>
+                        <AdminLayout />
+                      </AuthProtectedRoute>
+                    }>
+                      <Route path="template-suggestions" element={<TemplateSuggestions />} />
+                      <Route path="users" element={<UserManagement />} />
+                    </Route>
                     </Routes>
                   </Suspense>
                 </LazyLoadErrorBoundary>

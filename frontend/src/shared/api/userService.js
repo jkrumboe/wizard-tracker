@@ -8,6 +8,65 @@ class UserService {
     this.skipBackend = SKIP_BACKEND;
   }
 
+  async getAllUsers() {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/all`;
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch users' }));
+        throw new Error(error.error || 'Failed to fetch users');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  async updateUsername(userId, newUsername) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/${userId}/username`;
+      
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: newUsername }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update username' }));
+        throw new Error(error.error || 'Failed to update username');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating username:', error);
+      throw error;
+    }
+  }
+
   async updateUserName(userId, name) {
     // Skip backend call if in development mode without configured backend
     if (this.skipBackend) {

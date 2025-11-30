@@ -1,0 +1,366 @@
+/* Admin Layout Styles */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.admin-nav {
+  width: 250px;
+  background-color: var(--card-background);
+  padding: 2rem 1rem;
+  border-right: 1px solid var(--border-color);
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.admin-nav h2 {
+  color: var(--primary-color);
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.admin-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-nav li {
+  margin-bottom: 0.5rem;
+}
+
+.admin-nav a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.admin-nav a:hover {
+  background-color: var(--hover-color);
+}
+
+.admin-nav a.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.admin-main {
+  flex: 1;
+  margin-left: 250px;
+  padding: 2rem;
+}
+
+/* Admin Container */
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-header {
+  margin-bottom: 2rem;
+}
+
+.admin-header h1 {
+  color: var(--text-color);
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-header .subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* Welcome Screen */
+.admin-welcome {
+  text-align: center;
+  padding: 2rem;
+}
+
+.admin-welcome h1 {
+  color: var(--text-color);
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.admin-welcome > p {
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+}
+
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.admin-card {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.admin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+.admin-card h3 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.admin-card p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Suggestions List */
+.suggestions-list,
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.suggestion-card,
+.user-card {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.suggestion-card:hover,
+.user-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.suggestion-header h2 {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.suggestion-meta {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.suggestion-content,
+.user-content {
+  margin-bottom: 1.5rem;
+}
+
+.suggestion-details,
+.user-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-item label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-item span,
+.detail-item p {
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.detail-item .username {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.suggestion-note {
+  background-color: var(--background-color);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border-left: 3px solid var(--primary-color);
+  margin: 0;
+}
+
+.username-input {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.username-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+/* Actions */
+.suggestion-actions,
+.user-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btn-approve,
+.btn-reject,
+.btn-edit,
+.btn-save,
+.btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-approve {
+  background-color: var(--success-color, #10b981);
+  color: white;
+}
+
+.btn-approve:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+}
+
+.btn-reject {
+  background-color: var(--error-color, #ef4444);
+  color: white;
+}
+
+.btn-reject:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
+.btn-edit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: var(--primary-dark, #2563eb);
+  transform: translateY(-2px);
+}
+
+.btn-save {
+  background-color: var(--success-color, #10b981);
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #059669;
+  transform: translateY(-2px);
+}
+
+.btn-cancel {
+  background-color: var(--text-secondary);
+  color: white;
+}
+
+.btn-cancel:hover {
+  background-color: var(--text-color);
+  transform: translateY(-2px);
+}
+
+/* Empty States */
+.no-suggestions,
+.no-users,
+.loading,
+.error {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.error {
+  color: var(--error-color, #ef4444);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-nav {
+    width: 100%;
+    height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .admin-main {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .suggestion-details,
+  .user-details {
+    grid-template-columns: 1fr;
+  }
+
+  .suggestion-actions,
+  .user-actions {
+    flex-direction: column;
+  }
+
+  .btn-approve,
+  .btn-reject,
+  .btn-edit,
+  .btn-save,
+  .btn-cancel {
+    width: 100%;
+  }
+}
