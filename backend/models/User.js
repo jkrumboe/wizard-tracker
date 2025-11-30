@@ -13,6 +13,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Password is required']
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  email: {
+    type: String,
+    sparse: true,
+    trim: true
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
   profilePicture: {
     type: String,
     default: null,

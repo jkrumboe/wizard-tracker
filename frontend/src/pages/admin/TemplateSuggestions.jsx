@@ -90,13 +90,6 @@ const TemplateSuggestions = () => {
                     <label>Submitted by:</label>
                     <span>{suggestion.userId?.username || 'Unknown'}</span>
                   </div>
-                  
-                  {suggestion.userId?.email && (
-                    <div className="detail-item">
-                      <label>Email:</label>
-                      <span>{suggestion.userId.email}</span>
-                    </div>
-                  )}
 
                   {suggestion.targetNumber && (
                     <div className="detail-item">

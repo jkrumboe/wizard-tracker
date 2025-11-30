@@ -6,7 +6,7 @@ import { Link } from "react-router-dom"
 // import { useUser } from '@/shared/hooks/useUser'
 // import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
-import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon } from '@/components/ui/Icon'
+import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon, ShieldIcon } from '@/components/ui/Icon'
 
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
@@ -32,6 +32,9 @@ const GamesMenu = ({ show, onClose }) => {
           </Link>
           <Link to="/leaderboard" className="modal-button" onClick={onClose}>
             <TrophyIcon size={24} style={{ marginRight: 8 }} /> Leaderboard
+          </Link>
+          <Link to="/admin" className="modal-button" onClick={onClose}>
+            <ShieldIcon size={24} style={{ marginRight: 8 }} /> Admin Panel
           </Link>
         </div>
       </div>

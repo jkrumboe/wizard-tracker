@@ -75,4 +75,4 @@ export const CheckMarkIcon = (props) => <Icon name="Check" {...props} />;
 export const DiceIcon = (props) => <Icon name="Dices" {...props} />;
 export const BombIcon = (props) => <Icon name="Bomb" {...props} />;
 export const ListIcon = (props) => <Icon name="List" {...props} />;
-
+export const ShieldIcon = (props) => <Icon name="Shield" {...props} />;

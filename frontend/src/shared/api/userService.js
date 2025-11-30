@@ -17,6 +17,8 @@ class UserService {
       const token = localStorage.getItem('auth_token');
       const endpoint = `${this.baseURL}/api/users/admin/all`;
       
+      console.log('UserService.getAllUsers() - Fetching from:', endpoint);
+      
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
@@ -30,7 +32,9 @@ class UserService {
         throw new Error(error.error || 'Failed to fetch users');
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('UserService.getAllUsers() - Response:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -63,6 +67,36 @@ class UserService {
       return await response.json();
     } catch (error) {
       console.error('Error updating username:', error);
+      throw error;
+    }
+  }
+
+  async updateUserRole(userId, role) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/${userId}/role`;
+      
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update role' }));
+        throw new Error(error.error || 'Failed to update role');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating role:', error);
       throw error;
     }
   }

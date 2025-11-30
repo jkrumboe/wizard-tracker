@@ -766,19 +766,20 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
 router.get('/admin/all', auth, async (req, res, next) => {
   try {
     // TODO: Add admin permission check here
-    // if (!req.user.isAdmin) {
+    // const currentUser = await User.findById(req.user.userId);
+    // if (currentUser.role !== 'admin') {
     //   return res.status(403).json({ error: 'Admin access required' });
     // }
 
     const users = await User.find()
-      .select('_id username email createdAt lastLogin profilePicture')
+      .select('_id username role createdAt lastLogin profilePicture')
       .sort({ username: 1 });
 
     res.json({
       users: users.map(user => ({
         _id: user._id.toString(),
         username: user.username,
-        email: user.email || null,
+        role: user.role || 'user',
         createdAt: user.createdAt,
         lastLogin: user.lastLogin || null,
         profilePicture: user.profilePicture || null
@@ -793,7 +794,8 @@ router.get('/admin/all', auth, async (req, res, next) => {
 router.put('/:userId/username', auth, async (req, res, next) => {
   try {
     // TODO: Add admin permission check here
-    // if (!req.user.isAdmin) {
+    // const currentUser = await User.findById(req.user.userId);
+    // if (currentUser.role !== 'admin') {
     //   return res.status(403).json({ error: 'Admin access required' });
     // }
 
@@ -869,7 +871,7 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       user: {
         _id: user._id,
         username: user.username,
-        email: user.email || null,
+        role: user.role || 'user',
         createdAt: user.createdAt
       },
       updatedCollections: [
@@ -882,6 +884,48 @@ router.put('/:userId/username', auth, async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error updating username:', error);
+    next(error);
+  }
+});
+
+// PUT /users/:userId/role - Update user role (admin only)
+router.put('/:userId/role', auth, async (req, res, next) => {
+  try {
+    // TODO: Add admin permission check here
+    // const currentUser = await User.findById(req.user.userId);
+    // if (currentUser.role !== 'admin') {
+    //   return res.status(403).json({ error: 'Admin access required' });
+    // }
+
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    if (!role || !['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be "user" or "admin"' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const oldRole = user.role || 'user';
+    user.role = role;
+    await user.save();
+
+    console.log(`✅ User role updated from "${oldRole}" to "${role}" for user: ${user.username}`);
+
+    res.json({
+      message: 'User role updated successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        role: user.role,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
     next(error);
   }
 });

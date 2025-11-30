@@ -8,6 +8,8 @@ const UserManagement = () => {
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [newUsername, setNewUsername] = useState('');
+  const [editingRole, setEditingRole] = useState(null);
+  const [newRole, setNewRole] = useState('');
 
   useEffect(() => {
     loadUsers();
@@ -16,8 +18,19 @@ const UserManagement = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
+      console.log('Calling userService.getAllUsers()...');
       const data = await userService.getAllUsers();
-      setUsers(data.users || []);
+      console.log('Received users:', data);
+      console.log('Type of data:', typeof data);
+      console.log('Is data an array?', Array.isArray(data));
+      console.log('data.users:', data.users);
+      console.log('Keys in data:', Object.keys(data));
+      
+      // Handle both array directly or object with users property
+      const usersArray = Array.isArray(data) ? data : (data.users || []);
+      console.log('Final users array:', usersArray);
+      
+      setUsers(usersArray);
       setError('');
     } catch (err) {
       console.error('Error loading users:', err);
@@ -28,13 +41,45 @@ const UserManagement = () => {
   };
 
   const handleStartEdit = (user) => {
-    setEditingUser(user._id);
+    setEditingUser(user._id || user.id);
     setNewUsername(user.username);
   };
 
   const handleCancelEdit = () => {
     setEditingUser(null);
     setNewUsername('');
+  };
+
+  const handleStartRoleEdit = (user) => {
+    setEditingRole(user._id || user.id);
+    setNewRole(user.role || 'user');
+  };
+
+  const handleCancelRoleEdit = () => {
+    setEditingRole(null);
+    setNewRole('');
+  };
+
+  const handleSaveRole = async (userId) => {
+    if (!newRole) {
+      alert('Role cannot be empty');
+      return;
+    }
+
+    if (!confirm(`Change user role to "${newRole}"?`)) {
+      return;
+    }
+
+    try {
+      await userService.updateUserRole(userId, newRole);
+      alert('User role updated successfully!');
+      setEditingRole(null);
+      setNewRole('');
+      loadUsers();
+    } catch (err) {
+      console.error('Error updating role:', err);
+      alert('Failed to update role: ' + err.message);
+    }
   };
 
   const handleSaveUsername = async (userId) => {
@@ -81,12 +126,12 @@ const UserManagement = () => {
       ) : (
         <div className="users-list">
           {users.map((user) => (
-            <div key={user._id} className="user-card">
+            <div key={user._id || user.id} className="user-card">
               <div className="user-content">
                 <div className="user-details">
                   <div className="detail-item">
                     <label>Username:</label>
-                    {editingUser === user._id ? (
+                    {editingUser === (user._id || user.id) ? (
                       <input
                         type="text"
                         value={newUsername}
@@ -99,13 +144,6 @@ const UserManagement = () => {
                     )}
                   </div>
 
-                  {user.email && (
-                    <div className="detail-item">
-                      <label>Email:</label>
-                      <span>{user.email}</span>
-                    </div>
-                  )}
-
                   <div className="detail-item">
                     <label>Registered:</label>
                     <span>{new Date(user.createdAt).toLocaleDateString()}</span>
@@ -117,11 +155,30 @@ const UserManagement = () => {
                       <span>{new Date(user.lastLogin).toLocaleDateString()}</span>
                     </div>
                   )}
+
+                  <div className="detail-item">
+                    <label>Role:</label>
+                    {editingRole === (user._id || user.id) ? (
+                      <select
+                        value={newRole}
+                        onChange={(e) => setNewRole(e.target.value)}
+                        className="role-select"
+                        autoFocus
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    ) : (
+                      <span className={`role-badge role-${user.role || 'user'}`}>
+                        {(user.role || 'user').toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               <div className="user-actions">
-                {editingUser === user._id ? (
+                {editingUser === (user._id || user.id) ? (
                   <>
                     <button 
                       className="btn-cancel" 
@@ -131,18 +188,41 @@ const UserManagement = () => {
                     </button>
                     <button 
                       className="btn-save" 
-                      onClick={() => handleSaveUsername(user._id)}
+                      onClick={() => handleSaveUsername(user._id || user.id)}
                     >
-                      Save Changes
+                      Save Username
+                    </button>
+                  </>
+                ) : editingRole === (user._id || user.id) ? (
+                  <>
+                    <button 
+                      className="btn-cancel" 
+                      onClick={handleCancelRoleEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      className="btn-save" 
+                      onClick={() => handleSaveRole(user._id || user.id)}
+                    >
+                      Save Role
                     </button>
                   </>
                 ) : (
-                  <button 
-                    className="btn-edit" 
-                    onClick={() => handleStartEdit(user)}
-                  >
-                    Edit Username
-                  </button>
+                  <>
+                    <button 
+                      className="btn-edit" 
+                      onClick={() => handleStartEdit(user)}
+                    >
+                      Edit Username
+                    </button>
+                    <button 
+                      className="btn-role" 
+                      onClick={() => handleStartRoleEdit(user)}
+                    >
+                      Change Role
+                    </button>
+                  </>
                 )}
               </div>
             </div>
