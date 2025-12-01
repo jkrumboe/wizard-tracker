@@ -952,7 +952,7 @@ const TableGame = () => {
                 </table>
               </div>
 
-              {currentRound === 1 && (
+              {currentRound === 1 && !gameFinished && (
               <div className="explanation">
                 <p>Always enter the points for each player for the current round.</p>
                 <p>Use the navigation buttons below to move between rounds.</p>
