@@ -36,9 +36,7 @@
 
 /* Special styles for mobile with many players */
 @media (max-width: 768px) {
-  .many-players .player-round-data {
-    align-items: center;
-  }
+  
   
   .many-players .scorecard-table {
     font-size: 0.8rem;
