@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
+import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
 import { useUser } from "../../shared/hooks/useUser";
 import "../../styles/components/TableGame.css";
 
@@ -21,6 +22,8 @@ const TableGame = () => {
   });
   
   const [activeTab, setActiveTab] = useState('table'); // 'table' or 'scoreboard'
+  const [showDeletePlayerConfirm, setShowDeletePlayerConfirm] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState(null);
   
   // Game settings
   const [targetNumber, setTargetNumber] = useState(null);
@@ -472,9 +475,25 @@ const TableGame = () => {
   // Remove a player at a specific index
   const removePlayer = (idx) => {
     if (players.length <= MIN_PLAYERS) return; // Prevent removing below minimum
-    const newPlayers = [...players];
-    newPlayers.splice(idx, 1);
-    setPlayers(newPlayers);
+    setPlayerToDelete(idx);
+    setShowDeletePlayerConfirm(true);
+  };
+
+  // Confirm player deletion
+  const confirmDeletePlayer = () => {
+    if (playerToDelete !== null) {
+      const newPlayers = [...players];
+      newPlayers.splice(playerToDelete, 1);
+      setPlayers(newPlayers);
+    }
+    setShowDeletePlayerConfirm(false);
+    setPlayerToDelete(null);
+  };
+
+  // Cancel player deletion
+  const cancelDeletePlayer = () => {
+    setShowDeletePlayerConfirm(false);
+    setPlayerToDelete(null);
   };
 
   // Move player to the left
@@ -984,6 +1003,20 @@ const TableGame = () => {
           )}
         </>
       )}
+
+      {/* Delete Player Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeletePlayerConfirm}
+        onClose={cancelDeletePlayer}
+        onConfirm={confirmDeletePlayer}
+        title="Delete Player"
+        message={
+          playerToDelete !== null
+            ? `Are you sure you want to delete "${players[playerToDelete]?.name}"? All their scores will be permanently lost.`
+            : 'Are you sure you want to delete this player?'
+        }
+        confirmText="Delete Player"
+      />
     </div>
   );
 };
