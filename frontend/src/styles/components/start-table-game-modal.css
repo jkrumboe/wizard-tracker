@@ -232,6 +232,15 @@
   gap: 0.5rem;
 }
 
+.game-settings-info .settings-details {
+  display: flex;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .setting-item {
   /* font-size: 0.8rem; */
   color: var(--text-muted);
