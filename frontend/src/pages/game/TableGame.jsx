@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftIcon, ArrowRightIcon, XIcon, ArrowLeftCircleIcon, SaveIcon } from "../../components/ui/Icon";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, UsersIcon, SettingsIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
+import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
 import { useUser } from "../../shared/hooks/useUser";
+import StatsChart from "../../components/game/StatsChart";
+import { AdvancedStats } from "../../components/game";
 import "../../styles/components/TableGame.css";
+import "../../styles/pages/gameInProgress.css";
+import "../../styles/components/statsChart.css";
+import "../../styles/components/scorecard.css";
 
 const MIN_PLAYERS = 2;
 
@@ -21,9 +27,13 @@ const TableGame = () => {
     return initialRows;
   });
   
-  const [activeTab, setActiveTab] = useState('table'); // 'table' or 'scoreboard'
+  const [currentRound, setCurrentRound] = useState(1); // Track current round (1-based)
+  const [activeTab, setActiveTab] = useState('game'); // 'game' or 'stats'
+  const [statsSubTab, setStatsSubTab] = useState('table'); // 'chart' or 'table'
+  const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches);
   const [showDeletePlayerConfirm, setShowDeletePlayerConfirm] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
+  const [showGameSettingsModal, setShowGameSettingsModal] = useState(false);
   
   // Game settings
   const [targetNumber, setTargetNumber] = useState(null);
@@ -51,6 +61,7 @@ const TableGame = () => {
   // Refs to store current values for auto-save on unmount
   const playersRef = useRef(players);
   const rowsRef = useRef(rows);
+  const currentRoundRef = useRef(currentRound);
   const currentGameNameRef = useRef(currentGameName);
   const currentGameIdRef = useRef(currentGameId);
   const showTemplateSelectorRef = useRef(showTemplateSelector);
@@ -73,6 +84,7 @@ const TableGame = () => {
       const gameState = {
         players,
         rows,
+        currentRound,
         currentGameName,
         currentGameId,
         targetNumber,
@@ -81,7 +93,7 @@ const TableGame = () => {
       };
       sessionStorage.setItem('currentTableGameState', JSON.stringify(gameState));
     }
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
+  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
   // Restore game state from sessionStorage on mount (after HMR)
   useEffect(() => {
@@ -111,20 +123,21 @@ const TableGame = () => {
           }
           console.log('Restoring game state:', { isSmallLandscape, hasData, savedRows: gameState.rows, restoredRows });
           setRows(restoredRows);
+          setCurrentRound(gameState.currentRound || 1);
           setCurrentGameName(gameState.currentGameName);
           setCurrentGameId(gameState.currentGameId);
           setTargetNumber(gameState.targetNumber || null);
           setLowIsBetter(gameState.lowIsBetter || false);
           setGameFinished(gameState.gameFinished || false);
           setShowTemplateSelector(false);
-          setActiveTab('table'); // Always start at table view
+          setActiveTab('game'); // Always start at game view
           console.debug('🔄 Restored game state from session after HMR');
         }
       } catch (error) {
         console.error('Failed to restore game state:', error);
       }
     }
-  }, []); // Only run once on mount
+  }, [id, showTemplateSelector]); // Dependencies for restoration logic
 
   // Check for gameId in URL parameters and load that game
   useEffect(() => {
@@ -146,7 +159,7 @@ const TableGame = () => {
           setPlayers(loadedPlayers);
           setRows(gameData.rows || 10);
           setShowTemplateSelector(false);
-          setActiveTab('table');
+          setActiveTab('game');
           setCurrentGameName(savedGame.name);
           setCurrentGameId(savedGame.id);
           
@@ -185,6 +198,17 @@ const TableGame = () => {
     }
   }, [id, showTemplateSelector, currentGameId]);
 
+  // Listen for orientation changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(orientation: landscape)');
+    const handleOrientationChange = (e) => {
+      setIsLandscape(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleOrientationChange);
+    return () => mediaQuery.removeEventListener('change', handleOrientationChange);
+  }, []);
+
   // Listen for orientation changes and adjust rows
   useEffect(() => {
     const mediaQuery = window.matchMedia('(orientation: landscape) and (max-width: 950px)');
@@ -206,13 +230,14 @@ const TableGame = () => {
   useEffect(() => {
     playersRef.current = players;
     rowsRef.current = rows;
+    currentRoundRef.current = currentRound;
     currentGameNameRef.current = currentGameName;
     currentGameIdRef.current = currentGameId;
     showTemplateSelectorRef.current = showTemplateSelector;
     targetNumberRef.current = targetNumber;
     lowIsBetterRef.current = lowIsBetter;
     gameFinishedRef.current = gameFinished;
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
+  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
   // Sync game settings with template when game is active or template changes
   useEffect(() => {
@@ -496,41 +521,90 @@ const TableGame = () => {
     setPlayerToDelete(null);
   };
 
-  // Move player to the left
-  const movePlayerLeft = (idx) => {
-    if (idx === 0) return; // Can't move first player left
-    const newPlayers = [...players];
-    [newPlayers[idx - 1], newPlayers[idx]] = [newPlayers[idx], newPlayers[idx - 1]];
-    setPlayers(newPlayers);
-  };
-
-  // Move player to the right
-  const movePlayerRight = (idx) => {
-    if (idx === players.length - 1) return; // Can't move last player right
-    const newPlayers = [...players];
-    [newPlayers[idx], newPlayers[idx + 1]] = [newPlayers[idx + 1], newPlayers[idx]];
-    setPlayers(newPlayers);
-  };
+  // Note: Player reordering functions removed as they're not used in the new UI
 
   const addRow = () => {
     setRows(rows + 1);
+  };
+
+  // Navigation functions
+  const nextRound = () => {
+    // If we're on the last round, add a new round
+    if (currentRound >= rows) {
+      setRows(rows + 1);
+    }
+    setCurrentRound(currentRound + 1);
+  };
+
+  const previousRound = () => {
+    if (currentRound > 1) {
+      setCurrentRound(currentRound - 1);
+    }
   };
 
   const getTotal = (player) => {
     return player.points.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0);
   };
 
+  // Calculate comprehensive game statistics for all players
+  const calculateDetailedGameStats = () => {
+    return players.map((player, playerIndex) => {
+      const validPoints = player.points.filter(p => p !== "" && p !== undefined && p !== null);
+      const roundsPlayed = validPoints.length;
+      const totalPoints = getTotal(player);
+      const avgPoints = roundsPlayed > 0 ? totalPoints / roundsPlayed : 0;
+      
+      // Find best and worst rounds
+      let bestRound = roundsPlayed > 0 ? validPoints[0] : 0;
+      let worstRound = roundsPlayed > 0 ? validPoints[0] : 0;
+      
+      validPoints.forEach(point => {
+        const pointValue = Number.parseInt(point, 10) || 0;
+        if (pointValue > bestRound) bestRound = pointValue;
+        if (pointValue < worstRound) worstRound = pointValue;
+      });
+      
+      return {
+        id: playerIndex,
+        name: player.name,
+        roundsPlayed,
+        totalPoints,
+        avgPoints: avgPoints.toFixed(1),
+        bestRound,
+        worstRound,
+        validPoints: validPoints.map(p => Number.parseInt(p, 10) || 0)
+      };
+    });
+  };
+
+  const detailedStats = calculateDetailedGameStats();
+
   // Check if any player has reached or exceeded the target
   const hasReachedTarget = () => {
+    // No target set or game already finished
     if (!targetNumber || gameFinished) return false;
     
     return players.some(player => {
       const total = getTotal(player);
-      if (lowIsBetter) {
-        return total <= targetNumber;
-      } else {
+      
+      // Check if player has actually entered any points (not just zeros from empty inputs)
+      const hasValidPoints = player.points.some(p => {
+        return p !== "" && p !== undefined && p !== null;
+      });
+      
+      // If no points have been entered yet, target can't be reached
+      if (!hasValidPoints) return false;
+      
         return total >= targetNumber;
-      }
+    });
+  };
+
+  // Check if current round is complete (all players have entered points)
+  const isCurrentRoundComplete = () => {
+    const roundIndex = currentRound - 1;
+    return players.every(player => {
+      const point = player.points[roundIndex];
+      return point !== "" && point !== undefined && point !== null;
     });
   };
 
@@ -785,240 +859,275 @@ const TableGame = () => {
           onLoadGame={loadGame}
         />
       ) : (
-        <>
-          <div className="table-game-header">
-            <button
-              className="back-to-templates-btn"
+        <div className={`game-in-progress players-${players.length} ${players.length > 3 ? 'many-players' : ''}`}>
+          {/* Round Info Header */}
+          <div className="round-info">
+            <button 
+              className="back-btn"
               onClick={handleBackToTemplates}
               title="Back to Game Selection"
             >
-              <ArrowLeftCircleIcon size={20} />
-              Back
+              <ArrowLeftCircleIcon size={28} />
             </button>
-            
-            <button
-              className="table-game-add-player-above"
-              title="Add Player"
-              onClick={() => insertPlayer(players.length)}
-              disabled={gameFinished}
+            <span className="game-info-header">
+              {currentGameName || "Table Game"}
+              <div className="total-calls">
+                Round {currentRound}
+              </div>
+            </span>
+            <button 
+              className="settings-btn"
+              onClick={() => setShowGameSettingsModal(true)}
+              title="Game Settings"
             >
-              Add Player
-            </button>
-            {/* <SyncStatusIndicator 
-              gameId={currentGameName ? `table-${currentGameName}` : null}
-              showDetails={false}
-              className="ml-2"
-            /> */}
-            <button
-              className="table-game-save-btn"
-              onClick={saveGame}
-              title="Save Game"
-            >
-              <SaveIcon size={16} />
-              Save
+              <SettingsIcon size={24} />
             </button>
           </div>
 
-          {/* Tab Switcher */}
-        <div className="table-game-tab-switcher">
-          <button
-            className={`table-game-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
-            onClick={() => setActiveTab('table')}
-          >
-            Table View
-          </button>
-          <button
-            className={`table-game-tab-btn ${activeTab === 'scoreboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('scoreboard')}
-          >
-            Scoreboard
-          </button>
-        </div>
-
-      {/* Conditional Content Display */}
-      {activeTab === 'table' ? (
-        <div className="table-game-scroll">
-          <table className="table-game-table">
-            <thead>
-              {/* Player Names Row */}
-              <tr>
-                {players.map((player, idx) => (
-                  <th key={idx}>
-                    <div className="table-game-player-header">
-                      <input
-                        value={player.name}
-                        onChange={(e) => handleNameChange(idx, e.target.value)}
-                        className="table-game-player-input"
-                        placeholder={`Player ${idx + 1}`}
-                        type="text"
-                        disabled={gameFinished}
-                      />
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[...Array(rows)].map((_, rowIdx) => (
-                <tr key={rowIdx}>
-                  {players.map((player, playerIdx) => (
-                    <td key={playerIdx}>
-                      <input
-                        type="text"
-                        value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
-                        onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
-                        className="table-game-point-input"
-                        // inputMode="numeric"
-                        pattern="-?[0-9]*"
-                        disabled={gameFinished}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-              <tr>
-                <td colSpan={players.length}>
-                  <button
-                    className="table-game-add-row-inline"
-                    title="Add Row"
-                    onClick={addRow}
-                    disabled={gameFinished}
-                  >
-                    Add Row
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                {players.map((player, idx) => (
-                  <td key={idx} className={`table-game-total ${gameFinished ? 'disabled' : ''}`}>
-                    {getTotal(player)}
-                  </td>
-                ))}
-              </tr>
-              {/* Controls Row */}
-              <tr className={`table-game-controls-row ${gameFinished ? 'disabled' : ''}`}>
-                {players.map((_, idx) => (
-                  <td key={`controls-${idx}`} className="table-game-controls-cell">
-                    <div className="table-game-controls">
-                      <button
-                        className={`table-game-control-btn table-game-move-btn ${idx === 0 || gameFinished ? 'disabled' : ''}`}
-                        title="Move Left"
-                        onClick={() => movePlayerLeft(idx)}
-                        disabled={idx === 0 || gameFinished}
-                      >
-                        <ArrowLeftIcon size={16} />
-                      </button>
-                      {players.length > MIN_PLAYERS && (
-                        <button
-                          className="table-game-control-btn table-game-remove-btn"
-                          title="Remove Player"
-                          onClick={() => removePlayer(idx)}
-                          disabled={gameFinished}
-                        >
-                          <XIcon size={16} />
-                        </button>
-                      )}
-                      <button
-                        className={`table-game-control-btn table-game-move-btn ${idx === players.length - 1 || gameFinished ? 'disabled' : ''}`}
-                        title="Move Right"
-                        onClick={() => movePlayerRight(idx)}
-                        disabled={idx === players.length - 1 || gameFinished}
-                      >
-                        <ArrowRightIcon size={16} />
-                      </button>
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      ) : (
-        <div className="table-game-scoreboard">
-          <h2 className="scoreboard-title">Scoreboard</h2>
-          <div className="scoreboard-list">
-            {players
-              .map((player, idx) => ({
-                ...player,
-                total: getTotal(player),
-                originalIndex: idx
-              }))
-              .sort((a, b) => {
-                // Sort based on scoring preference
-                if (lowIsBetter) {
-                  return a.total - b.total; // Ascending (low to high)
-                } else {
-                  return b.total - a.total; // Descending (high to low)
-                }
-              })
-              .map((player, index, array) => {
-                // Calculate rank with proper tie handling
-                let rank = 1;
-                
-                // Count how many players have a better score
-                for (let i = 0; i < index; i++) {
-                  if (lowIsBetter) {
-                    if (array[i].total < player.total) {
-                      rank++;
-                    }
-                  } else {
-                    if (array[i].total > player.total) {
-                      rank++;
-                    }
-                  }
-                }
-                
-                return (
-                  <div key={player.originalIndex} className="scoreboard-item" data-rank={rank}>
-                    <div className="scoreboard-rank">{rank}</div>
-                    <div className="scoreboard-player-name">{player.name || `Player ${player.originalIndex + 1}`}</div>
-                    <div className="scoreboard-score">{player.total}</div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
-          
-        
-
+          {/* Finish Game Button */}
           {targetNumber && hasReachedTarget() && !gameFinished && (
-            <button
-              className="finish-btn"
-              onClick={handleFinishGame}
-              title="Finish Game"
-            >
+            <button className="finish-btn" onClick={handleFinishGame}>
               Finish Game
             </button>
           )}
           
           {gameFinished && (
-            <button
-              className="table-game-edit-btn"
-              onClick={handleEditGame}
-              title="Edit Game"
-            >
+            <button className="finish-btn" onClick={handleEditGame}>
               Edit Game
             </button>
           )}
-        </>
-      )}
 
-      {/* Delete Player Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={showDeletePlayerConfirm}
-        onClose={cancelDeletePlayer}
-        onConfirm={confirmDeletePlayer}
-        title="Delete Player"
-        message={
-          playerToDelete !== null
-            ? `Are you sure you want to delete "${players[playerToDelete]?.name}"? All their scores will be permanently lost.`
-            : 'Are you sure you want to delete this player?'
-        }
-        confirmText="Delete Player"
-      />
+          {/* Game Tab - Player Scores */}
+          {activeTab === 'game' && (
+            <div className="tab-panel">
+              <div className="player-scores">
+                <table className="score-table">
+                  <thead>
+                    <tr>
+                      <th className="player-header">Player</th>
+                      <th className="input-header">Points</th>
+                      <th className="score-header">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map((player, idx) => {
+                      // Use currentRound state (0-based index for array)
+                      const roundIndex = currentRound - 1;
+                      
+                      return (
+                        <tr key={idx} className="player-row">
+                          <td className="player-cell">
+                            <div className="player-name-container">
+                              <input
+                                value={player.name}
+                                onChange={(e) => handleNameChange(idx, e.target.value)}
+                                className="player-name-input"
+                                placeholder={`Player ${idx + 1}`}
+                                type="text"
+                                disabled={gameFinished}
+                              />
+                            </div>
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className="rounds-input"
+                              value={player.points[roundIndex] === 0 ? "0" : (player.points[roundIndex] ?? "")}
+                              onChange={(e) => handlePointChange(idx, roundIndex, e.target.value)}
+                              placeholder="0"
+                              disabled={gameFinished}
+                              inputMode="numeric"
+                              pattern="-?[0-9]*"
+                            />
+                          </td>
+                          <td className="score-cell">
+                            <div className="score">
+                              <span className="total-score">
+                                {getTotal(player)}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Tab */}
+          {activeTab === 'stats' && (
+            <div className="tab-panel">
+              <div className="game-stats-container">
+                <div className="stats-subtabs">
+                  <button 
+                    className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
+                    onClick={() => setStatsSubTab('table')}
+                  >
+                    Table
+                  </button>
+                  <button 
+                    className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
+                    onClick={() => setStatsSubTab('chart')}
+                  >
+                    Charts
+                  </button>
+                </div>
+                
+                {/* Show both views in landscape, otherwise show based on selected tab */}
+                {(statsSubTab === 'chart' || isLandscape) && (
+                  <div className="stats-chart-container">
+                    <StatsChart 
+                      playersData={detailedStats} 
+                      roundData={players[0]?.points.map((_, roundIndex) => ({
+                        round: roundIndex + 1,
+                        players: players.map((player, playerIndex) => ({
+                          id: playerIndex,
+                          name: player.name,
+                          totalScore: player.points.slice(0, roundIndex + 1).reduce((sum, p) => sum + (Number.parseInt(p, 10) || 0), 0)
+                        }))
+                      })) || []} 
+                    />
+                  </div>
+                )}
+
+                {(statsSubTab === 'table' || isLandscape) && (
+                  <div className="rounds-section">
+                    <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length}>
+                      <table className="scorecard-table">
+                        <thead>
+                          <tr>
+                            <th className="round-header sticky-cell">Round</th>
+                            {players.map((player, idx) => (
+                              <th key={idx} className="player-header">
+                                <div className="player-header-name">{player.name}</div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...Array(rows)].map((_, rowIdx) => {
+                            const hasData = players.some(p => {
+                              const point = p.points[rowIdx];
+                              return point !== "" && point !== undefined && point !== null;
+                            });
+                            
+                            if (!hasData && rowIdx > 0) {
+                              // Check if any player has data in previous row
+                              const hasPreviousData = players.some(p => {
+                                const point = p.points[rowIdx - 1];
+                                return point !== "" && point !== undefined && point !== null;
+                              });
+                              if (!hasPreviousData) return null;
+                            }
+                            
+                            return (
+                              <tr key={rowIdx} className="round-row">
+                                <td className="round-number sticky-cell">{rowIdx + 1}</td>
+                                {players.map((player, playerIdx) => (
+                                  <td key={playerIdx} className="player-round-cell">
+                                    <input
+                                      type="text"
+                                      value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
+                                      onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
+                                      className="round-point-input"
+                                      disabled={gameFinished}
+                                      inputMode="numeric"
+                                      pattern="-?[0-9]*"
+                                    />
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                          <tr className="total-row">
+                            <td className="total-label sticky-cell">Total</td>
+                            {players.map((player, idx) => (
+                              <td key={idx} className="total-score">
+                                {getTotal(player)}
+                              </td>
+                            ))}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Section with Controls */}
+          <div className="game-bottom-section">
+            {/* Toggle Button for Game / Stats */}
+            <div className="toggle-section">
+              <button
+                className="game-control-btn"
+                onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
+                title={`Switch to ${activeTab === 'game' ? 'Stats' : 'Game'}`}
+              >
+                {activeTab === 'game' ? <BarChartIcon size={27} /> : <UsersIcon size={27} />}
+              </button>
+            </div>
+
+            <div className="game-controls">
+              {/* Pause button placeholder - can be added if needed */}
+            </div>
+
+            <button 
+              className="nav-btn" 
+              id="prevRoundBtn" 
+              onClick={previousRound} 
+              disabled={currentRound <= 1}
+            >
+              <ArrowLeftIcon /> 
+            </button>
+
+            <button 
+              className="nav-btn" 
+              id="nextRoundBtn" 
+              onClick={nextRound} 
+              disabled={!isCurrentRoundComplete()}
+            >
+              <ArrowRightIcon />
+            </button>
+          </div>
+
+          {/* Delete Player Confirmation Modal */}
+          <DeleteConfirmationModal
+            isOpen={showDeletePlayerConfirm}
+            onClose={cancelDeletePlayer}
+            onConfirm={confirmDeletePlayer}
+            title="Delete Player"
+            message={
+              playerToDelete !== null
+                ? `Are you sure you want to delete "${players[playerToDelete]?.name}"? All their scores will be permanently lost.`
+                : 'Are you sure you want to delete this player?'
+            }
+            confirmText="Delete Player"
+          />
+
+          {/* Game Settings Modal */}
+          <TableGameSettingsModal
+            isOpen={showGameSettingsModal}
+            onClose={() => setShowGameSettingsModal(false)}
+            players={players}
+            rows={rows}
+            currentRound={currentRound}
+            targetNumber={targetNumber}
+            lowIsBetter={lowIsBetter}
+            onUpdateSettings={(settings) => {
+              if (settings.players) setPlayers(settings.players);
+              if (settings.rows) setRows(settings.rows);
+              if (settings.targetNumber !== undefined) setTargetNumber(settings.targetNumber);
+              if (settings.lowIsBetter !== undefined) setLowIsBetter(settings.lowIsBetter);
+              setShowGameSettingsModal(false);
+            }}
+            gameFinished={gameFinished}
+          />
+        </div>
+      )}
     </div>
   );
 };

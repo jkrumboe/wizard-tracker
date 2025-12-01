@@ -8,11 +8,12 @@
   display: flex;
   align-items: center;
   text-align: center;
-  flex-direction: column;
-  margin-bottom: var(--spacing-sm);
-  padding: var(--spacing-sm) 0;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border);
+  flex-direction: row;
+  gap: var(--spacing-md);
+  justify-content: space-between;
+  /* margin-bottom: var(--spacing-sm); */
+  /* background: rgba(255, 255, 255, 0.1); */
+  /* border: 1px solid var(--border); */
   border-radius: 8px;
 }
 
@@ -64,36 +65,36 @@
   text-align: center;
 }
 
-.players-section {
-  margin-bottom: var(--spacing-md);
-}
-
 .players-section h3 {
   font-size: 1.1rem;
   margin-bottom: var(--spacing-sm);
   color: var(--text);
+  
 }
 
 .players-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--spacing-sm);
+  height: 20dvh;
+  overflow-y: auto;
+  max-height: 20dvh;
 }
 
 .player-row-start {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 0.125rem;
-  padding: var(--spacing-sm);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 0;
 }
 
 .player-label {
-  font-size: 1rem;
+  font-size: 1.3rem;
+  min-width: 30px;
   font-weight: 600;
   color: var(--text);
+  text-align: center;
 }
 
 .player-controls {
@@ -103,7 +104,7 @@
 
 .player-name-input {
   flex: 1;
-  padding: 0.5rem 0.75rem;
+  padding: var(--spacing-sm);
   background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 6px;

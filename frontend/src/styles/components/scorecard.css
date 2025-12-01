@@ -50,7 +50,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
-  font-size: 1rem;
+  /* font-size: 1rem; */
 }
 
 /* Adjust for 4-6 players - corrected media query */
@@ -74,7 +74,7 @@
   box-shadow: none;
   /* Ensure the background fills the entire cell */
   isolation: isolate;
-  font-size: 1.1rem;
+  /* font-size: 1.1rem; */
   border-right: none;
 }
 
@@ -270,11 +270,16 @@
   
   .scorecard-table th, 
   .scorecard-table td {
-    padding:var(--spacing-xs);
+    padding: 0;
   }
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
     width: 30px;
   }
+
+  .table-game-container .round-header {
+    width: 50px;
+  }
+
 }

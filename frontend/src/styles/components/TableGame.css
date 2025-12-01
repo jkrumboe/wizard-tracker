@@ -53,7 +53,129 @@
   margin: 0 auto;
   padding: 0;
   margin-top: var(--spacing-md);
-  overflow-x: auto;
+  overflow-x: hidden;
+}
+
+/* GameInProgress-style layout */
+.table-game-container .game-in-progress {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Player name input in game tab */
+.player-name-input {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+  min-width: 80px;
+}
+
+.player-name-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.player-name-input:disabled {
+  background: var(--bg-secondary);
+  cursor: not-allowed;
+}
+
+/* Player Management Buttons */
+.player-management {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  justify-content: center;
+  box-shadow: none;
+}
+
+.add-player-btn,
+.remove-player {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.add-player-btn {
+  background: var(--primary);
+  color: var(--text);
+}
+
+.add-player-btn:hover {
+  background: var(--primary-dark);
+}
+
+.remove-player {
+  background: var(--danger-color);
+  color: var(--text-white);
+}
+
+.remove-player:hover {
+  background: var(--danger-dark);
+}
+
+.add-player-btn:disabled,
+.remove-player:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Add Row Button in Table View */
+.table-game-add-row-btn {
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  font-size: 0.95rem;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: var(--spacing-md);
+  width: 100%;
+}
+
+.table-game-add-row-btn:hover {
+  background: var(--primary-dark);
+}
+
+.table-game-add-row-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Round point input in table view */
+.round-point-input {
+  width: 90%;
+  padding: 4px;
+  font-size: 0.9rem;
+  color: var(--text);
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.round-point-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.round-point-input:disabled {
+  background: var(--bg-secondary);
+  cursor: not-allowed;
 }
 
 /* Table Game Header */
@@ -613,13 +735,13 @@
 .table-game-edit-btn {
   background-color: var(--success-color);
   color: var(--text-white);
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
   font-weight: bold;
   width: 100%;
-  margin-top: var(--spacing-md);
+  margin-top: 0;
 
 }
 

@@ -148,7 +148,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
           <div className="player-count-section">
             <label>
               <UsersIcon size={18} />
-              Number of Players
+              Players
             </label>
             <div className="player-count-controls">
               <button
@@ -181,7 +181,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                   
                   return (
                     <div key={index} className="player-row-start">
-                      <label className="player-label">Player {index + 1}</label>
+                      <label className="player-label">{index + 1}</label>
                       <div className="player-controls">
                         <input
                           type="text"
