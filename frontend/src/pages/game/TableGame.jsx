@@ -956,7 +956,7 @@ const TableGame = () => {
                 
                 return (
                   <div key={player.originalIndex} className="scoreboard-item" data-rank={rank}>
-                    <div className="scoreboard-rank">#{rank}</div>
+                    <div className="scoreboard-rank">{rank}</div>
                     <div className="scoreboard-player-name">{player.name || `Player ${player.originalIndex + 1}`}</div>
                     <div className="scoreboard-score">{player.total}</div>
                   </div>
