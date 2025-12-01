@@ -31,12 +31,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
+  /* gap: var(--spacing-sm); */
 }
 
 .count-btn {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 2px solid var(--primary);
   background: transparent;
@@ -58,10 +58,10 @@
 }
 
 .player-count-display {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: bold;
   color: var(--text);
-  min-width: 50px;
+  min-width: 40px;
   text-align: center;
 }
 
@@ -76,7 +76,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  height: 20dvh;
   overflow-y: auto;
   max-height: 20dvh;
 }
@@ -220,7 +219,12 @@
 
 .settings-details {
   display: flex;
-  flex-direction: column;
+  background-color: var(--card-bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 var(--spacing-sm);
   gap: 0.5rem;
 }
 
