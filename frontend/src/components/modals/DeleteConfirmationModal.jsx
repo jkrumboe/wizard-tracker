@@ -21,8 +21,8 @@ const DeleteConfirmationModal = ({
   const displayConfirmText = confirmText || (deleteAll ? 'Clear All Data' : 'Delete');
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container delete-confirmation-modal">
+    <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-container delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{displayTitle}</h2>
           <button className="close-btn" onClick={onClose}>

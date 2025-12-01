@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, PlusIcon, TrashIcon } from '@/components/ui/Icon';
 import { GripVertical } from 'lucide-react';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 import {
   DndContext,
   closestCenter,
@@ -95,6 +96,8 @@ const TableGameSettingsModal = ({
   const [localRows, setLocalRows] = useState(10);
   const [localTargetNumber, setLocalTargetNumber] = useState(null);
   const [localLowIsBetter, setLocalLowIsBetter] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState(null);
 
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -172,9 +175,23 @@ const TableGameSettingsModal = ({
 
   const handleRemovePlayer = (index) => {
     if (localPlayers.length > MIN_PLAYERS) {
-      const updated = localPlayers.filter((_, idx) => idx !== index);
+      setPlayerToDelete(index);
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const confirmDeletePlayer = () => {
+    if (playerToDelete !== null) {
+      const updated = localPlayers.filter((_, idx) => idx !== playerToDelete);
       setLocalPlayers(updated);
     }
+    setShowDeleteConfirm(false);
+    setPlayerToDelete(null);
+  };
+
+  const cancelDeletePlayer = () => {
+    setShowDeleteConfirm(false);
+    setPlayerToDelete(null);
   };
 
   const handleRowsChange = (newRows) => {
@@ -291,6 +308,20 @@ const TableGameSettingsModal = ({
           </button>
         </div>
       </div>
+
+      {/* Delete Player Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={cancelDeletePlayer}
+        onConfirm={confirmDeletePlayer}
+        title="Delete Player"
+        message={
+          playerToDelete !== null
+            ? `Are you sure you want to delete "${localPlayers[playerToDelete]?.name}"? All their scores will be permanently lost.`
+            : 'Are you sure you want to delete this player?'
+        }
+        confirmText="Delete Player"
+      />
     </div>
   );
 };
