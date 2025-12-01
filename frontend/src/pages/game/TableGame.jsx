@@ -819,6 +819,22 @@ const TableGame = () => {
             </button>
           </div>
 
+          {/* Tab Switcher */}
+        <div className="table-game-tab-switcher">
+          <button
+            className={`table-game-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
+            onClick={() => setActiveTab('table')}
+          >
+            Table View
+          </button>
+          <button
+            className={`table-game-tab-btn ${activeTab === 'scoreboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('scoreboard')}
+          >
+            Scoreboard
+          </button>
+        </div>
+
       {/* Conditional Content Display */}
       {activeTab === 'table' ? (
         <div className="table-game-scroll">
@@ -966,21 +982,7 @@ const TableGame = () => {
         </div>
       )}
           
-        {/* Tab Switcher */}
-        <div className="table-game-tab-switcher">
-          <button
-            className={`table-game-tab-btn ${activeTab === 'table' ? 'active' : ''}`}
-            onClick={() => setActiveTab('table')}
-          >
-            Table View
-          </button>
-          <button
-            className={`table-game-tab-btn ${activeTab === 'scoreboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('scoreboard')}
-          >
-            Scoreboard
-          </button>
-        </div>
+        
 
           {targetNumber && hasReachedTarget() && !gameFinished && (
             <button

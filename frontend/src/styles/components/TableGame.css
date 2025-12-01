@@ -522,7 +522,6 @@
 
 /* Scoreboard Styles */
 .table-game-scoreboard {
-  margin: var(--spacing-lg) 0;
   border-radius: var(--radius-md);
 }
 
@@ -545,20 +544,20 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-md);
   background: var(--card-bg-light);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
   transition: all 0.2s ease;
 }
 
-.scoreboard-item:hover {
+/* .scoreboard-item:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--primary);
-}
+} */
 
-.scoreboard-item[data-rank="1"] {
+/* .scoreboard-item[data-rank="1"] {
   background: linear-gradient(-130deg, rgba(254, 216, 0, 0.25), var(--card-bg));
   border-color: #FFD700;
 }
@@ -571,13 +570,12 @@
 .scoreboard-item[data-rank="3"] {
   background: linear-gradient(-100deg, rgba(205, 127, 50, 0.25), var(--card-bg-light));
   border-color: #CD7F32;
-}
+} */
 
 .scoreboard-rank {
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--primary);
-  min-width: 50px;
   text-align: center;
 }
 
@@ -606,12 +604,12 @@
   color: var(--teext-color);
   /* min-width: 80px; */
   /* text-align: right; */
-  padding: var(--spacing-xs) var(--spacing-md);
+  /* padding: var(--spacing-xs) var(--spacing-md); */
   background: var(--bg-secondary);
   border-radius: var(--radius-sm);
 }
 
-.table-game-finish-btn,
+.table-game-container .finish-btn,
 .table-game-edit-btn {
   background-color: var(--success-color);
   color: var(--text-white);
@@ -621,6 +619,8 @@
   cursor: pointer;
   font-weight: bold;
   width: 100%;
+  margin-top: var(--spacing-md);
+
 }
 
 .table-game-edit-btn {
@@ -655,10 +655,6 @@
 
   .scoreboard-item {
     padding: var(--spacing-sm) var(--spacing-md);
-  }
-
-  .scoreboard-rank {
-    min-width: 40px;
   }
 
   .scoreboard-score {
