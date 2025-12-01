@@ -899,13 +899,13 @@ const GameInProgress = () => {
         </div>
 
         <div className="game-controls">
-          <button 
+          {/* <button 
             className="game-control-btn pause-btn"
             onClick={() => showPauseConfirmation()}
             title="Pause Game"
           >
             <PauseIcon size={27} />
-          </button>
+          </button> */}
         </div>
 
         <button className="nav-btn" id="prevRoundBtn" onClick={previousRound} disabled={isFirstRound}>
