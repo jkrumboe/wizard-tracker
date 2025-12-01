@@ -29,7 +29,7 @@ const TableGame = () => {
   
   const [currentRound, setCurrentRound] = useState(1); // Track current round (1-based)
   const [activeTab, setActiveTab] = useState('game'); // 'game' or 'stats'
-  const [statsSubTab, setStatsSubTab] = useState('table'); // 'chart' or 'table'
+  const [statsSubTab, setStatsSubTab] = useState('standings'); // 'standings', 'chart', or 'table'
   const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches);
   const [showDeletePlayerConfirm, setShowDeletePlayerConfirm] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
@@ -966,10 +966,10 @@ const TableGame = () => {
               <div className="game-stats-container">
                 <div className="stats-subtabs">
                   <button 
-                    className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
-                    onClick={() => setStatsSubTab('table')}
+                    className={`stats-subtab-btn ${statsSubTab === 'standings' ? 'active' : ''}`}
+                    onClick={() => setStatsSubTab('standings')}
                   >
-                    Table
+                    Standings
                   </button>
                   <button 
                     className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
@@ -977,7 +977,58 @@ const TableGame = () => {
                   >
                     Charts
                   </button>
+                  <button 
+                    className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
+                    onClick={() => setStatsSubTab('table')}
+                  >
+                    Table
+                  </button>
                 </div>
+                
+                {/* Standings View */}
+                {(statsSubTab === 'standings' || isLandscape) && (
+                  <div className="results-table">
+                    {(() => {
+                      // Sort players by total points
+                      const sortedStats = [...detailedStats].sort((a, b) => {
+                        if (lowIsBetter) {
+                          return a.totalPoints - b.totalPoints; // Lower scores first
+                        } else {
+                          return b.totalPoints - a.totalPoints; // Higher scores first
+                        }
+                      });
+                      
+                      // Calculate positions with tie handling
+                      let currentRank = 1;
+                      return sortedStats.map((playerStats, index) => {
+                        // Check if this player's score is different from previous player
+                        if (index > 0 && sortedStats[index - 1].totalPoints !== playerStats.totalPoints) {
+                          currentRank = index + 1;
+                        }
+                        
+                        // Determine medal class based on rank
+                        let medalClass = '';
+                        if (currentRank === 1) medalClass = 'gold';
+                        else if (currentRank === 2) medalClass = 'silver';
+                        else if (currentRank === 3) medalClass = 'bronze';
+                        
+                        return (
+                          <div key={playerStats.id} className="results-row">
+                            <div className="top-result-row">
+                              <div className={`rank-col ${medalClass}`}>{currentRank}</div>
+                              <div className="player-col">
+                                <div className="player-info">
+                                  <span>{playerStats.name}</span>
+                                </div>
+                              </div>
+                              <div className="score-col">{playerStats.totalPoints || 0}</div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
                 
                 {/* Show both views in landscape, otherwise show based on selected tab */}
                 {(statsSubTab === 'chart' || isLandscape) && (
