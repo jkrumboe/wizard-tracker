@@ -160,32 +160,6 @@
   box-shadow: none;
 }
 
-.game-in-progress .back-btn:hover,
-.game-in-progress .settings-btn:hover {
-  background-color: rgba(var(--primary-rgb), 0.1);
-}
-
-.game-in-progress .back-btn:hover {
-  transform: translateX(-2px);
-}
-
-.game-in-progress .settings-btn:hover {
-  transform: rotate(45deg);
-}
-
-.game-in-progress .back-btn:active {
-  transform: translateX(-4px) scale(0.95);
-}
-
-.game-in-progress .settings-btn:active {
-  transform: rotate(45deg) scale(0.95);
-}
-
-/* Game stats container styling */
-.game-in-progress .game-stats-container {
-  /* padding-top: var(--spacing-sm); */
-}
-
 .game-in-progress .game-stats-container h2 {
   color: var(--primary);
   font-size: 1.5rem;

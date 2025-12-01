@@ -195,7 +195,7 @@ const AddGameTemplateModal = ({
                 />
                 High Score
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginLeft: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
                 <input
                   type="radio"
                   checked={lowIsBetter}

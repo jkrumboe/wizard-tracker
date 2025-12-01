@@ -1,7 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon, MinusIcon } from '@/components/ui/Icon';
+import { XIcon, PlusIcon, TrashIcon } from '@/components/ui/Icon';
+import { GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from '@dnd-kit/modifiers';
 
 const MIN_PLAYERS = 2;
+
+// Sortable Player Item Component
+const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, disabled }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: player.id || `player-${index}`,
+    disabled: disabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`player-order-item ${isDragging ? 'dragging' : ''}`}
+      {...attributes}
+    >
+      <div
+        className="drag-handle"
+        {...listeners}
+        style={{ cursor: disabled ? 'default' : 'grab', gap: '0.5rem', display: 'flex', alignItems: 'center' }}
+      >
+        <GripVertical size={16} />
+        {player.originalIndex + 1}
+      </div>
+      
+      <input
+        type="text"
+        className="player-name-input"
+        value={player.name}
+        onChange={(e) => onNameChange(index, e.target.value)}
+        disabled={disabled}
+      />
+      {canRemove && (
+        <button
+          className="remove-player-btn"
+          onClick={() => onRemove(index)}
+          disabled={disabled}
+        >
+          <TrashIcon size={16} />
+        </button>
+      )}
+    </div>
+  );
+};
 
 const TableGameSettingsModal = ({ 
   isOpen, 
@@ -19,9 +96,31 @@ const TableGameSettingsModal = ({
   const [localTargetNumber, setLocalTargetNumber] = useState(null);
   const [localLowIsBetter, setLocalLowIsBetter] = useState(false);
 
+  // @dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     if (isOpen) {
-      setLocalPlayers(players.map((p, idx) => ({ ...p, originalIndex: idx })));
+      setLocalPlayers(players.map((p, idx) => ({ 
+        ...p, 
+        id: p.id || `player-${idx}`,
+        originalIndex: idx 
+      })));
       setLocalRows(rows);
       setLocalTargetNumber(targetNumber);
       setLocalLowIsBetter(lowIsBetter);
@@ -45,24 +144,26 @@ const TableGameSettingsModal = ({
     setLocalPlayers(updated);
   };
 
-  const movePlayerUp = (index) => {
-    if (index > 0) {
-      const newPlayers = [...localPlayers];
-      [newPlayers[index], newPlayers[index - 1]] = [newPlayers[index - 1], newPlayers[index]];
-      setLocalPlayers(newPlayers);
-    }
-  };
+  // @dnd-kit drag end handler
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
 
-  const movePlayerDown = (index) => {
-    if (index < localPlayers.length - 1) {
-      const newPlayers = [...localPlayers];
-      [newPlayers[index], newPlayers[index + 1]] = [newPlayers[index + 1], newPlayers[index]];
-      setLocalPlayers(newPlayers);
+    if (active.id !== over?.id) {
+      const oldIndex = localPlayers.findIndex(player => (player.id || `player-${localPlayers.indexOf(player)}`) === active.id);
+      const newIndex = localPlayers.findIndex(player => (player.id || `player-${localPlayers.indexOf(player)}`) === over?.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newPlayers = [...localPlayers];
+        const [removed] = newPlayers.splice(oldIndex, 1);
+        newPlayers.splice(newIndex, 0, removed);
+        setLocalPlayers(newPlayers);
+      }
     }
   };
 
   const handleAddPlayer = () => {
     const newPlayer = {
+      id: `player-${Date.now()}`,
       name: `Player ${localPlayers.length + 1}`,
       points: []
     };
@@ -94,98 +195,34 @@ const TableGameSettingsModal = ({
         </div>
 
         <div className="modal-body">
-          {/* Max Rounds Setting */}
-          <div className="settings-section">
-            <h3>Maximum Rounds</h3>
-            <div className="setting-control">
-              <button 
-                className="control-btn"
-                onClick={() => handleRowsChange(localRows - 1)}
-                disabled={localRows <= currentRound || gameFinished}
-              >
-                <ChevronDownIcon size={20} />
-              </button>
-              <span className="control-value">{localRows}</span>
-              <button 
-                className="control-btn"
-                onClick={() => handleRowsChange(localRows + 1)}
-                disabled={localRows >= 100 || gameFinished}
-              >
-                <ChevronUpIcon size={20} />
-              </button>
-            </div>
-            <p className="setting-description">
-              Current round: {currentRound}
-            </p>
-          </div>
-
-          {/* Target Score Setting */}
-          <div className="settings-section">
-            <h3>Target Score (Optional)</h3>
-            <div className="setting-control">
-              <input
-                type="number"
-                className="target-input"
-                value={localTargetNumber || ''}
-                onChange={(e) => setLocalTargetNumber(e.target.value ? parseInt(e.target.value, 10) : null)}
-                placeholder="No target"
-                disabled={gameFinished}
-              />
-            </div>
-            <div className="checkbox-control">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={localLowIsBetter}
-                  onChange={(e) => setLocalLowIsBetter(e.target.checked)}
-                  disabled={gameFinished}
-                />
-                <span>Lower score wins</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Player Order */}
+          {/* Player Order - Moved to Top */}
           <div className="settings-section">
             <h3>Players</h3>
-            <div className="player-order-list">
-              {localPlayers.map((player, index) => (
-                <div key={index} className="player-order-item">
-                  <div className="player-order-controls">
-                    <button
-                      className="order-btn"
-                      onClick={() => movePlayerUp(index)}
-                      disabled={index === 0 || gameFinished}
-                    >
-                      <ChevronUpIcon size={16} />
-                    </button>
-                    <button
-                      className="order-btn"
-                      onClick={() => movePlayerDown(index)}
-                      disabled={index === localPlayers.length - 1 || gameFinished}
-                    >
-                      <ChevronDownIcon size={16} />
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    className="player-name-input"
-                    value={player.name}
-                    onChange={(e) => handlePlayerNameChange(index, e.target.value)}
-                    disabled={gameFinished}
-                  />
-                  {localPlayers.length > MIN_PLAYERS && (
-                    <button
-                      className="remove-player-btn"
-                      onClick={() => handleRemovePlayer(index)}
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            >
+              <SortableContext 
+                items={localPlayers.map(p => p.id || `player-${localPlayers.indexOf(p)}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="player-order-list">
+                  {localPlayers.map((player, index) => (
+                    <SortablePlayerItem
+                      key={player.id || index}
+                      player={player}
+                      index={index}
+                      onNameChange={handlePlayerNameChange}
+                      onRemove={handleRemovePlayer}
+                      canRemove={localPlayers.length > MIN_PLAYERS}
                       disabled={gameFinished}
-                    >
-                      <MinusIcon size={16} />
-                    </button>
-                  )}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
             <button
               className="add-player-modal-btn"
               onClick={handleAddPlayer}
@@ -194,6 +231,50 @@ const TableGameSettingsModal = ({
               <PlusIcon size={16} />
               Add Player
             </button>
+          </div>
+
+          {/* Game Settings - Styled like StartTableGameModal */}
+          <div className="settings-section game-settings-info">
+            <h3>Game Settings</h3>
+            <div className="settings-details">
+              <div className="add-section">
+                <label htmlFor="target-number-input">Target Number (optional):</label>
+                <input
+                  id="target-number-input"
+                  type="number"
+                  className="game-name-input"
+                  value={localTargetNumber || ''}
+                  onChange={(e) => setLocalTargetNumber(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  placeholder="200"
+                  disabled={gameFinished}
+                />
+              </div>
+              <div className="add-section">
+                <label>Scoring Preference:</label>
+                 <div className="scoring-prefernce-type" style={{ display: 'flex'}}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="scoring-preference"
+                      checked={!localLowIsBetter}
+                      onChange={() => setLocalLowIsBetter(false)}
+                      disabled={gameFinished}
+                    />
+                    <span>High Score</span>
+                  </label>
+                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="scoring-preference"
+                      checked={localLowIsBetter}
+                      onChange={() => setLocalLowIsBetter(true)}
+                      disabled={gameFinished}
+                    />
+                    <span>Low Score</span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

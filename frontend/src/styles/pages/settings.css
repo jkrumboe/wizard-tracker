@@ -166,6 +166,10 @@
   max-height: 40dvh;
 }
 
+.settings-section:has(.player-order-list) {
+  padding: 0;
+}
+
 .settings-section:has(.table-game-card) {
   max-height: 40dvh;
 }

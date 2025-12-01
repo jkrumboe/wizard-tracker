@@ -65,6 +65,7 @@ html, body {
   
   /* Border colors */
   --border: #b4b4b4;
+  --border-dark: #9ca3af;
   --border-light: #e2e8f0;
 }
 

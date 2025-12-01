@@ -188,10 +188,17 @@
 }
 
 .game-settings-info {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 0;
+}
+
+.game-name-input {
+  padding: var(--spacing-sm);
+}
+
+.game-settings-info h3 {
+  font-size: 1.2rem;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text);
 }
 
 .game-settings-info h4 {

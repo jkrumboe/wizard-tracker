@@ -380,7 +380,7 @@
 }
 
 .scoring-prefernce-type {
-  border: 1px solid var(--border);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-md);
   overflow: hidden;
 }

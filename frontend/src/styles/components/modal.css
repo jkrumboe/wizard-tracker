@@ -55,7 +55,8 @@
   font-size: 1.5rem;
 }
 
-.close-btn {
+.close-btn,
+.modal-close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -372,6 +373,25 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+.settings-section:has(.player-order-list) .player-order-list {
+  padding-bottom: var(--spacing-md);
+}
+
+.add-player-modal-btn {
+  width: 100%;
+  justify-content: center;
+  background-color: var(--primary);
+  color: var(--text);
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .player-order-item {

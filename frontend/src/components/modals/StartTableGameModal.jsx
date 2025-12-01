@@ -1,12 +1,114 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, UsersIcon, PlayIcon, MinusIcon, PlusIcon } from '@/components/ui/Icon';
+import { GripVertical } from 'lucide-react';
 import { localFriendsService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/modal.css';
 import '@/styles/components/start-table-game-modal.css';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from '@dnd-kit/modifiers';
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 10;
+
+// Sortable Player Item Component
+const SortablePlayerItem = ({ player, index, onNameChange, friends, showFriendDropdown, setShowFriendDropdown, onSelectFriend }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: `player-${index}`,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  const availableFriends = friends;
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`player-row-start ${isDragging ? 'dragging' : ''}`}
+      {...attributes}
+    >
+      <div className="drag-handle" {...listeners} style={{ cursor: 'grab' }}>
+        <GripVertical size={16} />
+      </div>
+      <label className="player-label">{index + 1}</label>
+      <div className="player-controls">
+        <input
+          type="text"
+          className="player-name-input"
+          value={player.name}
+          onChange={(e) => onNameChange(index, e.target.value)}
+          placeholder={`Player ${index + 1}`}
+        />
+        {availableFriends.length > 0 && (
+          <div className="friend-select-wrapper">
+            <button
+              type="button"
+              className="friend-select-btn"
+              onClick={() => setShowFriendDropdown(showFriendDropdown === index ? null : index)}
+              title="Select friend"
+            >
+              <UsersIcon size={18} />
+            </button>
+            {showFriendDropdown === index && (
+              <div className="friend-dropdown">
+                {availableFriends.map(friend => (
+                  <div
+                    key={friend.id}
+                    className="friend-dropdown-item"
+                    onClick={() => onSelectFriend(index, friend)}
+                  >
+                    {friend.profilePicture ? (
+                      <img 
+                        src={friend.profilePicture} 
+                        alt={friend.username}
+                        className="friend-dropdown-avatar"
+                      />
+                    ) : (
+                      <div className="friend-dropdown-avatar-placeholder">
+                        {friend.username[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span>{friend.username}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateSettings }) => {
   const { user } = useUser();
@@ -15,6 +117,24 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showFriendDropdown, setShowFriendDropdown] = useState(null); // Track which dropdown is open
+
+  // @dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const initializePlayers = (count) => {
     setPlayers(prevPlayers => {
@@ -84,6 +204,23 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
     };
     setPlayers(newPlayers);
     setShowFriendDropdown(null); // Close dropdown after selection
+  };
+
+  // @dnd-kit drag end handler
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = parseInt(active.id.split('-')[1]);
+      const newIndex = parseInt(over?.id.split('-')[1]);
+      
+      if (oldIndex !== newIndex && oldIndex >= 0 && newIndex >= 0) {
+        const newPlayers = [...players];
+        const [removed] = newPlayers.splice(oldIndex, 1);
+        newPlayers.splice(newIndex, 0, removed);
+        setPlayers(newPlayers);
+      }
+    }
   };
 
   // Get available friends for a specific player slot
@@ -175,62 +312,32 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
             {loading ? (
               <div className="loading-message">Loading friends...</div>
             ) : (
-              <div className="players-list">
-                {players.map((player, index) => {
-                  const availableFriends = getAvailableFriends();
-                  
-                  return (
-                    <div key={index} className="player-row-start">
-                      <label className="player-label">{index + 1}</label>
-                      <div className="player-controls">
-                        <input
-                          type="text"
-                          className="player-name-input"
-                          value={player.name}
-                          onChange={(e) => handlePlayerNameChange(index, e.target.value)}
-                          placeholder={`Player ${index + 1}`}
-                        />
-                        {availableFriends.length > 0 && (
-                          <div className="friend-select-wrapper">
-                            <button
-                              type="button"
-                              className="friend-select-btn"
-                              onClick={() => setShowFriendDropdown(showFriendDropdown === index ? null : index)}
-                              title="Select friend"
-                            >
-                              <UsersIcon size={18} />
-                            </button>
-                            {showFriendDropdown === index && (
-                              <div className="friend-dropdown">
-                                {availableFriends.map(friend => (
-                                  <div
-                                    key={friend.id}
-                                    className="friend-dropdown-item"
-                                    onClick={() => handleSelectFriend(index, friend)}
-                                  >
-                                    {friend.profilePicture ? (
-                                      <img 
-                                        src={friend.profilePicture} 
-                                        alt={friend.username}
-                                        className="friend-dropdown-avatar"
-                                      />
-                                    ) : (
-                                      <div className="friend-dropdown-avatar-placeholder">
-                                        {friend.username[0].toUpperCase()}
-                                      </div>
-                                    )}
-                                    <span>{friend.username}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+              >
+                <SortableContext 
+                  items={players.map((_, index) => `player-${index}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="players-list">
+                    {players.map((player, index) => (
+                      <SortablePlayerItem
+                        key={index}
+                        player={player}
+                        index={index}
+                        onNameChange={handlePlayerNameChange}
+                        friends={getAvailableFriends()}
+                        showFriendDropdown={showFriendDropdown}
+                        setShowFriendDropdown={setShowFriendDropdown}
+                        onSelectFriend={handleSelectFriend}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
 
