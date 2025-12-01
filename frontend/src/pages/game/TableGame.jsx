@@ -930,14 +930,12 @@ const TableGame = () => {
                           </td>
                           <td>
                             <input
-                              type="text"
+                              type="number"
                               className="rounds-input"
                               value={player.points[roundIndex] === 0 ? "0" : (player.points[roundIndex] ?? "")}
                               onChange={(e) => handlePointChange(idx, roundIndex, e.target.value)}
                               placeholder="0"
                               disabled={gameFinished}
-                              inputMode="numeric"
-                              pattern="-?[0-9]*"
                             />
                           </td>
                           <td className="score-cell">
@@ -1034,13 +1032,11 @@ const TableGame = () => {
                                 {players.map((player, playerIdx) => (
                                   <td key={playerIdx} className="player-round-cell">
                                     <input
-                                      type="text"
+                                      type="number"
                                       value={player.points[rowIdx] === 0 ? "0" : (player.points[rowIdx] ?? "")}
                                       onChange={(e) => handlePointChange(playerIdx, rowIdx, e.target.value)}
                                       className="round-point-input"
                                       disabled={gameFinished}
-                                      inputMode="numeric"
-                                      pattern="-?[0-9]*"
                                     />
                                   </td>
                                 ))}
