@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { marked } from 'marked';
 import gameTemplateService from '@/shared/api/gameTemplateService';
+import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import '@/styles/pages/admin.css';
 
 // Simple diff display component
@@ -34,14 +34,6 @@ const TemplateSuggestions = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // Configure marked options
-  useEffect(() => {
-    marked.setOptions({
-      breaks: true,
-      gfm: true,
-    });
-  }, []);
 
   useEffect(() => {
     loadSuggestions();
@@ -175,7 +167,7 @@ const TemplateSuggestions = () => {
                                   <h4>Previous Rules:</h4>
                                   <div 
                                     className="markdown-preview-admin"
-                                    dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.systemTemplateId.descriptionMarkdown) }}
+                                    dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.systemTemplateId.descriptionMarkdown) }}
                                   />
                                 </div>
                               )}
@@ -184,7 +176,7 @@ const TemplateSuggestions = () => {
                                   <h4>New Rules:</h4>
                                   <div 
                                     className="markdown-preview-admin"
-                                    dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown) }}
+                                    dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown) }}
                                   />
                                 </div>
                               )}
@@ -192,7 +184,7 @@ const TemplateSuggestions = () => {
                           ) : (
                             <div 
                               className="markdown-preview-admin"
-                              dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) }}
+                              dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) }}
                             />
                           )}
                         </div>
@@ -225,7 +217,7 @@ const TemplateSuggestions = () => {
                           <label>Game Rules:</label>
                           <div 
                             className="markdown-preview-admin"
-                            dangerouslySetInnerHTML={{ __html: marked.parse(suggestion.descriptionMarkdown) }}
+                            dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown) }}
                           />
                         </div>
                       )}

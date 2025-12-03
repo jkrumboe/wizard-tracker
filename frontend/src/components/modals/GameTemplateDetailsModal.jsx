@@ -1,5 +1,5 @@
 import React from 'react';
-import { marked } from 'marked';
+import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/GameTemplateDetailsModal.css';
 
@@ -48,7 +48,7 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
               {/* <h3>Game Rules & Instructions</h3> */}
               <div 
                 className="markdown-content"
-                dangerouslySetInnerHTML={{ __html: marked.parse(template.descriptionMarkdown) }}
+                dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(template.descriptionMarkdown) }}
               />
             </div>
           )}

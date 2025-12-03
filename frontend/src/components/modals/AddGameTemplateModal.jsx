@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { marked } from 'marked';
+import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/AddGameTemplateModal.css';
 
@@ -22,14 +22,6 @@ const AddGameTemplateModal = ({
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'rules'
   const [showPreview, setShowPreview] = useState(false);
-
-  // Configure marked options
-  useEffect(() => {
-    marked.setOptions({
-      breaks: true, // Convert \n to <br>
-      gfm: true, // GitHub Flavored Markdown
-    });
-  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -262,7 +254,7 @@ const AddGameTemplateModal = ({
                   {descriptionMarkdown && descriptionMarkdown.trim() ? (
                     <div 
                       className="markdown-content"
-                      dangerouslySetInnerHTML={{ __html: marked.parse(descriptionMarkdown) }}
+                      dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(descriptionMarkdown) }}
                     />
                   ) : (
                     <p className="markdown-hint" style={{ padding: '2rem', textAlign: 'center' }}>

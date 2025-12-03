@@ -21,6 +21,7 @@
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.0",
     "dexie": "^4.2.1",
+    "isomorphic-dompurify": "^2.33.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.525.0",
     "marked": "^17.0.1",
