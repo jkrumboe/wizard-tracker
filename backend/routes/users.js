@@ -5,6 +5,7 @@ const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const auth = require('../middleware/auth');
 const _ = require('lodash'); // Added for escapeRegExp
+const mongoose = require('mongoose');
 const router = express.Router();
 
 // POST /users/register - Create new user
@@ -480,6 +481,11 @@ router.post('/:userId/friend-requests', auth, async (req, res, next) => {
   try {
     const { userId } = req.params;
     const { receiverId } = req.body;
+
+    // Validate receiverId is a valid string and valid ObjectId
+    if (typeof receiverId !== "string" || !mongoose.Types.ObjectId.isValid(receiverId)) {
+      return res.status(400).json({ error: "Invalid receiverId" });
+    }
 
     // Verify the user is sending from their own account
     if (userId !== req.user._id.toString()) {
