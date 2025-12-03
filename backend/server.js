@@ -10,6 +10,7 @@ const gameTemplateRoutes = require('./routes/gameTemplates');
 const onlineRoutes = require('./routes/online');
 const gameSyncRoutes = require('./routes/gameSync');
 const errorHandler = require('./middleware/errorHandler');
+const { generalLimiter, apiLimiter } = require('./middleware/rateLimiter');
 const OnlineStatus = require('./models/OnlineStatus');
 
 const app = express();
@@ -20,6 +21,9 @@ app.use(cors());
 // Increase body size limit to handle base64 encoded images (up to 10MB)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Apply general rate limiting to all routes
+app.use(generalLimiter);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -45,13 +49,13 @@ mongoose.connect(process.env.MONGO_URI)
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Routes
-app.use('/api/users', userRoutes);
-app.use('/api/games', gameRoutes);
-app.use('/api/table-games', tableGameRoutes);
-app.use('/api/game-templates', gameTemplateRoutes);
-app.use('/api/games', gameSyncRoutes); // Game sync endpoints
-app.use('/api/online', onlineRoutes);
+// Routes with rate limiting
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/games', apiLimiter, gameRoutes);
+app.use('/api/table-games', apiLimiter, tableGameRoutes);
+app.use('/api/game-templates', apiLimiter, gameTemplateRoutes);
+app.use('/api/games', apiLimiter, gameSyncRoutes); // Game sync endpoints
+app.use('/api/online', apiLimiter, onlineRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

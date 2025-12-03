@@ -4,12 +4,13 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const auth = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const router = express.Router();
 
-// POST /users/register - Create new user
-router.post('/register', async (req, res, next) => {
+// POST /users/register - Create new user (with strict rate limiting)
+router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
@@ -67,8 +68,8 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// POST /users/login - Verify credentials and return JWT
-router.post('/login', async (req, res, next) => {
+// POST /users/login - Verify credentials and return JWT (with strict rate limiting)
+router.post('/login', authLimiter, async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
