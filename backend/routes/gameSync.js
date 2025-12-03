@@ -69,7 +69,7 @@ router.post('/:id/events', async (req, res) => {
     for (const event of events) {
       try {
         // Check for duplicate event ID
-        const existingEvent = await GameEvent.findOne({ id: event.id, gameId });
+        const existingEvent = await GameEvent.findOne({ id: { $eq: event.id }, gameId });
         
         if (existingEvent) {
           // Event already applied - skip but include in response
