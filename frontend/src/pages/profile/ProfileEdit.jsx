@@ -154,6 +154,44 @@ const ProfileEdit = () => {
     }
   };
 
+  // Helper to check actual raster image format from magic bytes
+  const isValidRasterImage = (file, cb) => {
+    const reader = new FileReader();
+    reader.onloadend = function() {
+      const arr = new Uint8Array(reader.result);
+      let valid = false;
+      // PNG: 89 50 4E 47 0D 0A 1A 0A
+      if (arr.length >= 8 && arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4E &&
+          arr[3] === 0x47 && arr[4] === 0x0D && arr[5] === 0x0A && arr[6] === 0x1A &&
+          arr[7] === 0x0A) {
+        valid = true;
+      }
+      // JPEG: FF D8 FF
+      else if (arr.length >= 3 && arr[0] === 0xFF && arr[1] === 0xD8 && arr[2] === 0xFF) {
+        valid = true;
+      }
+      // GIF: GIF87a or GIF89a
+      else if (arr.length >= 6 &&
+        (arr[0] === 0x47 && arr[1] === 0x49 && arr[2] === 0x46 &&
+        arr[3] === 0x38 && (arr[4] === 0x39 || arr[4] === 0x37) && arr[5] === 0x61)) {
+        valid = true;
+      }
+      // BMP: 42 4D
+      else if (arr.length >= 2 && arr[0] === 0x42 && arr[1] === 0x4D) {
+        valid = true;
+      }
+      // WEBP: RIFF....WEBP
+      else if (arr.length >= 12 &&
+        arr[0] === 0x52 && arr[1] === 0x49 && arr[2] === 0x46 && arr[3] === 0x46 &&
+        arr[8] === 0x57 && arr[9] === 0x45 && arr[10] === 0x42 && arr[11] === 0x50) {
+        valid = true;
+      }
+      cb(valid);
+    };
+    // Just read enough bytes for all header checks
+    reader.readAsArrayBuffer(file.slice(0, 12));
+  };
+
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -181,12 +219,19 @@ const ProfileEdit = () => {
           return;
         }
         
-        // Store the selected file for upload later
-        setSelectedAvatarFile(file);
-        
-        // Create preview URL
-        const previewUrl = URL.createObjectURL(file);
-        setPreviewAvatarUrl(previewUrl);
+        // Validate actual file content to ensure it's really a raster image
+        isValidRasterImage(file, (isValid) => {
+          if (!isValid) {
+            setError('File format does not match allowed image types');
+            return;
+          }
+          // Store the selected file for upload later
+          setSelectedAvatarFile(file);
+          
+          // Create preview URL
+          const previewUrl = URL.createObjectURL(file);
+          setPreviewAvatarUrl(previewUrl);
+        });
         
       } catch (err) {
         console.error("File selection failed:", err);
