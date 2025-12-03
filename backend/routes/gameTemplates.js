@@ -61,7 +61,7 @@ router.post('/', auth, async (req, res, next) => {
 
     // Check for duplicate by localId
     if (localId) {
-      const existingByLocalId = await UserGameTemplate.findOne({ localId, userId });
+      const existingByLocalId = await UserGameTemplate.findOne({ localId: { $eq: localId }, userId });
       if (existingByLocalId) {
         return res.status(200).json({
           message: 'Template already exists (by localId)',
