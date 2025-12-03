@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const auth = require('../middleware/auth');
-
+const _ = require('lodash'); // Added for escapeRegExp
 const router = express.Router();
 
 // POST /users/register - Create new user
@@ -311,9 +311,11 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Username must be between 3 and 50 characters' });
     }
 
+    // Escape regex metacharacters in trimmedName
+    const escapedName = _.escapeRegExp(trimmedName);
     // Check if username already exists (case-insensitive)
     const existingUser = await User.findOne({ 
-      username: { $regex: new RegExp(`^${trimmedName}$`, 'i') },
+      username: { $regex: new RegExp(`^${escapedName}$`, 'i') },
       _id: { $ne: req.user._id }
     });
 
