@@ -5,7 +5,6 @@ import { XIcon } from "@/components/ui/Icon";
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
-import DOMPurify from 'dompurify';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -71,12 +70,19 @@ const ProfileEdit = () => {
       setError(null);
       setSuccessMessage('');
       
-      // Remove any spaces and sanitize the name
-      const sanitizedEditedName = DOMPurify.sanitize(editedName.replace(/\s/g, ''));
+      // Remove any spaces from the username input
+      const cleanedName = editedName.trim().replace(/\s/g, '');
       
       // Validate username doesn't contain spaces
-      if (sanitizedEditedName && /\s/.test(sanitizedEditedName)) {
+      if (cleanedName && /\s/.test(cleanedName)) {
         setError('Username cannot contain spaces');
+        setSaving(false);
+        return;
+      }
+      
+      // Validate username length and characters
+      if (cleanedName && (cleanedName.length < 3 || cleanedName.length > 128)) {
+        setError('Username must be between 3 and 128 characters');
         setSaving(false);
         return;
       }
@@ -105,12 +111,12 @@ const ProfileEdit = () => {
       }
       
       // Update username using the Users API through backend
-      if (sanitizedEditedName && sanitizedEditedName !== user.name && sanitizedEditedName !== user.username) {
+      if (cleanedName && cleanedName !== user.name && cleanedName !== user.username) {
         let newUserData = null;
         
         try {
           // Try to update using the Users API
-          const result = await userService.updateUserName(user.$id || user.id, sanitizedEditedName);
+          const result = await userService.updateUserName(user.$id || user.id, cleanedName);
           
           // Extract updated user data from the result
           if (result && result.user) {
@@ -132,8 +138,8 @@ const ProfileEdit = () => {
         // Update the user context immediately to reflect changes in UI
         const updatedUserData = newUserData || {
           ...user,
-          name: sanitizedEditedName,
-          username: sanitizedEditedName
+          name: cleanedName,
+          username: cleanedName
         };
         
         // Force a complete state update by creating a new object
