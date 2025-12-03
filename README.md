@@ -3,12 +3,23 @@
 ![Version](https://img.shields.io/badge/version-1.10.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen)
+![Security](https://img.shields.io/badge/security-see%20SECURITY.md-red)
 
 A full-stack application for tracking and managing Wizard and card game scores, player statistics.
 
 [![Live Site](https://img.shields.io/badge/Live%20Site-wizard.jkrumboe.dev-brightgreen)](https://wizard.jkrumboe.dev/)
 
 <!-- Visit the Website: [wizard.jkrumboe.dev](https://wizard.jkrumboe.dev/) -->
+
+## ⚠️ Security Notice
+
+**Before deploying to production:**
+
+1. **Change all default credentials** in your `.env` file
+2. **Generate a secure JWT secret**: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+3. **Never commit** `.env` files with real credentials
+4. **Update MongoDB credentials** from the default `admin/admin123`
+5. See [SECURITY.md](SECURITY.md) for complete security guidelines
 
 ## Features
 
