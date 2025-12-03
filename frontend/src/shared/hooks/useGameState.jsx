@@ -31,6 +31,7 @@ export function GameStateProvider({ children }) {
     gameId: null,   // Current game ID for saving
     isPaused: false, // Track if game is paused
     gameName: null,  // Custom game name
+    startingDealerIndex: 0, // Starting dealer for rotation
     // Auto-upload status
     autoUploadStatus: null, // 'uploading', 'success', 'warning', null
     autoUploadMessage: null // Message to show user
@@ -318,14 +319,16 @@ export function GameStateProvider({ children }) {
           ...prevState,
           players: updatedPlayers,
           maxRounds: settings.maxRounds,
-          roundData: updatedRoundData
+          roundData: updatedRoundData,
+          startingDealerIndex: settings.dealerIndex
         };
       }
 
       return {
         ...prevState,
         players: updatedPlayers,
-        maxRounds: settings.maxRounds
+        maxRounds: settings.maxRounds,
+        startingDealerIndex: settings.dealerIndex
       };
     });
   }, [])

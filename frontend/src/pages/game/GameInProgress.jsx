@@ -534,9 +534,10 @@ const GameInProgress = () => {
     const players = currentRound.players;
     const playerCount = players.length;
     const roundIndex = gameState.currentRound - 1; // 0-based index
+    const startingDealer = gameState.startingDealerIndex || 0;
     
-    // Dealer rotates each round (starts with first player in round 1)
-    const dealerIndex = roundIndex % playerCount;
+    // Dealer rotates each round starting from the selected starting dealer
+    const dealerIndex = (startingDealer + roundIndex) % playerCount;
     // Caller is the next player after dealer (wraps around)
     const callerIndex = (dealerIndex + 1) % playerCount;
     

@@ -8,9 +8,11 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
 
   useEffect(() => {
     if (gameState) {
-      // Find current dealer index
-      const dealerIdx = gameState.players.findIndex(p => p.isDealer);
-      setDealerIndex(dealerIdx >= 0 ? dealerIdx : 0);
+      // Use startingDealerIndex from gameState or calculate from current round
+      const currentDealerIndex = gameState.startingDealerIndex !== undefined 
+        ? gameState.startingDealerIndex 
+        : gameState.players.findIndex(p => p.isDealer);
+      setDealerIndex(currentDealerIndex >= 0 ? currentDealerIndex : 0);
       
       // Set max rounds
       setMaxRounds(parseInt(gameState.maxRounds, 10) || 1);
