@@ -72,6 +72,9 @@ router.post('/login', async (req, res, next) => {
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
+    if (typeof username !== "string") {
+      return res.status(400).json({ error: "Invalid username format" });
+    }
 
     // Find user
     const user = await User.findOne({ username });
