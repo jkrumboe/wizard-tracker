@@ -332,12 +332,17 @@ export class ShareValidator {
     }
 
     // Remove HTML tags and script content
-    const cleaned = str
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+\s*=/gi, '') // Remove event handlers
-      .replace(/data:/gi, '') // Remove data: URLs
-      .trim();
+    let cleaned = str;
+    let previous;
+    do {
+      previous = cleaned;
+      cleaned = cleaned
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/javascript:/gi, '') // Remove javascript: protocol
+        .replace(/on\w+\s*=/gi, '') // Remove event handlers
+        .replace(/data:/gi, ''); // Remove data: URLs
+    } while (cleaned !== previous);
+    cleaned = cleaned.trim();
 
     // Truncate to max length
     return cleaned.length > maxLength ? cleaned.substring(0, maxLength) : cleaned;
