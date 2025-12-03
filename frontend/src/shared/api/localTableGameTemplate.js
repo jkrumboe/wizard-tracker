@@ -5,6 +5,7 @@
  */
 
 import gameTemplateService from './gameTemplateService';
+import { generateSecureId } from '../utils/secureRandom.js';
 
 const LOCAL_TABLE_GAME_TEMPLATES_KEY = "wizardTracker_tableGameTemplates";
 

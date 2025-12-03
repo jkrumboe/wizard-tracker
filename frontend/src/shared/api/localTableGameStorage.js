@@ -4,6 +4,8 @@
  * Now supports multiple users on the same device
  */
 
+import { generateSecureId } from '../utils/secureRandom.js';
+
 const LOCAL_TABLE_GAMES_STORAGE_KEY = "wizardTracker_tableGames";
 
 export class LocalTableGameStorage {

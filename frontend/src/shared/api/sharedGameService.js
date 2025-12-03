@@ -1,6 +1,8 @@
 
 // Shared game service for handling shared games using MongoDB backend
 
+import { generateSecureId } from '../utils/secureRandom.js';
+
 /**
  * Store a shared game reference in the backend
  * @param {Object} game - The game object to make shareable
