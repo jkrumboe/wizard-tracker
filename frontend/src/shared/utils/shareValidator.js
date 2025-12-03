@@ -3,6 +3,8 @@
  * Prevents malicious data injection and ensures data integrity
  */
 
+import sanitizeHtml from 'sanitize-html';
+
 export class ShareValidator {
   // Maximum allowed sizes to prevent memory exhaustion
   static MAX_DECODED_SIZE = 1024 * 1024; // 1MB
@@ -331,18 +333,11 @@ export class ShareValidator {
       return '';
     }
 
-    // Remove HTML tags and script content
-    let cleaned = str;
-    let previous;
-    do {
-      previous = cleaned;
-      cleaned = cleaned
-        .replace(/<[^>]*>/g, '') // Remove HTML tags
-        .replace(/javascript:/gi, '') // Remove javascript: protocol
-        .replace(/on\w+\s*=/gi, '') // Remove event handlers
-        .replace(/data:/gi, ''); // Remove data: URLs
-    } while (cleaned !== previous);
-    cleaned = cleaned.trim();
+    // Use sanitize-html to strip all HTML tags and attributes
+    let cleaned = sanitizeHtml(str, {
+      allowedTags: [],
+      allowedAttributes: {}
+    }).trim();
 
     // Truncate to max length
     return cleaned.length > maxLength ? cleaned.substring(0, maxLength) : cleaned;
