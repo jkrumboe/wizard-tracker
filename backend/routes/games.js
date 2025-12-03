@@ -432,7 +432,7 @@ router.get('/', auth, async (req, res, next) => {
     // Handle shareId query specifically for shared game lookup
     if (shareId) {
       try {
-        const game = await Game.findOne({ shareId });
+        const game = await Game.findOne({ shareId: { $eq: shareId } });
         if (!game) {
           return res.status(404).json({ error: 'Shared game not found' });
         }
