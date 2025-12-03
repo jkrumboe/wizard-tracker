@@ -525,7 +525,8 @@
   border: var(--accent-color);
 }
 
-.role-badge {
+.admin-container .role-badge,
+.user-management .role-badge {
   display: inline-block;
   font-size: 0.85rem;
   font-weight: 600;
@@ -538,7 +539,8 @@
   color: #4338ca;
 } */
 
-.role-badge.role-admin {
+.admin-container .role-badge.role-admin,
+.user-management .role-badge.role-admin {
   background-color: #fef3c7;
   color: #92400e;
 }
