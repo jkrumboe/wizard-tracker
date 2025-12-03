@@ -128,12 +128,18 @@ router.get('/leaderboard', async (req, res, next) => {
     // Calculate player statistics grouped by NAME (not ID)
     const playerStats = {};
     const gameTypeSet = new Set(['all', 'Wizard']); // Start with 'all' and 'Wizard'
+    const gameTypeSettings = { 'Wizard': { lowIsBetter: false } }; // Track lowIsBetter per game type
     
     // First, collect all available game types from table games
     tableGames.forEach(game => {
       const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
       if (gameMode && gameMode !== 'Table Game') {
         gameTypeSet.add(gameMode);
+        // Store the lowIsBetter setting for this game type
+        const lowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
+        if (!gameTypeSettings[gameMode]) {
+          gameTypeSettings[gameMode] = { lowIsBetter };
+        }
       }
     });
     
@@ -312,10 +318,31 @@ router.get('/leaderboard', async (req, res, next) => {
       };
     });
 
-    // Sort by wins, then win rate, then total games
+    // Determine if lower scores are better for the selected game type
+    const selectedGameLowIsBetter = gameType && gameType !== 'all' 
+      ? gameTypeSettings[gameType]?.lowIsBetter || false 
+      : false;
+
+    // Sort by wins, then win rate, then by score (considering lowIsBetter), then total games
     leaderboard.sort((a, b) => {
+      // Primary sort: wins
       if (b.wins !== a.wins) return b.wins - a.wins;
+      
+      // Tiebreaker 1: win rate
       if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+      
+      // Tiebreaker 2: average score (direction depends on game type)
+      if (a.avgScore !== b.avgScore) {
+        if (selectedGameLowIsBetter) {
+          // For low-is-better games, lower average is better
+          return a.avgScore - b.avgScore;
+        } else {
+          // For high-is-better games, higher average is better
+          return b.avgScore - a.avgScore;
+        }
+      }
+      
+      // Tiebreaker 3: total games
       return b.totalGames - a.totalGames;
     });
 
@@ -325,6 +352,7 @@ router.get('/leaderboard', async (req, res, next) => {
     res.json({
       leaderboard,
       gameTypes,
+      gameTypeSettings, // Send the settings so frontend knows which game types have lowIsBetter
       totalGames: wizardGames.length + tableGames.length
     });
   } catch (error) {

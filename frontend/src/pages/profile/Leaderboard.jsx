@@ -5,6 +5,7 @@ import "@/styles/pages/leaderboard.css"
 const Leaderboard = () => {
   const [players, setPlayers] = useState([])
   const [gameTypes, setGameTypes] = useState(['all'])
+  const [gameTypeSettings, setGameTypeSettings] = useState({}) // Track lowIsBetter per game type
   const [selectedGameType, setSelectedGameType] = useState('Wizard') // Default to Wizard
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -26,6 +27,7 @@ const Leaderboard = () => {
       const data = await getLeaderboard(selectedGameType)
       setPlayers(data.leaderboard || [])
       setGameTypes(data.gameTypes || ['all'])
+      setGameTypeSettings(data.gameTypeSettings || {})
       setTotalGames(data.totalGames || 0)
       setCurrentPage(1) // Reset to first page when filter changes
     } catch (error) {
@@ -57,6 +59,11 @@ const Leaderboard = () => {
   const filteredPlayers = players.filter(
     player => player.name.toLowerCase().includes(filter.toLowerCase())
   )
+
+  // Determine if lower scores are better for the selected game type
+  const lowIsBetter = selectedGameType && selectedGameType !== 'all' 
+    ? gameTypeSettings[selectedGameType]?.lowIsBetter || false 
+    : false;
 
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
     let aVal, bVal;
@@ -90,9 +97,15 @@ const Leaderboard = () => {
         if (a.winRate !== b.winRate) {
           return b.winRate - a.winRate;
         }
-        // Tiebreaker 2: average score
+        // Tiebreaker 2: average score (direction depends on game type)
         if (a.avgScore !== b.avgScore) {
-          return b.avgScore - a.avgScore;
+          if (lowIsBetter) {
+            // For low-is-better games, lower average is better
+            return a.avgScore - b.avgScore;
+          } else {
+            // For high-is-better games, higher average is better
+            return b.avgScore - a.avgScore;
+          }
         }
         // Tiebreaker 3: total games
         return b.totalGames - a.totalGames;
