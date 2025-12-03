@@ -3,6 +3,7 @@ import { createGame } from "@/shared/api/gameService"
 import { LocalGameStorage } from "@/shared/api"
 import { stateRecovery } from "@/shared/utils/stateRecovery"
 import { getSyncManager } from "@/shared/sync/syncManager"
+import { getSecureRandomInt } from "@/shared/utils/secureRandom"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
@@ -170,7 +171,7 @@ export function GameStateProvider({ children }) {
   const addPlayer = useCallback((customName = null, userId = null, isVerified = false) => {
     setGameState((prevState) => {
       // Use MongoDB user ID if provided, otherwise generate a unique ID based on timestamp and random number
-      const uniqueId = userId || (Date.now().toString() + Math.floor(Math.random() * 1000).toString());
+      const uniqueId = userId || (Date.now().toString() + getSecureRandomInt(0, 999).toString());
       
       let playerName;
       

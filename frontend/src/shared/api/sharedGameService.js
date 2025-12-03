@@ -94,7 +94,7 @@ export async function importSharedGame(gameData, shareInfo) {
     }
     
     // Create a new game ID for the imported game
-    const newGameId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newGameId = generateSecureId('shared');
     
     // Extract players from the correct location
     let players = gameData.players || gameData.gameState?.players || [];

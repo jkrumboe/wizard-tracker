@@ -216,7 +216,7 @@ export class LocalTableGameStorage {
    * @returns {string} - Unique game ID
    */
   static generateGameId() {
-    return `table_game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateSecureId('table_game');
   }
 
   /**

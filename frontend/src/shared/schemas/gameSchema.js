@@ -11,6 +11,8 @@
  * - Separation of events vs derived totals
  */
 
+import { generateSecureId } from '../utils/secureRandom.js';
+
 export const GAME_SCHEMA_VERSION = 1;
 export const GAME_SCHEMA_NAME = "wizard-tracker@1";
 
@@ -375,11 +377,11 @@ export function toLegacyFormat(game) {
 
 // Utility functions
 function generateGameId() {
-  return `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return generateSecureId('game');
 }
 
 function generatePlayerId() {
-  return `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return generateSecureId('player');
 }
 
 function isValidISOString(str) {

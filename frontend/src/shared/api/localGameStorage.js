@@ -527,7 +527,7 @@ export class LocalGameStorage {
    * @returns {string} - Unique game ID
    */
   static generateGameId() {
-    return `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateSecureId('game');
   }
 
   /**

@@ -172,7 +172,7 @@ export class LocalTableGameTemplate {
    * @returns {string} - Unique template ID
    */
   static generateTemplateId() {
-    return `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateSecureId('template');
   }
 
   /**

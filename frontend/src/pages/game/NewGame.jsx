@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
 import { LocalGameStorage } from "@/shared/api"
+import { secureArrayShuffle } from "@/shared/utils/secureRandom"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { SelectFriendsModal } from '@/components/modals';
 import { GripVertical } from 'lucide-react';
@@ -366,15 +367,9 @@ const NewGame = () => {
 
   const handleRandomizePlayers = () => {
     if (gameState.players.length < 2) return;
-    
-    // Create a shuffled copy using Fisher-Yates algorithm
-    const shuffled = [...gameState.players];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    
-    // Convert shuffled array into a series of swap operations
+
+    // Use secure shuffle instead of Math.random()
+    const shuffled = secureArrayShuffle([...gameState.players]);    // Convert shuffled array into a series of swap operations
     // that can be applied to the current order
     const current = [...gameState.players];
     
