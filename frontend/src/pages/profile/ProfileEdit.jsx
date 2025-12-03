@@ -161,13 +161,17 @@ const ProfileEdit = () => {
         setError(null);
         
         // Validate file type
-        if (!file.type.startsWith('image/')) {
-          setError('File must be an image');
-          return;
-        }
-        // Exclude SVG images from preview/upload for security (XSS risk).
-        if (file.type === 'image/svg+xml' || (file.name && file.name.toLowerCase().endsWith('.svg'))) {
-          setError('SVG images are not allowed for avatars for security reasons');
+        // Only allow raster image preview (not SVG, not other vector formats)
+        const rasterImageTypes = [
+          'image/png',
+          'image/jpeg',
+          'image/jpg',
+          'image/gif',
+          'image/bmp',
+          'image/webp'
+        ];
+        if (!rasterImageTypes.includes(file.type)) {
+          setError('Only PNG, JPEG, JPG, GIF, BMP, and WEBP images allowed');
           return;
         }
         
@@ -213,7 +217,7 @@ const ProfileEdit = () => {
         {/* Avatar preview */}
         <div className="avatar-preview-container">
           <img 
-            src={previewAvatarUrl || avatarUrl} 
+            src={previewAvatarUrl && previewAvatarUrl.startsWith('blob:') ? previewAvatarUrl : avatarUrl} 
             alt="Avatar Preview" 
             className="avatar-preview" 
           />
