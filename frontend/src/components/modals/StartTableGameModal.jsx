@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, UsersIcon, PlayIcon, MinusIcon, PlusIcon } from '@/components/ui/Icon';
 import { GripVertical } from 'lucide-react';
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { localFriendsService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/modal.css';
@@ -89,7 +90,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, friends, showFriendDr
                   >
                     {friend.profilePicture ? (
                       <img 
-                        src={friend.profilePicture} 
+                        src={sanitizeImageUrl(friend.profilePicture, '')} 
                         alt={friend.username}
                         className="friend-dropdown-avatar"
                       />

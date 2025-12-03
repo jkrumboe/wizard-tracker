@@ -5,6 +5,7 @@ import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
 import GameFilterModal from '@/components/modals/GameFilterModal'
 import { useUser } from '@/shared/hooks/useUser'
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 import { StatIcon, EditIcon, CalendarIcon, FilterIcon } from "@/components/ui/Icon"
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
 
@@ -276,7 +277,7 @@ return (
             </button>
         </div>
 
-        <img src={currentPlayer?.avatar || defaultAvatar} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
+        <img src={sanitizeImageUrl(currentPlayer?.avatar || defaultAvatar, defaultAvatar)} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
 
         {canEdit && (
           <button

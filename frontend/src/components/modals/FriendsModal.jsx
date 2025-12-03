@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { XIcon, UsersIcon, PlusIcon, TrashIcon, SearchIcon, CheckMarkIcon, ClockIcon } from '@/components/ui/Icon';
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { localFriendsService } from '@/shared/api';
 import { userService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
@@ -471,7 +472,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                     <div className="friend-info">
                       {friend.profilePicture ? (
                         <img 
-                          src={friend.profilePicture} 
+                          src={sanitizeImageUrl(friend.profilePicture, '')} 
                           alt={friend.username}
                           className="friend-avatar"
                         />
@@ -513,7 +514,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                     <div className="request-info">
                       {request.sender.profilePicture ? (
                         <img 
-                          src={request.sender.profilePicture} 
+                          src={sanitizeImageUrl(request.sender.profilePicture, '')} 
                           alt={request.sender.username}
                           className="request-avatar"
                         />
@@ -580,7 +581,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                       <div className="user-info">
                         {userItem.profilePicture ? (
                           <img 
-                            src={userItem.profilePicture} 
+                            src={sanitizeImageUrl(userItem.profilePicture, '')} 
                             alt={userItem.username}
                             className="user-avatar"
                           />

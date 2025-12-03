@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, Link } from "react-router-dom"
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 
 // Services
 import { getGameById } from "@/shared/api/gameService"
@@ -484,7 +485,7 @@ const GameDetails = () => {
                             </div>
                           ) : (
                             <Link to={`/profile/${player.id}`} className="player-link">
-                              <img src={player.avatar || defaultAvatar} alt={player.name} className="player-avatar" />
+                              <img src={sanitizeImageUrl(player.avatar || defaultAvatar, defaultAvatar)} alt={player.name} className="player-avatar" />
                               <span>{player.name}</span>
                             </Link>
                           )}

@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon } from '@/components/ui/Icon';
@@ -1018,7 +1019,7 @@ const Settings = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <Link to={user ? "/profile" : "/login"} style={{ textDecoration: 'none' }}>
                     <img
-                      src={avatarUrl}
+                      src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
                       alt="Profile"
                       style={{
                         width: '64px',

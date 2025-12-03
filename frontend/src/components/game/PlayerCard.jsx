@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { sanitizeImageUrl } from "@/shared/utils/urlSanitizer"
 import defaultAvatar from "@/assets/default-avatar.png"
 
 const PlayerCard = ({ player, onClick, showStats = true }) => {
@@ -16,7 +17,7 @@ const PlayerCard = ({ player, onClick, showStats = true }) => {
   return (
     <CardWrapper {...cardProps}>
       <div className="player-card-content">
-        <img src={avatar || defaultAvatar} alt={name} className="player-avatar" />
+        <img src={sanitizeImageUrl(avatar || defaultAvatar, defaultAvatar)} alt={name} className="player-avatar" />
         <div className="player-info">
           <h3 className="player-name">{name}</h3>
 

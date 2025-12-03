@@ -4,6 +4,7 @@ import { useUser } from '@/shared/hooks/useUser';
 import { XIcon } from "@/components/ui/Icon";
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import defaultAvatar from "@/assets/default-avatar.png";
 
 const ProfileEdit = () => {
@@ -268,7 +269,10 @@ const ProfileEdit = () => {
         {/* Avatar preview */}
         <div className="avatar-preview-container">
           <img 
-            src={previewAvatarUrl && previewAvatarUrl.startsWith('blob:') ? previewAvatarUrl : avatarUrl} 
+            src={sanitizeImageUrl(
+              previewAvatarUrl && previewAvatarUrl.startsWith('blob:') ? previewAvatarUrl : avatarUrl,
+              defaultAvatar
+            )} 
             alt="Avatar Preview" 
             className="avatar-preview" 
           />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, UsersIcon, CheckMarkIcon } from '@/components/ui/Icon';
+import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { localFriendsService } from '@/shared/api';
 import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
@@ -122,7 +123,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
                     <div className="friend-selection-info">
                       {friend.profilePicture ? (
                         <img 
-                          src={friend.profilePicture} 
+                          src={sanitizeImageUrl(friend.profilePicture, '')} 
                           alt={friend.username}
                           className="friend-selection-avatar"
                         />
