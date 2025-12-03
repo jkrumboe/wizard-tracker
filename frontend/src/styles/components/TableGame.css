@@ -85,7 +85,8 @@
 }
 
 .player-name-input:disabled {
-  background: var(--bg-secondary);
+  opacity: 1;
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 

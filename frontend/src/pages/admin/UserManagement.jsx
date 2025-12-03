@@ -4,16 +4,41 @@ import '@/styles/pages/admin.css';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [newUsername, setNewUsername] = useState('');
   const [editingRole, setEditingRole] = useState(null);
   const [newRole, setNewRole] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   useEffect(() => {
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    filterUsers();
+  }, [users, searchTerm, roleFilter]);
+
+  const filterUsers = () => {
+    let filtered = [...users];
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(user => 
+        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Apply role filter
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => (user.role || 'user') === roleFilter);
+    }
+    
+    setFilteredUsers(filtered);
+  };
 
   const loadUsers = async () => {
     try {
@@ -114,18 +139,45 @@ const UserManagement = () => {
 
   return (
     <div className="admin-container">
-      <div className="admin-header">
+      {/* <div className="admin-header">
         <h1>User Management</h1>
         <p className="subtitle">Manage usernames and user information</p>
+      </div> */}
+
+      <div className="admin-filters">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search by username..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+        <div className="filter-group">
+          <label>Role:</label>
+          <select 
+            value={roleFilter} 
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div className="results-count">
+          Showing {filteredUsers.length} of {users.length} users
+        </div>
       </div>
 
-      {users.length === 0 ? (
+      {filteredUsers.length === 0 ? (
         <div className="no-users">
-          <p>No users found</p>
+          <p>No users found{searchTerm || roleFilter !== 'all' ? ' matching your filters' : ''}</p>
         </div>
       ) : (
         <div className="users-list">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <div key={user._id || user.id} className="user-card">
               <div className="user-content">
                 <div className="user-details">

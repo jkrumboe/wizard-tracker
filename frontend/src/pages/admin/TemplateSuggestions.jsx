@@ -98,10 +98,10 @@ const TemplateSuggestions = () => {
 
   return (
     <div className="admin-container">
-      <div className="admin-header">
+      {/* <div className="admin-header">
         <h1>Template Suggestions</h1>
         <p className="subtitle">Review and approve user-submitted game templates</p>
-      </div>
+      </div> */}
 
       {suggestions.length === 0 ? (
         <div className="no-suggestions">
@@ -115,7 +115,7 @@ const TemplateSuggestions = () => {
                 <h2>{suggestion.name}</h2>
                 <div className="suggestion-meta">
                   <span className={`badge badge-${suggestion.suggestionType || 'new'}`}>
-                    {suggestion.suggestionType === 'change' ? '📝 Change Request' : '✨ New Template'}
+                    {suggestion.suggestionType === 'change' ? '📝 Change Request' : 'New Template'}
                   </span>
                   <span className="badge">
                     {new Date(suggestion.createdAt).toLocaleDateString()}
