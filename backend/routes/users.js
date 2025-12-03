@@ -134,9 +134,10 @@ router.get('/lookup/:username', async (req, res, next) => {
       return res.status(400).json({ error: 'Username is required' });
     }
 
-    // Case-insensitive username lookup
+    // Case-insensitive username lookup with regex safely escaped
+    const safeUsername = _.escapeRegExp(username);
     const user = await User.findOne({ 
-      username: { $regex: new RegExp(`^${username}$`, 'i') } 
+      username: { $regex: new RegExp(`^${safeUsername}$`, 'i') } 
     }).select('_id username createdAt');
 
     if (!user) {
