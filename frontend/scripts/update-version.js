@@ -186,12 +186,18 @@ function generateRandomHex(length) {
 // Generate a secure random password
 function generateRandomPassword(length = 24) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  let password = '';
-  const bytes = crypto.randomBytes(length);
-  for (let i = 0; i < length; i++) {
-    password += chars[bytes[i] % chars.length];
+  const passwordChars = [];
+  const charLen = chars.length;
+  const maxByte = 256 - (256 % charLen); // Upper bound for unbiased selection
+  while (passwordChars.length < length) {
+    const buf = crypto.randomBytes(1);
+    const byte = buf[0];
+    if (byte < maxByte) {
+      passwordChars.push(chars[byte % charLen]);
+    }
+    // else discard this byte and try again
   }
-  return password;
+  return passwordChars.join('');
 }
 
 // Update .creds file with new randomly generated security credentials
