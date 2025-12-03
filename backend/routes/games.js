@@ -54,8 +54,8 @@ router.post('/', auth, async (req, res, next) => {
     const similarGames = await Game.find({
       userId,
       'gameData.players': { $size: contentSignature.playerCount },
-      'gameData.total_rounds': contentSignature.totalRounds,
-      'gameData.winner_id': contentSignature.winnerId
+      'gameData.total_rounds': { $eq: contentSignature.totalRounds },
+      'gameData.winner_id': { $eq: contentSignature.winnerId }
     });
 
     // Check for exact content match
