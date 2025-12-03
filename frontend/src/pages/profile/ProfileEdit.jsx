@@ -165,6 +165,11 @@ const ProfileEdit = () => {
           setError('File must be an image');
           return;
         }
+        // Exclude SVG images from preview/upload for security (XSS risk).
+        if (file.type === 'image/svg+xml' || (file.name && file.name.toLowerCase().endsWith('.svg'))) {
+          setError('SVG images are not allowed for avatars for security reasons');
+          return;
+        }
         
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
