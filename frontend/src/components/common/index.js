@@ -8,3 +8,4 @@ export { default as PerformanceMetric } from './PerformanceMetric.jsx';
 export { default as AutoLogoutHandler } from './AutoLogoutHandler.jsx';
 export { default as NetworkRecoveryHandler } from './NetworkRecoveryHandler.jsx';
 export { default as SwipeableGameCard } from './SwipeableGameCard.jsx';
+export { default as UpdateNotification } from './UpdateNotification.jsx';

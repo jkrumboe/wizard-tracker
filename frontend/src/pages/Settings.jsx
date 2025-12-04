@@ -40,6 +40,10 @@ const Settings = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
   const [checkingForUpdates, setCheckingForUpdates] = useState(false);
+  const [autoUpdate, setAutoUpdate] = useState(() => {
+    const saved = localStorage.getItem('autoUpdate');
+    return saved !== null ? saved === 'true' : true; // Default to true
+  });
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
   const { isOnline } = useOnlineStatus();
@@ -493,6 +497,18 @@ const Settings = () => {
 
   const handleThemeModeChange = (e) => {
     setUseSystemTheme(e.target.checked);
+  };
+
+  const handleAutoUpdateChange = (e) => {
+    const newValue = e.target.checked;
+    setAutoUpdate(newValue);
+    localStorage.setItem('autoUpdate', newValue.toString());
+    setMessage({ 
+      text: newValue 
+        ? 'Automatic updates enabled. Updates will install automatically.' 
+        : 'Automatic updates disabled. You will be prompted before updating.', 
+      type: 'success' 
+    });
   };
 
   const handleCheckForUpdates = async () => {
@@ -1067,6 +1083,7 @@ const Settings = () => {
           {/* Theme Toggle Section */}
           <div className="settings-option">
             <label className="checkbox-label">
+              <span> Use system theme preference</span>
               <input 
                 type="checkbox"
                 checked={useSystemTheme} 
@@ -1079,7 +1096,6 @@ const Settings = () => {
                     alignSelf: 'center'
                   }}
               />
-              <span> Use system theme preference</span>
             </label>
           </div>
 
@@ -1114,6 +1130,35 @@ const Settings = () => {
               </div>
             </>
           )}
+
+          {/* Auto-Update Toggle Section */}
+          <div className="settings-option">
+            <label className="checkbox-label">
+              <span> Automatic updates</span>
+              <input 
+                type="checkbox"
+                checked={autoUpdate} 
+                onChange={handleAutoUpdateChange}
+                style={{ 
+                    width: '15px', 
+                    height: '15px',
+                    cursor: 'pointer',
+                    justifySelf: 'center',
+                    alignSelf: 'center'
+                  }}
+              />
+            </label>
+            <p style={{ 
+              fontSize: '0.85rem', 
+              color: 'var(--text-light)', 
+              marginTop: '0.25rem',
+              marginLeft: '1.5rem'
+            }}>
+              {autoUpdate 
+                ? 'Updates will install automatically when available' 
+                : 'You will be prompted before installing updates'}
+            </p>
+          </div>          
         </div>
 
         <div className="settings-section">

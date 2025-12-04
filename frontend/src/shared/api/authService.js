@@ -186,6 +186,36 @@ class AuthService {
     }
   }
 
+  isTokenExpired(token) {
+    try {
+      if (!token) return true;
+      
+      // Decode JWT token (basic decode, not validation)
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+      
+      const payload = JSON.parse(atob(parts[1]));
+      
+      // Check expiration (exp is in seconds, Date.now() is in milliseconds)
+      if (payload.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        const isExpired = payload.exp < now;
+        
+        if (isExpired) {
+          console.debug('🔒 Token expired:', new Date(payload.exp * 1000).toLocaleString());
+        }
+        
+        return isExpired;
+      }
+      
+      // No expiration field, assume not expired
+      return false;
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return true; // Assume expired on error
+    }
+  }
+
   async getCurrentUser() {
     try {
       // Ensure auth service is initialized
@@ -343,11 +373,18 @@ class AuthService {
       // Ensure initialized
       await this.initialize();
       
+      // Check if token is expired before proceeding
+      const cachedToken = await sessionCache.get('auth_token');
+      if (cachedToken && this.isTokenExpired(cachedToken)) {
+        console.debug('🔒 Token expired - logging out');
+        await this.logout();
+        return null;
+      }
+      
       // Simple check: if navigator is offline, try to restore from cache
       if (!navigator.onLine) {
         console.debug('🔒 Browser is offline - checking cached auth');
         const cachedUser = await sessionCache.get('auth_user');
-        const cachedToken = await sessionCache.get('auth_token');
         
         if (cachedUser && cachedToken) {
           this.currentUser = cachedUser;

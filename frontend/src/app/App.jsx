@@ -4,7 +4,7 @@ import { useEffect, lazy, Suspense, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { OnlineProtectedRoute, AuthProtectedRoute, NetworkRecoveryHandler } from "@/components/common"
+import { OnlineProtectedRoute, AuthProtectedRoute, NetworkRecoveryHandler, UpdateNotification } from "@/components/common"
 import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
 import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
@@ -275,6 +275,8 @@ function App() {
                 </LazyLoadErrorBoundary>
                 {/* Network Recovery Handler - monitors connection and restores state */}
                 <NetworkRecoveryHandler />
+                {/* Update Notification - handles app updates */}
+                <UpdateNotification />
                 </div>
               </GameStateProvider>
             </UserProvider>

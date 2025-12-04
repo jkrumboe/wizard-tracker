@@ -96,20 +96,22 @@ export function register() {
       })
   })
 
-  // Listen for controller change and reload once the update has been applied
+  // Listen for controller change - dispatch event for UpdateNotification to handle
   let controllerChangeHandled = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (isReloading || controllerChangeHandled) {
+    if (controllerChangeHandled) {
       console.debug('Controller change already handled, skipping');
       return;
     }
 
     controllerChangeHandled = true;
-    isReloading = true;
-    console.debug('New service worker activated - reloading...');
+    console.debug('New service worker activated - ready to reload');
     
-    // Immediate reload to show new version
-    window.location.reload();
+    // Dispatch custom event instead of automatic reload
+    window.dispatchEvent(new CustomEvent('sw-update-ready'));
+    
+    // Store flag that update is ready
+    sessionStorage.setItem('sw_update_ready', 'true');
   });
 }
 

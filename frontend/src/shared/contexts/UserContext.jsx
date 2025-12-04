@@ -114,6 +114,13 @@ export function UserProvider({ children }) {
     checkAuthenticationStatus()
   }, []) // Intentionally exclude isOnline to prevent auto-login on mode switch
 
+  // Function to clear user data (for logout)
+  const clearUserData = useCallback(() => {
+    setUser(null)
+    setPlayer(null)
+    LocalUserProfileService.clearCurrentUser()
+  }, [])
+
   // Handle online status changes - DON'T clear user session, just mark mode
   useEffect(() => {
     if (!isOnline && user) {
@@ -131,6 +138,35 @@ export function UserProvider({ children }) {
     }
     // Note: We preserve user data across online/offline transitions
   }, [isOnline, user])
+
+  // Periodic session validation - check if token expired every 5 minutes
+  useEffect(() => {
+    if (!user || !isOnline) return;
+    
+    const validateSession = async () => {
+      try {
+        const isValid = await authService.checkAuthStatus();
+        if (!isValid) {
+          console.debug('🔒 Session expired - logging out');
+          clearUserData();
+          // Redirect to login if needed
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+            window.location.href = '/login';
+          }
+        }
+      } catch (error) {
+        console.debug('Session validation error:', error);
+      }
+    };
+    
+    // Check immediately
+    validateSession();
+    
+    // Then check every 5 minutes
+    const interval = setInterval(validateSession, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [user, isOnline, clearUserData])
 
   // Fetch player data when user is set
   useEffect(() => {
@@ -232,12 +268,6 @@ export function UserProvider({ children }) {
     }
   }, [])
 
-  // Function to clear user data (for logout)
-  const clearUserData = useCallback(() => {
-    setUser(null)
-    setPlayer(null)
-    LocalUserProfileService.clearCurrentUser()
-  }, [])
   const value = {
     user,
     player,
