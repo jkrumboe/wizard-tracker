@@ -508,6 +508,24 @@ const GameInProgress = () => {
   const expectedTricks = reduceTrickCount ? (currentRound?.round || 0) - 1 : (currentRound?.round || 0);
   const madeValuesCorrect = allMadeEntered && totalMade === expectedTricks;
 
+  // Check if there's an illegal call (last caller made forbidden call)
+  const hasIllegalCall = () => {
+    if (!currentRound) return false;
+    const uncalledPlayers = currentRound.players.filter(p => p.call === null);
+    // Only check if all players have made their calls
+    if (uncalledPlayers.length !== 0) return false;
+    
+    // Check each player to see if they were the last caller and made a forbidden call
+    for (const player of currentRound.players) {
+      const otherCallsTotal = totalCalls - (player.call || 0);
+      const forbiddenCall = currentRound.round - otherCallsTotal;
+      if (player.call === forbiddenCall && forbiddenCall >= 0 && forbiddenCall <= currentRound.round) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
     if (!currentRound) return 0;
@@ -642,23 +660,33 @@ const GameInProgress = () => {
                     </div>
                   </td>
                   <td>
-                    <input
-                      type="tel"
-                      className="rounds-input"
-                      value={player.call !== null ? player.call : ''}
-                      placeholder="0"
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0;
-                        const maxAllowed = increaseCallMax ? currentRound.round + 1 : currentRound.round;
-                        const clampedValue = Math.max(0, Math.min(value, maxAllowed));
-                        updateCall(player.id, clampedValue);
-                      }}
-                      min={0}
-                      max={increaseCallMax ? currentRound.round + 1 : currentRound.round}
-                      title={`${player.name}'s Call (Max: ${increaseCallMax ? currentRound.round + 1 : currentRound.round})`}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                    />
+                    {(() => {
+                      // Check if this player is the last caller and has made a forbidden call
+                      const uncalledPlayers = currentRound.players.filter(p => p.call === null);
+                      const isLastCaller = uncalledPlayers.length === 0 && player.call !== null;
+                      const forbiddenCall = currentRound.round - (totalCalls - (player.call || 0));
+                      const isIllegalCall = isLastCaller && player.call === forbiddenCall && forbiddenCall >= 0 && forbiddenCall <= currentRound.round;
+                      
+                      return (
+                        <input
+                          type="tel"
+                          className={`rounds-input ${isIllegalCall ? 'call-illegal' : ''}`}
+                          value={player.call !== null ? player.call : ''}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 0;
+                            const maxAllowed = increaseCallMax ? currentRound.round + 1 : currentRound.round;
+                            const clampedValue = Math.max(0, Math.min(value, maxAllowed));
+                            updateCall(player.id, clampedValue);
+                          }}
+                          min={0}
+                          max={increaseCallMax ? currentRound.round + 1 : currentRound.round}
+                          title={`${player.name}'s Call (Max: ${increaseCallMax ? currentRound.round + 1 : currentRound.round})`}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                        />
+                      );
+                    })()}
                   </td>
                   <td>
                     {(() => {
@@ -913,7 +941,7 @@ const GameInProgress = () => {
           <ArrowLeftIcon /> 
         </button>
 
-        <button className="nav-btn" id="nextRoundBtn" onClick={nextRound} disabled={isLastRound || !isRoundComplete}>
+        <button className="nav-btn" id="nextRoundBtn" onClick={nextRound} disabled={isLastRound || !isRoundComplete || hasIllegalCall()}>
           <ArrowRightIcon />
         </button>
       </div> 

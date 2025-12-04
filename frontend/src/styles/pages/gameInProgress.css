@@ -217,6 +217,12 @@
   border-width: 2px !important;
 }
 
+/* Highlight call inputs when the last caller makes a forbidden/illegal call */
+.rounds-input.call-illegal {
+  border-color: var(--error-color) !important;
+  border-width: 2px !important;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {  
   .game-in-progress .results-row {
