@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { XIcon, PlusIcon, TrashIcon } from '@/components/ui/Icon';
 import { GripVertical } from 'lucide-react';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
@@ -79,6 +80,15 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, 
       )}
     </div>
   );
+};
+
+SortablePlayerItem.propTypes = {
+  player: PropTypes.object.isRequired,
+  index: PropTypes.number.isRequired,
+  onNameChange: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  canRemove: PropTypes.bool.isRequired,
+  disabled: PropTypes.bool
 };
 
 const TableGameSettingsModal = ({ 
@@ -194,13 +204,6 @@ const TableGameSettingsModal = ({
     setPlayerToDelete(null);
   };
 
-  const handleRowsChange = (newRows) => {
-    // Can't set rows below current round
-    if (newRows >= currentRound && newRows <= 100) {
-      setLocalRows(newRows);
-    }
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content game-settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -261,7 +264,7 @@ const TableGameSettingsModal = ({
                   type="number"
                   className="game-name-input"
                   value={localTargetNumber || ''}
-                  onChange={(e) => setLocalTargetNumber(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  onChange={(e) => setLocalTargetNumber(e.target.value ? Number.parseInt(e.target.value, 10) : null)}
                   placeholder="200"
                   disabled={gameFinished}
                 />
@@ -269,18 +272,20 @@ const TableGameSettingsModal = ({
               <div className="add-section">
                 <label>Scoring Preference:</label>
                  <div className="scoring-prefernce-type" style={{ display: 'flex'}}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <label htmlFor="high-score-radio" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
+                      id="high-score-radio"
                       type="radio"
                       name="scoring-preference"
-                      checked={!localLowIsBetter}
+                      checked={localLowIsBetter === false}
                       onChange={() => setLocalLowIsBetter(false)}
                       disabled={gameFinished}
                     />
                     <span>High Score</span>
                   </label>
-                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                 <label htmlFor="low-score-radio" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
+                      id="low-score-radio"
                       type="radio"
                       name="scoring-preference"
                       checked={localLowIsBetter}
@@ -316,14 +321,26 @@ const TableGameSettingsModal = ({
         onConfirm={confirmDeletePlayer}
         title="Delete Player"
         message={
-          playerToDelete !== null
-            ? `Are you sure you want to delete "${localPlayers[playerToDelete]?.name}"? All their scores will be permanently lost.`
-            : 'Are you sure you want to delete this player?'
+          playerToDelete === null
+            ? 'Are you sure you want to delete this player?'
+            : `Are you sure you want to delete "${localPlayers[playerToDelete]?.name}"? All their scores will be permanently lost.`
         }
         confirmText="Delete Player"
       />
     </div>
   );
+};
+
+TableGameSettingsModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  players: PropTypes.array.isRequired,
+  rows: PropTypes.number.isRequired,
+  currentRound: PropTypes.number.isRequired,
+  targetNumber: PropTypes.number,
+  lowIsBetter: PropTypes.bool.isRequired,
+  onUpdateSettings: PropTypes.func.isRequired,
+  gameFinished: PropTypes.bool.isRequired
 };
 
 export default TableGameSettingsModal;

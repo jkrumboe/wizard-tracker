@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
@@ -45,6 +46,16 @@ const DeleteConfirmationModal = ({
       </div>
     </div>
   );
+};
+
+DeleteConfirmationModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  deleteAll: PropTypes.bool,
+  title: PropTypes.string,
+  message: PropTypes.string,
+  confirmText: PropTypes.string
 };
 
 export default DeleteConfirmationModal;

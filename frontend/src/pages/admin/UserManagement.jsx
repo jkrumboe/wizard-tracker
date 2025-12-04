@@ -146,7 +146,9 @@ const UserManagement = () => {
 
       <div className="admin-filters">
         <div className="search-box">
+          <label htmlFor="user-search" className="sr-only">Search by username</label>
           <input
+            id="user-search"
             type="text"
             placeholder="Search by username..."
             value={searchTerm}
@@ -155,8 +157,9 @@ const UserManagement = () => {
           />
         </div>
         <div className="filter-group">
-          <label>Role:</label>
-          <select 
+          <label htmlFor="role-filter">Role:</label>
+          <select
+            id="role-filter"
             value={roleFilter} 
             onChange={(e) => setRoleFilter(e.target.value)}
             className="filter-select"
@@ -173,7 +176,7 @@ const UserManagement = () => {
 
       {filteredUsers.length === 0 ? (
         <div className="no-users">
-          <p>No users found{searchTerm || roleFilter !== 'all' ? ' matching your filters' : ''}</p>
+          <p>No users found{(searchTerm || roleFilter !== 'all') && ' matching your filters'}</p>
         </div>
       ) : (
         <div className="users-list">
@@ -182,9 +185,10 @@ const UserManagement = () => {
               <div className="user-content">
                 <div className="user-details">
                   <div className="detail-item">
-                    <label>Username:</label>
+                    <label htmlFor={`username-${user._id || user.id}`}>Username:</label>
                     {editingUser === (user._id || user.id) ? (
                       <input
+                        id={`username-${user._id || user.id}`}
                         type="text"
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value)}
@@ -197,21 +201,22 @@ const UserManagement = () => {
                   </div>
 
                   <div className="detail-item">
-                    <label>Registered:</label>
+                    <label htmlFor={`registered-${user._id || user.id}`}>Registered:</label>
                     <span>{new Date(user.createdAt).toLocaleDateString()}</span>
                   </div>
 
                   {user.lastLogin && (
                     <div className="detail-item">
-                      <label>Last Login:</label>
+                      <label htmlFor={`last-login-${user._id || user.id}`}>Last Login:</label>
                       <span>{new Date(user.lastLogin).toLocaleDateString()}</span>
                     </div>
                   )}
 
                   <div className="detail-item">
-                    <label>Role:</label>
+                    <label htmlFor={`role-${user._id || user.id}`}>Role:</label>
                     {editingRole === (user._id || user.id) ? (
                       <select
+                        id={`role-${user._id || user.id}`}
                         value={newRole}
                         onChange={(e) => setNewRole(e.target.value)}
                         className="role-select"
