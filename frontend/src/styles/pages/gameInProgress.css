@@ -680,8 +680,8 @@
 
 /* Table view within stats section */
 .game-in-progress .stats-subtabs ~ .rounds-section {
-  margin-top: var(--spacing-md);
-  max-height: 60vh;
+  margin: var(--spacing-md) 0;
+  /* max-height: 60vh; */
   overflow-y: auto;
   overflow-x: auto;
 }
