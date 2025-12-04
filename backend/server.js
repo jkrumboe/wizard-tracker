@@ -28,6 +28,7 @@ async function initializeServer() {
   const OnlineStatus = require('./models/OnlineStatus');
 
   // Middleware
+  app.set('trust proxy', 1); // Trust first proxy (nginx/Docker)
   app.use(cors());
   // Increase body size limit to handle base64 encoded images (up to 10MB)
   app.use(express.json({ limit: '10mb' }));
