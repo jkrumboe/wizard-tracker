@@ -151,17 +151,15 @@ export function validateGameSchema(game) {
   } else if (game.players.length === 0) {
     errors.push("Game must have at least one player");
   } else {
-    game.players.forEach((player, index) => {
+    for (const [index, player] of game.players.entries()) {
       if (!player.id) errors.push(`Player ${index} missing id`);
       if (!player.name) errors.push(`Player ${index} missing name`);
-    });
+    }
   }
   
   // Validate rounds
-  if (!Array.isArray(game.rounds)) {
-    errors.push("Rounds must be an array");
-  } else {
-    game.rounds.forEach((round, index) => {
+  if (Array.isArray(game.rounds)) {
+    for (const [index, round] of game.rounds.entries()) {
       if (typeof round.number !== 'number') {
         errors.push(`Round ${index} missing or invalid number`);
       }
@@ -177,16 +175,18 @@ export function validateGameSchema(game) {
       if (typeof round.points !== 'object') {
         errors.push(`Round ${index} missing or invalid points`);
       }
-    });
+    }
+  } else {
+    errors.push("Rounds must be an array");
   }
   
   // Validate timestamps are ISO strings
   const timestampFields = ['created_at', 'updated_at', 'started_at', 'finished_at'];
-  timestampFields.forEach(field => {
+  for (const field of timestampFields) {
     if (game[field] && !isValidISOString(game[field])) {
       errors.push(`Invalid timestamp format for ${field}`);
     }
-  });
+  }
   
   return {
     isValid: errors.length === 0,
@@ -221,7 +221,7 @@ export function migrateToNewSchema(oldGame) {
 
     // Convert player round data to bids/tricks/points objects
     if (round.players) {
-      round.players.forEach(playerRound => {
+      for (const playerRound of round.players) {
         // Robustly extract bid/call
         let bid = 0;
         if (playerRound.bid !== undefined) bid = playerRound.bid;
@@ -237,7 +237,7 @@ export function migrateToNewSchema(oldGame) {
         roundSchema.bids[playerRound.id] = bid;
         roundSchema.tricks[playerRound.id] = tricks;
         roundSchema.points[playerRound.id] = playerRound.score || 0;
-      });
+      }
     }
 
     return roundSchema;
@@ -289,26 +289,26 @@ export function computeDerivedTotals(game) {
   let highestScore = -Infinity;
   
   // Initialize scores for all players
-  game.players.forEach(player => {
+  for (const player of game.players) {
     finalScores[player.id] = 0;
-  });
+  }
   
   // Calculate total scores from rounds
-  game.rounds.forEach(round => {
-    Object.entries(round.points).forEach(([playerId, points]) => {
+  for (const round of game.rounds) {
+    for (const [playerId, points] of Object.entries(round.points)) {
       if (finalScores[playerId] !== undefined) {
         finalScores[playerId] += points;
       }
-    });
-  });
+    }
+  }
   
   // Find winner (highest score)
-  Object.entries(finalScores).forEach(([playerId, score]) => {
+  for (const [playerId, score] of Object.entries(finalScores)) {
     if (score > highestScore) {
       highestScore = score;
       winnerId = playerId;
     }
-  });
+  }
   
   // Update game totals
   game.totals = {

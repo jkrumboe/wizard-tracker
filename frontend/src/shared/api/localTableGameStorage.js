@@ -125,13 +125,13 @@ export class LocalTableGameStorage {
       
       // Filter games for the current user
       const userGames = {};
-      Object.keys(allGames).forEach(gameId => {
+      for (const gameId of Object.keys(allGames)) {
         const game = allGames[gameId];
         // Include games without userId (legacy) or games matching current user
         if (!game.userId || game.userId === currentUserId) {
           userGames[gameId] = game;
         }
-      });
+      }
       
       return userGames;
     } catch (error) {
