@@ -9,10 +9,12 @@ class OnlineStatusService {
   constructor() {
     this._onlineStatus = null;
     this._lastChecked = null;
-    this._checkInterval = 60000; // Check every 60 seconds (reduced from 15s to lower server load)
+    this._checkInterval = 300000; // Check every 5 minutes (300 seconds) to avoid rate limiting
+    this._minCheckInterval = 60000; // Minimum 60 seconds between forced checks
     this._listeners = [];
     this._intervalId = null;
     this._hasNetworkConnectivity = navigator.onLine; // Browser's network status
+    this._pendingCheck = null; // Track if a check is already in progress
     
     // Start periodic checking
     this._startPeriodicCheck();
@@ -30,9 +32,23 @@ class OnlineStatusService {
    * @returns {Promise<{online: boolean, lastUpdated: string, message: string, hasNetworkConnectivity: boolean}>}
    */
   async getStatus(forceCheck = false) {
+    // If a check is already in progress, return that promise
+    if (this._pendingCheck) {
+      return this._pendingCheck;
+    }
+    
     // If we have a cached status and it's recent, use it
     const now = Date.now();
     if (!forceCheck && this._onlineStatus && this._lastChecked && (now - this._lastChecked < this._checkInterval)) {
+      return {
+        ...this._onlineStatus,
+        hasNetworkConnectivity: this._hasNetworkConnectivity
+      };
+    }
+    
+    // If forcing a check, respect minimum interval to avoid rate limiting
+    if (forceCheck && this._lastChecked && (now - this._lastChecked < this._minCheckInterval)) {
+      console.debug('⏱️ Skipping forced check - too soon (rate limit protection)');
       return {
         ...this._onlineStatus,
         hasNetworkConnectivity: this._hasNetworkConnectivity
@@ -54,6 +70,22 @@ class OnlineStatusService {
       return networkDownStatus;
     }
     
+    // Start the check and cache the promise
+    this._pendingCheck = this._performStatusCheck();
+    
+    try {
+      const status = await this._pendingCheck;
+      return status;
+    } finally {
+      this._pendingCheck = null;
+    }
+  }
+  
+  /**
+   * Perform the actual status check
+   * @private
+   */
+  async _performStatusCheck() {
     try {
       // Check the MongoDB-based online status endpoint
       const response = await fetch(`${API_ENDPOINTS.base}/api/online/status`, {
@@ -79,6 +111,14 @@ class OnlineStatusService {
 
         this._updateStatus(status);
         return status;
+      } else if (response.status === 429) {
+        // Rate limited - return cached status
+        console.debug('⏱️ Rate limited - using cached status');
+        return {
+          ...this._onlineStatus,
+          hasNetworkConnectivity: true,
+          networkIssue: false
+        };
       } else {
         // If the endpoint fails, preserve last known status
         const fallbackStatus = {
@@ -92,7 +132,7 @@ class OnlineStatusService {
         return fallbackStatus;
       }
     } catch (error) {
-      console.error('Error checking online status:', error);
+      console.debug('Error checking online status:', error.message);
       
       // Network error - preserve last known backend status
       const errorStatus = { 
@@ -271,15 +311,28 @@ class OnlineStatusService {
    */
   _addWindowFocusListener() {
     if (typeof window !== 'undefined') {
+      let lastFocusCheck = 0;
+      
       window.addEventListener('focus', () => {
-        // Check status when user returns to the app
-        this.getStatus(true);
+        // Only check if it's been more than 60 seconds since last check (rate limit protection)
+        const now = Date.now();
+        if (now - lastFocusCheck > 60000) {
+          lastFocusCheck = now;
+          this.getStatus(true);
+        }
       });
       
       // Also check when the page becomes visible (handles tab switching)
+      let lastVisibilityCheck = 0;
+      
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-          this.getStatus(true);
+          // Only check if it's been more than 60 seconds since last check (rate limit protection)
+          const now = Date.now();
+          if (now - lastVisibilityCheck > 60000) {
+            lastVisibilityCheck = now;
+            this.getStatus(true);
+          }
         }
       });
     }

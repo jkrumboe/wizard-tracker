@@ -343,48 +343,70 @@ const Settings = () => {
     
     // Load table games
     const tableGames = LocalTableGameStorage.getSavedTableGamesList();
+    setSavedTableGames(tableGames);
     
-    // Verify uploaded table games still exist on server
+    // Only check sync status if online - do it in background with delay to avoid rate limiting
     if (isOnline && user) {
-      const { getTableGameById } = await import('@/shared/api/tableGameService');
-      for (const game of tableGames) {
-        if (game.isUploaded && game.cloudGameId) {
-          try {
-            await getTableGameById(game.cloudGameId);
-            // Game exists on server, keep upload status
-          } catch (error) {
-            // Game doesn't exist on server anymore, clear upload status
-            const isNotFound = error.message.includes('not found') || 
-                              error.message.includes('404') ||
-                              error.message.includes('Not Found');
-            if (isNotFound) {
-              console.debug(`[Settings] Table game ${game.id} not found on server, clearing upload status`);
-              LocalTableGameStorage.clearUploadStatus(game.id);
-              game.isUploaded = false;
-              game.cloudGameId = null;
-            } else {
-              console.debug(`[Settings] Error checking table game ${game.id}:`, error.message);
+      // Verify table games asynchronously with delay between requests
+      setTimeout(async () => {
+        const { getTableGameById } = await import('@/shared/api/tableGameService');
+        for (let i = 0; i < tableGames.length; i++) {
+          const game = tableGames[i];
+          if (game.isUploaded && game.cloudGameId) {
+            try {
+              // Add small delay between requests to avoid rate limiting
+              if (i > 0) await new Promise(resolve => setTimeout(resolve, 200));
+              
+              await getTableGameById(game.cloudGameId);
+              // Game exists on server, keep upload status
+            } catch (error) {
+              // Game doesn't exist on server anymore, clear upload status
+              const isNotFound = error.message.includes('not found') || 
+                                error.message.includes('404') ||
+                                error.message.includes('Not Found');
+              if (isNotFound) {
+                console.debug(`[Settings] Table game ${game.id} not found on server, clearing upload status`);
+                LocalTableGameStorage.clearUploadStatus(game.id);
+                // Reload games to reflect changes
+                const updatedTableGames = LocalTableGameStorage.getSavedTableGamesList();
+                setSavedTableGames(updatedTableGames);
+              } else {
+                console.debug(`[Settings] Error checking table game ${game.id}:`, error.message);
+              }
             }
           }
         }
-      }
-    }
-    
-    setSavedTableGames(tableGames);
-    
-    // Check sync status for each game
-    const syncStatuses = {};
-    for (const gameId of Object.keys(allGames)) {
-      try {
-        const syncStatus = await checkGameSyncStatus(gameId);
-        syncStatuses[gameId] = syncStatus;
-      } catch (error) {
-        console.error(`Error checking sync status for game ${gameId}:`, error);
+      }, 1000); // Wait 1 second before starting verification
+      
+      // Check sync status for wizard games in background with delay
+      setTimeout(async () => {
+        const syncStatuses = {};
+        const gameIds = Object.keys(allGames);
+        
+        for (let i = 0; i < gameIds.length; i++) {
+          const gameId = gameIds[i];
+          try {
+            // Add delay between requests to avoid rate limiting
+            if (i > 0) await new Promise(resolve => setTimeout(resolve, 200));
+            
+            const syncStatus = await checkGameSyncStatus(gameId);
+            syncStatuses[gameId] = syncStatus;
+          } catch (error) {
+            console.debug(`Error checking sync status for game ${gameId}:`, error.message);
+            syncStatuses[gameId] = { status: 'Local', synced: false };
+          }
+        }
+        setGameSyncStatuses(syncStatuses);
+      }, 2000); // Wait 2 seconds before starting sync checks
+    } else {
+      // Offline - mark all as local
+      const syncStatuses = {};
+      for (const gameId of Object.keys(allGames)) {
         syncStatuses[gameId] = { status: 'Local', synced: false };
       }
+      setGameSyncStatuses(syncStatuses);
     }
-    setGameSyncStatuses(syncStatuses);
-  }, []);
+  }, [isOnline, user]);
 
   // Reload games when date filter changes
   // Removed redundant reload on every render
