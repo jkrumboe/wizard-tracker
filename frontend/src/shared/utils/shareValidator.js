@@ -3,7 +3,7 @@
  * Prevents malicious data injection and ensures data integrity
  */
 
-import sanitizeHtml from 'sanitize-html';
+import DOMPurify from 'isomorphic-dompurify';
 
 export class ShareValidator {
   // Maximum allowed sizes to prevent memory exhaustion
@@ -333,10 +333,11 @@ export class ShareValidator {
       return '';
     }
 
-    // Use sanitize-html to strip all HTML tags and attributes
-    let cleaned = sanitizeHtml(str, {
-      allowedTags: [],
-      allowedAttributes: {}
+    // Use DOMPurify to strip all HTML tags and attributes
+    let cleaned = DOMPurify.sanitize(str, {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+      KEEP_CONTENT: true
     }).trim();
 
     // Truncate to max length
