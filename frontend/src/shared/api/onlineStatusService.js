@@ -9,7 +9,7 @@ class OnlineStatusService {
   constructor() {
     this._onlineStatus = null;
     this._lastChecked = null;
-    this._checkInterval = 15000; // Check every 15 seconds for better responsiveness
+    this._checkInterval = 60000; // Check every 60 seconds (reduced from 15s to lower server load)
     this._listeners = [];
     this._intervalId = null;
     this._hasNetworkConnectivity = navigator.onLine; // Browser's network status
