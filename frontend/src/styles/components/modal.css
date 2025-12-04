@@ -376,7 +376,15 @@
 }
 
 .settings-section:has(.player-order-list) .player-order-list {
-  padding-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+}
+
+.settings-section h3 {
+    margin-bottom: var(--spacing-sm);
+}
+
+.settings-section:has(.player-order-list) {
+    margin-bottom: 0
 }
 
 .add-player-modal-btn {

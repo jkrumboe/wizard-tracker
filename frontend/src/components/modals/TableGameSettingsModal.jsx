@@ -180,7 +180,8 @@ const TableGameSettingsModal = ({
     const newPlayer = {
       id: `player-${Date.now()}`,
       name: `Player ${localPlayers.length + 1}`,
-      points: []
+      points: [],
+      originalIndex: localPlayers.length
     };
     setLocalPlayers([...localPlayers, newPlayer]);
   };
