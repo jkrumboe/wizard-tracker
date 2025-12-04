@@ -158,29 +158,6 @@ const NewGame = () => {
     })
   );
 
-  // Custom modifier to restrict dragging to player list container
-  const restrictToPlayerList = ({ transform, draggingNodeRect, containerNodeRect }) => {
-    if (!draggingNodeRect || !containerNodeRect) {
-      return transform;
-    }
-
-    const playerListElement = document.querySelector('.player-list');
-    if (!playerListElement) {
-      return transform;
-    }
-
-    const playerListRect = playerListElement.getBoundingClientRect();
-    
-    // Calculate boundaries relative to the container
-    const topBoundary = playerListRect.top - containerNodeRect.top;
-    const bottomBoundary = playerListRect.bottom - containerNodeRect.top - draggingNodeRect.height;
-
-    return {
-      ...transform,
-      y: Math.max(topBoundary, Math.min(bottomBoundary, transform.y)),
-    };
-  };
-  
   // Ref for auto-scrolling to bottom of player list
   const selectedPlayersRef = useRef(null)
   
@@ -440,7 +417,7 @@ const NewGame = () => {
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
-                    modifiers={[restrictToVerticalAxis, restrictToParentElement, restrictToPlayerList]}
+                    modifiers={[restrictToVerticalAxis, restrictToParentElement]}
                   >
                     <SortableContext 
                       items={gameState.players.map(p => p.id)}
