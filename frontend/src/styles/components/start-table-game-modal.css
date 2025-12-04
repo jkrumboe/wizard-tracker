@@ -82,8 +82,7 @@
   gap: var(--spacing-sm);
   overflow-y: auto;
   height: 100%;
-  min-height: 15dvh;
-  max-height: 33dvh;
+  height: 33dvh;
 }
 
 .player-row-start {
@@ -244,7 +243,6 @@
 }
 
 .setting-item {
-  /* font-size: 0.8rem; */
   color: var(--text-muted);
   margin: 0;
 }
@@ -258,7 +256,7 @@
   color: var(--text);
   border: none;
   border-radius: 6px;
-  padding: 0.75rem 1.5rem;
+  padding: var(--spacing-xs) var(--spacing-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;

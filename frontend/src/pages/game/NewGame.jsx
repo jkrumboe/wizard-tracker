@@ -480,7 +480,7 @@ const NewGame = () => {
                   onClick={() => setShowSelectFriendsModal(true)}
                   title="Add friends to game"
                 >
-                  <UsersIcon size={20} />
+                  <UsersIcon size={25} />
                 </button>
               </div>
               

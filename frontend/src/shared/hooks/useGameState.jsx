@@ -8,17 +8,6 @@ import { getSecureRandomInt } from "@/shared/utils/secureRandom"
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
 
-// List of real names to use for random player names
-const PLAYER_NAMES = [
-  "Alex", "Bailey", "Charlie", "Dana", "Eli", "Frankie", "Gray", "Harper",
-  "Isa", "Jordan", "Kai", "Lee", "Morgan", "Nico", "Ollie", "Parker",
-  "Quinn", "Reese", "Sage", "Taylor", "Viv", "Winter", "Yuri", "Zoe",
-  "Avery", "Blake", "Casey", "Drew", "Ellis", "Finley", "Greer", "Hayden",
-  "Indigo", "Jules", "Kelsey", "Lennox", "Marley", "Nova", "Oakley", "Phoenix",
-  "River", "Skyler", "Tatum", "Utah", "Val", "Wren", "Xen", "Yael",
-  "Robin", "Jamie", "Riley", "Emery", "Ash", "Shawn", "Jesse", "Kendall"
-]
-
 export function GameStateProvider({ children }) {
   const [gameState, setGameState] = useState({
     players: [],
@@ -173,28 +162,8 @@ export function GameStateProvider({ children }) {
       // Use MongoDB user ID if provided, otherwise generate a unique ID based on timestamp and random number
       const uniqueId = userId || (Date.now().toString() + getSecureRandomInt(0, 999).toString());
       
-      let playerName;
-      
-      if (customName) {
-        // Use the custom name if provided
-        playerName = customName;
-      } else {
-        // Get currently used names in the game
-        const usedNames = prevState.players.map(player => player.name);
-        
-        // Filter out names that are already in use
-        const availableNames = PLAYER_NAMES.filter(name => !usedNames.includes(name));
-        
-        // If we're out of unique names (unlikely but possible), add a number to an existing name
-        if (availableNames.length === 0) {
-          // Take a random name and add a number to it
-          playerName = PLAYER_NAMES[Math.floor(Math.random() * PLAYER_NAMES.length)] + 
-            (Math.floor(Math.random() * 100) + 1);
-        } else {
-          // Select a random name from the available names
-          playerName = availableNames[Math.floor(Math.random() * availableNames.length)];
-        }
-      }
+      // Use the custom name if provided, otherwise leave empty
+      const playerName = customName || '';
 
       const player = { 
         id: uniqueId, 
