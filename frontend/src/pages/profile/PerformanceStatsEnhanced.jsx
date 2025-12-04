@@ -440,9 +440,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
                 border: `1px solid ${stats.currentStreak.type === 'win' ? '#1DBF73' : '#FF5C5C'}`,
                 width: '100%'
               }}>
-                <div style={{ fontSize: '2rem'}}>
+                {/* <div style={{ fontSize: '2rem'}}>
                   {stats.currentStreak.type === 'win' ? '🔥' : '❄️'}
-                </div>
+                </div> */}
                 <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
                   {stats.currentStreak.count} {stats.currentStreak.type === 'win' ? 'Win' : 'Loss'} Streak
                 </div>
@@ -670,7 +670,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
           )}
 
           {/* Additional Stats */}
-          <div style={{
+          {/* <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: 'var(--spacing-md)'
@@ -702,7 +702,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
                 {stats.lowestScore} - {stats.highestScore}
               </div>
             </div>
-          </div>
+          </div> */}
         </>
       )}
     </div>
