@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, UsersIcon, SettingsIcon } from "../../components/ui/Icon";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
@@ -1120,7 +1120,7 @@ const TableGame = () => {
                 onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
                 title={`Switch to ${activeTab === 'game' ? 'Stats' : 'Game'}`}
               >
-                {activeTab === 'game' ? <BarChartIcon size={27} /> : <UsersIcon size={27} />}
+                {activeTab === 'game' ? <BarChartIcon size={27} /> : <GamepadIcon size={27} />}
               </button>
             </div>
 
