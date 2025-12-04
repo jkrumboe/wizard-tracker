@@ -785,11 +785,10 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
 // GET /users/admin/all - Get all users with full details (admin only)
 router.get('/admin/all', auth, async (req, res, next) => {
   try {
-    // TODO: Add admin permission check here
-    // const currentUser = await User.findById(req.user.userId);
-    // if (currentUser.role !== 'admin') {
-    //   return res.status(403).json({ error: 'Admin access required' });
-    // }
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
 
     const users = await User.find()
       .select('_id username role createdAt lastLogin profilePicture')
@@ -813,11 +812,10 @@ router.get('/admin/all', auth, async (req, res, next) => {
 // PUT /users/:userId/username - Update username across all database collections (admin only)
 router.put('/:userId/username', auth, async (req, res, next) => {
   try {
-    // TODO: Add admin permission check here
-    // const currentUser = await User.findById(req.user.userId);
-    // if (currentUser.role !== 'admin') {
-    //   return res.status(403).json({ error: 'Admin access required' });
-    // }
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
 
     const { userId } = req.params;
     const { username } = req.body;
@@ -911,11 +909,10 @@ router.put('/:userId/username', auth, async (req, res, next) => {
 // PUT /users/:userId/role - Update user role (admin only)
 router.put('/:userId/role', auth, async (req, res, next) => {
   try {
-    // TODO: Add admin permission check here
-    // const currentUser = await User.findById(req.user.userId);
-    // if (currentUser.role !== 'admin') {
-    //   return res.status(403).json({ error: 'Admin access required' });
-    // }
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
 
     const { userId } = req.params;
     const { role } = req.body;
