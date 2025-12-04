@@ -56,7 +56,6 @@
   
   .player-tags {
     display: flex;
-    /* flex-wrap: wrap; */
     gap: var(--spacing-xs);
   }
 
@@ -67,8 +66,6 @@
     white-space: nowrap;
     gap: 0.5rem;
     margin: var(--spacing-xs);
-    /* justify-content: center;
-    align-items: center; */
   }
 
   .edit-tags-list {
@@ -121,8 +118,7 @@
     border: 1px solid var(--border);
     transition: all 0.2s ease;
     gap: var(--spacing-xs);
-    min-width: 0; /* Prevent overflow */
-    /* box-shadow: var(--shadow-sm); */
+    min-width: 0;
   }
   
   .game-date {
@@ -136,9 +132,9 @@
     display: inline-flex;
     gap: var(--spacing-xs);
     align-items: center;
-    flex: 0 0 auto;       /* don't grow or shrink, size to content */
+    flex: 0 0 auto;
     width: auto;
-    white-space: nowrap;  /* prevent wrapping so width matches content */
+    white-space: nowrap;
     background-color: rgba(255, 215, 0, 0.1);
     color: gold;
     font-size: 0.75rem;
@@ -146,7 +142,7 @@
     border: 1px solid gold;
     padding: 0 var(--spacing-xs);
     border-radius: var(--radius-md);
-    align-self: center; /* avoid stretching in flex containers */
+    align-self: center; 
   }
 
   .game-info {
@@ -177,14 +173,14 @@
     font-size: 0.85rem;
     color: var(--text);
     align-items: center;
-    min-width: 0; /* Allow flex item to shrink below content size */
-    flex: 1; /* Allow it to grow and shrink within available space */
-    overflow: hidden; /* Ensure content doesn't overflow */
+    min-width: 0; 
+    flex: 1;
+    overflow: hidden; 
     line-height: 1.4;
-    max-height: 3em; /* Limit to approximately 2-3 lines */
+    max-height: 3em; 
     text-overflow: ellipsis;
-    white-space: normal; /* Allow wrapping */
-    word-break: break-word; /* Break long words if needed */
+    white-space: normal; 
+    word-break: break-word;
   }
   
   .game-rounds {
@@ -193,11 +189,12 @@
   }
 
   .game-details {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     color: var(--primary);
     font-weight: 500;
-    font-size: 0.85rem;
+      font-size: 0.9rem;
+
     text-decoration: none;
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
@@ -257,10 +254,9 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    /* margin-top: var(--spacing-sm); */
     gap: var(--spacing-xs);
-    flex-shrink: 0; /* Prevent actions from being compressed */
-    min-width: 0; /* Allow proper flex shrinking */
+    flex-shrink: 0;
+    min-width: 0;
   }
   
   /* SearchBar Component */
@@ -329,20 +325,14 @@
     border-radius: var(--radius-lg);
     text-align: center;
     padding: var(--spacing-sm);
-    /* box-shadow: var(--shadow); */
-    /* border: 1px solid var(--border); */
     transition: transform 0.3s;
-    /* width: 30%; */
   }
   
   .stat-title {
     font-size: 0.9rem;
     color: var(--text-light);
-    /* margin-bottom: var(--spacing-xs); */
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    /* border-bottom: var(--border) solid 1px; */
-    /* padding: var(--spacing-xs) var(--spacing-sm); */
   }
   
   .stat-value {
@@ -379,7 +369,6 @@
   
   .game-details-header {
     display: grid;
-    /* flex-direction: column; */
     margin-bottom: var(--spacing-md);
     background-color: var(--card-bg);
     padding: 0 var(--spacing-md);
@@ -409,8 +398,6 @@
   .results-section {
     background-color: transparent;
     border-radius: var(--radius-lg);
-    /* padding: var(--spacing-md); */
-    /* box-shadow: var(--shadow); */
   }
   
   .rounds-section {
@@ -436,7 +423,6 @@
   }
 
   .results-table {
-    /* margin-top: var(--spacing-md); */
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 1px solid var(--border);
@@ -507,7 +493,6 @@
   border-radius: var(--radius-md);
   color: var(--text);
   padding: var(--spacing-xs) var(--spacing-sm);
-  /* margin: 0 var(--spacing-md); */
   font-size: 0.8rem;
   cursor: pointer;
   font-weight: 500;
@@ -635,7 +620,6 @@
     justify-self: center;
     border-radius: var(--radius-full);
     object-fit: cover;
-    /* margin-bottom: var(--spacing-md); */
     margin-top: -70px; 
     border: 4px solid var(--primary);
     box-shadow: var(--shadow);
@@ -645,7 +629,6 @@
   
   .player-info h1 {
     color: var(--primary);
-    margin-bottom:0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -681,17 +664,13 @@
     display: flex;
     flex-direction: column;
     background-color: transparent;
-    /* border-radius: var(--radius-lg); */
-    /* padding-bottom: var(--spacing-md); */
     gap: var(--spacing-sm);
-    /* border-bottom: 2px solid var(--border); */
   }
   
   .stats-graph h2,
   .recent-games h2 {
     color: var(--primary);
     position: relative;
-    /* padding-bottom: var(--spacing-sm); */
     margin-bottom: 0;
   }
   
@@ -714,7 +693,6 @@
   }
   
   .games-list {
-    /* max-height: 300px; */
     overflow-y: auto;
     gap: var(--spacing-sm);
   }
@@ -763,7 +741,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* z-index: 1000; */
     padding: var(--spacing-md);
   }
 
@@ -782,7 +759,6 @@
 
   .profile-edit-header input {
     width: 100%;
-    /* max-width: 300px; */
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -790,7 +766,6 @@
     background-color: var(--card-bg-alt);
     color: var(--text);
     transition: border-color 0.2s;
-    /* margin: 0 auto; */
   }
 
   .profile-edit-header input:focus {
@@ -830,7 +805,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* margin: var(--spacing-md) 0; */
   }
 
   .avatar-actions {
@@ -839,7 +813,6 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-sm);
-    /* margin: var(--spacing-md) 0; */
     width: 100%;
   }
 
@@ -860,7 +833,6 @@
     .avatar-upload-label {
       width: auto;
       font-size: 1rem;
-      /* min-width: 120px; */
       padding: var(--spacing-xs) var(--spacing-sm) !important;
       justify-content: center;
       height: 36px;
@@ -1120,7 +1092,6 @@
   
   .selected-players-wrapper {
     height: 45vh;
-    /* max-height: 27vh; */
     position: relative;
     padding-right: var(--spacing-xs);
     margin: auto 0;
@@ -1132,7 +1103,7 @@
     justify-content: center;
     align-items: center;
     overflow-y: auto;
-    scrollbar-gutter: stable; /* Reserve space for scrollbar to prevent shifting */
+    scrollbar-gutter: stable;
   }
 
   /* Fading border effect using pseudo-elements on wrapper */
@@ -1203,7 +1174,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* padding: var(--spacing-sm) 0; */
     margin-top: var(--spacing-md);
   }
 
@@ -1328,16 +1298,6 @@
   }
   
   /* Game in progress */
-  /* .game-in-progress {
-    padding: var(--spacing-md) 0;
-    padding-bottom: 0;
-  } */
-
-  /* @media (max-height: 780px) {
-    .game-in-progress {
-      height: 100vh;
-    }
-  } */
   
   .game-header {
     display: flex;
@@ -1411,15 +1371,12 @@
   }
   
   .player-scores {
-    /* background-color: var(--card-bg); */
     border-radius: var(--radius-lg);
     overflow: hidden;
-    /* box-shadow: var(--shadow); */
   }
 
   .explanation {
       background-color: var(--card-bg);
-      font-size: 0.9rem;
       margin-top: var(--spacing-lg);
       padding: var(--spacing-sm) var(--spacing-md);
       border-radius: var(--radius-lg);
@@ -1471,7 +1428,6 @@
     color: var(--text);
     font-size: 1.1em;
     font-weight: 500;
-    /* padding: 0.55rem 0; */
     height: 100%;
     min-height: 47px;
   }
@@ -1506,7 +1462,6 @@
     justify-content: center;
     flex-direction: column;
     font-weight: 400;
-    /* margin: 0 auto; */
     color: var(--text);
   }
 
@@ -1562,7 +1517,7 @@
   .empty-row {
     display: grid;
     grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr;
-    padding: 28px; /* Adjusted padding for empty row, MAYBE change this to not be */
+    padding: 28px;
     align-items: center;
   }
 
@@ -1614,7 +1569,7 @@
   }
 
   .player-col {
-    text-align: left; /* Override center alignment for player names */
+    text-align: left;
   }
 
   .player-avatar {
@@ -1661,7 +1616,6 @@
   
   /* Styling for the Player Statistics section */
   .player-stats {
-    margin-top: var(--spacing-lg);
     padding: var(--spacing-lg);
     background-color: var(--card-bg-alt);
     border-radius: var(--radius-lg);
@@ -1778,10 +1732,6 @@
       gap: var(--spacing-md);
     }
 
-    /* .players-section{
-      grid-row: span 2;
-    } */
-
     .nav-menu {
       display: flex;
       flex-direction: row;
@@ -1826,9 +1776,9 @@
   
   @media (min-width: 992px) {
     .avatar {
-      width: 150px; /* Increase size for desktops */
+      width: 150px;
       height: 150px;
-      margin-top: -75px; /* Maintain negative margin for larger avatar */
+      margin-top: -75px;
       position: relative;
       z-index: 10;
     }
@@ -1849,7 +1799,6 @@
 
 .tab-button {
   flex: 1;
-  background-color: transparent;
   border: none;
   padding: var(--spacing-sm);
   background: var(--card-bg-alt);
@@ -1919,7 +1868,6 @@
 .tab-controls {
   display: flex;
   justify-content: center;
-  /* margin-bottom: var(--spacing-md); */
   border-radius: var(--radius-lg);
   gap: var(--spacing-sm);
 }
@@ -1961,7 +1909,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  /* margin-top: var(--spacing-md); */
   justify-content: flex-start;
   align-items: center;
   overflow-y: auto;
@@ -2012,11 +1959,6 @@
   font-size: 1.1rem;
   margin: 0 0 var(--spacing-xs) 0;
   color: var(--text);
-}
-
-.game-details {
-  display: flex;
-  font-size: 0.9rem;
 }
 
 .resume-btn, .delete-btn {
@@ -2145,11 +2087,8 @@
 /* Home page - Recent Games section */
 .recent-games {
   background-color: transparent;
-  /* border-radius: var(--radius-lg); */
-  /* padding: var(--spacing-md); */
-  /* box-shadow: var(--shadow); */
-  flex: 1; /* Allow it to grow within home-container */
-  min-height: 0; /* Important for flex scrolling */
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -2169,8 +2108,8 @@
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  flex: 1; /* Allow it to grow and fill available space */
-  min-height: 0; /* Important for flex children to be scrollable */
+  flex: 1;
+  min-height: 0;
   gap: var(--spacing-sm);
   position: relative;
 }
@@ -2223,10 +2162,7 @@
 .home-header {
   text-align: center;
   background-color: transparent;
-  /* padding: var(--spacing-md); */
   border-radius: var(--radius-lg);
-  /* box-shadow: var(--shadow); */
-  /* margin-bottom: var(--spacing-md); */
 }
 
 .home-header h1 {
@@ -2242,15 +2178,10 @@
 @media (max-width: 768px) {
   .recent-games {
     max-height: calc(100dvh - var(--bottom-nav-height));
-    /* padding: var(--spacing-md);  */
   }
   
   .game-card {
     padding: 0;
-  }
-  
-  .home-header {
-    /* margin-bottom: var(--spacing-md); */
   }
   
   .home-header h1 {
@@ -2425,21 +2356,6 @@
 
 .game-controls .settings-button {
   background: transparent;
-}
-
-/* #toggle-button-profile {
-  top: 18vh;
-  left: var(--spacing-xl);
-  position: absolute;
-  padding: var(--spacing-sm);
-} */
-
-.game-header-top {
-  /* position: relative; */
-  /* top: 100%; */
-  /* display: flex; */
-  /* justify-content: space-between; */
-  /* align-items: center; */
 }
 
 #game-toggle-details {
@@ -2974,7 +2890,6 @@
 
 /* General .game-bottom-section styling for non-GameInProgress pages */
 .game-control-btn {
-  /* background-color: var(--primary); */
   color: var(--text);
   border: none;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -3456,7 +3371,6 @@
 .stat-row {
   display: flex;
   align-items: center;
-  /* width: 100%; */
 }
 
 .stat-row:last-child {

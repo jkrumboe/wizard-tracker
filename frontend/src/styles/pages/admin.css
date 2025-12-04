@@ -12,7 +12,6 @@
 
 .admin-nav h2 {
   color: var(--primary);
-  /* margin-bottom: 2rem; */
   font-size: 1.5rem;
 }
 
@@ -164,7 +163,6 @@
 /* Welcome Screen */
 .admin-welcome {
   text-align: center;
-  /* padding: 2rem; */
 }
 
 .admin-welcome h1 {
@@ -347,9 +345,7 @@
   background-color: var(--bg-color);
   padding: 1rem;
   border-radius: 8px;
-  /* border-left: 3px solid var(--primary); */
   margin: 0;
-  var(--text)-space: pre-wrap;
   font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
   font-size: 0.9rem;
   line-height: 1.6;
@@ -472,7 +468,6 @@
 .detail-item {
   display: flex;
   flex-direction: column;
-  /* gap: 0.25rem; */
   max-width: 40%;
 }
 
@@ -525,8 +520,7 @@
   border: var(--accent-color);
 }
 
-.admin-container .role-badge,
-.user-management .role-badge {
+.role-badge {
   display: inline-block;
   font-size: 0.85rem;
   font-weight: 600;
@@ -534,13 +528,7 @@
   padding: 0;
 }
 
-/* .role-badge.role-user {
-  background-color: #e0e7ff;
-  color: #4338ca;
-} */
-
-.admin-container .role-badge.role-admin,
-.user-management .role-badge.role-admin {
+.role-badge.role-admin {
   background-color: #fef3c7;
   color: #92400e;
 }
@@ -646,10 +634,8 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .admin-nav {
-    /* width: 100%; */
     height: auto;
     border-right: none;
-    /* border-bottom: 1px solid var(--border); */
     padding-top: var(--spacing-sm);
   }
 
