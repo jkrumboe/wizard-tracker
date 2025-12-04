@@ -397,11 +397,15 @@
 .player-order-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) ;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background-color: var(--card-bg);
+}
+
+.player-order-item {
+  background-color: var(--card-bg-alt);
 }
 
 .player-position {

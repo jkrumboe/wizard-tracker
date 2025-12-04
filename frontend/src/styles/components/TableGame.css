@@ -68,8 +68,8 @@
 
 /* Player name input in game tab */
 .player-name-input {
-  background: transparent;
-  border: 1px solid var(--border);
+  background: var(--input-bg);
+  border: 1px solid var(--border-light);
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 0.95rem;

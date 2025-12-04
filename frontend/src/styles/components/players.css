@@ -89,7 +89,6 @@
     background-color: var(--primary);
     color: var(--text);
     border-radius: var(--radius-md);
-    font-size: 0.8rem;
     font-weight: 600;
     flex-shrink: 0;
 }

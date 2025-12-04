@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { XIcon, PlusIcon, TrashIcon } from '@/components/ui/Icon';
+import { XIcon, PlusIcon } from '@/components/ui/Icon';
 import { GripVertical } from 'lucide-react';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import {
@@ -59,7 +59,9 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, 
         style={{ cursor: disabled ? 'default' : 'grab', gap: '0.5rem', display: 'flex', alignItems: 'center' }}
       >
         <GripVertical size={16} />
-        {player.originalIndex + 1}
+        <div className='player-number'>
+          {player.originalIndex + 1}
+        </div>
       </div>
       
       <input
@@ -75,7 +77,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, 
           onClick={() => onRemove(index)}
           disabled={disabled}
         >
-          <TrashIcon size={16} />
+          <XIcon size={16} />
         </button>
       )}
     </div>
