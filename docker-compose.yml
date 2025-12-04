@@ -20,6 +20,21 @@ services:
       retries: 10
       start_period: 20s
 
+  redis:
+    image: redis:7-alpine
+    container_name: wizard-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks: [wizard]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -31,10 +46,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-5000}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     ports:
       - "5000:5000"
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks: [wizard]
     healthcheck:
@@ -83,6 +101,7 @@ services:
 
 volumes:
   mongodb_data:
+  redis_data:
 
 networks:
   wizard:

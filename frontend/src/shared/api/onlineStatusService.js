@@ -9,8 +9,8 @@ class OnlineStatusService {
   constructor() {
     this._onlineStatus = null;
     this._lastChecked = null;
-    this._checkInterval = 300000; // Check every 5 minutes (300 seconds) to avoid rate limiting
-    this._minCheckInterval = 60000; // Minimum 60 seconds between forced checks
+    this._checkInterval = 60000; // Check every 60 seconds - Redis caching handles backend load
+    this._minCheckInterval = 30000; // Minimum 30 seconds between forced checks
     this._listeners = [];
     this._intervalId = null;
     this._hasNetworkConnectivity = navigator.onLine; // Browser's network status

@@ -1,7 +1,11 @@
 const express = require('express');
 const OnlineStatus = require('../models/OnlineStatus');
 const auth = require('../middleware/auth');
+const cache = require('../utils/redis');
 const router = express.Router();
+
+const CACHE_KEY = 'online:status';
+const CACHE_TTL = 300; // 5 minutes
 
 /**
  * GET /api/online/status
@@ -9,6 +13,12 @@ const router = express.Router();
  */
 router.get('/status', async (req, res) => {
   try {
+    // Try to get from cache first
+    const cached = await cache.get(CACHE_KEY);
+    if (cached) {
+      return res.json(cached);
+    }
+    
     // Get the latest status document
     let statusDoc = await OnlineStatus.findOne().sort({ updatedAt: -1 });
     
@@ -22,14 +32,19 @@ router.get('/status', async (req, res) => {
       await statusDoc.save();
     }
 
-    res.json({
+    const response = {
       online: statusDoc.status,
       message: statusDoc.status ? 
         'All features are available' : 
         'Online features are currently disabled for maintenance',
       lastUpdated: statusDoc.updatedAt,
       updatedBy: statusDoc.updatedBy
-    });
+    };
+
+    // Store in cache
+    await cache.set(CACHE_KEY, response, CACHE_TTL);
+
+    res.json(response);
   } catch (error) {
     console.error('Error getting online status:', error);
     // If there's an error, default to offline mode for safety
@@ -71,6 +86,9 @@ router.post('/toggle', auth, async (req, res) => {
     }
     
     await statusDoc.save();
+    
+    // Invalidate cache
+    await cache.del(CACHE_KEY);
     
     res.json({
       success: true,
@@ -126,6 +144,9 @@ router.put('/status', auth, async (req, res) => {
     }
     
     await statusDoc.save();
+    
+    // Invalidate cache
+    await cache.del(CACHE_KEY);
     
     res.json({
       success: true,
