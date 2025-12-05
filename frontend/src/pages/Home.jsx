@@ -15,7 +15,6 @@ import "@/styles/pages/home.css"
 const Home = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  // const { isOnline } = useOnlineStatus()
   const { user } = useUser()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
   const [allGames, setAllGames] = useState([])
@@ -24,7 +23,6 @@ const Home = () => {
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showFriendsModal, setShowFriendsModal] = useState(false)
   const [filters, setFilters] = useState(getDefaultFilters())
-  // const [offlineMessage, setOfflineMessage] = useState('')
   
   // Apply filters to games
   const filteredGames = useMemo(() => {

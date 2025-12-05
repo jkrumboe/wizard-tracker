@@ -110,7 +110,7 @@ export function UserProvider({ children }) {
 
     // Only run this check once on initial mount
     checkAuthenticationStatus()
-  }, []) // Intentionally exclude isOnline to prevent auto-login on mode switch
+  }, [])
 
   // Function to clear user data (for logout)
   const clearUserData = useCallback(() => {
@@ -119,27 +119,9 @@ export function UserProvider({ children }) {
     LocalUserProfileService.clearCurrentUser()
   }, [])
 
-  // Handle online status changes - DON'T clear user session, just mark mode
-  useEffect(() => {
-    if (!isOnline && user) {
-      console.debug('🔒 Switching to offline mode - preserving user session')
-      // Mark session as offline but don't clear it
-      authService.clearLocalSession() // This now just marks as offline
-      sessionCache.set('offline_mode', true, { persist: true });
-    } else if (isOnline && user) {
-      console.debug('🔓 Switching to online mode - restoring session')
-      // Try to restore session
-      authService.restoreLocalSession().catch(() => {
-        console.debug('No session to restore');
-      });
-      sessionCache.set('offline_mode', false, { persist: true });
-    }
-    // Note: We preserve user data across online/offline transitions
-  }, [isOnline, user])
-
   // Periodic session validation - check if token expired every 5 minutes
   useEffect(() => {
-    if (!user || !isOnline) return;
+    if (!user) return;
     
     const validateSession = async () => {
       try {
@@ -164,7 +146,7 @@ export function UserProvider({ children }) {
     const interval = setInterval(validateSession, 5 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [user, isOnline, clearUserData])
+  }, [user, clearUserData])
 
   // Fetch player data when user is set
   useEffect(() => {

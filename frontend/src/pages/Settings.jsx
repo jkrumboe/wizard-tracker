@@ -1154,18 +1154,7 @@ const Settings = () => {
           </div>          
         </div>
 
-        <div className="settings-section">
-          {/* <h2>Storage{isOnline ? ' & Cloud Sync' : ''}</h2> */}
-          
-          {/* {!isOnline && (
-            <div className="offline-notification">
-              <p className="offline-message">
-                <strong>Offline Mode:</strong> Cloud sync and sharing features are currently disabled. 
-                You can still manage your local saved games below.
-              </p>
-            </div>
-          )} */}
-          
+        <div className="settings-section">          
           <div className="storage-cloud-grid">
             <div className="storage-info">
               {/* <h3>Local Storage</h3> */}
