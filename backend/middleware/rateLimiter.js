@@ -29,7 +29,10 @@ const createLimiter = (options) => {
     ...options,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.path === '/api/health',
+    skip: (req) => {
+      // Skip rate limiting for health checks and online status
+      return req.path === '/api/health' || req.path === '/api/online/status';
+    },
     store
   });
 };
@@ -37,14 +40,14 @@ const createLimiter = (options) => {
 // General rate limiter for all routes
 const generalLimiter = createLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 500, // Limit each IP to 500 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
 });
 
 // Strict rate limiter for authentication endpoints
 const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login/register attempts per windowMs
+  max: 10, // Limit each IP to 10 login/register attempts per windowMs
   message: 'Too many authentication attempts, please try again later.',
   skipSuccessfulRequests: false, // Count successful requests too
 });
@@ -52,7 +55,7 @@ const authLimiter = createLimiter({
 // Rate limiter for API endpoints
 const apiLimiter = createLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 API requests per windowMs
+  max: 1000, // Limit each IP to 1000 API requests per windowMs
   message: 'Too many API requests, please try again later.',
 });
 
