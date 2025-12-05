@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/shared/hooks/useUser';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import authService from '@/shared/api/authService';
 import "@/styles/pages/login.css"
 
@@ -14,15 +13,9 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshAuthStatus } = useUser();
-  const { isOnline } = useOnlineStatus();
 
   const handleLogin = async () => {
     setError(null);
-    
-    if (!isOnline) {
-      setError('Cannot login while in offline mode. Please wait for online mode to be enabled.');
-      return;
-    }
     
     try {
       await authService.login({ username, password });
@@ -39,11 +32,6 @@ const Login = () => {
 
   const handleRegister = async () => {
     setError(null);
-    
-    if (!isOnline) {
-      setError('Cannot register while in offline mode. Please wait for online mode to be enabled.');
-      return;
-    }
     
     try {
       await authService.register({ username: username, password });
@@ -62,15 +50,6 @@ const Login = () => {
     <div className="login-page">
       {/* <h1>{isRegistering ? "Register" : "Login"}</h1> */}
       
-      {!isOnline && (
-        <div className="offline-notification" style={{ marginBottom: '1rem' }}>
-          <p className="offline-message">
-            <strong>Offline Mode:</strong> Authentication is currently disabled. 
-            Please wait for online mode to be enabled.
-          </p>
-        </div>
-      )}
-      
       <form
         className="login-form"
         onSubmit={(e) => {
@@ -87,7 +66,6 @@ const Login = () => {
             autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            disabled={!isOnline}
             required
           />
         </div>
@@ -99,14 +77,13 @@ const Login = () => {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={!isOnline}
             required
           />
         </div>
         
         {error && <p className="error-message">{error}</p>}
         
-        <button type="submit" className="submit-btn" disabled={!isOnline}>
+        <button type="submit" className="submit-btn">
           {isRegistering ? "Sign Up" : "Sign In"}
         </button>
         
@@ -114,7 +91,6 @@ const Login = () => {
           type="button"
           className="switch-btn"
           onClick={() => setIsRegistering(!isRegistering)}
-          disabled={!isOnline}
         >
           {isRegistering ? "Already have an account? Sign In" : "No account yet? Sign Up"}
         </button>

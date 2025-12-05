@@ -1,5 +1,4 @@
 import { API_ENDPOINTS } from './config.js';
-import { onlineStatusService } from './onlineStatusService';
 import { sessionCache } from '../utils/sessionCache';
 
 class AuthService {
@@ -385,39 +384,6 @@ class AuthService {
       if (!navigator.onLine) {
         console.debug('🔒 Browser is offline - checking cached auth');
         const cachedUser = await sessionCache.get('auth_user');
-        
-        if (cachedUser && cachedToken) {
-          this.currentUser = cachedUser;
-          this.token = cachedToken;
-          return cachedUser;
-        }
-        return null;
-      }
-      
-      // Try to get status from service, but don't wait too long
-      try {
-        const statusCheck = await Promise.race([
-          onlineStatusService.getStatus(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000))
-        ]);
-        
-        if (!statusCheck.online) {
-          console.debug('🔒 App is in offline mode - checking cached auth');
-          const cachedUser = await sessionCache.get('auth_user');
-          const cachedToken = await sessionCache.get('auth_token');
-          
-          if (cachedUser && cachedToken) {
-            this.currentUser = cachedUser;
-            this.token = cachedToken;
-            return cachedUser;
-          }
-          return null;
-        }
-      } catch {
-        // If status check times out, check cache
-        console.debug('🔒 Status check timed out - checking cached auth');
-        const cachedUser = await sessionCache.get('auth_user');
-        const cachedToken = await sessionCache.get('auth_token');
         
         if (cachedUser && cachedToken) {
           this.currentUser = cachedUser;

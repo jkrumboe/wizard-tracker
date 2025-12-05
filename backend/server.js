@@ -21,11 +21,9 @@ async function initializeServer() {
   const gameRoutes = require('./routes/games');
   const tableGameRoutes = require('./routes/tableGames');
   const gameTemplateRoutes = require('./routes/gameTemplates');
-  const onlineRoutes = require('./routes/online');
   const gameSyncRoutes = require('./routes/gameSync');
   const errorHandler = require('./middleware/errorHandler');
   const { generalLimiter, apiLimiter } = require('./middleware/rateLimiter');
-  const OnlineStatus = require('./models/OnlineStatus');
 
   // Middleware
   app.set('trust proxy', 1); // Trust first proxy (nginx/Docker)
@@ -41,16 +39,6 @@ async function initializeServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ MongoDB connected');
-    
-    // Initialize default online status document if none exists
-    const statusCount = await OnlineStatus.countDocuments();
-    if (statusCount === 0) {
-      await OnlineStatus.create({
-        status: true,
-        message: 'All features are available',
-        updatedBy: 'system'
-      });
-    }
   } catch (err) {
     console.error('MongoDB connection error:', err);
   }
@@ -76,7 +64,6 @@ async function initializeServer() {
   app.use('/api/table-games', apiLimiter, tableGameRoutes);
   app.use('/api/game-templates', apiLimiter, gameTemplateRoutes);
   app.use('/api/games', apiLimiter, gameSyncRoutes); // Game sync endpoints
-  app.use('/api/online', apiLimiter, onlineRoutes);
 
   // Health check route
   app.get('/api/health', (req, res) => {

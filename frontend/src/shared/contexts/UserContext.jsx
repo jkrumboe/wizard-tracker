@@ -1,7 +1,6 @@
 import { createContext, useState, useEffect, useCallback } from 'react'
 import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
-import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { LocalUserProfileService, LocalGameStorage, LocalTableGameStorage } from '../api'
 import { stateRecovery } from '../utils/stateRecovery'
 import { sessionCache } from '../utils/sessionCache'
@@ -12,7 +11,6 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null)
   const [player, setPlayer] = useState(null)
   const [loading, setLoading] = useState(true)
-  const { isOnline } = useOnlineStatus()
   
   // Register state recovery for user session
   useEffect(() => {

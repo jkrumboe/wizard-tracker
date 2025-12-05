@@ -30,8 +30,8 @@ const createLimiter = (options) => {
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-      // Skip rate limiting for health checks and online status
-      return req.path === '/api/health' || req.path === '/api/online/status';
+      // Skip rate limiting for health checks
+      return req.path === '/api/health';
     },
     store
   });

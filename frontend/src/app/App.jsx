@@ -4,9 +4,8 @@ import { useEffect, lazy, Suspense, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { OnlineProtectedRoute, AuthProtectedRoute, NetworkRecoveryHandler, UpdateNotification } from "@/components/common"
+import { AuthProtectedRoute, UpdateNotification } from "@/components/common"
 import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
-import AutoLogoutHandler from "@/components/common/AutoLogoutHandler"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
 // Eagerly import critical pages that should work offline
@@ -27,7 +26,7 @@ const Login = lazy(() => import("@/pages/auth/Login"))
 const SharedGamePage = lazy(() => import("@/pages/shared/SharedGamePage"))
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
-import { UserProvider, OnlineStatusProvider, ThemeProvider } from "@/shared/contexts"
+import { UserProvider, ThemeProvider } from "@/shared/contexts"
 import { authService } from "@/shared/api/authService"
 import { LocalGameStorage } from "@/shared/api/localGameStorage"
 import "@/styles/base/theme.css"
@@ -219,9 +218,7 @@ function App() {
   return (
       <Router>
         <ThemeProvider>
-          <OnlineStatusProvider>
             <UserProvider>
-              <AutoLogoutHandler />
               <ServiceWorkerErrorRecovery />
               <GameStateProvider>
                 <URLImportHandler />
@@ -256,9 +253,7 @@ function App() {
                     <Route path="/game/:id" element={<GameDetails />} />
                     <Route path="/game/current" element={<GameInProgress />} />
                     <Route path="/login" element= {
-                      <OnlineProtectedRoute>
                         <Login />
-                      </OnlineProtectedRoute>
                     }/>
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/shared/:shareId" element={<SharedGamePage />} />
@@ -273,14 +268,11 @@ function App() {
                     </Routes>
                   </Suspense>
                 </LazyLoadErrorBoundary>
-                {/* Network Recovery Handler - monitors connection and restores state */}
-                <NetworkRecoveryHandler />
                 {/* Update Notification - handles app updates */}
                 <UpdateNotification />
                 </div>
               </GameStateProvider>
             </UserProvider>
-          </OnlineStatusProvider>
         </ThemeProvider>
       </Router>
   )

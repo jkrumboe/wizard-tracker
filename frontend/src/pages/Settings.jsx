@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
@@ -46,7 +45,6 @@ const Settings = () => {
   });
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
-  const { isOnline } = useOnlineStatus();
 
   // Convert saved games object to array and apply filters
   const filteredGames = useMemo(() => {
@@ -306,7 +304,7 @@ const Settings = () => {
   // Load user avatar when user is available
   useEffect(() => {
     const loadAvatarUrl = async () => {
-      if (user && isOnline) {
+      if (user) {
         try {
           const url = await avatarService.getAvatarUrl()
           setAvatarUrl(url)
@@ -331,7 +329,7 @@ const Settings = () => {
     return () => {
       window.removeEventListener('avatarUpdated', handleAvatarUpdate)
     }
-  }, [user, isOnline])
+  }, [user])
 
   const loadSavedGames = useCallback(async () => {
     // First migrate games to ensure they have upload tracking properties
@@ -345,8 +343,8 @@ const Settings = () => {
     const tableGames = LocalTableGameStorage.getSavedTableGamesList();
     setSavedTableGames(tableGames);
     
-    // Only check sync status if online - do it in background with delay to avoid rate limiting
-    if (isOnline && user) {
+    // Check sync status if user is logged in - do it in background with delay to avoid rate limiting
+    if (user) {
       // Verify table games asynchronously with delay between requests
       setTimeout(async () => {
         const { getTableGameById } = await import('@/shared/api/tableGameService');
@@ -398,15 +396,8 @@ const Settings = () => {
         }
         setGameSyncStatuses(syncStatuses);
       }, 2000); // Wait 2 seconds before starting sync checks
-    } else {
-      // Offline - mark all as local
-      const syncStatuses = {};
-      for (const gameId of Object.keys(allGames)) {
-        syncStatuses[gameId] = { status: 'Local', synced: false };
-      }
-      setGameSyncStatuses(syncStatuses);
     }
-  }, [isOnline, user]);
+  }, [user]);
 
   // Reload games when date filter changes
   // Removed redundant reload on every render
@@ -742,11 +733,6 @@ const Settings = () => {
   const handleShareGame = async (gameId, gameData) => {
     console.debug('handleShareGame called with gameId:', gameId, 'gameData:', gameData);
     
-    if (!isOnline) {
-      setMessage({ text: 'Cannot share games while in offline mode', type: 'error' });
-      return;
-    }
-
     // Check authentication before attempting to share
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -843,11 +829,6 @@ const Settings = () => {
   };
 
   const handleBulkCloudSync = async () => {
-    if (!isOnline) {
-      setMessage({ text: 'Cannot upload games while in offline mode', type: 'error' });
-      return;
-    }
-
     // Check authentication before attempting bulk upload
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -964,11 +945,6 @@ const Settings = () => {
   };
 
   const handleDownloadCloudGames = () => {
-    if (!isOnline) {
-      setMessage({ text: 'Cannot download games while in offline mode', type: 'error' });
-      return;
-    }
-
     // Check authentication
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -1053,7 +1029,6 @@ const Settings = () => {
 
         <div className="settings-section" style={{border: '1px solid var(--border)'}}>          
           {/* Profile Picture Section */}
-          {isOnline && (
             <div className="settings-option">
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -1102,7 +1077,6 @@ const Settings = () => {
                 )}
               </div>
             </div>
-          )}
 
           {/* Theme Toggle Section */}
           <div className="settings-option">
@@ -1206,7 +1180,7 @@ const Settings = () => {
             </div>
           </div>
 
-          {isOnline && cloudSyncStatus.uploading && (
+          {cloudSyncStatus.uploading && (
             <div className="upload-progress">
               <div className="progress-text">{cloudSyncStatus.progress}</div>
               <div className="progress-bar">
@@ -1224,7 +1198,7 @@ const Settings = () => {
           )}
 
           <div className="settings-actions">
-            {isOnline && user && (
+            {user && (
               <div className="cloud-sync-actions">
                 <button 
                   className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
@@ -1268,7 +1242,7 @@ const Settings = () => {
                 </button>
               </div>
             )}
-            {isOnline && !user && (
+            {!user && (
               <button 
                 className="settings-button cloud-sync-button"
                 onClick={() => navigate('/login')}
@@ -1331,8 +1305,8 @@ const Settings = () => {
                 const badgeClass = status.toLowerCase().replace(' ', '-');
 
                 // Determine which actions to show
-                const showSync = isOnline && needsUpload && !isImportedGame;
-                const showShare = isOnline && isGameSynced && !isImportedGame;
+                const showSync = needsUpload && !isImportedGame;
+                const showShare = isGameSynced && !isImportedGame;
 
                 return (
                   <SwipeableGameCard
@@ -1430,7 +1404,7 @@ const Settings = () => {
             <div className="game-history">
               {savedTableGames.map((game) => {
                 const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
-                const showSync = isOnline && !isUploaded && game.gameFinished;
+                const showSync = !isUploaded && game.gameFinished;
                 
                 return (
                   <SwipeableGameCard
