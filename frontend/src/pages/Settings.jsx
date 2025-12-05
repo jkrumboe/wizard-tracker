@@ -562,10 +562,11 @@ const Settings = () => {
         // Post message to activate the waiting service worker
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         
-        // Wait for controller change and reload
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Wait for controller change and reload - with one-time handler
+        const handleControllerChange = () => {
           window.location.reload();
-        });
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange, { once: true });
         
         return;
       }
@@ -630,10 +631,11 @@ const Settings = () => {
         // Post message to activate the waiting service worker
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         
-        // Wait for controller change and reload
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Wait for controller change and reload - with one-time handler
+        const handleControllerChange = () => {
           window.location.reload();
-        });
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange, { once: true });
       } else {
         setMessage({ 
           text: '✅ You are running the latest version!', 
@@ -1170,12 +1172,7 @@ const Settings = () => {
                   }}
               />
             </label>
-            <p style={{ 
-              fontSize: '0.85rem', 
-              color: 'var(--text-light)', 
-              marginTop: '0.25rem',
-              marginLeft: '1.5rem'
-            }}>
+            <p>
               {autoUpdate 
                 ? 'Updates will install automatically when available' 
                 : 'You will be prompted before installing updates'}

@@ -188,6 +188,13 @@
   gap: var(--spacing-md);
 }
 
+.settings-option:has(.checkbox-label) p {
+  text-align: center;;
+  margin-top: var(--spacing-sm);
+  color: var(--text);
+  font-size: 0.7rem;
+}
+
 .settings-option span {
     font-size: 1rem;
     margin: 0 var(--spacing-sm);
