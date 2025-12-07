@@ -6,7 +6,7 @@
  * @returns {string} The shareable URL
  */
 export function generateShareableLink(game) {
-  const baseUrl = window.location.origin;
+  const baseUrl = globalThis.location.origin;
   
   // For imported/shared games, use the original game ID for sharing
   // This allows re-sharing of imported games
@@ -30,7 +30,7 @@ export function generateShareableLink(game) {
  */
 export async function copyToClipboard(text) {
   try {
-    if (navigator.clipboard && window.isSecureContext) {
+    if (navigator.clipboard && globalThis.isSecureContext) {
       await navigator.clipboard.writeText(text);
       return true;
     } else {

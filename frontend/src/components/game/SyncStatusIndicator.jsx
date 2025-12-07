@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Cloud, CloudOff, RefreshCw, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { WifiOff, Cloud, CloudOff, RefreshCw, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { getSyncManager } from '../../shared/sync/syncManager';
 import { db } from '../../shared/db/database';
 import { SyncStatus } from '../../shared/schemas/syncMetadata';
@@ -20,8 +20,8 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    globalThis.addEventListener('online', handleOnline);
+    globalThis.addEventListener('offline', handleOffline);
 
     // Load initial sync status
     loadSyncStatus();
@@ -40,8 +40,8 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
     const pollInterval = setInterval(loadSyncStatus, 10000);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      globalThis.removeEventListener('online', handleOnline);
+      globalThis.removeEventListener('offline', handleOffline);
       if (unsubscribe) unsubscribe();
       clearInterval(pollInterval);
     };

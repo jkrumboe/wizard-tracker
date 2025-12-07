@@ -20,7 +20,7 @@ if (wasServiceWorkerForceUpdated()) {
 }
 
 // Listen for unhandled promise rejections (like SW precache errors)
-window.addEventListener('unhandledrejection', (event) => {
+globalThis.addEventListener('unhandledrejection', (event) => {
   const error = event.reason;
   
   // Check if it's a Workbox precaching error (various formats)
@@ -41,12 +41,12 @@ window.addEventListener('unhandledrejection', (event) => {
     localStorage.setItem('sw_needs_cleanup', 'true');
     
     // Force a page reload to show the recovery UI
-    window.location.reload();
+    globalThis.location.reload();
   }
 });
 
 // Listen for regular errors too (old Workbox might throw synchronously)
-window.addEventListener('error', (event) => {
+globalThis.addEventListener('error', (event) => {
   const error = event.error;
   const message = event.message || '';
   
@@ -56,7 +56,7 @@ window.addEventListener('error', (event) => {
       error?.name === 'bad-precaching-response') {
     console.warn('Detected synchronous service worker error');
     localStorage.setItem('sw_precache_error', 'true');
-    window.location.reload();
+    globalThis.location.reload();
   }
 });
 
@@ -83,8 +83,8 @@ try {
 
 // Make sync manager globally available for debugging
 if (import.meta.env.DEV) {
-  window.__syncManager = syncManager;
-  window.__db = import('@/shared/db/database').then(m => m.db);
+  globalThis.__syncManager = syncManager;
+  globalThis.__db = import('@/shared/db/database').then(m => m.db);
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -97,6 +97,6 @@ root.render(
 
 // Signal that React app is ready for PWA loading transition
 setTimeout(() => {
-  window.dispatchEvent(new Event('app-ready'));
+  globalThis.dispatchEvent(new Event('app-ready'));
 }, 100);
 

@@ -188,7 +188,7 @@ export class LocalUserProfileService {
   static generateGuestUserId() {
     // Use crypto.getRandomValues for secure randomness
     const array = new Uint32Array(2);
-    window.crypto.getRandomValues(array);
+    globalThis.crypto.getRandomValues(array);
     // Convert each 32-bit number to base36 and append together for uniqueness
     const randomSuffix = array[0].toString(36) + array[1].toString(36);
     return `guest_${Date.now()}_${randomSuffix}`;

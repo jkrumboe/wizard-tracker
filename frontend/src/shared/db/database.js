@@ -47,7 +47,7 @@ class WizardTrackerDB extends Dexie {
     if (!clientState) {
       // Secure random clientId
       const array = new Uint8Array(16);
-      window.crypto.getRandomValues(array);
+      globalThis.crypto.getRandomValues(array);
       const secureRandom = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
       const clientId = `client_${Date.now()}_${secureRandom}`;
       await this.clientState.put({ key: 'clientId', value: clientId });

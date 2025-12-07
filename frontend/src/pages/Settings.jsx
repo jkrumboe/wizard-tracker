@@ -59,7 +59,7 @@ const Settings = () => {
   };
 
   const checkForImportedGames = () => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(globalThis.location.search);
     const importGamesParam = urlParams.get('importGames');
     const importGameParam = urlParams.get('importGame');
     const shareKeyParam = urlParams.get('shareKey');
@@ -73,7 +73,7 @@ const Settings = () => {
           text: `Invalid shared link: ${validation.error}`, 
           type: 'error' 
         });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
         return;
       }
       
@@ -90,7 +90,7 @@ const Settings = () => {
         setMessage({ text: 'Failed to process shared link data.', type: 'error' });
       }
       
-      window.history.replaceState({}, document.title, window.location.pathname);
+      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
     } else if (importGameParam) {
       // Handle single game import with security validation
       const validation = ShareValidator.validateEncodedGameData(importGameParam);
@@ -100,7 +100,7 @@ const Settings = () => {
           text: `Invalid shared link: ${validation.error}`, 
           type: 'error' 
         });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
         return;
       }
       
@@ -166,7 +166,7 @@ const Settings = () => {
         setMessage({ text: 'Failed to process shared link data.', type: 'error' });
       }
       
-      window.history.replaceState({}, document.title, window.location.pathname);
+      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
     } else if (shareKeyParam) {
       // Handle share key import (for large data) with security validation
       
@@ -176,7 +176,7 @@ const Settings = () => {
           text: 'Invalid share link format.', 
           type: 'error' 
         });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
         return;
       }
       
@@ -189,7 +189,7 @@ const Settings = () => {
             text: 'This share link was created on a different device. Please use the download/import file method for cross-device sharing.', 
             type: 'error' 
           });
-          window.history.replaceState({}, document.title, window.location.pathname);
+          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           return;
         }
         
@@ -198,7 +198,7 @@ const Settings = () => {
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
           setMessage({ text: 'Shared game link has expired.', type: 'error' });
-          window.history.replaceState({}, document.title, window.location.pathname);
+          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           return;
         }
         
@@ -210,7 +210,7 @@ const Settings = () => {
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
           setMessage({ text: 'Invalid shared link data format.', type: 'error' });
-          window.history.replaceState({}, document.title, window.location.pathname);
+          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           return;
         }
         
@@ -223,7 +223,7 @@ const Settings = () => {
             text: `Invalid shared link: ${validation.error}`, 
             type: 'error' 
           });
-          window.history.replaceState({}, document.title, window.location.pathname);
+          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           return;
         }
         
@@ -244,7 +244,7 @@ const Settings = () => {
         setMessage({ text: 'Failed to process shared link data.', type: 'error' });
       }
       
-      window.history.replaceState({}, document.title, window.location.pathname);
+      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
     }
   };
 
@@ -319,10 +319,10 @@ const Settings = () => {
       loadAvatarUrl()
     }
 
-    window.addEventListener('avatarUpdated', handleAvatarUpdate)
+    globalThis.addEventListener('avatarUpdated', handleAvatarUpdate)
 
     return () => {
-      window.removeEventListener('avatarUpdated', handleAvatarUpdate)
+      globalThis.removeEventListener('avatarUpdated', handleAvatarUpdate)
     }
   }, [user])
 
@@ -400,7 +400,7 @@ const Settings = () => {
   // Handle URL parameter changes
   useEffect(() => {
     const handleUrlParamImport = () => {
-      const urlParams = new URLSearchParams(window.location.search);
+      const urlParams = new URLSearchParams(globalThis.location.search);
       if (urlParams.has('importGame') || urlParams.has('importGames') || urlParams.has('shareKey')) {
         checkForImportedGames();
       }
@@ -410,10 +410,10 @@ const Settings = () => {
     handleUrlParamImport();
 
     // Listen for popstate events (back/forward navigation)
-    window.addEventListener('popstate', handleUrlParamImport);
+    globalThis.addEventListener('popstate', handleUrlParamImport);
 
     return () => {
-      window.removeEventListener('popstate', handleUrlParamImport);
+      globalThis.removeEventListener('popstate', handleUrlParamImport);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -470,12 +470,12 @@ const Settings = () => {
       // Then logout from backend
       await authService.logout();
       // Navigate to login page
-      window.location.href = '/login';
+      globalThis.location.href = '/login';
     } catch (error) {
       console.error('Error during logout:', error);
       // Even if logout fails on server, clear local data and redirect
       clearUserData();
-      window.location.href = '/login';
+      globalThis.location.href = '/login';
     }
   };
 
@@ -526,7 +526,7 @@ const Settings = () => {
         
         // Wait for controller change and reload - with one-time handler
         const handleControllerChange = () => {
-          window.location.reload();
+          globalThis.location.reload();
         };
         navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange, { once: true });
         
@@ -595,7 +595,7 @@ const Settings = () => {
         
         // Wait for controller change and reload - with one-time handler
         const handleControllerChange = () => {
-          window.location.reload();
+          globalThis.location.reload();
         };
         navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange, { once: true });
       } else {

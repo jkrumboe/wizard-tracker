@@ -40,32 +40,32 @@ const GameDetails = () => {
   const [showChart, setShowChart] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [isLandscape] = useState(() => {
-    if (typeof window !== 'undefined' && window.screen && window.screen.orientation) {
-      return window.screen.orientation.type.startsWith('landscape');
+    if (typeof window !== 'undefined' && globalThis.screen && globalThis.screen.orientation) {
+      return globalThis.screen.orientation.type.startsWith('landscape');
     }
     // Fallback: compare width and height
     return typeof window !== 'undefined'
-      ? window.innerWidth > window.innerHeight
+      ? globalThis.innerWidth > globalThis.innerHeight
       : true;
   });
 
   const [windowWidth, setWindowWidth] = useState(() => {
     // Safely handle window access for SSR
-    return typeof window !== 'undefined' ? window.innerWidth : 1200
+    return typeof window !== 'undefined' ? globalThis.innerWidth : 1200
   })
   
   // Handle window resize events
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth)
+      setWindowWidth(globalThis.innerWidth)
     }
     
     // Add event listener
-    window.addEventListener('resize', handleResize)
+    globalThis.addEventListener('resize', handleResize)
     
     // Clean up on unmount
     return () => {
-      window.removeEventListener('resize', handleResize)
+      globalThis.removeEventListener('resize', handleResize)
     }
   }, [])
   

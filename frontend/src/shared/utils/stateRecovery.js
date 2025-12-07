@@ -36,14 +36,14 @@ class StateRecoveryService {
     if (this.initialized) return;
     
     // Listen to page unload events
-    window.addEventListener('beforeunload', this.handleBeforeUnload);
+    globalThis.addEventListener('beforeunload', this.handleBeforeUnload);
     
     // Listen to visibility changes (tab switching, minimizing)
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
     
     // Listen to online/offline events
-    window.addEventListener('online', this.handleOnline);
-    window.addEventListener('offline', this.handleOffline);
+    globalThis.addEventListener('online', this.handleOnline);
+    globalThis.addEventListener('offline', this.handleOffline);
     
     // Auto-save periodically
     this.startAutoSave();
@@ -56,10 +56,10 @@ class StateRecoveryService {
    * Clean up event listeners
    */
   destroy() {
-    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    globalThis.removeEventListener('beforeunload', this.handleBeforeUnload);
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-    window.removeEventListener('online', this.handleOnline);
-    window.removeEventListener('offline', this.handleOffline);
+    globalThis.removeEventListener('online', this.handleOnline);
+    globalThis.removeEventListener('offline', this.handleOffline);
     
     if (this.autoSaveInterval) {
       clearInterval(this.autoSaveInterval);

@@ -53,7 +53,7 @@ export async function forceServiceWorkerUpdate() {
     sessionStorage.setItem('sw_force_updated', 'true');
     
     // Reload the page
-    window.location.reload();
+    globalThis.location.reload();
   } catch (error) {
     console.error('Error forcing service worker update:', error);
   }

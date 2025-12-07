@@ -14,7 +14,7 @@ export const DEV_UPDATE_HELPER = {
        console.debug('📦 New version detected - updating automatically...');
         DEV_UPDATE_HELPER.clearCaches().then(() => {
          console.debug('� Reloading with fresh content...');
-          window.location.reload();
+          globalThis.location.reload();
         });
       }, 1000);
     }
@@ -54,7 +54,7 @@ export const DEV_UPDATE_HELPER = {
        console.debug('3. Simulating automatic reload in 2 seconds...');
         setTimeout(() => {
          console.debug('4. 🔄 Auto-reloading now!');
-          window.location.reload();
+          globalThis.location.reload();
         }, 2000);
       });
     }
@@ -63,8 +63,8 @@ export const DEV_UPDATE_HELPER = {
 
 // Add to global scope for easy access in dev tools
 if (import.meta.env.DEV) {
-  window.DEV_UPDATE_HELPER = DEV_UPDATE_HELPER;
-  console.debug('🛠️ Auto-update helper available: window.DEV_UPDATE_HELPER');
+  globalThis.DEV_UPDATE_HELPER = DEV_UPDATE_HELPER;
+  console.debug('🛠️ Auto-update helper available: globalThis.DEV_UPDATE_HELPER');
  console.debug('Commands:');
  console.debug('  - DEV_UPDATE_HELPER.simulateAutoUpdate() - Test automatic update');
  console.debug('  - DEV_UPDATE_HELPER.clearCaches() - Clear all caches');

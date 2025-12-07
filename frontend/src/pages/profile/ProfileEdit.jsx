@@ -99,7 +99,7 @@ const ProfileEdit = () => {
           setAvatarUrl(newAvatarUrl);
           
           // Dispatch custom event to update navbar avatar
-          window.dispatchEvent(new CustomEvent('avatarUpdated'));
+          globalThis.dispatchEvent(new CustomEvent('avatarUpdated'));
           
           setSuccessMessage('Avatar updated successfully!');
         } catch (avatarError) {

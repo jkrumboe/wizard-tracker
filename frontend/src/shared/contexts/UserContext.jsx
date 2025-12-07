@@ -130,8 +130,8 @@ export function UserProvider({ children }) {
           console.debug('🔒 Session expired - logging out');
           clearUserData();
           // Redirect to login if needed
-          if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-            window.location.href = '/login';
+          if (globalThis.location.pathname !== '/login' && globalThis.location.pathname !== '/') {
+            globalThis.location.href = '/login';
           }
         }
       } catch (error) {

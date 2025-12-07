@@ -47,7 +47,7 @@ const LoadGameDialog = ({
   };
 
   const handleDeleteGame = async (gameId, gameName) => {
-    if (window.confirm(`Are you sure you want to delete "${gameName}"?`)) {
+    if (globalThis.confirm(`Are you sure you want to delete "${gameName}"?`)) {
       try {
         const result = await onDeleteGame(gameId);
         if (result.success) {

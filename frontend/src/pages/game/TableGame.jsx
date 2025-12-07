@@ -21,16 +21,15 @@ const TableGame = () => {
   const navigate = useNavigate();
   
   const [rows, setRows] = useState(() => {
-    const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
+    const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
     const initialRows = isSmallLandscape ? 4 : 10;
-    console.log('Initial rows state:', { isSmallLandscape, initialRows, windowWidth: window.innerWidth, orientation: window.screen.orientation?.type });
     return initialRows;
   });
   
   const [currentRound, setCurrentRound] = useState(1); // Track current round (1-based)
   const [activeTab, setActiveTab] = useState('game'); // 'game' or 'stats'
   const [statsSubTab, setStatsSubTab] = useState('standings'); // 'standings', 'chart', or 'table'
-  const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches);
+  const [isLandscape, setIsLandscape] = useState(globalThis.matchMedia('(orientation: landscape)').matches);
   const [showDeletePlayerConfirm, setShowDeletePlayerConfirm] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const [showGameSettingsModal, setShowGameSettingsModal] = useState(false);
@@ -110,7 +109,7 @@ const TableGame = () => {
         if (gameState.currentGameId && gameState.players) {
           setPlayers(gameState.players);
           // Check if we should adjust rows based on current orientation
-          const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
+          const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
           const hasData = gameState.players.some(player => 
             player.points.some(point => point !== "" && point !== undefined && point !== null)
           );
@@ -200,7 +199,7 @@ const TableGame = () => {
 
   // Listen for orientation changes
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(orientation: landscape)');
+    const mediaQuery = globalThis.matchMedia('(orientation: landscape)');
     const handleOrientationChange = (e) => {
       setIsLandscape(e.matches);
     };
@@ -211,7 +210,7 @@ const TableGame = () => {
 
   // Listen for orientation changes and adjust rows
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(orientation: landscape) and (max-width: 950px)');
+    const mediaQuery = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)');
     const handleOrientationChange = (e) => {
       // Only update rows if we're starting a new game (no data entered yet)
       const hasData = players.some(player => 
@@ -262,14 +261,14 @@ const TableGame = () => {
     };
 
     // Listen for template update events
-    window.addEventListener('templateUpdated', syncSettingsFromTemplate);
+    globalThis.addEventListener('templateUpdated', syncSettingsFromTemplate);
     
     // Also check on window focus (in case template was edited in another tab)
-    window.addEventListener('focus', syncSettingsFromTemplate);
+    globalThis.addEventListener('focus', syncSettingsFromTemplate);
     
     return () => {
-      window.removeEventListener('templateUpdated', syncSettingsFromTemplate);
-      window.removeEventListener('focus', syncSettingsFromTemplate);
+      globalThis.removeEventListener('templateUpdated', syncSettingsFromTemplate);
+      globalThis.removeEventListener('focus', syncSettingsFromTemplate);
     };
   }, [currentGameName, showTemplateSelector, targetNumber, lowIsBetter]);
 
@@ -455,10 +454,10 @@ const TableGame = () => {
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    globalThis.addEventListener('beforeunload', handleBeforeUnload);
     
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      globalThis.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []); // Empty dependency array - set up once
 
@@ -777,7 +776,7 @@ const TableGame = () => {
           { name: "Player 3", points: [] }
         ];
     
-    const isSmallLandscape = window.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
+    const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
     const newRows = isSmallLandscape ? 8 : 10;
     
     const gameData = {

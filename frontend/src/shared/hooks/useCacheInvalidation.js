@@ -18,10 +18,10 @@ export const useCacheInvalidation = () => {
     };
 
     // Listen for cache invalidation events
-    window.addEventListener('cacheInvalidation', handleCacheInvalidation);
+    globalThis.addEventListener('cacheInvalidation', handleCacheInvalidation);
     
     return () => {
-      window.removeEventListener('cacheInvalidation', handleCacheInvalidation);
+      globalThis.removeEventListener('cacheInvalidation', handleCacheInvalidation);
     };
   }, []);
 };
@@ -30,7 +30,7 @@ export const useCacheInvalidation = () => {
  * Utility function to trigger cache invalidation
  */
 export const invalidateCache = () => {
-  window.dispatchEvent(new CustomEvent('cacheInvalidation'));
+  globalThis.dispatchEvent(new CustomEvent('cacheInvalidation'));
 };
 
 /**

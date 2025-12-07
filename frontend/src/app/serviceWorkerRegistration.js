@@ -16,7 +16,7 @@ export function register() {
     return;
   }
 
-  window.addEventListener("load", () => {
+  globalThis.addEventListener("load", () => {
     // VitePWA with injectManifest registers service-worker.js automatically
     // We just need to listen for the registration and handle updates
     navigator.serviceWorker.ready
@@ -108,7 +108,7 @@ export function register() {
     console.debug('New service worker activated - ready to reload');
     
     // Dispatch custom event instead of automatic reload
-    window.dispatchEvent(new CustomEvent('sw-update-ready'));
+    globalThis.dispatchEvent(new CustomEvent('sw-update-ready'));
     
     // Store flag that update is ready
     sessionStorage.setItem('sw_update_ready', 'true');

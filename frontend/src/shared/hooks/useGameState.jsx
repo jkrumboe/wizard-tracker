@@ -70,7 +70,7 @@ export function GameStateProvider({ children }) {
         }
         
         // Only restore if we're on the game current route
-        const currentPath = window.location.pathname;
+        const currentPath = globalThis.location.pathname;
         if (currentPath !== '/game/current') {
           return;
         }

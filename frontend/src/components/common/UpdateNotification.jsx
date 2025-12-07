@@ -18,7 +18,7 @@ const UpdateNotification = () => {
         // Auto-reload if setting is enabled
         console.debug('🔄 Auto-update enabled - reloading automatically');
         setTimeout(() => {
-          window.location.reload();
+          globalThis.location.reload();
         }, 1000); // Small delay to avoid jarring experience
       } else {
         // Show notification if auto-update is disabled
@@ -27,7 +27,7 @@ const UpdateNotification = () => {
     };
 
     // Listen for the custom event from service worker
-    window.addEventListener('sw-update-ready', handleUpdateReady);
+    globalThis.addEventListener('sw-update-ready', handleUpdateReady);
 
     // Also check on mount if update is already ready
     if (sessionStorage.getItem('sw_update_ready') === 'true') {
@@ -44,13 +44,13 @@ const UpdateNotification = () => {
     }
 
     return () => {
-      window.removeEventListener('sw-update-ready', handleUpdateReady);
+      globalThis.removeEventListener('sw-update-ready', handleUpdateReady);
     };
   }, []);
 
   const handleUpdate = () => {
     sessionStorage.removeItem('sw_update_ready');
-    window.location.reload();
+    globalThis.location.reload();
   };
 
   const handleDismiss = () => {

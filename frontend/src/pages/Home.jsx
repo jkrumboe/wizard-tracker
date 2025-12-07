@@ -47,20 +47,6 @@ const Home = () => {
     setFilters(newFilters);
   };
 
-  // Check for offline mode redirect
-  useEffect(() => {
-    if (location.state?.offlineRedirect) {
-      // setOfflineMessage(location.state.message || 'Online features are currently unavailable');
-      
-      // Clear the message after 5 seconds
-      const timer = setTimeout(() => {
-        // setOfflineMessage('');
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [location.state]);
-
   useEffect(() => {
     const fetchLocalGames = async () => {
       setLoading(true);

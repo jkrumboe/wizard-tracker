@@ -158,13 +158,13 @@ const AppLoadingScreen = ({
       .forEach(e => document.addEventListener(e, throttled));
     
     // App close/visibility tracking
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    globalThis.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       ['click', 'keydown', 'scroll', 'mousemove']
         .forEach(e => document.removeEventListener(e, throttled));
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      globalThis.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [showOnAppOpen, storageKey, versionKey, appVersion, appOpenThreshold]);

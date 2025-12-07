@@ -9,16 +9,15 @@ import LoadGameDialog from "@/components/modals/LoadGameDialog"
 import GameMenuModal from "@/components/modals/GameMenuModal"
 import GameSettingsModal from "@/components/modals/GameSettingsModal"
 import PauseConfirmationModal from "@/components/modals/PauseConfirmationModal"
-import PerformanceMetric from "@/components/common/PerformanceMetric"
-import { SyncStatusIndicator } from "@/components/game"
+import { AdvancedStats } from "@/components/game";
+import StatsChart from "@/components/game/StatsChart";
 import "@/styles/utils/performanceMetrics.css"
 import "@/styles/pages/stats.css"
 import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/components/scorecard.css"
-import StatsChart from "@/components/game/StatsChart";
-import { AdvancedStats } from "@/components/game";
-import { PauseIcon, ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon, TableIcon } from "@/components/ui/Icon"
+
+import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
 
 const GameInProgress = () => {
   const navigate = useNavigate()
@@ -49,7 +48,7 @@ const GameInProgress = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
   const [isRecovering, setIsRecovering] = useState(false) // Track recovery state
-  const [isLandscape, setIsLandscape] = useState(window.matchMedia('(orientation: landscape)').matches)
+  const [isLandscape, setIsLandscape] = useState(globalThis.matchMedia('(orientation: landscape)').matches)
   const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
   const [increaseCallMax, setIncreaseCallMax] = useState(false) // For Wolke - allows one more call than round max
   
@@ -65,7 +64,7 @@ const GameInProgress = () => {
   
   // Listen for orientation changes
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(orientation: landscape)')
+    const mediaQuery = globalThis.matchMedia('(orientation: landscape)')
     const handleOrientationChange = (e) => {
       setIsLandscape(e.matches)
     }
@@ -277,7 +276,7 @@ const GameInProgress = () => {
   useEffect(() => {
     // Check if we need to recover game state (empty state but we have a backup)
     if ((!gameState || !gameState.gameStarted || gameState.players?.length === 0) && 
-        window.location.pathname === '/game/current' && !isRecovering) {
+        globalThis.location.pathname === '/game/current' && !isRecovering) {
       
       const backupGameState = sessionStorage.getItem('gameStateBackup');
       if (backupGameState) {
@@ -367,7 +366,7 @@ const GameInProgress = () => {
                     Return Home
                   </button>
                   <button 
-                    onClick={() => window.location.reload()}
+                    onClick={() => globalThis.location.reload()}
                     style={{ padding: '10px 20px' }}
                   >
                     Try Refresh

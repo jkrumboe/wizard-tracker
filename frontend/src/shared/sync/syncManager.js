@@ -5,7 +5,6 @@
 
 import { db } from '../db/database.js';
 import { markSyncSuccess, markSyncFailure, SyncStatus } from '../schemas/syncMetadata.js';
-import { acknowledgeEvent } from '../schemas/gameEvent.js';
 
 /**
  * Sync Manager for coordinating offline/online synchronization
@@ -18,8 +17,8 @@ export class SyncManager {
     this.isOnline = navigator.onLine;
     
     // Set up online/offline listeners
-    window.addEventListener('online', () => this.handleOnline());
-    window.addEventListener('offline', () => this.handleOffline());
+    globalThis.addEventListener('online', () => this.handleOnline());
+    globalThis.addEventListener('offline', () => this.handleOffline());
   }
   
   /**

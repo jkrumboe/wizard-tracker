@@ -66,7 +66,7 @@ const LoadTableGameDialog = ({
   };
 
   const handleDeleteGame = async (gameId, gameName) => {
-    if (window.confirm(`Are you sure you want to delete "${gameName}"? This action cannot be undone.`)) {
+    if (globalThis.confirm(`Are you sure you want to delete "${gameName}"? This action cannot be undone.`)) {
       try {
         LocalTableGameStorage.deleteTableGame(gameId);
         // Refresh the list with the current filter

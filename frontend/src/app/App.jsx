@@ -39,8 +39,8 @@ function URLImportHandler() {
   
   useEffect(() => {
     const handleUrlImport = () => {
-      const currentPath = window.location.pathname;
-      const urlParams = new URLSearchParams(window.location.search);
+      const currentPath = globalThis.location.pathname;
+      const urlParams = new URLSearchParams(globalThis.location.search);
       const importGameParam = urlParams.get('importGame');
       const importGamesParam = urlParams.get('importGames');
       const shareKeyParam = urlParams.get('shareKey');
@@ -114,7 +114,7 @@ function URLImportHandler() {
           const success = LocalGameStorage.importGames(JSON.stringify(fullGameData));
           
           // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           
           if (success) {
             // Add a temporary flag to localStorage to show success message
@@ -126,7 +126,7 @@ function URLImportHandler() {
         } catch (error) {
           console.error('Error importing game from URL:', error);
           // Clean up URL even on error
-          window.history.replaceState({}, document.title, window.location.pathname);
+          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           // Add error flag
           localStorage.setItem('import_error', 'true');
           navigate('/settings');
@@ -180,7 +180,7 @@ class LazyLoadErrorBoundary extends Component {
               : 'This page cannot be loaded while offline. Please check your internet connection and try again.'}
           </p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => globalThis.location.reload()}
             style={{
               padding: '10px 20px',
               backgroundColor: '#4CAF50',

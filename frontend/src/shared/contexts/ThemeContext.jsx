@@ -19,13 +19,13 @@ export function ThemeProvider({ children }) {
       return savedTheme;
     }
     // Check if user prefers dark mode
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   // Listen for system theme changes when useSystemTheme is true
   useEffect(() => {
     if (useSystemTheme) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const mediaQuery = globalThis.matchMedia('(prefers-color-scheme: dark)');
       
       const handleChange = () => {
         setTheme(mediaQuery.matches ? 'dark' : 'light');

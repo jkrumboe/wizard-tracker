@@ -39,8 +39,8 @@ export default function ServiceWorkerErrorRecovery() {
     };
 
     // Listen for both error types
-    window.addEventListener('unhandledrejection', handleError);
-    window.addEventListener('error', handleError);
+    globalThis.addEventListener('unhandledrejection', handleError);
+    globalThis.addEventListener('error', handleError);
 
     // Also check console for workbox errors (for old SW)
     const originalConsoleError = console.error;
@@ -54,8 +54,8 @@ export default function ServiceWorkerErrorRecovery() {
     };
 
     return () => {
-      window.removeEventListener('unhandledrejection', handleError);
-      window.removeEventListener('error', handleError);
+      globalThis.removeEventListener('unhandledrejection', handleError);
+      globalThis.removeEventListener('error', handleError);
       console.error = originalConsoleError;
     };
   }, []);
@@ -88,11 +88,11 @@ export default function ServiceWorkerErrorRecovery() {
       console.log('Service worker recovery complete - reloading...');
       
       // Force a hard reload
-      window.location.reload(true);
+      globalThis.location.reload(true);
     } catch (error) {
       console.error('Recovery failed:', error);
       // Still try to reload
-      window.location.reload(true);
+      globalThis.location.reload(true);
     }
   };
 

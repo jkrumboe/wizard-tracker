@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
-import { LocalGameStorage } from "@/shared/api"
 import { secureArrayShuffle } from "@/shared/utils/secureRandom"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { SelectFriendsModal } from '@/components/modals';
@@ -23,8 +22,6 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
