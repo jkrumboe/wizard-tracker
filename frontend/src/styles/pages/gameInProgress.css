@@ -38,7 +38,6 @@
 .game-in-progress .score-table td,
 .game-in-progress .score-table th  {
   overflow: hidden;
-  /* background-color: var(--card-bg); */
 }
 
 /* Table header styling */
@@ -194,10 +193,6 @@
   gap: var(--spacing-sm);
 }
 
-.game-in-progress .stats-section {
-  /* margin-bottom: var(--spacing-md); */
-}
-
 .game-in-progress .stats-section-title {
   font-size: 0.95rem;
   color: var(--text);
@@ -308,7 +303,6 @@
 }
 
 .trick-reducer-label.bomb {
-  /* border-color: rgba(239, 68, 68, 0.3); */
   border-color: transparent !important;
   transform: none !important;
 }
@@ -413,7 +407,6 @@
 }
 
 .trick-reducer-label.cloud {
-  /* border-color: rgba(96, 165, 250, 0.3); */
   border-color: transparent !important;
   transform: none !important;
 }
@@ -592,13 +585,6 @@
   gap: var(--spacing-sm);
   color: var(--text) !important;
   font-weight: 600 !important;
-  /* box-shadow: var(--shadow-lg); */
-}
-
-.illegal-calls {
-  color: var(--error-color) !important;
-  font-weight: 600 !important;
-  box-shadow: var(--shadow-lg);
 }
 
 .illegal-calls {
@@ -654,7 +640,6 @@
 
 .score-table th,
 .score-table td {
-  /* padding: var(--spacing-md); */
   text-align: center;
   border-bottom: 1px solid var(--border);
   transition: all 0.2s ease;
@@ -687,7 +672,6 @@
 /* Table view within stats section */
 .game-in-progress .stats-subtabs ~ .rounds-section {
   margin: var(--spacing-md) 0;
-  /* max-height: 60vh; */
   overflow-y: auto;
   overflow-x: auto;
 }
