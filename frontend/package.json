@@ -26,9 +26,9 @@
     "lucide-react": "^0.525.0",
     "marked": "^17.0.1",
     "p-limit": "^6.2.0",
-    "react": "^19.0.0",
+    "react": "^19.0.1",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.0.1",
     "react-router-dom": "^7.5.0",
     "recharts": "^2.15.1",
     "uuid": "^13.0.0"
