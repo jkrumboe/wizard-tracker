@@ -7,6 +7,8 @@
   align-items: center;
   gap: var(--spacing-xs);
   max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .role-badge {
@@ -100,6 +102,12 @@
 /* Ensure player name container fits properly */
 .game-in-progress .player-name-container {
   width: 100%;
+  min-width: 0;
+}
+
+.game-in-progress .player-cell {
+  overflow: hidden;
+  min-width: 0;
 }
 
 .game-in-progress {
@@ -141,6 +149,10 @@
   font-weight: 600;
   color: var(--text);
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 /* Back button styling */
@@ -230,6 +242,34 @@
   
   .game-in-progress .stats-cards {
     gap: var(--spacing-sm);
+  }
+
+  /* Improve player name display on mobile */
+  .player-name {
+    font-size: 0.95rem;
+    max-width: 150px;
+  }
+
+  .role-badge {
+    /* font-size: 0.6rem; */
+    padding: 2px 4px;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .player-name {
+    font-size: 0.85rem;
+    max-width: 100px;
+  }
+
+  .player-name-container {
+    gap: 4px;
+  }
+
+  .role-badge {
+    /* font-size: 0.55rem; */
+    padding: 2px 3px;
   }
 }
 

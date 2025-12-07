@@ -1013,7 +1013,6 @@ const TableGame = () => {
                         
                         return (
                           <div key={playerStats.id} className="results-row">
-                            <div className="top-result-row">
                               <div className={`rank-col ${medalClass}`}>{currentRank}</div>
                               <div className="player-col">
                                 <div className="player-info">
@@ -1021,7 +1020,6 @@ const TableGame = () => {
                                 </div>
                               </div>
                               <div className="score-col">{playerStats.totalPoints || 0}</div>
-                            </div>
                           </div>
                         );
                       });

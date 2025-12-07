@@ -422,11 +422,12 @@
   .results-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
     padding: var(--spacing-sm);
     background-color: var(--bg-color);
     border-bottom: 1px solid var(--border);
     overflow: hidden;
-    flex-direction: column;
     flex-wrap: nowrap;
     width: 100%;
     max-width: 100%;
@@ -451,22 +452,12 @@
 
   .results-row .score-col {
     flex: 0 0 20%;
-    text-align: right;
+    text-align: center;
     font-weight: bold;
-    margin-right: 5%;
   }
 
   .results-row .adv-stats-btn {
     flex: 0 0 25%;
-    margin-left: var(--spacing-sm);
-  }
-
-  .top-result-row {
-    display: flex;
-    width: 100%;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
   }
 
 .stats-subtabs {
@@ -496,7 +487,7 @@
   /* Responsive adjustments for smaller screens */
   @media (max-width: 480px) {
     .results-row .rank-col {
-      flex: 0 0 12%;
+      flex: 0 0 5%;
     }
     
     .results-row .player-col {
@@ -504,7 +495,7 @@
     }
     
     .results-row .score-col {
-      flex: 0 0 10%;
+      flex: 0 0 5%;
     }
     
     .results-row .adv-stats-btn {
@@ -1694,79 +1685,79 @@
   overflow: visible;
 }
   
-  @media (min-width: 768px) {
+@media (min-width: 768px) {
 
-    .profile-container {
-      width: 80vw;
-      margin: auto;
-    }
-  
-    .avatar {
-      margin-bottom: 0;
-      margin-top: -75px; /* Increase negative margin for larger avatar */
-      width: 150px; /* Increase size for tablets */
-      height: 150px;
-      position: relative;
-      z-index: 10;
-    }
-  
-    .game-summary {
-      display: flex;
-      flex-direction: row;
-      gap: var(--spacing-md);
-    }
-
-    .nav-menu {
-      display: flex;
-      flex-direction: row;
-      position: static;
-      width: auto;
-      background-color: transparent;
-      box-shadow: none;
-    }
-  
-    .nav-item {
-      margin: 0 var(--spacing-md);
-    }
-  
-    .menu-icon {
-      display: none;
-    }
-
-    .recent-games {
-      overflow: hidden;
-    }
-
-    .games-list {
-      overflow-y: scroll;
-      scrollbar-width: none;
-    }
-  
-    .card-tabs {
-      margin-top: var(--spacing-sm);
-      margin-bottom: var(--spacing-lg);
-      justify-content: center;
-      align-items: center;
-      
-    }
-
-    .player-name-tags {
-      display: flex;
-      gap: var(--spacing-xxl);
-      justify-content: left;
-    }
-
+  .profile-container {
+    width: 80vw;
+    margin: auto;
   }
-  
-  @media (min-width: 992px) {
-    .avatar {
-      width: 150px;
-      height: 150px;
-      margin-top: -75px;
-      position: relative;
-      z-index: 10;
-    }
+
+  .avatar {
+    margin-bottom: 0;
+    margin-top: -75px; /* Increase negative margin for larger avatar */
+    width: 150px; /* Increase size for tablets */
+    height: 150px;
+    position: relative;
+    z-index: 10;
   }
+
+  .game-summary {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-md);
+  }
+
+  .nav-menu {
+    display: flex;
+    flex-direction: row;
+    position: static;
+    width: auto;
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+  .nav-item {
+    margin: 0 var(--spacing-md);
+  }
+
+  .menu-icon {
+    display: none;
+  }
+
+  .recent-games {
+    overflow: hidden;
+  }
+
+  .games-list {
+    overflow-y: scroll;
+    scrollbar-width: none;
+  }
+
+  .card-tabs {
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    justify-content: center;
+    align-items: center;
+    
+  }
+
+  .player-name-tags {
+    display: flex;
+    gap: var(--spacing-xxl);
+    justify-content: left;
+  }
+
+}
+  
+@media (min-width: 992px) {
+  .avatar {
+    width: 150px;
+    height: 150px;
+    margin-top: -75px;
+    position: relative;
+    z-index: 10;
+  }
+}
 
 /* Styling for the card-like tabs */
 .card-tabs {

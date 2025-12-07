@@ -156,12 +156,15 @@
   align-items: center;
   gap: 12px;
   font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .player-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .wins-col,
@@ -335,9 +338,10 @@
     font-size: 1.1rem;
   }
 
-  /* .player-name {
-    font-size: 0.9rem;
-  } */
+  .player-name {
+    font-size: 0.85rem;
+    max-width: 120px;
+  }
 
   .wins-col,
   .winrate-col,

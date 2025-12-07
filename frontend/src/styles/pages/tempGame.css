@@ -53,15 +53,27 @@
 
 .game-container .player-col {
   flex: 1 1 auto;
-  min-width: 100px;
+  min-width: 0;
   font-size: 1.1rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   overflow: hidden;
+}
+
+.game-container .player-col .player-info {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+}
+
+.game-container .player-col .player-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 .game-container .score-col {
@@ -85,7 +97,6 @@
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.2s ease;
-  margin-left: var(--spacing-sm);
 }
 
 /* Fixed position for the round info at the top */
