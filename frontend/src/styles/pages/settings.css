@@ -155,7 +155,7 @@
 
 .settings-section:has(.game-history),
 .settings-section:has(.table-game-card),
-.settings-section:has(.storage-cloud-grid) {
+.settings-section:has(.cloud-sync-actions) {
   background-color: transparent;
   flex: 1;
   min-height: 0;

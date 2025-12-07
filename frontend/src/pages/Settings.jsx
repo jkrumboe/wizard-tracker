@@ -25,7 +25,6 @@ const Settings = () => {
   const navigate = useNavigate();
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
-  const [totalStorageSize, setTotalStorageSize] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
@@ -82,7 +81,6 @@ const Settings = () => {
         const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
         if (success) {
           loadSavedGames();
-          calculateStorageUsage();
           setMessage({ text: 'Games imported successfully from shared link!', type: 'success' });
         } else {
           setMessage({ text: 'Failed to import games from shared link.', type: 'error' });
@@ -159,7 +157,6 @@ const Settings = () => {
         const success = LocalGameStorage.importGames(JSON.stringify(fullGameData));
         if (success) {
           loadSavedGames();
-          calculateStorageUsage();
           setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
         } else {
           setMessage({ text: 'Failed to import game from shared link.', type: 'error' });
@@ -234,7 +231,6 @@ const Settings = () => {
         
         if (success) {
           loadSavedGames();
-          calculateStorageUsage();
           setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
           
           // Clean up the temporary storage
@@ -279,7 +275,6 @@ const Settings = () => {
     // Only load games if user is logged in
     if (user) {
       loadSavedGames();
-      calculateStorageUsage();
     } else {
       // Clear games when user logs out
       setSavedGames({});
@@ -423,28 +418,6 @@ const Settings = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const calculateStorageUsage = () => {
-    const totalSize = Object.keys(localStorage).reduce((total, key) => {
-      // Skip temporary share keys in storage calculation
-      if (key.startsWith('share_')) {
-        return total;
-      }
-      const value = localStorage.getItem(key);
-      return total + (value ? value.length * 2 / 1024 : 0); // Approximate size in KB
-    }, 0);
-    setTotalStorageSize(totalSize);
-  };
-
-  const formatStorageSize = (sizeInKB) => {
-    if (sizeInKB < 1024) {
-      return `${sizeInKB.toFixed(2)} KB`;
-    } else if (sizeInKB < 1024 * 1024) {
-      return `${(sizeInKB / 1024).toFixed(2)} MB`;
-    } else {
-      return `${(sizeInKB / (1024 * 1024)).toFixed(2)} GB`;
-    }
-  };
-
   const handleDeleteGame = (gameId, isTableGame = false) => {
     setGameToDelete({ id: gameId, isTableGame });
     setDeleteAll(false);
@@ -457,7 +430,6 @@ const Settings = () => {
       localStorage.clear();
       setSavedGames({});
       setSavedTableGames([]);
-      setTotalStorageSize(0);
       setMessage({ text: 'All local storage data has been cleared.', type: 'success' });
     } else if (gameToDelete) {
       // Delete specific game
@@ -467,7 +439,6 @@ const Settings = () => {
         LocalGameStorage.deleteGame(gameToDelete.id);
       }
       loadSavedGames();
-      calculateStorageUsage();
       setMessage({ text: 'Game deleted successfully.', type: 'success' });
     }
     setShowConfirmDialog(false);
@@ -1154,21 +1125,7 @@ const Settings = () => {
           </div>          
         </div>
 
-        <div className="settings-section">          
-          <div className="storage-cloud-grid">
-            <div className="storage-info">
-              {/* <h3>Local Storage</h3> */}
-              <div className="storage-metric">
-                <span>Total Storage Used</span>
-                <span className="storage-value">{formatStorageSize(totalStorageSize)}</span>
-              </div>
-              <div className="storage-metric">
-                <span>Saved Games</span>
-                <span className="storage-value">{Object.keys(savedGames).length}</span>
-              </div>
-            </div>
-          </div>
-
+        <div className="settings-section">
           {cloudSyncStatus.uploading && (
             <div className="upload-progress">
               <div className="progress-text">{cloudSyncStatus.progress}</div>
@@ -1249,7 +1206,8 @@ const Settings = () => {
 
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header" >
-            <h2>Wizard Games</h2>
+            <h2>Wizard Games ({filteredGames.length}) </h2>
+            
             <button 
               className="filter-button"
               onClick={() => setShowFilterModal(true)}
@@ -1387,7 +1345,7 @@ const Settings = () => {
         {/* Table Games Section */}
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header">
-            <h2>Table Games</h2>
+            <h2>Table Games ({savedTableGames.length})</h2>
           </div>
           {savedTableGames.length > 0 ? (
             <div className="game-history">
