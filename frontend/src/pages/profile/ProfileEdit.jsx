@@ -5,6 +5,7 @@ import { XIcon } from "@/components/ui/Icon";
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
+import ImageCropperModal from '@/components/modals/ImageCropperModal';
 import defaultAvatar from "@/assets/default-avatar.png";
 
 const ProfileEdit = () => {
@@ -17,7 +18,9 @@ const ProfileEdit = () => {
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
+  const [croppedAvatarBlob, setCroppedAvatarBlob] = useState(null);
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState('');
+  const [showCropper, setShowCropper] = useState(false);
   const [error, setError] = useState(null);
 
   // Load current user data
@@ -32,7 +35,8 @@ const ProfileEdit = () => {
     const loadAvatarUrl = async () => {
       if (user) {
         try {
-          const url = await avatarService.getAvatarUrl();
+          await avatarService.preloadAvatar();
+          const url = await avatarService.getAvatarUrl(false);
           setAvatarUrl(url);
         } catch (error) {
           console.error('Error loading avatar:', error);
@@ -89,13 +93,13 @@ const ProfileEdit = () => {
       }
       
       // Handle avatar upload if a file was selected
-      if (selectedAvatarFile) {
+      if (croppedAvatarBlob) {
         try {
           setUploadingAvatar(true);
-          await avatarService.replaceAvatar(selectedAvatarFile);
+          await avatarService.replaceAvatar(croppedAvatarBlob);
           
           // Get the new avatar URL and update the profile
-          const newAvatarUrl = await avatarService.getAvatarUrl();
+          const newAvatarUrl = await avatarService.getAvatarUrl(false);
           setAvatarUrl(newAvatarUrl);
           
           // Dispatch custom event to update navbar avatar
@@ -206,7 +210,6 @@ const ProfileEdit = () => {
         setError(null);
         
         // Validate file type
-        // Only allow raster image preview (not SVG, not other vector formats)
         const rasterImageTypes = [
           'image/png',
           'image/jpeg',
@@ -220,24 +223,22 @@ const ProfileEdit = () => {
           return;
         }
         
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          setError('File size must be less than 5MB');
+        // Validate file size (max 10MB - we'll compress it)
+        if (file.size > 10 * 1024 * 1024) {
+          setError('File size must be less than 10MB');
           return;
         }
         
-        // Validate actual file content to ensure it's really a raster image
+        // Validate actual file content
         isValidRasterImage(file, (isValid) => {
           if (!isValid) {
             setError('File format does not match allowed image types');
             return;
           }
-          // Store the selected file for upload later
-          setSelectedAvatarFile(file);
           
-          // Create preview URL
-          const previewUrl = URL.createObjectURL(file);
-          setPreviewAvatarUrl(previewUrl);
+          // Store the file and open cropper
+          setSelectedAvatarFile(file);
+          setShowCropper(true);
         });
         
       } catch (err) {
@@ -245,6 +246,17 @@ const ProfileEdit = () => {
         setError(err.message || 'Failed to select file');
       }
     }
+  };
+
+  const handleCropComplete = (blob) => {
+    // Store cropped blob for upload
+    setCroppedAvatarBlob(blob);
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(blob);
+    setPreviewAvatarUrl(previewUrl);
+    
+    setShowCropper(false);
   };
 
   if (!user) {
@@ -257,6 +269,16 @@ const ProfileEdit = () => {
 
   return (
     <div className="profile-edit-container">
+      <ImageCropperModal
+        isOpen={showCropper}
+        onClose={() => {
+          setShowCropper(false);
+          setSelectedAvatarFile(null);
+        }}
+        imageFile={selectedAvatarFile}
+        onCropComplete={handleCropComplete}
+      />
+      
       <div className="profile-edit-header">
         <button 
           onClick={handleCancel} 
@@ -338,10 +360,10 @@ const ProfileEdit = () => {
           <button 
             onClick={handleSave} 
             className='save-button'
-            disabled={saving || uploadingAvatar || (!editedName && !selectedAvatarFile)}
+            disabled={saving || uploadingAvatar || (!editedName && !croppedAvatarBlob)}
             style={{
-              opacity: saving || uploadingAvatar || (!editedName && !selectedAvatarFile) ? 0.6 : 1,
-              cursor: saving || uploadingAvatar || (!editedName && !selectedAvatarFile) ? 'not-allowed' : 'pointer'
+              opacity: saving || uploadingAvatar || (!editedName && !croppedAvatarBlob) ? 0.6 : 1,
+              cursor: saving || uploadingAvatar || (!editedName && !croppedAvatarBlob) ? 'not-allowed' : 'pointer'
             }}
           >
             {uploadingAvatar ? 'Uploading Avatar...' : saving ? 'Saving...' : 'Save Changes'}

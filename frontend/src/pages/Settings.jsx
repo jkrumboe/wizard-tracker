@@ -303,30 +303,33 @@ const Settings = () => {
     const loadAvatarUrl = async () => {
       if (user) {
         try {
-          const url = await avatarService.getAvatarUrl()
-          setAvatarUrl(url)
+          // Preload avatar (loads thumbnail first, then full image)
+          await avatarService.preloadAvatar();
+          // Get full avatar for display
+          const url = await avatarService.getAvatarUrl(false);
+          setAvatarUrl(url);
         } catch (error) {
-          console.error('Error loading avatar:', error)
-          setAvatarUrl(defaultAvatar)
+          console.error('Error loading avatar:', error);
+          setAvatarUrl(defaultAvatar);
         }
       } else {
-        setAvatarUrl(defaultAvatar)
+        setAvatarUrl(defaultAvatar);
       }
-    }
+    };
 
-    loadAvatarUrl()
+    loadAvatarUrl();
 
     // Listen for avatar updates
     const handleAvatarUpdate = () => {
-      loadAvatarUrl()
-    }
+      loadAvatarUrl();
+    };
 
-    globalThis.addEventListener('avatarUpdated', handleAvatarUpdate)
+    globalThis.addEventListener('avatarUpdated', handleAvatarUpdate);
 
     return () => {
-      globalThis.removeEventListener('avatarUpdated', handleAvatarUpdate)
-    }
-  }, [user])
+      globalThis.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    };
+  }, [user]);
 
   const loadSavedGames = useCallback(async () => {
     // First migrate games to ensure they have upload tracking properties
@@ -1015,10 +1018,8 @@ const Settings = () => {
                       style={{
                         width: '64px',
                         height: '64px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
+                        borderRadius: '25%',
                         cursor: 'pointer',
-                        border: '1px solid var(--primary)'
                       }}
                     />
                   </Link>

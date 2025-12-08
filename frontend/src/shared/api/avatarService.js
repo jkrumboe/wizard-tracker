@@ -1,9 +1,12 @@
 import defaultAvatar from '@/assets/default-avatar.png';
 import { API_BASE_URL } from './config.js';
+import { compressImage, createThumbnail } from '@/shared/utils/imageCompression';
 
 class AvatarService {
   constructor() {
     // Service now uses backend API for storage
+    this.avatarCache = null; // Memory cache for avatar
+    this.thumbnailCache = null; // Memory cache for thumbnail
   }
 
   /**
@@ -40,10 +43,10 @@ class AvatarService {
       throw new Error('Invalid file extension');
     }
 
-    // 4. Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // 4. Validate file size (max 10MB for input - we'll compress it)
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      throw new Error('File size must be less than 5MB');
+      throw new Error('File size must be less than 10MB');
     }
 
     // 5. Validate minimum file size (prevents empty/corrupted files)
@@ -72,12 +75,7 @@ class AvatarService {
           return;
         }
 
-        // Check maximum dimensions (prevent extremely large images)
-        if (img.width > 4096 || img.height > 4096) {
-          reject(new Error('Image dimensions must not exceed 4096x4096 pixels'));
-          return;
-        }
-
+        // No maximum dimension check - we'll compress large images
         // Check aspect ratio (prevent extremely stretched images)
         const aspectRatio = img.width / img.height;
         if (aspectRatio > 10 || aspectRatio < 0.1) {
@@ -99,7 +97,7 @@ class AvatarService {
 
   /**
    * Upload avatar image to backend
-   * @param {File} file - The image file from input
+   * @param {File|Blob} file - The image file or blob from input/cropper
    * @returns {Promise<string>} - The file identifier (base64 string)
    */
   async uploadAvatar(file) {
@@ -107,19 +105,31 @@ class AvatarService {
       // Comprehensive security validation
       await this.validateImageFile(file);
 
-      // Convert to base64
-      const base64 = await this.fileToBase64(file);
+      // Compress image to optimize size and quality
+      console.log('Compressing image...', { originalSize: file.size });
+      const compressed = await compressImage(file, {
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 0.85,
+        mimeType: 'image/jpeg',
+        maxSizeKB: 400 // Target 400KB max
+      });
+
+      console.log('Compressed:', {
+        originalSize: file.size,
+        compressedSize: compressed.size,
+        reduction: `${Math.round((1 - compressed.size / file.size) * 100)}%`
+      });
+
+      const base64 = compressed.dataUrl;
       
       // Additional check: Verify base64 data URL format
       if (!base64.startsWith('data:image/')) {
         throw new Error('Invalid image data format');
       }
 
-      // Check base64 size after encoding
-      const base64Size = base64.length;
-      if (base64Size > 10 * 1024 * 1024) { // 10MB base64 limit
-        throw new Error('Encoded image is too large');
-      }
+      // Create thumbnail for faster loading
+      const thumbnail = await createThumbnail(base64, 128);
 
       // Upload to backend
       const response = await fetch(`${API_BASE_URL}/api/users/me/profile-picture`, {
@@ -136,16 +146,33 @@ class AvatarService {
         throw new Error(error.error || 'Failed to upload profile picture');
       }
 
-      // Also store in localStorage as fallback
+      // Cache in memory and localStorage
+      this.avatarCache = base64;
+      this.thumbnailCache = thumbnail;
       localStorage.setItem('user_avatar', base64);
+      localStorage.setItem('user_avatar_thumbnail', thumbnail);
+      localStorage.setItem('user_avatar_timestamp', Date.now().toString());
       
       return base64;
     } catch (error) {
       console.error('Error uploading avatar:', error);
       // If backend fails, try storing locally as fallback
       if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        const base64 = await this.fileToBase64(file);
+        const compressed = await compressImage(file, {
+          maxWidth: 512,
+          maxHeight: 512,
+          quality: 0.85,
+          mimeType: 'image/jpeg',
+          maxSizeKB: 400
+        });
+        const base64 = compressed.dataUrl;
+        const thumbnail = await createThumbnail(base64, 128);
+        
+        this.avatarCache = base64;
+        this.thumbnailCache = thumbnail;
         localStorage.setItem('user_avatar', base64);
+        localStorage.setItem('user_avatar_thumbnail', thumbnail);
+        localStorage.setItem('user_avatar_timestamp', Date.now().toString());
         console.warn('Avatar stored locally only (backend unavailable)');
         return base64;
       }
@@ -169,11 +196,38 @@ class AvatarService {
 
   /**
    * Get avatar URL for the current user
+   * @param {boolean} useThumbnail - Use thumbnail for faster loading
    * @returns {Promise<string>} - The avatar URL or fallback default avatar
    */
-  async getAvatarUrl() {
+  async getAvatarUrl(useThumbnail = false) {
     try {
-      // Try to get from backend first
+      // Check memory cache first (instant)
+      if (useThumbnail && this.thumbnailCache) {
+        return this.thumbnailCache;
+      }
+      if (!useThumbnail && this.avatarCache) {
+        return this.avatarCache;
+      }
+
+      // Check localStorage cache (fast)
+      const cacheKey = useThumbnail ? 'user_avatar_thumbnail' : 'user_avatar';
+      const cached = localStorage.getItem(cacheKey);
+      const timestamp = localStorage.getItem('user_avatar_timestamp');
+      
+      // Use cache if less than 5 minutes old
+      if (cached && timestamp) {
+        const age = Date.now() - parseInt(timestamp);
+        if (age < 5 * 60 * 1000) { // 5 minutes
+          if (useThumbnail) {
+            this.thumbnailCache = cached;
+          } else {
+            this.avatarCache = cached;
+          }
+          return cached;
+        }
+      }
+
+      // Try to get from backend
       const response = await fetch(`${API_BASE_URL}/api/users/me/profile-picture`, {
         headers: this.getAuthHeader()
       });
@@ -181,16 +235,33 @@ class AvatarService {
       if (response.ok) {
         const data = await response.json();
         if (data.profilePicture) {
-          // Also cache locally
+          // Update cache
+          this.avatarCache = data.profilePicture;
           localStorage.setItem('user_avatar', data.profilePicture);
+          localStorage.setItem('user_avatar_timestamp', Date.now().toString());
+          
+          // Generate and cache thumbnail if needed
+          if (useThumbnail) {
+            if (!this.thumbnailCache) {
+              const thumbnail = await createThumbnail(data.profilePicture, 128);
+              this.thumbnailCache = thumbnail;
+              localStorage.setItem('user_avatar_thumbnail', thumbnail);
+            }
+            return this.thumbnailCache;
+          }
+          
           return data.profilePicture;
         }
       }
 
       // Fallback to localStorage if backend fails or returns null
-      const customAvatar = localStorage.getItem('user_avatar');
-      if (customAvatar) {
-        return customAvatar;
+      if (cached) {
+        if (useThumbnail) {
+          this.thumbnailCache = cached;
+        } else {
+          this.avatarCache = cached;
+        }
+        return cached;
       }
 
       // Return default avatar
@@ -199,14 +270,46 @@ class AvatarService {
       console.error('Error getting avatar URL:', error);
       
       // Try localStorage as fallback
-      const customAvatar = localStorage.getItem('user_avatar');
-      if (customAvatar) {
-        return customAvatar;
+      const cacheKey = useThumbnail ? 'user_avatar_thumbnail' : 'user_avatar';
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        if (useThumbnail) {
+          this.thumbnailCache = cached;
+        } else {
+          this.avatarCache = cached;
+        }
+        return cached;
       }
       
       // Return default avatar as final fallback
       return defaultAvatar;
     }
+  }
+
+  /**
+   * Preload avatar for faster display
+   * Loads thumbnail first, then full image in background
+   */
+  async preloadAvatar() {
+    try {
+      // Load thumbnail immediately
+      await this.getAvatarUrl(true);
+      // Load full image in background
+      this.getAvatarUrl(false).catch(() => {});
+    } catch (error) {
+      console.error('Error preloading avatar:', error);
+    }
+  }
+
+  /**
+   * Clear avatar cache
+   */
+  clearCache() {
+    this.avatarCache = null;
+    this.thumbnailCache = null;
+    localStorage.removeItem('user_avatar');
+    localStorage.removeItem('user_avatar_thumbnail');
+    localStorage.removeItem('user_avatar_timestamp');
   }
 
   /**
@@ -218,8 +321,8 @@ class AvatarService {
   // eslint-disable-next-line no-unused-vars
   async getAvatarUrlWithSize(width = 128, height = 128) {
     try {
-      // For now, we ignore dimensions and return the same avatar
-      return await this.getAvatarUrl();
+      // Use thumbnail for small sizes
+      return await this.getAvatarUrl(width <= 128);
     } catch (error) {
       console.error('Error getting avatar URL:', error);
       return defaultAvatar;
@@ -239,23 +342,23 @@ class AvatarService {
       });
 
       if (response.ok) {
-        // Also remove from localStorage
-        localStorage.removeItem('user_avatar');
+        // Clear all caches
+        this.clearCache();
         return true;
       }
 
       throw new Error('Failed to delete profile picture');
     } catch (error) {
       console.error('Error deleting avatar:', error);
-      // Remove from localStorage anyway as fallback
-      localStorage.removeItem('user_avatar');
+      // Clear caches anyway as fallback
+      this.clearCache();
       throw new Error(error.message || 'Failed to delete avatar');
     }
   }
 
   /**
    * Replace current user's avatar with a new one
-   * @param {File} file - The new image file
+   * @param {File|Blob} file - The new image file or blob
    * @returns {Promise<string>} - The new file identifier
    */
   async replaceAvatar(file) {
@@ -271,3 +374,4 @@ class AvatarService {
 
 export const avatarService = new AvatarService();
 export default avatarService;
+
