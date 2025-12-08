@@ -45,13 +45,12 @@
 .overview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .game-type-card {
   background: var(--card-bg);
-  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-sm) var(--spacing-md);
   transition: all 0.2s ease;
@@ -157,14 +156,9 @@
   text-align: center;
 }
 
-.overall-recent-results .results-string {
-  margin-bottom: var(--spacing-sm);
-}
-
 .results-description {
   font-size: 0.9rem;
   color: var(--text-light);
-  margin: var(--spacing-sm) 0 0;
 }
 
 .game-type-selector {
@@ -331,7 +325,7 @@
 .settings-section {
   background-color: var(--card-bg);
   border-radius: 12px;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
 }
 

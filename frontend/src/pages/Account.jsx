@@ -1193,9 +1193,9 @@ const Account = () => {
         gameTypeStats[gameType].wins++;
       }
       
-      // Add to recent results (limit to last 20)
+      // Add to recent results (limit to last 10)
       gameTypeStats[gameType].recentResults.unshift(userWon ? 'W' : 'L');
-      if (gameTypeStats[gameType].recentResults.length > 20) {
+      if (gameTypeStats[gameType].recentResults.length > 10) {
         gameTypeStats[gameType].recentResults.pop();
       }
     });
@@ -1204,14 +1204,14 @@ const Account = () => {
     
     console.log('📊 Game Types Found:', gameTypes);
     
-    // Get overall recent results (last 20 games)
+    // Get overall recent results (last 10 games)
     const sortedGames = [...allGamesList].sort((a, b) => {
       const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || 0);
       const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || 0);
       return dateB - dateA; // Most recent first
     });
     
-    const allResults = sortedGames.slice(0, 20).map(game => {
+    const allResults = sortedGames.slice(0, 10).map(game => {
       let userWon = false;
       
       if (game.gameType === 'table') {
@@ -1365,7 +1365,7 @@ const Account = () => {
                   style={{
                     background: 'none',
                     cursor: 'pointer',
-                    padding: '0',
+                    padding: '0 var(--spacing-xs) 0 0',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1376,7 +1376,7 @@ const Account = () => {
                   title="Sign Out"
                   aria-label="Sign Out"
                 >
-                  <LogOutIcon size={20} />
+                  <LogOutIcon size={24} />
                 </button>
               )}
               </div>
@@ -1469,7 +1469,7 @@ const Account = () => {
                           </span>
                         ))}
                       </div>
-                      <p className="results-description">Last 20 games</p>
+                      <p className="results-description">Last 10 games</p>
                     </div>
                   </div>
                 )}
