@@ -1512,8 +1512,8 @@ const Settings = () => {
                 className={`settings-button-update`}
                 onClick={handleForceUpdate}
                 disabled={forcingUpdate || checkingForUpdates}
-                title="Force clear cache and reload (use if stuck in update loop)"
-                style={{backgroundColor: 'var(--error)', borderColor: 'var(--error)'}}
+                  title="Force clear cache and reload (use if stuck in update loop)"
+                  style={{backgroundColor: 'var(--primary)'}}
               >
                 <TrashIcon size={18} />Force Update
               </button>
