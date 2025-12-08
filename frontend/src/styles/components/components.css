@@ -44,7 +44,6 @@
   .stat-label {
     font-size: 0.6rem;
     color: var(--text-light);
-    text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   
@@ -431,6 +430,13 @@
     flex-wrap: nowrap;
     width: 100%;
     max-width: 100%;
+  }
+
+  .top-result-row {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
   }
 
   /* Proportional column widths to ensure proper fit */
@@ -3351,16 +3357,15 @@
   margin-bottom: 0;
 }
 
-.stat-label {
+/* .stat-label {
   flex: 1;
   font-weight: 500;
   min-width: 120px;
-}
+} */
 
 .stat-value {
   font-weight: 700;
   font-size: 1.1rem;
-  min-width: 60px;
   color: var(--text);
 }
 

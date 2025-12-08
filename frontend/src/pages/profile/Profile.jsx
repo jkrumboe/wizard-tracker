@@ -281,7 +281,7 @@ return (
 
         {canEdit && (
           <button
-            onClick={() => navigate('/profile/edit')}
+            onClick={() => navigate('/account/edit')}
             className='edit-button'>
             <EditIcon size={30} />
           </button>

@@ -8,6 +8,7 @@ import TableGameSettingsModal from "../../components/modals/TableGameSettingsMod
 import { useUser } from "../../shared/hooks/useUser";
 import StatsChart from "../../components/game/StatsChart";
 import { AdvancedStats } from "../../components/game";
+import { generateSecureId } from "../../shared/utils/secureRandom";
 import "../../styles/components/TableGame.css";
 import "../../styles/pages/gameInProgress.css";
 import "../../styles/components/statsChart.css";
@@ -42,10 +43,11 @@ const TableGame = () => {
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
     const firstPlayerName = user?.username || user?.name || "Player 1";
+    const firstPlayerId = user?.id || user?.$id || generateSecureId('player');
     return [
-      { name: firstPlayerName, points: [] },
-      { name: "Player 2", points: [] },
-      { name: "Player 3", points: [] }
+      { id: firstPlayerId, name: firstPlayerName, points: [] },
+      { id: generateSecureId('player'), name: "Player 2", points: [] },
+      { id: generateSecureId('player'), name: "Player 3", points: [] }
     ];
   };
   
@@ -148,8 +150,9 @@ const TableGame = () => {
         if (savedGame) {
           const gameData = savedGame.gameData;
           
-          // Ensure players have proper structure with points arrays
+          // Ensure players have proper structure with points arrays and IDs
           const loadedPlayers = (gameData.players || []).map(player => ({
+            id: player.id || generateSecureId('player'),
             name: player.name || 'Unknown',
             points: Array.isArray(player.points) ? player.points : []
           }));
@@ -492,7 +495,7 @@ const TableGame = () => {
     const newPlayers = [...players];
     // Suggest a default name, but user can change it
     const defaultName = `Player ${players.length + 1}`;
-    newPlayers.splice(idx, 0, { name: defaultName, points: [] });
+    newPlayers.splice(idx, 0, { id: generateSecureId('player'), name: defaultName, points: [] });
     setPlayers(newPlayers);
   };
 
@@ -628,6 +631,21 @@ const TableGame = () => {
       points: player.points.slice(0, actualUsedRows)
     }));
     
+    // Calculate winner based on scores
+    const playersWithScores = trimmedPlayers.map(player => {
+      const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
+      return { ...player, total };
+    });
+    
+    const winner = playersWithScores.reduce((best, current) => {
+      if (!best) return current;
+      if (lowIsBetter) {
+        return current.total < best.total ? current : best;
+      } else {
+        return current.total > best.total ? current : best;
+      }
+    }, null);
+    
     // Update state with trimmed data
     setPlayers(trimmedPlayers);
     setRows(actualUsedRows);
@@ -641,7 +659,9 @@ const TableGame = () => {
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
         gameFinished: true, // Explicitly set to true
-        gameName: currentGameName
+        gameName: currentGameName,
+        winner_id: winner?.id || null,
+        winner_name: winner?.name || null
       };
 
       const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
@@ -656,7 +676,9 @@ const TableGame = () => {
           lowIsBetter: lowIsBetter,
           gameFinished: true,
           totalRounds: actualUsedRows,
-          playerCount: trimmedPlayers.length
+          playerCount: trimmedPlayers.length,
+          winner_id: winner?.id || null,
+          winner_name: winner?.name || null
         });
         console.debug(`Game finished and saved: "${name}" (ID: ${currentGameId}, actual rounds: ${actualUsedRows})`);
       } else {
@@ -768,12 +790,17 @@ const TableGame = () => {
   const handleSelectTemplate = (templateName, settings = {}) => {
     // Create a new game
     const firstPlayerName = user?.username || user?.name || "Player 1";
+    const firstPlayerId = user?.id || user?.$id || generateSecureId('player');
     const initialPlayers = settings.playerNames && Array.isArray(settings.playerNames) && settings.playerNames.length > 0
-      ? settings.playerNames.map(name => ({ name: name, points: [] }))
+      ? settings.playerNames.map((name, idx) => ({ 
+          id: idx === 0 ? firstPlayerId : generateSecureId('player'),
+          name: name, 
+          points: [] 
+        }))
       : [
-          { name: firstPlayerName, points: [] },
-          { name: "Player 2", points: [] },
-          { name: "Player 3", points: [] }
+          { id: firstPlayerId, name: firstPlayerName, points: [] },
+          { id: generateSecureId('player'), name: "Player 2", points: [] },
+          { id: generateSecureId('player'), name: "Player 3", points: [] }
         ];
     
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;

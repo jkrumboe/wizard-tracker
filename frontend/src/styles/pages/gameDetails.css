@@ -157,3 +157,7 @@
     transform: translateY(0);
   }
 }
+
+.game-details-container .results-row {
+  flex-direction: column;
+}

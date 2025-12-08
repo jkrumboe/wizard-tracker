@@ -1,3 +1,185 @@
+/* Account Tabs */
+.account-tabs {
+  display: flex;
+  gap:var(--spacing-xs);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--border);
+}
+
+.account-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) 0;
+  background: transparent;
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.account-tab.active {
+  background: var(--primary);
+  color: var(--text);
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Overview Tab Styles */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.game-type-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.2s ease;
+}
+
+.game-type-card:hover {
+  border-color: var(--primary);
+}
+
+.game-type-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.game-type-stats {
+  display: flex;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  min-width: none;
+}
+
+.stat-label {
+  font-size: 1rem !important;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  min-width: 0;
+}
+
+.stat-value {
+  /* font-size: 1.75rem; */
+  font-weight: 500;
+  color: var(--text);
+}
+
+.stat-value.win-rate {
+  color: var(--success);
+}
+
+.recent-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.results-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.results-string {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.results-string.large {
+  justify-content: center;
+}
+
+.result-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+
+.results-string.large .result-letter {
+  font-size: 1rem;
+}
+
+.result-letter.win {
+  background: var(--success);
+  color: var(--success-color);
+}
+
+.result-letter.loss {
+  background: var(--error);
+  color: var(--error-color);
+}
+
+.result-letter:hover {
+  transform: scale(1.1);
+}
+
+.overall-recent-results {
+  text-align: center;
+}
+
+.overall-recent-results .results-string {
+  margin-bottom: var(--spacing-sm);
+}
+
+.results-description {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin: var(--spacing-sm) 0 0;
+}
+
+.game-type-selector {
+  width: 100%;
+  padding: var(--spacing-xs);
+  margin: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  text-align: center;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
 /* Spinner for share button animation */
 .share-spinner {
   display: inline-block;
@@ -344,18 +526,20 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text);
-  background-color: var(--card-bg-alt);
+  background-color: var(--primary);
 }
 
 .settings-button-update {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
   background-color: var(--secondary);
   color: var(--text);
   padding: 4px var(--spacing-sm);
   transform: none;
   border: none;
+  width: 100%;
 }
 
 .settings-section-title {

@@ -228,22 +228,18 @@ function App() {
                   <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
                     <Routes>
                       <Route path="/" element={<Home />} />
-                    <Route path="/profile" element={
-                      <AuthProtectedRoute>
-                        <Profile />
-                      </AuthProtectedRoute>
-                    } />
-                    <Route path="/profile/edit" element={
+                    <Route path="/profile" element={<Navigate to="/account" replace />} />
+                    <Route path="/account/edit" element={
                       <AuthProtectedRoute>
                         <ProfileEdit />
                       </AuthProtectedRoute>
                     } />
+                    <Route path="/profile/edit" element={<Navigate to="/account/edit" replace />} />
                     <Route path="/profile/:id" element={
                       <AuthProtectedRoute>
                         <Profile />
                       </AuthProtectedRoute>
                     } />
-                    {/* <Route path="/account" element={<Navigate to="/profile" replace />} /> */}
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/stats/:name" element={<Stats />} />
                     <Route path="/profile/stats" element={<Stats />} />

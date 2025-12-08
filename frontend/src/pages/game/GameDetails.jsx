@@ -474,6 +474,7 @@ const GameDetails = () => {
                 <div className="results-table">
                   {sortedPlayers.map((player) => (
                     <div key={player.id} className="results-row">
+                      <div className="top-result-row">
                         <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
                           {player.rank}
                         </div>
@@ -493,6 +494,7 @@ const GameDetails = () => {
                         <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
                           Adv. Stats
                         </button>
+                    </div>
                     {compareIds(selectedPlayerId, player.id) && (() => {
                       // Find player stats once and store in variable for efficient access
                       // Convert IDs to strings for comparison to handle type mismatches

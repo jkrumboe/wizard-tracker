@@ -7,7 +7,7 @@ import { useUser } from '@/shared/hooks/useUser';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
-import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
@@ -19,10 +19,13 @@ import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
+import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced';
 import '@/styles/pages/account.css';
 
 const Account = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('overview'); // overview, stats, games
+  const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -1052,136 +1055,486 @@ const Account = () => {
     }
   };
 
+  // Calculate overview stats from all games
+  const overviewStats = useMemo(() => {
+    const allGamesList = [...Object.values(savedGames), ...savedTableGames];
+    
+    console.log('📊 Overview Stats Debug:', {
+      user,
+      totalGames: allGamesList.length,
+      wizardGames: Object.values(savedGames).length,
+      tableGames: savedTableGames.length,
+      sampleGame: allGamesList[0],
+      sampleTableGame: savedTableGames[0]
+    });
+    
+    if (!user || allGamesList.length === 0) {
+      return { gameTypes: [], recentResults: [] };
+    }
+
+    const gameTypeStats = {};
+
+    // Get user identifiers - for local games, username is the key
+    const userIdentifiers = [user.id, user.name, user.username, user.$id].filter(Boolean);
+    const usernameLower = user.username?.toLowerCase();
+
+    allGamesList.forEach(game => {
+      // Determine game type
+      // Check if it's a table game (has specific table game indicators)
+      let gameType;
+      if (game.gameType === 'table') {
+        // It's a table game - use the gameTypeName or name
+        gameType = game.gameTypeName || game.name || 'Table Game';
+      } else {
+        // It's a wizard game
+        gameType = game.game_mode || game.gameState?.game_mode || 'Wizard';
+        // Fix "Local" mode to be "Wizard"
+        if (gameType === 'Local') {
+          gameType = 'Wizard';
+        }
+      }
+      
+      // Initialize game type stats
+      if (!gameTypeStats[gameType]) {
+        gameTypeStats[gameType] = {
+          name: gameType,
+          matches: 0,
+          wins: 0,
+          recentResults: []
+        };
+      }
+
+      // Check if user won this game
+      // Local games: ALL games in localStorage are played by the current user
+      // The user either created the game or was part of it
+      let userWon = false;
+      let userPlayer = null;
+
+      // Different handling for table games vs wizard games
+      if (game.gameType === 'table') {
+        // Table games: check gameData.players
+        if (game.gameData?.players) {
+          userPlayer = game.gameData.players.find(p => {
+            const playerNameLower = p.name?.toLowerCase();
+            return playerNameLower === usernameLower;
+          });
+          
+          // For table games, use winner_id if available, otherwise calculate
+          if (userPlayer && game.gameFinished) {
+            const winnerId = game.gameData?.winner_id || game.winner_id;
+            
+            console.log('🎯 Table Game Win Check:', {
+              gameName: game.name || game.gameTypeName,
+              winnerId,
+              userPlayerId: userPlayer.id,
+              userId: user.id,
+              userDollarId: user.$id,
+              matches: {
+                playerIdMatch: winnerId === userPlayer.id,
+                userIdMatch: winnerId === user.id,
+                dollarIdMatch: winnerId === user.$id
+              }
+            });
+            
+            if (winnerId) {
+              // Use the stored winner_id (faster and more reliable)
+              userWon = winnerId === userPlayer.id || winnerId === user.id || winnerId === user.$id;
+            } else {
+              // Fallback: calculate winner by score (for old games without winner_id)
+              const players = game.gameData.players;
+              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
+              
+              const playersWithScores = players.map(player => {
+                const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
+                return { ...player, total };
+              });
+              
+              const userWithScore = playersWithScores.find(p => p.name === userPlayer.name);
+              const userScore = userWithScore?.total || 0;
+              
+              userWon = playersWithScores.every(p => {
+                if (p.name === userPlayer.name) return true;
+                return lowIsBetter ? userScore <= p.total : userScore >= p.total;
+              });
+            }
+          }
+        }
+      } else {
+        // Wizard games: check gameState.players
+        if (game.gameState?.players) {
+          userPlayer = game.gameState.players.find(p => {
+            const playerNameLower = p.name?.toLowerCase();
+            const playerUsernameLower = p.username?.toLowerCase();
+            
+            return playerNameLower === usernameLower ||
+                   playerUsernameLower === usernameLower ||
+                   userIdentifiers.includes(p.id) ||
+                   userIdentifiers.includes(p.userId);
+          });
+          
+          if (userPlayer) {
+            const winnerId = game.winner_id || game.gameState?.winner_id;
+            // Check if user won by comparing IDs or if user is the winner
+            userWon = winnerId === userPlayer.id || 
+                      winnerId === userPlayer.userId ||
+                      winnerId === user.id ||
+                      winnerId === user.$id;
+          } else {
+            // If we can't find the user in players but the game is saved locally,
+            // check if user might be winner by ID match
+            const winnerId = game.winner_id || game.gameState?.winner_id;
+            userWon = userIdentifiers.includes(winnerId);
+          }
+        }
+      }
+
+      gameTypeStats[gameType].matches++;
+      if (userWon) {
+        gameTypeStats[gameType].wins++;
+      }
+      
+      // Add to recent results (limit to last 20)
+      gameTypeStats[gameType].recentResults.unshift(userWon ? 'W' : 'L');
+      if (gameTypeStats[gameType].recentResults.length > 20) {
+        gameTypeStats[gameType].recentResults.pop();
+      }
+    });
+
+    const gameTypes = Object.values(gameTypeStats).filter(gt => gt.matches > 0);
+    
+    console.log('📊 Game Types Found:', gameTypes);
+    
+    // Get overall recent results (last 20 games)
+    const sortedGames = [...allGamesList].sort((a, b) => {
+      const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || 0);
+      const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || 0);
+      return dateB - dateA; // Most recent first
+    });
+    
+    const allResults = sortedGames.slice(0, 20).map(game => {
+      let userWon = false;
+      
+      if (game.gameType === 'table') {
+        // Table game
+        if (game.gameData?.players && game.gameFinished) {
+          const userPlayer = game.gameData.players.find(p => 
+            p.name?.toLowerCase() === usernameLower
+          );
+          
+          if (userPlayer) {
+            const winnerId = game.gameData?.winner_id || game.winner_id;
+            
+            if (winnerId) {
+              // Use the stored winner_id (faster and more reliable)
+              userWon = winnerId === userPlayer.id || winnerId === user.id || winnerId === user.$id;
+            } else {
+              // Fallback: calculate winner by score (for old games without winner_id)
+              const players = game.gameData.players;
+              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
+              
+              const playersWithScores = players.map(player => {
+                const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
+                return { ...player, total };
+              });
+              
+              const userWithScore = playersWithScores.find(p => p.name === userPlayer.name);
+              const userScore = userWithScore?.total || 0;
+              
+              userWon = playersWithScores.every(p => {
+                if (p.name === userPlayer.name) return true;
+                return lowIsBetter ? userScore <= p.total : userScore >= p.total;
+              });
+            }
+          }
+        }
+      } else {
+        // Wizard game
+        if (game.gameState?.players) {
+          const userPlayer = game.gameState.players.find(p => {
+            const playerNameLower = p.name?.toLowerCase();
+            const playerUsernameLower = p.username?.toLowerCase();
+            
+            return playerNameLower === usernameLower ||
+                   playerUsernameLower === usernameLower ||
+                   userIdentifiers.includes(p.id) ||
+                   userIdentifiers.includes(p.userId);
+          });
+          
+          const winnerId = game.winner_id || game.gameState?.winner_id;
+          userWon = userPlayer ? 
+            (winnerId === userPlayer.id || winnerId === userPlayer.userId || winnerId === user.id) :
+            userIdentifiers.includes(winnerId);
+        }
+      }
+      
+      return userWon ? 'W' : 'L';
+    });
+
+    return { gameTypes, recentResults: allResults };
+  }, [savedGames, savedTableGames, user]);
+
+  // Get all games for stats tab
+  const allGamesForStats = useMemo(() => {
+    const wizardGames = Object.values(savedGames);
+    const tableGames = savedTableGames;
+    
+    if (statsGameType === 'wizard') {
+      return wizardGames;
+    } else {
+      // Filter by specific table game type
+      return tableGames.filter(game => 
+        (game.gameTypeName || game.name) === statsGameType
+      );
+    }
+  }, [savedGames, savedTableGames, statsGameType]);
+
+  // Get available game types for stats selector
+  const availableGameTypes = useMemo(() => {
+    const types = [];
+    
+    if (Object.keys(savedGames).length > 0) {
+      types.push({ value: 'wizard', label: 'Wizard' });
+    }
+    
+    // Add table game types
+    const tableGameTypes = new Set();
+    savedTableGames.forEach(game => {
+      const gameType = game.gameTypeName || game.name;
+      if (gameType) {
+        tableGameTypes.add(gameType);
+      }
+    });
+    
+    tableGameTypes.forEach(type => {
+      types.push({ value: type, label: type });
+    });
+    
+    return types;
+  }, [savedGames, savedTableGames]);
+
+  // Auto-select first available game type if 'all' or invalid selection
+  React.useEffect(() => {
+    if (availableGameTypes.length > 0 && (statsGameType === 'all' || !availableGameTypes.find(t => t.value === statsGameType))) {
+      setStatsGameType(availableGameTypes[0].value);
+    }
+  }, [availableGameTypes, statsGameType]);
+
+  // Create current player object for stats
+  const currentPlayer = useMemo(() => {
+    if (user) {
+      return {
+        id: user.id,
+        name: user.name || user.username || 'User',
+        username: user.username
+      };
+    }
+    return null;
+  }, [user]);
+
   return (
       <div className="settings-container">
-
+        {/* Profile Header */}
         <div className="settings-section" style={{border: '1px solid var(--border)'}}>          
           {/* Profile Picture Section */}
             <div className="settings-option">
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <Link to={user ? "/profile" : "/login"} style={{ textDecoration: 'none' }}>
-                    <img
-                      src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
-                      alt="Profile"
-                      style={{
+                  <img
+                    src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
+                    alt="Profile"
+                    style={{
                         width: '64px',
                         height: '64px',
-                        borderRadius: '25%',
-                        cursor: 'pointer',
-                      }}
-                    />
-                  </Link>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
-                    <Link 
-                      to={user ? "/profile/edit" : "/login"}
-                      style={{ fontSize: '14px', color: 'var(--primary)' }}
-                    >
-                      {user ? 'Edit Profile' : 'Login'}
-                    </Link>
-                  </div>
-                </div>
-                {user && (
-                  <button
-                    onClick={handleLogout}
-                    style={{
-                      background: 'none',
+                      borderRadius: '25%',
                       cursor: 'pointer',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--error-color)',
-                      border: 'none',
-                      boxShadow: 'none'
                     }}
-                    title="Sign Out"
-                    aria-label="Sign Out"
+                  />
+                <div>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
+                  <Link 
+                    to={user ? "/account/edit" : "/login"}
+                    style={{ fontSize: '14px', color: 'var(--primary)' }}
                   >
-                    <LogOutIcon size={24} />
-                  </button>
-                )}
+                    {user ? 'Edit Profile' : 'Login'}
+                  </Link>
+                </div>
+              </div>
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: 'none',
+                    cursor: 'pointer',
+                    padding: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--error-color)',
+                    border: 'none',
+                    boxShadow: 'none'
+                  }}
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOutIcon size={20} />
+                </button>
+              )}
               </div>
             </div>
-
-          {/* Theme Toggle Section */}
-          <div className="settings-option">
-            <label className="checkbox-label">
-              <span> Use system theme preference</span>
-              <input 
-                type="checkbox"
-                checked={useSystemTheme} 
-                onChange={handleThemeModeChange}
-                style={{ 
-                    width: '15px', 
-                    height: '15px',
-                    cursor: 'pointer',
-                    justifySelf: 'center',
-                    alignSelf: 'center'
-                  }}
-              />
-            </label>
-          </div>
-
-          {!useSystemTheme && (
-            <>
-              <div className="settings-option" style={{ marginBottom: 'var(--spacing-sm)' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                </div>
-              </div>
-
-              <div className="settings-option">
-                <div className="theme-button-group">
-                  <button 
-                    type="button"
-                    className={`tab-button ${theme === 'light' ? 'active' : ''}`}
-                    onClick={() => theme === 'dark' && toggleTheme()}
-                  >
-                    Light Mode
-                  </button>
-                  <button 
-                    type="button"
-                    className={`tab-button ${theme === 'dark' ? 'active' : ''}`}
-                    onClick={() => theme === 'light' && toggleTheme()}
-                  >
-                    Dark Mode
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Auto-Update Toggle Section */}
-          <div className="settings-option">
-            <label className="checkbox-label">
-              <span> Automatic updates</span>
-              <input 
-                type="checkbox"
-                checked={autoUpdate} 
-                onChange={handleAutoUpdateChange}
-                style={{ 
-                    width: '15px', 
-                    height: '15px',
-                    cursor: 'pointer',
-                    justifySelf: 'center',
-                    alignSelf: 'center'
-                  }}
-              />
-            </label>
-            <p>
-              {autoUpdate 
-                ? 'Updates will install automatically when available' 
-                : 'You will be prompted before installing updates'}
-            </p>
-          </div>          
         </div>
 
-        <div className="settings-section">
+        {/* Tab Navigation */}
+        <div className="account-tabs">
+          <button 
+            className={`account-tab ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button 
+            className={`account-tab ${activeTab === 'stats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('stats')}
+          >
+            Stats
+          </button>
+          <button 
+            className={`account-tab ${activeTab === 'games' ? 'active' : ''}`}
+            onClick={() => setActiveTab('games')}
+          >
+            Games
+          </button>
+          <button 
+            className={`account-tab ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            Settings
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="tab-content">
+            {!user ? (
+              <div className="settings-section">
+                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  Please <Link to="/login">login</Link> to view your game statistics
+                </p>
+              </div>
+            ) : overviewStats.gameTypes.length === 0 ? (
+              <div className="settings-section">
+                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  No games played yet. Start a new game to see your stats!
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Game Types Grid */}
+                <div className="overview-grid">
+                  {overviewStats.gameTypes.map(gameType => (
+                    <div 
+                      key={gameType.name} 
+                      className="game-type-card"
+                      onClick={() => {
+                        setStatsGameType(gameType.name.toLowerCase() === 'wizard' ? 'wizard' : gameType.name);
+                        setActiveTab('stats');
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <h3 className="game-type-name">{gameType.name}</h3>
+                      <div className="game-type-stats">
+                        <div className="stat-item">
+                          <span className="stat-label">Win%:</span>
+                          <span className="stat-value win-rate">
+                            {Math.round((gameType.wins / gameType.matches) * 100)}
+                          </span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-label">Matches:</span>
+                          <span className="stat-value">{gameType.matches}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Overall Recent Results */}
+                {overviewStats.recentResults.length > 0 && (
+                  <div className="settings-section">
+                    <h3 className="settings-section-title">Recent Performance</h3>
+                    <div className="overall-recent-results">
+                      <div className="results-string large">
+                        {overviewStats.recentResults.map((result, idx) => (
+                          <span key={idx} className={`result-letter ${result === 'W' ? 'win' : 'loss'}`}>
+                            {result}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="results-description">Last 20 games</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'stats' && (
+          <div className="tab-content">
+            {!user ? (
+              <div className="settings-section">
+                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  Please <Link to="/login">login</Link> to view detailed statistics
+                </p>
+              </div>
+            ) : allGamesForStats.length > 0 || (Object.keys(savedGames).length > 0 || savedTableGames.length > 0) ? (
+              <>
+                {/* Game Type Selector */}
+                {availableGameTypes.length > 1 && (
+                  <div className="settings-section" style={{ padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: 'var(--spacing-sm)' }}>
+                    <select 
+                      className="game-type-selector"
+                      value={statsGameType}
+                      onChange={(e) => setStatsGameType(e.target.value)}
+                      style={{
+                        
+                      }}
+                    >
+                      {availableGameTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {allGamesForStats.length > 0 ? (
+                  <PerformanceStatsEnhanced 
+                    games={allGamesForStats} 
+                    currentPlayer={currentPlayer} 
+                    isWizardGame={statsGameType === 'wizard'}
+                  />
+                ) : (
+                  <div className="settings-section">
+                    <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      No games available for {statsGameType === 'all' ? 'any game type' : statsGameType}. Play some games to see your performance!
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="settings-section">
+                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  No games available for statistics. Play some games to see your performance!
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'games' && (
+          <div className="tab-content">
+            <div className="settings-section">
           {cloudSyncStatus.uploading && (
             <div className="upload-progress">
               <div className="progress-text">{cloudSyncStatus.progress}</div>
@@ -1267,7 +1620,7 @@ const Account = () => {
           <div className="section-header" >
             <h2>Wizard Games ({filteredGames.length}) </h2>
             
-            <button 
+            {/* <button 
               className="filter-button"
               onClick={() => setShowFilterModal(true)}
               aria-label="Filter games"
@@ -1297,7 +1650,7 @@ const Account = () => {
                   border: '2px solid var(--card-bg)'
                 }} />
               )}
-            </button>
+            </button> */}
           </div>
           {filteredGames.length > 0 ? (
             <div className="game-history">
@@ -1496,45 +1849,111 @@ const Account = () => {
           )}
         </div>
 
-        {/* App Info Section */}
-        <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
-          <h3 className="settings-section-title">App Information
-            <div style={{display: 'flex', gap: 'var(--spacing-xs)'}}>
-              <button 
-                className={`settings-button-update`}
-                onClick={handleCheckForUpdates}
-                disabled={checkingForUpdates || forcingUpdate}
-                title="Check for app updates"
-              >
-                <RefreshIcon size={18} />Check for Updates
-              </button>
-              <button 
-                className={`settings-button-update`}
-                onClick={handleForceUpdate}
-                disabled={forcingUpdate || checkingForUpdates}
+        {/* End of Games Tab */}
+        </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="tab-content">
+            {/* Theme Settings */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">Theme Settings</h3>
+              <div className="settings-option">
+                <button 
+                  className="settings-button"
+                  onClick={toggleTheme}
+                  disabled={useSystemTheme}
+                >
+                  {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+                </button>
+              </div>
+              <div className="settings-option">
+                <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center'}}>
+                  <input
+                    type="checkbox"
+                    checked={useSystemTheme}
+                    onChange={(e) => setUseSystemTheme(e.target.checked)}
+                    style={{
+                      width: '15px', 
+                      height: '15px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div>
+                    <p style={{margin: 0}}>Automatically match your device's theme</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Update Settings */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">Update Settings</h3>
+              <div className="settings-option">
+                <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center'}}>
+                  <input
+                    type="checkbox"
+                    checked={autoUpdate}
+                    onChange={(e) => handleAutoUpdateChange(e.target.checked)}
+                    style={{
+                      width: '15px', 
+                      height: '15px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div>
+                    <p>
+                      {autoUpdate 
+                        ? 'Updates will install automatically' 
+                        : 'You will be prompted before installing updates'}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* App Information */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">App Information</h3>
+              <div className="settings-card info-card">
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Version:</span>
+                    <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Build Date:</span>
+                    <span className="info-value">
+                      {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div style={{display: 'flex', gap: 'var(--spacing-xs)', marginTop: 'var(--spacing-md)', flexDirection: 'row'}}>
+                <button 
+                  className={`settings-button-update`}
+                  onClick={handleCheckForUpdates}
+                  disabled={checkingForUpdates || forcingUpdate}
+                  title="Check for app updates"
+                >
+                  <RefreshIcon size={18} />Check for Updates
+                </button>
+                <button 
+                  className={`settings-button-update`}
+                  onClick={handleForceUpdate}
+                  disabled={forcingUpdate || checkingForUpdates}
                   title="Force clear cache and reload (use if stuck in update loop)"
                   style={{backgroundColor: 'var(--primary)'}}
-              >
-                <TrashIcon size={18} />Force Update
-              </button>
-            </div>
-          </h3>
-          <div className="settings-card info-card">
-            <div className="info-grid">
-              <div className="info-item">
-                <span className="info-label">Version:</span>
-                <span className="info-value">{import.meta.env.VITE_APP_VERSION}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Build Date:</span>
-                <span className="info-value">
-                  {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
-                </span>
+                >
+                  <TrashIcon size={18} />Force Update
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
+        {/* Modals */}
         <DeleteConfirmationModal
           isOpen={showConfirmDialog}
           onClose={() => setShowConfirmDialog(false)}

@@ -66,6 +66,10 @@
   padding: 0;
 }
 
+.table-game-container .results-row {
+  flex-direction: row;
+}
+
 /* Player name input in game tab */
 .player-name-input {
   background: var(--input-bg);

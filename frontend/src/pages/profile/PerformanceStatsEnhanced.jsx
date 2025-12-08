@@ -5,9 +5,7 @@ import "@/styles/pages/performancestats.css";
 
 const COLORS = ['#1DBF73', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
-const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
-  const [activeSection, setActiveSection] = useState('overview');
-  
+const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true }) => {
   // Calculate comprehensive statistics from games
   const stats = useMemo(() => {
     if (!games || games.length === 0) {
@@ -337,8 +335,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
 
   if (!games || games.length === 0) {
     return (
-      <div className="performance-stats-container" style={{ padding: 'var(--spacing-md)' }}>
-        <h2>Performance Statistics</h2>
+      <div className="performance-stats-container">
+        {/* <h2>Performance Statistics</h2> */}
         <div className="empty-message" style={{ textAlign: 'center', color: 'var(--text)', marginTop: 'var(--spacing-xl)' }}>
           No games played yet. Start playing to see your performance statistics!
         </div>
@@ -349,362 +347,284 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer }) => {
   if (!stats) return null;
 
   return (
-    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', paddingTop: 'var(--spacing-sm)', gap: 'var(--spacing-md)' }}>
-      <h2 style={{ margin: '0' }}>Performance Statistics</h2>
+    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
       
-      {/* Section Navigation */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--spacing-sm)'
-      }}>
-        {/* First row: Overview, Insights, Opponents */}
+      {/* OVERVIEW SECTION */}
+      <div>
+        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Overview</h3>
+        
+        {/* Overall Stats Grid */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+          gap: 'var(--spacing-sm)',
+          marginBottom: 'var(--spacing-md)'
+        }}>
+          <StatCard title="Total Games" value={stats.totalGames} />
+          <StatCard title="Wins" value={stats.wins} />
+          <StatCard title="Losses" value={stats.losses} />
+          <StatCard title="Win Rate" value={`${stats.winRate}%`} />
+          <StatCard title="Avg Score" value={stats.averageScore} />
+          <StatCard title="High Score" value={stats.highestScore} />
+        </div>
+
+        {/* Streak & Trend Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 'var(--spacing-sm)'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 'var(--spacing-md)'
         }}>
-          {['overview', 'insights', 'opponents'].map(section => (
-            <button
-              key={section}
-              onClick={() => setActiveSection(section)}
-              style={{
-                padding: 'var(--spacing-sm) var(--spacing-md)',
-                background: activeSection === section ? 'var(--primary)' : 'var(--card-bg)',
-                color: activeSection === section ? 'white' : 'var(--text)',
-                border: `1px solid ${activeSection === section ? 'var(--primary)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
-                fontWeight: '500',
-                textTransform: 'capitalize'
-              }}
-            >
-              {section}
-            </button>
-          ))}
+          {/* Current Streak */}
+          {stats.currentStreak.count > 0 && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 'var(--spacing-md)',
+              borderRadius: 'var(--radius-lg)',
+              background: stats.currentStreak.type === 'win' ? 'rgba(29, 191, 115, 0.1)' : 'rgba(255, 92, 92, 0.1)',
+              border: `1px solid ${stats.currentStreak.type === 'win' ? '#1DBF73' : '#FF5C5C'}`,
+            }}>
+              <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
+                {stats.currentStreak.count} {stats.currentStreak.type === 'win' ? 'Win' : 'Loss'} Streak
+              </div>
+              <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Currently Active</div>
+            </div>
+          )}
+
+          {/* Record Streaks */}
+          <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 'var(--spacing-md)',
+              borderRadius: 'var(--radius-lg)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
+          }}>
+            <div style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--primary)'}}>Streaks</div>
+            <div style={{ display: 'flex', gap: 'var(--spacing-md)'}}>
+              <div><strong>Best:</strong> {stats.longestWinStreak} wins</div>
+              <div><strong>Worst:</strong> {stats.longestLossStreak} losses</div>
+            </div>
+          </div>
+
+          {/* Recent Trend */}
+          {/* {stats.totalGames >= 10 && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 'var(--spacing-md)',
+              borderRadius: 'var(--radius-lg)',
+              background: stats.recentTrend === 'improving' ? 'rgba(29, 191, 115, 0.1)' : 
+                         stats.recentTrend === 'declining' ? 'rgba(255, 92, 92, 0.1)' : 
+                         'rgba(107, 114, 128, 0.1)',
+              border: `1px solid ${stats.recentTrend === 'improving' ? '#1DBF73' : 
+                                    stats.recentTrend === 'declining' ? '#FF5C5C' : '#6B7280'}`,
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-xs)' }}>
+                {stats.recentTrend === 'improving' ? '📈' : stats.recentTrend === 'declining' ? '📉' : '➡️'}
+              </div>
+              <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
+                {stats.recentTrend === 'improving' ? 'Improving!' : 
+                 stats.recentTrend === 'declining' ? 'Needs Work' : 'Stable'}
+              </div>
+              <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Last 5 vs Previous 5</div>
+            </div>
+          )} */}
         </div>
-        
-        {/* Second row: Achievements (full width) */}
-        <button
-          onClick={() => setActiveSection('achievements')}
-          style={{
-            padding: 'var(--spacing-sm) var(--spacing-md)',
-            background: activeSection === 'achievements' ? 'var(--primary)' : 'var(--card-bg)',
-            color: activeSection === 'achievements' ? 'white' : 'var(--text)',
-            border: `1px solid ${activeSection === 'achievements' ? 'var(--primary)' : 'var(--border)'}`,
-            borderRadius: 'var(--radius-md)',
-            cursor: 'pointer',
-            fontWeight: '500',
-            textTransform: 'capitalize',
-            width: '100%'
-          }}
-        >
-          Achievements
-        </button>
       </div>
 
-      {/* OVERVIEW SECTION */}
-      {activeSection === 'overview' && (
-        <>
-          {/* Overall Stats Grid */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-            gap: 'var(--spacing-md)'
-          }}>
-            <StatCard title="Total Games" value={stats.totalGames} />
-            <StatCard title="Wins" value={stats.wins} />
-            <StatCard title="Losses" value={stats.losses} />
-            <StatCard title="Win Rate" value={`${stats.winRate}%`} />
-            <StatCard title="Avg Score" value={stats.averageScore} />
-            <StatCard title="High Score" value={stats.highestScore} />
-          </div>
-
-          {/* Streak & Trend Cards */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-            width: '100%',
-            gap: 'var(--spacing-md)'
-          }}>
-            {/* Current Streak */}
-            {stats.currentStreak.count > 0 && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                padding: 'var(--spacing-md)',
-                borderRadius: 'var(--radius-lg)',
-                background: stats.currentStreak.type === 'win' ? 'rgba(29, 191, 115, 0.1)' : 'rgba(255, 92, 92, 0.1)',
-                border: `1px solid ${stats.currentStreak.type === 'win' ? '#1DBF73' : '#FF5C5C'}`,
-                width: '100%'
-              }}>
-                {/* <div style={{ fontSize: '2rem'}}>
-                  {stats.currentStreak.type === 'win' ? '🔥' : '❄️'}
-                </div> */}
-                <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                  {stats.currentStreak.count} {stats.currentStreak.type === 'win' ? 'Win' : 'Loss'} Streak
-                </div>
-                <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Currently Active</div>
-              </div>
-            )}
-
-            {/* Record Streaks */}
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                padding: 'var(--spacing-md)',
-                borderRadius: 'var(--radius-lg)',
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border)',
-                width: '100%'
-            }}>
-              <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>Record Streaks</div>
-              <div style={{ marginTop: 'var(--spacing-sm)' }}>
-                <div>Best: {stats.longestWinStreak} wins</div>
-                <div>Worst: {stats.longestLossStreak} losses</div>
-              </div>
-            </div>
-
-            {/* Recent Trend */}
-            {stats.totalGames >= 10 && (
-              <div style={{
-                padding: 'var(--spacing-md)',
-                borderRadius: 'var(--radius-lg)',
-                background: stats.recentTrend === 'improving' ? 'rgba(29, 191, 115, 0.1)' : 
-                           stats.recentTrend === 'declining' ? 'rgba(255, 92, 92, 0.1)' : 
-                           'rgba(107, 114, 128, 0.1)',
-                border: `1px solid ${stats.recentTrend === 'improving' ? '#1DBF73' : 
-                                      stats.recentTrend === 'declining' ? '#FF5C5C' : '#6B7280'}`,
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-xs)' }}>
-                  {stats.recentTrend === 'improving' ? '📈' : stats.recentTrend === 'declining' ? '📉' : '➡️'}
-                </div>
-                <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                  {stats.recentTrend === 'improving' ? 'Improving!' : 
-                   stats.recentTrend === 'declining' ? 'Needs Work' : 'Stable'}
-                </div>
-                <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Last 5 vs Previous 5</div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
       {/* INSIGHTS SECTION */}
-      {activeSection === 'insights' && (
-        <>
-          {/* Performance Metrics */}
+      <div>
+        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h3>
+        
+        {/* Performance Metrics */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: 'var(--spacing-sm)',
+          marginBottom: 'var(--spacing-md)'
+        }}>
+          {isWizardGame && <StatCard title="Bid Accuracy" value={`${stats.bidAccuracy}%`} />}
+          {isWizardGame && <StatCard title="Perfect Games" value={stats.perfectBids} />}
+          <StatCard title="Best Score" value={stats.bestGame?.score || 0} />
+          <StatCard title="Worst Score" value={stats.worstGame?.score || 0} />
+        </div>
+
+        {/* Score Performance Over Time */}
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
+          <h4 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1rem', fontWeight: '500' }}>Score Progression</h4>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={stats.performanceOverTime}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis 
+                dataKey="game" 
+                stroke="var(--text)"
+                tick={{ fill: 'var(--text)' }}
+                label={{ value: 'Game Number', position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
+              />
+              <YAxis 
+                stroke="var(--text)"
+                tick={{ fill: 'var(--text)' }}
+                label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: 'var(--text)' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  background: 'var(--card-bg)', 
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)',
+                  color: 'var(--text)'
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="score" 
+                stroke="#1DBF73" 
+                fill="#1DBF73" 
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Win Rate Over Time */}
+        <div>
+          <h4 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1rem', fontWeight: '500' }}>Win Rate Progression</h4>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={stats.performanceOverTime}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis 
+                dataKey="game" 
+                stroke="var(--text)"
+                tick={{ fill: 'var(--text)' }}
+                label={{ value: 'Game Number', position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
+              />
+              <YAxis 
+                stroke="var(--text)"
+                tick={{ fill: 'var(--text)' }}
+                label={{ value: 'Win Rate (%)', angle: -90, position: 'insideLeft', fill: 'var(--text)' }}
+                domain={[0, 100]}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  background: 'var(--card-bg)', 
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)',
+                  color: 'var(--text)'
+                }}
+                formatter={(value) => `${value}%`}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="winRate" 
+                stroke="#4F46E5" 
+                strokeWidth={2}
+                dot={{ fill: '#4F46E5', r: 3 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* HEAD-TO-HEAD SECTION */}
+      <div>
+        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Head-to-Head Performance</h3>
+        {stats.topOpponents.length > 0 ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
             gap: 'var(--spacing-md)'
           }}>
-            <StatCard title="Bid Accuracy" value={`${stats.bidAccuracy}%`} />
-            <StatCard title="Perfect Games" value={stats.perfectBids} />
-            <StatCard title="Comeback Wins" value={stats.comebackWins} />
-            <StatCard title="Dominant Wins" value={stats.dominantWins} />
-            <StatCard title="Best Score" value={stats.bestGame?.score || 0} />
-            <StatCard title="Worst Score" value={stats.worstGame?.score || 0} />
-          </div>
-
-          {/* Score Performance Over Time */}
-          <div>
-            <h3>Score Progression</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={stats.performanceOverTime}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis 
-                  dataKey="game" 
-                  stroke="var(--text)"
-                  tick={{ fill: 'var(--text)' }}
-                  label={{ value: 'Game Number', position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
-                />
-                <YAxis 
-                  stroke="var(--text)"
-                  tick={{ fill: 'var(--text)' }}
-                  label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: 'var(--text)' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--card-bg)', 
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                    color: 'var(--text)'
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#1DBF73" 
-                  fill="#1DBF73" 
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Win Rate Over Time */}
-          <div>
-            <h3>Win Rate Progression</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={stats.performanceOverTime}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis 
-                  dataKey="game" 
-                  stroke="var(--text)"
-                  tick={{ fill: 'var(--text)' }}
-                  label={{ value: 'Game Number', position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
-                />
-                <YAxis 
-                  stroke="var(--text)"
-                  tick={{ fill: 'var(--text)' }}
-                  label={{ value: 'Win Rate (%)', angle: -90, position: 'insideLeft', fill: 'var(--text)' }}
-                  domain={[0, 100]}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'var(--card-bg)', 
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                    color: 'var(--text)'
-                  }}
-                  formatter={(value) => `${value}%`}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="winRate" 
-                  stroke="#4F46E5" 
-                  strokeWidth={2}
-                  dot={{ fill: '#4F46E5', r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </>
-      )}
-
-      {/* OPPONENTS SECTION */}
-      {activeSection === 'opponents' && (
-        <div className="head-to-head">
-          {/* <h3>Head-to-Head</h3> */}
-          {stats.topOpponents.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 'var(--spacing-md)'
-            }}>
-              {stats.topOpponents.map((opponent, idx) => (
-                <div key={idx} style={{
-                  background: 'var(--card-bg)',
-                  padding: 'var(--spacing-md)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--border)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>{opponent.name}</div>
-                    <div style={{ fontSize: '0.875rem', opacity: 0.8}}>
-                      {opponent.games} games
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '700', color: opponent.winRate >= 50 ? '#1DBF73' : '#FF5C5C' }}>
-                      {opponent.winRate}%
-                    </div>
-                    <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>
-                      {opponent.wins}W - {opponent.losses}L
-                    </div>
+            {stats.topOpponents.map((opponent, idx) => (
+              <div key={idx} style={{
+                background: 'var(--card-bg)',
+                padding: 'var(--spacing-md)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>{opponent.name}</div>
+                  <div style={{ fontSize: '0.875rem', opacity: 0.8}}>
+                    {opponent.games} games
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)', opacity: 0.7 }}>
-              No opponent data available yet
-            </div>
-          )}
-        </div>
-      )}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: '700', color: opponent.winRate >= 50 ? '#1DBF73' : '#FF5C5C' }}>
+                    {opponent.winRate}%
+                  </div>
+                  <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>
+                    {opponent.wins}W - {opponent.losses}L
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: 'var(--spacing-xl)', 
+            background: 'var(--card-bg)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            opacity: 0.7 
+          }}>
+            No opponent data available yet
+          </div>
+        )}
+      </div>
 
       {/* ACHIEVEMENTS SECTION */}
-      {activeSection === 'achievements' && (
-        <>
-          {/* <h3 style={{ margin: '0' }}>Your Achievements</h3> */}
-          {stats.achievements.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: 'var(--spacing-sm)'
-            }}>
-              {stats.achievements.map((achievement, idx) => (
-                <div key={idx} style={{
-                  background: 'var(--card-bg)',
-                  paddingBottom: 'var(--spacing-md)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '2px solid var(--primary)',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  <div style={{ fontSize: '3rem'}}>
-                    {achievement.icon}
-                  </div>
-                  <div style={{ fontWeight: '600', fontSize: '1rem'}}>
-                    {achievement.name}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                    {achievement.description}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)', opacity: 0.7 }}>
-              Keep playing to unlock achievements! 🎯
-            </div>
-          )}
-
-          {/* Additional Stats */}
-          {/* <div style={{
+      <div>
+        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Achievements</h3>
+        {stats.achievements.length > 0 ? (
+          <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
             gap: 'var(--spacing-md)'
-          }}>            
-            <div style={{
-              background: 'var(--card-bg)',
-              padding: 'var(--spacing-md)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)'
-            }}>
-              <div style={{ color: 'var(--text)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                Avg Rounds per Game
+          }}>
+            {stats.achievements.map((achievement, idx) => (
+              <div key={idx} style={{
+                background: 'var(--card-bg)',
+                padding: 'var(--spacing-md)',
+                borderRadius: 'var(--radius-md)',
+                border: '2px solid var(--primary)',
+                textAlign: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-xs)' }}>
+                  {achievement.icon}
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                  {achievement.name}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                  {achievement.description}
+                </div>
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '600' }}>
-                {stats.averageRoundsPerGame}
-              </div>
-            </div>
-            
-            <div style={{
-              background: 'var(--card-bg)',
-              padding: 'var(--spacing-md)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border)'
-            }}>
-              <div style={{ color: 'var(--text)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                Score Range
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '600' }}>
-                {stats.lowestScore} - {stats.highestScore}
-              </div>
-            </div>
-          </div> */}
-        </>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: 'var(--spacing-xl)', 
+            background: 'var(--card-bg)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            opacity: 0.7 
+          }}>
+            Keep playing to unlock achievements! 🎯
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

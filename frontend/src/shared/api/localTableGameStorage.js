@@ -169,6 +169,7 @@ export class LocalTableGameStorage {
           const gameData = {
             id: game.id,
             name: game.name || `Table Game from ${new Date(game.savedAt).toLocaleDateString()}`,
+            gameTypeName: game.gameTypeName || game.name,
             savedAt: game.savedAt || new Date().toISOString(),
             lastPlayed: game.lastPlayed || new Date().toISOString(),
             playerCount: game.playerCount || 0,
@@ -176,6 +177,10 @@ export class LocalTableGameStorage {
             gameType: 'table',
             gameFinished: game.gameFinished || false,
             userId: game.userId,
+            lowIsBetter: game.lowIsBetter || game.gameData?.lowIsBetter || false,
+            winner_id: game.winner_id || game.gameData?.winner_id,
+            winner_name: game.winner_name || game.gameData?.winner_name,
+            gameData: game.gameData, // Include full gameData for access to players and winner info
             players: game.gameData && game.gameData.players ? 
               game.gameData.players.map(p => p.name) : []
           };

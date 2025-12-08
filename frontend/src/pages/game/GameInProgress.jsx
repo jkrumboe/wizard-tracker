@@ -780,6 +780,7 @@ const GameInProgress = () => {
               <div className="results-table">
                 {detailedStats.map((playerStats, index) => (
                   <div key={playerStats.id} className="results-row">
+                    <div className="top-result-row">
                       <div className="rank-col">{index + 1}</div>
                       <div className="player-col">
                         <div className="player-info">
@@ -790,7 +791,7 @@ const GameInProgress = () => {
                       <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
                         {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
                       </button>
-                    
+                    </div>
                     <AdvancedStats 
                       playerStats={playerStats} 
                       isVisible={selectedPlayerId === playerStats.id} 
