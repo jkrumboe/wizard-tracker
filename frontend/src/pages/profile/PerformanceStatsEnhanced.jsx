@@ -45,12 +45,14 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
     // Detect if this is a low-is-better scoring game
     const isLowIsBetter = games.length > 0 && (games[0].lowIsBetter || games[0].gameData?.lowIsBetter);
 
-    // Sort games by date (oldest first for chronological performance)
-    const sortedGames = [...games].sort((a, b) => {
-      const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || '1970-01-01');
-      const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || '1970-01-01');
-      return dateA - dateB;
-    });
+    // Filter out paused games and sort by date (oldest first for chronological performance)
+    const sortedGames = [...games]
+      .filter(game => !game.isPaused && game.gameFinished !== false)
+      .sort((a, b) => {
+        const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || '1970-01-01');
+        const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || '1970-01-01');
+        return dateA - dateB;
+      });
 
     sortedGames.forEach((game, index) => {
       totalGames++;
