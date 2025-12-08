@@ -276,7 +276,7 @@ const Leaderboard = () => {
               Previous
             </button>
             <span>
-              Page {currentPage} of {totalPages || 1}
+              {currentPage} of {totalPages || 1}
             </span>
             <button onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
               Next

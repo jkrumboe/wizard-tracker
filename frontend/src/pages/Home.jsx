@@ -175,7 +175,7 @@ const Home = () => {
       </div>
 
       <section className="recent-games">
-        <div className="section-header">
+        {/* <div className="section-header">
           <h2>Finished Games</h2>
           <button 
             className="filter-button"
@@ -185,7 +185,7 @@ const Home = () => {
             <FilterIcon size={20} />
             {hasActiveFilters(filters) && <span className="filter-badge">•</span>}
           </button>
-        </div>
+        </div> */}
         {filteredGames.length > 0 ? (
           <div className="game-history">
             {filteredGames.map(game => (
