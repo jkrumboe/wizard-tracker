@@ -1728,7 +1728,7 @@ const Account = () => {
                           </span>
                         </div>
                         <div className="game-players">
-                          <UsersIcon size={12} />{" "}
+                          {/* <UsersIcon size={12} />{" "} */}
                           {game.gameState?.players 
                             ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
                             : "No players"}
@@ -1827,7 +1827,7 @@ const Account = () => {
                           )}               
                         </div>
                         <div className="game-players">
-                          <UsersIcon size={12} />{" "}
+                          {/* <UsersIcon size={12} />{" "} */}
                           {game.players.join(", ")}
                         </div>
                         <div className="actions-game-history">

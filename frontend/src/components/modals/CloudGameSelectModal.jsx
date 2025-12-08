@@ -217,7 +217,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                       </div>
 
                       <div className="game-players">
-                        <UsersIcon size={12} />{" "} 
+                        {/* <UsersIcon size={12} />{" "}  */}
                         {game.players && game.players.length > 0 
                           ? game.players.map(p => typeof p === 'string' ? p : (p.name || 'Unknown')).join(', ')
                           : 'No players'}
