@@ -6,7 +6,7 @@ import { Link } from "react-router-dom"
 import { useUser } from '@/shared/hooks/useUser'
 // import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
-import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, SettingsIcon, ShieldIcon } from '@/components/ui/Icon'
+import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, UserIcon, ShieldIcon } from '@/components/ui/Icon'
 
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
@@ -92,11 +92,11 @@ const Navbar = () => {
           </div>
           <span>Home</span>
         </Link>
-        <Link to="/settings" className={`bottom-nav-item ${isActive("/settings")}`}>
+        <Link to="/account" className={`bottom-nav-item ${isActive("/account")}`}>
           <div className="nav-icon">
-            <SettingsIcon size={20} />
+            <UserIcon size={20} />
           </div>
-          <span>Settings</span>
+          <span>Account</span>
         </Link>
       </nav>
     </>

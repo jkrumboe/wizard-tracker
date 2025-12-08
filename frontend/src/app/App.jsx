@@ -119,8 +119,8 @@ function URLImportHandler() {
           if (success) {
             // Add a temporary flag to localStorage to show success message
             localStorage.setItem('import_success', 'true');
-            // Navigate to settings to show the imported game
-            navigate('/settings');
+            // Navigate to account to show the imported game
+            navigate('/account');
           }
           
         } catch (error) {
@@ -129,10 +129,10 @@ function URLImportHandler() {
           globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           // Add error flag
           localStorage.setItem('import_error', 'true');
-          navigate('/settings');
+          navigate('/account');
         }
       } else if (importGamesParam || shareKeyParam) {
-        navigate('/settings');
+        navigate('/account');
       }
     };
 
@@ -243,7 +243,7 @@ function App() {
                         <Profile />
                       </AuthProtectedRoute>
                     } />
-                    <Route path="/account" element={<Navigate to="/profile" replace />} />
+                    {/* <Route path="/account" element={<Navigate to="/profile" replace />} /> */}
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/stats/:name" element={<Stats />} />
                     <Route path="/profile/stats" element={<Stats />} />
@@ -255,7 +255,7 @@ function App() {
                     <Route path="/login" element= {
                         <Login />
                     }/>
-                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/account" element={<Settings />} />
                     <Route path="/shared/:shareId" element={<SharedGamePage />} />
                     <Route path="/admin" element={
                       <AdminProtectedRoute>

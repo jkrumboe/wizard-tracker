@@ -131,9 +131,9 @@ const SharedGamePage = () => {
       setImported(true);
       setAlreadyImported(true); // Mark as imported to prevent further attempts
       
-      // Redirect to settings page after a short delay
+      // Redirect to account page after a short delay
       setTimeout(() => {
-        navigate('/settings', { 
+        navigate('/account', { 
           state: { 
             message: selectedPlayerId 
               ? 'Shared game imported and linked to your profile!' 
@@ -243,7 +243,7 @@ const SharedGamePage = () => {
                     </div>
                     <button 
                       className="btn-secondary"
-                      onClick={() => navigate('/settings')}
+                      onClick={() => navigate('/account')}
                     >
                       View My Games
                     </button>
