@@ -4,6 +4,7 @@ let updateCheckInProgress = false;
 let lastUpdateCheck = 0;
 const UPDATE_CHECK_INTERVAL = 300000; // 5 minutes
 const MIN_UPDATE_CHECK_DELAY = 10000; // 10 seconds minimum between checks
+const LAST_SW_VERSION_KEY = 'last_sw_version';
 
 export function register() {
   if (!("serviceWorker" in navigator)) {
@@ -22,6 +23,21 @@ export function register() {
     navigator.serviceWorker.ready
       .then((registration) => {
         console.debug("ServiceWorker ready with scope: ", registration.scope)
+        
+        // Initialize version tracking on first load
+        if (registration.active) {
+          const messageChannel = new MessageChannel();
+          messageChannel.port1.onmessage = (event) => {
+            if (event.data?.version) {
+              const lastVersion = localStorage.getItem(LAST_SW_VERSION_KEY);
+              if (!lastVersion) {
+                console.debug(`📌 Initializing version tracking: ${event.data.version}`);
+                localStorage.setItem(LAST_SW_VERSION_KEY, event.data.version);
+              }
+            }
+          };
+          registration.active.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
+        }
 
         // Throttled update checker
         const checkForUpdate = () => {

@@ -134,7 +134,13 @@ self.addEventListener('message', (event) => {
   
   if (event.data && event.data.type === 'GET_VERSION') {
     console.debug(`Sending version ${APP_VERSION}`);
-    event.ports[0].postMessage({ version: APP_VERSION });
+    // Always respond with version, even if no port provided (backwards compatibility)
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ version: APP_VERSION });
+    } else {
+      // Fallback: send message to the client directly
+      event.source.postMessage({ type: 'VERSION_RESPONSE', version: APP_VERSION });
+    }
   }
   
   if (event.data && event.data.type === 'CLEAR_CACHE') {

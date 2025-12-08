@@ -39,6 +39,7 @@ const Settings = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
   const [checkingForUpdates, setCheckingForUpdates] = useState(false);
+  const [forcingUpdate, setForcingUpdate] = useState(false);
   const [autoUpdate, setAutoUpdate] = useState(() => {
     const saved = localStorage.getItem('autoUpdate');
     return saved !== null ? saved === 'true' : true; // Default to true
@@ -622,6 +623,54 @@ const Settings = () => {
     }
   };
 
+  const handleForceUpdate = async () => {
+    if (!('serviceWorker' in navigator)) {
+      setMessage({ text: 'Service Worker not supported in this browser', type: 'error' });
+      return;
+    }
+
+    // Confirm action
+    if (!confirm('This will clear all caches and reload the app. Any unsaved changes may be lost. Continue?')) {
+      return;
+    }
+
+    setForcingUpdate(true);
+    setMessage({ text: 'Clearing caches and forcing update...', type: 'info' });
+
+    try {
+      // Clear all localStorage update tracking
+      localStorage.removeItem('last_sw_reload');
+      localStorage.removeItem('last_sw_version');
+      localStorage.removeItem('sw_reload_attempts');
+      sessionStorage.removeItem('sw_update_ready');
+      sessionStorage.removeItem('sw_update_in_progress');
+      
+      // Clear all caches
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+      console.debug(`🧹 Cleared ${cacheNames.length} caches`);
+      
+      // Unregister service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration => registration.unregister()));
+      console.debug(`🧹 Unregistered ${registrations.length} service workers`);
+      
+      setMessage({ text: '✅ Caches cleared! Reloading...', type: 'success' });
+      
+      // Hard reload after a short delay
+      setTimeout(() => {
+        globalThis.location.reload(true);
+      }, 1000);
+    } catch (error) {
+      console.error('Error forcing update:', error);
+      setForcingUpdate(false);
+      setMessage({ 
+        text: 'Failed to clear caches. Please try again.', 
+        type: 'error' 
+      });
+    }
+  };
+
   const clearMessage = () => {
     setTimeout(() => {
       setMessage({ text: '', type: '' });
@@ -1039,12 +1088,13 @@ const Settings = () => {
                     style={{
                       background: 'none',
                       cursor: 'pointer',
-                      padding: '8px',
+                      padding: '0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'var(--error-color)',
-                      border: '1px solid var(--error-color)',
+                      border: 'none',
+                      boxShadow: 'none'
                     }}
                     title="Sign Out"
                     aria-label="Sign Out"
@@ -1449,14 +1499,25 @@ const Settings = () => {
         {/* App Info Section */}
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <h3 className="settings-section-title">App Information
-            <button 
-              className={`settings-button-update`}
-              onClick={handleCheckForUpdates}
-              disabled={checkingForUpdates}
-              title="Check for app updates"
-            >
-              <RefreshIcon size={18} />Check for Updates
-            </button>
+            <div style={{display: 'flex', gap: 'var(--spacing-xs)'}}>
+              <button 
+                className={`settings-button-update`}
+                onClick={handleCheckForUpdates}
+                disabled={checkingForUpdates || forcingUpdate}
+                title="Check for app updates"
+              >
+                <RefreshIcon size={18} />Check for Updates
+              </button>
+              <button 
+                className={`settings-button-update`}
+                onClick={handleForceUpdate}
+                disabled={forcingUpdate || checkingForUpdates}
+                title="Force clear cache and reload (use if stuck in update loop)"
+                style={{backgroundColor: 'var(--error)', borderColor: 'var(--error)'}}
+              >
+                <TrashIcon size={18} />Force Update
+              </button>
+            </div>
           </h3>
           <div className="settings-card info-card">
             <div className="info-grid">
