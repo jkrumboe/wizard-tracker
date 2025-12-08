@@ -36,11 +36,13 @@ class AvatarService {
       throw new Error('Only JPEG, PNG, GIF, and WebP images are allowed');
     }
 
-    // 3. Validate file extension matches MIME type
-    const fileExtension = file.name.split('.').pop().toLowerCase();
-    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    if (!validExtensions.includes(fileExtension)) {
-      throw new Error('Invalid file extension');
+    // 3. Validate file extension matches MIME type (only for File objects with names)
+    if (file.name) {
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      if (!validExtensions.includes(fileExtension)) {
+        throw new Error('Invalid file extension');
+      }
     }
 
     // 4. Validate file size (max 10MB for input - we'll compress it)
@@ -55,10 +57,12 @@ class AvatarService {
       throw new Error('File is too small or corrupted');
     }
 
-    // 6. Validate file name (prevent malicious filenames)
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
-    if (sanitizedName.length === 0) {
-      throw new Error('Invalid filename');
+    // 6. Validate file name (prevent malicious filenames) - only for File objects
+    if (file.name) {
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+      if (sanitizedName.length === 0) {
+        throw new Error('Invalid filename');
+      }
     }
 
     // 7. Validate image dimensions and content

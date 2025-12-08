@@ -7,6 +7,7 @@ const auth = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
+const cache = require('../utils/redis');
 const router = express.Router();
 
 // POST /users/register - Create new user (with strict rate limiting)
@@ -250,17 +251,30 @@ router.put('/me/profile-picture', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid image content detected' });
     }
 
-    // Update the profile picture (use cleaned version)
-    req.user.profilePicture = cleanedProfilePicture;
-    await req.user.save();
+    // Update the profile picture in the database
+    // Note: req.user is a lean object, so we need to use findByIdAndUpdate
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { profilePicture: cleanedProfilePicture },
+      { new: true, select: '-passwordHash' }
+    ).lean();
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Clear the user cache so next request gets fresh data
+    if (cache.isConnected) {
+      await cache.del(`user:${req.user._id}`);
+    }
 
     res.json({
       message: 'Profile picture updated successfully',
       user: {
-        id: req.user._id,
-        username: req.user.username,
-        createdAt: req.user.createdAt,
-        profilePicture: req.user.profilePicture
+        id: updatedUser._id,
+        username: updatedUser.username,
+        createdAt: updatedUser.createdAt,
+        profilePicture: updatedUser.profilePicture
       }
     });
   } catch (error) {

@@ -21,7 +21,7 @@
 .modal-container {
   background-color: var(--card-bg);
   border-radius: var(--radius-lg);
-  width: 80%;
+  width: 90%;
   max-width: 500px;
   max-height: 90vh;
   display: flex;
@@ -451,4 +451,8 @@
   background-color: var(--primary);
   color: var(--text);
   border-color: var(--primary);
+}
+
+.reactEasyCrop_CropArea {
+  border-radius: 25% !important;
 }
