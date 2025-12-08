@@ -42,6 +42,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
     const dayOfWeekGames = { Sun: 0, Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0 };
     const hourlyPerformance = Array(24).fill(0).map(() => ({ games: 0, wins: 0 }));
 
+    // Detect if this is a low-is-better scoring game
+    const isLowIsBetter = games.length > 0 && (games[0].lowIsBetter || games[0].gameData?.lowIsBetter);
+
     // Sort games by date (oldest first for chronological performance)
     const sortedGames = [...games].sort((a, b) => {
       const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || '1970-01-01');
@@ -56,7 +59,25 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       let playerScore = 0;
       let playerId = null;
       
-      if (game.gameState?.players) {
+      // Check if it's a wizard game (has gameState) or table game (has gameData)
+      const isTableGame = game.gameType === 'table' || game.gameData?.players;
+      
+      if (isTableGame && game.gameData?.players) {
+        // Table game structure
+        const player = game.gameData.players.find(p => 
+          p.name === currentPlayer.name || 
+          p.id === currentPlayer.id ||
+          p.username === currentPlayer.username
+        );
+        if (player) {
+          playerId = player.id;
+          // Calculate total score from points array
+          if (player.points && Array.isArray(player.points)) {
+            playerScore = player.points.reduce((sum, point) => sum + (point || 0), 0);
+          }
+        }
+      } else if (game.gameState?.players) {
+        // Wizard game structure
         const player = game.gameState.players.find(p => 
           p.name === currentPlayer.name || 
           p.id === currentPlayer.id ||
@@ -70,7 +91,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         }
       }
       
-      if (playerId && playerScore === 0) {
+      // Fallback score lookups for wizard games
+      if (!isTableGame && playerId && playerScore === 0) {
         if (game.final_scores?.[playerId] !== undefined) {
           playerScore = game.final_scores[playerId];
         } else if (game.gameState?.final_scores?.[playerId] !== undefined) {
@@ -78,7 +100,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         }
       }
       
-      if (playerScore === 0) {
+      if (!isTableGame && playerScore === 0) {
         if (game.final_scores?.[currentPlayer.name] !== undefined) {
           playerScore = game.final_scores[currentPlayer.name];
         } else if (game.gameState?.final_scores?.[currentPlayer.name] !== undefined) {
@@ -90,24 +112,40 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       if (playerScore > highestScore) highestScore = playerScore;
       if (playerScore < lowestScore) lowestScore = playerScore;
       
-      // Track best and worst games
-      if (playerScore > bestGameScore) {
-        bestGameScore = playerScore;
-        bestGameData = { score: playerScore, date: game.created_at || game.savedAt, name: game.name };
-      }
-      if (playerScore < worstGameScore) {
-        worstGameScore = playerScore;
-        worstGameData = { score: playerScore, date: game.created_at || game.savedAt, name: game.name };
+      // Track best and worst games (swap logic if lower is better)
+      if (isLowIsBetter) {
+        // For low-is-better games: best = lowest score, worst = highest score
+        if (playerScore < bestGameScore || bestGameScore === -Infinity) {
+          bestGameScore = playerScore;
+          bestGameData = { score: playerScore, date: game.created_at || game.savedAt, name: game.name };
+        }
+        if (playerScore > worstGameScore || worstGameScore === Infinity) {
+          worstGameScore = playerScore;
+          worstGameData = { score: playerScore, date: game.created_at || game.savedAt, name: game.name };
+        }
+      } else {
+        // For high-is-better games: best = highest score, worst = lowest score
+        if (playerScore > bestGameScore) {
+          bestGameScore = playerScore;
+          bestGameData = { score: playerScore, date: game.created_at || game.savedAt, name: game.name };
+        }
+        if (playerScore < worstGameScore) {
+          worstGameScore = playerScore;
+          worstGameData = { score: playerScore, date: game.created_at || game.savedAt, name: game.name };
+        }
       }
       
       // Count rounds
-      const rounds = game.total_rounds || game.gameState?.maxRounds || 0;
+      const rounds = game.totalRounds || game.total_rounds || game.gameState?.maxRounds || 0;
       totalRounds += rounds;
       
       // Determine if player won
-      const winnerId = game.winner_id || game.gameState?.winner_id;
-      const winnerName = game.gameState?.players?.find(p => p.id === winnerId)?.name;
-      const isWin = winnerName === currentPlayer.name || winnerId === currentPlayer.id;
+      const winnerId = game.winner_id || game.gameData?.winner_id || game.gameState?.winner_id;
+      const winnerName = game.winner_name || game.gameData?.winner_name || 
+                         game.gameState?.players?.find(p => p.id === winnerId)?.name;
+      const isWin = winnerName === currentPlayer.name || 
+                    winnerId === currentPlayer.id ||
+                    winnerId === playerId;
       
       if (isWin) {
         wins++;
@@ -128,7 +166,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       }
       
       // Performance by player count
-      const playerCount = game.gameState?.players?.length || 0;
+      const playerCount = game.gameData?.players?.length || game.gameState?.players?.length || 0;
       if (playerCount > 0) {
         if (!performanceByPlayerCount[playerCount]) {
           performanceByPlayerCount[playerCount] = { games: 0, wins: 0, totalScore: 0 };
@@ -139,8 +177,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       }
       
       // Head-to-head tracking
-      if (game.gameState?.players) {
-        game.gameState.players.forEach(opponent => {
+      const players = game.gameData?.players || game.gameState?.players || [];
+      if (players.length > 0) {
+        players.forEach(opponent => {
           if (opponent.name !== currentPlayer.name && opponent.id !== currentPlayer.id) {
             const opponentName = opponent.name || opponent.username || 'Unknown';
             if (!headToHeadStats[opponentName]) {
@@ -197,20 +236,47 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       if (isWin) hourlyPerformance[hour].wins++;
       
       // Comeback/dominant win detection
-      if (isWin && game.gameState?.players) {
-        const sortedPlayers = [...game.gameState.players].sort((a, b) => {
-          const scoreA = a.totalScore || game.final_scores?.[a.id] || 0;
-          const scoreB = b.totalScore || game.final_scores?.[b.id] || 0;
-          return scoreB - scoreA;
-        });
-        
-        if (sortedPlayers.length >= 2) {
-          const winnerScore = sortedPlayers[0].totalScore || game.final_scores?.[sortedPlayers[0].id] || 0;
-          const secondScore = sortedPlayers[1].totalScore || game.final_scores?.[sortedPlayers[1].id] || 0;
-          const margin = winnerScore - secondScore;
+      if (isWin) {
+        const allPlayers = game.gameData?.players || game.gameState?.players || [];
+        if (allPlayers.length >= 2) {
+          const sortedPlayers = [...allPlayers].sort((a, b) => {
+            let scoreA, scoreB;
+            
+            // Handle table game scores
+            if (game.gameType === 'table' || game.gameData?.players) {
+              scoreA = a.points ? a.points.reduce((sum, p) => sum + (p || 0), 0) : 0;
+              scoreB = b.points ? b.points.reduce((sum, p) => sum + (p || 0), 0) : 0;
+              // If lowIsBetter, reverse the sort
+              if (game.lowIsBetter || game.gameData?.lowIsBetter) {
+                return scoreA - scoreB;
+              }
+            } else {
+              // Handle wizard game scores
+              scoreA = a.totalScore || game.final_scores?.[a.id] || 0;
+              scoreB = b.totalScore || game.final_scores?.[b.id] || 0;
+            }
+            
+            return scoreB - scoreA;
+          });
           
-          if (margin > 50) dominantWins++;
-          if (margin < 10 && margin > 0) comebackWins++;
+          if (sortedPlayers.length >= 2) {
+            let winnerScore, secondScore;
+            
+            if (game.gameType === 'table' || game.gameData?.players) {
+              winnerScore = sortedPlayers[0].points ? 
+                sortedPlayers[0].points.reduce((sum, p) => sum + (p || 0), 0) : 0;
+              secondScore = sortedPlayers[1].points ? 
+                sortedPlayers[1].points.reduce((sum, p) => sum + (p || 0), 0) : 0;
+            } else {
+              winnerScore = sortedPlayers[0].totalScore || game.final_scores?.[sortedPlayers[0].id] || 0;
+              secondScore = sortedPlayers[1].totalScore || game.final_scores?.[sortedPlayers[1].id] || 0;
+            }
+            
+            const margin = Math.abs(winnerScore - secondScore);
+            
+            if (margin > 50) dominantWins++;
+            if (margin < 10 && margin > 0) comebackWins++;
+          }
         }
       }
       
@@ -311,6 +377,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       averageScore: averageScore.toFixed(1),
       highestScore: highestScore === -Infinity ? 0 : highestScore,
       lowestScore: lowestScore === Infinity ? 0 : lowestScore,
+      isLowIsBetter,
       totalRounds,
       averageRoundsPerGame: averageRoundsPerGame.toFixed(1),
       performanceOverTime: performanceData,
@@ -365,7 +432,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
           <StatCard title="Losses" value={stats.losses} />
           <StatCard title="Win Rate" value={`${stats.winRate}%`} />
           <StatCard title="Avg Score" value={stats.averageScore} />
-          <StatCard title="High Score" value={stats.highestScore} />
+          <StatCard title="Top Score" value={stats.isLowIsBetter ? stats.lowestScore : stats.highestScore} />
         </div>
 
         {/* Streak & Trend Cards */}
