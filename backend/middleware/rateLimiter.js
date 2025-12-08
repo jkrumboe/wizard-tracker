@@ -47,9 +47,16 @@ const generalLimiter = createLimiter({
 // Strict rate limiter for authentication endpoints
 const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 login/register attempts per windowMs
-  message: 'Too many authentication attempts, please try again later.',
+  max: 200, // Increased from 50 to 200 to allow multiple users on same network
+  message: 'Too many authentication attempts from this network. Please try again in 15 minutes.',
   skipSuccessfulRequests: true, // Don't count successful logins
+  // Add handler to provide more helpful error response
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many authentication attempts from this network. Please try again in 15 minutes.',
+      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
+    });
+  }
 });
 
 // Rate limiter for API endpoints

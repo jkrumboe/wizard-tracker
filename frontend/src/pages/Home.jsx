@@ -9,6 +9,7 @@ import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useUser } from '@/shared/hooks/useUser'
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
+import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker'
 import { FilterIcon, UsersIcon } from '@/components/ui/Icon'
 import "@/styles/pages/home.css"
 
@@ -23,6 +24,7 @@ const Home = () => {
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [showFriendsModal, setShowFriendsModal] = useState(false)
   const [filters, setFilters] = useState(getDefaultFilters())
+  const [gameSyncStatuses, setGameSyncStatuses] = useState({})
   
   // Apply filters to games
   const filteredGames = useMemo(() => {
@@ -111,6 +113,22 @@ const Home = () => {
         });
         
         setAllGames(allGames);
+        
+        // Batch check sync status for wizard games
+        if (user && allGames.length > 0) {
+          try {
+            const wizardGameIds = allGames
+              .filter(game => game.gameType !== 'table' && game.id)
+              .map(game => game.id);
+            
+            if (wizardGameIds.length > 0) {
+              const syncStatuses = await batchCheckGamesSyncStatus(wizardGameIds);
+              setGameSyncStatuses(syncStatuses);
+            }
+          } catch (error) {
+            console.debug('Error batch checking sync status on Home:', error.message);
+          }
+        }
       } catch (error) {
         console.error('Error fetching local games:', error);
         setAllGames([]);
@@ -171,7 +189,15 @@ const Home = () => {
         {filteredGames.length > 0 ? (
           <div className="game-history">
             {filteredGames.map(game => (
-              <GameHistoryItem key={game.id} game={game} />
+              <GameHistoryItem 
+                key={game.id} 
+                game={{
+                  ...game,
+                  isUploaded: game.gameType === 'table' 
+                    ? game.isUploaded 
+                    : gameSyncStatuses[game.id]?.synced || game.isUploaded
+                }} 
+              />
             ))}
           </div>
         ) : loading ? (

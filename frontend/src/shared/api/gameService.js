@@ -40,10 +40,14 @@ export async function getRecentGames(_limit = 5) {
 }
 
 // Get leaderboard data (public endpoint - no auth required)
-export async function getLeaderboard(gameType = 'all') {
-  const url = gameType && gameType !== 'all' 
-    ? `${API_ENDPOINTS.games.leaderboard}?gameType=${encodeURIComponent(gameType)}`
-    : API_ENDPOINTS.games.leaderboard;
+export async function getLeaderboard(gameType = 'all', page = 1, limit = 50) {
+  const params = new URLSearchParams({
+    gameType: gameType || 'all',
+    page: page.toString(),
+    limit: limit.toString()
+  });
+  
+  const url = `${API_ENDPOINTS.games.leaderboard}?${params}`;
   
   try {
     const res = await fetch(url);

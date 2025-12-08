@@ -64,4 +64,10 @@ tableGameSchema.index({ userId: 1, createdAt: -1 });
 // Index for faster lookups by localId
 tableGameSchema.index({ localId: 1, userId: 1 });
 
+// Index for game type filtering
+tableGameSchema.index({ gameTypeName: 1, createdAt: -1 });
+
+// Index for finished games queries
+tableGameSchema.index({ gameFinished: 1, userId: 1 });
+
 module.exports = mongoose.model('TableGame', tableGameSchema);

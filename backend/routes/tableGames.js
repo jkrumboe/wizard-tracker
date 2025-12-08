@@ -1,6 +1,7 @@
 const express = require('express');
 const TableGame = require('../models/TableGame');
 const auth = require('../middleware/auth');
+const cache = require('../utils/redis');
 
 const router = express.Router();
 
@@ -62,6 +63,11 @@ router.post('/', auth, async (req, res, next) => {
     });
 
     await tableGame.save();
+    
+    // Invalidate leaderboard cache when new table game is created
+    if (cache.isConnected) {
+      await cache.delPattern('leaderboard:*');
+    }
     
     console.debug(`[POST /api/table-games] Created table game: ${tableGame._id} for user ${userId}`);
     

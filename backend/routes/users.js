@@ -365,7 +365,8 @@ router.get('/all', auth, async (req, res, next) => {
     // Get all users but exclude password and limit data
     const users = await User.find()
       .select('_id username createdAt profilePicture')
-      .sort({ username: 1 });
+      .sort({ username: 1 })
+      .lean(); // Use lean() for better performance
 
     res.json({
       users: users.map(user => ({

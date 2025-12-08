@@ -125,6 +125,184 @@ export async function checkGameSyncStatus(gameId) {
 }
 
 /**
+ * Check if multiple games exist in the backend by their MongoDB IDs (batch operation)
+ * @param {string[]} cloudGameIds - Array of MongoDB game document IDs
+ * @returns {Promise<Object>} - Object mapping gameId to boolean (exists or not)
+ */
+export async function batchCheckCloudGamesExist(cloudGameIds) {
+  if (!Array.isArray(cloudGameIds) || cloudGameIds.length === 0) {
+    return {};
+  }
+  
+  // Filter out invalid IDs
+  const validIds = cloudGameIds.filter(id => id && typeof id === 'string' && id.length > 0);
+  
+  if (validIds.length === 0) {
+    return {};
+  }
+  
+  // Check authentication
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    // Return null for all games to indicate unknown status
+    const results = {};
+    validIds.forEach(id => { results[id] = null; });
+    return results;
+  }
+  
+  try {
+    const res = await fetch(API_ENDPOINTS.games.batchCheck, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ gameIds: validIds })
+    });
+    
+    if (res.status === 401) {
+      console.warn('Authentication expired while batch checking cloud games');
+      const results = {};
+      validIds.forEach(id => { results[id] = null; });
+      return results;
+    }
+    
+    if (!res.ok) {
+      console.warn(`Batch check failed with status ${res.status}`);
+      return {};
+    }
+    
+    const data = await res.json();
+    return data.results || {};
+  } catch (err) {
+    console.error('Error batch checking games in backend:', err);
+    return {};
+  }
+}
+
+/**
+ * Check sync status for multiple local games (batch operation)
+ * @param {string[]} gameIds - Array of local game IDs
+ * @returns {Promise<Object>} - Object mapping gameId to sync status
+ */
+export async function batchCheckGamesSyncStatus(gameIds) {
+  try {
+    const games = LocalGameStorage.getAllSavedGames();
+    const syncStatuses = {};
+    
+    // Collect all cloud game IDs that need checking
+    const cloudGameIds = [];
+    const gameIdToCloudId = {};
+    
+    gameIds.forEach(gameId => {
+      const localGame = games[gameId];
+      if (!localGame) {
+        syncStatuses[gameId] = {
+          exists: false,
+          local: false,
+          cloud: false,
+          synced: false,
+          status: 'Not Found'
+        };
+        return;
+      }
+      
+      // Handle imported shared games
+      const isImportedSharedGame = localGame.isImported || localGame.isShared || localGame.originalGameId;
+      if (isImportedSharedGame) {
+        syncStatuses[gameId] = {
+          exists: true,
+          local: true,
+          cloud: true,
+          synced: true,
+          status: 'Synced',
+          isUploaded: true,
+          cloudGameId: localGame.cloudGameId || localGame.originalGameId || null,
+          isImported: true
+        };
+        return;
+      }
+      
+      // Collect cloud game IDs for batch checking
+      if (localGame.isUploaded && localGame.cloudGameId) {
+        cloudGameIds.push(localGame.cloudGameId);
+        gameIdToCloudId[gameId] = localGame.cloudGameId;
+      } else {
+        // Game not uploaded
+        syncStatuses[gameId] = {
+          exists: true,
+          local: true,
+          cloud: false,
+          synced: false,
+          status: 'Local',
+          isUploaded: false,
+          cloudGameId: null
+        };
+      }
+    });
+    
+    // Batch check all cloud games
+    if (cloudGameIds.length > 0) {
+      const cloudResults = await batchCheckCloudGamesExist(cloudGameIds);
+      
+      // Map results back to game IDs
+      Object.entries(gameIdToCloudId).forEach(([gameId, cloudGameId]) => {
+        const localGame = games[gameId];
+        const cloudExists = cloudResults[cloudGameId];
+        
+        if (cloudExists === null) {
+          // Can't verify without authentication
+          syncStatuses[gameId] = {
+            exists: true,
+            local: true,
+            cloud: 'unknown',
+            synced: true,
+            status: 'Synced',
+            isUploaded: localGame.isUploaded || false,
+            cloudGameId: cloudGameId,
+            requiresAuth: true
+          };
+        } else if (cloudExists === false && localGame.isUploaded) {
+          // Game was marked as uploaded but doesn't exist - reset flags
+          console.warn(`Game ${gameId} was marked as uploaded but not found in backend`);
+          localGame.isUploaded = false;
+          localGame.cloudGameId = null;
+          localGame.uploadedAt = null;
+          localGame.cloudLookupKey = null;
+          localStorage.setItem('wizardTracker_localGames', JSON.stringify(games));
+          
+          syncStatuses[gameId] = {
+            exists: true,
+            local: true,
+            cloud: false,
+            synced: false,
+            status: 'Local',
+            isUploaded: false,
+            cloudGameId: null
+          };
+        } else {
+          // Normal sync status
+          syncStatuses[gameId] = {
+            exists: true,
+            local: true,
+            cloud: cloudExists,
+            synced: cloudExists,
+            status: cloudExists ? 'Synced' : 'Local',
+            isUploaded: localGame.isUploaded || false,
+            cloudGameId: cloudGameId
+          };
+        }
+      });
+    }
+    
+    return syncStatuses;
+  } catch (error) {
+    console.error('Error batch checking games sync status:', error);
+    return {};
+  }
+}
+
+/**
  * Check sync status for all local games
  * @returns {Promise<Object>} - Object with gameId as key and sync status as value
  */
@@ -132,14 +310,9 @@ export async function checkAllGamesSyncStatus() {
   try {
     const games = LocalGameStorage.getAllSavedGames();
     const gameIds = Object.keys(games);
-    const syncStatuses = {};
-
-    // Check each game's sync status
-    for (const gameId of gameIds) {
-      syncStatuses[gameId] = await checkGameSyncStatus(gameId);
-    }
-
-    return syncStatuses;
+    
+    // Use batch checking for better performance
+    return await batchCheckGamesSyncStatus(gameIds);
   } catch (error) {
     console.error('Error checking all games sync status:', error);
     return {};

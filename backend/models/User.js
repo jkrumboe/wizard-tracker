@@ -39,4 +39,10 @@ const userSchema = new mongoose.Schema({
 // Index for faster username lookups
 userSchema.index({ username: 1 });
 
+// Text index for username search
+userSchema.index({ username: 'text' });
+
+// Index for friends array queries
+userSchema.index({ friends: 1 });
+
 module.exports = mongoose.model('User', userSchema);

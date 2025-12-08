@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/games`,
     create: `${API_BASE_URL}/api/games`,
     getById: (id) => `${API_BASE_URL}/api/games/${id}`,
+    batchCheck: `${API_BASE_URL}/api/games/batch-check`,
     stats: `${API_BASE_URL}/api/games/stats`,
     leaderboard: `${API_BASE_URL}/api/games/leaderboard`,
   },

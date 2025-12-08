@@ -1,6 +1,7 @@
 const express = require('express');
 const Game = require('../models/Game');
 const auth = require('../middleware/auth');
+const cache = require('../utils/redis');
 
 const router = express.Router();
 
@@ -50,13 +51,18 @@ router.post('/', auth, async (req, res, next) => {
       winnerId: gameData.winner_id || null
     };
 
-    // Find games with similar content
+    // Find games with similar content - limit to recent games for performance
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const similarGames = await Game.find({
       userId,
       'gameData.players': { $size: contentSignature.playerCount },
       'gameData.total_rounds': { $eq: contentSignature.totalRounds },
-      'gameData.winner_id': { $eq: contentSignature.winnerId }
-    });
+      'gameData.winner_id': { $eq: contentSignature.winnerId },
+      createdAt: { $gte: oneDayAgo } // Only check games from last 24 hours
+    })
+    .select('gameData.final_scores _id userId gameData createdAt')
+    .limit(10) // Only check most recent 10 similar games
+    .lean();
 
     // Check for exact content match
     for (const similarGame of similarGames) {
@@ -93,6 +99,11 @@ router.post('/', auth, async (req, res, next) => {
 
     await game.save();
 
+    // Invalidate leaderboard cache when new game is created
+    if (cache.isConnected) {
+      await cache.delPattern('leaderboard:*');
+    }
+
     res.status(201).json({
       message: 'Game created successfully',
       game: {
@@ -114,16 +125,38 @@ router.post('/', auth, async (req, res, next) => {
 router.get('/leaderboard', async (req, res, next) => {
   
   try {
-    const { gameType } = req.query;
+    const { gameType, page = 1, limit = 50 } = req.query;
+    
+    // Create cache key based on query parameters
+    const cacheKey = `leaderboard:${gameType || 'all'}:${page}:${limit}`;
+    
+    // Try to get from cache first
+    if (cache.isConnected) {
+      const cached = await cache.get(cacheKey);
+      if (cached) {
+        console.debug('✅ Leaderboard served from cache');
+        return res.json(cached);
+      }
+    }
     
     // Fetch both Wizard games and Table games
     const TableGame = require('../models/TableGame');
     
-    // Get wizard games (from Game collection)
-    const wizardGames = await Game.find({});
+    // Get wizard games (from Game collection) - only fetch needed fields
+    const wizardGames = await Game.find({}, {
+      'gameData.players': 1,
+      'gameData.winner_id': 1,
+      'gameData.final_scores': 1,
+      'createdAt': 1
+    }).lean(); // Use lean() for better performance
     
-    // Get table games (from TableGame collection)
-    const tableGames = await TableGame.find({});
+    // Get table games (from TableGame collection) - only fetch needed fields
+    const tableGames = await TableGame.find({}, {
+      'gameData': 1,
+      'gameTypeName': 1,
+      'lowIsBetter': 1,
+      'createdAt': 1
+    }).lean(); // Use lean() for better performance
     
     // Calculate player statistics grouped by NAME (not ID)
     const playerStats = {};
@@ -349,16 +382,81 @@ router.get('/leaderboard', async (req, res, next) => {
     // Get unique game types
     const gameTypes = Array.from(gameTypeSet).sort();
     
-    res.json({
-      leaderboard,
+    // Apply pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = Math.min(parseInt(limit) || 50, 100); // Max 100 per page
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedLeaderboard = leaderboard.slice(startIndex, endIndex);
+    
+    const response = {
+      leaderboard: paginatedLeaderboard,
       gameTypes,
       gameTypeSettings, // Send the settings so frontend knows which game types have lowIsBetter
-      totalGames: wizardGames.length + tableGames.length
-    });
+      totalGames: wizardGames.length + tableGames.length,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(leaderboard.length / limitNum),
+        totalPlayers: leaderboard.length,
+        hasNextPage: endIndex < leaderboard.length,
+        hasPrevPage: pageNum > 1
+      }
+    };
+    
+    // Cache the result for 5 minutes
+    if (cache.isConnected) {
+      await cache.set(cacheKey, response, 300); // 5 minute TTL
+    }
+    
+    res.json(response);
   } catch (error) {
     console.error('[GET /api/games/leaderboard] Error:', error);
     console.error('[GET /api/games/leaderboard] Error stack:', error.stack);
     res.status(500).json({ error: error.message, details: error.stack });
+  }
+});
+
+// POST /games/batch-check - Check existence of multiple games by their IDs
+// IMPORTANT: This must come BEFORE /:id route to avoid conflicts
+router.post('/batch-check', auth, async (req, res) => {
+  try {
+    const { gameIds } = req.body;
+    
+    if (!Array.isArray(gameIds) || gameIds.length === 0) {
+      return res.status(400).json({ error: 'gameIds array is required' });
+    }
+    
+    // Limit batch size to prevent abuse
+    if (gameIds.length > 100) {
+      return res.status(400).json({ error: 'Maximum 100 games per batch check' });
+    }
+    
+    // Filter valid MongoDB ObjectIDs
+    const validIds = gameIds.filter(id => id && typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/));
+    
+    if (validIds.length === 0) {
+      return res.json({ results: {} });
+    }
+    
+    // Check which games exist in database - optimized query
+    const existingGames = await Game.find({
+      _id: { $in: validIds }
+    }).select('_id').lean();
+    
+    // Create a map of existing game IDs
+    const existingIds = new Set(existingGames.map(g => g._id.toString()));
+    
+    // Return result for each requested game ID
+    const results = {};
+    gameIds.forEach(id => {
+      // Return false for invalid IDs, check existingIds for valid ones
+      results[id] = validIds.includes(id) ? existingIds.has(id) : false;
+    });
+    
+    res.json({ results });
+  } catch (error) {
+    console.error('[POST /api/games/batch-check] Error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -503,9 +601,11 @@ router.get('/', auth, async (req, res, next) => {
         { 'gameData.player_ids': userId.toString() }
       ]
     })
+      .select('_id userId localId gameData shareId createdAt') // Only select needed fields
       .sort({ createdAt: sortDirection })
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean(); // Use lean() for better performance
     
     const totalGames = await Game.countDocuments({
       $or: [

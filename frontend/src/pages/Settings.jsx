@@ -15,7 +15,7 @@ import { SwipeableGameCard } from '@/components/common';
 import authService from '@/shared/api/authService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
-import { checkGameSyncStatus } from '@/shared/utils/syncChecker';
+import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
@@ -32,6 +32,7 @@ const Settings = () => {
   const [cloudSyncStatus, setCloudSyncStatus] = useState({ uploading: false, progress: '', uploadedCount: 0, totalCount: 0 });
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
+  const [syncStatusLoaded, setSyncStatusLoaded] = useState(false); // Track if sync status has been checked
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
   const [showCloudGameSelectModal, setShowCloudGameSelectModal] = useState(false); // Cloud game select modal
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
@@ -280,6 +281,7 @@ const Settings = () => {
       setSavedGames({});
       setSavedTableGames([]);
       setGameSyncStatuses({});
+      setSyncStatusLoaded(false); // Reset sync status loaded flag
     }
     
     checkForImportedGames();
@@ -371,26 +373,29 @@ const Settings = () => {
         }
       }, 1000); // Wait 1 second before starting verification
       
-      // Check sync status for wizard games in background with delay
+      // Check sync status for wizard games in background using batch API
       setTimeout(async () => {
-        const syncStatuses = {};
-        const gameIds = Object.keys(allGames);
-        
-        for (let i = 0; i < gameIds.length; i++) {
-          const gameId = gameIds[i];
-          try {
-            // Add delay between requests to avoid rate limiting
-            if (i > 0) await new Promise(resolve => setTimeout(resolve, 200));
-            
-            const syncStatus = await checkGameSyncStatus(gameId);
-            syncStatuses[gameId] = syncStatus;
-          } catch (error) {
-            console.debug(`Error checking sync status for game ${gameId}:`, error.message);
-            syncStatuses[gameId] = { status: 'Local', synced: false };
+        try {
+          const gameIds = Object.keys(allGames);
+          if (gameIds.length > 0) {
+            const syncStatuses = await batchCheckGamesSyncStatus(gameIds);
+            setGameSyncStatuses(syncStatuses);
+            setSyncStatusLoaded(true); // Mark sync status as loaded
+          } else {
+            setSyncStatusLoaded(true); // No games, mark as loaded
           }
+        } catch (error) {
+          console.debug('Error checking batch sync status:', error.message);
+          // Set all games as local on error
+          const gameIds = Object.keys(allGames);
+          const fallbackStatuses = {};
+          gameIds.forEach(id => {
+            fallbackStatuses[id] = { status: 'Local', synced: false };
+          });
+          setGameSyncStatuses(fallbackStatuses);
+          setSyncStatusLoaded(true); // Mark sync status as loaded even on error
         }
-        setGameSyncStatuses(syncStatuses);
-      }, 2000); // Wait 2 seconds before starting sync checks
+      }, 1000); // Reduced delay since batch check is much faster
     }
   }, [user]);
 
@@ -1151,6 +1156,7 @@ const Settings = () => {
                   onClick={handleBulkCloudSync}
                   disabled={
                     cloudSyncStatus.uploading || 
+                    !syncStatusLoaded || // Disable until sync status is loaded
                     (
                       // Check wizard games
                       Object.values(savedGames).filter(game => !game.isPaused).length === 0 &&
@@ -1158,12 +1164,14 @@ const Settings = () => {
                       savedTableGames.filter(game => game.gameFinished && !LocalTableGameStorage.isGameUploaded(game.id)).length === 0
                     ) ||
                     (
-                      // All wizard games are synced
-                      Object.entries(savedGames)
-                        .filter(([, game]) => !game.isPaused)
-                        .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced') &&
-                      // All table games are synced
-                      savedTableGames.every(game => LocalTableGameStorage.isGameUploaded(game.id) || !game.gameFinished)
+                      syncStatusLoaded && (
+                        // All wizard games are synced
+                        Object.entries(savedGames)
+                          .filter(([, game]) => !game.isPaused)
+                          .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced') &&
+                        // All table games are synced
+                        savedTableGames.every(game => LocalTableGameStorage.isGameUploaded(game.id) || !game.gameFinished)
+                      )
                     )
                   }
                 >

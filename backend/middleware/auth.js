@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const cache = require('../utils/redis');
 
 const auth = async (req, res, next) => {
   try {
@@ -15,8 +16,21 @@ const auth = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Get user from database
-    const user = await User.findById(decoded.userId).select('-passwordHash');
+    // Try to get user from cache first
+    const cacheKey = `user:${decoded.userId}`;
+    let user = null;
+    
+    if (cache.isConnected) {
+      user = await cache.get(cacheKey);
+      if (user) {
+        // Convert cached plain object back to a mongoose-like object
+        req.user = user;
+        return next();
+      }
+    }
+    
+    // Get user from database if not in cache
+    user = await User.findById(decoded.userId).select('-passwordHash').lean();
     
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
@@ -25,6 +39,11 @@ const auth = async (req, res, next) => {
     // Ensure role field exists (for backwards compatibility with old user documents)
     if (!user.role) {
       user.role = 'user';
+    }
+    
+    // Cache user for 15 minutes
+    if (cache.isConnected) {
+      await cache.set(cacheKey, user, 900);
     }
 
     // Add user to request object

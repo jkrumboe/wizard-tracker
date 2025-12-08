@@ -90,6 +90,13 @@ class AuthService {
 
       if (!response.ok) {
         const error = await response.json();
+        
+        // Handle rate limiting with more helpful message
+        if (response.status === 429) {
+          const retryMinutes = Math.ceil((error.retryAfter || 900) / 60);
+          throw new Error(`Too many login attempts from your network. Please try again in ${retryMinutes} minutes.`);
+        }
+        
         throw new Error(error.error || 'Login failed');
       }
 
@@ -134,6 +141,13 @@ class AuthService {
 
       if (!response.ok) {
         const error = await response.json();
+        
+        // Handle rate limiting with more helpful message
+        if (response.status === 429) {
+          const retryMinutes = Math.ceil((error.retryAfter || 900) / 60);
+          throw new Error(`Too many registration attempts from your network. Please try again in ${retryMinutes} minutes.`);
+        }
+        
         throw new Error(error.error || 'Registration failed');
       }
 
