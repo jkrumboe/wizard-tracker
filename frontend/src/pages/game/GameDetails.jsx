@@ -20,7 +20,7 @@ import "@/styles/utils/performanceMetrics.css"
 import "@/styles/components/scorecard.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/components/chartToggle.css"
-import "@/styles/pages/settings.css"
+import "@/styles/pages/account.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
 import { ArrowLeftIcon, BarChartIcon, ChartLineIcon, ShareIcon, UsersIcon, TableIcon } from "@/components/ui/Icon"

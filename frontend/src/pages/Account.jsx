@@ -19,9 +19,9 @@ import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
-import '@/styles/pages/settings.css';
+import '@/styles/pages/account.css';
 
-const Settings = () => {
+const Account = () => {
   const navigate = useNavigate();
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
@@ -1558,4 +1558,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default Account;

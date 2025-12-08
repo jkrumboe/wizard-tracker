@@ -9,7 +9,7 @@ import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
 // Eagerly import critical pages that should work offline
-import Settings from "@/pages/Settings"
+import Account from "@/pages/Account"
 import { NewGame, GameDetails, GameInProgress, TableGame } from "@/pages/game"
 
 // Admin pages
@@ -255,7 +255,7 @@ function App() {
                     <Route path="/login" element= {
                         <Login />
                     }/>
-                    <Route path="/account" element={<Settings />} />
+                    <Route path="/account" element={<Account />} />
                     <Route path="/shared/:shareId" element={<SharedGamePage />} />
                     <Route path="/admin" element={
                       <AdminProtectedRoute>
