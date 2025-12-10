@@ -1,15 +1,17 @@
 // Service Worker for KeepWiz PWA
 const CACHE_NAME = "keep-wiz-v1.11.0"
+const SW_VERSION = "1.11.0" // Separate version for easier tracking
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png"]
 
 // Install event - cache assets
 self.addEventListener("install", (event) => {
+  console.debug(`[SW] Installing version ${SW_VERSION}`);
   // Skip waiting to activate immediately
   self.skipWaiting();
   
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.debug("Opened cache")
+      console.debug(`[SW] Opened cache: ${CACHE_NAME}`)
       return cache.addAll(urlsToCache)
     }),
   )
@@ -50,25 +52,29 @@ self.addEventListener("fetch", (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
+  console.debug(`[SW] Activating version ${SW_VERSION}`);
   // Take control of all clients immediately
   event.waitUntil(
     clients.claim().then(() => {
+      console.debug(`[SW] Claimed all clients for version ${SW_VERSION}`);
       const cacheWhitelist = [CACHE_NAME];
       return caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheWhitelist.indexOf(cacheName) === -1) {
-              return caches.delete(cacheName)
-            }
-          }),
-        )
+        const deletePromises = cacheNames.map((cacheName) => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.debug(`[SW] Deleting old cache: ${cacheName}`);
+            return caches.delete(cacheName)
+          }
+        });
+        return Promise.all(deletePromises);
       }).then(() => {
         // Notify all clients that a new version is active
         return self.clients.matchAll().then(clients => {
+          console.debug(`[SW] Notifying ${clients.length} client(s) of activation`);
           clients.forEach(client => {
             client.postMessage({
               type: 'SW_ACTIVATED',
-              version: CACHE_NAME
+              version: SW_VERSION,
+              cacheName: CACHE_NAME
             });
           });
         });
@@ -76,4 +82,19 @@ self.addEventListener("activate", (event) => {
     })
   );
 })
+
+// Message handler for version checks and skip waiting
+self.addEventListener('message', (event) => {
+  console.debug('Service worker received message:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    // Respond with current version
+    event.ports[0].postMessage({ version: SW_VERSION });
+  }
+});
+
 
