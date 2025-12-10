@@ -14,9 +14,8 @@ const gameSchema = new mongoose.Schema({
     index: true
   },
   gameData: {
-    type: Object,
-    required: [true, 'Game data is required'],
-    default: {},
+    type: mongoose.Schema.Types.Mixed,
+    required: [true, 'Game data is required']
   },
   shareId: {
     type: String,
