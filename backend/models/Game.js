@@ -14,8 +14,9 @@ const gameSchema = new mongoose.Schema({
     index: true
   },
   gameData: {
-    type: mongoose.Schema.Types.Mixed,
-    required: [true, 'Game data is required']
+    type: Object,
+    required: [true, 'Game data is required'],
+    default: {},
   },
   shareId: {
     type: String,
@@ -39,19 +40,5 @@ const gameSchema = new mongoose.Schema({
 
 // Index for faster queries by user and creation date
 gameSchema.index({ userId: 1, createdAt: -1 });
-
-// Index for faster queries by player IDs in gameData
-gameSchema.index({ 'gameData.player_ids': 1 });
-
-// Compound index for duplicate checking
-gameSchema.index({ 
-  userId: 1, 
-  'gameData.players': 1,
-  'gameData.total_rounds': 1,
-  'gameData.winner_id': 1 
-});
-
-// Index for faster winner lookups
-gameSchema.index({ 'gameData.winner_id': 1 });
 
 module.exports = mongoose.model('Game', gameSchema);

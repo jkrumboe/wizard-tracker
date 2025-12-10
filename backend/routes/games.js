@@ -43,30 +43,42 @@ router.post('/', auth, async (req, res, next) => {
     }
 
     // 2. Check for content-based duplicates (same players, scores, rounds)
-    // Create a content hash for comparison
+    // Create a content hash for comparison - support both old and new schema formats
     const contentSignature = {
       playerCount: gameData.players?.length || 0,
-      totalRounds: gameData.total_rounds || 0,
-      finalScoresJson: JSON.stringify(gameData.final_scores || {}),
-      winnerId: gameData.winner_id || null
+      totalRounds: gameData.total_rounds || gameData.totals?.total_rounds || 0,
+      finalScoresJson: JSON.stringify(gameData.final_scores || gameData.totals?.final_scores || {}),
+      winnerId: gameData.winner_id || gameData.totals?.winner_id || null
     };
 
     // Find games with similar content - limit to recent games for performance
+    // Use flexible querying that works with both schema formats
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const similarGames = await Game.find({
       userId,
-      'gameData.players': { $size: contentSignature.playerCount },
-      'gameData.total_rounds': { $eq: contentSignature.totalRounds },
-      'gameData.winner_id': { $eq: contentSignature.winnerId },
       createdAt: { $gte: oneDayAgo } // Only check games from last 24 hours
     })
-    .select('gameData.final_scores _id userId gameData createdAt')
-    .limit(10) // Only check most recent 10 similar games
+    .select('gameData _id userId createdAt')
+    .limit(50) // Check more games but filter in memory
     .lean();
 
-    // Check for exact content match
+    // Check for exact content match (in memory to handle both schema formats)
     for (const similarGame of similarGames) {
-      const similarScores = JSON.stringify(similarGame.gameData.final_scores || {});
+      const similarData = similarGame.gameData || {};
+      
+      // Check player count
+      if ((similarData.players?.length || 0) !== contentSignature.playerCount) continue;
+      
+      // Check total rounds (support both formats)
+      const similarTotalRounds = similarData.total_rounds || similarData.totals?.total_rounds || 0;
+      if (similarTotalRounds !== contentSignature.totalRounds) continue;
+      
+      // Check winner (support both formats)
+      const similarWinnerId = similarData.winner_id || similarData.totals?.winner_id || null;
+      if (similarWinnerId !== contentSignature.winnerId) continue;
+      
+      // Check final scores (support both formats)
+      const similarScores = JSON.stringify(similarData.final_scores || similarData.totals?.final_scores || {});
       if (similarScores === contentSignature.finalScoresJson) {
         console.debug('[POST /api/games] Found content duplicate:', similarGame._id);
         return res.status(200).json({
