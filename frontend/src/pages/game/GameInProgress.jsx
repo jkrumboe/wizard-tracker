@@ -510,6 +510,8 @@ const GameInProgress = () => {
   // Check if there's an illegal call (last caller made forbidden call)
   const hasIllegalCall = () => {
     if (!currentRound) return false;
+    // If cloud is active, no call is illegal
+    if (increaseCallMax) return false;
     const uncalledPlayers = currentRound.players.filter(p => p.call === null);
     // Only check if all players have made their calls
     if (uncalledPlayers.length !== 0) return false;
@@ -528,6 +530,8 @@ const GameInProgress = () => {
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
     if (!currentRound) return 0;
+    // If cloud is active, no call restrictions apply
+    if (increaseCallMax) return "0";
     const players = currentRound.players;
     // Find players who have not made a call yet
     const uncalledPlayers = players.filter(p => p.call === null);
@@ -664,7 +668,8 @@ const GameInProgress = () => {
                       const uncalledPlayers = currentRound.players.filter(p => p.call === null);
                       const isLastCaller = uncalledPlayers.length === 0 && player.call !== null;
                       const forbiddenCall = currentRound.round - (totalCalls - (player.call || 0));
-                      const isIllegalCall = isLastCaller && player.call === forbiddenCall && forbiddenCall >= 0 && forbiddenCall <= currentRound.round;
+                      // If cloud is active, no call is illegal
+                      const isIllegalCall = !increaseCallMax && isLastCaller && player.call === forbiddenCall && forbiddenCall >= 0 && forbiddenCall <= currentRound.round;
                       
                       return (
                         <input
