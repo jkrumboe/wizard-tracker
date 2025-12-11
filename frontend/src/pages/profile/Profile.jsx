@@ -203,10 +203,12 @@ const calculatedStats = useMemo(() => {
   let losses = 0;
 
   allGames.forEach(game => {
-    // Determine if player won
-    const winnerId = game.winner_id || game.gameState?.winner_id;
-    const winnerName = game.gameState?.players?.find(p => p.id === winnerId)?.name;
-    const isWin = winnerName === currentPlayer.name || winnerId === currentPlayer.id;
+    // Determine if player won - handle winner_id as both single value and array
+    const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+    const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+    
+    const isWin = winnerIds.includes(currentPlayer.id) || 
+                  winnerIds.some(wId => game.gameState?.players?.find(p => p.id === wId)?.name === currentPlayer.name);
     
     if (isWin) {
       wins++;

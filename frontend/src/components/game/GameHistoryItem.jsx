@@ -65,10 +65,14 @@ const GameHistoryItem = ({ game }) => {
        (game.gameState && game.gameState.player_ids) || 
        (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || []);
   
-  // Find winner_id from various possible locations
-  const winner_id = game.winner_id || 
+  // Find winner_id from various possible locations - support both single ID and array
+  const winner_id_raw = game.winner_id || 
+                 (game.gameData && game.gameData.totals && game.gameData.totals.winner_id) ||
                  (game.gameState && game.gameState.winner_id) ||
                  (game.gameState && game.gameState.roundData && determineWinner(game.gameState));
+  
+  // Normalize winner_id to always be an array
+  const winner_ids = Array.isArray(winner_id_raw) ? winner_id_raw : (winner_id_raw ? [winner_id_raw] : []);
   
   const game_mode = isTableGame ? game.name : (game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local");
   const total_rounds = game.total_rounds || game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0;
@@ -82,26 +86,41 @@ const GameHistoryItem = ({ game }) => {
       hour12: false
     });
   
-  // Helper function to determine winner from game state
+  // Helper function to determine winner from game state - returns array for draws
   function determineWinner(gameState) {
-    if (!gameState || !gameState.roundData || !gameState.roundData.length) return null;
+    if (!gameState || !gameState.roundData || !gameState.roundData.length) return [];
     
     const lastRound = gameState.roundData[gameState.roundData.length - 1];
-    if (!lastRound || !lastRound.players) return null;
+    if (!lastRound || !lastRound.players) return [];
     
-    // Find player with highest score
+    // Find player(s) with highest score (supports draws)
     let highestScore = -Infinity;
-    let winnerId = null;
+    let winnerIds = [];
     
     lastRound.players.forEach(player => {
       if (player.totalScore > highestScore) {
         highestScore = player.totalScore;
-        winnerId = player.id;
+        winnerIds = [player.id];
+      } else if (player.totalScore === highestScore && highestScore > -Infinity) {
+        winnerIds.push(player.id);
       }
     });
     
-    return winnerId;
+    return winnerIds.length === 1 ? winnerIds[0] : winnerIds;
   }
+  
+  // Get winner name(s) for display
+  const getWinnerDisplay = () => {
+    if (isTableGame) return game.winner_name || "Not determined";
+    if (winner_ids.length === 0) return "Not determined";
+    if (winner_ids.length === 1) return playerDetails[winner_ids[0]]?.name || "Not determined";
+    
+    // Multiple winners (draw)
+    const winnerNames = winner_ids.map(id => playerDetails[id]?.name).filter(Boolean);
+    if (winnerNames.length === 0) return "Not determined";
+    if (winnerNames.length === 2) return `${winnerNames[0]} & ${winnerNames[1]}`;
+    return `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
+  };
 
   return (
     <div className="game-card">
@@ -110,7 +129,7 @@ const GameHistoryItem = ({ game }) => {
           <div className="game-name">
             {isTableGame ? game.name : (game.game_name || "Wizard")}
             <div className="game-winner">
-              <TrophyIcon size={12} /> Winner: {isTableGame ? game.winner_name : (playerDetails[winner_id]?.name || "Not determined")}
+              {getWinnerDisplay()}
             </div>
           </div>
           {game.isUploaded ? (

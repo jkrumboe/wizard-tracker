@@ -21,13 +21,13 @@ export function generateGameContentHash(gameData) {
   // Extract key game data that makes a game unique
   const gameContent = {
     players: playersData,
-    totalRounds: gameData.total_rounds || gameData.maxRounds || gameData.gameState?.maxRounds,
+    totalRounds: gameData.total_rounds || gameData.totals?.total_rounds || gameData.maxRounds || gameData.gameState?.maxRounds,
     gameMode: gameData.game_mode || gameData.mode || gameData.gameState?.mode,
-    finalScores: gameData.final_scores || gameData.gameState?.final_scores,
-    winnerId: gameData.winner_id || gameData.gameState?.winner_id,
+    finalScores: gameData.final_scores || gameData.totals?.final_scores || gameData.gameState?.final_scores,
+    winnerId: gameData.winner_id || gameData.totals?.winner_id || gameData.gameState?.winner_id,
     createdAt: gameData.created_at || gameData.gameState?.created_at,
     durationSeconds: gameData.duration_seconds || gameData.gameState?.duration_seconds,
-    roundData: (gameData.round_data || gameData.gameState?.roundData)?.map(round => ({
+    roundData: (gameData.round_data || gameData.rounds || gameData.gameState?.roundData)?.map(round => ({
       round: round.round,
       cards: round.cards,
       players: Array.isArray(round.players) 

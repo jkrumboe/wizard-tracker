@@ -308,6 +308,7 @@
 
     .settings-button.danger-button {
         width: 35% !important;
+        background-color: var(--card-bg-alt);
     }
 
     .player-actions {

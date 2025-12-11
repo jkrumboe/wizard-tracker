@@ -1099,6 +1099,10 @@
   cursor: not-allowed;
 }
 
+.settings-button.danger-button {
+  background-color: var(--card-bg-alt) !important;
+}
+
 .settings-note {
   margin-top: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);

@@ -41,15 +41,24 @@ const SharedGamePage = () => {
 
         // Extract players from the correct location
         const players = gameData.players || gameData.gameState?.players || [];
+        
+        // Handle winner_id as both single value and array
+        const winnerIds = Array.isArray(gameData.winner_id) ? gameData.winner_id : (gameData.winner_id ? [gameData.winner_id] : []);
+        const winnerNames = winnerIds.map(id => players.find(p => p.id === id)?.name).filter(Boolean);
+        const winnerDisplay = winnerNames.length === 0 ? 'Unknown' :
+                            winnerNames.length === 1 ? winnerNames[0] :
+                            winnerNames.length === 2 ? `${winnerNames[0]} & ${winnerNames[1]}` :
+                            `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
+        const finalScore = winnerIds.length > 0 ? (gameData.final_scores?.[winnerIds[0]] || 0) : 0;
 
         // Create mock shared game info from the actual game data
         const mockSharedInfo = {
           shareId: shareId,
           originalGameId: shareId, // Use the direct game ID
-          title: `Wizard Game - ${players.find(p => p.id === gameData.winner_id)?.name || 'Unknown'} wins!`,
+          title: `Wizard Game - ${winnerDisplay} wins!`,
           playerNames: players.map(p => p.name).join(', ') || '',
-          winnerName: players.find(p => p.id === gameData.winner_id)?.name || 'Unknown',
-          finalScore: gameData.final_scores?.[gameData.winner_id] || 0,
+          winnerName: winnerDisplay,
+          finalScore: finalScore,
           totalRounds: gameData.total_rounds || 0,
           createdAt: gameData.created_at || new Date().toISOString(),
           gameData: gameData

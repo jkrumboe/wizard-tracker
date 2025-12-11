@@ -44,11 +44,18 @@ router.post('/', auth, async (req, res, next) => {
 
     // 2. Check for content-based duplicates (same players, scores, rounds)
     // Create a content hash for comparison - support both old and new schema formats
+    // Normalize winner_id to always be an array for consistent comparison
+    const normalizeWinnerId = (winnerId) => {
+      if (!winnerId) return [];
+      if (Array.isArray(winnerId)) return winnerId.sort();
+      return [winnerId];
+    };
+    
     const contentSignature = {
       playerCount: gameData.players?.length || 0,
       totalRounds: gameData.total_rounds || gameData.totals?.total_rounds || 0,
       finalScoresJson: JSON.stringify(gameData.final_scores || gameData.totals?.final_scores || {}),
-      winnerId: gameData.winner_id || gameData.totals?.winner_id || null
+      winnerIdJson: JSON.stringify(normalizeWinnerId(gameData.winner_id || gameData.totals?.winner_id))
     };
 
     // Find games with similar content - limit to recent games for performance
@@ -73,9 +80,10 @@ router.post('/', auth, async (req, res, next) => {
       const similarTotalRounds = similarData.total_rounds || similarData.totals?.total_rounds || 0;
       if (similarTotalRounds !== contentSignature.totalRounds) continue;
       
-      // Check winner (support both formats)
-      const similarWinnerId = similarData.winner_id || similarData.totals?.winner_id || null;
-      if (similarWinnerId !== contentSignature.winnerId) continue;
+      // Check winner (support both formats and arrays)
+      const similarWinnerId = similarData.winner_id || similarData.totals?.winner_id;
+      const similarWinnerIdJson = JSON.stringify(normalizeWinnerId(similarWinnerId));
+      if (similarWinnerIdJson !== contentSignature.winnerIdJson) continue;
       
       // Check final scores (support both formats)
       const similarScores = JSON.stringify(similarData.final_scores || similarData.totals?.final_scores || {});
@@ -196,8 +204,9 @@ router.get('/leaderboard', async (req, res, next) => {
       }
 
       const gameMode = 'Wizard'; // All games from Game collection are Wizard
-      const winnerId = gameData.winner_id;
-      const finalScores = gameData.final_scores || {};
+      const winnerIdRaw = gameData.winner_id || gameData.totals?.winner_id;
+      const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+      const finalScores = gameData.final_scores || gameData.totals?.final_scores || {};
 
       gameData.players.forEach(player => {
         const playerId = player.id;
@@ -228,8 +237,8 @@ router.get('/leaderboard', async (req, res, next) => {
         
         stats.totalGames++;
         
-        const isWinner = playerId === winnerId || 
-                        (winnerId && gameData.players.find(p => p.id === winnerId)?.name === playerName);
+        // Check if player is one of the winners (handles draws)
+        const isWinner = winnerIds.includes(playerId);
         
         if (isWinner) {
           stats.wins++;
@@ -281,15 +290,18 @@ router.get('/leaderboard', async (req, res, next) => {
         finalScores[playerId] = totalScore;
       });
       
-      // Find winner (highest or lowest score depending on lowIsBetter)
-      let winnerId = null;
+      // Find winner(s) - highest or lowest score depending on lowIsBetter (supports draws)
+      let winnerIds = [];
       if (Object.keys(finalScores).length > 0) {
         const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
         const scores = Object.entries(finalScores);
+        
         if (lowIsBetter) {
-          winnerId = scores.reduce((min, curr) => curr[1] < min[1] ? curr : min)[0];
+          const minScore = Math.min(...scores.map(s => s[1]));
+          winnerIds = scores.filter(s => s[1] === minScore).map(s => s[0]);
         } else {
-          winnerId = scores.reduce((max, curr) => curr[1] > max[1] ? curr : max)[0];
+          const maxScore = Math.max(...scores.map(s => s[1]));
+          winnerIds = scores.filter(s => s[1] === maxScore).map(s => s[0]);
         }
       }
 
@@ -320,7 +332,7 @@ router.get('/leaderboard', async (req, res, next) => {
         
         stats.totalGames++;
         
-        const isWinner = playerId === winnerId;
+        const isWinner = winnerIds.includes(playerId);
         
         if (isWinner) {
           stats.wins++;

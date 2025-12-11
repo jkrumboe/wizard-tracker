@@ -596,7 +596,7 @@ export function GameStateProvider({ children }) {
       // Prepare game data for saving
       const lastRound = gameState.roundData[gameState.maxRounds - 1];
       const finalScores = {};
-      let winnerId = null;
+      let winnerIds = [];
       let maxScore = Number.NEGATIVE_INFINITY;
       const duration = Math.floor((new Date() - new Date(gameState.referenceDate)) / 1000); // Duration in seconds
 
@@ -604,7 +604,9 @@ export function GameStateProvider({ children }) {
         finalScores[player.id] = player.totalScore;
         if (player.totalScore > maxScore) {
           maxScore = player.totalScore;
-          winnerId = player.id;
+          winnerIds = [player.id];
+        } else if (player.totalScore === maxScore && maxScore > Number.NEGATIVE_INFINITY) {
+          winnerIds.push(player.id);
         }
       });
 
@@ -613,7 +615,7 @@ export function GameStateProvider({ children }) {
         created_at: new Date().toISOString(),
         player_ids: gameState.players.map((p) => p.id),
         players: gameState.players, // Store the full player data for local games
-        winner_id: winnerId,
+        winner_id: winnerIds,
         final_scores: finalScores,
         round_data: gameState.roundData,
         duration_seconds: duration,
@@ -629,7 +631,7 @@ export function GameStateProvider({ children }) {
         ...gameState,
         gameFinished: true, // Mark the game as finished
         isPaused: false,    // Make sure it's not marked as paused
-        winner_id: winnerId,
+        winner_id: winnerIds,
         final_scores: finalScores,
         player_ids: gameState.players.map((p) => p.id),
         created_at: new Date().toISOString(),

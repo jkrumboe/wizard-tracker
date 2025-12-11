@@ -73,7 +73,7 @@ export function createGameSchema(gameData = {}) {
     // Derived totals (computed from rounds)
     totals: {
       final_scores: gameData.final_scores || {},
-      winner_id: gameData.winner_id || null,
+      winner_id: gameData.winner_id || [],
       total_rounds: gameData.total_rounds || 0
     },
     
@@ -285,7 +285,7 @@ export function migrateToNewSchema(oldGame) {
  */
 export function computeDerivedTotals(game) {
   const finalScores = {};
-  let winnerId = null;
+  let winnerIds = [];
   let highestScore = -Infinity;
   
   // Initialize scores for all players
@@ -302,18 +302,20 @@ export function computeDerivedTotals(game) {
     }
   }
   
-  // Find winner (highest score)
+  // Find winners (highest score - supports draws)
   for (const [playerId, score] of Object.entries(finalScores)) {
     if (score > highestScore) {
       highestScore = score;
-      winnerId = playerId;
+      winnerIds = [playerId]; // New highest - reset array
+    } else if (score === highestScore && highestScore > -Infinity) {
+      winnerIds.push(playerId); // Tie - add to array
     }
   }
   
   // Update game totals
   game.totals = {
     final_scores: finalScores,
-    winner_id: winnerId,
+    winner_id: winnerIds,
     total_rounds: game.rounds.length
   };
   

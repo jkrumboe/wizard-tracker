@@ -95,12 +95,29 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
   };
 
   const getWinnerName = (game) => {
-    const winner = game.players?.find(p => p.id === game.winner_id);
-    return winner?.name || 'Unknown';
+    // Handle winner_id as both single value and array
+    const winnerIds = Array.isArray(game.winner_id) ? game.winner_id : (game.winner_id ? [game.winner_id] : []);
+    
+    if (winnerIds.length === 0) return 'Unknown';
+    if (winnerIds.length === 1) {
+      const winner = game.players?.find(p => p.id === winnerIds[0]);
+      return winner?.name || 'Unknown';
+    }
+    
+    // Multiple winners (draw)
+    const winnerNames = winnerIds.map(id => game.players?.find(p => p.id === id)?.name).filter(Boolean);
+    if (winnerNames.length === 0) return 'Unknown';
+    if (winnerNames.length === 2) return `${winnerNames[0]} & ${winnerNames[1]}`;
+    return `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
   };
 
   const getWinnerScore = (game) => {
-    return game.final_scores?.[game.winner_id] || 0;
+    // Handle winner_id as both single value and array
+    const winnerIds = Array.isArray(game.winner_id) ? game.winner_id : (game.winner_id ? [game.winner_id] : []);
+    
+    if (winnerIds.length === 0) return 0;
+    // For draws, show the score of the first winner (they all have the same score)
+    return game.final_scores?.[winnerIds[0]] || 0;
   };
 
   if (!isOpen) return null;

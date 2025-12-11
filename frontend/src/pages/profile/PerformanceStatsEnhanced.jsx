@@ -141,13 +141,17 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       const rounds = game.totalRounds || game.total_rounds || game.gameState?.maxRounds || 0;
       totalRounds += rounds;
       
-      // Determine if player won
-      const winnerId = game.winner_id || game.gameData?.winner_id || game.gameState?.winner_id;
-      const winnerName = game.winner_name || game.gameData?.winner_name || 
-                         game.gameState?.players?.find(p => p.id === winnerId)?.name;
-      const isWin = winnerName === currentPlayer.name || 
-                    winnerId === currentPlayer.id ||
-                    winnerId === playerId;
+      // Determine if player won - handle winner_id as both single value and array
+      const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameData?.winner_id || game.gameState?.winner_id;
+      const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+      
+      const isWin = winnerIds.includes(currentPlayer.id) || 
+                    winnerIds.includes(playerId) ||
+                    winnerIds.some(wId => {
+                      const winnerName = game.winner_name || game.gameData?.winner_name || 
+                                        game.gameState?.players?.find(p => p.id === wId)?.name;
+                      return winnerName === currentPlayer.name;
+                    });
       
       if (isWin) {
         wins++;
@@ -310,15 +314,17 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       const previous5 = sortedGames.slice(-10, -5);
       
       const recentWins = recent5.filter(game => {
-        const winnerId = game.winner_id || game.gameState?.winner_id;
-        const winnerName = game.gameState?.players?.find(p => p.id === winnerId)?.name;
-        return winnerName === currentPlayer.name || winnerId === currentPlayer.id;
+        const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+        return winnerIds.includes(currentPlayer.id) || 
+               winnerIds.some(wId => game.gameState?.players?.find(p => p.id === wId)?.name === currentPlayer.name);
       }).length;
       
       const previousWins = previous5.filter(game => {
-        const winnerId = game.winner_id || game.gameState?.winner_id;
-        const winnerName = game.gameState?.players?.find(p => p.id === winnerId)?.name;
-        return winnerName === currentPlayer.name || winnerId === currentPlayer.id;
+        const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+        return winnerIds.includes(currentPlayer.id) || 
+               winnerIds.some(wId => game.gameState?.players?.find(p => p.id === wId)?.name === currentPlayer.name);
       }).length;
       
       if (recentWins > previousWins) recentTrend = 'improving';

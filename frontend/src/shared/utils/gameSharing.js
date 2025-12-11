@@ -65,22 +65,27 @@ export async function shareNatively(url, game) {
   try {
     // Handle both direct and nested game structures
     const players = game.players || game.gameState?.players || [];
-    const winnerId = game.winner_id || game.gameState?.winner_id;
-    const finalScores = game.final_scores || game.gameState?.final_scores || {};
+    const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+    const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+    const finalScores = game.final_scores || game.gameData?.totals?.final_scores || game.gameState?.final_scores || {};
     
     // console.debug('Share debug - Players:', players);
-    // console.debug('Share debug - Winner ID:', winnerId);
+    // console.debug('Share debug - Winner IDs:', winnerIds);
     // console.debug('Share debug - Final Scores:', finalScores);
     
-    const winnerName = players.find(p => p.id === winnerId)?.name || 'Unknown';
-    const winnerScore = finalScores[winnerId] || 0;
+    const winnerNames = winnerIds.map(id => players.find(p => p.id === id)?.name).filter(Boolean);
+    const winnerDisplay = winnerNames.length === 0 ? 'Unknown' :
+                         winnerNames.length === 1 ? winnerNames[0] :
+                         winnerNames.length === 2 ? `${winnerNames[0]} & ${winnerNames[1]}` :
+                         `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
+    const winnerScore = winnerIds.length > 0 ? (finalScores[winnerIds[0]] || 0) : 0;
     
-    // console.debug('Share debug - Winner Name:', winnerName);
+    // console.debug('Share debug - Winner Display:', winnerDisplay);
     // console.debug('Share debug - Winner Score:', winnerScore);
     
     const shareData = {
       title: 'Wizard Tracker',
-      text: `Check out this Wizard game! Winner: ${winnerName} with ${winnerScore} points.`,
+      text: `Check out this Wizard game! Winner: ${winnerDisplay} with ${winnerScore} points.`,
       url: url
     };
 
