@@ -57,14 +57,15 @@ export class LocalGameStorage {
       // Extract data for finished games to make it accessible at the top level
       const topLevelData = {};
       if (!isPaused) {
-        // This is a finished game, extract important data to top level for compatibility
-        topLevelData.winner_id = gameState.winner_id;
-        topLevelData.final_scores = gameState.final_scores;
+        // This is a finished game, extract important data using new schema structure
+        // Support both old format (flat) and new format (nested in totals)
+        topLevelData.winner_id = gameState.winner_id || gameState.totals?.winner_id || [];
+        topLevelData.final_scores = gameState.final_scores || gameState.totals?.final_scores || {};
         topLevelData.created_at = gameState.created_at || timestamp;
         topLevelData.player_ids = gameState.player_ids || 
                                 (gameState.players ? gameState.players.map(p => p.id) : []);
-        topLevelData.round_data = gameState.round_data || gameState.roundData;
-        topLevelData.total_rounds = gameState.total_rounds || gameState.maxRounds || gameState.totalRounds;
+        topLevelData.round_data = gameState.round_data || gameState.rounds || gameState.roundData;
+        topLevelData.total_rounds = gameState.total_rounds || gameState.totals?.total_rounds || gameState.maxRounds || gameState.totalRounds;
         topLevelData.duration_seconds = gameState.duration_seconds;
         topLevelData.is_local = true;
       }
@@ -509,12 +510,18 @@ export class LocalGameStorage {
         games[gameId].gameFinished = true;
         games[gameId].name = `Finished Game - ${new Date().toLocaleDateString()}`;
         
-        // Add finished game metadata
-        if (gameState.winner_id) games[gameId].winner_id = gameState.winner_id;
-        if (gameState.final_scores) games[gameId].final_scores = gameState.final_scores;
+        // Add finished game metadata - support both old and new schema formats
+        const winnerIds = gameState.winner_id || gameState.totals?.winner_id || [];
+        const finalScores = gameState.final_scores || gameState.totals?.final_scores || {};
+        const totalRounds = gameState.total_rounds || gameState.totals?.total_rounds || gameState.maxRounds || gameState.totalRounds;
+        
+        games[gameId].winner_id = winnerIds;
+        games[gameId].final_scores = finalScores;
         if (gameState.player_ids) games[gameId].player_ids = gameState.player_ids;
-        if (gameState.roundData) games[gameId].round_data = gameState.roundData;
-        games[gameId].total_rounds = gameState.maxRounds || gameState.totalRounds;
+        if (gameState.roundData || gameState.rounds) {
+          games[gameId].round_data = gameState.roundData || gameState.rounds;
+        }
+        games[gameId].total_rounds = totalRounds;
         games[gameId].duration_seconds = gameState.duration_seconds;
         games[gameId].is_local = true;
         games[gameId].created_at = gameState.created_at || new Date().toISOString();
