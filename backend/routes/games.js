@@ -2,6 +2,7 @@ const express = require('express');
 const Game = require('../models/Game');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
+const { validateWizardGameData } = require('../schemas/wizardGameSchema');
 
 const router = express.Router();
 
@@ -17,6 +18,16 @@ router.post('/', auth, async (req, res, next) => {
     }
     if (!localId || typeof localId !== 'string') {
       return res.status(400).json({ error: 'localId (string) is required' });
+    }
+
+    // Validate wizard game data structure
+    const validation = validateWizardGameData(gameData);
+    if (!validation.isValid) {
+      console.error('[POST /api/games] Game data validation failed:', validation.errors);
+      return res.status(400).json({ 
+        error: 'Invalid game data structure', 
+        validationErrors: validation.errors 
+      });
     }
 
     // Get userId from authenticated user

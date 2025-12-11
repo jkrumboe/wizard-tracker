@@ -10,6 +10,7 @@ import {
   GameMode 
 } from "@/shared/schemas/gameSchema";
 import { validateWithJsonSchema } from "@/shared/schemas/gameJsonSchema";
+import { formatWizardGameForBackend } from "@/shared/utils/wizardGameFormatter";
 
 //=== Game Management ===//
 
@@ -468,20 +469,32 @@ export async function createGame(gameData, localId) {
     throw new Error('You must be logged in to sync games to the cloud. Please sign in and try again.');
   }
 
+  // Format the game data for backend storage
+  const formattedGameData = formatWizardGameForBackend(gameData);
+  
+  console.debug('Uploading game with formatted data:', {
+    original: gameData,
+    formatted: formattedGameData
+  });
+
   const res = await fetch(API_ENDPOINTS.games.create, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify({ gameData, localId })
+    body: JSON.stringify({ gameData: formattedGameData, localId })
   });
   
   if (res.status === 401) {
     throw new Error('Your session has expired. Please sign in again to sync games to the cloud.');
   }
   
-  if (!res.ok) throw new Error('Failed to create game');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to create game: ${res.status}`);
+  }
+  
   const data = await res.json();
   return data;
 }
