@@ -58,7 +58,7 @@ class RedisCache {
       }
       return null;
     } catch (error) {
-      console.error(`Redis GET error for key ${key}:`, error.message);
+      console.error('Redis GET error for key %s:', key, error.message);
       return null;
     }
   }
@@ -73,7 +73,7 @@ class RedisCache {
       await this.client.setEx(key, ttlSeconds, serialized);
       return true;
     } catch (error) {
-      console.error(`Redis SET error for key ${key}:`, error.message);
+      console.error('Redis SET error for key %s:', key, error.message);
       return false;
     }
   }
@@ -87,7 +87,7 @@ class RedisCache {
       await this.client.del(key);
       return true;
     } catch (error) {
-      console.error(`Redis DEL error for key ${key}:`, error.message);
+      console.error('Redis DEL error for key %s:', key, error.message);
       return false;
     }
   }
@@ -104,7 +104,7 @@ class RedisCache {
       }
       return true;
     } catch (error) {
-      console.error(`Redis DEL pattern error for ${pattern}:`, error.message);
+      console.error('Redis DEL pattern error for %s:', pattern, error.message);
       return false;
     }
   }
@@ -118,7 +118,7 @@ class RedisCache {
       const result = await this.client.exists(key);
       return result === 1;
     } catch (error) {
-      console.error(`Redis EXISTS error for key ${key}:`, error.message);
+      console.error('Redis EXISTS error for key %s:', key, error.message);
       return false;
     }
   }
