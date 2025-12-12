@@ -612,7 +612,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       </div>
 
       {/* HEAD-TO-HEAD SECTION */}
-      <div>
+      {/* <div>
         <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Head-to-Head Performance</h3>
         {stats.topOpponents.length > 0 ? (
           <div style={{
@@ -659,7 +659,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
             No opponent data available yet
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* ACHIEVEMENTS SECTION */}
       <div>
