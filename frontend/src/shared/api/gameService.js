@@ -9,15 +9,14 @@ import {
   GameStatus,
   GameMode 
 } from "@/shared/schemas/gameSchema";
-import { validateWithJsonSchema } from "@/shared/schemas/gameJsonSchema";
-import { formatWizardGameForBackend } from "@/shared/utils/wizardGameFormatter";
+import { formatWizardGameForBackend, validateGameForUpload } from "@/shared/utils/wizardGameFormatter";
 
 //=== Game Management ===//
 
-// Get all games
+// Get all games (from wizard-games collection)
 export async function getGames() {
   const token = localStorage.getItem('auth_token');
-  const res = await fetch(API_ENDPOINTS.games.list, {
+  const res = await fetch(API_ENDPOINTS.wizardGames.list, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -27,10 +26,10 @@ export async function getGames() {
   return data.games || [];
 }
 
-// Get recent games
+// Get recent games (from wizard-games collection)
 export async function getRecentGames(_limit = 5) {
   const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${API_ENDPOINTS.games.list}?limit=${_limit}&sortOrder=desc`, {
+  const res = await fetch(`${API_ENDPOINTS.wizardGames.list}?limit=${_limit}&sortOrder=desc`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -88,7 +87,7 @@ export async function getUserCloudGamesList() {
     
     while (hasMore) {
       try {
-        const res = await fetch(`${API_ENDPOINTS.games.list}?page=${currentPage}&limit=100&sortOrder=desc`, {
+        const res = await fetch(`${API_ENDPOINTS.wizardGames.list}?page=${currentPage}&limit=100&sortOrder=desc`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -118,21 +117,22 @@ export async function getUserCloudGamesList() {
     // Return games with useful metadata for selection
     return allGames.map(cloudGame => {
       const gameData = cloudGame.gameData || {};
-      const localId = cloudGame.localId || cloudGame.id;
+      const localId = cloudGame.localId || cloudGame._id || cloudGame.id;
+      const cloudId = cloudGame._id || cloudGame.id;
       
       // Check if game exists locally by localId OR by cloudGameId
       const allLocalGames = LocalGameStorage.getAllSavedGames();
       const existsByLocalId = !!allLocalGames[localId];
       const existsByCloudId = Object.values(allLocalGames).some(game => 
-        game.cloudGameId === cloudGame.id || 
-        game.gameState?.cloudGameId === cloudGame.id
+        game.cloudGameId === cloudId || 
+        game.gameState?.cloudGameId === cloudId
       );
       const existsLocally = existsByLocalId || existsByCloudId;
       
       return {
-        cloudId: cloudGame.id,
+        cloudId: cloudId,
         localId: localId,
-        players: gameData.gameState?.players || gameData.players || [],
+        players: gameData.players || gameData.gameState?.players || [],
         winner_id: gameData.winner_id || gameData.gameState?.winner_id,
         final_scores: gameData.final_scores || gameData.gameState?.final_scores || {},
         created_at: cloudGame.createdAt || gameData.created_at,
@@ -149,7 +149,7 @@ export async function getUserCloudGamesList() {
       message: error.message,
       stack: error.stack,
       token: token ? 'present' : 'missing',
-      endpoint: API_ENDPOINTS.games.list
+      endpoint: API_ENDPOINTS.wizardGames.list
     });
     throw error;
   }
@@ -191,18 +191,19 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
         }
 
         const cloudGame = cloudGameMeta.rawData;
-        const localId = cloudGame.localId || cloudGame.id;
+        const localId = cloudGame.localId || cloudGame._id || cloudGame.id;
+        const cloudId = cloudGame._id || cloudGame.id;
         
         // Check if game already exists locally - check by localId AND cloudGameId
         const allLocalGames = LocalGameStorage.getAllSavedGames();
         const existsByLocalId = !!allLocalGames[localId];
         const existsByCloudId = Object.values(allLocalGames).some(game => 
-          game.cloudGameId === cloudGame.id || 
-          game.gameState?.cloudGameId === cloudGame.id
+          game.cloudGameId === cloudId || 
+          game.gameState?.cloudGameId === cloudId
         );
         
         if (existsByLocalId || existsByCloudId) {
-          console.debug(`Game ${localId} (cloud ID: ${cloudGame.id}) already exists locally, skipping`);
+          console.debug(`Game ${localId} (cloud ID: ${cloudId}) already exists locally, skipping`);
           skipped++;
           continue;
         }
@@ -212,8 +213,8 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
         
         // Determine the source of truth for game data
         const gameState = cloudGameData.gameState || {};
-        const players = gameState.players || cloudGameData.players || [];
-        const roundData = gameState.roundData || cloudGameData.round_data || cloudGameData.roundData || [];
+        const players = cloudGameData.players || gameState.players || [];
+        const roundData = cloudGameData.round_data || gameState.roundData || cloudGameData.roundData || [];
         const currentRound = gameState.currentRound || roundData.length;
         const totalRounds = cloudGameData.total_rounds || cloudGameData.totalRounds || gameState.maxRounds || 0;
         
@@ -254,7 +255,7 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
           duration_seconds: cloudGameData.duration_seconds || 0,
           is_local: true,
           downloadedFromCloud: true,
-          cloudGameId: cloudGame.id,
+          cloudGameId: cloudId,
           created_at: cloudGame.createdAt || cloudGameData.created_at
         };
 
@@ -274,7 +275,7 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
           rounds: `${currentRound}/${totalRounds}`
         });
         // Mark as uploaded to prevent re-uploading (same as importSharedGame)
-        LocalGameStorage.markGameAsUploaded(savedGameId, cloudGame.id);
+        LocalGameStorage.markGameAsUploaded(savedGameId, cloudId);
         
         downloaded++;
       } catch (error) {
@@ -460,7 +461,7 @@ export async function getAllLocalGames() {
   }
 }
 
-// Create game
+// Create game (v3.0 format - uploads to wizard collection)
 export async function createGame(gameData, localId) {
   const token = localStorage.getItem('auth_token');
   
@@ -469,15 +470,30 @@ export async function createGame(gameData, localId) {
     throw new Error('You must be logged in to sync games to the cloud. Please sign in and try again.');
   }
 
-  // Format the game data for backend storage
+  // Format the game data for backend storage (v3.0)
   const formattedGameData = formatWizardGameForBackend(gameData);
   
-  console.debug('Uploading game with formatted data:', {
+  // Validate before upload
+  const validation = validateGameForUpload(gameData);
+  
+  if (!validation.isValid) {
+    console.error('Game validation failed:', validation.errors);
+    throw new Error(`Game validation failed:\n${validation.errors.join('\n')}`);
+  }
+  
+  // Log warnings if any
+  if (validation.warnings && validation.warnings.length > 0) {
+    console.warn('Game validation warnings:', validation.warnings);
+  }
+  
+  console.debug('Uploading wizard game (v3.0):', {
     original: gameData,
-    formatted: formattedGameData
+    formatted: formattedGameData,
+    validation: validation
   });
 
-  const res = await fetch(API_ENDPOINTS.games.create, {
+  // Upload to wizard-games endpoint (v3.0 collection)
+  const res = await fetch(API_ENDPOINTS.wizardGames.create, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -492,6 +508,12 @@ export async function createGame(gameData, localId) {
   
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    
+    // Provide detailed error message for validation errors
+    if (errorData.validationErrors) {
+      throw new Error(`Game validation failed:\n${errorData.validationErrors.join('\n')}`);
+    }
+    
     throw new Error(errorData.error || `Failed to create game: ${res.status}`);
   }
   
@@ -512,9 +534,9 @@ export async function getGameById(id) {
   const localGames = LocalGameStorage.getAllSavedGames();
   const localGame = localGames[id];
   if (localGame) return localGame;
-  // Try backend
+  // Try backend (wizard-games collection)
   const token = localStorage.getItem('auth_token');
-  const res = await fetch(API_ENDPOINTS.games.getById(id), {
+  const res = await fetch(API_ENDPOINTS.wizardGames.getById(id), {
     headers: {
       'Authorization': `Bearer ${token}`
     }

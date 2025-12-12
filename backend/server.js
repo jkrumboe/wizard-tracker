@@ -19,6 +19,7 @@ async function initializeServer() {
   // Now load routes and middleware that depend on Redis
   const userRoutes = require('./routes/users');
   const gameRoutes = require('./routes/games');
+  const wizardGameRoutes = require('./routes/wizardGames');
   const tableGameRoutes = require('./routes/tableGames');
   const gameTemplateRoutes = require('./routes/gameTemplates');
   const gameSyncRoutes = require('./routes/gameSync');
@@ -61,6 +62,7 @@ async function initializeServer() {
   // Routes with rate limiting
   app.use('/api/users', apiLimiter, userRoutes);
   app.use('/api/games', apiLimiter, gameRoutes);
+  app.use('/api/wizard-games', apiLimiter, wizardGameRoutes); // New wizard games collection
   app.use('/api/table-games', apiLimiter, tableGameRoutes);
   app.use('/api/game-templates', apiLimiter, gameTemplateRoutes);
   app.use('/api/games', apiLimiter, gameSyncRoutes); // Game sync endpoints

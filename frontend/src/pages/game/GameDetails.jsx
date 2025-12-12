@@ -171,56 +171,35 @@ const GameDetails = () => {
   const finalScores = game.gameState?.final_scores || game.final_scores || {};
   
   const sortedPlayers = Object.entries(finalScores)
-    .map(([playerId, score]) => {
-      // Handle player IDs consistently - keep as string if it has scientific notation (e)
-      const normalizedId = playerId.includes("e") ? playerId : Number.parseInt(playerId);
+    .map(([playerId, score], playerIndex) => {
+      const normalizedId = String(playerId);
       
-      // Try multiple lookup strategies to find the player data
-      let playerData = playerDetails[playerId] || 
-                      playerDetails[String(playerId)] || 
-                      playerDetails[Number(playerId)] || 
-                      playerDetails[normalizedId] ||
-                      playerDetails[String(normalizedId)];
+      // For v3.0 format, get player from game.players array
+      let playerData = null;
+      if (game.players && Array.isArray(game.players)) {
+        playerData = game.players.find(p => String(p.id) === normalizedId);
+      }
       
-      // If still not found, try to find by comparing all keys
+      // For legacy format, get from gameState.players
+      if (!playerData && game.gameState?.players && Array.isArray(game.gameState.players)) {
+        playerData = game.gameState.players.find(p => String(p.id) === normalizedId);
+      }
+      
+      // Fallback: try to get from round_data
+      if (!playerData && game.round_data?.[0]?.players) {
+        playerData = game.round_data[0].players.find(p => String(p.id) === normalizedId);
+      }
+      
+      // If still not found, check playerDetails map
       if (!playerData) {
-        const foundKey = Object.keys(playerDetails).find(key => 
-          String(key) === String(playerId) || 
-          String(key) === String(normalizedId)
-        );
-        if (foundKey) {
-          playerData = playerDetails[foundKey];
-        }
+        playerData = playerDetails[normalizedId] || playerDetails[playerId];
       }
       
-      // If still not found and playerId is a number (array index), try to find by position
-      if (!playerData && !isNaN(playerId)) {
-        const playerIndex = parseInt(playerId);
-        // Try to find player by index in gameState.players array
-        if (game.gameState?.players && Array.isArray(game.gameState.players)) {
-          const playerByIndex = game.gameState.players[playerIndex];
-          if (playerByIndex) {
-            playerData = { name: playerByIndex };
-          }
-        }
-        
-        // Also try round_data first round to find player by index
-        if (!playerData && game.round_data?.[0]?.players && Array.isArray(game.round_data[0].players)) {
-          const playerByIndex = game.round_data[0].players[playerIndex];
-          if (playerByIndex) {
-            playerData = { name: playerByIndex };
-          }
-        }
-      }
-      
-      const result = {
+      return {
         id: normalizedId,
         score,
-        name: playerData?.name || 'Unknown Player',
-        ...playerData,
+        name: playerData?.name || `Player ${playerIndex + 1}`,
       };
-      
-      return result;
     })
     .sort((a, b) => b.score - a.score)
     .map((player, index, array) => {
@@ -320,26 +299,21 @@ const GameDetails = () => {
       // Ensure we're using the string version of ID for consistent lookup
       const stringId = String(playerStat.id);
       
-      // Try multiple lookup strategies to find the player name
-      let playerData = playerDetails[stringId] || 
-                      playerDetails[playerStat.id] || 
-                      playerDetails[String(playerStat.id)] || 
-                      playerDetails[Number(playerStat.id)];
-      
-      // If still not found, try to find by comparing all keys
+      // Get player data from v3.0 format (game.players) or legacy format
+      let playerData = null;
+      if (game.players && Array.isArray(game.players)) {
+        playerData = game.players.find(p => String(p.id) === stringId);
+      }
+      if (!playerData && game.gameState?.players && Array.isArray(game.gameState.players)) {
+        playerData = game.gameState.players.find(p => String(p.id) === stringId);
+      }
       if (!playerData) {
-        const foundKey = Object.keys(playerDetails).find(key => 
-          String(key) === String(playerStat.id) || 
-          String(key) === stringId
-        );
-        if (foundKey) {
-          playerData = playerDetails[foundKey];
-        }
+        playerData = playerDetails[stringId] || playerDetails[playerStat.id];
       }
       
       return {
         id: playerStat.id, // Keep the original ID format for StatsChart
-        name: playerData?.name || 'Unknown Player',
+        name: playerData?.name || `Player ${Object.keys(game.final_scores || game.gameState?.final_scores || {}).indexOf(stringId) + 1}`,
         correctBids: playerStat.correctBids || 0,
         overBids: playerStat.overbids || 0,
         underBids: playerStat.underbids || 0,
@@ -479,16 +453,9 @@ const GameDetails = () => {
                           {player.rank}
                         </div>
                         <div className="player-col">
-                          {game.is_local ? (
-                            <div className="player-info">
-                              <span>{player.name}</span>
-                            </div>
-                          ) : (
-                            <Link to={`/profile/${player.id}`} className="player-link">
-                              <img src={sanitizeImageUrl(player.avatar || defaultAvatar, defaultAvatar)} alt={player.name} className="player-avatar" />
-                              <span>{player.name}</span>
-                            </Link>
-                          )}
+                          <div className="player-info">
+                            <span>{player.name}</span>
+                          </div>
                         </div>
                         <div className="score-col">{player.score}</div>
                         <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>

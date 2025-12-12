@@ -35,7 +35,6 @@ const GameInProgress = () => {
     leaveGame,
     loadSavedGame,
     getSavedGames,
-    recoverGameState,
     updateGameSettings
   } = useGameStateContext()
   
@@ -278,35 +277,15 @@ const GameInProgress = () => {
     if ((!gameState || !gameState.gameStarted || gameState.players?.length === 0) && 
         globalThis.location.pathname === '/game/current' && !isRecovering) {
       
+      // Note: Auto-recovery logic disabled - backup is maintained but not auto-restored
+      // Users can manually recover through the UI if needed
       const backupGameState = sessionStorage.getItem('gameStateBackup');
       if (backupGameState) {
-        try {
-          const parsedBackup = JSON.parse(backupGameState);
-          
-          // Only restore if the backup has valid game data
-          if (parsedBackup.gameStarted && parsedBackup.players?.length > 0) {
-            setIsRecovering(true);
-            
-            // Use setTimeout to allow UI to update before recovery
-            setTimeout(() => {
-              const success = recoverGameState(parsedBackup);
-              if (success) {
-                // Clear the backup after successful recovery to prevent re-triggering
-                sessionStorage.removeItem('gameStateBackup');
-              } else {
-                console.error('Failed to recover game state');
-                // Don't clear backup if recovery failed, allow manual recovery
-              }
-              setIsRecovering(false);
-            }, 100);
-          }
-        } catch (error) {
-          console.error('Failed to parse backup game state:', error);
-          sessionStorage.removeItem('gameStateBackup');
-        }
+        // Backup exists but we don't auto-restore to avoid conflicts
+        // The backup is cleared when user explicitly leaves or finishes the game
       }
     }
-  }, [gameState, recoverGameState, isRecovering]);
+  }, [gameState, isRecovering]);
 
 
   // Add defensive check for game state
@@ -406,6 +385,19 @@ const GameInProgress = () => {
   const isLastRound = gameState.currentRound === gameState.maxRounds
   const isFirstRound = gameState.currentRound === 1
 
+  // Calculate total score for a player up to the current round
+  const calculateTotalScore = (playerId) => {
+    let total = 0;
+    for (let i = 0; i < currentRoundIndex; i++) {
+      const round = gameState.roundData[i];
+      const player = round.players.find(p => p.id === playerId);
+      if (player && player.score !== null && player.score !== undefined) {
+        total += player.score;
+      }
+    }
+    return total;
+  };
+
   // Check if all players have made their calls and tricks for the current round
   const isRoundComplete = currentRound?.players.every((player) => player.call !== null && player.made !== null)
 
@@ -459,8 +451,8 @@ const GameInProgress = () => {
       const avgBid = roundsPlayed > 0 ? totalBids / roundsPlayed : 0;
       const avgTricks = roundsPlayed > 0 ? totalTricks / roundsPlayed : 0;
       
-      // Get the current player's total score from the current round data
-      const playerCurrentTotalScore = player.totalScore || 0;
+      // Calculate total score by summing all round scores
+      const playerCurrentTotalScore = calculateTotalScore(player.id);
       const avgPoints = roundsPlayed > 0 ? playerCurrentTotalScore / roundsPlayed : 0;
       const avgDiff = roundsPlayed > 0 ? 
         allRoundsData.reduce((sum, round) => {
@@ -675,10 +667,16 @@ const GameInProgress = () => {
                         <input
                           type="tel"
                           className={`rounds-input ${isIllegalCall ? 'call-illegal' : ''}`}
-                          value={player.call !== null ? player.call : ''}
+                          value={player.call != null && !isNaN(player.call) ? player.call : ''}
                           placeholder="0"
                           onChange={(e) => {
-                            const value = parseInt(e.target.value) || 0;
+                            const rawValue = e.target.value;
+                            if (rawValue === '') {
+                              updateCall(player.id, null);
+                              return;
+                            }
+                            const value = parseInt(rawValue, 10);
+                            if (isNaN(value)) return;
                             const maxAllowed = increaseCallMax ? currentRound.round + 1 : currentRound.round;
                             const clampedValue = Math.max(0, Math.min(value, maxAllowed));
                             updateCall(player.id, clampedValue);
@@ -704,10 +702,16 @@ const GameInProgress = () => {
                           <input
                             type="tel"
                             className={`rounds-input ${madeValuesCorrect ? 'made-correct' : ''}`}
-                            value={player.made !== null ? player.made : ''}
+                            value={player.made != null && !isNaN(player.made) ? player.made : ''}
                             placeholder="0"
                             onChange={(e) => {
-                              const value = parseInt(e.target.value) || 0;
+                              const rawValue = e.target.value;
+                              if (rawValue === '') {
+                                updateMade(player.id, null);
+                                return;
+                              }
+                              const value = parseInt(rawValue, 10);
+                              if (isNaN(value)) return;
                               updateMade(player.id, value);
                             }}
                             min={0}
@@ -724,7 +728,7 @@ const GameInProgress = () => {
                   <td className="score-cell">
                     <div className="score">
                       <span className="total-score">
-                        {player.totalScore !== null ? player.totalScore : 0}
+                        {calculateTotalScore(player.id)}
                       </span>
                       {player.score !== null && player.score !== 0 && (
                         <span

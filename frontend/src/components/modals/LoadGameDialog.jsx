@@ -102,7 +102,7 @@ const LoadGameDialog = ({
                     </div>
                     <div className="saved-game-details">
                       <UsersIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
-                      {game.players ? game.players.length : 0} players • Round {game.currentRound}/{game.totalRounds}
+                      {game.playerCount || (game.players ? game.players.length : 0)} players • Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds}
                       <br />
                       <CalendarIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
                       Last played: {formatDate(game.lastPlayed)}

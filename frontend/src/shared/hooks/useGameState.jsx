@@ -81,14 +81,19 @@ export function GameStateProvider({ children }) {
         // Find the most recently saved active (paused) game
         // Exclude auto-saves and only restore explicitly saved games
         const activeGame = gameEntries
-          .filter(([, game]) => 
-            game.isPaused && 
-            game.gameState && 
-            game.gameState.gameStarted &&
-            game.name && 
-            !game.name.includes('Auto-save') && 
-            !game.name.includes('Current Game (Auto-save)')
-          )
+          .filter(([, game]) => {
+            // Check if game is paused and started
+            const isPaused = game.isPaused || (game._internalState && game._internalState.isPaused);
+            const gameStarted = game.gameStarted || 
+                              (game._internalState && game._internalState.gameStarted) ||
+                              (game.gameState && game.gameState.gameStarted);
+            
+            return isPaused && 
+              gameStarted &&
+              game.name && 
+              !game.name.includes('Auto-save') && 
+              !game.name.includes('Current Game (Auto-save)');
+          })
           .sort(([,a], [,b]) => new Date(b.lastPlayed || b.dateCreated) - new Date(a.lastPlayed || a.dateCreated))[0];
         
         if (activeGame) {
@@ -334,7 +339,7 @@ export function GameStateProvider({ children }) {
             ? updatedRoundData[prevRoundIdx].players[playerIndex].totalScore 
             : 0;
             
-          player.totalScore = prevScore + player.score;
+          player.totalScore = prevScore + (player.score || 0);
         }
         
         // If this round has no score data but there are future rounds with scores,
@@ -396,7 +401,7 @@ export function GameStateProvider({ children }) {
   // Update player's call for current round
   const updateCall = useCallback((playerId, call) => {
     setGameState((prevState) => {
-      const roundIndex = prevState.currentRound - 1
+      const roundIndex = prevState.currentRound - 1;
       const newRoundData = [...prevState.roundData]
       const currentRound = { ...newRoundData[roundIndex] }
       const playerIndex = currentRound.players.findIndex((p) => p.id === playerId)
@@ -404,10 +409,15 @@ export function GameStateProvider({ children }) {
       if (playerIndex !== -1) {
         const updatedPlayers = [...currentRound.players]
         const player = { ...updatedPlayers[playerIndex] };
-        // Allow calls up to round + 1 to support special rules like "Wolke"
-        const validCall = Math.max(0, Math.min(call, currentRound.round + 1));
         
-        player.call = validCall;
+        // Handle null value (when clearing input)
+        if (call === null) {
+          player.call = null;
+        } else {
+          // Allow calls up to round + 1 to support special rules like "Wolke"
+          const validCall = Math.max(0, Math.min(call, currentRound.round + 1));
+          player.call = validCall;
+        }
         
         // If player has made values already entered, recalculate score for this round
         if (player.made !== null) {
@@ -423,7 +433,7 @@ export function GameStateProvider({ children }) {
             ? prevRound.players[playerIndex].totalScore 
             : 0;
             
-          player.totalScore = prevScore + player.score;
+          player.totalScore = prevScore + (player.score || 0);
         }
 
         updatedPlayers[playerIndex] = player;
@@ -458,12 +468,16 @@ export function GameStateProvider({ children }) {
         const updatedPlayers = [...currentRound.players];
         const player = { ...updatedPlayers[playerIndex] };
 
-        // In Wizard, each player can make between 0 and the total number of cards in the round
-        // The constraint is that the total of all players' made tricks should equal the round cards
-        // but individual players aren't limited by what others have made
-        const validMade = Math.max(0, Math.min(made, currentRound.round));
-
-        player.made = validMade;
+        // Handle null value (when clearing input)
+        if (made === null) {
+          player.made = null;
+        } else {
+          // In Wizard, each player can make between 0 and the total number of cards in the round
+          // The constraint is that the total of all players' made tricks should equal the round cards
+          // but individual players aren't limited by what others have made
+          const validMade = Math.max(0, Math.min(made, currentRound.round));
+          player.made = validMade;
+        }
 
         // Always calculate score if made is set, even if call isn't set yet
         // This allows scores to be calculated when made values are entered early
@@ -482,7 +496,7 @@ export function GameStateProvider({ children }) {
             const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
               ? prevRound.players[playerIndex].totalScore 
               : 0;
-            player.totalScore = prevScore + player.score;
+            player.totalScore = prevScore + (player.score || 0);
           } 
           // If call isn't set yet, we'll defer score calculation until call is set
         }
@@ -594,18 +608,29 @@ export function GameStateProvider({ children }) {
   const finishGame = useCallback(async () => {
     try {
       // Prepare game data for saving
-      const lastRound = gameState.roundData[gameState.maxRounds - 1];
       const finalScores = {};
       let winnerIds = [];
       let maxScore = Number.NEGATIVE_INFINITY;
       const duration = Math.floor((new Date() - new Date(gameState.referenceDate)) / 1000); // Duration in seconds
 
-      lastRound.players.forEach((player) => {
-        finalScores[player.id] = player.totalScore;
-        if (player.totalScore > maxScore) {
-          maxScore = player.totalScore;
+      // Calculate final scores by summing all rounds for each player
+      // Use gameState.players to ensure we calculate for all players
+      gameState.players.forEach((player) => {
+        let totalScore = 0;
+        // Sum scores from all completed rounds
+        for (let i = 0; i < gameState.roundData.length; i++) {
+          const round = gameState.roundData[i];
+          const playerInRound = round.players.find(p => p.id === player.id);
+          if (playerInRound && playerInRound.score !== null && playerInRound.score !== undefined) {
+            totalScore += playerInRound.score;
+          }
+        }
+        
+        finalScores[player.id] = totalScore;
+        if (totalScore > maxScore) {
+          maxScore = totalScore;
           winnerIds = [player.id];
-        } else if (player.totalScore === maxScore && maxScore > Number.NEGATIVE_INFINITY) {
+        } else if (totalScore === maxScore && maxScore > Number.NEGATIVE_INFINITY) {
           winnerIds.push(player.id);
         }
       });

@@ -31,6 +31,14 @@ export const API_ENDPOINTS = {
     stats: `${API_BASE_URL}/api/games/stats`,
     leaderboard: `${API_BASE_URL}/api/games/leaderboard`,
   },
+  wizardGames: {
+    list: `${API_BASE_URL}/api/wizard-games`,
+    create: `${API_BASE_URL}/api/wizard-games`,
+    getById: (id) => `${API_BASE_URL}/api/wizard-games/${id}`,
+    batchCheck: `${API_BASE_URL}/api/wizard-games/batch-check`,
+    stats: `${API_BASE_URL}/api/wizard-games/stats`,
+    migrate: `${API_BASE_URL}/api/wizard-games/migrate`,
+  },
   tableGames: {
     list: `${API_BASE_URL}/api/table-games`,
     create: `${API_BASE_URL}/api/table-games`,

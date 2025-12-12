@@ -529,23 +529,29 @@ const NewGame = () => {
               </div>
             ) : (
               <div className="paused-games-list">
-                {pausedGames.map(game => (
+                {pausedGames.map(game => {
+                  // Handle both v3.0 format (flat) and legacy format (nested gameState)
+                  const playerNames = game.players 
+                    ? (Array.isArray(game.players) && game.players.length > 0 && typeof game.players[0] === 'object'
+                        ? game.players.map(p => p.name || "Unknown Player")
+                        : game.players)
+                    : [];
+                  
+                  return (
                   <div key={game.id} className="game-card">
                     <div className="settings-card-content">
                       <div className="settings-card-header">
                         <div className="game-info">
-                          <div>Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds || game.gameState?.maxRounds || 0}</div>
+                          <div>Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds || 0}</div>
                         </div>
                         <div className="game-players">
                           {/* Players:{" "} */}
-                          {game.gameState?.players 
-                            ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                            : game.players && game.players.join(", ") || "No players"}
+                          {playerNames.length > 0 ? playerNames.join(", ") : "No players"}
                         </div>
                         <div className="actions-game-history">
                           <div className="bottom-actions-game-history">
-                            <span className={`mode-badge ${(game.game_mode || game.mode || (game.gameState && game.gameState.mode) || 'local').toLowerCase()}`}>
-                              {game.game_mode || game.mode || (game.gameState && game.gameState.mode) || 'Local'}
+                            <span className={`mode-badge ${(game.mode || 'local').toLowerCase()}`}>
+                              {game.mode || 'Local'}
                             </span>
                             <div className="game-date">
                               {normalizeDate(game.lastPlayed)}
@@ -570,7 +576,8 @@ const NewGame = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

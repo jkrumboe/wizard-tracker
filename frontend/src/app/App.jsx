@@ -29,6 +29,7 @@ import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { UserProvider, ThemeProvider } from "@/shared/contexts"
 import { authService } from "@/shared/api/authService"
 import { LocalGameStorage } from "@/shared/api/localGameStorage"
+import { autoMigrateIfNeeded } from "@/shared/utils/localStorageMigration"
 import "@/styles/base/theme.css"
 import "@/styles/devices/tablet.css"
 import "@/shared/utils/devUpdateHelper"
@@ -207,6 +208,17 @@ function App() {
     // eslint-disable-next-line no-undef
     const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
     console.log(`KeepWiz v${appVersion}`);
+    
+    // Auto-migrate local storage games to v3.0 format
+    autoMigrateIfNeeded().then(result => {
+      if (result.success && result.stats) {
+        if (result.stats.migrated > 0) {
+          console.log(`✅ Migrated ${result.stats.migrated} games to v3.0 format`);
+        }
+      }
+    }).catch(error => {
+      console.error('❌ Migration error:', error);
+    });
     
     // Register service worker for PWA functionality
     register()

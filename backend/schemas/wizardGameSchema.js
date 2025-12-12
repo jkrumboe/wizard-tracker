@@ -7,10 +7,15 @@
 const WIZARD_GAME_SCHEMA = {
   $schema: "http://json-schema.org/draft-07/schema#",
   title: "Wizard Game Data Schema",
-  description: "Schema for Wizard card game data",
+  description: "Schema for Wizard card game data (version 3.0)",
   type: "object",
-  required: ["created_at", "duration_seconds", "total_rounds", "players", "round_data"],
+  required: ["version", "created_at", "duration_seconds", "total_rounds", "players", "round_data"],
   properties: {
+    version: {
+      type: "string",
+      const: "3.0",
+      description: "Schema version - must be 3.0"
+    },
     created_at: {
       type: "string",
       format: "date-time",
@@ -30,8 +35,8 @@ const WIZARD_GAME_SCHEMA = {
     players: {
       type: "array",
       minItems: 2,
-      maxItems: 6,
-      description: "Array of players in the game",
+      maxItems: 10,
+      description: "Array of players in the game (2-10 players)",
       items: {
         type: "object",
         required: ["id", "name"],
@@ -69,6 +74,10 @@ const WIZARD_GAME_SCHEMA = {
           description: "Single winner player ID"
         }
       ]
+    },
+    gameFinished: {
+      type: "boolean",
+      description: "Whether the game is finished or paused"
     },
     final_scores: {
       type: "object",
@@ -148,8 +157,8 @@ function validateWizardGameData(gameData) {
       errors.push('players must be an array');
     } else if (gameData.players.length < 2) {
       errors.push('At least 2 players required');
-    } else if (gameData.players.length > 6) {
-      errors.push('Maximum 6 players allowed');
+    } else if (gameData.players.length > 10) {
+      errors.push('Maximum 10 players allowed');
     } else {
       gameData.players.forEach((player, idx) => {
         if (!player.id) errors.push(`Player ${idx}: id is required`);

@@ -9,8 +9,16 @@ const GameHistoryItem = ({ game }) => {
   useEffect(() => {
     const fetchPlayerDetails = async () => {
       try {
-        // Handle games saved with LocalGameStorage format
-        if (game && game.gameState && game.gameState.players) {
+        // Check if v3.0 format (flat structure with players at root)
+        if (game && game.version === '3.0' && game.players) {
+          const playerMap = {};
+          game.players.forEach((player) => {
+            playerMap[player.id] = player;
+          });
+          setPlayerDetails(playerMap);
+        }
+        // Handle legacy format with gameState wrapper
+        else if (game && game.gameState && game.gameState.players) {
           const playerMap = {};
           game.gameState.players.forEach((player) => {
             playerMap[player.id] = player;
@@ -54,16 +62,22 @@ const GameHistoryItem = ({ game }) => {
   // Check if this is a table game
   const isTableGame = game.gameType === 'table';
   
+  // Check if this is v3.0 format
+  const isV3Format = game.version === '3.0';
+  
   // Extract data from either format
   const id = game.id;
   const created_at = game.created_at || game.savedAt || game.lastPlayed || new Date().toISOString();
   
   // For table games, get players from the game data
+  // For v3.0, players are at root level
+  // For legacy, check gameState or root
   const player_ids = isTableGame 
     ? (game.players || [])
     : (game.player_ids || 
-       (game.gameState && game.gameState.player_ids) || 
-       (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || []);
+       (isV3Format ? (game.players ? game.players.map(p => p.id) : []) :
+       ((game.gameState && game.gameState.player_ids) || 
+       (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || [])));
   
   // Find winner_id from various possible locations - support both single ID and array
   const winner_id_raw = game.winner_id || 
@@ -88,9 +102,10 @@ const GameHistoryItem = ({ game }) => {
   
   // Helper function to determine winner from game state - returns array for draws
   function determineWinner(gameState) {
-    if (!gameState || !gameState.roundData || !gameState.roundData.length) return [];
+    const rounds = gameState?.roundData || gameState?.round_data;
+    if (!gameState || !rounds || !rounds.length) return [];
     
-    const lastRound = gameState.roundData[gameState.roundData.length - 1];
+    const lastRound = rounds[rounds.length - 1];
     if (!lastRound || !lastRound.players) return [];
     
     // Find player(s) with highest score (supports draws)
@@ -144,20 +159,22 @@ const GameHistoryItem = ({ game }) => {
             {/* <UsersIcon size={12} />{" "} */}
             {isTableGame
               ? Array.isArray(game.players) ? game.players.join(", ") : "No players"
-              : game.gameState && game.gameState.players 
-                ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                : game.is_local && game.players
-                  ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
-                    ? game.players.join(", ") 
-                    : game.players.map(player => player.name || "Unknown Player").join(", ")
-                  : Array.isArray(player_ids)
-                    ? player_ids
-                        .map(
-                          (playerId) =>
-                            playerDetails[playerId]?.name || "Unknown Player"
-                        )
-                        .join(", ")
-                    : "No players"}
+              : isV3Format && game.players
+                ? game.players.map(player => player.name || "Unknown Player").join(", ")
+                : game.gameState && game.gameState.players 
+                  ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                  : game.is_local && game.players
+                    ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
+                      ? game.players.join(", ") 
+                      : game.players.map(player => player.name || "Unknown Player").join(", ")
+                    : Array.isArray(player_ids)
+                      ? player_ids
+                          .map(
+                            (playerId) =>
+                              playerDetails[playerId]?.name || "Unknown Player"
+                          )
+                          .join(", ")
+                      : "No players"}
         </div>
         <div className="actions-game-history">
           <div className="bottom-actions-game-history">

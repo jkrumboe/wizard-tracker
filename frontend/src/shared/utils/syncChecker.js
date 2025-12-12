@@ -151,7 +151,7 @@ export async function batchCheckCloudGamesExist(cloudGameIds) {
   }
   
   try {
-    const res = await fetch(API_ENDPOINTS.games.batchCheck, {
+    const res = await fetch(API_ENDPOINTS.wizardGames.batchCheck, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -339,7 +339,7 @@ export async function checkCloudGameExistsByGameId(cloudGameId) {
   }
   
   try {
-    const res = await fetch(API_ENDPOINTS.games.getById(cloudGameId), {
+    const res = await fetch(API_ENDPOINTS.wizardGames.getById(cloudGameId), {
       headers: {
         'Authorization': `Bearer ${token}`
       }

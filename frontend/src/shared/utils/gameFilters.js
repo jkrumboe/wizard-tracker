@@ -14,7 +14,8 @@ export const filterGames = (games, filters) => {
   // Filter by player names (must include ALL selected players)
   if (filters.playerNames && filters.playerNames.length > 0) {
     filteredGames = filteredGames.filter(game => {
-      const players = game.gameState?.players || [];
+      // Handle v3.0 format (players at root) and legacy format (players in gameState)
+      const players = game.players || game.gameState?.players || [];
       const playerNamesInGame = players.map(p => 
         (p.name || p.username || '').toLowerCase().trim()
       );
@@ -62,8 +63,8 @@ export const filterGames = (games, filters) => {
           valueB = b.total_rounds || b.totalRounds || b.gameState?.maxRounds || 0;
           break;
         case 'players':
-          valueA = a.gameState?.players?.length || 0;
-          valueB = b.gameState?.players?.length || 0;
+          valueA = (a.players ? a.players.length : (a.gameState?.players?.length || 0));
+          valueB = (b.players ? b.players.length : (b.gameState?.players?.length || 0));
           break;
         default:
           valueA = new Date(a.created_at || a.savedAt || 0).getTime();

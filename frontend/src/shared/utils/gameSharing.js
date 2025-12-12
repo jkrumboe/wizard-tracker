@@ -13,9 +13,14 @@ export function generateShareableLink(game) {
   let gameIdToShare = game.id;
   
   // Check if this is an imported game with an original ID
+  // Support both v3.0 format (flat) and legacy format (nested gameState)
   if (game.originalGameId) {
     gameIdToShare = game.originalGameId;
+  } else if (game._internalState?.originalGameId) {
+    // v3.0 format stores internal state separately
+    gameIdToShare = game._internalState.originalGameId;
   } else if (game.gameState?.originalGameId) {
+    // Legacy format with gameState wrapper
     gameIdToShare = game.gameState.originalGameId;
   }
   

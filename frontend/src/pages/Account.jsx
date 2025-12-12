@@ -7,6 +7,7 @@ import { useUser } from '@/shared/hooks/useUser';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
+import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
 import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
@@ -47,6 +48,9 @@ const Account = () => {
     const saved = localStorage.getItem('autoUpdate');
     return saved !== null ? saved === 'true' : true; // Default to true
   });
+  const [migrating, setMigrating] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState(null);
+  const [needsMigration, setNeedsMigration] = useState(false);
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
 
@@ -626,6 +630,44 @@ const Account = () => {
     }
   };
 
+  // Check migration status on load
+  useEffect(() => {
+    const status = getMigrationStatus();
+    setMigrationStatus(status);
+    setNeedsMigration(hasGamesNeedingMigration());
+  }, [savedGames]);
+
+  // Handle manual migration
+  const handleMigrateGames = async () => {
+    setMigrating(true);
+    try {
+      const result = await migrateLocalStorageGames();
+      if (result.success) {
+        setMessage({ 
+          text: result.message, 
+          type: 'success' 
+        });
+        setMigrationStatus(getMigrationStatus());
+        setNeedsMigration(false);
+        // Reload games to show migrated format
+        loadAllGames();
+      } else {
+        setMessage({ 
+          text: result.message || 'Migration failed', 
+          type: 'error' 
+        });
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+      setMessage({ 
+        text: 'Migration failed: ' + error.message, 
+        type: 'error' 
+        });
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   const handleForceUpdate = async () => {
     if (!('serviceWorker' in navigator)) {
       setMessage({ text: 'Service Worker not supported in this browser', type: 'error' });
@@ -1058,16 +1100,7 @@ const Account = () => {
   // Calculate overview stats from all games
   const overviewStats = useMemo(() => {
     const allGamesList = [...Object.values(savedGames), ...savedTableGames];
-    
-    console.log('📊 Overview Stats Debug:', {
-      user,
-      totalGames: allGamesList.length,
-      wizardGames: Object.values(savedGames).length,
-      tableGames: savedTableGames.length,
-      sampleGame: allGamesList[0],
-      sampleTableGame: savedTableGames[0]
-    });
-    
+        
     if (!user || allGamesList.length === 0) {
       return { gameTypes: [], recentResults: [] };
     }
@@ -1160,9 +1193,10 @@ const Account = () => {
           }
         }
       } else {
-        // Wizard games: check gameState.players
-        if (game.gameState?.players) {
-          userPlayer = game.gameState.players.find(p => {
+        // Wizard games: check v3.0 format (players at root) or legacy format (gameState.players)
+        const players = game.players || game.gameState?.players;
+        if (players) {
+          userPlayer = players.find(p => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUsernameLower = p.username?.toLowerCase();
             
@@ -1248,9 +1282,10 @@ const Account = () => {
           }
         }
       } else {
-        // Wizard game
-        if (game.gameState?.players) {
-          const userPlayer = game.gameState.players.find(p => {
+        // Wizard game: check v3.0 format (players at root) or legacy format (gameState.players)
+        const players = game.players || game.gameState?.players;
+        if (players) {
+          const userPlayer = players.find(p => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUsernameLower = p.username?.toLowerCase();
             
@@ -1729,15 +1764,25 @@ const Account = () => {
                         </div>
                         <div className="game-players">
                           {/* <UsersIcon size={12} />{" "} */}
-                          {game.gameState?.players 
-                            ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                          {game.players && game.players.length > 0
+                            ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
+                                ? game.players.join(", ")
+                                : game.players.map(p => p.name || "Unknown Player").join(", "))
                             : "No players"}
                         </div>
                         <div className="actions-game-history">
                           <div className="bottom-actions-game-history">
-                            <div className="game-rounds">Rounds: {game.gameState?.currentRound || game.gameState?.round_data?.length || "N/A"}</div>
+                            <div className="game-rounds">Rounds: {(() => {
+                              const rounds = game.gameFinished 
+                                ? (game.total_rounds || game.totalRounds || game.roundsCompleted || "N/A") 
+                                : (game._internalState?.currentRound || game.roundsCompleted !== undefined ? (game._internalState?.currentRound || game.roundsCompleted + 1) : "N/A");
+                              return rounds;
+                            })()}</div>
                             <div className="game-date">
-                              {formatDate(game.lastPlayed)}
+                              {(() => {
+                                const dateToUse = game.created_at || game.lastPlayed;
+                                return formatDate(dateToUse);
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -1911,6 +1956,51 @@ const Account = () => {
                   </div>
                 </label>
               </div>
+            </div>
+
+            {/* Data Management */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">Data Management</h3>
+              <div className="settings-card info-card">
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Storage Format:</span>
+                    <span className="info-value">
+                      {migrationStatus && migrationStatus.version === '3.0' ? 'v3.0' : 'Legacy'}
+                    </span>
+                  </div>
+                  {migrationStatus && migrationStatus.lastMigration && (
+                    <div className="info-item">
+                      <span className="info-label">Last Migration:</span>
+                      <span className="info-value">
+                        {formatDate(migrationStatus.lastMigration)}
+                      </span>
+                    </div>
+                  )}
+                  {needsMigration && (
+                    <div className="info-item" style={{gridColumn: '1 / -1'}}>
+                      <span style={{color: 'var(--warning)', fontSize: '0.9rem'}}>
+                        ⚠️ Some games are in old format and need migration
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button 
+                className="settings-button-update"
+                onClick={handleMigrateGames}
+                disabled={migrating || (!needsMigration && migrationStatus?.version === '3.0')}
+                title="Migrate local games to v3.0 format"
+                style={{marginTop: 'var(--spacing-md)', width: '100%'}}
+              >
+                <RefreshIcon size={18} />
+                {migrating ? 'Migrating...' : needsMigration ? 'Migrate Games to v3.0' : 'All Games Up to Date'}
+              </button>
+              {migrationStatus && migrationStatus.stats && (
+                <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: 'var(--spacing-sm)'}}>
+                  Last migration: {migrationStatus.stats.migrated} migrated, {migrationStatus.stats.alreadyV3} already v3.0
+                </div>
+              )}
             </div>
 
             {/* App Information */}

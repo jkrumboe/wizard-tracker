@@ -18,7 +18,7 @@ export class LocalGameStorage {
   }
 
   /**
-   * Save a game to local storage
+   * Save a game to local storage in v3.0 format
    * @param {Object} gameState - The current game state
    * @param {string} gameName - Optional custom name for the game
    * @param {boolean} isPaused - Whether this is a paused game (true) or a finished game (false)
@@ -39,13 +39,6 @@ export class LocalGameStorage {
     const currentUserId = userId || this.getCurrentUserId();
     
     try {
-      // Create a new saved game object
-      const gameStateCopy = { 
-        ...gameState,
-        isPaused: isPaused,
-        gameFinished: !isPaused  // If it's not paused, it's finished
-      };
-      
       // Generate an appropriate name based on game state
       let defaultName;
       if (isPaused) {
@@ -54,37 +47,99 @@ export class LocalGameStorage {
         defaultName = `Finished Game - ${new Date().toLocaleDateString()}`;
       }
       
-      // Extract data for finished games to make it accessible at the top level
-      const topLevelData = {};
-      if (!isPaused) {
-        // This is a finished game, extract important data using new schema structure
-        // Support both old format (flat) and new format (nested in totals)
-        topLevelData.winner_id = gameState.winner_id || gameState.totals?.winner_id || [];
-        topLevelData.final_scores = gameState.final_scores || gameState.totals?.final_scores || {};
-        topLevelData.created_at = gameState.created_at || timestamp;
-        topLevelData.player_ids = gameState.player_ids || 
-                                (gameState.players ? gameState.players.map(p => p.id) : []);
-        topLevelData.round_data = gameState.round_data || gameState.rounds || gameState.roundData;
-        topLevelData.total_rounds = gameState.total_rounds || gameState.totals?.total_rounds || gameState.maxRounds || gameState.totalRounds;
-        topLevelData.duration_seconds = gameState.duration_seconds;
-        topLevelData.is_local = true;
-      }
+      // Convert round data to v3.0 format
+      // For paused games, only save rounds up to and including the current round
+      const allRounds = gameState.roundData || gameState.round_data || gameState.rounds || [];
+      const roundsToSave = isPaused && gameState.currentRound !== undefined
+        ? allRounds.slice(0, gameState.currentRound + 1) // Only save up to current round (inclusive)
+        : allRounds; // For finished games, save all rounds
       
+      console.log('[LocalStorage] Saving game:', {
+        isPaused,
+        currentRound: gameState.currentRound,
+        totalRounds: allRounds.length,
+        roundsToSave: roundsToSave.length,
+        gameId
+      });
+      
+      const roundData = roundsToSave.map(round => ({
+        players: (round.players || []).map(player => {
+          const formatted = {
+            id: player.id,
+            name: player.name, // Include name for display
+            made: player.made !== undefined ? player.made : null,
+            score: player.score !== undefined ? player.score : null
+          };
+          
+          // Only include call if it's defined
+          if (player.call !== undefined) {
+            formatted.call = player.call;
+          }
+          
+          // Include totalScore if it exists
+          if (player.totalScore !== undefined) {
+            formatted.totalScore = player.totalScore;
+          }
+          
+          return formatted;
+        })
+      }));
+      
+      // Convert players to v3.0 format
+      const players = (gameState.players || []).map(player => ({
+        id: player.id,
+        name: player.name,
+        ...(player.isVerified !== undefined && { isVerified: player.isVerified }),
+        ...(player.isDealer !== undefined && { isDealer: player.isDealer }),
+        ...(player.isCaller !== undefined && { isCaller: player.isCaller })
+      }));
+      
+      // Build v3.0 format game object
       const savedGame = {
+        // Unique identifiers
         id: gameId,
+        
+        // v3.0 schema fields (snake_case)
+        version: '3.0',
+        created_at: gameState.created_at || gameState.referenceDate || timestamp,
+        duration_seconds: gameState.duration_seconds || 0,
+        total_rounds: gameState.total_rounds || gameState.maxRounds || 0,
+        players: players,
+        round_data: roundData,
+        
+        // Game state fields
+        gameFinished: !isPaused,
+        
+        // Metadata fields for UI
         name: gameName || defaultName,
-        gameState: gameStateCopy,
         savedAt: timestamp,
         lastPlayed: timestamp,
-        playerCount: gameState.players ? gameState.players.length : 0,
-        roundsCompleted: gameState.currentRound ? gameState.currentRound - 1 : 0,
-        totalRounds: gameState.maxRounds || 0,
-        mode: gameState.mode || "Local",
-        isPaused: isPaused,
-        gameFinished: !isPaused, // If it's not paused, it's finished
-        userId: currentUserId, // Add userId to track ownership
-        ...topLevelData // Add extracted data for finished games
+        userId: currentUserId,
+        isUploaded: false,
+        cloudGameId: null,
+        cloudLookupKey: null,
+        
+        // Store original state for internal use (currentRound, maxRounds, etc.)
+        _internalState: {
+          currentRound: gameState.currentRound,
+          maxRounds: gameState.maxRounds,
+          gameStarted: gameState.gameStarted,
+          mode: gameState.mode || "Local",
+          isLocal: gameState.isLocal !== undefined ? gameState.isLocal : true,
+          isPaused: isPaused,
+          referenceDate: gameState.referenceDate
+        }
       };
+      
+      // Add optional finished game fields
+      if (!isPaused) {
+        if (gameState.winner_id || gameState.totals?.winner_id) {
+          savedGame.winner_id = gameState.winner_id || gameState.totals?.winner_id || [];
+        }
+        if (gameState.final_scores || gameState.totals?.final_scores) {
+          savedGame.final_scores = gameState.final_scores || gameState.totals?.final_scores || {};
+        }
+      }
     
       
       // Get existing storage
@@ -158,9 +213,9 @@ export class LocalGameStorage {
   }
 
   /**
-   * Load a saved game
+   * Load a saved game and convert from v3.0 to internal format
    * @param {string} gameId - The game ID to load
-   * @returns {Object|null} - The game state or null if not found
+   * @returns {Object|null} - The game state in internal format or null if not found
    */
   static loadGame(gameId) {
     const games = this.getAllSavedGames();
@@ -172,6 +227,77 @@ export class LocalGameStorage {
       games[gameId] = savedGame;
       localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
       
+      // Check if it's v3.0 format (has version field and no gameState wrapper)
+      if (savedGame.version === '3.0' && !savedGame.gameState) {
+        // Convert v3.0 format back to internal format
+        const internalState = savedGame._internalState || {};
+        
+        // Merge player names from root players array into roundData if missing
+        // Also add round numbers and fill missing future rounds for paused games
+        const savedRounds = savedGame.round_data || [];
+        const totalRounds = savedGame.total_rounds || internalState.maxRounds || 20;
+        const currentRound = internalState.currentRound || 1;
+        
+        // Create all rounds (both saved and future ones)
+        const roundData = [];
+        for (let i = 1; i <= totalRounds; i++) {
+          const savedRound = savedRounds[i - 1]; // Saved rounds are 0-indexed
+          
+          if (savedRound) {
+            // Use saved round data and add round number
+            roundData.push({
+              round: i,
+              cards: i <= 10 ? i : 20 - i,
+              players: (savedRound.players || []).map(roundPlayer => {
+                // If player name is missing, get it from root players array
+                if (!roundPlayer.name) {
+                  const fullPlayer = (savedGame.players || []).find(p => String(p.id) === String(roundPlayer.id));
+                  return {
+                    ...roundPlayer,
+                    name: fullPlayer?.name || `Player ${roundPlayer.id}`
+                  };
+                }
+                return roundPlayer;
+              })
+            });
+          } else {
+            // Create empty round for future rounds
+            roundData.push({
+              round: i,
+              cards: i <= 10 ? i : 20 - i,
+              players: (savedGame.players || []).map(player => ({
+                id: player.id,
+                name: player.name,
+                call: null,
+                made: null,
+                score: null,
+                totalScore: 0
+              }))
+            });
+          }
+        }
+        
+        return {
+          gameId: savedGame.id,
+          players: savedGame.players || [],
+          currentRound: internalState.currentRound || 1,
+          maxRounds: internalState.maxRounds || savedGame.total_rounds || 0,
+          roundData: roundData,
+          gameStarted: internalState.gameStarted !== undefined ? internalState.gameStarted : true,
+          gameFinished: savedGame.gameFinished || false,
+          mode: internalState.mode || "Local",
+          isLocal: internalState.isLocal !== undefined ? internalState.isLocal : true,
+          isPaused: internalState.isPaused !== undefined ? internalState.isPaused : !savedGame.gameFinished,
+          referenceDate: internalState.referenceDate || savedGame.created_at,
+          created_at: savedGame.created_at,
+          duration_seconds: savedGame.duration_seconds,
+          winner_id: savedGame.winner_id,
+          final_scores: savedGame.final_scores,
+          total_rounds: savedGame.total_rounds
+        };
+      }
+      
+      // Legacy format with gameState wrapper
       return savedGame.gameState;
     }
     
@@ -316,18 +442,37 @@ export class LocalGameStorage {
         gamesList = Object.values(parsedData)
           .filter(game => game && game.id)
           .map(game => {
+            // Check if it's v3.0 format or legacy format
+            const isV3Format = game.version === '3.0' && !game.gameState;
+            
             const gameData = {
               id: game.id,
               name: game.name || `Game from ${new Date(game.savedAt || game.lastPlayed).toLocaleDateString()}`,
               savedAt: game.savedAt || new Date().toISOString(),
               lastPlayed: game.lastPlayed || new Date().toISOString(),
-              playerCount: game.playerCount || (game.gameState && game.gameState.players && game.gameState.players.length) || 0,
-              roundsCompleted: game.roundsCompleted || (game.gameState && game.gameState.currentRound - 1) || 0,
-              totalRounds: game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0,
-              mode: game.mode || (game.gameState && game.gameState.mode) || "Local",
+              playerCount: isV3Format 
+                ? (game.players ? game.players.length : 0)
+                : (game.playerCount || (game.gameState && game.gameState.players && game.gameState.players.length) || 0),
+              roundsCompleted: isV3Format
+                ? (game.gameFinished 
+                    ? game.total_rounds 
+                    : (game._internalState?.currentRound ? game._internalState.currentRound - 1 : 0))
+                : (game.gameFinished 
+                    ? (game.totalRounds || (game.gameState?.maxRounds)) 
+                    : (game.roundsCompleted || (game.gameState && game.gameState.currentRound - 1) || 0)),
+              totalRounds: isV3Format
+                ? game.total_rounds
+                : (game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0),
+              mode: isV3Format
+                ? (game._internalState ? game._internalState.mode : "Local")
+                : (game.mode || (game.gameState && game.gameState.mode) || "Local"),
               players: (() => {
-                // Try multiple sources for player names
+                if (isV3Format) {
+                  // v3.0 format - players are at root level
+                  return game.players ? game.players.map(p => p.name) : [];
+                }
                 
+                // Legacy format - try multiple sources for player names
                 // Check root level players first (for imported games)
                 if (game.players && Array.isArray(game.players)) {
                   if (game.players.length > 0 && typeof game.players[0] === 'object' && game.players[0].name) {
@@ -349,23 +494,38 @@ export class LocalGameStorage {
                 console.debug('getSavedGamesList: No players found for game:', game.id || game.name);
                 return [];
               })(),
-              isPaused: game.isPaused || (game.gameState && game.gameState.isPaused) || false,
-              gameFinished: game.gameFinished || (game.gameState && game.gameState.gameFinished) || false
+              isPaused: isV3Format
+                ? (game._internalState ? game._internalState.isPaused : !game.gameFinished)
+                : (game.isPaused || (game.gameState && game.gameState.isPaused) || false),
+              gameFinished: game.gameFinished || (game.gameState && game.gameState.gameFinished) || false,
+              totalRounds: isV3Format
+                ? game.total_rounds
+                : (game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0)
             };
             
             // For finished games, add more data for compatibility
             if (gameData.gameFinished) {
               gameData.created_at = game.created_at || game.savedAt || new Date().toISOString();
               gameData.winner_id = game.winner_id || (game.gameState && game.gameState.winner_id);
-              gameData.player_ids = game.player_ids || (game.gameState && game.gameState.player_ids) || 
-                                   (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || [];
-              gameData.round_data = game.round_data || (game.gameState && game.gameState.roundData);
+              gameData.player_ids = isV3Format
+                ? (game.players ? game.players.map(p => p.id) : [])
+                : (game.player_ids || (game.gameState && game.gameState.player_ids) || 
+                   (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || []);
+              gameData.round_data = isV3Format
+                ? game.round_data
+                : (game.round_data || (game.gameState && game.gameState.roundData));
               gameData.final_scores = game.final_scores || (game.gameState && game.gameState.final_scores);
               gameData.total_rounds = game.total_rounds || game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0;
               gameData.duration_seconds = game.duration_seconds || (game.gameState && game.gameState.duration_seconds);
               gameData.is_local = true;
               gameData.game_mode = game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local";
-              gameData.gameState = game.gameState;
+              // For v3.0 format, include all the game data, not gameState wrapper
+              if (isV3Format) {
+                gameData.version = '3.0';
+                gameData.players = game.players;
+              } else {
+                gameData.gameState = game.gameState;
+              }
             }
             
             return gameData;
@@ -489,42 +649,95 @@ export class LocalGameStorage {
   }
 
   /**
-   * Auto-save a game with a specific ID (for continuous saving)
+   * Auto-save a game with a specific ID (for continuous saving) in v3.0 format
    * @param {Object} gameState - The current game state
    * @param {string} gameId - Existing game ID for auto-save
    */
   static autoSaveGame(gameState, gameId) {
     const games = this.getAllSavedGames();
     if (games[gameId]) {
-      // Update the game state
-      games[gameId].gameState = { ...gameState };
-      games[gameId].lastPlayed = new Date().toISOString();
-      games[gameId].roundsCompleted = gameState.currentRound - 1;
+      const timestamp = new Date().toISOString();
       
-      // Always update totalRounds to reflect current maxRounds
-      games[gameId].totalRounds = gameState.maxRounds || gameState.totalRounds || 0;
-      
-      // If the game has transitioned from paused to finished, update metadata
-      if (gameState.gameFinished && games[gameId].isPaused) {
-        games[gameId].isPaused = false;
-        games[gameId].gameFinished = true;
-        games[gameId].name = `Finished Game - ${new Date().toLocaleDateString()}`;
+      // Check if it's v3.0 format
+      if (games[gameId].version === '3.0') {
+        // Update v3.0 format fields
         
-        // Add finished game metadata - support both old and new schema formats
-        const winnerIds = gameState.winner_id || gameState.totals?.winner_id || [];
-        const finalScores = gameState.final_scores || gameState.totals?.final_scores || {};
-        const totalRounds = gameState.total_rounds || gameState.totals?.total_rounds || gameState.maxRounds || gameState.totalRounds;
+        // Convert round data to v3.0 format
+        const roundData = (gameState.roundData || gameState.round_data || gameState.rounds || []).map(round => ({
+          players: (round.players || []).map(player => {
+            const formatted = {
+              id: player.id,
+              made: player.made !== undefined ? player.made : null,
+              score: player.score !== undefined ? player.score : null
+            };
+            
+            if (player.call !== undefined) {
+              formatted.call = player.call;
+            }
+            
+            return formatted;
+          })
+        }));
         
-        games[gameId].winner_id = winnerIds;
-        games[gameId].final_scores = finalScores;
-        if (gameState.player_ids) games[gameId].player_ids = gameState.player_ids;
-        if (gameState.roundData || gameState.rounds) {
-          games[gameId].round_data = gameState.roundData || gameState.rounds;
+        // Update v3.0 fields
+        games[gameId].round_data = roundData;
+        games[gameId].lastPlayed = timestamp;
+        games[gameId].total_rounds = gameState.total_rounds || gameState.maxRounds || 0;
+        games[gameId].duration_seconds = gameState.duration_seconds || 0;
+        
+        // Update internal state
+        if (!games[gameId]._internalState) {
+          games[gameId]._internalState = {};
         }
-        games[gameId].total_rounds = totalRounds;
-        games[gameId].duration_seconds = gameState.duration_seconds;
-        games[gameId].is_local = true;
-        games[gameId].created_at = gameState.created_at || new Date().toISOString();
+        games[gameId]._internalState.currentRound = gameState.currentRound;
+        games[gameId]._internalState.maxRounds = gameState.maxRounds;
+        games[gameId]._internalState.gameStarted = gameState.gameStarted;
+        
+        // If the game has transitioned from paused to finished, update metadata
+        if (gameState.gameFinished && !games[gameId].gameFinished) {
+          games[gameId].gameFinished = true;
+          games[gameId]._internalState.isPaused = false;
+          games[gameId].name = `Finished Game - ${new Date().toLocaleDateString()}`;
+          
+          // Add finished game metadata
+          if (gameState.winner_id || gameState.totals?.winner_id) {
+            games[gameId].winner_id = gameState.winner_id || gameState.totals?.winner_id || [];
+          }
+          if (gameState.final_scores || gameState.totals?.final_scores) {
+            games[gameId].final_scores = gameState.final_scores || gameState.totals?.final_scores || {};
+          }
+          if (!games[gameId].created_at) {
+            games[gameId].created_at = gameState.created_at || timestamp;
+          }
+        }
+      } else {
+        // Legacy format with gameState wrapper - update as before
+        games[gameId].gameState = { ...gameState };
+        games[gameId].lastPlayed = timestamp;
+        games[gameId].roundsCompleted = gameState.currentRound - 1;
+        games[gameId].totalRounds = gameState.maxRounds || gameState.totalRounds || 0;
+        
+        // If the game has transitioned from paused to finished, update metadata
+        if (gameState.gameFinished && games[gameId].isPaused) {
+          games[gameId].isPaused = false;
+          games[gameId].gameFinished = true;
+          games[gameId].name = `Finished Game - ${new Date().toLocaleDateString()}`;
+          
+          const winnerIds = gameState.winner_id || gameState.totals?.winner_id || [];
+          const finalScores = gameState.final_scores || gameState.totals?.final_scores || {};
+          const totalRounds = gameState.total_rounds || gameState.totals?.total_rounds || gameState.maxRounds || gameState.totalRounds;
+          
+          games[gameId].winner_id = winnerIds;
+          games[gameId].final_scores = finalScores;
+          if (gameState.player_ids) games[gameId].player_ids = gameState.player_ids;
+          if (gameState.roundData || gameState.rounds) {
+            games[gameId].round_data = gameState.roundData || gameState.rounds;
+          }
+          games[gameId].total_rounds = totalRounds;
+          games[gameId].duration_seconds = gameState.duration_seconds;
+          games[gameId].is_local = true;
+          games[gameId].created_at = gameState.created_at || timestamp;
+        }
       }
       
       localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
