@@ -78,35 +78,36 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
             playerScore = player.points.reduce((sum, point) => sum + (point || 0), 0);
           }
         }
-      } else if (game.gameState?.players) {
-        // Wizard game structure
-        const player = game.gameState.players.find(p => 
-          p.name === currentPlayer.name || 
-          p.id === currentPlayer.id ||
-          p.username === currentPlayer.username
-        );
-        if (player) {
-          playerId = player.id;
-          if (player.totalScore !== undefined) {
-            playerScore = player.totalScore;
+      } else {
+        // Wizard game structure - check v3.0 format (players at root) or legacy (gameState.players)
+        const players = game.players || game.gameState?.players;
+        if (players) {
+          const player = players.find(p => 
+            p.name === currentPlayer.name || 
+            p.id === currentPlayer.id ||
+            p.username === currentPlayer.username
+          );
+          if (player) {
+            playerId = player.id;
+            if (player.totalScore !== undefined) {
+              playerScore = player.totalScore;
+            }
           }
         }
       }
       
-      // Fallback score lookups for wizard games
+      // Fallback score lookups for wizard games - check v3.0 format (final_scores at root) first
       if (!isTableGame && playerId && playerScore === 0) {
-        if (game.final_scores?.[playerId] !== undefined) {
-          playerScore = game.final_scores[playerId];
-        } else if (game.gameState?.final_scores?.[playerId] !== undefined) {
-          playerScore = game.gameState.final_scores[playerId];
+        const finalScores = game.final_scores || game.gameState?.final_scores;
+        if (finalScores?.[playerId] !== undefined) {
+          playerScore = finalScores[playerId];
         }
       }
       
       if (!isTableGame && playerScore === 0) {
-        if (game.final_scores?.[currentPlayer.name] !== undefined) {
-          playerScore = game.final_scores[currentPlayer.name];
-        } else if (game.gameState?.final_scores?.[currentPlayer.name] !== undefined) {
-          playerScore = game.gameState.final_scores[currentPlayer.name];
+        const finalScores = game.final_scores || game.gameState?.final_scores;
+        if (finalScores?.[currentPlayer.name] !== undefined) {
+          playerScore = finalScores[currentPlayer.name];
         }
       }
       
@@ -149,7 +150,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
                     winnerIds.includes(playerId) ||
                     winnerIds.some(wId => {
                       const winnerName = game.winner_name || game.gameData?.winner_name || 
-                                        game.gameState?.players?.find(p => p.id === wId)?.name;
+                                        (game.players || game.gameState?.players)?.find(p => p.id === wId)?.name;
                       return winnerName === currentPlayer.name;
                     });
       
@@ -171,8 +172,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         currentStreakCount = Math.max(tempWinStreak, tempLossStreak);
       }
       
-      // Performance by player count
-      const playerCount = game.gameData?.players?.length || game.gameState?.players?.length || 0;
+      // Performance by player count - check v3.0 (game.players), table games (gameData.players), legacy wizard (gameState.players)
+      const playerCount = game.players?.length || game.gameData?.players?.length || game.gameState?.players?.length || 0;
       if (playerCount > 0) {
         if (!performanceByPlayerCount[playerCount]) {
           performanceByPlayerCount[playerCount] = { games: 0, wins: 0, totalScore: 0 };
@@ -182,8 +183,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         performanceByPlayerCount[playerCount].totalScore += playerScore;
       }
       
-      // Head-to-head tracking
-      const players = game.gameData?.players || game.gameState?.players || [];
+      // Head-to-head tracking - check v3.0 (game.players), table games (gameData.players), legacy wizard (gameState.players)
+      const players = game.players || game.gameData?.players || game.gameState?.players || [];
       if (players.length > 0) {
         players.forEach(opponent => {
           if (opponent.name !== currentPlayer.name && opponent.id !== currentPlayer.id) {
@@ -199,11 +200,13 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       }
       
       // Bid accuracy tracking (if available)
-      if (game.gameState?.roundData && Array.isArray(game.gameState.roundData)) {
+      // Check v3.0 format (round_data at root) or legacy format (gameState.roundData)
+      const roundData = game.round_data || game.gameState?.roundData;
+      if (roundData && Array.isArray(roundData)) {
         let perfectGameRounds = 0;
         let completedGameRounds = 0;
         
-        game.gameState.roundData.forEach(round => {
+        roundData.forEach(round => {
           if (round.players && Array.isArray(round.players)) {
             const roundPlayer = round.players.find(p => 
               p.name === currentPlayer.name || 
@@ -243,7 +246,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       
       // Comeback/dominant win detection
       if (isWin) {
-        const allPlayers = game.gameData?.players || game.gameState?.players || [];
+        const allPlayers = game.players || game.gameData?.players || game.gameState?.players || [];
         if (allPlayers.length >= 2) {
           const sortedPlayers = [...allPlayers].sort((a, b) => {
             let scoreA, scoreB;
@@ -257,9 +260,10 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
                 return scoreA - scoreB;
               }
             } else {
-              // Handle wizard game scores
-              scoreA = a.totalScore || game.final_scores?.[a.id] || 0;
-              scoreB = b.totalScore || game.final_scores?.[b.id] || 0;
+              // Handle wizard game scores - check v3.0 (final_scores at root) or legacy (gameState.final_scores)
+              const finalScores = game.final_scores || game.gameState?.final_scores || {};
+              scoreA = a.totalScore || finalScores[a.id] || 0;
+              scoreB = b.totalScore || finalScores[b.id] || 0;
             }
             
             return scoreB - scoreA;
@@ -274,8 +278,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
               secondScore = sortedPlayers[1].points ? 
                 sortedPlayers[1].points.reduce((sum, p) => sum + (p || 0), 0) : 0;
             } else {
-              winnerScore = sortedPlayers[0].totalScore || game.final_scores?.[sortedPlayers[0].id] || 0;
-              secondScore = sortedPlayers[1].totalScore || game.final_scores?.[sortedPlayers[1].id] || 0;
+              const finalScores = game.final_scores || game.gameState?.final_scores || {};
+              winnerScore = sortedPlayers[0].totalScore || finalScores[sortedPlayers[0].id] || 0;
+              secondScore = sortedPlayers[1].totalScore || finalScores[sortedPlayers[1].id] || 0;
             }
             
             const margin = Math.abs(winnerScore - secondScore);
