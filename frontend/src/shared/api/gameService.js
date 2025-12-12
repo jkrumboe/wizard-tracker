@@ -256,11 +256,11 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
           is_local: true,
           downloadedFromCloud: true,
           cloudGameId: cloudId,
-          created_at: cloudGame.createdAt || cloudGameData.created_at
+          created_at: cloudGameData.created_at || cloudGame.createdAt // Use actual game date, not upload date
         };
 
         // Save using LocalGameStorage.saveGame like importSharedGame does
-        const gameDate = cloudGame.createdAt || cloudGameData.created_at || cloudGameData.savedAt;
+        const gameDate = cloudGameData.created_at || cloudGame.createdAt || cloudGameData.savedAt;
         const gameName = cloudGameData.name || `Game ${new Date(gameDate).toLocaleDateString()}`;
         const savedGameId = LocalGameStorage.saveGame(
           localGameData,
