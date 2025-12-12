@@ -80,8 +80,8 @@ export function formatWizardGameForBackend(gameData) {
     durationSeconds = Math.floor((end - start) / 1000);
   }
   
-  // Normalize winner_id to array format
-  let winnerId = data.winner_id || data.winnerId;
+  // Normalize winner_ids/winner_id to array format
+  let winnerId = data.winner_ids || data.winner_id || data.winnerId;
   if (winnerId && !Array.isArray(winnerId)) {
     winnerId = [winnerId];
   }
@@ -267,8 +267,8 @@ export function validateGameForUpload(gameData) {
     errors.push('total_rounds must be between 1 and 60');
   }
 
-  // Validate optional winner_id
-  const winnerId = data.winner_id || data.winnerId;
+  // Validate optional winner_ids/winner_id
+  const winnerId = data.winner_ids || data.winner_id || data.winnerId;
   if (winnerId) {
     const winnerIds = Array.isArray(winnerId) ? winnerId : [winnerId];
     winnerIds.forEach(id => {

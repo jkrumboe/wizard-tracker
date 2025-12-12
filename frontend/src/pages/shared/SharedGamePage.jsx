@@ -42,8 +42,9 @@ const SharedGamePage = () => {
         // Extract players from the correct location
         const players = gameData.players || gameData.gameState?.players || [];
         
-        // Handle winner_id as both single value and array
-        const winnerIds = Array.isArray(gameData.winner_id) ? gameData.winner_id : (gameData.winner_id ? [gameData.winner_id] : []);
+        // Handle winner_ids (new) and winner_id (legacy) as both single value and array
+        const winnerIdRaw = gameData.winner_ids || gameData.winner_id;
+        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
         const winnerNames = winnerIds.map(id => players.find(p => p.id === id)?.name).filter(Boolean);
         const winnerDisplay = winnerNames.length === 0 ? 'Unknown' :
                             winnerNames.length === 1 ? winnerNames[0] :

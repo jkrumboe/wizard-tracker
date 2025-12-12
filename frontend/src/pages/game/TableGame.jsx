@@ -600,14 +600,18 @@ const TableGame = () => {
       return { ...player, total };
     });
     
-    const winner = playersWithScores.reduce((best, current) => {
-      if (!best) return current;
+    // Find all winners (handle ties)
+    const bestScore = playersWithScores.reduce((best, current) => {
       if (lowIsBetter) {
-        return current.total < best.total ? current : best;
+        return best === null || current.total < best ? current.total : best;
       } else {
-        return current.total > best.total ? current : best;
+        return best === null || current.total > best ? current.total : best;
       }
     }, null);
+    
+    const winners = playersWithScores.filter(p => p.total === bestScore);
+    const winner = winners[0]; // Keep single winner for backward compatibility
+    const winnerIds = winners.map(w => w.id);
     
     // Update state with trimmed data
     setPlayers(trimmedPlayers);
@@ -623,7 +627,8 @@ const TableGame = () => {
         lowIsBetter: lowIsBetter,
         gameFinished: true, // Explicitly set to true
         gameName: currentGameName,
-        winner_id: winner?.id || null,
+        winner_ids: winnerIds || [], // Array to handle ties
+        winner_id: winner?.id || null, // Keep for backward compatibility
         winner_name: winner?.name || null
       };
 
@@ -640,7 +645,8 @@ const TableGame = () => {
           gameFinished: true,
           totalRounds: actualUsedRows,
           playerCount: trimmedPlayers.length,
-          winner_id: winner?.id || null,
+          winner_ids: winnerIds || [], // Array to handle ties
+          winner_id: winner?.id || null, // Keep for backward compatibility
           winner_name: winner?.name || null
         });
         console.debug(`Game finished and saved: "${name}" (ID: ${currentGameId}, actual rounds: ${actualUsedRows})`);

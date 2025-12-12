@@ -110,8 +110,8 @@ function migrateFromV1(gameData) {
     durationSeconds = Math.floor((new Date(state.finished_at) - new Date(state.created_at)) / 1000);
   }
 
-  // Normalize winner_id
-  let winnerId = state.winner_id || state.winnerId || gameData.winner_id;
+  // Normalize winner_id/winner_ids
+  let winnerId = state.winner_ids || state.winner_id || state.winnerId || gameData.winner_ids || gameData.winner_id;
   if (winnerId && !Array.isArray(winnerId)) {
     winnerId = [winnerId];
   }
@@ -201,8 +201,8 @@ function migrateFromV2(gameData) {
     })
   }));
 
-  // Normalize winner_id - check multiple locations
-  let winnerId = gameData.winner_id || gameData.gameState?.winner_id;
+  // Normalize winner_id/winner_ids - check multiple locations
+  let winnerId = gameData.winner_ids || gameData.winner_id || gameData.gameState?.winner_ids || gameData.gameState?.winner_id;
   if (winnerId && !Array.isArray(winnerId)) {
     winnerId = [winnerId];
   }

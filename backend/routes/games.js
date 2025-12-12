@@ -66,7 +66,7 @@ router.post('/', auth, async (req, res, next) => {
       playerCount: gameData.players?.length || 0,
       totalRounds: gameData.total_rounds || gameData.totals?.total_rounds || 0,
       finalScoresJson: JSON.stringify(gameData.final_scores || gameData.totals?.final_scores || {}),
-      winnerIdJson: JSON.stringify(normalizeWinnerId(gameData.winner_id || gameData.totals?.winner_id))
+      winnerIdJson: JSON.stringify(normalizeWinnerId({ winner_ids: gameData.winner_ids, winner_id: gameData.winner_id || gameData.totals?.winner_id }))
     };
 
     // Find games with similar content - limit to recent games for performance
@@ -92,8 +92,7 @@ router.post('/', auth, async (req, res, next) => {
       if (similarTotalRounds !== contentSignature.totalRounds) continue;
       
       // Check winner (support both formats and arrays)
-      const similarWinnerId = similarData.winner_id || similarData.totals?.winner_id;
-      const similarWinnerIdJson = JSON.stringify(normalizeWinnerId(similarWinnerId));
+      const similarWinnerIdJson = JSON.stringify(normalizeWinnerId({ winner_ids: similarData.winner_ids, winner_id: similarData.winner_id || similarData.totals?.winner_id }));
       if (similarWinnerIdJson !== contentSignature.winnerIdJson) continue;
       
       // Check final scores (support both formats)
@@ -215,7 +214,7 @@ router.get('/leaderboard', async (req, res, next) => {
       }
 
       const gameMode = 'Wizard'; // All games from Game collection are Wizard
-      const winnerIdRaw = gameData.winner_id || gameData.totals?.winner_id;
+      const winnerIdRaw = gameData.winner_ids || gameData.winner_id || gameData.totals?.winner_ids || gameData.totals?.winner_id;
       const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
       const finalScores = gameData.final_scores || gameData.totals?.final_scores || {};
 

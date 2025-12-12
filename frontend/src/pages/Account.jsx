@@ -1152,26 +1152,31 @@ const Account = () => {
             return playerNameLower === usernameLower;
           });
           
-          // For table games, use winner_id if available, otherwise calculate
+          // For table games, use winner_ids if available, otherwise calculate
           if (userPlayer && game.gameFinished) {
-            const winnerId = game.gameData?.winner_id || game.winner_id;
+            // Check winner_ids first (new format), then fallback to winner_id (legacy)
+            const winnerIds = game.gameData?.winner_ids || game.winner_ids || 
+                             (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
+                             (game.winner_id ? [game.winner_id] : null);
             
             console.log('🎯 Table Game Win Check:', {
               gameName: game.name || game.gameTypeName,
-              winnerId,
+              winnerIds,
               userPlayerId: userPlayer.id,
               userId: user.id,
               userDollarId: user.$id,
               matches: {
-                playerIdMatch: winnerId === userPlayer.id,
-                userIdMatch: winnerId === user.id,
-                dollarIdMatch: winnerId === user.$id
+                playerIdMatch: winnerIds?.includes(userPlayer.id),
+                userIdMatch: winnerIds?.includes(user.id),
+                dollarIdMatch: winnerIds?.includes(user.$id)
               }
             });
             
-            if (winnerId) {
-              // Use the stored winner_id (faster and more reliable)
-              userWon = winnerId === userPlayer.id || winnerId === user.id || winnerId === user.$id;
+            if (winnerIds && winnerIds.length > 0) {
+              // Use the stored winner_ids (faster and more reliable)
+              userWon = winnerIds.includes(userPlayer.id) || 
+                       winnerIds.includes(user.id) || 
+                       winnerIds.includes(user.$id);
             } else {
               // Fallback: calculate winner by score (for old games without winner_id)
               const players = game.gameData.players;
@@ -1207,17 +1212,28 @@ const Account = () => {
           });
           
           if (userPlayer) {
-            const winnerId = game.winner_id || game.gameState?.winner_id;
-            // Check if user won by comparing IDs or if user is the winner
-            userWon = winnerId === userPlayer.id || 
-                      winnerId === userPlayer.userId ||
-                      winnerId === user.id ||
-                      winnerId === user.$id;
+            // Check winner_ids first (new format), then fallback to winner_id (legacy)
+            const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
+                             (game.winner_id ? [game.winner_id] : null) ||
+                             (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
+            
+            // Check if user won by comparing IDs or if user is in the winners array
+            if (winnerIds && winnerIds.length > 0) {
+              userWon = winnerIds.includes(userPlayer.id) || 
+                       winnerIds.includes(userPlayer.userId) ||
+                       winnerIds.includes(user.id) ||
+                       winnerIds.includes(user.$id);
+            }
           } else {
             // If we can't find the user in players but the game is saved locally,
             // check if user might be winner by ID match
-            const winnerId = game.winner_id || game.gameState?.winner_id;
-            userWon = userIdentifiers.includes(winnerId);
+            const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
+                             (game.winner_id ? [game.winner_id] : null) ||
+                             (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
+            
+            if (winnerIds && winnerIds.length > 0) {
+              userWon = winnerIds.some(winnerId => userIdentifiers.includes(winnerId));
+            }
           }
         }
       }
@@ -1256,11 +1272,16 @@ const Account = () => {
           );
           
           if (userPlayer) {
-            const winnerId = game.gameData?.winner_id || game.winner_id;
+            // Check winner_ids first (new format), then fallback to winner_id (legacy)
+            const winnerIds = game.gameData?.winner_ids || game.winner_ids ||
+                             (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
+                             (game.winner_id ? [game.winner_id] : null);
             
-            if (winnerId) {
-              // Use the stored winner_id (faster and more reliable)
-              userWon = winnerId === userPlayer.id || winnerId === user.id || winnerId === user.$id;
+            if (winnerIds && winnerIds.length > 0) {
+              // Use the stored winner_ids (faster and more reliable)
+              userWon = winnerIds.includes(userPlayer.id) || 
+                       winnerIds.includes(user.id) || 
+                       winnerIds.includes(user.$id);
             } else {
               // Fallback: calculate winner by score (for old games without winner_id)
               const players = game.gameData.players;
@@ -1295,10 +1316,15 @@ const Account = () => {
                    userIdentifiers.includes(p.userId);
           });
           
-          const winnerId = game.winner_id || game.gameState?.winner_id;
-          userWon = userPlayer ? 
-            (winnerId === userPlayer.id || winnerId === userPlayer.userId || winnerId === user.id) :
-            userIdentifiers.includes(winnerId);
+          const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
+                           (game.winner_id ? [game.winner_id] : null) ||
+                           (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
+          
+          userWon = userPlayer && winnerIds && winnerIds.length > 0 ? 
+            (winnerIds.includes(userPlayer.id) || 
+             winnerIds.includes(userPlayer.userId) || 
+             winnerIds.includes(user.id)) :
+            (winnerIds && winnerIds.some(winnerId => userIdentifiers.includes(winnerId)));
         }
       }
       

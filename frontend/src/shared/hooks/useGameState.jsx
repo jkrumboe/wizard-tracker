@@ -640,7 +640,8 @@ export function GameStateProvider({ children }) {
         created_at: new Date().toISOString(),
         player_ids: gameState.players.map((p) => p.id),
         players: gameState.players, // Store the full player data for local games
-        winner_id: winnerIds,
+        winner_ids: winnerIds, // Support multiple winners for ties
+        winner_id: winnerIds, // Keep for backward compatibility
         final_scores: finalScores,
         round_data: gameState.roundData,
         duration_seconds: duration,
@@ -656,7 +657,8 @@ export function GameStateProvider({ children }) {
         ...gameState,
         gameFinished: true, // Mark the game as finished
         isPaused: false,    // Make sure it's not marked as paused
-        winner_id: winnerIds,
+        winner_ids: winnerIds, // Support multiple winners for ties
+        winner_id: winnerIds, // Keep for backward compatibility
         final_scores: finalScores,
         player_ids: gameState.players.map((p) => p.id),
         created_at: new Date().toISOString(),

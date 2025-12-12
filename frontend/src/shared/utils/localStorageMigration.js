@@ -110,8 +110,11 @@ function migrateGameToV3(game) {
   
   // Add optional finished game fields
   if (migratedGame.gameFinished) {
-    if (gameData.winner_id || game.winner_id) {
-      migratedGame.winner_id = gameData.winner_id || game.winner_id || [];
+    // Check winner_ids first (new format), then winner_id (legacy)
+    const winnerIds = gameData.winner_ids || game.winner_ids || gameData.winner_id || game.winner_id;
+    if (winnerIds) {
+      migratedGame.winner_ids = Array.isArray(winnerIds) ? winnerIds : [winnerIds];
+      migratedGame.winner_id = migratedGame.winner_ids; // Keep for backward compatibility
     }
     if (gameData.final_scores || game.final_scores) {
       migratedGame.final_scores = gameData.final_scores || game.final_scores || {};

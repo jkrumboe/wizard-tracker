@@ -191,8 +191,16 @@ function validateWizardGameData(gameData) {
     errors.push('final_scores must be an object');
   }
   
-  // Validate winner_id if present
-  if (gameData.winner_id) {
+  // Validate winner_ids if present (array for handling ties)
+  if (gameData.winner_ids) {
+    if (!Array.isArray(gameData.winner_ids)) {
+      errors.push('winner_ids must be an array of strings');
+    } else if (!gameData.winner_ids.every(id => typeof id === 'string')) {
+      errors.push('winner_ids must contain only strings');
+    }
+  }
+  // Legacy support: also validate winner_id (singular) and convert to array
+  if (gameData.winner_id && !gameData.winner_ids) {
     const isValidString = typeof gameData.winner_id === 'string';
     const isValidArray = Array.isArray(gameData.winner_id) && 
                         gameData.winner_id.every(id => typeof id === 'string');
@@ -208,14 +216,20 @@ function validateWizardGameData(gameData) {
 }
 
 /**
- * Normalizes winner_id to always be an array
- * @param {string|Array} winnerId - Winner ID(s)
+ * Normalizes winner_id/winner_ids to always be an array
+ * @param {Object} gameData - Game data with winner_id or winner_ids
  * @returns {Array} Array of winner IDs
  */
-function normalizeWinnerId(winnerId) {
-  if (!winnerId) return [];
-  if (Array.isArray(winnerId)) return winnerId;
-  return [winnerId];
+function normalizeWinnerId(gameData) {
+  // Prefer winner_ids (new format)
+  if (gameData.winner_ids) {
+    return Array.isArray(gameData.winner_ids) ? gameData.winner_ids : [gameData.winner_ids];
+  }
+  // Fallback to winner_id (legacy format)
+  if (gameData.winner_id) {
+    return Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id];
+  }
+  return [];
 }
 
 module.exports = {

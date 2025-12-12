@@ -24,7 +24,7 @@ export function generateGameContentHash(gameData) {
     totalRounds: gameData.total_rounds || gameData.totals?.total_rounds || gameData.maxRounds || gameData.gameState?.maxRounds,
     gameMode: gameData.game_mode || gameData.mode || gameData.gameState?.mode,
     finalScores: gameData.final_scores || gameData.totals?.final_scores || gameData.gameState?.final_scores,
-    winnerId: gameData.winner_id || gameData.totals?.winner_id || gameData.gameState?.winner_id,
+    winnerId: gameData.winner_ids || gameData.winner_id || gameData.totals?.winner_ids || gameData.totals?.winner_id || gameData.gameState?.winner_ids || gameData.gameState?.winner_id,
     createdAt: gameData.created_at || gameData.gameState?.created_at,
     durationSeconds: gameData.duration_seconds || gameData.gameState?.duration_seconds,
     roundData: (gameData.round_data || gameData.rounds || gameData.gameState?.roundData)?.map(round => ({

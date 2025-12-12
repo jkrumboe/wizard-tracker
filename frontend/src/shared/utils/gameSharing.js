@@ -70,7 +70,8 @@ export async function shareNatively(url, game) {
   try {
     // Handle both direct and nested game structures
     const players = game.players || game.gameState?.players || [];
-    const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+    const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
+                       game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
     const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
     const finalScores = game.final_scores || game.gameData?.totals?.final_scores || game.gameState?.final_scores || {};
     

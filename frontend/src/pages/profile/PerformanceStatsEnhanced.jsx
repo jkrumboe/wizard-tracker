@@ -142,8 +142,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       const rounds = game.totalRounds || game.total_rounds || game.gameState?.maxRounds || 0;
       totalRounds += rounds;
       
-      // Determine if player won - handle winner_id as both single value and array
-      const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameData?.winner_id || game.gameState?.winner_id;
+      // Determine if player won - handle winner_ids (new) and winner_id (legacy) as both single value and array
+      const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
+                         game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
       const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
       
       const isWin = winnerIds.includes(currentPlayer.id) || 
@@ -319,14 +320,16 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       const previous5 = sortedGames.slice(-10, -5);
       
       const recentWins = recent5.filter(game => {
-        const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+        const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
+                           game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
         const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
         return winnerIds.includes(currentPlayer.id) || 
                winnerIds.some(wId => game.gameState?.players?.find(p => p.id === wId)?.name === currentPlayer.name);
       }).length;
       
       const previousWins = previous5.filter(game => {
-        const winnerIdRaw = game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+        const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
+                           game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
         const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
         return winnerIds.includes(currentPlayer.id) || 
                winnerIds.some(wId => game.gameState?.players?.find(p => p.id === wId)?.name === currentPlayer.name);
