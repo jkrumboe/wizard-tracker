@@ -165,19 +165,11 @@ const TableGame = () => {
           setCurrentGameName(savedGame.name);
           setCurrentGameId(savedGame.id);
           
-          // Try to sync with template settings first
-          const templates = LocalTableGameTemplate.getAllTemplates();
-          const matchingTemplate = Object.values(templates).find(t => t.name === savedGame.name);
-          
-          if (matchingTemplate) {
-            setTargetNumber(matchingTemplate.targetNumber || null);
-            setLowIsBetter(matchingTemplate.lowIsBetter || false);
-            console.debug(`📋 Synced game settings from template: target=${matchingTemplate.targetNumber}, lowIsBetter=${matchingTemplate.lowIsBetter}`);
-          } else {
-            setTargetNumber(gameData.targetNumber || null);
-            setLowIsBetter(gameData.lowIsBetter || false);
-            console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
-          }
+          // Use saved game settings directly - don't sync with templates
+          // This prevents altered local variants from overriding games created with system templates
+          setTargetNumber(gameData.targetNumber || null);
+          setLowIsBetter(gameData.lowIsBetter || false);
+          console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
           
           setGameFinished(savedGame.gameFinished || false);
           console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, finished: ${savedGame.gameFinished}`);
@@ -241,39 +233,10 @@ const TableGame = () => {
     gameFinishedRef.current = gameFinished;
   }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
 
-  // Sync game settings with template when game is active or template changes
-  useEffect(() => {
-    const syncSettingsFromTemplate = () => {
-      if (!showTemplateSelector && currentGameName) {
-        // Find the template for the current game
-        const templates = LocalTableGameTemplate.getAllTemplates();
-        const matchingTemplate = Object.values(templates).find(t => t.name === currentGameName);
-        
-        if (matchingTemplate) {
-          // Update game settings if template settings have changed
-          const templateTarget = matchingTemplate.targetNumber || null;
-          const templateLowIsBetter = matchingTemplate.lowIsBetter || false;
-          
-          if (templateTarget !== targetNumber || templateLowIsBetter !== lowIsBetter) {
-            setTargetNumber(templateTarget);
-            setLowIsBetter(templateLowIsBetter);
-            console.debug(`🔄 Updated game settings from template: target=${templateTarget}, lowIsBetter=${templateLowIsBetter}`);
-          }
-        }
-      }
-    };
-
-    // Listen for template update events
-    globalThis.addEventListener('templateUpdated', syncSettingsFromTemplate);
-    
-    // Also check on window focus (in case template was edited in another tab)
-    globalThis.addEventListener('focus', syncSettingsFromTemplate);
-    
-    return () => {
-      globalThis.removeEventListener('templateUpdated', syncSettingsFromTemplate);
-      globalThis.removeEventListener('focus', syncSettingsFromTemplate);
-    };
-  }, [currentGameName, showTemplateSelector, targetNumber, lowIsBetter]);
+  // Note: We intentionally removed the template sync useEffect that was here.
+  // It was causing issues where altered local variants would override settings
+  // of games created with system templates. Game settings are now locked to
+  // whatever was saved when the game was created.
 
   // Debug: Log when players data changes
   useEffect(() => {
