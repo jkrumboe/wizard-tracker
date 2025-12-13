@@ -454,7 +454,13 @@ const GameDetails = () => {
                         </div>
                         <div className="player-col">
                           <div className="player-info">
-                            <span>{player.name}</span>
+                            {playerDetails[String(player.id)]?.userId ? (
+                              <Link to={`/user/${playerDetails[String(player.id)].userId}`} className="player-link">
+                                {player.name}
+                              </Link>
+                            ) : (
+                              <span>{player.name}</span>
+                            )}
                           </div>
                         </div>
                         <div className="score-col">{player.score}</div>
@@ -501,11 +507,22 @@ const GameDetails = () => {
                   <thead>
                     <tr>
                       <th className="round-header sticky-cell"/>
-                      {sortedPlayers.map(player => (
-                        <th key={player.id} className="player-header">
-                          <div className="player-header-name">{player.name}</div>
-                        </th>
-                      ))}
+                      {sortedPlayers.map(player => {
+                        const playerDetail = playerDetails[String(player.id)];
+                        return (
+                          <th key={player.id} className="player-header">
+                            <div className="player-header-name">
+                              {playerDetail?.userId ? (
+                                <Link to={`/user/${playerDetail.userId}`} className="player-link">
+                                  {player.name}
+                                </Link>
+                              ) : (
+                                player.name
+                              )}
+                            </div>
+                          </th>
+                        );
+                      })}
                     </tr>
                   </thead>
                   <tbody>

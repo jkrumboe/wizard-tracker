@@ -170,6 +170,107 @@ router.get('/lookup/:username', async (req, res, next) => {
   }
 });
 
+// GET /users/:userId/profile - Get public profile for a user
+router.get('/:userId/profile', async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Valid user ID is required' });
+    }
+
+    // Get user basic info
+    const user = await User.findById(userId).select('_id username createdAt profilePicture');
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get user's games from both Game and WizardGame collections
+    const Game = require('../models/Game');
+    const WizardGame = require('../models/WizardGame');
+    
+    // Fetch wizard games
+    const wizardGames = await WizardGame.find({ userId })
+      .select('gameData createdAt localId')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    // Fetch legacy games
+    const legacyGames = await Game.find({ userId })
+      .select('gameData gameState createdAt')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    // Process games to extract relevant stats
+    const allGames = [];
+    let totalWins = 0;
+    
+    // Process wizard games
+    wizardGames.forEach(game => {
+      const gameData = game.gameData;
+      if (!gameData) return;
+      
+      const winnerIds = gameData.winner_ids || 
+                       (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
+      const isWinner = winnerIds.includes(userId) || winnerIds.some(id => String(id) === String(userId));
+      
+      if (isWinner) totalWins++;
+      
+      allGames.push({
+        id: game._id,
+        gameType: 'wizard',
+        created_at: game.createdAt,
+        winner_ids: winnerIds,
+        winner_id: winnerIds[0], // For backward compatibility
+        gameData: {
+          players: gameData.players,
+          total_rounds: gameData.total_rounds,
+          final_scores: gameData.final_scores,
+          winner_ids: winnerIds
+        }
+      });
+    });
+
+    // Process legacy games
+    legacyGames.forEach(game => {
+      const gameData = game.gameData || game.gameState;
+      if (!gameData) return;
+      
+      const winnerIds = gameData.winner_ids || 
+                       (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
+      const isWinner = winnerIds.includes(userId) || winnerIds.some(id => String(id) === String(userId));
+      
+      if (isWinner) totalWins++;
+      
+      allGames.push({
+        id: game._id,
+        gameType: 'wizard',
+        created_at: game.createdAt,
+        winner_ids: winnerIds,
+        winner_id: winnerIds[0],
+        gameState: gameData
+      });
+    });
+
+    res.json({
+      id: user._id,
+      _id: user._id,
+      username: user.username,
+      createdAt: user.createdAt,
+      profilePicture: user.profilePicture || null,
+      totalGames: allGames.length,
+      totalWins: totalWins,
+      games: allGames
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    next(error);
+  }
+});
+
 // PUT /users/me/profile-picture - Update profile picture (protected route)
 router.put('/me/profile-picture', auth, async (req, res, next) => {
   try {

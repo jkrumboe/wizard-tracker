@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
 import "@/styles/pages/leaderboard.css"
 
@@ -25,6 +26,7 @@ const Leaderboard = () => {
     setError(null)
     try {
       const data = await getLeaderboard(selectedGameType)
+      console.log('Leaderboard data received:', data.leaderboard?.slice(0, 3)) // Log first 3 players for debugging
       setPlayers(data.leaderboard || [])
       setGameTypes(data.gameTypes || ['all'])
       setGameTypeSettings(data.gameTypeSettings || {})
@@ -250,7 +252,13 @@ const Leaderboard = () => {
                       {globalRank > 3 && globalRank}
                     </div>
                     <div className="player-col">
-                      <span className="player-name">{player.name}</span>
+                      {player.userId ? (
+                        <Link to={`/user/${player.userId}`} className="player-link">
+                          {player.name}
+                        </Link>
+                      ) : (
+                        player.name
+                      )}
                     </div>
                     <div className="wins-col">{player.wins}</div>
                     <div className="winrate-col">{player.winRate}%</div>

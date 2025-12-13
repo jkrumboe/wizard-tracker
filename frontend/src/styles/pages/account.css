@@ -57,7 +57,7 @@
 }
 
 .game-type-card:hover {
-  border-color: var(--primary);
+  border: 1px solid var(--primary);
 }
 
 .game-type-name {
@@ -119,7 +119,7 @@
 }
 
 .results-string.large {
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .result-letter {

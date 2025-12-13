@@ -172,11 +172,22 @@ router.get('/leaderboard', async (req, res, next) => {
     // Fetch both Wizard games and Table games
     const TableGame = require('../models/TableGame');
     
+    // Fetch all users to create a username -> userId mapping for player linking
+    const User = require('../models/User');
+    const allUsers = await User.find({}).select('_id username').lean();
+    const usernameToUserIdMap = {};
+    allUsers.forEach(user => {
+      usernameToUserIdMap[user.username.toLowerCase()] = user._id.toString();
+    });
+    console.log(`[Leaderboard] Loaded ${allUsers.length} users for username mapping`);
+    
     // Get wizard games (from Game collection) - only fetch needed fields
     const wizardGames = await Game.find({}, {
       'gameData.players': 1,
       'gameData.winner_id': 1,
+      'gameData.winner_ids': 1,
       'gameData.final_scores': 1,
+      'userId': 1,
       'createdAt': 1
     }).lean(); // Use lean() for better performance
     
@@ -221,6 +232,9 @@ router.get('/leaderboard', async (req, res, next) => {
       gameData.players.forEach(player => {
         const playerId = player.id;
         const playerName = player.name;
+        // For wizard games, the game's userId is the user who owns the game
+        // If the player is verified (isVerified flag), they likely own the game
+        const playerUserId = player.isVerified ? game.userId : (player.userId || null);
         
         // Skip players without a name
         if (!playerName) return;
@@ -232,15 +246,28 @@ router.get('/leaderboard', async (req, res, next) => {
 
         // Use NAME as the key to group same players with different IDs
         if (!playerStats[playerName]) {
+          // Look up userId by matching player name to registered username
+          const lookupUserId = playerUserId || usernameToUserIdMap[playerName.toLowerCase()];
+          
           playerStats[playerName] = {
             id: playerName,
             name: playerName,
+            userId: lookupUserId, // Store userId for linking to profiles
             totalGames: 0,
             wins: 0,
             totalScore: 0,
             gameTypes: {},
             lastPlayed: game.createdAt
           };
+        } else if (!playerStats[playerName].userId && playerUserId) {
+          // Update userId if we didn't have it before
+          playerStats[playerName].userId = playerUserId;
+        } else if (!playerStats[playerName].userId) {
+          // Try to look up by username
+          const lookupUserId = usernameToUserIdMap[playerName.toLowerCase()];
+          if (lookupUserId) {
+            playerStats[playerName].userId = lookupUserId;
+          }
         }
 
         const stats = playerStats[playerName];
@@ -327,9 +354,13 @@ router.get('/leaderboard', async (req, res, next) => {
         }
 
         if (!playerStats[playerName]) {
+          // Look up userId by matching player name to registered username
+          const lookupUserId = usernameToUserIdMap[playerName.toLowerCase()];
+          
           playerStats[playerName] = {
             id: playerName,
             name: playerName,
+            userId: lookupUserId, // Store userId for linking to profiles
             totalGames: 0,
             wins: 0,
             totalScore: 0,

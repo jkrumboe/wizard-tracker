@@ -579,7 +579,44 @@ class UserService {
       throw error;
     }
   }
+
+  async getUserPublicProfile(userId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const endpoint = `${this.baseURL}/api/users/${userId}/profile`;
+      
+      console.log('UserService.getUserPublicProfile() - Fetching from:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch user profile' }));
+        throw new Error(error.error || 'Failed to fetch user profile');
+      }
+
+      const result = await response.json();
+      console.log('UserService.getUserPublicProfile() - Response:', result);
+      return result;
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        throw new Error('Backend server not available');
+      }
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();
 export default userService;
+
+// Named export for getUserPublicProfile
+export const getUserPublicProfile = (userId) => userService.getUserPublicProfile(userId);

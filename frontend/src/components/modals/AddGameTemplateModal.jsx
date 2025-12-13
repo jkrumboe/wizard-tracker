@@ -46,6 +46,13 @@ const AddGameTemplateModal = ({
     }
   }, [isOpen, editMode, initialData]);
 
+  // Auto-show preview when switching to rules tab in edit mode
+  useEffect(() => {
+    if (activeTab === 'rules' && editMode) {
+      setShowPreview(true);
+    }
+  }, [activeTab, editMode]);
+
   const handleSave = () => {
     const trimmedName = gameName.trim();
     
@@ -232,9 +239,6 @@ const AddGameTemplateModal = ({
                   {showPreview ? 'Edit' : 'Preview'}
                 </button>
               </div>
-              {/* <p className="markdown-hint">
-                Explain how the game works. You can use markdown formatting for better organization.
-              </p> */}
               {!showPreview ? (
                 <>
                   <textarea
@@ -243,7 +247,7 @@ const AddGameTemplateModal = ({
                     onChange={(e) => setDescriptionMarkdown(e.target.value)}
                     placeholder="## Setup&#10;- Each player gets 7 cards&#10;- Place deck in center&#10;&#10;## How to Play&#10;1. First step...&#10;2. Second step...&#10;&#10;## Scoring&#10;- Points are awarded for...&#10;&#10;"
                     className="game-markdown-input"
-                    rows="11"
+                    rows="20"
                   />
                   <p className="markdown-hint">
                     Tip: Use **bold**, *italic*, ## headers, - bullet lists
@@ -269,10 +273,13 @@ const AddGameTemplateModal = ({
           {error && <div className="modal-error">{error}</div>}
         </div>
 
+        {(activeTab !== 'rules' && 
         <div className="add-game-modal-actions">
+          {!editMode && (
           <button className="modal-btn cancel-btn" onClick={onClose}>
             Cancel
           </button>
+          )}
           {editMode && isSystemTemplate && onMakeLocalChanges && (
             <button className="modal-btn local-changes-btn" onClick={onMakeLocalChanges}>
               Make Local Changes
@@ -294,6 +301,7 @@ const AddGameTemplateModal = ({
             </button>
           )}
         </div>
+      )}
       </div>
     </div>
   );
