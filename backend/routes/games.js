@@ -232,9 +232,6 @@ router.get('/leaderboard', async (req, res, next) => {
       gameData.players.forEach(player => {
         const playerId = player.id;
         const playerName = player.name;
-        // For wizard games, the game's userId is the user who owns the game
-        // If the player is verified (isVerified flag), they likely own the game
-        const playerUserId = player.isVerified ? game.userId : (player.userId || null);
         
         // Skip players without a name
         if (!playerName) return;
@@ -244,14 +241,16 @@ router.get('/leaderboard', async (req, res, next) => {
           return;
         }
 
-        // Use NAME as the key to group same players with different IDs
-        if (!playerStats[playerName]) {
+        // Use LOWERCASE NAME as the key to group same players regardless of casing
+        const playerKey = playerName.toLowerCase();
+        
+        if (!playerStats[playerKey]) {
           // Look up userId by matching player name to registered username
-          const lookupUserId = playerUserId || usernameToUserIdMap[playerName.toLowerCase()];
+          const lookupUserId = usernameToUserIdMap[playerKey];
           
-          playerStats[playerName] = {
-            id: playerName,
-            name: playerName,
+          playerStats[playerKey] = {
+            id: playerKey,
+            name: playerName, // Store original casing for display
             userId: lookupUserId, // Store userId for linking to profiles
             totalGames: 0,
             wins: 0,
@@ -259,18 +258,15 @@ router.get('/leaderboard', async (req, res, next) => {
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else if (!playerStats[playerName].userId && playerUserId) {
-          // Update userId if we didn't have it before
-          playerStats[playerName].userId = playerUserId;
-        } else if (!playerStats[playerName].userId) {
-          // Try to look up by username
-          const lookupUserId = usernameToUserIdMap[playerName.toLowerCase()];
+        } else if (!playerStats[playerKey].userId) {
+          // Try to look up by username if we didn't have it before
+          const lookupUserId = usernameToUserIdMap[playerKey];
           if (lookupUserId) {
-            playerStats[playerName].userId = lookupUserId;
+            playerStats[playerKey].userId = lookupUserId;
           }
         }
 
-        const stats = playerStats[playerName];
+        const stats = playerStats[playerKey];
         
         stats.totalGames++;
         
@@ -353,13 +349,16 @@ router.get('/leaderboard', async (req, res, next) => {
           return;
         }
 
-        if (!playerStats[playerName]) {
+        // Use LOWERCASE NAME as the key to group same players regardless of casing
+        const playerKey = playerName.toLowerCase();
+        
+        if (!playerStats[playerKey]) {
           // Look up userId by matching player name to registered username
-          const lookupUserId = usernameToUserIdMap[playerName.toLowerCase()];
+          const lookupUserId = usernameToUserIdMap[playerKey];
           
-          playerStats[playerName] = {
-            id: playerName,
-            name: playerName,
+          playerStats[playerKey] = {
+            id: playerKey,
+            name: playerName, // Store original casing for display
             userId: lookupUserId, // Store userId for linking to profiles
             totalGames: 0,
             wins: 0,
@@ -367,9 +366,15 @@ router.get('/leaderboard', async (req, res, next) => {
             gameTypes: {},
             lastPlayed: game.createdAt
           };
+        } else if (!playerStats[playerKey].userId) {
+          // Try to look up by username if we didn't have it before
+          const lookupUserId = usernameToUserIdMap[playerKey];
+          if (lookupUserId) {
+            playerStats[playerKey].userId = lookupUserId;
+          }
         }
 
-        const stats = playerStats[playerName];
+        const stats = playerStats[playerKey];
         
         stats.totalGames++;
         

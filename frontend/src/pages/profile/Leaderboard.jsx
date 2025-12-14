@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
+import { lookupUserByUsername } from '@/shared/api/userService'
 import "@/styles/pages/leaderboard.css"
 
 const Leaderboard = () => {
+  const navigate = useNavigate()
   const [players, setPlayers] = useState([])
   const [gameTypes, setGameTypes] = useState(['all'])
   const [gameTypeSettings, setGameTypeSettings] = useState({}) // Track lowIsBetter per game type
@@ -17,6 +19,42 @@ const Leaderboard = () => {
   const [totalGames, setTotalGames] = useState(0)
   const playersPerPage = 10
 
+  // Handle player click - lookup userId if not present
+  const handlePlayerClick = async (player) => {
+    console.log('🎯 Player clicked:', {
+      name: player.name,
+      userId: player.userId,
+      id: player.id,
+      fullPlayerData: player
+    });
+
+    try {
+      // If player already has userId, navigate directly
+      if (player.userId) {
+        console.log('✅ Player has userId, navigating to:', `/user/${player.userId}`);
+        navigate(`/user/${player.userId}`)
+        return
+      }
+
+      console.log('🔍 No userId found, looking up by username:', player.name);
+      
+      // Otherwise, lookup by username
+      const result = await lookupUserByUsername(player.name)
+      
+      console.log('📋 Lookup result:', result);
+      
+      if (result.found && result.user?.id) {
+        console.log('✅ User found, navigating to:', `/user/${result.user.id}`);
+        navigate(`/user/${result.user.id}`)
+      } else {
+        console.warn('❌ User not found for player:', player.name)
+        // Could show a toast/message that this player doesn't have an account
+      }
+    } catch (error) {
+      console.error('💥 Error looking up player:', error)
+    }
+  }
+
   useEffect(() => {
     fetchLeaderboard()
   }, [selectedGameType])
@@ -26,7 +64,7 @@ const Leaderboard = () => {
     setError(null)
     try {
       const data = await getLeaderboard(selectedGameType)
-      console.log('Leaderboard data received:', data.leaderboard?.slice(0, 3)) // Log first 3 players for debugging
+      console.log('Leaderboard data received:', data.leaderboard) // Log first 3 players for debugging
       setPlayers(data.leaderboard || [])
       setGameTypes(data.gameTypes || ['all'])
       setGameTypeSettings(data.gameTypeSettings || {})
@@ -251,14 +289,16 @@ const Leaderboard = () => {
                       {globalRank === 3 && <span className="medal bronze">🥉</span>}
                       {globalRank > 3 && globalRank}
                     </div>
-                    <div className="player-col">
-                      {player.userId ? (
-                        <Link to={`/user/${player.userId}`} className="player-link">
-                          {player.name}
-                        </Link>
-                      ) : (
-                        player.name
-                      )}
+                    <div 
+                      className="player-col"
+                      onClick={() => handlePlayerClick(player)}
+                      style={{ 
+                        cursor: 'pointer',
+                        opacity: player.userId ? 1 : 0.7
+                      }}
+                      title={player.userId ? 'View profile' : 'Look up player'}
+                    >
+                      {player.name}
                     </div>
                     <div className="wins-col">{player.wins}</div>
                     <div className="winrate-col">{player.winRate}%</div>

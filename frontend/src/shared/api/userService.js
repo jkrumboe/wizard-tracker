@@ -618,5 +618,6 @@ class UserService {
 export const userService = new UserService();
 export default userService;
 
-// Named export for getUserPublicProfile
+// Named exports for common methods
 export const getUserPublicProfile = (userId) => userService.getUserPublicProfile(userId);
+export const lookupUserByUsername = (username) => userService.lookupUserByUsername(username);

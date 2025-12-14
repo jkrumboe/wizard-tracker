@@ -204,7 +204,30 @@ const UserProfile = () => {
 
   return (
     <div className="settings-container">
-      <div className="settings-section">
+      
+      <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '8px' }}>
+        <button
+                onClick={() => navigate(-1)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '60px',
+                  color: 'var(--text-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  transition: 'background-color 0.2s',
+                  boxShadow: 'none',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--card-bg)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                title="Go back"
+              >
+                <ArrowLeftIcon size={24} />
+              </button>
         <div className="settings-option">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
