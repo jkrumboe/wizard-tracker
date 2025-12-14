@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
+import { useGameStats } from '@/shared/hooks/useGameStats';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
@@ -21,6 +22,7 @@ import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced';
+import StatsOverview from '@/components/stats/StatsOverview';
 import '@/styles/pages/account.css';
 
 const Account = () => {
@@ -1097,242 +1099,16 @@ const Account = () => {
     }
   };
 
-  // Calculate overview stats from all games
-  const overviewStats = useMemo(() => {
-    const allGamesList = [...Object.values(savedGames), ...savedTableGames];
-        
-    if (!user || allGamesList.length === 0) {
-      return { gameTypes: [], recentResults: [] };
-    }
+  // Calculate overview stats from all games using shared hook
+  const allGamesForOverview = useMemo(() => {
+    return [...Object.values(savedGames), ...savedTableGames];
+  }, [savedGames, savedTableGames]);
 
-    const gameTypeStats = {};
-
-    // Get user identifiers - for local games, username is the key
-    const userIdentifiers = [user.id, user.name, user.username, user.$id].filter(Boolean);
-    const usernameLower = user.username?.toLowerCase();
-
-    allGamesList.forEach(game => {
-      // Determine game type
-      // Check if it's a table game (has specific table game indicators)
-      let gameType;
-      if (game.gameType === 'table') {
-        // It's a table game - use the gameTypeName or name
-        gameType = game.gameTypeName || game.name || 'Table Game';
-      } else {
-        // It's a wizard game
-        gameType = game.game_mode || game.gameState?.game_mode || 'Wizard';
-        // Fix "Local" mode to be "Wizard"
-        if (gameType === 'Local') {
-          gameType = 'Wizard';
-        }
-      }
-      
-      // Initialize game type stats
-      if (!gameTypeStats[gameType]) {
-        gameTypeStats[gameType] = {
-          name: gameType,
-          matches: 0,
-          wins: 0,
-          recentResults: []
-        };
-      }
-
-      // Check if user won this game
-      // Local games: ALL games in localStorage are played by the current user
-      // The user either created the game or was part of it
-      let userWon = false;
-      let userPlayer = null;
-
-      // Different handling for table games vs wizard games
-      if (game.gameType === 'table') {
-        // Table games: check gameData.players
-        if (game.gameData?.players) {
-          userPlayer = game.gameData.players.find(p => {
-            const playerNameLower = p.name?.toLowerCase();
-            return playerNameLower === usernameLower;
-          });
-          
-          // For table games, use winner_ids if available, otherwise calculate
-          if (userPlayer && game.gameFinished) {
-            // Check winner_ids first (new format), then fallback to winner_id (legacy)
-            const winnerIds = game.gameData?.winner_ids || game.winner_ids || 
-                             (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
-                             (game.winner_id ? [game.winner_id] : null);
-            
-            console.log('🎯 Table Game Win Check:', {
-              gameName: game.name || game.gameTypeName,
-              winnerIds,
-              userPlayerId: userPlayer.id,
-              userId: user.id,
-              userDollarId: user.$id,
-              matches: {
-                playerIdMatch: winnerIds?.includes(userPlayer.id),
-                userIdMatch: winnerIds?.includes(user.id),
-                dollarIdMatch: winnerIds?.includes(user.$id)
-              }
-            });
-            
-            if (winnerIds && winnerIds.length > 0) {
-              // Use the stored winner_ids (faster and more reliable)
-              userWon = winnerIds.includes(userPlayer.id) || 
-                       winnerIds.includes(user.id) || 
-                       winnerIds.includes(user.$id);
-            } else {
-              // Fallback: calculate winner by score (for old games without winner_id)
-              const players = game.gameData.players;
-              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
-              
-              const playersWithScores = players.map(player => {
-                const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-                return { ...player, total };
-              });
-              
-              const userWithScore = playersWithScores.find(p => p.name === userPlayer.name);
-              const userScore = userWithScore?.total || 0;
-              
-              userWon = playersWithScores.every(p => {
-                if (p.name === userPlayer.name) return true;
-                return lowIsBetter ? userScore <= p.total : userScore >= p.total;
-              });
-            }
-          }
-        }
-      } else {
-        // Wizard games: check v3.0 format (players at root) or legacy format (gameState.players)
-        const players = game.players || game.gameState?.players;
-        if (players) {
-          userPlayer = players.find(p => {
-            const playerNameLower = p.name?.toLowerCase();
-            const playerUsernameLower = p.username?.toLowerCase();
-            
-            return playerNameLower === usernameLower ||
-                   playerUsernameLower === usernameLower ||
-                   userIdentifiers.includes(p.id) ||
-                   userIdentifiers.includes(p.userId);
-          });
-          
-          if (userPlayer) {
-            // Check winner_ids first (new format), then fallback to winner_id (legacy)
-            const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
-                             (game.winner_id ? [game.winner_id] : null) ||
-                             (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
-            
-            // Check if user won by comparing IDs or if user is in the winners array
-            if (winnerIds && winnerIds.length > 0) {
-              userWon = winnerIds.includes(userPlayer.id) || 
-                       winnerIds.includes(userPlayer.userId) ||
-                       winnerIds.includes(user.id) ||
-                       winnerIds.includes(user.$id);
-            }
-          } else {
-            // If we can't find the user in players but the game is saved locally,
-            // check if user might be winner by ID match
-            const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
-                             (game.winner_id ? [game.winner_id] : null) ||
-                             (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
-            
-            if (winnerIds && winnerIds.length > 0) {
-              userWon = winnerIds.some(winnerId => userIdentifiers.includes(winnerId));
-            }
-          }
-        }
-      }
-
-      gameTypeStats[gameType].matches++;
-      if (userWon) {
-        gameTypeStats[gameType].wins++;
-      }
-      
-      // Add to recent results (limit to last 10)
-      gameTypeStats[gameType].recentResults.unshift(userWon ? 'W' : 'L');
-      if (gameTypeStats[gameType].recentResults.length > 10) {
-        gameTypeStats[gameType].recentResults.pop();
-      }
-    });
-
-    const gameTypes = Object.values(gameTypeStats).filter(gt => gt.matches > 0);
-    
-    console.log('📊 Game Types Found:', gameTypes);
-    
-    // Get overall recent results (last 10 games)
-    const sortedGames = [...allGamesList].sort((a, b) => {
-      const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || 0);
-      const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || 0);
-      return dateB - dateA; // Most recent first
-    });
-    
-    const allResults = sortedGames.slice(0, 10).map(game => {
-      let userWon = false;
-      
-      if (game.gameType === 'table') {
-        // Table game
-        if (game.gameData?.players && game.gameFinished) {
-          const userPlayer = game.gameData.players.find(p => 
-            p.name?.toLowerCase() === usernameLower
-          );
-          
-          if (userPlayer) {
-            // Check winner_ids first (new format), then fallback to winner_id (legacy)
-            const winnerIds = game.gameData?.winner_ids || game.winner_ids ||
-                             (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
-                             (game.winner_id ? [game.winner_id] : null);
-            
-            if (winnerIds && winnerIds.length > 0) {
-              // Use the stored winner_ids (faster and more reliable)
-              userWon = winnerIds.includes(userPlayer.id) || 
-                       winnerIds.includes(user.id) || 
-                       winnerIds.includes(user.$id);
-            } else {
-              // Fallback: calculate winner by score (for old games without winner_id)
-              const players = game.gameData.players;
-              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
-              
-              const playersWithScores = players.map(player => {
-                const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-                return { ...player, total };
-              });
-              
-              const userWithScore = playersWithScores.find(p => p.name === userPlayer.name);
-              const userScore = userWithScore?.total || 0;
-              
-              userWon = playersWithScores.every(p => {
-                if (p.name === userPlayer.name) return true;
-                return lowIsBetter ? userScore <= p.total : userScore >= p.total;
-              });
-            }
-          }
-        }
-      } else {
-        // Wizard game: check v3.0 format (players at root) or legacy format (gameState.players)
-        const players = game.players || game.gameState?.players;
-        if (players) {
-          const userPlayer = players.find(p => {
-            const playerNameLower = p.name?.toLowerCase();
-            const playerUsernameLower = p.username?.toLowerCase();
-            
-            return playerNameLower === usernameLower ||
-                   playerUsernameLower === usernameLower ||
-                   userIdentifiers.includes(p.id) ||
-                   userIdentifiers.includes(p.userId);
-          });
-          
-          const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
-                           (game.winner_id ? [game.winner_id] : null) ||
-                           (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
-          
-          userWon = userPlayer && winnerIds && winnerIds.length > 0 ? 
-            (winnerIds.includes(userPlayer.id) || 
-             winnerIds.includes(userPlayer.userId) || 
-             winnerIds.includes(user.id)) :
-            (winnerIds && winnerIds.some(winnerId => userIdentifiers.includes(winnerId)));
-        }
-      }
-      
-      return userWon ? 'W' : 'L';
-    });
-
-    return { gameTypes, recentResults: allResults };
-  }, [savedGames, savedTableGames, user]);
+  // Handler for game type card clicks
+  const handleGameTypeClick = useCallback((gameTypeName) => {
+    setStatsGameType(gameTypeName.toLowerCase() === 'wizard' ? 'wizard' : gameTypeName);
+    setActiveTab('stats');
+  }, []);
 
   // Get all games for stats tab
   const allGamesForStats = useMemo(() => {
@@ -1475,67 +1251,11 @@ const Account = () => {
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="tab-content">
-            {!user ? (
-              <div className="settings-section">
-                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  Please <Link to="/login">login</Link> to view your game statistics
-                </p>
-              </div>
-            ) : overviewStats.gameTypes.length === 0 ? (
-              <div className="settings-section">
-                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  No games played yet. Start a new game to see your stats!
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Game Types Grid */}
-                <div className="overview-grid">
-                  {overviewStats.gameTypes.map(gameType => (
-                    <div 
-                      key={gameType.name} 
-                      className="game-type-card"
-                      onClick={() => {
-                        setStatsGameType(gameType.name.toLowerCase() === 'wizard' ? 'wizard' : gameType.name);
-                        setActiveTab('stats');
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <h3 className="game-type-name">{gameType.name}</h3>
-                      <div className="game-type-stats">
-                        <div className="stat-item">
-                          <span className="stat-label">Win%:</span>
-                          <span className="stat-value win-rate">
-                            {Math.round((gameType.wins / gameType.matches) * 100)}
-                          </span>
-                        </div>
-                        <div className="stat-item">
-                          <span className="stat-label">Matches:</span>
-                          <span className="stat-value">{gameType.matches}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Overall Recent Results */}
-                {overviewStats.recentResults.length > 0 && (
-                  <div className="settings-section">
-                    <h3 className="settings-section-title">Recent Performance</h3>
-                    <div className="overall-recent-results">
-                      <div className="results-string large">
-                        {overviewStats.recentResults.map((result, idx) => (
-                          <span key={idx} className={`result-letter ${result === 'W' ? 'win' : 'loss'}`}>
-                            {result}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="results-description">Last 10 games</p>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+            <StatsOverview 
+              games={allGamesForOverview} 
+              user={user} 
+              onGameTypeClick={handleGameTypeClick}
+            />
           </div>
         )}
 

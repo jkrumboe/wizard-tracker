@@ -62,7 +62,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       let playerId = null;
       
       // Check if it's a wizard game (has gameState) or table game (has gameData)
-      const isTableGame = game.gameType === 'table' || game.gameData?.players;
+      const isTableGame = game.gameType === 'table' || (game.gameData?.players && !game.gameData?.final_scores);
       
       if (isTableGame && game.gameData?.players) {
         // Table game structure
@@ -79,8 +79,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
           }
         }
       } else {
-        // Wizard game structure - check v3.0 format (players at root) or legacy (gameState.players)
-        const players = game.players || game.gameState?.players;
+        // Wizard game structure - check all possible locations for players and scores
+        // Priority: game.players, game.gameData.players, game.gameState.players
+        const players = game.players || game.gameData?.players || game.gameState?.players;
         if (players) {
           const player = players.find(p => 
             p.name === currentPlayer.name || 
@@ -89,6 +90,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
           );
           if (player) {
             playerId = player.id;
+            // Check if player has totalScore property
             if (player.totalScore !== undefined) {
               playerScore = player.totalScore;
             }
@@ -96,18 +98,30 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         }
       }
       
-      // Fallback score lookups for wizard games - check v3.0 format (final_scores at root) first
+      // Fallback score lookups for wizard games - check ALL possible locations
       if (!isTableGame && playerId && playerScore === 0) {
-        const finalScores = game.final_scores || game.gameState?.final_scores;
-        if (finalScores?.[playerId] !== undefined) {
-          playerScore = finalScores[playerId];
-        }
-      }
-      
-      if (!isTableGame && playerScore === 0) {
-        const finalScores = game.final_scores || game.gameState?.final_scores;
-        if (finalScores?.[currentPlayer.name] !== undefined) {
-          playerScore = finalScores[currentPlayer.name];
+        // Check: game.final_scores, game.gameData.final_scores, game.gameState.final_scores
+        const finalScores = game.final_scores || game.gameData?.final_scores || game.gameState?.final_scores;
+        if (finalScores) {
+          // Try by playerId first
+          if (finalScores[playerId] !== undefined) {
+            playerScore = finalScores[playerId];
+          }
+          // Then try by player name
+          else if (finalScores[currentPlayer.name] !== undefined) {
+            playerScore = finalScores[currentPlayer.name];
+          }
+          // For older formats, final_scores might be nested in players
+          else {
+            const player = (game.players || game.gameData?.players || game.gameState?.players)?.find(p => 
+              p.name === currentPlayer.name || p.id === currentPlayer.id
+            );
+            if (player && finalScores[player.name] !== undefined) {
+              playerScore = finalScores[player.name];
+            } else if (player && finalScores[player.id] !== undefined) {
+              playerScore = finalScores[player.id];
+            }
+          }
         }
       }
       
@@ -201,8 +215,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       }
       
       // Bid accuracy tracking (if available)
-      // Check v3.0 format (round_data at root) or legacy format (gameState.roundData)
-      const roundData = game.round_data || game.gameState?.roundData;
+      // Check ALL possible locations: round_data, gameData.round_data, gameState.roundData
+      const roundData = game.round_data || game.gameData?.round_data || game.gameState?.roundData;
       if (roundData && Array.isArray(roundData)) {
         let perfectGameRounds = 0;
         let completedGameRounds = 0;

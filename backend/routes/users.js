@@ -189,6 +189,7 @@ router.get('/:userId/profile', async (req, res, next) => {
     // Get user's games from both Game and WizardGame collections
     const Game = require('../models/Game');
     const WizardGame = require('../models/WizardGame');
+    const TableGame = require('../models/TableGame');
     
     // Fetch wizard games
     const wizardGames = await WizardGame.find({ userId })
@@ -204,18 +205,53 @@ router.get('/:userId/profile', async (req, res, next) => {
       .limit(100)
       .lean();
 
+    // Fetch table games
+    const tableGames = await TableGame.find({ userId })
+      .select('gameData gameTypeName name lowIsBetter createdAt gameFinished')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
     // Process games to extract relevant stats
     const allGames = [];
+    const seenGameIds = new Set(); // Track unique games to avoid duplicates
     let totalWins = 0;
     
     // Process wizard games
     wizardGames.forEach(game => {
       const gameData = game.gameData;
-      if (!gameData) return;
+      if (!gameData || !gameData.players) return;
+      
+      // Skip paused or unfinished games
+      if (gameData.isPaused || gameData.gameFinished === false) return;
+      
+      // Use localId or _id as unique identifier to avoid duplicates
+      const gameId = gameData.gameId || game.localId || String(game._id);
+      if (seenGameIds.has(gameId)) return; // Skip duplicates
+      
+      // Find if user is a player in this game - match by username OR userId
+      const userPlayer = gameData.players.find(p => {
+        const playerNameLower = p.name?.toLowerCase();
+        const playerUsernameLower = p.username?.toLowerCase();
+        const usernameLower = user.username?.toLowerCase();
+        
+        return playerNameLower === usernameLower ||
+               playerUsernameLower === usernameLower ||
+               p.userId === String(userId) || 
+               p.userId === userId ||
+               String(p.userId) === String(userId);
+      });
+      
+      // Skip if user is not a player in this game
+      if (!userPlayer) return;
+      
+      seenGameIds.add(gameId); // Mark as seen
       
       const winnerIds = gameData.winner_ids || 
                        (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
-      const isWinner = winnerIds.includes(userId) || winnerIds.some(id => String(id) === String(userId));
+      
+      // Check if user's player ID is in winner_ids
+      const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
       
       if (isWinner) totalWins++;
       
@@ -229,6 +265,7 @@ router.get('/:userId/profile', async (req, res, next) => {
           players: gameData.players,
           total_rounds: gameData.total_rounds,
           final_scores: gameData.final_scores,
+          round_data: gameData.round_data, // Include for bid accuracy
           winner_ids: winnerIds
         }
       });
@@ -239,9 +276,40 @@ router.get('/:userId/profile', async (req, res, next) => {
       const gameData = game.gameData || game.gameState;
       if (!gameData) return;
       
+      // Skip paused or unfinished games
+      if (gameData.isPaused || gameData.gameFinished === false) return;
+      
+      // Use gameId or _id as unique identifier to avoid duplicates
+      const gameId = gameData.gameId || gameData.id || String(game._id);
+      if (seenGameIds.has(gameId)) return; // Skip duplicates
+      
+      // For legacy games, check both players array and gameState.players
+      const players = gameData.players || gameData.gameState?.players;
+      if (!players) return;
+      
+      // Find if user is a player in this game - match by username OR userId
+      const userPlayer = players.find(p => {
+        const playerNameLower = p.name?.toLowerCase();
+        const playerUsernameLower = p.username?.toLowerCase();
+        const usernameLower = user.username?.toLowerCase();
+        
+        return playerNameLower === usernameLower ||
+               playerUsernameLower === usernameLower ||
+               p.userId === String(userId) || 
+               p.userId === userId ||
+               String(p.userId) === String(userId);
+      });
+      
+      // Skip if user is not a player in this game
+      if (!userPlayer) return;
+      
+      seenGameIds.add(gameId); // Mark as seen
+      
       const winnerIds = gameData.winner_ids || 
                        (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
-      const isWinner = winnerIds.includes(userId) || winnerIds.some(id => String(id) === String(userId));
+      
+      // Check if user's player ID is in winner_ids
+      const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
       
       if (isWinner) totalWins++;
       
@@ -251,7 +319,51 @@ router.get('/:userId/profile', async (req, res, next) => {
         created_at: game.createdAt,
         winner_ids: winnerIds,
         winner_id: winnerIds[0],
+        gameData: {
+          players: players,
+          total_rounds: gameData.total_rounds || gameData.maxRounds,
+          final_scores: gameData.final_scores,
+          round_data: gameData.round_data || gameData.roundData, // Include for bid accuracy
+          winner_ids: winnerIds
+        },
         gameState: gameData
+      });
+    });
+
+    // Process table games
+    tableGames.forEach(game => {
+      const gameData = game.gameData;
+      if (!gameData || !game.gameFinished || !gameData.players) return;
+      
+      // For table games, match by username since players don't have userId
+      const userPlayer = gameData.players.find(p => 
+        p.name?.toLowerCase() === user.username?.toLowerCase()
+      );
+      
+      // Skip if user is not a player in this game
+      if (!userPlayer) return;
+      
+      const winnerIds = gameData.winner_ids || 
+                       (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
+      
+      // Check if user's player ID is in winner_ids
+      const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
+      
+      if (isWinner) totalWins++;
+      
+      allGames.push({
+        id: game._id,
+        gameType: 'table',
+        gameTypeName: game.gameTypeName || game.name,
+        name: game.name,
+        created_at: game.createdAt,
+        winner_ids: winnerIds,
+        winner_id: winnerIds[0],
+        lowIsBetter: game.lowIsBetter,
+        gameData: {
+          players: gameData.players,
+          winner_ids: winnerIds
+        }
       });
     });
 

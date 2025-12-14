@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 import { getUserPublicProfile } from '@/shared/api/userService'
 import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters'
+import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api'
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced'
+import StatsOverview from '@/components/stats/StatsOverview'
 import { ArrowLeftIcon, TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
 import avatarService from '@/shared/api/avatarService'
 import defaultAvatar from "@/assets/default-avatar.png"
@@ -25,6 +27,18 @@ const UserProfile = () => {
 
   // Check if viewing own profile
   const isOwnProfile = currentUser && (currentUser.id === userId || currentUser._id === userId)
+  
+  // Load games from localStorage if viewing own profile
+  const localGamesData = useMemo(() => {
+    if (!isOwnProfile) return null;
+    const savedGames = LocalGameStorage.getAllSavedGames();
+    const savedTableGames = LocalTableGameStorage.getSavedTableGamesList();
+    return {
+      wizardGames: Object.values(savedGames),
+      tableGames: savedTableGames,
+      allGames: [...Object.values(savedGames), ...savedTableGames]
+    };
+  }, [isOwnProfile, currentUser]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -36,19 +50,27 @@ const UserProfile = () => {
 
       try {
         setLoading(true)
+        
+        // If viewing own profile, use current user data with localStorage games
+        if (isOwnProfile && localGamesData) {
+          setProfileUser({
+            ...currentUser,
+            games: localGamesData.allGames
+          });
+          if (currentUser.profilePicture) {
+            setAvatarUrl(currentUser.profilePicture);
+          }
+          setLoading(false);
+          return;
+        }
+        
+        // Otherwise fetch from API for other users
         const data = await getUserPublicProfile(userId)
         setProfileUser(data)
         
         // Load avatar if available
         if (data.profilePicture) {
-          try {
-            const avatar = await avatarService.getAvatar(userId)
-            if (avatar) {
-              setAvatarUrl(avatar)
-            }
-          } catch (err) {
-            console.warn('Failed to load avatar:', err)
-          }
+          setAvatarUrl(data.profilePicture)
         }
       } catch (err) {
         console.error('Error fetching user profile:', err)
@@ -59,128 +81,92 @@ const UserProfile = () => {
     }
 
     fetchUserProfile()
-  }, [userId])
+  }, [userId, isOwnProfile, localGamesData, currentUser])
 
-  // Calculate stats from games
-  const { gameTypes, recentResults } = useMemo(() => {
-    if (!profileUser?.games) {
-      return { gameTypes: {}, recentResults: [] }
-    }
+  // Handler for game type card clicks
+  const handleGameTypeClick = useCallback((gameTypeName) => {
+    setStatsGameType(gameTypeName.toLowerCase() === 'wizard' ? 'wizard' : gameTypeName);
+    setActiveTab('stats');
+  }, []);
 
-    const allGamesList = profileUser.games
-    const gameTypes = {}
-
-    allGamesList.forEach(game => {
-      const gameType = game.gameType === 'table' 
-        ? (game.gameTypeName || game.name || 'Table') 
-        : 'Wizard'
-      
-      if (!gameTypes[gameType]) {
-        gameTypes[gameType] = {
-          matches: 0,
-          wins: 0,
-          losses: 0,
-          winRate: 0,
-          recentResults: []
-        }
-      }
-
-      let userWon = false
-
-      if (game.gameType === 'table') {
-        // Check winner_ids for table games
-        const winnerIds = game.gameData?.winner_ids || game.winner_ids ||
-                         (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
-                         (game.winner_id ? [game.winner_id] : null)
-        
-        if (winnerIds && winnerIds.length > 0) {
-          userWon = winnerIds.includes(profileUser.id) || winnerIds.includes(profileUser._id)
-        }
-      } else {
-        // Check winner_ids for wizard games
-        const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
-                         (game.winner_id ? [game.winner_id] : null) ||
-                         (game.gameState?.winner_id ? [game.gameState.winner_id] : null)
-        
-        if (winnerIds && winnerIds.length > 0) {
-          userWon = winnerIds.includes(profileUser.id) || winnerIds.includes(profileUser._id)
-        }
-      }
-
-      gameTypes[gameType].matches++
-      if (userWon) {
-        gameTypes[gameType].wins++
-      } else {
-        gameTypes[gameType].losses++
-      }
-      
-      gameTypes[gameType].recentResults.push(userWon ? 'W' : 'L')
-    })
-
-    // Calculate win rates
-    Object.keys(gameTypes).forEach(type => {
-      const stats = gameTypes[type]
-      stats.winRate = stats.matches > 0 
-        ? Math.round((stats.wins / stats.matches) * 100) 
-        : 0
-      stats.recentResults = stats.recentResults.slice(-10)
-    })
-
-    // Get overall recent results (last 10 games)
-    const sortedGames = [...allGamesList].sort((a, b) => {
-      const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || 0)
-      const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || 0)
-      return dateB - dateA
-    })
-    
-    const allResults = sortedGames.slice(0, 10).map(game => {
-      let userWon = false
-      
-      if (game.gameType === 'table') {
-        const winnerIds = game.gameData?.winner_ids || game.winner_ids ||
-                         (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
-                         (game.winner_id ? [game.winner_id] : null)
-        if (winnerIds && winnerIds.length > 0) {
-          userWon = winnerIds.includes(profileUser.id) || winnerIds.includes(profileUser._id)
-        }
-      } else {
-        const winnerIds = game.winner_ids || game.gameState?.winner_ids ||
-                         (game.winner_id ? [game.winner_id] : null) ||
-                         (game.gameState?.winner_id ? [game.gameState.winner_id] : null)
-        if (winnerIds && winnerIds.length > 0) {
-          userWon = winnerIds.includes(profileUser.id) || winnerIds.includes(profileUser._id)
-        }
-      }
-      
-      return userWon ? 'W' : 'L'
-    })
-
-    return { gameTypes, recentResults: allResults }
-  }, [profileUser])
-
-  // Get games for stats tab
+  // Get games for stats tab (use localStorage if own profile, otherwise API)
   const allGamesForStats = useMemo(() => {
-    if (!profileUser?.games) return []
+    // Determine the source of games
+    const gamesSource = (isOwnProfile && localGamesData) 
+      ? localGamesData.allGames 
+      : (profileUser?.games || []);
+    
+    if (!gamesSource || gamesSource.length === 0) return [];
+    
+    // Filter by game type
+    const wizardGames = gamesSource.filter(g => g.gameType !== 'table');
+    const tableGames = gamesSource.filter(g => g.gameType === 'table');
     
     if (statsGameType === 'wizard') {
-      return profileUser.games.filter(g => g.gameType !== 'table')
-    } else if (statsGameType === 'all') {
-      return profileUser.games
+      return wizardGames;
     } else {
-      return profileUser.games.filter(g => 
-        g.gameType === 'table' && 
-        (g.gameTypeName === statsGameType || g.name === statsGameType)
-      )
+      // Filter by specific table game type
+      return tableGames.filter(game => 
+        (game.gameTypeName || game.name) === statsGameType
+      );
     }
-  }, [profileUser?.games, statsGameType])
+  }, [profileUser?.games, statsGameType, isOwnProfile, localGamesData]);
 
   const filteredGamesForStats = useMemo(() => {
     return filterGames(allGamesForStats, filters)
   }, [allGamesForStats, filters])
 
+  // Get available game types for stats selector
+  const availableGameTypes = useMemo(() => {
+    if (!profileUser?.games) return []
+    
+    const types = []
+    
+    const wizardGames = profileUser.games.filter(g => g.gameType !== 'table')
+    if (wizardGames.length > 0) {
+      types.push({ value: 'wizard', label: 'Wizard' })
+    }
+    
+    // Add table game types
+    const tableGameTypes = new Set()
+    profileUser.games
+      .filter(g => g.gameType === 'table')
+      .forEach(game => {
+        const gameType = game.gameTypeName || game.name
+        if (gameType) {
+          tableGameTypes.add(gameType)
+        }
+      })
+    
+    tableGameTypes.forEach(type => {
+      types.push({ value: type, label: type })
+    })
+    
+    return types
+  }, [profileUser?.games])
+
+  // Auto-select first available game type if invalid selection
+  useEffect(() => {
+    if (availableGameTypes.length > 0 && !availableGameTypes.find(t => t.value === statsGameType)) {
+      setStatsGameType(availableGameTypes[0].value)
+    }
+  }, [availableGameTypes, statsGameType])
+
+  // Create current player object for stats
+  const currentPlayer = useMemo(() => {
+    if (profileUser) {
+      return {
+        id: profileUser.id || profileUser._id,
+        name: profileUser.username,
+        username: profileUser.username
+      }
+    }
+    return null
+  }, [profileUser])
+
   if (loading) {
     return (
-      <div className="account-container">
+      <div className="settings-container">
         <div className="loading-container">
           <div className="spinner"></div>
           <p>Loading profile...</p>
@@ -191,7 +177,7 @@ const UserProfile = () => {
 
   if (error) {
     return (
-      <div className="account-container">
+      <div className="settings-container">
         <div className="error-container">
           <h2>Error Loading Profile</h2>
           <p>{error}</p>
@@ -205,7 +191,7 @@ const UserProfile = () => {
 
   if (!profileUser) {
     return (
-      <div className="account-container">
+      <div className="settings-container">
         <div className="error-container">
           <h2>User Not Found</h2>
           <button onClick={() => navigate(-1)} className="back-button">
@@ -217,39 +203,53 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="account-container">
-      <div className="account-header">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="back-link"
-          aria-label="Go back"
-        >
-          <ArrowLeftIcon className="back-icon" />
-        </button>
-        <div className="profile-info">
-          <img 
-            src={sanitizeImageUrl(avatarUrl)} 
-            alt={`${profileUser.username}'s avatar`} 
-            className="profile-avatar"
-            onError={(e) => {
-              e.target.src = defaultAvatar
-            }}
-          />
-          <div className="profile-details">
-            <h1 className="profile-name">{profileUser.username}</h1>
-            <p className="profile-member-since">
-              Member since {new Date(profileUser.createdAt).toLocaleDateString()}
-            </p>
+    <div className="settings-container">
+      <div className="settings-section">
+        <div className="settings-option">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <img
+                src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
+                alt={`${profileUser.username}'s avatar`}
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '25%',
+                }}
+                onError={(e) => {
+                  e.target.src = defaultAvatar
+                }}
+              />
+              <div>
+                <p style={{ margin: 0, fontWeight: 'bold' }}>{profileUser.username}</p>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  Member since {new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+            </div>
+            {/* {isOwnProfile && (
+              <button
+                onClick={() => navigate('/account')}
+                style={{
+                  background: 'none',
+                  cursor: 'pointer',
+                  padding: '8px 12px',
+                  color: 'var(--primary)',
+                  border: '1px solid var(--primary)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}
+              >
+                View Full Profile
+              </button>
+            )} */}
           </div>
         </div>
-        {isOwnProfile && (
-          <button
-            onClick={() => navigate('/account')}
-            className="edit-profile-btn"
-          >
-            View Full Profile
-          </button>
-        )}
       </div>
 
       <div className="account-tabs">
@@ -271,113 +271,56 @@ const UserProfile = () => {
 
       <div className="account-content">
         {activeTab === 'overview' && (
-          <div className="overview-section">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <h3>Total Games</h3>
-                <p className="stat-value">{profileUser.totalGames || 0}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Total Wins</h3>
-                <p className="stat-value">{profileUser.totalWins || 0}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Win Rate</h3>
-                <p className="stat-value">
-                  {profileUser.totalGames > 0 
-                    ? Math.round((profileUser.totalWins / profileUser.totalGames) * 100)
-                    : 0}%
-                </p>
-              </div>
-            </div>
-
-            {recentResults.length > 0 && (
-              <div className="recent-results-section">
-                <h3>Recent Results (Last 10 Games)</h3>
-                <div className="results-row">
-                  {recentResults.map((result, index) => (
-                    <span
-                      key={index}
-                      className={`result-badge ${result === 'W' ? 'win' : 'loss'}`}
-                    >
-                      {result}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {Object.keys(gameTypes).length > 0 && (
-              <div className="game-types-section">
-                <h3>Performance by Game Type</h3>
-                {Object.entries(gameTypes).map(([gameType, stats]) => (
-                  <div key={gameType} className="game-type-stats">
-                    <h4>{gameType}</h4>
-                    <div className="game-type-grid">
-                      <div className="stat-item">
-                        <span className="stat-label">Matches:</span>
-                        <span className="stat-value">{stats.matches}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Wins:</span>
-                        <span className="stat-value">{stats.wins}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Win Rate:</span>
-                        <span className="stat-value">{stats.winRate}%</span>
-                      </div>
-                    </div>
-                    {stats.recentResults.length > 0 && (
-                      <div className="recent-results">
-                        <span className="stat-label">Recent:</span>
-                        {stats.recentResults.map((result, index) => (
-                          <span
-                            key={index}
-                            className={`result-badge ${result === 'W' ? 'win' : 'loss'}`}
-                          >
-                            {result}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="tab-content">
+            <StatsOverview 
+              games={profileUser?.games} 
+              user={profileUser} 
+              onGameTypeClick={handleGameTypeClick}
+            />
           </div>
         )}
 
         {activeTab === 'stats' && (
-          <div className="stats-section">
-            <div className="stats-controls">
-              <select
-                value={statsGameType}
-                onChange={(e) => setStatsGameType(e.target.value)}
-                className="game-type-select"
-              >
-                <option value="all">All Games</option>
-                <option value="wizard">Wizard</option>
-                {Object.keys(gameTypes)
-                  .filter(type => type !== 'Wizard')
-                  .map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-              </select>
-            </div>
-
-            {filteredGamesForStats.length > 0 && profileUser ? (
-              <PerformanceStatsEnhanced
-                games={filteredGamesForStats}
-                currentPlayer={{
-                  id: profileUser.id || profileUser._id,
-                  name: profileUser.username,
-                  username: profileUser.username
-                }}
-              />
-            ) : (
-              <div className="no-data">
-                <p>No games found for this game type.</p>
+          <div className="tab-content">
+            {!profileUser?.games || profileUser.games.length === 0 ? (
+              <div className="settings-section">
+                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  No games available for statistics. Play some games to see your performance!
+                </p>
               </div>
+            ) : (
+              <>
+                {/* Game Type Selector */}
+                {availableGameTypes.length > 1 && (
+                  <div className="settings-section" style={{ padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: 'var(--spacing-sm)' }}>
+                    <select 
+                      className="game-type-selector"
+                      value={statsGameType}
+                      onChange={(e) => setStatsGameType(e.target.value)}
+                    >
+                      {availableGameTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {allGamesForStats.length > 0 ? (
+                  <PerformanceStatsEnhanced 
+                    games={allGamesForStats} 
+                    currentPlayer={currentPlayer} 
+                    isWizardGame={statsGameType === 'wizard'}
+                  />
+                ) : (
+                  <div className="settings-section">
+                    <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      No games available for {statsGameType}. Play some games to see your performance!
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
