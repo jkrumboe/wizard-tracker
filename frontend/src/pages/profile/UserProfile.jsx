@@ -13,8 +13,45 @@ import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
 
 const UserProfile = () => {
-  const { userId } = useParams()
   const navigate = useNavigate()
+  
+  // DISABLED: User profile page is temporarily disabled
+  return (
+    <div className="settings-container">
+      <div className="settings-section">
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <h2>User Profiles Coming Soon</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+            Public user profiles are currently under development.
+          </p>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              background: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '500',
+            }}
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+  
+  /* DISABLED CODE - Keep for future restoration
+  const { userId } = useParams()
+  const { user: currentUser } = useUser()
+  
+  )
+  
+  /* DISABLED CODE - Keep for future restoration
+  const { userId } = useParams()
   const { user: currentUser } = useUser()
   
   const [profileUser, setProfileUser] = useState(null)
@@ -350,6 +387,7 @@ const UserProfile = () => {
       </div>
     </div>
   )
+  END OF DISABLED CODE */
 }
 
 export default UserProfile

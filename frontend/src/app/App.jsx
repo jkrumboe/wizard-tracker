@@ -19,7 +19,7 @@ import UserManagement from "@/pages/admin/UserManagement"
 
 // Lazy load less critical pages for better performance
 const Profile = lazy(() => import("@/pages/profile/Profile"))
-const UserProfile = lazy(() => import("@/pages/profile/UserProfile"))
+// const UserProfile = lazy(() => import("@/pages/profile/UserProfile"))
 const ProfileEdit = lazy(() => import("@/pages/profile/ProfileEdit"))
 const Leaderboard = lazy(() => import("@/pages/profile/Leaderboard"))
 const Stats = lazy(() => import("@/pages/profile/Stats"))
@@ -253,7 +253,7 @@ function App() {
                         <Profile />
                       </AuthProtectedRoute>
                     } />
-                    <Route path="/user/:userId" element={<UserProfile />} />
+                    {/* <Route path="/user/:userId" element={<UserProfile />} /> */}
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/stats/:name" element={<Stats />} />
                     <Route path="/profile/stats" element={<Stats />} />

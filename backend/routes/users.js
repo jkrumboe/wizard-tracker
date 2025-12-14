@@ -170,8 +170,15 @@ router.get('/lookup/:username', async (req, res, next) => {
   }
 });
 
-// GET /users/:userId/profile - Get public profile for a user
+// GET /users/:userId/profile - Get public profile for a user (DISABLED)
 router.get('/:userId/profile', async (req, res, next) => {
+  // DISABLED: User profile feature is temporarily disabled
+  return res.status(503).json({ 
+    error: 'User profiles are temporarily unavailable',
+    message: 'This feature is currently under development'
+  });
+  
+  /* DISABLED CODE - Keep for future restoration
   try {
     const { userId } = req.params;
     
@@ -197,7 +204,6 @@ router.get('/:userId/profile', async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
-
     // Fetch legacy games
     const legacyGames = await Game.find({ userId })
       .select('gameData gameState createdAt')
@@ -381,6 +387,7 @@ router.get('/:userId/profile', async (req, res, next) => {
     console.error('Error fetching user profile:', error);
     next(error);
   }
+  END OF DISABLED CODE */
 });
 
 // PUT /users/me/profile-picture - Update profile picture (protected route)

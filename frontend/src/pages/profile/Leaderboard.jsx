@@ -19,8 +19,13 @@ const Leaderboard = () => {
   const [totalGames, setTotalGames] = useState(0)
   const playersPerPage = 10
 
-  // Handle player click - lookup userId if not present
+  // Handle player click - DISABLED: User profiles are disabled
   const handlePlayerClick = async (player) => {
+    console.log('🚫 User profiles are currently disabled');
+    // User profile functionality is temporarily disabled
+    return;
+    
+    /* DISABLED CODE
     console.log('🎯 Player clicked:', {
       name: player.name,
       userId: player.userId,
@@ -53,6 +58,7 @@ const Leaderboard = () => {
     } catch (error) {
       console.error('💥 Error looking up player:', error)
     }
+    */
   }
 
   useEffect(() => {
@@ -291,12 +297,11 @@ const Leaderboard = () => {
                     </div>
                     <div 
                       className="player-col"
-                      onClick={() => handlePlayerClick(player)}
                       style={{ 
-                        cursor: 'pointer',
-                        opacity: player.userId ? 1 : 0.7
+                        cursor: 'default',
+                        opacity: 1
                       }}
-                      title={player.userId ? 'View profile' : 'Look up player'}
+                      title="User profiles coming soon"
                     >
                       {player.name}
                     </div>
