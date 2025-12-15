@@ -649,6 +649,10 @@ export function GameStateProvider({ children }) {
         }
       });
 
+      // Use actual round count if it differs from maxRounds (happens when rounds reduced mid-game)
+      const actualRounds = gameState.roundData.length;
+      const effectiveRounds = Math.min(gameState.maxRounds, actualRounds);
+      
       const gameData = {
         id: Date.now().toString(), // Generate a local ID
         created_at: new Date().toISOString(),
@@ -660,7 +664,7 @@ export function GameStateProvider({ children }) {
         round_data: gameState.roundData,
         duration_seconds: duration,
         game_mode: gameState.mode || "Local",
-        total_rounds: gameState.maxRounds,
+        total_rounds: effectiveRounds, // Use actual completed rounds, not maxRounds
         is_local: true
       };
 
@@ -677,7 +681,7 @@ export function GameStateProvider({ children }) {
         player_ids: gameState.players.map((p) => p.id),
         created_at: new Date().toISOString(),
         duration_seconds: duration,
-        total_rounds: gameState.maxRounds,
+        total_rounds: effectiveRounds, // Use actual completed rounds, not maxRounds
       };
       const savedGameId = LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
 

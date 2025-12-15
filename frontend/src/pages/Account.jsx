@@ -746,24 +746,32 @@ const Account = () => {
     }
     
     // Sanitize game data before upload (fix round reduction bug on PWA)
-    // This prevents validation errors when rounds are reduced but round_data isn't trimmed
-    if (gameData && gameData.total_rounds) {
-      const maxRounds = gameData.total_rounds;
+    // This prevents validation errors when rounds are reduced but data isn't properly updated
+    if (gameData && gameData.round_data && Array.isArray(gameData.round_data)) {
+      const actualRounds = gameData.round_data.length;
+      const declaredRounds = gameData.total_rounds || actualRounds;
       
-      // Trim round_data array to match total_rounds
-      if (gameData.round_data && gameData.round_data.length > maxRounds) {
-        console.warn(`🔧 Auto-fixing: Trimming round_data from ${gameData.round_data.length} to ${maxRounds} rounds`);
-        gameData.round_data = gameData.round_data.slice(0, maxRounds);
+      // Case 1: round_data has more entries than total_rounds (old bug)
+      if (actualRounds > declaredRounds) {
+        console.warn(`🔧 Auto-fixing: Trimming round_data from ${actualRounds} to ${declaredRounds} rounds`);
+        gameData.round_data = gameData.round_data.slice(0, declaredRounds);
       }
       
-      // Also trim players' rounds arrays if they exist
+      // Case 2: total_rounds is larger than actual round_data (game finished early after reducing rounds)
+      if (declaredRounds > actualRounds && gameData.gameFinished) {
+        console.warn(`🔧 Auto-fixing: Adjusting total_rounds from ${declaredRounds} to ${actualRounds} (game finished with fewer rounds)`);
+        gameData.total_rounds = actualRounds;
+      }
+      
+      // Also trim/fix players' rounds arrays if they exist
       if (gameData.players && Array.isArray(gameData.players)) {
+        const targetRounds = gameData.total_rounds || actualRounds;
         gameData.players = gameData.players.map(player => {
-          if (player.rounds && player.rounds.length > maxRounds) {
-            console.warn(`🔧 Auto-fixing: Trimming ${player.name}'s rounds from ${player.rounds.length} to ${maxRounds}`);
+          if (player.rounds && player.rounds.length > targetRounds) {
+            console.warn(`🔧 Auto-fixing: Trimming ${player.name}'s rounds from ${player.rounds.length} to ${targetRounds}`);
             return {
               ...player,
-              rounds: player.rounds.slice(0, maxRounds)
+              rounds: player.rounds.slice(0, targetRounds)
             };
           }
           return player;
