@@ -744,6 +744,33 @@ const Account = () => {
     if (LocalGameStorage.isGameUploaded(gameId)) {
       return { success: false, error: 'Game already uploaded', isDuplicate: true };
     }
+    
+    // Sanitize game data before upload (fix round reduction bug on PWA)
+    // This prevents validation errors when rounds are reduced but round_data isn't trimmed
+    if (gameData && gameData.total_rounds) {
+      const maxRounds = gameData.total_rounds;
+      
+      // Trim round_data array to match total_rounds
+      if (gameData.round_data && gameData.round_data.length > maxRounds) {
+        console.warn(`🔧 Auto-fixing: Trimming round_data from ${gameData.round_data.length} to ${maxRounds} rounds`);
+        gameData.round_data = gameData.round_data.slice(0, maxRounds);
+      }
+      
+      // Also trim players' rounds arrays if they exist
+      if (gameData.players && Array.isArray(gameData.players)) {
+        gameData.players = gameData.players.map(player => {
+          if (player.rounds && player.rounds.length > maxRounds) {
+            console.warn(`🔧 Auto-fixing: Trimming ${player.name}'s rounds from ${player.rounds.length} to ${maxRounds}`);
+            return {
+              ...player,
+              rounds: player.rounds.slice(0, maxRounds)
+            };
+          }
+          return player;
+        });
+      }
+    }
+    
     try {
       const { createGame } = await import('@/shared/api/gameService');
       const result = await createGame(gameData, gameId);

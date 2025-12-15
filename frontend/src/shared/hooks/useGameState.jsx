@@ -285,10 +285,16 @@ export function GameStateProvider({ children }) {
         updatedPlayers = settings.playerOrder.map(idx => updatedPlayers[idx]);
         
         // Also update the players in roundData to match the new order
-        const updatedRoundData = prevState.roundData.map(round => ({
+        let updatedRoundData = prevState.roundData.map(round => ({
           ...round,
           players: settings.playerOrder.map(idx => round.players[idx])
         }));
+        
+        // Trim roundData if maxRounds was reduced (prevent corruption)
+        if (settings.maxRounds < updatedRoundData.length) {
+          console.warn(`🔧 Trimming roundData from ${updatedRoundData.length} to ${settings.maxRounds} rounds`);
+          updatedRoundData = updatedRoundData.slice(0, settings.maxRounds);
+        }
 
         return {
           ...prevState,
@@ -299,10 +305,18 @@ export function GameStateProvider({ children }) {
         };
       }
 
+      // Trim roundData if maxRounds was reduced (prevent corruption)
+      let updatedRoundData = prevState.roundData;
+      if (settings.maxRounds < prevState.roundData.length) {
+        console.warn(`🔧 Trimming roundData from ${prevState.roundData.length} to ${settings.maxRounds} rounds`);
+        updatedRoundData = prevState.roundData.slice(0, settings.maxRounds);
+      }
+
       return {
         ...prevState,
         players: updatedPlayers,
         maxRounds: settings.maxRounds,
+        roundData: updatedRoundData,
         startingDealerIndex: settings.dealerIndex
       };
     });
