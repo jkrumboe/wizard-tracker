@@ -755,13 +755,20 @@ const Account = () => {
       return { success: false, error: 'Game already uploaded', isDuplicate: true };
     }
     
-    addDebugLog('🔍 Checking game structure', {
+    addDebugLog(`🆔 Game ID: ${gameId}`, { 
       gameId,
+      timestamp: gameData.created_at,
+      players: gameData.players?.length || 0
+    });
+    
+    addDebugLog('🔍 Game structure check', {
       hasRoundData: !!gameData.roundData,
       hasRound_data: !!gameData.round_data,
       hasTotalRounds: !!gameData.total_rounds,
       hasMaxRounds: !!gameData.maxRounds,
-      gameFinished: gameData.gameFinished
+      gameFinished: gameData.gameFinished,
+      hasPlayers: !!(gameData.players && gameData.players.length > 0),
+      hasVersion: !!gameData.version
     });
     
     // Sanitize game data before upload (fix round reduction bug on PWA)
@@ -772,10 +779,23 @@ const Account = () => {
       const actualRounds = roundDataArray.length;
       const declaredRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
       
+      // Check round data quality
+      const emptyRounds = roundDataArray.filter(r => !r || !r.players || r.players.length === 0).length;
+      const incompleteRounds = roundDataArray.filter(r => {
+        if (!r || !r.players) return true;
+        return r.players.some(p => p.call === null || p.call === undefined || p.made === null || p.made === undefined);
+      }).length;
+      
       addDebugLog('🔍 Round validation', {
         declared: declaredRounds,
         actual: actualRounds,
-        finished: gameData.gameFinished
+        finished: gameData.gameFinished,
+        emptyRounds,
+        incompleteRounds,
+        firstRound: roundDataArray[0] ? {
+          hasPlayers: !!roundDataArray[0].players,
+          playerCount: roundDataArray[0].players?.length || 0
+        } : null
       });
       
       // Case 1: round_data has more entries than total_rounds (old bug)
@@ -820,7 +840,9 @@ const Account = () => {
     
     try {
       const { createGame } = await import('@/shared/api/gameService');
+      addDebugLog('📤 Attempting upload', { gameId });
       const result = await createGame(gameData, gameId);
+      addDebugLog('✅ Upload successful', { gameId, cloudId: result.game?.id });
       if (result.duplicate) {
         // Mark as uploaded with existing cloud ID
         LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
@@ -842,6 +864,11 @@ const Account = () => {
         return { success: true, cloudGameId: result.game.id };
       }
     } catch (error) {
+      addDebugLog('❌ Upload failed', { 
+        gameId, 
+        error: error.message,
+        validationErrors: error.message.includes('validation') ? error.message.split('\n') : null
+      });
       return { success: false, error: error.message };
     }
   };
@@ -1950,12 +1977,16 @@ const Account = () => {
                     padding: 'var(--spacing-xs)',
                     background: 'var(--secondary-bg)',
                     borderRadius: '4px',
-                    borderLeft: '3px solid var(--primary-color)'
+                    borderLeft: log.message.includes('🆔 Game ID') ? '3px solid var(--success-color)' : '3px solid var(--primary-color)'
                   }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
                       {log.timestamp}
                     </div>
-                    <div style={{ marginTop: '2px' }}>
+                    <div style={{ 
+                      marginTop: '2px',
+                      fontWeight: log.message.includes('🆔 Game ID') ? 'bold' : 'normal',
+                      fontSize: log.message.includes('🆔 Game ID') ? '0.85rem' : '0.75rem'
+                    }}>
                       {log.message}
                     </div>
                     {log.data && (
@@ -1966,7 +1997,9 @@ const Account = () => {
                         padding: '4px',
                         borderRadius: '2px',
                         overflow: 'auto',
-                        maxHeight: '100px'
+                        maxHeight: '150px',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all'
                       }}>
                         {JSON.stringify(log.data, null, 2)}
                       </pre>
