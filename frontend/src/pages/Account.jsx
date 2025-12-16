@@ -1489,7 +1489,7 @@ const Account = () => {
                   )}
                   {cloudSyncStatus.uploading ? 'Downloading...' : 'Download'}
                 </button>
-                {user?.isAdmin && (
+                {user && user.role === 'admin' && (
                   <button 
                     className="settings-button"
                     onClick={() => setShowDebugPanel(!showDebugPanel)}
@@ -1930,7 +1930,7 @@ const Account = () => {
         />
 
         {/* Debug Panel for Mobile (Admin Only) */}
-        {showDebugPanel && user?.isAdmin && (
+        {showDebugPanel && user && user.role === 'admin' && (
           <div style={{
             position: 'fixed',
             bottom: 0,
