@@ -40,7 +40,17 @@ const Account = () => {
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
   const [syncStatusLoaded, setSyncStatusLoaded] = useState(false); // Track if sync status has been checked
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
+  const [debugLogs, setDebugLogs] = useState([]); // Debug logs for mobile debugging
+  const [showDebugPanel, setShowDebugPanel] = useState(false); // Show/hide debug panel
   const [showCloudGameSelectModal, setShowCloudGameSelectModal] = useState(false); // Cloud game select modal
+
+  // Helper to add debug logs visible in UI
+  const addDebugLog = (message, data = null) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = { timestamp, message, data };
+    console.log(message, data);
+    setDebugLogs(prev => [...prev.slice(-20), logEntry]); // Keep last 20 logs
+  };
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
@@ -745,30 +755,57 @@ const Account = () => {
       return { success: false, error: 'Game already uploaded', isDuplicate: true };
     }
     
+    addDebugLog('🔍 Checking game structure', {
+      gameId,
+      hasRoundData: !!gameData.roundData,
+      hasRound_data: !!gameData.round_data,
+      hasTotalRounds: !!gameData.total_rounds,
+      hasMaxRounds: !!gameData.maxRounds,
+      gameFinished: gameData.gameFinished
+    });
+    
     // Sanitize game data before upload (fix round reduction bug on PWA)
     // This prevents validation errors when rounds are reduced but data isn't properly updated
-    if (gameData && gameData.round_data && Array.isArray(gameData.round_data)) {
-      const actualRounds = gameData.round_data.length;
-      const declaredRounds = gameData.total_rounds || actualRounds;
+    // Handle both round_data and roundData (internal format)
+    const roundDataArray = gameData.round_data || gameData.roundData;
+    if (roundDataArray && Array.isArray(roundDataArray)) {
+      const actualRounds = roundDataArray.length;
+      const declaredRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
+      
+      addDebugLog('🔍 Round validation', {
+        declared: declaredRounds,
+        actual: actualRounds,
+        finished: gameData.gameFinished
+      });
       
       // Case 1: round_data has more entries than total_rounds (old bug)
       if (actualRounds > declaredRounds) {
-        console.warn(`🔧 Auto-fixing: Trimming round_data from ${actualRounds} to ${declaredRounds} rounds`);
-        gameData.round_data = gameData.round_data.slice(0, declaredRounds);
+        addDebugLog(`🔧 Trimming rounds: ${actualRounds} → ${declaredRounds}`);
+        if (gameData.round_data) {
+          gameData.round_data = gameData.round_data.slice(0, declaredRounds);
+        }
+        if (gameData.roundData) {
+          gameData.roundData = gameData.roundData.slice(0, declaredRounds);
+        }
       }
       
       // Case 2: total_rounds is larger than actual round_data (game finished early after reducing rounds)
       if (declaredRounds > actualRounds && gameData.gameFinished) {
-        console.warn(`🔧 Auto-fixing: Adjusting total_rounds from ${declaredRounds} to ${actualRounds} (game finished with fewer rounds)`);
-        gameData.total_rounds = actualRounds;
+        addDebugLog(`🔧 Adjusting total_rounds: ${declaredRounds} → ${actualRounds}`);
+        if (gameData.total_rounds) {
+          gameData.total_rounds = actualRounds;
+        }
+        if (gameData.maxRounds) {
+          gameData.maxRounds = actualRounds;
+        }
       }
       
       // Also trim/fix players' rounds arrays if they exist
       if (gameData.players && Array.isArray(gameData.players)) {
-        const targetRounds = gameData.total_rounds || actualRounds;
+        const targetRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
         gameData.players = gameData.players.map(player => {
           if (player.rounds && player.rounds.length > targetRounds) {
-            console.warn(`🔧 Auto-fixing: Trimming ${player.name}'s rounds from ${player.rounds.length} to ${targetRounds}`);
+            addDebugLog(`🔧 Trimming ${player.name}'s rounds: ${player.rounds.length} → ${targetRounds}`);
             return {
               ...player,
               rounds: player.rounds.slice(0, targetRounds)
@@ -777,6 +814,8 @@ const Account = () => {
           return player;
         });
       }
+    } else {
+      addDebugLog('⚠️ No round data found in game', { gameId });
     }
     
     try {
@@ -988,11 +1027,20 @@ const Account = () => {
         }));
 
         try {
-          await uploadSingleGameToCloud(gameId, gameData);
-          successful++;
+          const result = await uploadSingleGameToCloud(gameId, gameData);
+          if (result && !result.error) {
+            successful++;
+          } else {
+            failed++;
+            const errorMsg = `Game ${gameId}: ${result?.error || 'Unknown error'}`;
+            errors.push(errorMsg);
+            addDebugLog('❌ Upload failed', { gameId, error: result?.error });
+          }
         } catch (error) {
           failed++;
-          errors.push(`Wizard Game ${gameId}: ${error.message}`);
+          const errorMsg = `Game ${gameId}: ${error.message}`;
+          errors.push(errorMsg);
+          addDebugLog('❌ Upload exception', { gameId, error: error.message, stack: error.stack });
         }
       }
 
@@ -1032,16 +1080,16 @@ const Account = () => {
         });
       } else if (successful > 0 && failed > 0) {
         setMessage({ 
-          text: `⚠️ Uploaded ${successful} games, ${failed} failed. Check console for details.`, 
+          text: `⚠️ ${successful} uploaded, ${failed} failed. Tap 'Debug Log' to see details.\n${errors[0] || ''}`, 
           type: 'warning' 
         });
-        console.warn('Upload errors:', errors);
+        addDebugLog('Upload summary', { successful, failed, errors });
       } else {
         setMessage({ 
-          text: `❌ All uploads failed. Check console for details.`, 
+          text: `❌ Upload failed. Tap 'Debug Log' to see details.\n${errors[0] || ''}`, 
           type: 'error' 
         });
-        console.error('Upload errors:', errors);
+        addDebugLog('All uploads failed', { errors });
       }
     } catch (error) {
       setCloudSyncStatus({ 
@@ -1413,6 +1461,13 @@ const Account = () => {
                     <CloudIcon size={18} />
                   )}
                   {cloudSyncStatus.uploading ? 'Downloading...' : 'Download'}
+                </button>
+                <button 
+                  className="settings-button"
+                  onClick={() => setShowDebugPanel(!showDebugPanel)}
+                  style={{ background: showDebugPanel ? 'var(--primary-color)' : 'var(--secondary-bg)' }}
+                >
+                  {showDebugPanel ? '✓' : '🐛'} Debug Log
                 </button>
               </div>
             )}
@@ -1844,6 +1899,82 @@ const Account = () => {
           onApplyFilters={handleApplyFilters}
           initialFilters={filters}
         />
+
+        {/* Debug Panel for Mobile */}
+        {showDebugPanel && (
+          <div style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            maxHeight: '50vh',
+            background: 'var(--card-bg)',
+            border: '2px solid var(--primary-color)',
+            borderRadius: '12px 12px 0 0',
+            padding: 'var(--spacing-md)',
+            overflow: 'auto',
+            zIndex: 1000,
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>🐛 Debug Log</h3>
+              <button 
+                onClick={() => setDebugLogs([])}
+                style={{ 
+                  padding: '4px 8px', 
+                  fontSize: '0.8rem',
+                  background: 'var(--danger-color)',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Clear
+              </button>
+            </div>
+            <div style={{ 
+              fontSize: '0.75rem', 
+              fontFamily: 'monospace',
+              maxHeight: '40vh',
+              overflow: 'auto'
+            }}>
+              {debugLogs.length === 0 ? (
+                <p style={{ color: 'var(--text-secondary)' }}>No logs yet. Try uploading a game.</p>
+              ) : (
+                debugLogs.map((log, idx) => (
+                  <div key={idx} style={{ 
+                    marginBottom: 'var(--spacing-xs)', 
+                    padding: 'var(--spacing-xs)',
+                    background: 'var(--secondary-bg)',
+                    borderRadius: '4px',
+                    borderLeft: '3px solid var(--primary-color)'
+                  }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
+                      {log.timestamp}
+                    </div>
+                    <div style={{ marginTop: '2px' }}>
+                      {log.message}
+                    </div>
+                    {log.data && (
+                      <pre style={{ 
+                        marginTop: '4px', 
+                        fontSize: '0.7rem', 
+                        background: 'var(--bg-color)', 
+                        padding: '4px',
+                        borderRadius: '2px',
+                        overflow: 'auto',
+                        maxHeight: '100px'
+                      }}>
+                        {JSON.stringify(log.data, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
   );
 };
