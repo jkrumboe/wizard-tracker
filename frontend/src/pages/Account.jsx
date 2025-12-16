@@ -786,20 +786,55 @@ const Account = () => {
         return r.players.some(p => p.call === null || p.call === undefined || p.made === null || p.made === undefined);
       }).length;
       
+      // Find last complete round (for trimming incomplete rounds at the end)
+      let lastCompleteRoundIndex = actualRounds - 1;
+      for (let i = actualRounds - 1; i >= 0; i--) {
+        const round = roundDataArray[i];
+        if (round && round.players && round.players.length > 0) {
+          const isComplete = round.players.every(p => 
+            p.made !== null && p.made !== undefined && 
+            p.score !== null && p.score !== undefined
+          );
+          if (isComplete) {
+            lastCompleteRoundIndex = i;
+            break;
+          }
+        }
+      }
+      
       addDebugLog('🔍 Round validation', {
         declared: declaredRounds,
         actual: actualRounds,
         finished: gameData.gameFinished,
         emptyRounds,
         incompleteRounds,
+        lastCompleteRound: lastCompleteRoundIndex + 1,
         firstRound: roundDataArray[0] ? {
           hasPlayers: !!roundDataArray[0].players,
           playerCount: roundDataArray[0].players?.length || 0
         } : null
       });
       
-      // Case 1: round_data has more entries than total_rounds (old bug)
-      if (actualRounds > declaredRounds) {
+      // Case 1: Game is finished and has incomplete rounds at the end - trim to last complete round
+      if (gameData.gameFinished && incompleteRounds > 0 && lastCompleteRoundIndex < actualRounds - 1) {
+        const newRoundCount = lastCompleteRoundIndex + 1;
+        addDebugLog(`🔧 Trimming incomplete rounds: ${actualRounds} → ${newRoundCount} (last complete round)`);
+        
+        if (gameData.round_data) {
+          gameData.round_data = gameData.round_data.slice(0, newRoundCount);
+        }
+        if (gameData.roundData) {
+          gameData.roundData = gameData.roundData.slice(0, newRoundCount);
+        }
+        if (gameData.total_rounds) {
+          gameData.total_rounds = newRoundCount;
+        }
+        if (gameData.maxRounds) {
+          gameData.maxRounds = newRoundCount;
+        }
+      }
+      // Case 2: round_data has more entries than total_rounds (old bug)
+      else if (actualRounds > declaredRounds) {
         addDebugLog(`🔧 Trimming rounds: ${actualRounds} → ${declaredRounds}`);
         if (gameData.round_data) {
           gameData.round_data = gameData.round_data.slice(0, declaredRounds);
@@ -809,8 +844,8 @@ const Account = () => {
         }
       }
       
-      // Case 2: total_rounds is larger than actual round_data (game finished early after reducing rounds)
-      if (declaredRounds > actualRounds && gameData.gameFinished) {
+      // Case 3: total_rounds is larger than actual round_data (game finished early after reducing rounds)
+      else if (declaredRounds > actualRounds && gameData.gameFinished) {
         addDebugLog(`🔧 Adjusting total_rounds: ${declaredRounds} → ${actualRounds}`);
         if (gameData.total_rounds) {
           gameData.total_rounds = actualRounds;
