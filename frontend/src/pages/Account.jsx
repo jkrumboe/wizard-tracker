@@ -1462,13 +1462,15 @@ const Account = () => {
                   )}
                   {cloudSyncStatus.uploading ? 'Downloading...' : 'Download'}
                 </button>
-                <button 
-                  className="settings-button"
-                  onClick={() => setShowDebugPanel(!showDebugPanel)}
-                  style={{ background: showDebugPanel ? 'var(--primary-color)' : 'var(--secondary-bg)' }}
-                >
-                  {showDebugPanel ? '✓' : '🐛'} Debug Log
-                </button>
+                {user?.isAdmin && (
+                  <button 
+                    className="settings-button"
+                    onClick={() => setShowDebugPanel(!showDebugPanel)}
+                    style={{ background: showDebugPanel ? 'var(--primary-color)' : 'var(--secondary-bg)' }}
+                  >
+                    {showDebugPanel ? '✓' : '🐛'} Debug Log
+                  </button>
+                )}
               </div>
             )}
             {!user && (
@@ -1900,8 +1902,8 @@ const Account = () => {
           initialFilters={filters}
         />
 
-        {/* Debug Panel for Mobile */}
-        {showDebugPanel && (
+        {/* Debug Panel for Mobile (Admin Only) */}
+        {showDebugPanel && user?.isAdmin && (
           <div style={{
             position: 'fixed',
             bottom: 0,
