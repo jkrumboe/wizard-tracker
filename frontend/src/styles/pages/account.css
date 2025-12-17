@@ -50,6 +50,10 @@
 }
 
 .game-type-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-sm) var(--spacing-md);
@@ -70,6 +74,7 @@
 
 .game-type-stats {
   display: flex;
+  width: 70%;
 }
 
 .stat-item {
@@ -82,7 +87,7 @@
 
 .stat-label {
   font-size: 1rem !important;
-  font-weight: 600;
+  /* font-weight: 600; */
   color: var(--text-light);
   letter-spacing: 0.5px;
   min-width: 0;
