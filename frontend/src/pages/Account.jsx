@@ -895,6 +895,8 @@ const Account = () => {
           const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
           const syncStatuses = await checkAllGamesSyncStatus();
           setGameSyncStatuses(syncStatuses);
+          // Dispatch event to notify leaderboard of new game
+          window.dispatchEvent(new CustomEvent('gameUploaded'));
         }
         return { success: true, cloudGameId: result.game.id };
       }

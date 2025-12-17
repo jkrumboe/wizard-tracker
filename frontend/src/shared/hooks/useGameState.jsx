@@ -714,6 +714,12 @@ export function GameStateProvider({ children }) {
             autoUploadStatus: 'success',
             autoUploadMessage: '✅ Game uploaded to database!'
           }));
+          
+          // Dispatch event to notify leaderboard of new game
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('gameUploaded'));
+          }
+          
           setTimeout(() => {
             setGameState((prevState) => ({
               ...prevState,

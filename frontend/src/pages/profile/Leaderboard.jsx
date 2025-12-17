@@ -17,6 +17,7 @@ const Leaderboard = () => {
   const [filter, setFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalGames, setTotalGames] = useState(0)
+  const [lastRefresh, setLastRefresh] = useState(null)
   const playersPerPage = 10
 
   // Handle player click - DISABLED: User profiles are disabled
@@ -63,10 +64,30 @@ const Leaderboard = () => {
 
   useEffect(() => {
     fetchLeaderboard()
+    
+    // Set up auto-refresh every 30 seconds
+    const refreshInterval = setInterval(() => {
+      fetchLeaderboard(true) // true = silent refresh
+    }, 30000)
+    
+    // Listen for custom game upload events
+    const handleGameUploaded = () => {
+      console.log('🎮 Game uploaded event received, refreshing leaderboard...')
+      fetchLeaderboard(true)
+    }
+    
+    window.addEventListener('gameUploaded', handleGameUploaded)
+    
+    return () => {
+      clearInterval(refreshInterval)
+      window.removeEventListener('gameUploaded', handleGameUploaded)
+    }
   }, [selectedGameType])
 
-  const fetchLeaderboard = async () => {
-    setLoading(true)
+  const fetchLeaderboard = async (silent = false) => {
+    if (!silent) {
+      setLoading(true)
+    }
     setError(null)
     try {
       const data = await getLeaderboard(selectedGameType)
@@ -75,7 +96,10 @@ const Leaderboard = () => {
       setGameTypes(data.gameTypes || ['all'])
       setGameTypeSettings(data.gameTypeSettings || {})
       setTotalGames(data.totalGames || 0)
-      setCurrentPage(1) // Reset to first page when filter changes
+      setLastRefresh(new Date())
+      if (!silent) {
+        setCurrentPage(1) // Reset to first page when filter changes
+      }
     } catch (error) {
       console.error('Error fetching leaderboard:', error)
       setError(error.message)
@@ -212,12 +236,23 @@ const Leaderboard = () => {
 
   return (
     <div className="leaderboard-container">
-      <h1>Leaderboard</h1>
+      <h1 style={{marginBottom: '0'}}>Leaderboard</h1>
       
-      <div className="leaderboard-stats">
+      {lastRefresh && (
+        <div style={{ 
+          fontSize: '0.85rem', 
+          color: 'var(--text-secondary)', 
+          textAlign: 'center',
+          marginBottom: '1rem' 
+        }}>
+          Last updated: {lastRefresh.toLocaleTimeString()}
+        </div>
+      )}
+      
+      {/* <div className="leaderboard-stats">
         <span>Total Games: {totalGames}</span>
         <span>Total Players: {players.length}</span>
-      </div>
+      </div> */}
 
       <div className="filter-container">
         <input
