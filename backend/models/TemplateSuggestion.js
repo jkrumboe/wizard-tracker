@@ -43,7 +43,7 @@ const templateSuggestionSchema = new mongoose.Schema({
   descriptionMarkdown: {
     type: String,
     default: '',
-    maxlength: [5000, 'Description cannot exceed 5000 characters']
+    maxlength: [7500, 'Description cannot exceed 7500 characters']
   },
   suggestionNote: {
     type: String,
