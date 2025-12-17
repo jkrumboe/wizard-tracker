@@ -18,8 +18,9 @@
   display: flex;
   width: 100%;
   max-width: 100%;
-  overflow-x: scroll;
+  /* overflow-x: scroll; */
   border-bottom: 1px solid var(--border);
+  gap: 0;
 }
 
 .friends-modal .tab-btn {
@@ -82,7 +83,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -125,7 +126,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: var(--spacing-xs) var(--spacing-md);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -143,15 +144,15 @@
 .request-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-sm);
   flex: 1;
 }
 
 .friend-avatar,
 .user-avatar,
 .request-avatar {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--border);
@@ -160,8 +161,8 @@
 .friend-avatar-placeholder,
 .user-avatar-placeholder,
 .request-avatar-placeholder {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--primary);
   display: flex;
