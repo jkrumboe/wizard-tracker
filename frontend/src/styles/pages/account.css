@@ -139,17 +139,13 @@
 }
 
 .result-letter.win {
-  background: var(--success);
+  background: #4caf4f27;
   color: var(--success-color);
 }
 
 .result-letter.loss {
-  background: var(--error);
+  background: #f4433621;
   color: var(--error-color);
-}
-
-.result-letter:hover {
-  transform: scale(1.1);
 }
 
 .overall-recent-results {
