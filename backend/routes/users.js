@@ -170,52 +170,42 @@ router.get('/lookup/:username', async (req, res, next) => {
   }
 });
 
-// GET /users/:userId/profile - Get public profile for a user (DISABLED)
-router.get('/:userId/profile', async (req, res, next) => {
-  // DISABLED: User profile feature is temporarily disabled
-  return res.status(503).json({ 
-    error: 'User profiles are temporarily unavailable',
-    message: 'This feature is currently under development'
-  });
-  
-  /* DISABLED CODE - Keep for future restoration
+// GET /users/:usernameOrId/profile - Get public profile for a user by username or ID
+router.get('/:usernameOrId/profile', async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const { usernameOrId } = req.params;
     
-    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: 'Valid user ID is required' });
+    if (!usernameOrId) {
+      return res.status(400).json({ error: 'Username or user ID is required' });
     }
 
-    // Get user basic info
-    const user = await User.findById(userId).select('_id username createdAt profilePicture');
+    // Get user basic info - try by username first, then by ID
+    let user;
+    if (mongoose.Types.ObjectId.isValid(usernameOrId)) {
+      user = await User.findById(usernameOrId).select('_id username createdAt profilePicture');
+    }
+    if (!user) {
+      user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture');
+    }
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get user's games from both Game and WizardGame collections
-    const Game = require('../models/Game');
+    // Get user's games from WizardGame and TableGame collections (not legacy Game collection)
     const WizardGame = require('../models/WizardGame');
     const TableGame = require('../models/TableGame');
     
-    // Fetch wizard games
-    const wizardGames = await WizardGame.find({ userId })
-      .select('gameData createdAt localId')
+    // Fetch ALL wizard games (not just by userId) since players might be identified by name
+    const wizardGames = await WizardGame.find({})
+      .select('gameData createdAt localId userId')
       .sort({ createdAt: -1 })
-      .limit(100)
-      .lean();
-    // Fetch legacy games
-    const legacyGames = await Game.find({ userId })
-      .select('gameData gameState createdAt')
-      .sort({ createdAt: -1 })
-      .limit(100)
       .lean();
 
-    // Fetch table games
-    const tableGames = await TableGame.find({ userId })
-      .select('gameData gameTypeName name lowIsBetter createdAt gameFinished')
+    // Fetch ALL table games
+    const tableGames = await TableGame.find({})
+      .select('gameData gameTypeName name lowIsBetter createdAt gameFinished userId')
       .sort({ createdAt: -1 })
-      .limit(100)
       .lean();
 
     // Process games to extract relevant stats
@@ -277,65 +267,6 @@ router.get('/:userId/profile', async (req, res, next) => {
       });
     });
 
-    // Process legacy games
-    legacyGames.forEach(game => {
-      const gameData = game.gameData || game.gameState;
-      if (!gameData) return;
-      
-      // Skip paused or unfinished games
-      if (gameData.isPaused || gameData.gameFinished === false) return;
-      
-      // Use gameId or _id as unique identifier to avoid duplicates
-      const gameId = gameData.gameId || gameData.id || String(game._id);
-      if (seenGameIds.has(gameId)) return; // Skip duplicates
-      
-      // For legacy games, check both players array and gameState.players
-      const players = gameData.players || gameData.gameState?.players;
-      if (!players) return;
-      
-      // Find if user is a player in this game - match by username OR userId
-      const userPlayer = players.find(p => {
-        const playerNameLower = p.name?.toLowerCase();
-        const playerUsernameLower = p.username?.toLowerCase();
-        const usernameLower = user.username?.toLowerCase();
-        
-        return playerNameLower === usernameLower ||
-               playerUsernameLower === usernameLower ||
-               p.userId === String(userId) || 
-               p.userId === userId ||
-               String(p.userId) === String(userId);
-      });
-      
-      // Skip if user is not a player in this game
-      if (!userPlayer) return;
-      
-      seenGameIds.add(gameId); // Mark as seen
-      
-      const winnerIds = gameData.winner_ids || 
-                       (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
-      
-      // Check if user's player ID is in winner_ids
-      const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
-      
-      if (isWinner) totalWins++;
-      
-      allGames.push({
-        id: game._id,
-        gameType: 'wizard',
-        created_at: game.createdAt,
-        winner_ids: winnerIds,
-        winner_id: winnerIds[0],
-        gameData: {
-          players: players,
-          total_rounds: gameData.total_rounds || gameData.maxRounds,
-          final_scores: gameData.final_scores,
-          round_data: gameData.round_data || gameData.roundData, // Include for bid accuracy
-          winner_ids: winnerIds
-        },
-        gameState: gameData
-      });
-    });
-
     // Process table games
     tableGames.forEach(game => {
       const gameData = game.gameData;
@@ -373,21 +304,24 @@ router.get('/:userId/profile', async (req, res, next) => {
       });
     });
 
+    // Sort allGames by date and limit to most recent 200
+    allGames.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const limitedGames = allGames.slice(0, 200);
+
     res.json({
       id: user._id,
       _id: user._id,
       username: user.username,
       createdAt: user.createdAt,
       profilePicture: user.profilePicture || null,
-      totalGames: allGames.length,
+      totalGames: limitedGames.length,
       totalWins: totalWins,
-      games: allGames
+      games: limitedGames
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
     next(error);
   }
-  END OF DISABLED CODE */
 });
 
 // PUT /users/me/profile-picture - Update profile picture (protected route)

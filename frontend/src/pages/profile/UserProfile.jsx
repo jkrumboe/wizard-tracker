@@ -14,44 +14,7 @@ import '@/styles/pages/account.css'
 
 const UserProfile = () => {
   const navigate = useNavigate()
-  
-  // DISABLED: User profile page is temporarily disabled
-  return (
-    <div className="settings-container">
-      <div className="settings-section">
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <h2>User Profiles Coming Soon</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-            Public user profiles are currently under development.
-          </p>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              background: 'var(--primary)',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '500',
-            }}
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-  
-  /* DISABLED CODE - Keep for future restoration
-  const { userId } = useParams()
-  const { user: currentUser } = useUser()
-  
-  )
-  
-  /* DISABLED CODE - Keep for future restoration
-  const { userId } = useParams()
+  const { username } = useParams()
   const { user: currentUser } = useUser()
   
   const [profileUser, setProfileUser] = useState(null)
@@ -63,7 +26,7 @@ const UserProfile = () => {
   const [filters] = useState(getDefaultFilters())
 
   // Check if viewing own profile
-  const isOwnProfile = currentUser && (currentUser.id === userId || currentUser._id === userId)
+  const isOwnProfile = currentUser && (currentUser.username?.toLowerCase() === username?.toLowerCase())
   
   // Load games from localStorage if viewing own profile
   const localGamesData = useMemo(() => {
@@ -79,17 +42,22 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!userId) {
-        setError('No user ID provided')
+      if (!username) {
+        setError('No username provided')
         setLoading(false)
         return
       }
+
+      console.log('🔍 [UserProfile] Fetching profile for username:', username);
+      console.log('🔍 [UserProfile] Current user:', currentUser);
+      console.log('🔍 [UserProfile] Is own profile?', isOwnProfile);
 
       try {
         setLoading(true)
         
         // If viewing own profile, use current user data with localStorage games
         if (isOwnProfile && localGamesData) {
+          console.log('✅ [UserProfile] Using own profile with local games:', localGamesData.allGames.length, 'games');
           setProfileUser({
             ...currentUser,
             games: localGamesData.allGames
@@ -101,8 +69,15 @@ const UserProfile = () => {
           return;
         }
         
-        // Otherwise fetch from API for other users
-        const data = await getUserPublicProfile(userId)
+        // Otherwise fetch from API for other users by username
+        console.log('🌐 [UserProfile] Fetching from API for username:', username);
+        const data = await getUserPublicProfile(username)
+        console.log('✅ [UserProfile] Profile data received:', {
+          username: data.username,
+          gamesCount: data.games?.length || 0,
+          hasGames: !!data.games,
+          games: data.games
+        });
         setProfileUser(data)
         
         // Load avatar if available
@@ -110,7 +85,7 @@ const UserProfile = () => {
           setAvatarUrl(data.profilePicture)
         }
       } catch (err) {
-        console.error('Error fetching user profile:', err)
+        console.error('❌ [UserProfile] Error fetching user profile:', err)
         setError(err.message || 'Failed to load user profile')
       } finally {
         setLoading(false)
@@ -118,7 +93,7 @@ const UserProfile = () => {
     }
 
     fetchUserProfile()
-  }, [userId, isOwnProfile, localGamesData, currentUser])
+  }, [username, isOwnProfile, localGamesData, currentUser])
 
   // Handler for game type card clicks
   const handleGameTypeClick = useCallback((gameTypeName) => {
@@ -291,23 +266,6 @@ const UserProfile = () => {
                 </p>
               </div>
             </div>
-            {/* {isOwnProfile && (
-              <button
-                onClick={() => navigate('/account')}
-                style={{
-                  background: 'none',
-                  cursor: 'pointer',
-                  padding: '8px 12px',
-                  color: 'var(--primary)',
-                  border: '1px solid var(--primary)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}
-              >
-                View Full Profile
-              </button>
-            )} */}
           </div>
         </div>
       </div>
@@ -387,7 +345,6 @@ const UserProfile = () => {
       </div>
     </div>
   )
-  END OF DISABLED CODE */
 }
 
 export default UserProfile

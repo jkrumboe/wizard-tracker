@@ -20,13 +20,8 @@ const Leaderboard = () => {
   const [lastRefresh, setLastRefresh] = useState(null)
   const playersPerPage = 10
 
-  // Handle player click - DISABLED: User profiles are disabled
+  // Handle player click - Navigate to user profile
   const handlePlayerClick = async (player) => {
-    console.log('🚫 User profiles are currently disabled');
-    // User profile functionality is temporarily disabled
-    return;
-    
-    /* DISABLED CODE
     console.log('🎯 Player clicked:', {
       name: player.name,
       userId: player.userId,
@@ -35,31 +30,19 @@ const Leaderboard = () => {
     });
 
     try {
-      // If player already has userId, navigate directly
-      if (player.userId) {
-        console.log('✅ Player has userId, navigating to:', `/user/${player.userId}`);
-        navigate(`/user/${player.userId}`)
-        return
-      }
-
-      console.log('🔍 No userId found, looking up by username:', player.name);
-      
-      // Otherwise, lookup by username
-      const result = await lookupUserByUsername(player.name)
-      
-      console.log('📋 Lookup result:', result);
-      
-      if (result.found && result.user?.id) {
-        console.log('✅ User found, navigating to:', `/user/${result.user.id}`);
-        navigate(`/user/${result.user.id}`)
-      } else {
-        console.warn('❌ User not found for player:', player.name)
-        // Could show a toast/message that this player doesn't have an account
-      }
+      // Navigate using player name (which matches username)
+      console.log('✅ Navigating to user profile:', `/user/${player.name}`);
+      console.log('📊 Player stats:', {
+        wins: player.wins,
+        totalGames: player.totalGames,
+        winRate: player.winRate,
+        avgScore: player.avgScore
+      });
+      navigate(`/user/${player.name}`)
     } catch (error) {
-      console.error('💥 Error looking up player:', error)
+      console.error('💥 Error navigating to player:', error)
+      alert(`Error loading player profile: ${error.message}`)
     }
-    */
   }
 
   useEffect(() => {
@@ -331,12 +314,13 @@ const Leaderboard = () => {
                       {globalRank > 3 && globalRank}
                     </div>
                     <div 
-                      className="player-col"
+                      className="player-col clickable"
+                      onClick={() => handlePlayerClick(player)}
                       style={{ 
-                        cursor: 'default',
+                        cursor: 'pointer',
                         opacity: 1
                       }}
-                      title="User profiles coming soon"
+                      title="View player profile"
                     >
                       {player.name}
                     </div>

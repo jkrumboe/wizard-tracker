@@ -580,13 +580,13 @@ class UserService {
     }
   }
 
-  async getUserPublicProfile(userId) {
+  async getUserPublicProfile(usernameOrId) {
     if (this.skipBackend) {
       throw new Error('Backend server not available');
     }
 
     try {
-      const endpoint = `${this.baseURL}/api/users/${userId}/profile`;
+      const endpoint = `${this.baseURL}/api/users/${usernameOrId}/profile`;
       
       console.log('UserService.getUserPublicProfile() - Fetching from:', endpoint);
       
@@ -619,5 +619,5 @@ export const userService = new UserService();
 export default userService;
 
 // Named exports for common methods
-export const getUserPublicProfile = (userId) => userService.getUserPublicProfile(userId);
+export const getUserPublicProfile = (usernameOrId) => userService.getUserPublicProfile(usernameOrId);
 export const lookupUserByUsername = (username) => userService.lookupUserByUsername(username);
