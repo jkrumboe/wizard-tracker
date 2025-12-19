@@ -171,6 +171,7 @@ router.get('/lookup/:username', async (req, res, next) => {
 });
 
 // GET /users/:usernameOrId/profile - Get public profile for a user by username or ID
+// Also works for player names without registered accounts
 router.get('/:usernameOrId/profile', async (req, res, next) => {
   try {
     const { usernameOrId } = req.params;
@@ -179,7 +180,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       return res.status(400).json({ error: 'Username or user ID is required' });
     }
 
-    // Get user basic info - try by username first, then by ID
+    // Try to find registered user - by ID first, then by username
     let user;
     if (mongoose.Types.ObjectId.isValid(usernameOrId)) {
       user = await User.findById(usernameOrId).select('_id username createdAt profilePicture');
@@ -188,9 +189,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture');
     }
     
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    // If no registered user found, create a virtual user object for the player name
+    const playerName = user ? user.username : usernameOrId;
+    const isRegisteredUser = !!user;
 
     // Get user's games from WizardGame and TableGame collections (not legacy Game collection)
     const WizardGame = require('../models/WizardGame');
@@ -229,13 +230,13 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const userPlayer = gameData.players.find(p => {
         const playerNameLower = p.name?.toLowerCase();
         const playerUsernameLower = p.username?.toLowerCase();
-        const usernameLower = user.username?.toLowerCase();
+        const searchNameLower = playerName.toLowerCase();
         
-        return playerNameLower === usernameLower ||
-               playerUsernameLower === usernameLower ||
-               p.userId === String(userId) || 
-               p.userId === userId ||
-               String(p.userId) === String(userId);
+        return playerNameLower === searchNameLower ||
+               playerUsernameLower === searchNameLower ||
+               (user && (p.userId === String(user._id) || 
+                        p.userId === user._id ||
+                        String(p.userId) === String(user._id)));
       });
       
       // Skip if user is not a player in this game
@@ -272,9 +273,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const gameData = game.gameData;
       if (!gameData || !game.gameFinished || !gameData.players) return;
       
-      // For table games, match by username since players don't have userId
+      // For table games, match by player name
       const userPlayer = gameData.players.find(p => 
-        p.name?.toLowerCase() === user.username?.toLowerCase()
+        p.name?.toLowerCase() === playerName.toLowerCase()
       );
       
       // Skip if user is not a player in this game
@@ -309,11 +310,12 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     const limitedGames = allGames.slice(0, 200);
 
     res.json({
-      id: user._id,
-      _id: user._id,
-      username: user.username,
-      createdAt: user.createdAt,
-      profilePicture: user.profilePicture || null,
+      id: user?._id || null,
+      _id: user?._id || null,
+      username: playerName,
+      createdAt: user?.createdAt || null,
+      profilePicture: user?.profilePicture || null,
+      isRegisteredUser: isRegisteredUser,
       totalGames: limitedGames.length,
       totalWins: totalWins,
       games: limitedGames
