@@ -171,6 +171,7 @@ router.get('/leaderboard', async (req, res, next) => {
     
     // Fetch both Wizard games and Table games
     const TableGame = require('../models/TableGame');
+    const WizardGame = require('../models/WizardGame');
     
     // Fetch all users to create a username -> userId mapping for player linking
     const User = require('../models/User');
@@ -181,8 +182,8 @@ router.get('/leaderboard', async (req, res, next) => {
     });
     console.log(`[Leaderboard] Loaded ${allUsers.length} users for username mapping`);
     
-    // Get wizard games (from Game collection) - only fetch needed fields
-    const wizardGames = await Game.find({}, {
+    // Get wizard games from WizardGame collection - only fetch needed fields
+    const wizardGames = await WizardGame.find({}, {
       'gameData.players': 1,
       'gameData.winner_id': 1,
       'gameData.winner_ids': 1,
