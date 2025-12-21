@@ -69,6 +69,38 @@ const FriendsModal = ({ isOpen, onClose }) => {
     }
   }, [user?.id, loadFriends]);
 
+  // Batch load all friends data (friends list + requests) in one API call
+  const loadFriendsBatchData = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const batchData = await userService.getFriendsBatchCheck(user.id);
+      
+      // Update received and sent requests
+      setReceivedRequests(batchData.receivedRequests);
+      setSentRequests(batchData.sentRequests);
+      
+      // Sync cloud friends to local storage if there are any
+      if (batchData.friends.length > 0) {
+        const localFriends = await localFriendsService.getAllFriends();
+        const localFriendIds = new Set(localFriends.map(f => f.id));
+        
+        // Add any cloud friends that aren't in local storage
+        for (const cloudFriend of batchData.friends) {
+          if (!localFriendIds.has(cloudFriend.id)) {
+            console.log('Syncing new friend from cloud to local:', cloudFriend.username);
+            await localFriendsService.addFriend(cloudFriend);
+          }
+        }
+        
+        // Reload friends list to show updates
+        await loadFriends();
+      }
+    } catch (err) {
+      console.error('Error loading friends batch data:', err);
+    }
+  }, [user?.id, loadFriends]);
+
   const loadFriendRequests = useCallback(async () => {
     if (!user?.id) return;
     
@@ -88,22 +120,23 @@ const FriendsModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       loadFriends();
       if (user?.id) {
-        loadFriendRequests();
+        loadFriendsBatchData(); // Use batch endpoint for initial load
       }
     }
-  }, [isOpen, user?.id, loadFriendRequests, loadFriends]);
+  }, [isOpen, user?.id, loadFriendsBatchData, loadFriends]);
 
-  // Poll for new friend requests every 3 seconds when modal is open
+  // Poll for new friend requests every 15 seconds when modal is open
+  // Reduced from 3s to prevent rate limiting issues
+  // Uses batch endpoint to reduce from 3 API calls to 1
   useEffect(() => {
     if (!isOpen || !user?.id) return;
 
     const pollInterval = setInterval(() => {
-      loadFriendRequests();
-      syncCloudFriendsToLocal(); // Also sync friends from cloud
-    }, 3000); // Poll every 3 seconds
+      loadFriendsBatchData(); // Use batch endpoint instead of 3 separate calls
+    }, 15000); // Poll every 15 seconds to avoid rate limiting
 
     return () => clearInterval(pollInterval);
-  }, [isOpen, user?.id, loadFriendRequests, syncCloudFriendsToLocal]);
+  }, [isOpen, user?.id, loadFriendsBatchData]);
 
   // Detect new friend requests
   useEffect(() => {

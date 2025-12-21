@@ -73,9 +73,19 @@ const adminLimiter = createLimiter({
   message: 'Too many admin requests, please try again later.',
 });
 
+// Rate limiter for friends endpoints (high limit for polling)
+// Friends modal polls frequently, so needs generous limits
+const friendsLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 2000, // High limit to accommodate frequent polling
+  message: 'Too many friend request checks, please try again later.',
+  skipSuccessfulRequests: false, // Count all requests
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
   apiLimiter,
-  adminLimiter
+  adminLimiter,
+  friendsLimiter
 };

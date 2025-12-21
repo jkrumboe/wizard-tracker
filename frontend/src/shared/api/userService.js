@@ -472,6 +472,48 @@ class UserService {
     }
   }
 
+  // Batch endpoint to get all friends data in one request (reduces polling overhead)
+  async getFriendsBatchCheck(userId) {
+    // Skip backend call if in development mode without configured backend
+    if (this.skipBackend) {
+      return { friends: [], receivedRequests: [], sentRequests: [] };
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const endpoint = `${this.baseURL}/api/users/${userId}/friends/batch-check`;
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch friends data' }));
+        throw new Error(error.message || error.error || 'Failed to fetch friends data');
+      }
+
+      const result = await response.json();
+      return {
+        friends: result.friends || [],
+        receivedRequests: result.receivedRequests || [],
+        sentRequests: result.sentRequests || []
+      };
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        return { friends: [], receivedRequests: [], sentRequests: [] };
+      }
+      console.error('Error getting friends batch data:', error);
+      return { friends: [], receivedRequests: [], sentRequests: [] };
+    }
+  }
+
   async acceptFriendRequest(userId, requestId) {
     // Skip backend call if in development mode without configured backend
     if (this.skipBackend) {

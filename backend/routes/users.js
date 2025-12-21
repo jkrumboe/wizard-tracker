@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const auth = require('../middleware/auth');
-const { authLimiter } = require('../middleware/rateLimiter');
+const { authLimiter, friendsLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const cache = require('../utils/redis');
@@ -552,7 +552,7 @@ router.get('/all', auth, async (req, res, next) => {
 });
 
 // GET /users/:userId/friends - Get user's friends list (protected route)
-router.get('/:userId/friends', auth, async (req, res, next) => {
+router.get('/:userId/friends', friendsLimiter, auth, async (req, res, next) => {
   try {
     const { userId } = req.params;
 
@@ -573,6 +573,73 @@ router.get('/:userId/friends', auth, async (req, res, next) => {
         username: friend.username,
         createdAt: friend.createdAt,
         profilePicture: friend.profilePicture || null
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/:userId/friends/batch-check - Get all friends data in one request (protected route)
+// Combines friends list, received requests, and sent requests to reduce polling overhead
+router.get('/:userId/friends/batch-check', friendsLimiter, auth, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Verify the user is requesting their own data
+    if (userId !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only view your own friends data' });
+    }
+
+    // Fetch all data in parallel for efficiency
+    const [user, receivedRequests, sentRequests] = await Promise.all([
+      User.findById(userId).populate('friends', '_id username createdAt profilePicture'),
+      FriendRequest.find({
+        receiver: userId,
+        status: 'pending'
+      })
+      .populate('sender', '_id username profilePicture createdAt')
+      .sort({ createdAt: -1 }),
+      FriendRequest.find({
+        sender: userId,
+        status: 'pending'
+      })
+      .populate('receiver', '_id username profilePicture createdAt')
+      .sort({ createdAt: -1 })
+    ]);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      friends: user.friends.map(friend => ({
+        id: friend._id.toString(),
+        username: friend.username,
+        createdAt: friend.createdAt,
+        profilePicture: friend.profilePicture || null
+      })),
+      receivedRequests: receivedRequests.map(req => ({
+        id: req._id.toString(),
+        sender: {
+          id: req.sender._id.toString(),
+          username: req.sender.username,
+          profilePicture: req.sender.profilePicture || null,
+          createdAt: req.sender.createdAt
+        },
+        status: req.status,
+        createdAt: req.createdAt
+      })),
+      sentRequests: sentRequests.map(req => ({
+        id: req._id.toString(),
+        receiver: {
+          id: req.receiver._id.toString(),
+          username: req.receiver.username,
+          profilePicture: req.receiver.profilePicture || null,
+          createdAt: req.receiver.createdAt
+        },
+        status: req.status,
+        createdAt: req.createdAt
       }))
     });
   } catch (error) {
@@ -746,7 +813,7 @@ router.post('/:userId/friend-requests', auth, async (req, res, next) => {
 });
 
 // GET /users/:userId/friend-requests/received - Get received friend requests (protected route)
-router.get('/:userId/friend-requests/received', auth, async (req, res, next) => {
+router.get('/:userId/friend-requests/received', friendsLimiter, auth, async (req, res, next) => {
   try {
     const { userId } = req.params;
 
@@ -781,7 +848,7 @@ router.get('/:userId/friend-requests/received', auth, async (req, res, next) => 
 });
 
 // GET /users/:userId/friend-requests/sent - Get sent friend requests (protected route)
-router.get('/:userId/friend-requests/sent', auth, async (req, res, next) => {
+router.get('/:userId/friend-requests/sent', friendsLimiter, auth, async (req, res, next) => {
   try {
     const { userId } = req.params;
 
