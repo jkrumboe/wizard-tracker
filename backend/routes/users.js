@@ -8,6 +8,7 @@ const { authLimiter, friendsLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const cache = require('../utils/redis');
+const { linkGamesToNewUser } = require('../utils/gameUserLinkage');
 const router = express.Router();
 
 // POST /users/register - Create new user (with strict rate limiting)
@@ -52,6 +53,30 @@ router.post('/register', authLimiter, async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    // ========== Link Previous Games to New User ==========
+    // This runs in the background and doesn't block the registration response
+    // If it fails, registration still succeeds
+    setImmediate(async () => {
+      try {
+        console.log(`\n🎮 Attempting to link previous games for new user: ${username}`);
+        const linkageResults = await linkGamesToNewUser(username, user._id);
+        
+        if (linkageResults.success) {
+          const totalLinked = linkageResults.gamesLinked + 
+                            linkageResults.wizardGamesLinked + 
+                            linkageResults.tableGamesLinked;
+          console.log(`✅ Successfully linked ${totalLinked} previous games to ${username}`);
+        } else if (linkageResults.errors.length > 0) {
+          console.warn(`⚠️  Game linkage completed with errors for ${username}:`, 
+            linkageResults.errors);
+        }
+      } catch (linkError) {
+        // Log the error but don't fail the registration
+        console.error(`❌ Failed to link games for ${username}:`, linkError.message);
+        console.error('   Registration succeeded, but game linkage failed');
+      }
+    });
 
     res.status(201).json({
       message: 'User created successfully',
@@ -113,6 +138,41 @@ router.post('/login', authLimiter, async (req, res, next) => {
       }
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// POST /users/me/link-games - Manually link games to current user (protected route)
+// Useful if automatic linkage failed during registration or for retroactive linking
+router.post('/me/link-games', auth, async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const username = req.user.username;
+
+    console.log(`🔗 Manual game linkage requested for user: ${username}`);
+
+    // Run the game linkage
+    const linkageResults = await linkGamesToNewUser(username, userId);
+
+    const totalLinked = linkageResults.gamesLinked + 
+                       linkageResults.wizardGamesLinked + 
+                       linkageResults.tableGamesLinked;
+
+    res.json({
+      success: linkageResults.success,
+      message: totalLinked > 0 
+        ? `Successfully linked ${totalLinked} game(s) to your account`
+        : 'No games found to link',
+      details: {
+        gamesLinked: linkageResults.gamesLinked,
+        wizardGamesLinked: linkageResults.wizardGamesLinked,
+        tableGamesLinked: linkageResults.tableGamesLinked,
+        totalLinked: totalLinked,
+        errors: linkageResults.errors.length > 0 ? linkageResults.errors : undefined
+      }
+    });
+  } catch (error) {
+    console.error('Error in manual game linkage:', error);
     next(error);
   }
 });
