@@ -137,14 +137,8 @@ const Home = () => {
       }
     };
     
-    // Only fetch games if there's a user, otherwise clear the list
-    // This prevents showing all users' games when logged out
-    if (user) {
-      fetchLocalGames();
-    } else {
-      setAllGames([]);
-      setLoading(false);
-    }
+    // Always fetch games from localStorage, even when not logged in
+    fetchLocalGames();
   }, [user]); // Re-fetch games when user changes (e.g., after login/logout)
 
   // Check for offline message from navigation state
