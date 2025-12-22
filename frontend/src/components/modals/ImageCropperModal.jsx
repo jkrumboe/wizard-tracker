@@ -110,7 +110,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
       <div className="modal-container image-cropper-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Crop Profile Picture</h2>
-          <button onClick={onClose} className="modal-close-button" aria-label="Close modal">
+          <button onClick={onClose} className="modal-close-btn" aria-label="Close modal">
             <XIcon size={24} />
           </button>
         </div>
@@ -146,11 +146,10 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
         </div>
 
         <div className="modal-footer">
-          <button onClick={onClose} className="button button-secondary">
+          <button onClick={onClose} className="btn-secondary">
             Cancel
           </button>
-          <button onClick={handleApply} className="button button-primary">
-            <CheckMarkIcon size={18} />
+          <button onClick={handleApply} className="btn-primary">
             Apply
           </button>
         </div>

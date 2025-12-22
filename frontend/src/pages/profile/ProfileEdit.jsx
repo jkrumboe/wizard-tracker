@@ -22,6 +22,7 @@ const ProfileEdit = () => {
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState('');
   const [showCropper, setShowCropper] = useState(false);
   const [error, setError] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Load current user data
   useEffect(() => {
@@ -57,7 +58,38 @@ const ProfileEdit = () => {
     };
   }, [previewAvatarUrl]);
 
+  // Track if changes have been made
+  useEffect(() => {
+    const originalName = user?.name || user?.username || '';
+    const nameChanged = editedName.trim() !== '' && editedName !== originalName;
+    const avatarChanged = croppedAvatarBlob !== null;
+    setHasChanges(nameChanged || avatarChanged);
+  }, [editedName, croppedAvatarBlob, user]);
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasChanges && !saving) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasChanges, saving]);
+
   const handleCancel = () => {
+    // Check if there are unsaved changes
+    if (hasChanges) {
+      const confirmLeave = window.confirm(
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+      );
+      if (!confirmLeave) {
+        return;
+      }
+    }
+    
     // Clean up preview URL if it exists
     if (previewAvatarUrl) {
       URL.revokeObjectURL(previewAvatarUrl);
@@ -86,8 +118,8 @@ const ProfileEdit = () => {
       }
       
       // Validate username length and characters
-      if (cleanedName && (cleanedName.length < 3 || cleanedName.length > 128)) {
-        setError('Username must be between 3 and 128 characters');
+      if (cleanedName && (cleanedName.length < 3 || cleanedName.length > 20)) {
+        setError('Username must be between 3 and 20 characters');
         setSaving(false);
         return;
       }
@@ -259,6 +291,16 @@ const ProfileEdit = () => {
     setShowCropper(false);
   };
 
+  const handleRemoveNewAvatar = () => {
+    // Clean up preview URL
+    if (previewAvatarUrl) {
+      URL.revokeObjectURL(previewAvatarUrl);
+    }
+    setCroppedAvatarBlob(null);
+    setPreviewAvatarUrl('');
+    setSelectedAvatarFile(null);
+  };
+
   if (!user) {
     return (
       <div className="profile-container">
@@ -304,20 +346,43 @@ const ProfileEdit = () => {
               className="avatar-preview" 
             />
           </div>
-          <label className="avatar-upload-label" style={{
-            alignSelf: 'center',
-            marginTop: '8vh'
+          <div style={{
+            display: 'flex',
+            gap: 'var(--spacing-sm)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: '7.5vh',
+            paddingLeft: croppedAvatarBlob ? '25%' : '0'
           }}>
-            <span>Change Picture</span>
-            <input
-              type="file"
-              className="edit-avatar"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={handleFileSelect}
-              disabled={uploadingAvatar}
-              hidden
-            />
-          </label>
+            <label className="avatar-upload-label" style={{
+              backgroundColor: croppedAvatarBlob ? 'var(--primary)' : 'var(--card-bg-alt)',
+              borderColor: croppedAvatarBlob ? 'var(--primary)' : 'var(--border)',
+              color: croppedAvatarBlob ? 'white' : 'var(--text)'
+            }}>
+              <span>{croppedAvatarBlob ? 'New Picture' : 'Change Picture'}</span>
+              <input
+                type="file"
+                className="edit-avatar"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleFileSelect}
+                disabled={uploadingAvatar}
+                hidden
+              />
+            </label>
+            {croppedAvatarBlob && !uploadingAvatar && (
+              <button
+                onClick={handleRemoveNewAvatar}
+                className="avatar-upload-label"
+                style={{
+                  backgroundColor: 'var(--card-bg-alt)',
+                  color: 'var(--text)'
+                }}
+                aria-label="Remove new picture"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
           {uploadingAvatar && (
             <div className="uploading-indicator" style={{ textAlign: 'center' }}>
               Uploading avatar...
@@ -349,14 +414,13 @@ const ProfileEdit = () => {
               setEditedName(nameWithoutSpaces);
             }}
             placeholder={user?.name || user?.username || "Enter username"}
-            maxLength={128}
+            maxLength={20}
           />
           <small style={{ 
             color: 'var(--text-muted)', 
-            fontSize: '0.8rem',
-            marginTop: '2px'
+            fontSize: '0.8rem'
           }}>
-            No spaces allowed • 3-128 characters
+            3-20 characters
           </small>
         </div>
         
@@ -374,14 +438,14 @@ const ProfileEdit = () => {
           </div>
         )} 
             
-        <div className="edit-buttons" style={{ marginTop: 'var(--spacing-md)' }}>
+        <div className="edit-buttons" style={{ marginTop: 'var(--spacing-sm)' }}>
           <button 
             onClick={handleSave} 
             className='save-button'
-            disabled={saving || uploadingAvatar || (!editedName && !croppedAvatarBlob)}
+            disabled={saving || uploadingAvatar || !hasChanges}
             style={{
-              opacity: saving || uploadingAvatar || (!editedName && !croppedAvatarBlob) ? 0.6 : 1,
-              cursor: saving || uploadingAvatar || (!editedName && !croppedAvatarBlob) ? 'not-allowed' : 'pointer'
+              opacity: saving || uploadingAvatar || !hasChanges ? 0.6 : 1,
+              cursor: saving || uploadingAvatar || !hasChanges ? 'not-allowed' : 'pointer'
             }}
           >
             {uploadingAvatar ? 'Uploading Avatar...' : saving ? 'Saving...' : 'Save Changes'}
