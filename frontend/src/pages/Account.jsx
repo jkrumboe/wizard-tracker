@@ -1462,7 +1462,10 @@ const Account = () => {
 
         {activeTab === 'games' && (
           <div className="tab-content">
-            <div className="settings-section">
+            <div 
+              className="settings-section"
+              style={{background: 'transparent', border: 'none', padding: '0'}}
+            >
           {cloudSyncStatus.uploading && (
             <div className="upload-progress">
               <div className="progress-text">{cloudSyncStatus.progress}</div>
@@ -1530,7 +1533,7 @@ const Account = () => {
                   <button 
                     className="settings-button"
                     onClick={() => setShowDebugPanel(!showDebugPanel)}
-                    style={{ background: showDebugPanel ? 'var(--primary-color)' : 'var(--secondary-bg)' }}
+                    style={{ border: '1px solid var(--primary)' }}
                   >
                     {showDebugPanel ? '✓' : '🐛'} Debug Log
                   </button>
