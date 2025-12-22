@@ -15,6 +15,16 @@ const WizardGame = require('../models/WizardGame');
 const TableGame = require('../models/TableGame');
 
 /**
+ * Escapes special regex characters in a string
+ * Prevents regex injection attacks
+ * @param {String} string - The string to escape
+ * @returns {String} - Escaped string safe for use in RegExp
+ */
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Helper function to link a single game to a user
  * @param {Object} game - The game document
  * @param {String} username - The username to match
@@ -80,8 +90,10 @@ async function linkGamesToNewUser(username, userId) {
       throw new Error('Invalid userId provided');
     }
 
-    // Case-sensitive username matching
-    const usernameRegex = new RegExp(`^${username}$`);
+    // Case-sensitive username matching with sanitized input
+    // Escape special regex characters to prevent regex injection
+    const sanitizedUsername = escapeRegExp(username);
+    const usernameRegex = new RegExp(`^${sanitizedUsername}$`);
 
     // ========== Link Regular Games (Game collection) ==========
     try {
