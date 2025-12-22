@@ -29,9 +29,9 @@ async function linkSingleGame(game, username, userObjectId, gameType) {
     return false;
   }
 
-  // Check if this game has at least one matching player
+  // Check if this game has at least one matching player (case-sensitive)
   const hasMatchingPlayer = game.gameData?.players?.some(
-    player => player.name && player.name.toLowerCase() === username.toLowerCase()
+    player => player.name && player.name === username
   );
 
   if (!hasMatchingPlayer) {
@@ -80,8 +80,8 @@ async function linkGamesToNewUser(username, userId) {
       throw new Error('Invalid userId provided');
     }
 
-    // Case-insensitive username matching
-    const usernameRegex = new RegExp(`^${username}$`, 'i');
+    // Case-sensitive username matching
+    const usernameRegex = new RegExp(`^${username}$`);
 
     // ========== Link Regular Games (Game collection) ==========
     try {
@@ -240,7 +240,7 @@ async function linkGamesToNewUser(username, userId) {
  */
 async function findGamesByUsername(username) {
   try {
-    const usernameRegex = new RegExp(`^${username}$`, 'i');
+    const usernameRegex = new RegExp(`^${username}$`);
 
     const [games, wizardGames, tableGames] = await Promise.all([
       Game.find({

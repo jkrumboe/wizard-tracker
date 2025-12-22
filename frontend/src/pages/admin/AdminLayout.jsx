@@ -55,6 +55,14 @@ const AdminLayout = () => {
               <span>User Management</span>
             </Link>
           </li>
+          <li>
+            <Link 
+              to="/admin/game-linkage" 
+              className={location.pathname === '/admin/game-linkage' ? 'active' : ''}
+            >
+              <span>Game Linkage</span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
@@ -91,6 +99,10 @@ const AdminLayout = () => {
                 <h3>User Management</h3>
                 <p>Manage usernames and user information</p>
                 <div className="card-badge">{stats.users} users</div>
+              </Link>
+              <Link to="/admin/game-linkage" className="admin-card">
+                <h3>Game Linkage</h3>
+                <p>Link games to user accounts retroactively</p>
               </Link>
             </div>
           </div>

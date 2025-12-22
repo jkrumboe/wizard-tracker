@@ -1080,6 +1080,132 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
   }
 });
 
+// POST /users/admin/link-all-games - Retroactively link games for all users (admin only)
+router.post('/admin/link-all-games', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    console.log('🔗 Admin triggered game linkage for all users');
+
+    // Get all users
+    const users = await User.find().select('_id username');
+    
+    const results = {
+      totalUsers: users.length,
+      processed: 0,
+      successful: 0,
+      failed: 0,
+      totalGamesLinked: 0,
+      details: []
+    };
+
+    // Process each user
+    for (const user of users) {
+      try {
+        results.processed++;
+        console.log(`Processing user ${results.processed}/${users.length}: ${user.username}`);
+        
+        const linkageResults = await linkGamesToNewUser(user.username, user._id);
+        const gamesLinked = linkageResults.gamesLinked + 
+                          linkageResults.wizardGamesLinked + 
+                          linkageResults.tableGamesLinked;
+        
+        if (gamesLinked > 0 || linkageResults.errors.length === 0) {
+          results.successful++;
+          results.totalGamesLinked += gamesLinked;
+          
+          if (gamesLinked > 0) {
+            results.details.push({
+              userId: user._id.toString(),
+              username: user.username,
+              gamesLinked: gamesLinked,
+              success: true
+            });
+          }
+        } else {
+          results.failed++;
+          results.details.push({
+            userId: user._id.toString(),
+            username: user.username,
+            success: false,
+            errors: linkageResults.errors
+          });
+        }
+      } catch (error) {
+        results.failed++;
+        console.error(`❌ Error processing user ${user.username}:`, error.message);
+        results.details.push({
+          userId: user._id.toString(),
+          username: user.username,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    console.log(`✅ Completed linking games for ${results.totalUsers} users`);
+    console.log(`   Successful: ${results.successful}, Failed: ${results.failed}`);
+    console.log(`   Total games linked: ${results.totalGamesLinked}`);
+
+    res.json({
+      success: true,
+      message: `Processed ${results.totalUsers} users, linked ${results.totalGamesLinked} games`,
+      results
+    });
+  } catch (error) {
+    console.error('❌ Error in admin game linkage:', error);
+    next(error);
+  }
+});
+
+// POST /users/admin/link-user-games/:userId - Link games for a specific user (admin only)
+router.post('/admin/link-user-games/:userId', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.params;
+
+    // Get the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log(`🔗 Admin triggered game linkage for user: ${user.username}`);
+
+    // Run the game linkage
+    const linkageResults = await linkGamesToNewUser(user.username, userId);
+
+    const totalLinked = linkageResults.gamesLinked + 
+                       linkageResults.wizardGamesLinked + 
+                       linkageResults.tableGamesLinked;
+
+    res.json({
+      success: linkageResults.success,
+      message: totalLinked > 0 
+        ? `Successfully linked ${totalLinked} game(s) for user ${user.username}`
+        : `No games found to link for user ${user.username}`,
+      details: {
+        username: user.username,
+        gamesLinked: linkageResults.gamesLinked,
+        wizardGamesLinked: linkageResults.wizardGamesLinked,
+        tableGamesLinked: linkageResults.tableGamesLinked,
+        totalLinked: totalLinked,
+        errors: linkageResults.errors.length > 0 ? linkageResults.errors : undefined
+      }
+    });
+  } catch (error) {
+    console.error('Error in admin user game linkage:', error);
+    next(error);
+  }
+});
+
 // GET /users/admin/all - Get all users with full details (admin only)
 router.get('/admin/all', auth, async (req, res, next) => {
   try {

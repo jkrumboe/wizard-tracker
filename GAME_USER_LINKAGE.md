@@ -309,7 +309,7 @@ Automatically links games during registration.
 ```
 
 ### POST /api/users/me/link-games
-Manually trigger game linkage.
+Manually trigger game linkage for authenticated user.
 
 **Headers:**
 ```
@@ -330,6 +330,85 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+### POST /api/users/admin/link-all-games
+**Admin only** - Retroactively link games for all users.
+
+**Headers:**
+```
+Authorization: Bearer <admin-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Processed 50 users, linked 123 games",
+  "results": {
+    "totalUsers": 50,
+    "processed": 50,
+    "successful": 48,
+    "failed": 2,
+    "totalGamesLinked": 123,
+    "details": [...]
+  }
+}
+```
+
+### POST /api/users/admin/link-user-games/:userId
+**Admin only** - Link games for a specific user.
+
+**Headers:**
+```
+Authorization: Bearer <admin-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Successfully linked 5 game(s) for user PlayerName",
+  "details": {
+    "username": "PlayerName",
+    "gamesLinked": 2,
+    "wizardGamesLinked": 2,
+    "tableGamesLinked": 1,
+    "totalLinked": 5
+  }
+}
+```
+
+## Admin Panel
+
+Admins can access the **Game Linkage Management** page at `/admin/game-linkage` to:
+
+- View information about the game linkage system
+- Trigger retroactive linkage for all existing users
+- See detailed results including:
+  - Number of users processed
+  - Total games linked
+  - Success/failure counts
+  - Per-user breakdown
+
+**When to use:**
+- After initial deployment to link existing users' games
+- After data migration or bulk user import
+- When troubleshooting linkage issues
+- To ensure all historical games are properly linked
+
+**How to access:**
+1. Log in as an admin user
+2. Navigate to Admin Panel
+3. Click "Game Linkage" in the sidebar
+4. Click "Link All User Games" button
+5. Confirm the operation
+6. Wait for results (may take several seconds to minutes)
+
+The admin panel displays:
+- Real-time progress
+- Total statistics
+- Detailed per-user results
+- Error information if any failures occur
 
 ## Related Documentation
 

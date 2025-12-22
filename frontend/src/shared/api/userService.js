@@ -655,6 +655,72 @@ class UserService {
       throw error;
     }
   }
+
+  async linkAllUserGames() {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/link-all-games`;
+      
+      console.log('UserService.linkAllUserGames() - Posting to:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to link games' }));
+        throw new Error(error.error || 'Failed to link games');
+      }
+
+      const result = await response.json();
+      console.log('UserService.linkAllUserGames() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error linking user games:', error);
+      throw error;
+    }
+  }
+
+  async linkUserGames(userId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/link-user-games/${userId}`;
+      
+      console.log('UserService.linkUserGames() - Posting to:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to link user games' }));
+        throw new Error(error.error || 'Failed to link user games');
+      }
+
+      const result = await response.json();
+      console.log('UserService.linkUserGames() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error linking user games:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();
