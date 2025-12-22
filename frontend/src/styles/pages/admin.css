@@ -563,7 +563,6 @@
 .admin-container .username-input:focus,
 .admin-container .role-select:focus {
   outline: none;
-  border: var(--accent-color);
 }
 
 .admin-layout .role-badge {
@@ -612,7 +611,7 @@
 
 .admin-layout .btn-approve,
 .admin-container .btn-approve {
-  background-color: var(--success-color, #10b981);
+  background-color: var(--success-color);
   color: var(--text);
 }
 
@@ -624,7 +623,7 @@
 
 .admin-layout .btn-reject,
 .admin-container .btn-reject {
-  background-color: var(--error-color, #ef4444);
+  background-color: var(--error-color);
   color: var(--text);
 }
 
@@ -646,8 +645,7 @@
 .admin-layout .btn-role:hover,
 .admin-container .btn-edit:hover,
 .admin-container .btn-role:hover {
-  background-color: var(--primary-dark, #2563eb);
-  transform: translateY(-2px);
+  transform: scale(1.01);
 }
 
 .admin-layout .btn-role,
@@ -680,7 +678,7 @@
 
 .admin-layout .btn-cancel:hover,
 .admin-container .btn-cancel:hover {
-  background-color: var(--text);
+  /* background-color: var(--text); */
   transform: translateY(-2px);
 }
 
@@ -701,7 +699,7 @@
 
 .admin-layout .error,
 .admin-container .error {
-  color: var(--error-color, #ef4444);
+  color: var(--error-color);
 }
 
 /* Responsive Design */
