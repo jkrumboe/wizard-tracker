@@ -53,7 +53,7 @@ async function linkSingleGame(game, username, userObjectId, gameType) {
   game.userId = userObjectId;
   await game.save();
 
-  console.log(`✅ Linked ${gameType} ${game.localId} to user ${username}`);
+  console.log('✅ Linked %s %s to user %s', gameType, game.localId, username);
   return true;
 }
 
@@ -78,7 +78,7 @@ async function linkGamesToNewUser(username, userId) {
   };
 
   try {
-    console.log(`🔗 Starting game linkage for new user: ${username} (ID: ${userId})`);
+    console.log('🔗 Starting game linkage for new user: %s (ID: %s)', username, userId);
 
     // Convert userId to ObjectId if it's a string
     let userObjectId;
@@ -106,7 +106,7 @@ async function linkGamesToNewUser(username, userId) {
         }
       });
 
-      console.log(`📦 Found ${games.length} regular games with player "${username}"`);
+      console.log('📦 Found %d regular games with player "%s"', games.length, username);
 
       for (const game of games) {
         try {
@@ -147,7 +147,7 @@ async function linkGamesToNewUser(username, userId) {
         }
       });
 
-      console.log(`🧙 Found ${wizardGames.length} wizard games with player "${username}"`);
+      console.log('🧙 Found %d wizard games with player "%s"', wizardGames.length, username);
 
       for (const game of wizardGames) {
         try {
@@ -188,7 +188,7 @@ async function linkGamesToNewUser(username, userId) {
         }
       });
 
-      console.log(`🎲 Found ${tableGames.length} table games with player "${username}"`);
+      console.log('🎲 Found %d table games with player "%s"', tableGames.length, username);
 
       for (const game of tableGames) {
         try {
@@ -223,11 +223,11 @@ async function linkGamesToNewUser(username, userId) {
     const totalLinked = results.gamesLinked + results.wizardGamesLinked + results.tableGamesLinked;
     results.success = totalLinked > 0 || results.errors.length === 0;
 
-    console.log(`\n📊 Game Linkage Summary for ${username}:`);
-    console.log(`   ✅ Regular Games: ${results.gamesLinked}`);
-    console.log(`   ✅ Wizard Games: ${results.wizardGamesLinked}`);
-    console.log(`   ✅ Table Games: ${results.tableGamesLinked}`);
-    console.log(`   📈 Total Linked: ${totalLinked}`);
+    console.log('\n📊 Game Linkage Summary for %s:', username);
+    console.log('   ✅ Regular Games: %d', results.gamesLinked);
+    console.log('   ✅ Wizard Games: %d', results.wizardGamesLinked);
+    console.log('   ✅ Table Games: %d', results.tableGamesLinked);
+    console.log('   📈 Total Linked: %d', totalLinked);
     if (results.errors.length > 0) {
       console.log(`   ⚠️  Errors: ${results.errors.length}`);
     }

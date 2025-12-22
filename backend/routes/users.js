@@ -59,21 +59,21 @@ router.post('/register', authLimiter, async (req, res, next) => {
     // If it fails, registration still succeeds
     setImmediate(async () => {
       try {
-        console.log(`\n🎮 Attempting to link previous games for new user: ${username}`);
+        console.log('\n🎮 Attempting to link previous games for new user: %s', username);
         const linkageResults = await linkGamesToNewUser(username, user._id);
         
         if (linkageResults.success) {
           const totalLinked = linkageResults.gamesLinked + 
                             linkageResults.wizardGamesLinked + 
                             linkageResults.tableGamesLinked;
-          console.log(`✅ Successfully linked ${totalLinked} previous games to ${username}`);
+          console.log('✅ Successfully linked %d previous games to %s', totalLinked, username);
         } else if (linkageResults.errors.length > 0) {
-          console.warn(`⚠️  Game linkage completed with errors for ${username}:`, 
+          console.warn('⚠️  Game linkage completed with errors for %s:', username, 
             linkageResults.errors);
         }
       } catch (linkError) {
         // Log the error but don't fail the registration
-        console.error(`❌ Failed to link games for ${username}:`, linkError.message);
+        console.error('❌ Failed to link games for %s:', username, linkError.message);
         console.error('   Registration succeeded, but game linkage failed');
       }
     });
@@ -149,7 +149,7 @@ router.post('/me/link-games', auth, async (req, res, next) => {
     const userId = req.user._id;
     const username = req.user.username;
 
-    console.log(`🔗 Manual game linkage requested for user: ${username}`);
+    console.log('🔗 Manual game linkage requested for user: %s', username);
 
     // Run the game linkage
     const linkageResults = await linkGamesToNewUser(username, userId);
@@ -1106,7 +1106,7 @@ router.post('/admin/link-all-games', auth, async (req, res, next) => {
     for (const user of users) {
       try {
         results.processed++;
-        console.log(`Processing user ${results.processed}/${users.length}: ${user.username}`);
+        console.log('Processing user %d/%d: %s', results.processed, users.length, user.username);
         
         const linkageResults = await linkGamesToNewUser(user.username, user._id);
         const gamesLinked = linkageResults.gamesLinked + 
@@ -1136,7 +1136,7 @@ router.post('/admin/link-all-games', auth, async (req, res, next) => {
         }
       } catch (error) {
         results.failed++;
-        console.error(`❌ Error processing user ${user.username}:`, error.message);
+        console.error('❌ Error processing user %s:', user.username, error.message);
         results.details.push({
           userId: user._id.toString(),
           username: user.username,
@@ -1177,7 +1177,7 @@ router.post('/admin/link-user-games/:userId', auth, async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log(`🔗 Admin triggered game linkage for user: ${user.username}`);
+    console.log('🔗 Admin triggered game linkage for user: %s', user.username);
 
     // Run the game linkage
     const linkageResults = await linkGamesToNewUser(user.username, userId);
@@ -1306,7 +1306,7 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       { $set: { userName: trimmedUsername } }
     );
 
-    console.log(`✅ Username updated from "${oldUsername}" to "${trimmedUsername}" across all collections`);
+    console.log('✅ Username updated from "%s" to "%s" across all collections', oldUsername, trimmedUsername);
 
     res.json({
       message: 'Username updated successfully across all records',
@@ -1354,7 +1354,7 @@ router.put('/:userId/role', auth, async (req, res, next) => {
     user.role = role;
     await user.save();
 
-    console.log(`✅ User role updated from "${oldRole}" to "${role}" for user: ${user.username}`);
+    console.log('✅ User role updated from "%s" to "%s" for user: %s', oldRole, role, user.username);
 
     res.json({
       message: 'User role updated successfully',
