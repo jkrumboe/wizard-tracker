@@ -10,12 +10,15 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshAuthStatus } = useUser();
 
   const handleLogin = async () => {
     setError(null);
+    setIsLoading(true);
     
     try {
       await authService.login({ username, password });
@@ -26,12 +29,15 @@ const Login = () => {
       const from = location.state?.from || '/';
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.message);
+      setError(error.message || 'Failed to sign in. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRegister = async () => {
     setError(null);
+    setIsLoading(true);
     
     try {
       await authService.register({ username: username, password });
@@ -42,14 +48,14 @@ const Login = () => {
       const from = location.state?.from || '/';
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.message);
+      setError(error.message || 'Failed to create account. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="login-page">
-      {/* <h1>{isRegistering ? "Register" : "Login"}</h1> */}
-      
       <form
         className="login-form"
         onSubmit={(e) => {
@@ -57,44 +63,118 @@ const Login = () => {
           isRegistering ? handleRegister() : handleLogin();
         }}
       >
-        <h2 className="login-title">{isRegistering ? "Create Account" : "Welcome Back"}</h2>
+        <div className="login-header">
+          <h2 className="login-title">{isRegistering ? "Create Account" : "Welcome"}</h2>
+        </div>
         
         <div className="input-group">
+          <label htmlFor="username" className="input-label">
+            Username
+          </label>
           <input
+            id="username"
             type="text"
-            placeholder="Username"
+            placeholder="Enter your username"
             autoComplete="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => {
+              // Remove any spaces from the input
+              const usernameWithoutSpaces = e.target.value.replace(/\s/g, '');
+              setUsername(usernameWithoutSpaces);
+            }}
+            disabled={isLoading}
+            maxLength={20}
             required
           />
+          {isRegistering && (
+            <small className="input-hint">3-20 characters</small>
+          )}
         </div>
         
         <div className="input-group">
-          <input
-            type="password"
-            placeholder="Password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <label htmlFor="password" className="input-label">
+            Password
+          </label>
+          <div className="password-input-wrapper">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              autoComplete={isRegistering ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={isLoading}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              )}
+            </button>
+          </div>
+          {isRegistering && (
+            <small className="input-hint">Minimum 8 characters recommended</small>
+          )}
         </div>
         
-        {error && <p className="error-message">{error}</p>}
+        {error && (
+          <div className="error-message">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{error}</span>
+          </div>
+        )}
         
-        <button type="submit" className="submit-btn">
-          {isRegistering ? "Sign Up" : "Sign In"}
+        <button type="submit" className="submit-btn btn-primary" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <span className="loading-spinner"></span>
+              {isRegistering ? "Creating Account..." : "Signing In..."}
+            </>
+          ) : (
+            isRegistering ? "Sign Up" : "Sign In"
+          )}
         </button>
+        
+        <div className="divider">
+          <span>or</span>
+        </div>
         
         <button
           type="button"
           className="switch-btn"
-          onClick={() => setIsRegistering(!isRegistering)}
+          onClick={() => {
+            setIsRegistering(!isRegistering);
+            setError(null);
+          }}
+          disabled={isLoading}
         >
           {isRegistering ? "Already have an account? Sign In" : "No account yet? Sign Up"}
         </button>
       </form>
+
+      <p className="login-subtitle">
+            {isRegistering 
+              ? "Sign up to start tracking your game scores" 
+              : "Sign in to continue to your account"}
+          </p>
     </div>
   );
 };
