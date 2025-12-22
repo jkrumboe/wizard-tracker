@@ -726,29 +726,30 @@
     display: flex;
     flex-direction: column;
     background-color: var(--card-bg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     width: 100%;
-    padding-top: var(--spacing-sm);
-    gap: var(--spacing-sm);
+    max-width: 450px;
+    gap: 0;
     position: relative;
   }
 
   .profile-edit-header input {
     width: 100%;
     padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius-md);
     font-size: 1rem;
     background-color: var(--card-bg-alt);
     color: var(--text);
-    transition: border-color 0.2s;
+    transition: all 0.2s;
   }
 
   .profile-edit-header input:focus {
     outline: none;
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
   }
 
   .profile-edit-header .save-button {
@@ -758,12 +759,19 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     font-weight: 600;
-    font-size: 1.1rem;
-    padding: var(--spacing-sm) var(--spacing-xl);
-    margin-top: var(--spacing-sm);
+    font-size: 1rem;
+    padding: var(--spacing-sm) 0;
+    margin-top: 0;
     min-width: 140px;
     width: 100%;
     transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .profile-edit-header .save-button:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
   .edit-avatar {
@@ -779,18 +787,13 @@
   }
 
   .avatar-preview-container {
+    position: absolute;
+    top: -70px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  .avatar-actions {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-sm);
-    width: 100%;
   }
 
   .edit-buttons {
@@ -802,34 +805,37 @@
 
   /* Mobile responsive adjustments for profile edit */
   @media (max-width: 768px) {
-    .avatar-actions {
-      flex-direction: row;
-      gap: var(--spacing-sm);
+    .profile-edit-header {
+      max-width: 100%;
     }
 
     .avatar-upload-label {
       width: auto;
-      font-size: 1rem;
-      padding: var(--spacing-xs) var(--spacing-sm) !important;
-      justify-content: center;
-      height: 36px;
-      display: flex;
-      align-items: center;
+      font-size: 0.85rem;
+      padding: var(--spacing-xs) var(--spacing-md) !important;
     }
   }
   
   .avatar-upload-label {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background-color: var(--primary);
+    padding: var(--spacing-xs) var(--spacing-lg);
+    background-color: var(--card-bg-alt);
     color: var(--text);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius-md);
     font-weight: 500;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
-    border: none;
+  }
+  
+  .avatar-upload-label:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-1px);
   }
 
   .uploading-indicator {
@@ -845,7 +851,7 @@
     margin: var(--spacing-sm) 0;
     font-weight: 500;
     text-align: center;
-    max-width: 300px;
+    width: 100%;
   }
 
   .profile-edit-header .settings-message.success {

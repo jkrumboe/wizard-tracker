@@ -288,21 +288,27 @@ const ProfileEdit = () => {
           <XIcon size={20} />
         </button>
         
-        {/* Avatar preview */}
-        <div className="avatar-preview-container">
-          <img 
-            src={sanitizeImageUrl(
-              previewAvatarUrl && previewAvatarUrl.startsWith('blob:') ? previewAvatarUrl : avatarUrl,
-              defaultAvatar
-            )} 
-            alt="Avatar Preview" 
-            className="avatar-preview" 
-          />
-        </div>
-
-        <div className="avatar-actions">
-          <label className="avatar-upload-label">
-            <span>Upload</span>
+        {/* Avatar Section */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--spacing-sm)'
+        }}>
+          <div className="avatar-preview-container">
+            <img 
+              src={sanitizeImageUrl(
+                previewAvatarUrl && previewAvatarUrl.startsWith('blob:') ? previewAvatarUrl : avatarUrl,
+                defaultAvatar
+              )} 
+              alt="Avatar Preview" 
+              className="avatar-preview" 
+            />
+          </div>
+          <label className="avatar-upload-label" style={{
+            alignSelf: 'center',
+            marginTop: '8vh'
+          }}>
+            <span>Change Picture</span>
             <input
               type="file"
               className="edit-avatar"
@@ -312,8 +318,28 @@ const ProfileEdit = () => {
               hidden
             />
           </label>
+          {uploadingAvatar && (
+            <div className="uploading-indicator" style={{ textAlign: 'center' }}>
+              Uploading avatar...
+            </div>
+          )}
+        </div>
 
+        {/* Username Section */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--spacing-xs)'
+        }}>
+          <label htmlFor="username-input" style={{
+            fontSize: '0.9rem',
+            fontWeight: '500',
+            color: 'var(--text)'
+          }}>
+            Username
+          </label>
           <input
+            id="username-input"
             type="text"
             className='edit-name'
             value={editedName}
@@ -325,22 +351,14 @@ const ProfileEdit = () => {
             placeholder={user?.name || user?.username || "Enter username"}
             maxLength={128}
           />
-
-          {uploadingAvatar && (
-            <div className="uploading-indicator">
-              Uploading avatar...
-            </div>
-          )}
+          <small style={{ 
+            color: 'var(--text-muted)', 
+            fontSize: '0.8rem',
+            marginTop: '2px'
+          }}>
+            No spaces allowed • 3-128 characters
+          </small>
         </div>
-
-        <small style={{ 
-          color: 'var(--text)', 
-          fontSize: '0.85rem',
-          display: 'block',
-          alignSelf: 'center',
-        }}>
-          No spaces allowed in username
-        </small>
         
         {/* Success message */}
         {successMessage && (
@@ -356,7 +374,7 @@ const ProfileEdit = () => {
           </div>
         )} 
             
-        <div className="edit-buttons">
+        <div className="edit-buttons" style={{ marginTop: 'var(--spacing-md)' }}>
           <button 
             onClick={handleSave} 
             className='save-button'
