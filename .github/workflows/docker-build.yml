@@ -11,7 +11,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     env:
-      VITE_APP_VERSION: "1.12.9"
+      VITE_APP_VERSION: "1.12.10"
 
     steps:
       - name: Checkout repository
@@ -33,7 +33,7 @@ jobs:
           push: true
           tags: beerejustin/wizard-frontend:latest
           build-args: |
-            VITE_APP_VERSION=1.12.9
+            VITE_APP_VERSION=1.12.10
             VITE_BUILD_DATE=${{ github.event.head_commit.timestamp }}
 
       - name: Build and push backend image
