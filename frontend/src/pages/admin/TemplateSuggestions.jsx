@@ -107,7 +107,7 @@ const TemplateSuggestions = () => {
                 <h2>{suggestion.name}</h2>
                 <div className="suggestion-meta">
                   <span className={`badge badge-${suggestion.suggestionType || 'new'}`}>
-                    {suggestion.suggestionType === 'change' ? '📝 Change Request' : 'New Template'}
+                    {suggestion.suggestionType === 'change' ? 'Change Request' : 'New Template'}
                   </span>
                   <span className="badge">
                     {new Date(suggestion.createdAt).toLocaleDateString()}
@@ -117,7 +117,7 @@ const TemplateSuggestions = () => {
 
               <div className="suggestion-content">
                 <div className="suggestion-details">
-                  <div className="detail-item">
+                  <div className="detail-item" id='submitter'>
                     <label>Submitted by:</label>
                     <span>{suggestion.userId?.username || 'Unknown'}</span>
                   </div>
@@ -125,10 +125,10 @@ const TemplateSuggestions = () => {
                   {/* Show diff view for change requests */}
                   {suggestion.suggestionType === 'change' && suggestion.systemTemplateId ? (
                     <>
-                      <div className="detail-item full-width">
+                      {/* <div className="detail-item full-width">
                         <label>Modifying Template:</label>
                         <span className="template-ref">{suggestion.systemTemplateId.name || 'System Template'}</span>
-                      </div>
+                      </div> */}
                       
                       <div className="detail-item full-width">
                         <label>Changes Requested:</label>

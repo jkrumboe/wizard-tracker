@@ -35,6 +35,7 @@
   border-radius: 8px;
   transition: all 0.2s ease;
   position: relative;
+  border: 1px solid var(--border);
 }
 
 .admin-nav .nav-icon {
@@ -304,7 +305,7 @@
   background-color: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   transition: box-shadow 0.2s ease;
 }
 
@@ -480,8 +481,8 @@
 }
 
 .admin-layout .suggestion-details,
-.admin-layout .user-details,
 .admin-container .suggestion-details,
+.admin-layout .user-details,
 .admin-container .user-details {
   display: flex;
   flex-direction: row;
@@ -490,16 +491,25 @@
   gap: var(--spacing-xs);
 }
 
+.admin-layout .suggestion-details,
+.admin-container .suggestion-details {
+  flex-direction: column;
+}
+
+.admin-layout .suggestion-details #submitter {
+  flex-direction: row;
+  background-color: var(--primary);
+}
+
 .admin-layout .detail-item,
 .admin-container .detail-item {
   display: flex;
   flex-direction: column;
-  max-width: 40%;
 }
 
 .admin-layout .detail-item.full-width,
 .admin-container .detail-item.full-width {
-  grid-column: 1 / -1;
+  width: 100%;
 }
 
 .admin-layout .detail-item label,
@@ -776,11 +786,13 @@
 
 /* Diff View Styles */
 .diff-container {
+  display: flex;
+  flex-direction: column;
   background: var(--bg-color);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
-  margin-top: 0.5rem;
+  width: 100%;
 }
 
 .diff-item {
@@ -993,11 +1005,9 @@
 .detail-item {
   display: flex;
   justify-content: space-between;
+  padding: 0 var(--spacing-sm);
   align-items: center;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
   border-radius: 6px;
-  background-color: var(--bg-color);
 }
 
 .detail-item.success {
