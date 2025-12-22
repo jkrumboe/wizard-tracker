@@ -62,7 +62,7 @@ export async function getLeaderboard(gameType = 'all', page = 1, limit = 50) {
   } catch (error) {
     // Handle network errors
     if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-      throw new Error('Unable to connect to server. Please ensure the backend is running on port 5000.');
+      throw new Error('Unable to connect to server.');
     }
     throw error;
   }
