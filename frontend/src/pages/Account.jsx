@@ -1318,7 +1318,7 @@ const Account = () => {
   return (
       <div className="settings-container">
         {/* Profile Header */}
-        <div className="settings-section" style={{border: '1px solid var(--border)'}}>          
+        <div className="settings-section" id="border">          
           {/* Profile Picture Section */}
             <div className="settings-option">
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>

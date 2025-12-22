@@ -34,6 +34,7 @@
 
 .tab-content {
   animation: fadeIn 0.3s ease;
+  padding-bottom: var(--spacing-sm);
 }
 
 @keyframes fadeIn {
@@ -119,7 +120,7 @@
 
 .results-string {
   display: flex;
-  gap: 4px;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
@@ -883,7 +884,9 @@
   border-radius: 0;
 }
 
-.player-name
+.settings-section#border {
+  border: 1px solid var(--border);
+}
 
 .info-card {
   border-radius: 8px;
