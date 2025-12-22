@@ -293,16 +293,8 @@ const Account = () => {
   };
 
   useEffect(() => {
-    // Only load games if user is logged in
-    if (user) {
-      loadSavedGames();
-    } else {
-      // Clear games when user logs out
-      setSavedGames({});
-      setSavedTableGames([]);
-      setGameSyncStatuses({});
-      setSyncStatusLoaded(false); // Reset sync status loaded flag
-    }
+    // Always load games from local storage, regardless of login status
+    loadSavedGames();
     
     checkForImportedGames();
     cleanupExpiredShareKeys();
@@ -1556,6 +1548,25 @@ const Account = () => {
           </div>
         </div>
 
+        {!user && (
+          <div style={{
+            // padding: 'var(--spacing-sm) var(--spacing-md)',
+            // background: 'rgba(79, 70, 229, 0.1)',
+            // border: '1px solid rgba(79, 70, 229, 0.3)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 'var(--spacing-sm)',
+            fontSize: '1rem',
+            color: 'var(--text)',
+            display: 'flex',
+            alignItems: 'center',
+            textAlign: 'center',
+            justifyContent: 'center',
+            gap: 'var(--spacing-sm)'
+          }}>
+            <span>Sign in to share games with others</span>
+          </div>
+        )}
+
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header" >
             <h2>Wizard Games ({filteredGames.length}) </h2>
@@ -1636,7 +1647,7 @@ const Account = () => {
                     } : undefined}
                     onShare={showShare ? () => {
                       if (!user) {
-                        navigate('/login');
+                        setMessage({ text: 'Please sign in to share games', type: 'error' });
                         return;
                       }
                       handleShareGame(game.id, game);
@@ -1653,8 +1664,14 @@ const Account = () => {
                       !user ? 'Click to sign in and upload to cloud' :
                       'Upload to cloud'
                     }
+                    shareTitle={
+                      !user ? 'Sign in to share game' :
+                      game.isPaused ? 'Cannot share paused games' :
+                      sharingGames.has(game.id) ? 'Sharing...' :
+                      'Share game'
+                    }
                     disableSync={game.isPaused || uploadingGames.has(game.id) || isUploaded}
-                    disableShare={game.isPaused || sharingGames.has(game.id)}
+                    disableShare={!user || game.isPaused || sharingGames.has(game.id)}
                   >
                     <div className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
                       <div className="settings-card-header">
