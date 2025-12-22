@@ -415,7 +415,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
       <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>
-            <UsersIcon size={24} /> Friends
+            <UsersIcon size={20} /> Friends
           </h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />

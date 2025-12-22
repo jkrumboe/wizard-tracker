@@ -47,7 +47,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-xs);
   background: var(--card-bg-alt);
   border: 2px solid var(--border);
   border-radius: 8px;
@@ -64,8 +63,7 @@
 .friend-selection-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex: 1;
+  padding-left: 2vw;
 }
 
 .friend-selection-avatar {
@@ -98,10 +96,10 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--text);
+  padding-left: 23vw;
 }
 
 .selection-checkmark {
-  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;

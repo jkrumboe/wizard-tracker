@@ -3,7 +3,7 @@
   max-width: 600px;
   max-height: 60vh;
   min-height: 400px;
-  height: 60vh;
+  height: 50vh;
 }
 
 .modal-content {
@@ -186,7 +186,7 @@
   font-size: 1.3rem;
   font-weight: 600;
   color: var(--text);
-  /* margin-bottom: 0.25rem; */
+  text-align: center;
 }
 
 .friend-date,
@@ -201,8 +201,7 @@
 .cancel-request-btn {
   max-width: 36px;
   max-height: 36px;
-  padding: 0.5rem;
-  border: none;
+  padding: var(--spacing-xs);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
