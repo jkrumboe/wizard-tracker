@@ -12,7 +12,8 @@
 .leaderboard-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding-bottom: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
 }
 
 /* Player link styling */
@@ -154,7 +155,6 @@
 }
 
 .leaderboard-row.empty-row {
-  /* opacity: 0.3; */
   pointer-events: none;
 }
 
@@ -350,12 +350,12 @@
     grid-template-columns: 40px 1fr 50px 50px 60px;
     gap: 4px;
     padding: 6px 6px;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
   }
 
-  .leaderboard-container {
+  /* .leaderboard-container {
     padding: 10px;
-  }
+  } */
 
   .leaderboard-container h1 {
     font-size: 1.75rem;
@@ -374,10 +374,10 @@
     max-width: 120px;
   }
 
-  .wins-col,
+  /* .wins-col,
   .winrate-col,
   .games-col,
   .score-col {
     font-size: 0.9rem;
-  }
+  } */
 }

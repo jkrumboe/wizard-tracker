@@ -267,20 +267,20 @@ const Leaderboard = () => {
         <>
           <div className="leaderboard-table">
             <div className="leaderboard-header">
-              <div className="rank-col">#</div>
-              <div 
+              <div className="rank-col"/>
+              <div
                 className={`player-col ${sortBy === 'name' ? 'sorted' : ''}`}
                 onClick={() => handleSort('name')}
               >
                 Player {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
-              <div 
+              <div
                 className={`wins-col ${sortBy === 'wins' ? 'sorted' : ''}`}
                 onClick={() => handleSort('wins')}
               >
                 Wins {sortBy === 'wins' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
-              <div 
+              <div
                 className={`winrate-col ${sortBy === 'winRate' ? 'sorted' : ''}`}
                 onClick={() => handleSort('winRate')}
               >

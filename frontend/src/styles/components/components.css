@@ -319,6 +319,7 @@
     border-radius: var(--radius-lg);
     text-align: center;
     padding: var(--spacing-sm);
+    border: 1px solid var(--border);
     transition: transform 0.3s;
   }
   
@@ -1477,7 +1478,7 @@
     max-width: min(100vw, 960px);
     width: 100%;
     border-radius: var(--radius-lg);
-    margin: var(--spacing-lg) auto;
+
   }
 
   .leaderboard-container h1 {
@@ -1519,9 +1520,9 @@
     transition: background-color 0.2s;
   }
 
-  .leaderboard-row:nth-child(even) {
+  /* .leaderboard-row:nth-child(even) {
     background-color: var(--card-bg-alt);
-  }
+  } */
 
   .leaderboard-row:hover {
     background-color: rgba(53, 99, 233, 0.1);

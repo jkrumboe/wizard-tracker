@@ -448,7 +448,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       
       {/* OVERVIEW SECTION */}
       <div>
-        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Overview</h3>
+        <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Overview</h3>
         
         {/* Overall Stats Grid */}
         <div style={{ 
@@ -507,45 +507,19 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
               <div><strong>Worst:</strong> {stats.longestLossStreak} losses</div>
             </div>
           </div>
-
-          {/* Recent Trend */}
-          {/* {stats.totalGames >= 10 && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 'var(--spacing-md)',
-              borderRadius: 'var(--radius-lg)',
-              background: stats.recentTrend === 'improving' ? 'rgba(29, 191, 115, 0.1)' : 
-                         stats.recentTrend === 'declining' ? 'rgba(255, 92, 92, 0.1)' : 
-                         'rgba(107, 114, 128, 0.1)',
-              border: `1px solid ${stats.recentTrend === 'improving' ? '#1DBF73' : 
-                                    stats.recentTrend === 'declining' ? '#FF5C5C' : '#6B7280'}`,
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-xs)' }}>
-                {stats.recentTrend === 'improving' ? '📈' : stats.recentTrend === 'declining' ? '📉' : '➡️'}
-              </div>
-              <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                {stats.recentTrend === 'improving' ? 'Improving!' : 
-                 stats.recentTrend === 'declining' ? 'Needs Work' : 'Stable'}
-              </div>
-              <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Last 5 vs Previous 5</div>
-            </div>
-          )} */}
         </div>
       </div>
 
       {/* INSIGHTS SECTION */}
       <div>
-        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h3>
+        <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h3>
         
         {/* Performance Metrics */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: 'var(--spacing-sm)',
-          marginBottom: 'var(--spacing-md)'
+          marginBottom: 'var(--spacing-sm)'
         }}>
           {isWizardGame && <StatCard title="Bid Accuracy" value={`${stats.bidAccuracy}%`} />}
           {isWizardGame && <StatCard title="Perfect Games" value={stats.perfectBids} />}
@@ -554,10 +528,10 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         </div>
 
         {/* Score Performance Over Time */}
-        <div style={{ marginBottom: 'var(--spacing-md)' }}>
-          <h4 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1rem', fontWeight: '500' }}>Score Progression</h4>
+        <div style={{ marginBottom: 'var(--spacing-xs)' }}>
+          <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Score Progression</h4>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={stats.performanceOverTime}>
+            <AreaChart data={stats.performanceOverTime} margin={{ top: 5, right: 0, left: -25, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis 
                 dataKey="game" 
@@ -568,7 +542,6 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
               <YAxis 
                 stroke="var(--text)"
                 tick={{ fill: 'var(--text)' }}
-                label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: 'var(--text)' }}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -591,9 +564,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
 
         {/* Win Rate Over Time */}
         <div>
-          <h4 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1rem', fontWeight: '500' }}>Win Rate Progression</h4>
+          <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)'  }}>Win Rate Progression</h4>
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={stats.performanceOverTime}>
+            <LineChart data={stats.performanceOverTime} margin={{ top: 5, right: 0, left: -10, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis 
                 dataKey="game" 
@@ -604,8 +577,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
               <YAxis 
                 stroke="var(--text)"
                 tick={{ fill: 'var(--text)' }}
-                label={{ value: 'Win Rate (%)', angle: -90, position: 'insideLeft', fill: 'var(--text)' }}
                 domain={[0, 100]}
+                tickFormatter={(value) => `${value}%`}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -626,61 +599,11 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* HEAD-TO-HEAD SECTION */}
-      {/* <div>
-        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Head-to-Head Performance</h3>
-        {stats.topOpponents.length > 0 ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 'var(--spacing-md)'
-          }}>
-            {stats.topOpponents.map((opponent, idx) => (
-              <div key={idx} style={{
-                background: 'var(--card-bg)',
-                padding: 'var(--spacing-md)',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>{opponent.name}</div>
-                  <div style={{ fontSize: '0.875rem', opacity: 0.8}}>
-                    {opponent.games} games
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: '700', color: opponent.winRate >= 50 ? '#1DBF73' : '#FF5C5C' }}>
-                    {opponent.winRate}%
-                  </div>
-                  <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>
-                    {opponent.wins}W - {opponent.losses}L
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: 'var(--spacing-xl)', 
-            background: 'var(--card-bg)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border)',
-            opacity: 0.7 
-          }}>
-            No opponent data available yet
-          </div>
-        )}
-      </div> */}
+      </div>      
 
       {/* ACHIEVEMENTS SECTION */}
       <div>
-        <h3 style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '1.25rem', fontWeight: '600' }}>Achievements</h3>
+        <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Achievements</h3>
         {stats.achievements.length > 0 ? (
           <div style={{
             display: 'grid',
