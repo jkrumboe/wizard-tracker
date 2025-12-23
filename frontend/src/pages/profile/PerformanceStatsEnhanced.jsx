@@ -531,7 +531,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         <div style={{ marginBottom: 'var(--spacing-xs)' }}>
           <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Score Progression</h4>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={stats.performanceOverTime} margin={{ top: 5, right: 0, left: -25, bottom: 10 }}>
+            <AreaChart data={stats.performanceOverTime} margin={{ top: 5, right: 0, left: -20, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis 
                 dataKey="game" 
