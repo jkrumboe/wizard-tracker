@@ -97,7 +97,7 @@
     right: 8px;
     background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: var(--primary);
     cursor: pointer;
     padding: 6px;
     display: flex;
