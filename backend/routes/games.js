@@ -182,6 +182,35 @@ router.get('/leaderboard', async (req, res, next) => {
     });
     console.log(`[Leaderboard] Loaded ${allUsers.length} users for username mapping`);
     
+    // Fetch all player aliases to consolidate stats
+    const PlayerAlias = require('../models/PlayerAlias');
+    const allAliases = await PlayerAlias.find({}).populate('userId', 'username').lean();
+    const aliasToUsernameMap = {}; // Maps alias name -> registered username
+    allAliases.forEach(alias => {
+      if (alias.userId && alias.userId.username) {
+        aliasToUsernameMap[alias.aliasName.toLowerCase()] = alias.userId.username.toLowerCase();
+      }
+    });
+    console.log(`[Leaderboard] Loaded ${allAliases.length} player aliases for consolidation`);
+    
+    // Helper function: Resolve a player name to the canonical username (via alias or direct match)
+    const resolvePlayerName = (playerName) => {
+      const lowerName = playerName.toLowerCase();
+      // First check if this name is an alias - if so, use the linked username
+      if (aliasToUsernameMap[lowerName]) {
+        return aliasToUsernameMap[lowerName];
+      }
+      // Otherwise use the name as-is
+      return lowerName;
+    };
+    
+    // Helper function: Get the display name for a canonical username
+    const getDisplayName = (canonicalName) => {
+      // Find the actual user to get proper casing
+      const user = allUsers.find(u => u.username.toLowerCase() === canonicalName);
+      return user ? user.username : canonicalName;
+    };
+    
     // Get wizard games from WizardGame collection - only fetch needed fields
     const wizardGames = await WizardGame.find({}, {
       'gameData.players': 1,
@@ -242,16 +271,17 @@ router.get('/leaderboard', async (req, res, next) => {
           return;
         }
 
-        // Use LOWERCASE NAME as the key to group same players regardless of casing
-        const playerKey = playerName.toLowerCase();
+        // Resolve player name to canonical username (via alias if applicable)
+        const canonicalName = resolvePlayerName(playerName);
+        const displayName = getDisplayName(canonicalName);
         
-        if (!playerStats[playerKey]) {
-          // Look up userId by matching player name to registered username
-          const lookupUserId = usernameToUserIdMap[playerKey];
+        if (!playerStats[canonicalName]) {
+          // Look up userId by matching canonical username
+          const lookupUserId = usernameToUserIdMap[canonicalName];
           
-          playerStats[playerKey] = {
-            id: playerKey,
-            name: playerName, // Store original casing for display
+          playerStats[canonicalName] = {
+            id: canonicalName,
+            name: displayName, // Use registered username for display
             userId: lookupUserId, // Store userId for linking to profiles
             totalGames: 0,
             wins: 0,
@@ -259,15 +289,15 @@ router.get('/leaderboard', async (req, res, next) => {
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else if (!playerStats[playerKey].userId) {
+        } else if (!playerStats[canonicalName].userId) {
           // Try to look up by username if we didn't have it before
-          const lookupUserId = usernameToUserIdMap[playerKey];
+          const lookupUserId = usernameToUserIdMap[canonicalName];
           if (lookupUserId) {
-            playerStats[playerKey].userId = lookupUserId;
+            playerStats[canonicalName].userId = lookupUserId;
           }
         }
 
-        const stats = playerStats[playerKey];
+        const stats = playerStats[canonicalName];
         
         stats.totalGames++;
         
@@ -350,16 +380,17 @@ router.get('/leaderboard', async (req, res, next) => {
           return;
         }
 
-        // Use LOWERCASE NAME as the key to group same players regardless of casing
-        const playerKey = playerName.toLowerCase();
+        // Resolve player name to canonical username (via alias if applicable)
+        const canonicalName = resolvePlayerName(playerName);
+        const displayName = getDisplayName(canonicalName);
         
-        if (!playerStats[playerKey]) {
-          // Look up userId by matching player name to registered username
-          const lookupUserId = usernameToUserIdMap[playerKey];
+        if (!playerStats[canonicalName]) {
+          // Look up userId by matching canonical username
+          const lookupUserId = usernameToUserIdMap[canonicalName];
           
-          playerStats[playerKey] = {
-            id: playerKey,
-            name: playerName, // Store original casing for display
+          playerStats[canonicalName] = {
+            id: canonicalName,
+            name: displayName, // Use registered username for display
             userId: lookupUserId, // Store userId for linking to profiles
             totalGames: 0,
             wins: 0,
@@ -367,15 +398,15 @@ router.get('/leaderboard', async (req, res, next) => {
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else if (!playerStats[playerKey].userId) {
+        } else if (!playerStats[canonicalName].userId) {
           // Try to look up by username if we didn't have it before
-          const lookupUserId = usernameToUserIdMap[playerKey];
+          const lookupUserId = usernameToUserIdMap[canonicalName];
           if (lookupUserId) {
-            playerStats[playerKey].userId = lookupUserId;
+            playerStats[canonicalName].userId = lookupUserId;
           }
         }
 
-        const stats = playerStats[playerKey];
+        const stats = playerStats[canonicalName];
         
         stats.totalGames++;
         

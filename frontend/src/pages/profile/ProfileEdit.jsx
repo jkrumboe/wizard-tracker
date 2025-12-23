@@ -14,15 +14,25 @@ const ProfileEdit = () => {
   
   const [editedName, setEditedName] = useState('');
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [croppedAvatarBlob, setCroppedAvatarBlob] = useState(null);
   const [previewAvatarUrl, setPreviewAvatarUrl] = useState('');
   const [showCropper, setShowCropper] = useState(false);
-  const [error, setError] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Add a message to the queue
+  const addMessage = (text, type = 'error') => {
+    const id = Date.now();
+    setMessages(prev => [...prev, { id, text, type }]);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      setMessages(prev => prev.filter(msg => msg.id !== id));
+    }, 4000);
+  };
 
   // Load current user data
   useEffect(() => {
@@ -104,22 +114,21 @@ const ProfileEdit = () => {
     
     try {
       setSaving(true);
-      setError(null);
-      setSuccessMessage('');
+      setMessages([]);
       
       // Remove any spaces from the username input
       const cleanedName = editedName.trim().replace(/\s/g, '');
       
       // Validate username doesn't contain spaces
       if (cleanedName && /\s/.test(cleanedName)) {
-        setError('Username cannot contain spaces');
+        addMessage('Username cannot contain spaces', 'error');
         setSaving(false);
         return;
       }
       
       // Validate username length and characters
       if (cleanedName && (cleanedName.length < 3 || cleanedName.length > 20)) {
-        setError('Username must be between 3 and 20 characters');
+        addMessage('Username must be between 3 and 20 characters', 'error');
         setSaving(false);
         return;
       }
@@ -137,10 +146,10 @@ const ProfileEdit = () => {
           // Dispatch custom event to update navbar avatar
           globalThis.dispatchEvent(new CustomEvent('avatarUpdated'));
           
-          setSuccessMessage('Avatar updated successfully!');
+          addMessage('Avatar updated successfully!', 'success');
         } catch (avatarError) {
           console.error("Avatar upload failed:", avatarError);
-          setError(`Failed to upload avatar: ${avatarError.message}`);
+          addMessage(`Failed to upload avatar: ${avatarError.message}`, 'error');
           return; // Don't continue if avatar upload fails
         } finally {
           setUploadingAvatar(false);
@@ -165,10 +174,10 @@ const ProfileEdit = () => {
             };
           }
           
-          setSuccessMessage(prev => prev ? `${prev} Username updated too!` : 'Username updated successfully!');
+          addMessage('Username updated successfully!', 'success');
         } catch (error) {
           console.error('Username update failed:', error);
-          setError(`Failed to update username: ${error.message}`);
+          addMessage(`Failed to update username: ${error.message}`, 'error');
           return;
         }
         
@@ -183,15 +192,14 @@ const ProfileEdit = () => {
         setUser(() => updatedUserData);
       }
 
-      // Clear success message after 2 seconds and navigate back
+      // Navigate back after 2 seconds
       setTimeout(() => {
-        setSuccessMessage('');
         navigate('/profile');
       }, 2000);
       
     } catch (err) {
       console.error("Error updating profile:", err);
-      setError("Failed to update profile");
+      addMessage("Failed to update profile", 'error');
     } finally {
       setSaving(false);
     }
@@ -239,7 +247,6 @@ const ProfileEdit = () => {
     const file = e.target.files[0];
     if (file) {
       try {
-        setError(null);
         
         // Validate file type
         const rasterImageTypes = [
@@ -251,20 +258,20 @@ const ProfileEdit = () => {
           'image/webp'
         ];
         if (!rasterImageTypes.includes(file.type)) {
-          setError('Only PNG, JPEG, JPG, GIF, BMP, and WEBP images allowed');
+          addMessage('Only PNG, JPEG, JPG, GIF, BMP, and WEBP images allowed', 'error');
           return;
         }
         
         // Validate file size (max 10MB - we'll compress it)
         if (file.size > 10 * 1024 * 1024) {
-          setError('File size must be less than 10MB');
+          addMessage('File size must be less than 10MB', 'error');
           return;
         }
         
         // Validate actual file content
         isValidRasterImage(file, (isValid) => {
           if (!isValid) {
-            setError('File format does not match allowed image types');
+            addMessage('File format does not match allowed image types', 'error');
             return;
           }
           
@@ -275,7 +282,7 @@ const ProfileEdit = () => {
         
       } catch (err) {
         console.error("File selection failed:", err);
-        setError(err.message || 'Failed to select file');
+        addMessage(err.message || 'Failed to select file', 'error');
       }
     }
   };
@@ -311,6 +318,20 @@ const ProfileEdit = () => {
 
   return (
     <div className="profile-edit-container">
+      {/* Messages Stack - Position at top level */}
+      {messages.length > 0 && (
+        <ul className="messages-container">
+          {messages.map((message, index) => (
+            <li 
+              key={message.id} 
+              className={`settings-message ${message.type}`}
+            >
+              {message.text}
+            </li>
+          ))}
+        </ul>
+      )}
+      
       <ImageCropperModal
         isOpen={showCropper}
         onClose={() => {
@@ -423,20 +444,6 @@ const ProfileEdit = () => {
             3-20 characters
           </small>
         </div>
-        
-        {/* Success message */}
-        {successMessage && (
-          <div className="settings-message success">
-            {successMessage}
-          </div>
-        )}
-        
-        {/* Error message */}
-        {error && (
-          <div className="settings-message error">
-            {error}
-          </div>
-        )} 
             
         <div className="edit-buttons" style={{ marginTop: 'var(--spacing-sm)' }}>
           <button 

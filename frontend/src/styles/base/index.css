@@ -317,11 +317,8 @@ button:disabled,
 .error {
   width: 100%;
   text-align: center;
-  padding: var(--spacing-xl);
   font-weight: 500;
-  border-radius: var(--radius-lg);
-  margin: var(--spacing-lg) 0;
-}
+  border-radius: var(--radius-lg);}
 
 .loading {
   background-color: var(--card-bg);

@@ -749,19 +749,56 @@
   color: var(--error-color);
 }
 
+/* Messages Container */
+.messages-container {
+  position: fixed;
+  top: 20px;
+  width: 90%;
+  max-width: 500px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 /* Settings Messages */
 .settings-message {
-  position: fixed;
-  top: var(--spacing-md);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  animation: fadeIn 0.3s ease-in-out;
-  padding: var(--spacing-md);
+  position: relative;
+  padding: var(--spacing-sm);
   border-radius: 8px;
-  margin-bottom: var(--spacing-md);
   font-weight: 500;
   border: 1px solid transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  justify-content: center;
+  text-align: center;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .settings-message.success {

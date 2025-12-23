@@ -350,7 +350,7 @@
     grid-template-columns: 40px 1fr 50px 50px 60px;
     gap: 4px;
     padding: 6px 6px;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
   }
 
   /* .leaderboard-container {

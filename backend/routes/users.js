@@ -254,6 +254,20 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     const playerName = user ? user.username : usernameOrId;
     const isRegisteredUser = !!user;
 
+    // If user is registered, fetch all their aliases to include games under alias names
+    const PlayerAlias = require('../models/PlayerAlias');
+    let searchNames = [playerName]; // Start with the username
+    
+    if (user) {
+      const aliases = await PlayerAlias.find({ userId: user._id }).select('aliasName').lean();
+      const aliasNames = aliases.map(alias => alias.aliasName);
+      searchNames = [...searchNames, ...aliasNames];
+      console.log(`[Profile] User "${playerName}" has ${aliases.length} alias(es): ${aliasNames.join(', ')}`);
+    }
+    
+    // Create array of lowercase names for matching
+    const searchNamesLower = searchNames.map(name => name.toLowerCase());
+
     // Get user's games from WizardGame and TableGame collections (not legacy Game collection)
     const WizardGame = require('../models/WizardGame');
     const TableGame = require('../models/TableGame');
@@ -287,17 +301,21 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const gameId = gameData.gameId || game.localId || String(game._id);
       if (seenGameIds.has(gameId)) return; // Skip duplicates
       
-      // Find if user is a player in this game - match by username OR userId
+      // Find if user is a player in this game - match by username OR userId OR any alias
       const userPlayer = gameData.players.find(p => {
         const playerNameLower = p.name?.toLowerCase();
         const playerUsernameLower = p.username?.toLowerCase();
-        const searchNameLower = playerName.toLowerCase();
         
-        return playerNameLower === searchNameLower ||
-               playerUsernameLower === searchNameLower ||
-               (user && (p.userId === String(user._id) || 
-                        p.userId === user._id ||
-                        String(p.userId) === String(user._id)));
+        // Check if player name matches any of our search names (username + aliases)
+        const nameMatches = playerNameLower && searchNamesLower.includes(playerNameLower);
+        const usernameMatches = playerUsernameLower && searchNamesLower.includes(playerUsernameLower);
+        
+        // Also match by userId if available
+        const userIdMatches = user && (p.userId === String(user._id) || 
+                     p.userId === user._id ||
+                     String(p.userId) === String(user._id));
+        
+        return nameMatches || usernameMatches || userIdMatches;
       });
       
       // Skip if user is not a player in this game
@@ -334,10 +352,11 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const gameData = game.gameData;
       if (!gameData || !game.gameFinished || !gameData.players) return;
       
-      // For table games, match by player name
-      const userPlayer = gameData.players.find(p => 
-        p.name?.toLowerCase() === playerName.toLowerCase()
-      );
+      // For table games, match by player name against username or any alias
+      const userPlayer = gameData.players.find(p => {
+        const playerNameLower = p.name?.toLowerCase();
+        return playerNameLower && searchNamesLower.includes(playerNameLower);
+      });
       
       // Skip if user is not a player in this game
       if (!userPlayer) return;
@@ -564,13 +583,31 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
+    // Check if new username conflicts with any existing player alias
+    const PlayerAlias = require('../models/PlayerAlias');
+    const conflictingAlias = await PlayerAlias.findOne({ 
+      aliasName: trimmedName 
+    }).populate('userId', 'username');
+
+    if (conflictingAlias) {
+      return res.status(400).json({ 
+        error: `Username "${trimmedName}" is already in use as a player alias for user "${conflictingAlias.userId?.username || 'Unknown'}"` 
+      });
+    }
+
+    // Fetch the user as a Mongoose document (not lean) so we can use .save()
+    const userDoc = await User.findById(req.user._id);
+    if (!userDoc) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     // Update the username
-    req.user.username = trimmedName;
-    await req.user.save();
+    userDoc.username = trimmedName;
+    await userDoc.save();
 
     // Generate new JWT with updated username
     const token = jwt.sign(
-      { userId: req.user._id, username: req.user.username },
+      { userId: userDoc._id, username: userDoc.username },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -579,10 +616,10 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       message: 'Username updated successfully',
       token,
       user: {
-        id: req.user._id,
-        username: req.user.username,
-        createdAt: req.user.createdAt,
-        profilePicture: req.user.profilePicture || null
+        id: userDoc._id,
+        username: userDoc.username,
+        createdAt: userDoc.createdAt,
+        profilePicture: userDoc.profilePicture || null
       }
     });
   } catch (error) {
@@ -1277,8 +1314,20 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
+    // Check if new username conflicts with any existing player alias
+    const PlayerAlias = require('../models/PlayerAlias');
+    const conflictingAlias = await PlayerAlias.findOne({ 
+      aliasName: trimmedUsername 
+    }).populate('userId', 'username');
+
+    if (conflictingAlias) {
+      return res.status(400).json({ 
+        error: `Username "${trimmedUsername}" is already in use as a player alias for user "${conflictingAlias.userId?.username || 'Unknown'}"` 
+      });
+    }
+
     // Get old username before updating
-    const user = await User.findById(userId);
+    const user = await User.findOne({ _id: { $eq: userId } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -1309,6 +1358,28 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       { arrayFilters: [{ 'elem.playerId': userId }] }
     );
 
+    // Update username in all WizardGame documents
+    const WizardGame = require('../models/WizardGame');
+    await WizardGame.updateMany(
+      { 'gameData.players.user_id': userId },
+      { $set: { 'gameData.players.$[elem].name': trimmedUsername } },
+      { arrayFilters: [{ 'elem.user_id': userId }] }
+    );
+
+    // Update notes on all player aliases linked to this user
+    const userAliases = await PlayerAlias.find({ userId });
+    if (userAliases.length > 0) {
+      const timestamp = new Date().toISOString();
+      const updateNote = `\n[${timestamp}] Username changed from "${oldUsername}" to "${trimmedUsername}" by admin: ${req.user.username}`;
+      
+      for (const alias of userAliases) {
+        alias.notes = (alias.notes || '') + updateNote;
+        await alias.save();
+      }
+      
+      console.log('✅ Updated notes on %d player alias(es) for username change', userAliases.length);
+    }
+
     // Update username in UserGameTemplate suggestions
     const UserGameTemplate = require('../models/UserGameTemplate');
     await UserGameTemplate.updateMany(
@@ -1336,10 +1407,13 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       updatedCollections: [
         'User',
         'Game (players)',
+        'WizardGame (players)',
         'TableGame (players and scores)',
         'UserGameTemplate',
-        'TemplateSuggestion'
-      ]
+        'TemplateSuggestion',
+        'PlayerAlias (notes updated)'
+      ],
+      aliasesUpdated: userAliases.length
     });
   } catch (error) {
     console.error('Error updating username:', error);

@@ -68,7 +68,65 @@ This means:
 - Aliases work automatically for new game linkage operations
 - The "Link All User Games" admin feature includes alias matching
 
-## Workflow
+## How Aliases Work
+
+### Automatic Consolidation
+
+When a player alias is created, the system automatically consolidates statistics and game data:
+
+1. **Leaderboard** - Players appear once with combined stats from all their aliases
+   - Example: "Sönke" (2 wins) + alias → "SönkeSoffmann" = 3 wins total
+   - Display name uses the registered username
+   - Stats include all games under username and alias names
+
+2. **User Profiles** - Shows all games where the player participated under any name
+   - Fetches games matching the registered username
+   - Fetches games matching any alias names
+   - Consolidates total games, wins, and statistics
+   - Preserves original player names in individual game records
+
+3. **Game Linkage** - Automatically links games to user accounts
+   - When searching for user games, checks both username and all aliases
+   - See `backend/utils/gameUserLinkage.js` for implementation
+
+### Technical Implementation
+
+The alias system works by:
+
+1. **Creating an alias map** - Maps alias names → registered usernames
+2. **Resolution during queries** - When aggregating stats, resolves player names to canonical usernames
+3. **Consolidation** - Groups all stats under the registered username
+4. **Display** - Shows the registered username while preserving historical game data
+
+Example flow:
+```
+Player name in game: "Sönke"
+↓
+Check alias map: "Sönke" → "SönkeSoffmann" 
+↓
+Consolidate stats under: "SönkeSoffmann"
+↓
+Display on leaderboard/profile: "SönkeSoffmann" with combined stats
+```
+
+### Affected Endpoints
+
+The following endpoints automatically handle alias consolidation:
+
+- `GET /api/games/leaderboard` - Leaderboard with combined player stats
+- `GET /api/users/:usernameOrId/profile` - User profile with all games (username + aliases)
+- `POST /api/users/admin/link-games` - Manual game linkage (includes aliases)
+- Game upload endpoints - Automatic linkage checks aliases
+
+### What Aliases Don't Change
+
+Important: Aliases **do not modify historical game data**:
+- ❌ Original player names in games are **not changed**
+- ❌ Individual game records remain as they were recorded
+- ✅ Only statistics and aggregations are consolidated
+- ✅ Game history is preserved for accuracy
+
+This means if you view an individual game from 2023 where "Sönke" played, it will still show "Sönke" in that game's player list. But when viewing the leaderboard or user profile, all those games count toward "SönkeSoffmann"'s statistics.
 
 ### Creating a Player Alias
 
@@ -98,6 +156,61 @@ When unchecked:
 - Search aliases by name or username
 - Delete aliases that are no longer needed
 - See who created each alias and when
+
+## Username Changes and Aliases
+
+### What Happens When a User Changes Their Username?
+
+The system handles username changes differently depending on who makes the change:
+
+#### Regular User Self-Update (`PUT /users/:userId`)
+
+When a user changes their own username:
+- ✅ Username updated in User collection
+- ✅ New JWT token generated
+- ✅ **Validates against existing aliases** - prevents choosing a name that's already an alias
+- ❌ Historical game records are NOT updated (preserves game history)
+- ❌ Player aliases remain unchanged
+
+**Validation:** Users cannot change their username to match any existing player alias name to prevent conflicts.
+
+#### Admin Username Update (`PUT /users/:userId/username`)
+
+When an admin changes a user's username:
+- ✅ Username updated in User collection
+- ✅ **All Game documents updated** (players array)
+- ✅ **All WizardGame documents updated** (players array)
+- ✅ **All TableGame documents updated** (players and scores)
+- ✅ **UserGameTemplate and TemplateSuggestion updated**
+- ✅ **Player aliases preserved with automatic notes** - Aliases linked to the user remain active, and a timestamped note is added to each alias documenting the username change
+- ✅ **Validates against existing aliases** - prevents renaming to a name that's already an alias
+
+**Alias Note Example:**
+```
+[2025-12-23T10:30:00.000Z] Username changed from "JohnDoe" to "JohnSmith" by admin: AdminUser
+```
+
+This means:
+- Historical accuracy is updated across all game records
+- Aliases remain functional and automatically documented
+- No manual alias management needed after username changes
+- Full audit trail of username changes in alias notes
+
+### Conflict Prevention
+
+**Scenario:** User "JohnDoe" wants to change username to "Johnny", but "Johnny" is already an alias for another user.
+
+**Result:** ❌ Change is blocked with error message:
+```json
+{
+  "error": "Username \"Johnny\" is already in use as a player alias for user \"JaneSmith\""
+}
+```
+
+This prevents:
+- Username conflicts with existing aliases
+- Confusion in game records
+- Duplicate player name issues
 
 ## Important Notes
 
