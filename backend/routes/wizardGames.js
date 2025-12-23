@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
 const Game = require('../models/Game');
 const WizardGame = require('../models/WizardGame');
@@ -23,6 +24,15 @@ router.post('/migrate', auth, async (req, res) => {
     
     // Determine which games to migrate
     if (gameIds && Array.isArray(gameIds)) {
+      // Validate all gameIds are valid ObjectIds to prevent injection
+      const invalidIds = gameIds.filter(id => !mongoose.Types.ObjectId.isValid(id));
+      if (invalidIds.length > 0) {
+        return res.status(400).json({
+          error: 'Invalid game ID format',
+          invalidIds: invalidIds
+        });
+      }
+
       // Migrate specific games (must belong to user)
       gamesToMigrate = await Game.find({
         _id: { $in: gameIds },
@@ -312,8 +322,13 @@ router.get('/:id', auth, async (req, res) => {
     const gameId = req.params.id;
     const userId = req.user._id;
     
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
     const game = await WizardGame.findOne({
-      _id: gameId,
+      _id: { $eq: gameId },
       userId: userId
     });
     
@@ -337,10 +352,14 @@ router.get('/', auth, async (req, res) => {
     const userId = req.user._id;
     const { limit = 50, skip = 0 } = req.query;
     
+    // Validate and sanitize pagination parameters to prevent injection
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 200);
+    const parsedSkip = Math.max(parseInt(skip) || 0, 0);
+    
     const games = await WizardGame.find({ userId: userId })
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip(parseInt(skip))
+      .limit(parsedLimit)
+      .skip(parsedSkip)
       .select('-__v');
     
     const total = await WizardGame.countDocuments({ userId: userId });
@@ -348,8 +367,8 @@ router.get('/', auth, async (req, res) => {
     res.json({
       games: games,
       total: total,
-      limit: parseInt(limit),
-      skip: parseInt(skip)
+      limit: parsedLimit,
+      skip: parsedSkip
     });
     
   } catch (error) {

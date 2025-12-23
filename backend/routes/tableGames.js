@@ -109,7 +109,12 @@ router.get('/:id', auth, async (req, res, next) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const tableGame = await TableGame.findOne({ _id: gameId, userId });
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
+    const tableGame = await TableGame.findOne({ _id: { $eq: gameId }, userId });
 
     if (!tableGame) {
       return res.status(404).json({ error: 'Table game not found' });
@@ -131,7 +136,12 @@ router.delete('/:id', auth, async (req, res, next) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const tableGame = await TableGame.findOneAndDelete({ _id: gameId, userId });
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
+    const tableGame = await TableGame.findOneAndDelete({ _id: { $eq: gameId }, userId });
 
     if (!tableGame) {
       return res.status(404).json({ error: 'Table game not found' });

@@ -534,7 +534,12 @@ router.post('/batch-check', auth, async (req, res) => {
 // GET /games/:id - Get a game by MongoDB _id
 router.get('/:id', async (req, res) => {
   try {
-    const game = await Game.findById(req.params.id);
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
+    const game = await Game.findOne({ _id: { $eq: req.params.id } });
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }
@@ -553,6 +558,11 @@ router.put('/:id/share', auth, async (req, res) => {
       return res.status(400).json({ error: 'shareId (string) is required' });
     }
 
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
     // Check if shareId is already in use
     const existingSharedGame = await Game.findOne({ shareId });
     if (existingSharedGame && existingSharedGame._id.toString() !== req.params.id) {
@@ -560,7 +570,7 @@ router.put('/:id/share', auth, async (req, res) => {
     }
 
     // Verify user owns the game
-    const game = await Game.findById(req.params.id);
+    const game = await Game.findOne({ _id: { $eq: req.params.id } });
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
     }

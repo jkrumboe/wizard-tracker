@@ -723,8 +723,13 @@ router.post('/:userId/friends/:friendId', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'You cannot add yourself as a friend' });
     }
 
-    // Check if friend exists
-    const friend = await User.findById(friendId);
+    // Validate friendId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(friendId)) {
+      return res.status(400).json({ error: 'Invalid friend ID format' });
+    }
+
+    // Check if friend exists using $eq for safety
+    const friend = await User.findOne({ _id: { $eq: friendId } });
     if (!friend) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -762,12 +767,17 @@ router.delete('/:userId/friends/:friendId', auth, async (req, res, next) => {
       return res.status(403).json({ error: 'You can only manage your own friends list' });
     }
 
+    // Validate friendId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(friendId)) {
+      return res.status(400).json({ error: 'Invalid friend ID format' });
+    }
+
     // Remove friend from current user's list
     req.user.friends = req.user.friends.filter(id => id.toString() !== friendId);
     await req.user.save();
 
     // Also remove current user from the other user's friends list (mutual unfriend)
-    const friend = await User.findById(friendId);
+    const friend = await User.findOne({ _id: { $eq: friendId } });
     if (friend) {
       friend.friends = friend.friends.filter(id => id.toString() !== userId);
       await friend.save();
@@ -1250,6 +1260,11 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Username is required' });
     }
 
+    // Validate userId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
     const trimmedUsername = username.trim();
 
     // Check if username already exists (excluding current user)
@@ -1347,7 +1362,12 @@ router.put('/:userId/role', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid role. Must be "user" or "admin"' });
     }
 
-    const user = await User.findById(userId);
+    // Validate userId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
+    const user = await User.findOne({ _id: { $eq: userId } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -1431,10 +1451,15 @@ router.post('/admin/player-aliases', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
+    // Validate userId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
     const trimmedAliasName = aliasName.trim();
 
-    // Check if user exists
-    const targetUser = await User.findById(userId);
+    // Check if user exists using $eq for safety
+    const targetUser = await User.findOne({ _id: { $eq: userId } });
     if (!targetUser) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -1530,7 +1555,12 @@ router.delete('/admin/player-aliases/:aliasId', auth, async (req, res, next) => 
 
     const { aliasId } = req.params;
 
-    const alias = await PlayerAlias.findById(aliasId).populate('userId', 'username');
+    // Validate aliasId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(aliasId)) {
+      return res.status(400).json({ error: 'Invalid alias ID format' });
+    }
+
+    const alias = await PlayerAlias.findOne({ _id: { $eq: aliasId } }).populate('userId', 'username');
     if (!alias) {
       return res.status(404).json({ error: 'Player alias not found' });
     }
@@ -1538,7 +1568,7 @@ router.delete('/admin/player-aliases/:aliasId', auth, async (req, res, next) => 
     const aliasName = alias.aliasName;
     const username = alias.userId?.username || 'Unknown';
 
-    await PlayerAlias.findByIdAndDelete(aliasId);
+    await PlayerAlias.deleteOne({ _id: { $eq: aliasId } });
 
     console.log('🗑️  Deleted player alias: "%s" -> User: %s (by admin: %s)', 
       aliasName, username, req.user.username);
@@ -1573,8 +1603,10 @@ router.get('/admin/player-names', auth, async (req, res, next) => {
     const WizardGame = require('../models/WizardGame');
     const TableGame = require('../models/TableGame');
 
+    // Escape regex special characters to prevent injection
+    const escapedSearchTerm = _.escapeRegExp(searchTerm);
     // Create case-insensitive regex for partial matching
-    const searchRegex = new RegExp(searchTerm, 'i');
+    const searchRegex = new RegExp(escapedSearchTerm, 'i');
 
     // Find distinct player names across all game types
     const [games, wizardGames, tableGames] = await Promise.all([

@@ -290,7 +290,9 @@ async function linkGamesToNewUser(username, userId) {
  */
 async function findGamesByUsername(username) {
   try {
-    const usernameRegex = new RegExp(`^${username}$`);
+    // Escape special regex characters to prevent injection
+    const sanitizedUsername = escapeRegExp(username);
+    const usernameRegex = new RegExp(`^${sanitizedUsername}$`);
 
     const [games, wizardGames, tableGames] = await Promise.all([
       Game.find({
