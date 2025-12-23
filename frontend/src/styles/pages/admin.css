@@ -1305,7 +1305,7 @@
   color: var(--text);
 }
 
-.user-name {
+.admin-layout .user-name {
   display: flex;
   align-items: center;
   gap: 0.5rem;
