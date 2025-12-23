@@ -41,7 +41,7 @@ const GameLinkageManagement = () => {
           <h2>Link All User Games</h2>
           <p>
             This will scan all user accounts and link any games where the username appears as a player.
-            Games are matched by username (case-insensitive).
+            Games are matched by exact username (case-sensitive) and player aliases.
           </p>
         </div>
 

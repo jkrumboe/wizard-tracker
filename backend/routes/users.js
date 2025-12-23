@@ -620,6 +620,25 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       console.log(`✅ Deleted alias "${trimmedName}" as user reverted to this username`);
     }
 
+    // When changing to a NEW username (not reverting):
+    // Delete all old aliases for this user to keep only the most recent previous username
+    // This frees up old names and prevents alias accumulation
+    if (oldUsername !== trimmedName && (!conflictingAlias || conflictingAlias.userId._id.toString() !== req.user._id.toString())) {
+      try {
+        // Get all existing aliases for this user
+        const existingAliases = await PlayerAlias.find({ userId: userDoc._id });
+        
+        // Delete all existing aliases (we'll create a new one for the current old username)
+        if (existingAliases.length > 0) {
+          const deletedCount = await PlayerAlias.deleteMany({ userId: userDoc._id });
+          console.log(`✅ Deleted ${deletedCount.deletedCount} old alias(es) for user ${userDoc.username} (freeing up old names)`);
+        }
+      } catch (cleanupErr) {
+        console.error('Failed to clean up old aliases:', cleanupErr);
+        // Don't fail the request if cleanup fails
+      }
+    }
+
     // Create/update player alias for the old username so games are consolidated
     if (oldUsername !== trimmedName) {
       try {
