@@ -31,6 +31,8 @@ const Account = () => {
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
+  const [cloudGames, setCloudGames] = useState([]); // Games from API (includes alias consolidation)
+  const [profileData, setProfileData] = useState(null); // Profile data including aliases
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
@@ -292,57 +294,6 @@ const Account = () => {
     });
   };
 
-  useEffect(() => {
-    // Always load games from local storage, regardless of login status
-    loadSavedGames();
-    
-    checkForImportedGames();
-    cleanupExpiredShareKeys();
-    
-    // Check for import success/error flags from URL handler
-    if (localStorage.getItem('import_success')) {
-      setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
-      localStorage.removeItem('import_success');
-    } else if (localStorage.getItem('import_error')) {
-      setMessage({ text: 'Failed to import game from shared link.', type: 'error' });
-      localStorage.removeItem('import_error');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Re-run when user changes (login/logout)
-
-  // Load user avatar when user is available
-  useEffect(() => {
-    const loadAvatarUrl = async () => {
-      if (user) {
-        try {
-          // Preload avatar (loads thumbnail first, then full image)
-          await avatarService.preloadAvatar();
-          // Get full avatar for display
-          const url = await avatarService.getAvatarUrl(false);
-          setAvatarUrl(url);
-        } catch (error) {
-          console.error('Error loading avatar:', error);
-          setAvatarUrl(defaultAvatar);
-        }
-      } else {
-        setAvatarUrl(defaultAvatar);
-      }
-    };
-
-    loadAvatarUrl();
-
-    // Listen for avatar updates
-    const handleAvatarUpdate = () => {
-      loadAvatarUrl();
-    };
-
-    globalThis.addEventListener('avatarUpdated', handleAvatarUpdate);
-
-    return () => {
-      globalThis.removeEventListener('avatarUpdated', handleAvatarUpdate);
-    };
-  }, [user]);
-
   const loadSavedGames = useCallback(async () => {
     // First migrate games to ensure they have upload tracking properties
     LocalGameStorage.migrateGamesForUploadTracking();
@@ -412,6 +363,90 @@ const Account = () => {
         }
       }, 1000); // Reduced delay since batch check is much faster
     }
+  }, [user, savedGames, savedTableGames]);
+
+  // Load cloud games from API if user is logged in
+  const loadCloudGames = useCallback(async () => {
+    if (!user) {
+      setCloudGames([]);
+      setProfileData(null);
+      return;
+    }
+
+    try {
+      console.log('🔄 [Account] Fetching cloud games for user:', user.username);
+      const userService = (await import('@/shared/api/userService')).default;
+      const data = await userService.getUserPublicProfile(user.username);
+      
+      console.log('✅ [Account] Fetched cloud games from API:', {
+        username: data.username,
+        aliases: data.aliases,
+        totalGames: data.totalGames,
+        gamesCount: data.games?.length || 0
+      });
+      
+      setProfileData(data);
+      setCloudGames(data.games || []);
+    } catch (error) {
+      console.error('[Account] Failed to fetch cloud games:', error);
+      setCloudGames([]);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Always load games from local storage, regardless of login status
+    loadSavedGames();
+    
+    // Load cloud games if user is logged in
+    if (user) {
+      loadCloudGames();
+    }
+    
+    checkForImportedGames();
+    cleanupExpiredShareKeys();
+    
+    // Check for import success/error flags from URL handler
+    if (localStorage.getItem('import_success')) {
+      setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
+      localStorage.removeItem('import_success');
+    } else if (localStorage.getItem('import_error')) {
+      setMessage({ text: 'Failed to import game from shared link.', type: 'error' });
+      localStorage.removeItem('import_error');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loadCloudGames]); // Re-run when user changes (login/logout)
+
+  // Load user avatar when user is available
+  useEffect(() => {
+    const loadAvatarUrl = async () => {
+      if (user) {
+        try {
+          // Preload avatar (loads thumbnail first, then full image)
+          await avatarService.preloadAvatar();
+          // Get full avatar for display
+          const url = await avatarService.getAvatarUrl(false);
+          setAvatarUrl(url);
+        } catch (error) {
+          console.error('Error loading avatar:', error);
+          setAvatarUrl(defaultAvatar);
+        }
+      } else {
+        setAvatarUrl(defaultAvatar);
+      }
+    };
+
+    loadAvatarUrl();
+
+    // Listen for avatar updates
+    const handleAvatarUpdate = () => {
+      loadAvatarUrl();
+    };
+
+    globalThis.addEventListener('avatarUpdated', handleAvatarUpdate);
+
+    return () => {
+      globalThis.removeEventListener('avatarUpdated', handleAvatarUpdate);
+    };
   }, [user]);
 
   // Reload games when date filter changes
@@ -1240,8 +1275,26 @@ const Account = () => {
 
   // Calculate overview stats from all games using shared hook
   const allGamesForOverview = useMemo(() => {
-    return [...Object.values(savedGames), ...savedTableGames];
-  }, [savedGames, savedTableGames]);
+    // If user is logged in, only use cloud games (which include alias consolidation)
+    // Local games are for upload management in the Games tab
+    if (user && cloudGames.length > 0) {
+      return cloudGames;
+    }
+    
+    // If not logged in, combine local games
+    const localWizardGames = Object.values(savedGames);
+    const localTableGames = savedTableGames;
+    return [...localWizardGames, ...localTableGames];
+  }, [savedGames, savedTableGames, cloudGames, user]);
+
+  // Create user object with aliases for stats calculation
+  const userWithAliases = useMemo(() => {
+    if (!user) return null;
+    return {
+      ...user,
+      aliases: profileData?.aliases || [user.username]
+    };
+  }, [user, profileData]);
 
   // Handler for game type card clicks
   const handleGameTypeClick = useCallback((gameTypeName) => {
@@ -1251,8 +1304,17 @@ const Account = () => {
 
   // Get all games for stats tab
   const allGamesForStats = useMemo(() => {
-    const wizardGames = Object.values(savedGames);
-    const tableGames = savedTableGames;
+    // If user is logged in, use cloud games (which include alias consolidation)
+    // Otherwise use local games
+    const gamesSource = user && cloudGames.length > 0 
+      ? cloudGames 
+      : [...Object.values(savedGames), ...savedTableGames];
+    
+    if (!gamesSource || gamesSource.length === 0) return [];
+    
+    // Filter by game type
+    const wizardGames = gamesSource.filter(g => g.gameType !== 'table');
+    const tableGames = gamesSource.filter(g => g.gameType === 'table');
     
     if (statsGameType === 'wizard') {
       return wizardGames;
@@ -1262,31 +1324,40 @@ const Account = () => {
         (game.gameTypeName || game.name) === statsGameType
       );
     }
-  }, [savedGames, savedTableGames, statsGameType]);
+  }, [savedGames, savedTableGames, cloudGames, user, statsGameType]);
 
   // Get available game types for stats selector
   const availableGameTypes = useMemo(() => {
+    // Use cloud games if user is logged in, otherwise local games
+    const gamesSource = user && cloudGames.length > 0 
+      ? cloudGames 
+      : [...Object.values(savedGames), ...savedTableGames];
+    
     const types = [];
     
-    if (Object.keys(savedGames).length > 0) {
+    // Check for wizard games
+    const wizardGames = gamesSource.filter(g => g.gameType !== 'table');
+    if (wizardGames.length > 0) {
       types.push({ value: 'wizard', label: 'Wizard' });
     }
     
     // Add table game types
     const tableGameTypes = new Set();
-    savedTableGames.forEach(game => {
-      const gameType = game.gameTypeName || game.name;
-      if (gameType) {
-        tableGameTypes.add(gameType);
-      }
-    });
+    gamesSource
+      .filter(g => g.gameType === 'table')
+      .forEach(game => {
+        const gameType = game.gameTypeName || game.name;
+        if (gameType) {
+          tableGameTypes.add(gameType);
+        }
+      });
     
     tableGameTypes.forEach(type => {
       types.push({ value: type, label: type });
     });
     
     return types;
-  }, [savedGames, savedTableGames]);
+  }, [savedGames, savedTableGames, cloudGames, user]);
 
   // Auto-select first available game type if 'all' or invalid selection
   React.useEffect(() => {
@@ -1392,7 +1463,7 @@ const Account = () => {
           <div className="tab-content">
             <StatsOverview 
               games={allGamesForOverview} 
-              user={user} 
+              user={userWithAliases || user} 
               onGameTypeClick={handleGameTypeClick}
             />
           </div>

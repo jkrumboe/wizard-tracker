@@ -55,28 +55,16 @@ const UserProfile = () => {
       try {
         setLoading(true)
         
-        // If viewing own profile, use current user data with localStorage games
-        if (isOwnProfile && localGamesData) {
-          console.log('✅ [UserProfile] Using own profile with local games:', localGamesData.allGames.length, 'games');
-          setProfileUser({
-            ...currentUser,
-            games: localGamesData.allGames
-          });
-          if (currentUser.profilePicture) {
-            setAvatarUrl(currentUser.profilePicture);
-          }
-          setLoading(false);
-          return;
-        }
-        
-        // Otherwise fetch from API for other users by username
+        // Always fetch from API to get complete profile with alias consolidation
+        // Even for own profile, we need backend data to include games under old usernames
         console.log('🌐 [UserProfile] Fetching from API for username:', username);
         const data = await getUserPublicProfile(username)
         console.log('✅ [UserProfile] Profile data received:', {
           username: data.username,
           gamesCount: data.games?.length || 0,
           hasGames: !!data.games,
-          games: data.games
+          totalWins: data.totalWins,
+          totalGames: data.totalGames
         });
         setProfileUser(data)
         
@@ -101,12 +89,10 @@ const UserProfile = () => {
     setActiveTab('stats');
   }, []);
 
-  // Get games for stats tab (use localStorage if own profile, otherwise API)
+  // Get games for stats tab (always use API data from profileUser)
   const allGamesForStats = useMemo(() => {
-    // Determine the source of games
-    const gamesSource = (isOwnProfile && localGamesData) 
-      ? localGamesData.allGames 
-      : (profileUser?.games || []);
+    // Always use profileUser games (from API) to include alias consolidation
+    const gamesSource = profileUser?.games || [];
     
     if (!gamesSource || gamesSource.length === 0) return [];
     
@@ -122,7 +108,7 @@ const UserProfile = () => {
         (game.gameTypeName || game.name) === statsGameType
       );
     }
-  }, [profileUser?.games, statsGameType, isOwnProfile, localGamesData]);
+  }, [profileUser?.games, statsGameType]);
 
   const filteredGamesForStats = useMemo(() => {
     return filterGames(allGamesForStats, filters)

@@ -23,6 +23,7 @@ const Profile = () => {
   const isOwnProfile = !paramId || paramId === user?.id
   
   const [allGames, setAllGames] = useState([])
+  const [profileData, setProfileData] = useState(null)
   const [tags, setTags] = useState([])
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('performance')
@@ -64,7 +65,7 @@ const canEdit = useMemo(() => {
 useEffect(() => {
   const fetchData = async () => {
     try {
-      if (!isOwnProfile || !currentPlayer) {
+      if (!isOwnProfile || !user) {
         if (!isOwnProfile) {
           setError("Viewing other users' profiles is not yet supported");
         }
@@ -76,71 +77,42 @@ useEffect(() => {
       // For now, just set empty default data since playerService is not implemented
       // setDefaultTags([]);
       
-      // Fetch all local games (both finished and paused)
+      // Fetch all games for current user from API (includes alias consolidation)
       try {
-        const localGames = await getRecentLocalGames(100); // Get up to 100 games
+        console.log('🔄 [Account] Fetching profile data for user:', user.username);
+        const userService = (await import('@/shared/api/userService')).default;
+        const profileData = await userService.getUserPublicProfile(user.username);
         
-        // Get all possible identifiers for the current user
-        const userIdentifiers = [
-          currentPlayer.id,
-          currentPlayer.name,
-          currentPlayer.username,
-          user.id,
-          user.name,
-          user.username,
-          user.$id // user ID
-        ].filter(Boolean); // Remove any null/undefined values
-        
-        // Filter games to only include games where the current user ACTUALLY PLAYED
-        const userGames = localGames.filter(game => {
-          // Check if user is in the players list by name/username (most reliable for local games)
-          if (game.gameState?.players && Array.isArray(game.gameState.players)) {
-            const isInPlayers = game.gameState.players.some(player => {
-              // Check if player name or username matches current user
-              const playerName = player.name?.toLowerCase().trim();
-              const playerUsername = player.username?.toLowerCase().trim();
-              const currentName = currentPlayer.name?.toLowerCase().trim();
-              const currentUsername = currentPlayer.username?.toLowerCase().trim();
-              
-              return playerName === currentName || playerUsername === currentUsername;
-            });
-            
-            if (isInPlayers) {
-              return true;
-            }
-          }
-          
-          // Fallback: Check if user is in the players list by ID
-          if (game.gameState?.players) {
-            const isInPlayersById = game.gameState.players.some(player => {
-              const playerIdentifiers = [
-                player.id,
-                player.userId
-              ].filter(Boolean);
-              
-              return playerIdentifiers.some(playerId => 
-                userIdentifiers.includes(playerId)
-              );
-            });
-            
-            if (isInPlayersById) {
-              return true;
-            }
-          }
-          
-          // Check player_ids array as last resort
-          if (game.player_ids && Array.isArray(game.player_ids)) {
-            if (game.player_ids.some(playerId => userIdentifiers.includes(playerId))) {
-              return true;
-            }
-          }
-          
-          return false;
+        console.log('✅ [Account] Fetched profile data from API:', {
+          username: profileData.username,
+          aliases: profileData.aliases,
+          totalGames: profileData.totalGames,
+          totalWins: profileData.totalWins,
+          gamesCount: profileData.games?.length || 0
         });
         
-        setAllGames(userGames || []);
+        // Store profile data including aliases
+        setProfileData(profileData);
+        
+        // Use games from API which includes alias consolidation
+        const userGames = profileData.games || [];
+        
+        // Filter to only finished games (for stats display)
+        const finishedGames = userGames.filter(game => {
+          if (game.gameType === 'wizard') {
+            // Wizard games: check if gameFinished is not explicitly false
+            return game.gameData?.gameFinished !== false;
+          } else {
+            // Table games: must be explicitly finished
+            return game.gameData?.gameFinished === true || game.gameFinished === true;
+          }
+        });
+        
+        console.log(`📊 [Account] Filtered to ${finishedGames.length} finished games out of ${userGames.length} total`);
+        
+        setAllGames(finishedGames);
       } catch (err) {
-        console.error('Local games not available:', err);
+        console.error('Failed to fetch profile data from API:', err);
         setAllGames([]);
       }
       
@@ -150,8 +122,8 @@ useEffect(() => {
     }
   };
 
-  if (currentPlayer) fetchData();
-}, [currentPlayer, isOwnProfile, user]);
+  if (user) fetchData();
+}, [user, isOwnProfile]);
 
 // Load avatar URL when user is available
 useEffect(() => {
@@ -190,7 +162,7 @@ useEffect(() => {
 
 // Calculate actual stats from user's games
 const calculatedStats = useMemo(() => {
-  if (!currentPlayer || !allGames || allGames.length === 0) {
+  if (!user || !allGames || allGames.length === 0) {
     return {
       totalGames: 0,
       wins: 0,
@@ -201,15 +173,35 @@ const calculatedStats = useMemo(() => {
 
   let wins = 0;
   let losses = 0;
+  
+  // Get current username and all aliases
+  const searchNames = profileData?.aliases || [user.username];
+  const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
+  const currentUserId = user.id || user.$id;
 
   allGames.forEach(game => {
-    // Determine if player won - handle winner_ids (new) and winner_id (legacy) as both single value and array
-    const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
-                       game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+    // Find if current user is a player in this game
+    const players = game.gameData?.players || game.gameState?.players || [];
+    const userPlayer = players.find(p => {
+      const playerNameLower = p.name?.toLowerCase();
+      const playerUsernameLower = p.username?.toLowerCase();
+      const playerUserId = p.userId;
+      
+      return searchNamesLower.includes(playerNameLower) ||
+             searchNamesLower.includes(playerUsernameLower) ||
+             playerUserId === currentUserId ||
+             String(playerUserId) === String(currentUserId);
+    });
+    
+    if (!userPlayer) return; // Skip if user not in this game
+    
+    // Determine if player won
+    const winnerIdRaw = game.winner_ids || game.gameData?.winner_ids || game.gameData?.totals?.winner_ids ||
+                       game.winner_id || game.gameData?.winner_id || game.gameData?.totals?.winner_id;
     const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
     
-    const isWin = winnerIds.includes(currentPlayer.id) || 
-                  winnerIds.some(wId => game.gameState?.players?.find(p => p.id === wId)?.name === currentPlayer.name);
+    const isWin = winnerIds.includes(userPlayer.id) || 
+                  winnerIds.some(wId => String(wId) === String(userPlayer.id));
     
     if (isWin) {
       wins++;
@@ -227,7 +219,7 @@ const calculatedStats = useMemo(() => {
     losses,
     winRate: winRate.toFixed(1)
   };
-}, [allGames, currentPlayer]);
+}, [allGames, user, profileData]);
 
 // Create pie chart data - use calculated stats
 const totalWins = calculatedStats.wins;

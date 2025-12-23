@@ -124,7 +124,7 @@
 }
 
 .rank-col.gold {
-  background: linear-gradient(45deg, #f1e78a 0%, rgb(193, 164, 0) 100%);
+  background: #fde508;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -132,7 +132,7 @@
 }
 
 .rank-col.silver {
-  background: linear-gradient(45deg, #cdcdcd 0%, #7f7f7f 100%);
+  background: #ffffff;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -140,7 +140,7 @@
 }
 
 .rank-col.bronze {
-  background: linear-gradient(45deg, #CD7F32 0%, #FFDAB9 100%);
+  background: #ee9f51;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

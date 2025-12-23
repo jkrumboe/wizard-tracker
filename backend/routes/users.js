@@ -262,11 +262,13 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const aliases = await PlayerAlias.find({ userId: user._id }).select('aliasName').lean();
       const aliasNames = aliases.map(alias => alias.aliasName);
       searchNames = [...searchNames, ...aliasNames];
-      console.log(`[Profile] User "${playerName}" has ${aliases.length} alias(es): ${aliasNames.join(', ')}`);
+      console.log(`[Profile] User "${playerName}" (ID: ${user._id}) has ${aliases.length} alias(es): ${aliasNames.join(', ')}`);
+      console.log(`[Profile] Will search for games with names: ${searchNames.join(', ')}`);
     }
     
     // Create array of lowercase names for matching
     const searchNamesLower = searchNames.map(name => name.toLowerCase());
+    console.log(`[Profile] Lowercase search names: ${searchNamesLower.join(', ')}`);
 
     // Get user's games from WizardGame and TableGame collections (not legacy Game collection)
     const WizardGame = require('../models/WizardGame');
@@ -349,7 +351,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
 
     // Process table games
     tableGames.forEach(game => {
-      const gameData = game.gameData;
+      const outerGameData = game.gameData;
+      const gameData = outerGameData?.gameData || outerGameData; // Handle nested structure
+      
       if (!gameData || !game.gameFinished || !gameData.players) return;
       
       // For table games, match by player name against username or any alias
@@ -398,6 +402,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       isRegisteredUser: isRegisteredUser,
       totalGames: limitedGames.length,
       totalWins: totalWins,
+      aliases: searchNames, // Include all search names (username + aliases) for frontend matching
       games: limitedGames
     });
   } catch (error) {
@@ -589,7 +594,8 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       aliasName: trimmedName 
     }).populate('userId', 'username');
 
-    if (conflictingAlias) {
+    // Allow if the alias belongs to the current user (reverting to old username)
+    if (conflictingAlias && conflictingAlias.userId._id.toString() !== req.user._id.toString()) {
       return res.status(400).json({ 
         error: `Username "${trimmedName}" is already in use as a player alias for user "${conflictingAlias.userId?.username || 'Unknown'}"` 
       });
@@ -601,9 +607,59 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Store old username before updating
+    const oldUsername = userDoc.username;
+
     // Update the username
     userDoc.username = trimmedName;
     await userDoc.save();
+
+    // If reverting to an old username that's currently an alias, delete that alias
+    if (conflictingAlias && conflictingAlias.userId._id.toString() === req.user._id.toString()) {
+      await PlayerAlias.deleteOne({ _id: conflictingAlias._id });
+      console.log(`✅ Deleted alias "${trimmedName}" as user reverted to this username`);
+    }
+
+    // Create/update player alias for the old username so games are consolidated
+    if (oldUsername !== trimmedName) {
+      try {
+        // Check if alias already exists for this old username
+        const existingAlias = await PlayerAlias.findOne({
+          userId: userDoc._id,
+          aliasName: oldUsername
+        });
+
+        if (!existingAlias) {
+          // Create new alias for old username (user is creator of their own alias)
+          await PlayerAlias.create({
+            userId: userDoc._id,
+            aliasName: oldUsername,
+            createdBy: userDoc._id, // User creates their own alias
+            notes: `Username changed from "${oldUsername}" to "${trimmedName}" on ${new Date().toISOString()}`
+          });
+          console.log(`✅ Created alias "${oldUsername}" → "${trimmedName}"`);
+        }
+      } catch (aliasErr) {
+        console.error('Failed to create player alias:', aliasErr);
+        // Don't fail the request if alias creation fails
+      }
+    }
+
+    // Clear leaderboard cache since username has changed
+    const cache = require('../utils/redis');
+    if (cache.isConnected) {
+      try {
+        // Delete all leaderboard cache keys
+        const keys = await cache.client.keys('leaderboard:*');
+        if (keys.length > 0) {
+          await cache.client.del(keys);
+          console.log(`✅ Cleared ${keys.length} leaderboard cache entries after username update`);
+        }
+      } catch (cacheErr) {
+        console.error('Failed to clear leaderboard cache:', cacheErr);
+        // Don't fail the request if cache clear fails
+      }
+    }
 
     // Generate new JWT with updated username
     const token = jwt.sign(

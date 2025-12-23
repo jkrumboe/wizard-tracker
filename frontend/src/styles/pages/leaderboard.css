@@ -198,10 +198,10 @@
   max-width: 100%;
 }
 
-.wins-col,
-.winrate-col,
-.games-col,
-.score-col {
+.leaderboard-container  .wins-col,
+.leaderboard-container .winrate-col,
+.leaderboard-container .games-col,
+.leaderboard-container .score-col {
   text-align: center;
   font-weight: 500;
   font-size: 0.85rem;
@@ -335,11 +335,11 @@
     width: 100%;
   }
 
-  .rank-col {
+  .leaderboard-container .rank-col {
     font-size: 1rem;
   }
 
-  .medal {
+  .leaderboard-container .medal {
     font-size: 1.2rem;
   }
 }
@@ -361,11 +361,11 @@
     font-size: 1.75rem;
   }
 
-  .rank-col {
+  .leaderboard-container .rank-col {
     font-size: 0.9rem;
   }
 
-  .medal {
+  .leaderboard-container .medal {
     font-size: 1.1rem;
   }
 

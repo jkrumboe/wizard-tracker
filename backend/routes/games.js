@@ -193,6 +193,9 @@ router.get('/leaderboard', async (req, res, next) => {
     });
     console.log(`[Leaderboard] Loaded ${allAliases.length} player aliases for consolidation`);
     
+    // Track original name casing for display
+    const originalNameCasing = {}; // Maps lowercase canonical name -> first seen original casing
+    
     // Helper function: Resolve a player name to the canonical username (via alias or direct match)
     const resolvePlayerName = (playerName) => {
       const lowerName = playerName.toLowerCase();
@@ -200,15 +203,25 @@ router.get('/leaderboard', async (req, res, next) => {
       if (aliasToUsernameMap[lowerName]) {
         return aliasToUsernameMap[lowerName];
       }
-      // Otherwise use the name as-is
+      // Otherwise use the name as-is (lowercase for grouping)
       return lowerName;
     };
     
     // Helper function: Get the display name for a canonical username
-    const getDisplayName = (canonicalName) => {
-      // Find the actual user to get proper casing
+    const getDisplayName = (canonicalName, originalPlayerName) => {
+      // First, check if there's a registered user with this username
       const user = allUsers.find(u => u.username.toLowerCase() === canonicalName);
-      return user ? user.username : canonicalName;
+      if (user) {
+        return user.username; // Use registered user's actual casing
+      }
+      
+      // For non-registered players, preserve the original casing from games
+      // Store the first seen casing for this canonical name
+      if (!originalNameCasing[canonicalName] && originalPlayerName) {
+        originalNameCasing[canonicalName] = originalPlayerName;
+      }
+      
+      return originalNameCasing[canonicalName] || canonicalName;
     };
     
     // Get wizard games from WizardGame collection - only fetch needed fields
@@ -273,7 +286,7 @@ router.get('/leaderboard', async (req, res, next) => {
 
         // Resolve player name to canonical username (via alias if applicable)
         const canonicalName = resolvePlayerName(playerName);
-        const displayName = getDisplayName(canonicalName);
+        const displayName = getDisplayName(canonicalName, playerName);
         
         if (!playerStats[canonicalName]) {
           // Look up userId by matching canonical username
@@ -289,11 +302,16 @@ router.get('/leaderboard', async (req, res, next) => {
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else if (!playerStats[canonicalName].userId) {
+        } else {
+          // Update display name if user has changed their username
+          playerStats[canonicalName].name = displayName;
+          
           // Try to look up by username if we didn't have it before
-          const lookupUserId = usernameToUserIdMap[canonicalName];
-          if (lookupUserId) {
-            playerStats[canonicalName].userId = lookupUserId;
+          if (!playerStats[canonicalName].userId) {
+            const lookupUserId = usernameToUserIdMap[canonicalName];
+            if (lookupUserId) {
+              playerStats[canonicalName].userId = lookupUserId;
+            }
           }
         }
 
@@ -382,7 +400,7 @@ router.get('/leaderboard', async (req, res, next) => {
 
         // Resolve player name to canonical username (via alias if applicable)
         const canonicalName = resolvePlayerName(playerName);
-        const displayName = getDisplayName(canonicalName);
+        const displayName = getDisplayName(canonicalName, playerName);
         
         if (!playerStats[canonicalName]) {
           // Look up userId by matching canonical username
@@ -398,11 +416,16 @@ router.get('/leaderboard', async (req, res, next) => {
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else if (!playerStats[canonicalName].userId) {
+        } else {
+          // Update display name if user has changed their username
+          playerStats[canonicalName].name = displayName;
+          
           // Try to look up by username if we didn't have it before
-          const lookupUserId = usernameToUserIdMap[canonicalName];
-          if (lookupUserId) {
-            playerStats[canonicalName].userId = lookupUserId;
+          if (!playerStats[canonicalName].userId) {
+            const lookupUserId = usernameToUserIdMap[canonicalName];
+            if (lookupUserId) {
+              playerStats[canonicalName].userId = lookupUserId;
+            }
           }
         }
 

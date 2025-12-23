@@ -5,7 +5,7 @@ import { useMemo } from 'react';
  * Works with both localStorage games and API games
  * 
  * @param {Array} games - Array of game objects (wizard + table games)
- * @param {Object} user - Current user object
+ * @param {Object} user - Current user object (should include `aliases` array from API)
  * @returns {Object} - { gameTypes: [], recentResults: [] }
  */
 export const useGameStats = (games, user) => {
@@ -21,6 +21,10 @@ export const useGameStats = (games, user) => {
     // Get user identifiers
     const userIdentifiers = [user.id, user._id, user.$id, user.username].filter(Boolean);
     const usernameLower = user.username?.toLowerCase();
+    
+    // Get all searchable names (username + aliases) from user object
+    const searchNames = user.aliases || [user.username];
+    const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
 
     allGamesList.forEach(game => {
       // Skip paused or unfinished games
@@ -57,10 +61,17 @@ export const useGameStats = (games, user) => {
       // Different handling for table games vs wizard games
       if (game.gameType === 'table') {
         // Table games: check gameData.players
+        // Match by player name (including aliases) OR userId
         if (game.gameData?.players) {
           userPlayer = game.gameData.players.find(p => {
             const playerNameLower = p.name?.toLowerCase();
-            return playerNameLower === usernameLower;
+            const playerUserId = p.userId;
+            
+            // Match by any of the user's names (including aliases) OR by userId
+            return searchNamesLower.includes(playerNameLower) ||
+                   userIdentifiers.includes(playerUserId) ||
+                   String(playerUserId) === String(user._id) ||
+                   String(playerUserId) === String(user.id);
           });
           
           if (userPlayer && game.gameFinished !== false) {
@@ -103,8 +114,9 @@ export const useGameStats = (games, user) => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUsernameLower = p.username?.toLowerCase();
             
-            return playerNameLower === usernameLower ||
-                   playerUsernameLower === usernameLower ||
+            // Match by any of the user's names (including aliases) OR by userId
+            return searchNamesLower.includes(playerNameLower) ||
+                   searchNamesLower.includes(playerUsernameLower) ||
                    userIdentifiers.includes(p.id) ||
                    userIdentifiers.includes(p.userId);
           });
@@ -152,9 +164,13 @@ export const useGameStats = (games, user) => {
       if (game.gameType === 'table') {
         // Table game
         if (game.gameData?.players && game.gameFinished !== false) {
-          const userPlayer = game.gameData.players.find(p => 
-            p.name?.toLowerCase() === usernameLower
-          );
+          const userPlayer = game.gameData.players.find(p => {
+            const playerNameLower = p.name?.toLowerCase();
+            const playerUserId = p.userId || p.id;
+            return searchNamesLower.includes(playerNameLower) || 
+                   userIdentifiers.includes(playerUserId) || 
+                   (p.username && searchNamesLower.includes(p.username.toLowerCase()));
+          });
           
           if (userPlayer) {
             const winnerIds = game.gameData?.winner_ids || game.winner_ids ||
@@ -193,11 +209,11 @@ export const useGameStats = (games, user) => {
           const userPlayer = players.find(p => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUsernameLower = p.username?.toLowerCase();
+            const playerUserId = p.userId || p.id;
             
-            return playerNameLower === usernameLower ||
-                   playerUsernameLower === usernameLower ||
-                   userIdentifiers.includes(p.id) ||
-                   userIdentifiers.includes(p.userId);
+            return searchNamesLower.includes(playerNameLower) ||
+                   searchNamesLower.includes(playerUsernameLower) ||
+                   userIdentifiers.includes(playerUserId);
           });
           
           const winnerIds = game.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
