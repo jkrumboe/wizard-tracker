@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
+const PlayerAlias = require('../models/PlayerAlias');
 const auth = require('../middleware/auth');
 const { authLimiter, friendsLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
@@ -1215,13 +1216,14 @@ router.get('/admin/all', auth, async (req, res, next) => {
     }
 
     const users = await User.find()
-      .select('_id username role createdAt lastLogin profilePicture')
+      .select('_id username email role createdAt lastLogin profilePicture')
       .sort({ username: 1 });
 
     res.json({
       users: users.map(user => ({
         _id: user._id.toString(),
         username: user.username,
+        email: user.email || null,
         role: user.role || 'user',
         createdAt: user.createdAt,
         lastLogin: user.lastLogin || null,
@@ -1367,6 +1369,253 @@ router.put('/:userId/role', auth, async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error updating user role:', error);
+    next(error);
+  }
+});
+
+// ==================== Player Alias Management (Admin Only) ====================
+
+// GET /users/admin/player-aliases - Get all player aliases (admin only)
+router.get('/admin/player-aliases', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const aliases = await PlayerAlias.find()
+      .populate('userId', 'username profilePicture')
+      .populate('createdBy', 'username')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      aliases: aliases.map(alias => ({
+        _id: alias._id.toString(),
+        aliasName: alias.aliasName,
+        user: alias.userId ? {
+          id: alias.userId._id.toString(),
+          username: alias.userId.username,
+          profilePicture: alias.userId.profilePicture || null
+        } : null,
+        createdBy: alias.createdBy ? {
+          id: alias.createdBy._id.toString(),
+          username: alias.createdBy.username
+        } : null,
+        notes: alias.notes || '',
+        createdAt: alias.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching player aliases:', error);
+    next(error);
+  }
+});
+
+// POST /users/admin/player-aliases - Create a new player alias (admin only)
+router.post('/admin/player-aliases', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { aliasName, userId, notes, linkGamesNow } = req.body;
+
+    // Validation
+    if (!aliasName || !aliasName.trim()) {
+      return res.status(400).json({ error: 'Alias name is required' });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const trimmedAliasName = aliasName.trim();
+
+    // Check if user exists
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if alias already exists
+    const existingAlias = await PlayerAlias.findOne({ aliasName: trimmedAliasName });
+    if (existingAlias) {
+      const existingUser = await User.findById(existingAlias.userId);
+      return res.status(400).json({ 
+        error: `Alias "${trimmedAliasName}" is already linked to user "${existingUser?.username || 'Unknown'}"` 
+      });
+    }
+
+    // Check if alias is same as target user's username
+    if (trimmedAliasName.toLowerCase() === targetUser.username.toLowerCase()) {
+      return res.status(400).json({ 
+        error: 'Alias name cannot be the same as the user\'s registered username' 
+      });
+    }
+
+    // Create the alias
+    const playerAlias = new PlayerAlias({
+      userId: userId,
+      aliasName: trimmedAliasName,
+      createdBy: req.user._id,
+      notes: notes || ''
+    });
+
+    await playerAlias.save();
+
+    console.log('✅ Created player alias: "%s" -> User: %s (by admin: %s)', 
+      trimmedAliasName, targetUser.username, req.user.username);
+
+    // Optionally link games immediately
+    let linkageResults = null;
+    if (linkGamesNow) {
+      try {
+        linkageResults = await linkGamesToNewUser(trimmedAliasName, userId);
+        console.log('📊 Linked %d games for alias "%s"', 
+          (linkageResults.gamesLinked || 0) + (linkageResults.wizardGamesLinked || 0) + (linkageResults.tableGamesLinked || 0),
+          trimmedAliasName);
+      } catch (linkError) {
+        console.error('⚠️  Error linking games for alias:', linkError);
+        // Don't fail the alias creation if linkage fails
+      }
+    }
+
+    // Return the created alias with populated user info
+    const populatedAlias = await PlayerAlias.findById(playerAlias._id)
+      .populate('userId', 'username profilePicture')
+      .populate('createdBy', 'username')
+      .lean();
+
+    res.status(201).json({
+      message: 'Player alias created successfully',
+      alias: {
+        _id: populatedAlias._id.toString(),
+        aliasName: populatedAlias.aliasName,
+        user: {
+          id: populatedAlias.userId._id.toString(),
+          username: populatedAlias.userId.username,
+          profilePicture: populatedAlias.userId.profilePicture || null
+        },
+        createdBy: {
+          id: populatedAlias.createdBy._id.toString(),
+          username: populatedAlias.createdBy.username
+        },
+        notes: populatedAlias.notes || '',
+        createdAt: populatedAlias.createdAt
+      },
+      linkageResults: linkageResults ? {
+        gamesLinked: linkageResults.gamesLinked || 0,
+        wizardGamesLinked: linkageResults.wizardGamesLinked || 0,
+        tableGamesLinked: linkageResults.tableGamesLinked || 0,
+        totalLinked: (linkageResults.gamesLinked || 0) + 
+                     (linkageResults.wizardGamesLinked || 0) + 
+                     (linkageResults.tableGamesLinked || 0)
+      } : null
+    });
+  } catch (error) {
+    console.error('Error creating player alias:', error);
+    next(error);
+  }
+});
+
+// DELETE /users/admin/player-aliases/:aliasId - Delete a player alias (admin only)
+router.delete('/admin/player-aliases/:aliasId', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { aliasId } = req.params;
+
+    const alias = await PlayerAlias.findById(aliasId).populate('userId', 'username');
+    if (!alias) {
+      return res.status(404).json({ error: 'Player alias not found' });
+    }
+
+    const aliasName = alias.aliasName;
+    const username = alias.userId?.username || 'Unknown';
+
+    await PlayerAlias.findByIdAndDelete(aliasId);
+
+    console.log('🗑️  Deleted player alias: "%s" -> User: %s (by admin: %s)', 
+      aliasName, username, req.user.username);
+
+    res.json({
+      message: 'Player alias deleted successfully',
+      aliasName: aliasName,
+      username: username
+    });
+  } catch (error) {
+    console.error('Error deleting player alias:', error);
+    next(error);
+  }
+});
+
+// GET /users/admin/player-names - Search for player names in games (admin only)
+router.get('/admin/player-names', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { search } = req.query;
+
+    if (!search || search.trim().length < 2) {
+      return res.status(400).json({ error: 'Search term must be at least 2 characters' });
+    }
+
+    const searchTerm = search.trim();
+    const Game = require('../models/Game');
+    const WizardGame = require('../models/WizardGame');
+    const TableGame = require('../models/TableGame');
+
+    // Create case-insensitive regex for partial matching
+    const searchRegex = new RegExp(searchTerm, 'i');
+
+    // Find distinct player names across all game types
+    const [games, wizardGames, tableGames] = await Promise.all([
+      Game.find({ 'gameData.players.name': searchRegex })
+        .select('gameData.players')
+        .limit(50)
+        .lean(),
+      WizardGame.find({ 'gameData.players.name': searchRegex })
+        .select('gameData.players')
+        .limit(50)
+        .lean(),
+      TableGame.find({ 'gameData.players.name': searchRegex })
+        .select('gameData.players')
+        .limit(50)
+        .lean()
+    ]);
+
+    // Extract unique player names
+    const playerNamesSet = new Set();
+
+    [...games, ...wizardGames, ...tableGames].forEach(game => {
+      if (game.gameData?.players) {
+        game.gameData.players.forEach(player => {
+          if (player.name && searchRegex.test(player.name)) {
+            playerNamesSet.add(player.name);
+          }
+        });
+      }
+    });
+
+    // Convert to array and sort
+    const playerNames = Array.from(playerNamesSet).sort((a, b) => 
+      a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+
+    res.json({
+      playerNames: playerNames.slice(0, 20), // Limit to 20 results
+      totalFound: playerNames.length
+    });
+  } catch (error) {
+    console.error('Error searching player names:', error);
     next(error);
   }
 });

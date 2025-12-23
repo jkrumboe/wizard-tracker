@@ -17,6 +17,7 @@ import AdminLayout from "@/pages/admin/AdminLayout"
 import TemplateSuggestions from "@/pages/admin/TemplateSuggestions"
 import UserManagement from "@/pages/admin/UserManagement"
 import GameLinkageManagement from "@/pages/admin/GameLinkageManagement"
+import PlayerLinking from "@/pages/admin/PlayerLinking"
 
 // Lazy load less critical pages for better performance
 const Profile = lazy(() => import("@/pages/profile/Profile"))
@@ -276,6 +277,7 @@ function App() {
                       <Route path="template-suggestions" element={<TemplateSuggestions />} />
                       <Route path="users" element={<UserManagement />} />
                       <Route path="game-linkage" element={<GameLinkageManagement />} />
+                      <Route path="player-linking" element={<PlayerLinking />} />
                     </Route>
                     </Routes>
                   </Suspense>

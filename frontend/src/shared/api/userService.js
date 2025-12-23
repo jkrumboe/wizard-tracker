@@ -721,6 +721,141 @@ class UserService {
       throw error;
     }
   }
+
+  // ==================== Player Alias Management ====================
+
+  async getPlayerAliases() {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/player-aliases`;
+      
+      console.log('UserService.getPlayerAliases() - Fetching from:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch player aliases' }));
+        throw new Error(error.error || 'Failed to fetch player aliases');
+      }
+
+      const result = await response.json();
+      console.log('UserService.getPlayerAliases() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error fetching player aliases:', error);
+      throw error;
+    }
+  }
+
+  async createPlayerAlias(aliasData) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/player-aliases`;
+      
+      console.log('UserService.createPlayerAlias() - Posting to:', endpoint, aliasData);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(aliasData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to create player alias' }));
+        throw new Error(error.error || 'Failed to create player alias');
+      }
+
+      const result = await response.json();
+      console.log('UserService.createPlayerAlias() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error creating player alias:', error);
+      throw error;
+    }
+  }
+
+  async deletePlayerAlias(aliasId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/player-aliases/${aliasId}`;
+      
+      console.log('UserService.deletePlayerAlias() - Deleting:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete player alias' }));
+        throw new Error(error.error || 'Failed to delete player alias');
+      }
+
+      const result = await response.json();
+      console.log('UserService.deletePlayerAlias() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error deleting player alias:', error);
+      throw error;
+    }
+  }
+
+  async searchPlayerNames(searchTerm) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/player-names?search=${encodeURIComponent(searchTerm)}`;
+      
+      console.log('UserService.searchPlayerNames() - Fetching from:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to search player names' }));
+        throw new Error(error.error || 'Failed to search player names');
+      }
+
+      const result = await response.json();
+      console.log('UserService.searchPlayerNames() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error searching player names:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

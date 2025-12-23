@@ -2175,8 +2175,8 @@
   }
 
   .form-group {
-    margin: 0 auto 1rem auto;
-    width: 80%;
+    /* margin: 0 auto 1rem auto;
+    width: 80%; */
     display: flex;
     flex-direction: column;
     align-items: center;

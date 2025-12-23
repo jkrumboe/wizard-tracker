@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
 const Game = require('../models/Game');
 const WizardGame = require('../models/WizardGame');
 const TableGame = require('../models/TableGame');
+const PlayerAlias = require('../models/PlayerAlias');
 
 /**
  * Escapes special regex characters in a string
@@ -59,6 +60,7 @@ async function linkSingleGame(game, username, userObjectId, gameType) {
 
 /**
  * Link all games containing a username to a newly registered user
+ * Also checks for player aliases to link games with different player names
  * @param {String} username - The username to search for
  * @param {String|ObjectId} userId - The user's ID to link games to
  * @returns {Object} Results of the linkage operation
@@ -90,34 +92,53 @@ async function linkGamesToNewUser(username, userId) {
       throw new Error('Invalid userId provided');
     }
 
+    // Get all player aliases for this user
+    const aliases = await PlayerAlias.find({ userId: userObjectId }).select('aliasName').lean();
+    const aliasNames = aliases.map(alias => alias.aliasName);
+    
+    console.log('🏷️  Found %d player alias(es) for user: %s', aliasNames.length, aliasNames.join(', '));
+
+    // Build array of all names to search for (username + aliases)
+    const searchNames = [username, ...aliasNames];
+    
     // Case-sensitive username matching with sanitized input
     // Escape special regex characters to prevent regex injection
-    const sanitizedUsername = escapeRegExp(username);
-    const usernameRegex = new RegExp(`^${sanitizedUsername}$`);
+    const nameRegexes = searchNames.map(name => {
+      const sanitizedName = escapeRegExp(name);
+      return new RegExp(`^${sanitizedName}$`);
+    });
 
     // ========== Link Regular Games (Game collection) ==========
     try {
-      // Find games where the username appears in players array
+      // Find games where any of the names appear in players array
       const games = await Game.find({
         'gameData.players': { 
           $elemMatch: { 
-            name: usernameRegex 
+            name: { $in: nameRegexes }
           }
         }
       });
 
-      console.log('📦 Found %d regular games with player "%s"', games.length, username);
+      console.log('📦 Found %d regular games with player names: %s', games.length, searchNames.join(', '));
 
       for (const game of games) {
         try {
-          const wasLinked = await linkSingleGame(game, username, userObjectId, 'Game');
-          if (wasLinked) {
-            results.gamesLinked++;
-            results.details.games.push({
-              localId: game.localId,
-              _id: game._id.toString(),
-              createdAt: game.createdAt
-            });
+          // Check if game has any matching player with any of our search names
+          const matchingName = searchNames.find(name => 
+            game.gameData?.players?.some(player => player.name && player.name === name)
+          );
+          
+          if (matchingName) {
+            const wasLinked = await linkSingleGame(game, matchingName, userObjectId, 'Game');
+            if (wasLinked) {
+              results.gamesLinked++;
+              results.details.games.push({
+                localId: game.localId,
+                _id: game._id.toString(),
+                createdAt: game.createdAt,
+                matchedName: matchingName
+              });
+            }
           }
         } catch (gameError) {
           console.error(`❌ Error linking game ${game.localId}:`, gameError.message);
@@ -138,27 +159,34 @@ async function linkGamesToNewUser(username, userId) {
 
     // ========== Link Wizard Games (WizardGame collection) ==========
     try {
-      // Find wizard games where the username appears in players array
+      // Find wizard games where any of the names appear in players array
       const wizardGames = await WizardGame.find({
         'gameData.players': { 
           $elemMatch: { 
-            name: usernameRegex 
+            name: { $in: nameRegexes }
           }
         }
       });
 
-      console.log('🧙 Found %d wizard games with player "%s"', wizardGames.length, username);
+      console.log('🧙 Found %d wizard games with player names: %s', wizardGames.length, searchNames.join(', '));
 
       for (const game of wizardGames) {
         try {
-          const wasLinked = await linkSingleGame(game, username, userObjectId, 'WizardGame');
-          if (wasLinked) {
-            results.wizardGamesLinked++;
-            results.details.wizardGames.push({
-              localId: game.localId,
-              _id: game._id.toString(),
-              createdAt: game.createdAt
-            });
+          const matchingName = searchNames.find(name => 
+            game.gameData?.players?.some(player => player.name && player.name === name)
+          );
+          
+          if (matchingName) {
+            const wasLinked = await linkSingleGame(game, matchingName, userObjectId, 'WizardGame');
+            if (wasLinked) {
+              results.wizardGamesLinked++;
+              results.details.wizardGames.push({
+                localId: game.localId,
+                _id: game._id.toString(),
+                createdAt: game.createdAt,
+                matchedName: matchingName
+              });
+            }
           }
         } catch (gameError) {
           console.error(`❌ Error linking wizard game ${game.localId}:`, gameError.message);
@@ -179,28 +207,35 @@ async function linkGamesToNewUser(username, userId) {
 
     // ========== Link Table Games (TableGame collection) ==========
     try {
-      // Find table games where the username appears in gameData.players
+      // Find table games where any of the names appear in gameData.players
       const tableGames = await TableGame.find({
         'gameData.players': { 
           $elemMatch: { 
-            name: usernameRegex 
+            name: { $in: nameRegexes }
           }
         }
       });
 
-      console.log('🎲 Found %d table games with player "%s"', tableGames.length, username);
+      console.log('🎲 Found %d table games with player names: %s', tableGames.length, searchNames.join(', '));
 
       for (const game of tableGames) {
         try {
-          const wasLinked = await linkSingleGame(game, username, userObjectId, 'TableGame');
-          if (wasLinked) {
-            results.tableGamesLinked++;
-            results.details.tableGames.push({
-              localId: game.localId,
-              _id: game._id.toString(),
-              name: game.name,
-              createdAt: game.createdAt
-            });
+          const matchingName = searchNames.find(name => 
+            game.gameData?.players?.some(player => player.name && player.name === name)
+          );
+          
+          if (matchingName) {
+            const wasLinked = await linkSingleGame(game, matchingName, userObjectId, 'TableGame');
+            if (wasLinked) {
+              results.tableGamesLinked++;
+              results.details.tableGames.push({
+                localId: game.localId,
+                _id: game._id.toString(),
+                name: game.name,
+                createdAt: game.createdAt,
+                matchedName: matchingName
+              });
+            }
           }
         } catch (gameError) {
           console.error(`❌ Error linking table game ${game.localId}:`, gameError.message);
@@ -224,6 +259,9 @@ async function linkGamesToNewUser(username, userId) {
     results.success = totalLinked > 0 || results.errors.length === 0;
 
     console.log('\n📊 Game Linkage Summary for %s:', username);
+    if (aliasNames.length > 0) {
+      console.log('   🏷️  Aliases: %s', aliasNames.join(', '));
+    }
     console.log('   ✅ Regular Games: %d', results.gamesLinked);
     console.log('   ✅ Wizard Games: %d', results.wizardGamesLinked);
     console.log('   ✅ Table Games: %d', results.tableGamesLinked);

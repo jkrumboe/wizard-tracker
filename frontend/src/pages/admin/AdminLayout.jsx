@@ -63,6 +63,14 @@ const AdminLayout = () => {
               <span>Game Linkage</span>
             </Link>
           </li>
+          <li>
+            <Link 
+              to="/admin/player-linking" 
+              className={location.pathname === '/admin/player-linking' ? 'active' : ''}
+            >
+              <span>Player Linking</span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
@@ -103,6 +111,10 @@ const AdminLayout = () => {
               <Link to="/admin/game-linkage" className="admin-card">
                 <h3>Game Linkage</h3>
                 <p>Link games to user accounts retroactively</p>
+              </Link>
+              <Link to="/admin/player-linking" className="admin-card">
+                <h3>Player Linking</h3>
+                <p>Manually link old player names to registered users</p>
               </Link>
             </div>
           </div>
