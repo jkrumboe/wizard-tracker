@@ -6,6 +6,11 @@ const UPDATE_CHECK_INTERVAL = 300000; // 5 minutes
 const MIN_UPDATE_CHECK_DELAY = 10000; // 10 seconds minimum between checks
 const LAST_SW_VERSION_KEY = 'last_sw_version';
 
+// Dispatch update progress events to the app
+const dispatchUpdateProgress = (data) => {
+  globalThis.dispatchEvent(new CustomEvent('sw-update-progress', { detail: data }));
+};
+
 export function register() {
   if (!("serviceWorker" in navigator)) {
     return;
@@ -38,6 +43,17 @@ export function register() {
           };
           registration.active.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
         }
+        
+        // Listen for messages from the service worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data?.type === 'SW_UPDATE_PROGRESS') {
+            dispatchUpdateProgress(event.data);
+          }
+          if (event.data?.type === 'SW_INSTALLING') {
+            console.debug(`📦 New service worker v${event.data.version} is installing...`);
+            dispatchUpdateProgress({ status: 'downloading', version: event.data.version });
+          }
+        });
 
         // Throttled update checker
         const checkForUpdate = () => {

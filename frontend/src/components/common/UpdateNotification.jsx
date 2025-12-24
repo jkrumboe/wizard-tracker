@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RefreshIcon, XIcon } from '@/components/ui/Icon';
+import { XIcon } from '@/components/ui/Icon';
 
 const RELOAD_COOLDOWN_MS = 10000; // 10 seconds between reloads
 const LAST_RELOAD_KEY = 'last_sw_reload';
@@ -7,19 +7,63 @@ const LAST_SW_VERSION_KEY = 'last_sw_version';
 const UPDATE_IN_PROGRESS_KEY = 'sw_update_in_progress';
 const MAX_RELOAD_ATTEMPTS = 3;
 const RELOAD_ATTEMPTS_KEY = 'sw_reload_attempts';
+const SNOOZE_KEY = 'sw_update_snoozed_until';
+const SNOOZE_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+// Semantic version comparison utilities
+const parseVersion = (version) => {
+  if (!version) return null;
+  const clean = version.replace(/^v/, '');
+  const [major, minor, patch] = clean.split('.').map(n => Number.parseInt(n, 10) || 0);
+  return { major, minor, patch, raw: clean };
+};
+
+const compareVersions = (v1, v2) => {
+  const parsed1 = parseVersion(v1);
+  const parsed2 = parseVersion(v2);
+  
+  if (!parsed1 || !parsed2) return 0;
+  
+  if (parsed1.major !== parsed2.major) return parsed1.major - parsed2.major;
+  if (parsed1.minor !== parsed2.minor) return parsed1.minor - parsed2.minor;
+  return parsed1.patch - parsed2.patch;
+};
+
+const getUpdateType = (oldVersion, newVersion) => {
+  const oldParsed = parseVersion(oldVersion);
+  const newParsed = parseVersion(newVersion);
+  
+  if (!oldParsed || !newParsed) return 'unknown';
+  
+  if (newParsed.major > oldParsed.major) return 'major';
+  if (newParsed.minor > oldParsed.minor) return 'minor';
+  if (newParsed.patch > oldParsed.patch) return 'patch';
+  return 'none';
+};
 
 const UpdateNotification = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [updateReady, setUpdateReady] = useState(false);
   const [newVersion, setNewVersion] = useState(null);
+  const [currentVersion, setCurrentVersion] = useState(null);
+  const [updateType, setUpdateType] = useState('unknown');
+  const [updateProgress, setUpdateProgress] = useState({ status: 'idle', progress: 0 });
+  const [isUpdating, setIsUpdating] = useState(false);
   const updateHandledRef = useRef(false);
   const controllerChangeHandledRef = useRef(false);
 
+  // Check if update was snoozed
+  const isUpdateSnoozed = () => {
+    const snoozedUntil = localStorage.getItem(SNOOZE_KEY);
+    if (!snoozedUntil) return false;
+    return Date.now() < Number.parseInt(snoozedUntil, 10);
+  };
+
   // Check if we can safely reload (not in cooldown, not too many attempts)
   const canReload = () => {
-    const lastReload = parseInt(localStorage.getItem(LAST_RELOAD_KEY) || '0');
+    const lastReload = Number.parseInt(localStorage.getItem(LAST_RELOAD_KEY) || '0', 10);
     const timeSinceReload = Date.now() - lastReload;
-    const reloadAttempts = parseInt(localStorage.getItem(RELOAD_ATTEMPTS_KEY) || '0');
+    const reloadAttempts = Number.parseInt(localStorage.getItem(RELOAD_ATTEMPTS_KEY) || '0', 10);
     const updateInProgress = sessionStorage.getItem(UPDATE_IN_PROGRESS_KEY);
     
     if (updateInProgress === 'true') {
@@ -76,23 +120,34 @@ const UpdateNotification = () => {
 
   // Check if version actually changed
   const hasVersionChanged = async () => {
-    const currentVersion = await getServiceWorkerVersion();
+    const newSWVersion = await getServiceWorkerVersion();
     const lastVersion = localStorage.getItem(LAST_SW_VERSION_KEY);
     
-    if (!currentVersion) {
+    if (!newSWVersion) {
       console.debug('⚠️ Could not determine service worker version');
       return false; // Don't reload if we can't verify version change
     }
     
     if (!lastVersion) {
       // First time tracking version
-      console.debug(`📌 Initial version: ${currentVersion}`);
-      localStorage.setItem(LAST_SW_VERSION_KEY, currentVersion);
+      console.debug(`📌 Initial version: ${newSWVersion}`);
+      localStorage.setItem(LAST_SW_VERSION_KEY, newSWVersion);
+      setCurrentVersion(newSWVersion);
       return false;
     }
     
-    const changed = currentVersion !== lastVersion;
-    console.debug(`🔍 Version check: ${lastVersion} -> ${currentVersion} (Changed: ${changed})`);
+    // Use semantic version comparison
+    const comparison = compareVersions(newSWVersion, lastVersion);
+    const changed = comparison > 0;
+    
+    if (changed) {
+      const type = getUpdateType(lastVersion, newSWVersion);
+      setUpdateType(type);
+      setCurrentVersion(lastVersion);
+      console.debug(`🔍 Version check: ${lastVersion} -> ${newSWVersion} (${type} update)`);
+    } else {
+      console.debug(`🔍 Version check: ${lastVersion} -> ${newSWVersion} (No update needed)`);
+    }
     
     return changed;
   };
@@ -112,31 +167,35 @@ const UpdateNotification = () => {
     
     const versionChanged = await hasVersionChanged();
     if (!versionChanged) {
-      console.debug('❌ Version unchanged, skipping reload');
+      console.debug('❌ Version unchanged or not newer, skipping reload');
       sessionStorage.removeItem('sw_update_ready');
       sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
       return;
     }
     
     updateHandledRef.current = true;
+    setIsUpdating(true);
     
     // Get new version for tracking
-    const currentVersion = await getServiceWorkerVersion();
-    if (currentVersion) {
-      setNewVersion(currentVersion);
+    const newSWVersion = await getServiceWorkerVersion();
+    if (newSWVersion) {
+      setNewVersion(newSWVersion);
     }
     
     // Track reload attempt
-    const attempts = parseInt(localStorage.getItem(RELOAD_ATTEMPTS_KEY) || '0');
+    const attempts = Number.parseInt(localStorage.getItem(RELOAD_ATTEMPTS_KEY) || '0', 10);
     localStorage.setItem(RELOAD_ATTEMPTS_KEY, (attempts + 1).toString());
     localStorage.setItem(LAST_RELOAD_KEY, Date.now().toString());
     sessionStorage.setItem(UPDATE_IN_PROGRESS_KEY, 'true');
     
+    // Clear snooze on successful update
+    localStorage.removeItem(SNOOZE_KEY);
+    
     console.debug(`🔄 Reloading for update (attempt ${attempts + 1}/${MAX_RELOAD_ATTEMPTS})...`);
     
     // Update stored version before reload
-    if (currentVersion) {
-      localStorage.setItem(LAST_SW_VERSION_KEY, currentVersion);
+    if (newSWVersion) {
+      localStorage.setItem(LAST_SW_VERSION_KEY, newSWVersion);
     }
     
     setTimeout(() => {
@@ -148,7 +207,7 @@ const UpdateNotification = () => {
   useEffect(() => {
     // Clear update-in-progress flag on mount (in case of crash/manual reload)
     if (sessionStorage.getItem(UPDATE_IN_PROGRESS_KEY) === 'true') {
-      const lastReload = parseInt(localStorage.getItem(LAST_RELOAD_KEY) || '0');
+      const lastReload = Number.parseInt(localStorage.getItem(LAST_RELOAD_KEY) || '0', 10);
       if (Date.now() - lastReload > 30000) { // 30 seconds
         console.debug('🧹 Clearing stale update-in-progress flag');
         sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
@@ -157,30 +216,96 @@ const UpdateNotification = () => {
       } else {
         // Recent reload - check if version actually changed
         const checkRecentUpdate = async () => {
-          const currentVersion = await getServiceWorkerVersion();
+          const newSWVersion = await getServiceWorkerVersion();
           const lastVersion = localStorage.getItem(LAST_SW_VERSION_KEY);
           
-          if (currentVersion && lastVersion && currentVersion !== lastVersion) {
+          if (newSWVersion && lastVersion && compareVersions(newSWVersion, lastVersion) > 0) {
             // Update was successful!
-            console.debug(`✅ Update completed successfully: ${lastVersion} → ${currentVersion}`);
-            localStorage.setItem(LAST_SW_VERSION_KEY, currentVersion);
+            const type = getUpdateType(lastVersion, newSWVersion);
+            console.debug(`✅ Update completed successfully: ${lastVersion} → ${newSWVersion} (${type})`);
+            localStorage.setItem(LAST_SW_VERSION_KEY, newSWVersion);
             localStorage.removeItem(RELOAD_ATTEMPTS_KEY);
             sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
             
-            // Show success message
+            // Show success message with update type
+            const getTypeLabel = (updateType) => {
+              if (updateType === 'major') return '🎉 Major update';
+              if (updateType === 'minor') return '✨ New features';
+              return '🔧 Bug fixes';
+            };
+            const typeLabel = getTypeLabel(type);
             const event = new CustomEvent('show-toast', {
               detail: { 
-                message: `Updated to version ${currentVersion}`, 
-                type: 'success' 
+                message: `${typeLabel}: v${newSWVersion}`, 
+                type: 'success',
+                duration: 5000
               }
             });
             globalThis.dispatchEvent(event);
+          } else if (newSWVersion === lastVersion) {
+            // Same version - update completed
+            console.debug(`✅ Update confirmed: v${newSWVersion}`);
+            localStorage.removeItem(RELOAD_ATTEMPTS_KEY);
+            sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
           }
         };
         
         // Check after a short delay to let service worker stabilize
         setTimeout(checkRecentUpdate, 2000);
       }
+    }
+    
+    // Listen for SW update progress messages (from actual SW or dev helper)
+    const handleSWMessage = (event) => {
+      if (event.data?.type === 'SW_UPDATE_PROGRESS') {
+        setUpdateProgress({
+          status: event.data.status,
+          progress: event.data.progress || 0,
+          totalAssets: event.data.totalAssets || 0,
+          cachedAssets: event.data.cachedAssets || 0
+        });
+        
+        if (event.data.version) {
+          setNewVersion(event.data.version);
+        }
+      }
+      
+      if (event.data?.type === 'SW_INSTALLING') {
+        setUpdateProgress(prev => ({ ...prev, status: 'downloading' }));
+        if (event.data.version) {
+          setNewVersion(event.data.version);
+        }
+      }
+    };
+    
+    // Handle progress events from dev helper (CustomEvent)
+    const handleDevProgress = (event) => {
+      const data = event.detail;
+      if (data?.type === 'SW_UPDATE_PROGRESS') {
+        setUpdateProgress({
+          status: data.status,
+          progress: data.progress || 0,
+          totalAssets: data.totalAssets || 0,
+          cachedAssets: data.cachedAssets || 0
+        });
+        
+        if (data.version) {
+          setNewVersion(data.version);
+        }
+        
+        // Show notification when downloading starts
+        if (data.status === 'downloading' || data.status === 'ready') {
+          setUpdateReady(true);
+          setShowNotification(true);
+        }
+      }
+    };
+    
+    // Listen for dev helper events
+    globalThis.addEventListener('sw-update-progress', handleDevProgress);
+    
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
     }
     
     // Check if auto-update is enabled
@@ -194,7 +319,14 @@ const UpdateNotification = () => {
         return;
       }
       
+      // Check if snoozed
+      if (isUpdateSnoozed()) {
+        console.debug('💤 Update snoozed, skipping notification');
+        return;
+      }
+      
       setUpdateReady(true);
+      setUpdateProgress(prev => ({ ...prev, status: 'ready' }));
       
       if (autoUpdateEnabled) {
         // Auto-reload if setting is enabled and safety checks pass
@@ -204,8 +336,8 @@ const UpdateNotification = () => {
         // Show notification if auto-update is disabled
         const versionChanged = await hasVersionChanged();
         if (versionChanged) {
-          const currentVersion = await getServiceWorkerVersion();
-          setNewVersion(currentVersion);
+          const newSWVersion = await getServiceWorkerVersion();
+          setNewVersion(newSWVersion);
           setShowNotification(true);
         } else {
           console.debug('❌ No version change detected, hiding notification');
@@ -236,8 +368,8 @@ const UpdateNotification = () => {
         if (!autoUpdateEnabled) {
           const versionChanged = await hasVersionChanged();
           if (versionChanged) {
-            const currentVersion = await getServiceWorkerVersion();
-            setNewVersion(currentVersion);
+            const newSWVersion = await getServiceWorkerVersion();
+            setNewVersion(newSWVersion);
             setShowNotification(true);
           }
         }
@@ -247,12 +379,20 @@ const UpdateNotification = () => {
       
       return () => {
         globalThis.removeEventListener('sw-update-ready', handleUpdateReady);
+        globalThis.removeEventListener('sw-update-progress', handleDevProgress);
         navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+        }
       };
     }
 
     return () => {
       globalThis.removeEventListener('sw-update-ready', handleUpdateReady);
+      globalThis.removeEventListener('sw-update-progress', handleDevProgress);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
     };
   }, []);
 
@@ -269,86 +409,212 @@ const UpdateNotification = () => {
     setShowNotification(false);
     // Still keep the flag so user can update later via Settings
   };
+  
+  const handleSnooze = () => {
+    const snoozeUntil = Date.now() + SNOOZE_DURATION_MS;
+    localStorage.setItem(SNOOZE_KEY, snoozeUntil.toString());
+    setShowNotification(false);
+    console.debug(`💤 Update snoozed for 4 hours`);
+  };
+
+  // Get update type label and styling
+  const getUpdateInfo = () => {
+    switch (updateType) {
+      case 'major':
+        return { 
+          label: '🎉 Major Update', 
+          description: 'New major version with significant changes.',
+          color: 'var(--primary)'
+        };
+      case 'minor':
+        return { 
+          label: '✨ New Features', 
+          description: 'New features and improvements are available.',
+          color: 'var(--success, #22c55e)'
+        };
+      case 'patch':
+        return { 
+          label: '🔧 Bug Fixes', 
+          description: 'Bug fixes and performance improvements.',
+          color: 'var(--text-light)'
+        };
+      default:
+        return { 
+          label: 'Update Available', 
+          description: 'A new version is ready.',
+          color: 'var(--primary)'
+        };
+    }
+  };
 
   if (!showNotification || !updateReady) {
     return null;
   }
+  
+  const updateInfo = getUpdateInfo();
+  const showProgress = updateProgress.status === 'downloading' && !isUpdating;
+  
+  // Map 0-75% progress to 0-100% of border fill, then stay at 100%
+  const mappedProgress = Math.min(100, (updateProgress.progress / 75) * 100);
+  const progressDeg = (mappedProgress / 100) * 360;
 
   return (
     <div
+      className="update-notification"
       style={{
         position: 'fixed',
         bottom: '20px',
         right: '20px',
         left: '20px',
-        maxWidth: '400px',
+        maxWidth: '420px',
         margin: '0 auto',
-        backgroundColor: 'var(--card-bg)',
-        border: '1px solid var(--primary)',
         borderRadius: 'var(--radius-lg)',
         padding: 'var(--spacing-md)',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
         zIndex: 10000,
         animation: 'slideUp 0.3s ease-out',
+        // Use CSS custom property for smooth animation
+        '--progress-deg': `${progressDeg}deg`,
+        '--update-color': updateInfo.color,
+        backgroundColor: 'var(--card-bg)',
+        border: showProgress ? '3px solid transparent' : `2px solid ${updateInfo.color}`,
+        background: showProgress 
+          ? `linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+             conic-gradient(
+               from 270deg,
+               var(--update-color) 0deg,
+               var(--update-color) var(--progress-deg),
+               var(--border) var(--progress-deg),
+               var(--border) 360deg
+             ) border-box`
+          : 'var(--card-bg)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-sm)' }}>
-        <RefreshIcon size={24} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-sm)' }}>
         <div style={{ flex: 1 }}>
-          <h3 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: 600 }}>
-            Update Available{newVersion ? ` (v${newVersion})` : ''}
-          </h3>
-          <p style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>
-            A new version of the app is ready. Update now to get the latest features and improvements.
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--spacing-xs)', marginBottom: '4px' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
+              {updateInfo.label}
+            </h3>
+            {newVersion && (
+              <span style={{ 
+                fontSize: '0.75rem', 
+                padding: '2px 6px', 
+                backgroundColor: 'var(--bg-secondary, rgba(255,255,255,0.1))', 
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-light)'
+              }}>
+                v{newVersion}
+              </span>
+            )}
+          </div>
+          
+          {currentVersion && newVersion && (
+            <p style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: '0.75rem', 
+              color: 'var(--text-muted, var(--text-light))',
+              opacity: 0.7
+            }}>
+              v{currentVersion} → v{newVersion}
+            </p>
+          )}
+          
+          <p style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '0.875rem', color: 'var(--text-light)' }}>
+            {isUpdating ? 'Applying update...' : updateInfo.description}
           </p>
-          <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+          
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button
               onClick={handleUpdate}
+              disabled={isUpdating}
               style={{
-                flex: 1,
+                flex: '1 1 auto',
+                minWidth: '100px',
                 padding: 'var(--spacing-sm) var(--spacing-md)',
-                backgroundColor: 'var(--primary)',
+                backgroundColor: updateInfo.color,
                 color: 'var(--text)',
                 border: 'none',
                 borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
+                cursor: isUpdating ? 'not-allowed' : 'pointer',
                 fontWeight: 600,
-                fontSize: '0.9rem',
+                fontSize: '0.875rem',
+                opacity: isUpdating ? 0.7 : 1,
+                transition: 'opacity 0.2s, transform 0.1s',
               }}
             >
-              Update Now
+              {isUpdating ? 'Updating...' : 'Update Now'}
             </button>
-            <button
-              onClick={handleDismiss}
+            <div
               style={{
-                padding: 'var(--spacing-sm) var(--spacing-md)',
-                backgroundColor: 'transparent',
-                color: 'var(--text-light)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-              }}
-            >
-              Later
-            </button>
+                display: 'flex',
+                gap: 'var(--spacing-sm)',
+                flex: '1 1 auto',
+                minWidth: '100px',
+                justifyContent: 'space-between'
+                }}>
+              <button
+                onClick={handleSnooze}
+                disabled={isUpdating}
+                style={{
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-light)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: isUpdating ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  opacity: isUpdating ? 0.5 : 1,
+                }}
+                title="Remind me in 4 hours"
+              >
+                Snooze
+              </button>
+              <button
+                onClick={handleDismiss}
+                disabled={isUpdating}
+                style={{
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-light)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: isUpdating ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  opacity: isUpdating ? 0.5 : 1,
+                }}
+              >
+                Later
+              </button>
+            </div>
           </div>
         </div>
         <button
           onClick={handleDismiss}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px',
-            color: 'var(--text-light)',
-            flexShrink: 0,
-          }}
+          disabled={isUpdating}
+          className='close-btn'
           aria-label="Dismiss"
         >
           <XIcon size={20} />
         </button>
       </div>
+      
+      <style>{`
+        @property --progress-deg {
+          syntax: '<angle>';
+          initial-value: 0deg;
+          inherits: false;
+        }
+        
+        .update-notification {
+          transition: --progress-deg 0.4s ease-out, border 0.3s ease, background 0.3s ease;
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

@@ -10,19 +10,51 @@ import { ExpirationPlugin } from 'workbox-expiration';
 const APP_VERSION = "__APP_VERSION__" // Will be replaced during build
 const API_CACHE_NAME = `keep-wiz-api-v${APP_VERSION}`
 
-// Precache and route assets with error recovery
-// Wrap in function to handle gracefully
+// Update state management
+let updateState = {
+  isInstalling: false,
+  progress: 0,
+  totalAssets: 0,
+  cachedAssets: 0,
+  status: 'idle' // 'idle' | 'checking' | 'downloading' | 'ready' | 'error'
+};
+
+// Broadcast update progress to all clients
+const broadcastUpdateProgress = async (state) => {
+  updateState = { ...updateState, ...state };
+  const clients = await self.clients.matchAll();
+  clients.forEach(client => {
+    client.postMessage({
+      type: 'SW_UPDATE_PROGRESS',
+      ...updateState,
+      version: APP_VERSION
+    });
+  });
+};
+
+// Precache and route assets with error recovery and progress tracking
 const setupPrecaching = async () => {
   try {
+    const manifest = self.__WB_MANIFEST || [];
+    updateState.totalAssets = manifest.length;
+    
+    // Track precaching progress
+    if (manifest.length > 0) {
+      await broadcastUpdateProgress({ status: 'downloading', progress: 0, totalAssets: manifest.length });
+    }
+    
     // This will be replaced by Vite PWA plugin with the actual manifest
-    precacheAndRoute(self.__WB_MANIFEST || [], {
+    precacheAndRoute(manifest, {
       // Ignore errors for individual URLs - don't fail entire precache
       ignoreURLParametersMatching: [/^v/, /^_/],
     });
     cleanupOutdatedCaches();
-    console.debug(`Service Worker v${APP_VERSION} precaching complete`);
+    
+    console.debug(`Service Worker v${APP_VERSION} precaching complete (${manifest.length} assets)`);
+    await broadcastUpdateProgress({ status: 'ready', progress: 100, cachedAssets: manifest.length });
   } catch (error) {
     console.error('Precaching failed:', error);
+    await broadcastUpdateProgress({ status: 'error', error: error.message });
     
     // On error, clear ALL caches to force fresh state
     // This handles the case where old SW has stale manifest
@@ -82,19 +114,27 @@ registerRoute(
 // Install event - Workbox handles precaching, we just skip waiting
 self.addEventListener("install", (event) => {
   console.debug(`Service Worker installing version ${APP_VERSION}...`);
-  // Skip waiting immediately to activate the new service worker
-  self.skipWaiting();
   
   // Notify clients that a new version is installing
   event.waitUntil(
-    self.clients.matchAll().then(clients => {
+    (async () => {
+      await broadcastUpdateProgress({ 
+        status: 'downloading', 
+        isInstalling: true,
+        progress: 0 
+      });
+      
+      const clients = await self.clients.matchAll();
       clients.forEach(client => {
         client.postMessage({
           type: 'SW_INSTALLING',
           version: APP_VERSION
         });
       });
-    })
+      
+      // Skip waiting immediately to activate the new service worker
+      await self.skipWaiting();
+    })()
   );
 });
 
@@ -140,6 +180,22 @@ self.addEventListener('message', (event) => {
     } else {
       // Fallback: send message to the client directly
       event.source.postMessage({ type: 'VERSION_RESPONSE', version: APP_VERSION });
+    }
+  }
+  
+  if (event.data && event.data.type === 'GET_UPDATE_STATUS') {
+    // Return current update state
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ 
+        ...updateState, 
+        version: APP_VERSION 
+      });
+    } else {
+      event.source.postMessage({ 
+        type: 'UPDATE_STATUS_RESPONSE', 
+        ...updateState,
+        version: APP_VERSION 
+      });
     }
   }
   
