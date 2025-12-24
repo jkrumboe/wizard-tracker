@@ -264,9 +264,9 @@
   gap: var(--spacing-sm);
 }
 
-.setting-section {
+/* .setting-section {
   margin-bottom: var(--spacing-sm);
-}
+} */
 
 .setting-section:last-child {
   border-bottom: none;
@@ -317,7 +317,6 @@
 }
 
 .setting-hint {
-  margin-top: var(--spacing-sm);
   font-size: 0.9rem;
   color: var(--text-light);
   text-align: center;
@@ -336,6 +335,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  background-color: var(--bg-color);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -409,11 +409,14 @@
   padding: var(--spacing-sm) ;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background-color: var(--card-bg);
+  background-color: var(--bg-color);
 }
 
-.player-order-item {
-  background-color: var(--card-bg-alt);
+.player-name-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
 }
 
 .player-position {

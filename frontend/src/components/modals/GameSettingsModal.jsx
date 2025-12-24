@@ -1,10 +1,91 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon, ChevronUpIcon, ChevronDownIcon } from '@/components/ui/Icon';
+import { XIcon } from '@/components/ui/Icon';
+import { GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from '@dnd-kit/modifiers';
+
+// Sortable Player Item Component
+const SortablePlayerItem = ({ player, index }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: player.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`player-order-item ${isDragging ? 'dragging' : ''}`}
+      {...attributes}
+    >
+      <div
+        className="drag-handle"
+        {...listeners}
+        style={{ cursor: 'grab', gap: '0.5rem', display: 'flex', alignItems: 'center' }}
+      >
+        <GripVertical size={16} />
+        <div className='player-number'>
+          {index + 1}
+        </div>
+      </div>
+      
+      <div className="player-name-display">{player.name}</div>
+    </div>
+  );
+};
 
 const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => {
   const [dealerIndex, setDealerIndex] = useState(0);
   const [maxRounds, setMaxRounds] = useState(1);
   const [playerOrder, setPlayerOrder] = useState([]);
+
+  // @dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (gameState) {
@@ -36,19 +117,20 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
     }
   };
 
-  const movePlayerUp = (index) => {
-    if (index > 0) {
-      const newOrder = [...playerOrder];
-      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
-      setPlayerOrder(newOrder);
-    }
-  };
+  // @dnd-kit drag end handler
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
 
-  const movePlayerDown = (index) => {
-    if (index < playerOrder.length - 1) {
-      const newOrder = [...playerOrder];
-      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-      setPlayerOrder(newOrder);
+    if (active.id !== over?.id) {
+      const oldIndex = playerOrder.findIndex((idx) => gameState.players[idx].id === active.id);
+      const newIndex = playerOrder.findIndex((idx) => gameState.players[idx].id === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = [...playerOrder];
+        const [removed] = newOrder.splice(oldIndex, 1);
+        newOrder.splice(newIndex, 0, removed);
+        setPlayerOrder(newOrder);
+      }
     }
   };
 
@@ -135,32 +217,27 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
           {/* Player Order */}
           <div className="setting-section">
             <h3>Player Order</h3>
-            <div className="player-order-list">
-              {orderedPlayers.map((player, index) => (
-                <div key={player.id} className="player-order-item">
-                  <span className="player-position">{index + 1}</span>
-                  <span className="player-name">{player.name}</span>
-                  <div className="player-order-controls">
-                    <button
-                      className="order-btn"
-                      onClick={() => movePlayerUp(index)}
-                      disabled={index === 0}
-                      aria-label="Move up"
-                    >
-                      <ChevronUpIcon size={20} />
-                    </button>
-                    <button
-                      className="order-btn"
-                      onClick={() => movePlayerDown(index)}
-                      disabled={index === orderedPlayers.length - 1}
-                      aria-label="Move down"
-                    >
-                      <ChevronDownIcon size={20} />
-                    </button>
-                  </div>
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            >
+              <SortableContext 
+                items={orderedPlayers.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="player-order-list">
+                  {orderedPlayers.map((player, index) => (
+                    <SortablePlayerItem
+                      key={player.id}
+                      player={player}
+                      index={index}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         </div>
 

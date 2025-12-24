@@ -21,6 +21,7 @@
   font-weight: bold;
   color: var(--text);
   flex-shrink: 0;
+  min-width: 40px;
 }
 
 .dealer-badge {
