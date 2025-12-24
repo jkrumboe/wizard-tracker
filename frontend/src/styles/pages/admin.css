@@ -925,7 +925,7 @@
   color: var(--text-secondary);
 }
 
-.results-section {
+.admin-layout .results-section {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -933,7 +933,7 @@
   margin-top: 1.5rem;
 }
 
-.results-section h3 {
+.admin-layout .results-section h3 {
   margin-top: 0;
   margin-bottom: 1rem;
 }
