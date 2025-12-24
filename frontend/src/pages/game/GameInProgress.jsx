@@ -521,21 +521,40 @@ const GameInProgress = () => {
 
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
-    if (!currentRound) return 0;
+    if (!currentRound) return "--";
     // If cloud is active, no call restrictions apply
     if (increaseCallMax) return "0";
     const players = currentRound.players;
     // Find players who have not made a call yet
     const uncalledPlayers = players.filter(p => p.call === null);
-    // Only restrict the last player to call
-    if (uncalledPlayers.length !== 1) return "0";
-    // The forbidden call is the value that would make totalCalls == currentRound.round
+    
+    // If more than 1 player hasn't called yet (dealer hasn't called yet)
+    // Show "--" until the player right before the dealer calls
+    if (uncalledPlayers.length > 1) return "--";
+    
+    // If no uncalled players (everyone including dealer has called)
+    if (uncalledPlayers.length === 0) {
+      // Check if the dealer made an illegal call
+      const forbiddenCall = currentRound.round - totalCalls;
+      // Only show if there was an illegal call made
+      if (forbiddenCall >= 0 && forbiddenCall <= currentRound.round) {
+        // Check if any player made the forbidden call
+        const madeIllegalCall = players.some(p => p.call === forbiddenCall);
+        if (madeIllegalCall) {
+          return `${forbiddenCall}`;
+        }
+      }
+      // No illegal call was made, hide the display
+      return null;
+    }
+    
+    // Only one player left to call (the dealer) - show the forbidden call
     const forbiddenCall = currentRound.round - totalCalls;
     // Only restrict if forbiddenCall is within valid range
     if (forbiddenCall >= 0 && forbiddenCall <= currentRound.round) {
       return `${forbiddenCall}`;
     }
-    return 0;
+    return "0";
   };
 
   // Calculate dealer and caller for the current round
@@ -600,10 +619,14 @@ const GameInProgress = () => {
             <div>
               Calls: {totalCalls}
             </div>
-          |  
-          <div className={`illegal-calls ${(currentRound?.round - totalCalls) < 0 ? 'free' : ''}`}>
-            {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
-          </div>
+          {lastPlayerCantCall() !== null && (
+            <>
+              |  
+              <div className={`illegal-calls ${(currentRound?.round - totalCalls) < 0 ? 'free' : ''}`}>
+                {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
+              </div>
+            </>
+          )}
           </div> 
         </span>
         <button 
