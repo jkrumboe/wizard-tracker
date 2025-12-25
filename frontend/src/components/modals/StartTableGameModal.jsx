@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { XIcon, UsersIcon, PlayIcon, PlusIcon } from '@/components/ui/Icon';
+import { XIcon, UsersIcon, PlayIcon, PlusIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { GripVertical, Dices as DiceIcon } from 'lucide-react';
-import { localFriendsService } from '@/shared/api';
+import { localFriendsService, userService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
 import SelectFriendsModal from '@/components/modals/SelectFriendsModal';
 import '@/styles/components/modal.css';
@@ -31,7 +31,7 @@ import {
 const MAX_PLAYERS = 10;
 
 // Sortable Player Item Component
-const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove }) => {
+const SortablePlayerItem = ({ player, index, onNameChange, onNameBlur, onRemove, canRemove, isLookingUp }) => {
   const {
     attributes,
     listeners,
@@ -54,11 +54,14 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove }
     ...listeners,
   };
 
+  // Player is verified if they have a userId (from friend selection or user lookup)
+  const isVerified = !!player.userId;
+
   return (
     <div 
       ref={setNodeRef}
       style={style}
-      className={`player-item ${isDragging ? 'dragging' : ''} ${player.friendId ? 'verified' : ''}`}
+      className={`player-item ${isDragging ? 'dragging' : ''} ${isVerified ? 'verified' : ''}`}
       {...attributes}
     >
       <div
@@ -77,9 +80,16 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove }
         className="inputPlayerName" 
         value={player.name}
         onChange={(e) => onNameChange(player.id, e.target.value)}
+        onBlur={(e) => onNameBlur?.(player.id, e.target.value)}
         onFocus={(e) => e.target.select()}
         placeholder={`Player ${index + 1}`}
       />
+
+      {isLookingUp && (
+        <span className="lookup-spinner" title="Looking up user...">
+          ⏳
+        </span>
+      )}
       
       {canRemove && (
         <button 
@@ -101,12 +111,14 @@ SortablePlayerItem.propTypes = {
   player: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
-    friendId: PropTypes.string,
+    userId: PropTypes.string,
   }).isRequired,
   index: PropTypes.number.isRequired,
   onNameChange: PropTypes.func.isRequired,
+  onNameBlur: PropTypes.func,
   onRemove: PropTypes.func.isRequired,
   canRemove: PropTypes.bool.isRequired,
+  isLookingUp: PropTypes.bool,
 };
 
 const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateSettings }) => {
@@ -115,6 +127,8 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showSelectFriendsModal, setShowSelectFriendsModal] = useState(false);
+  const [lookingUpPlayers, setLookingUpPlayers] = useState(new Set()); // Track which players are being looked up
+  const lookupTimeouts = useRef({}); // Debounce timeouts for user lookup
 
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -140,12 +154,12 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
       {
         id: `player-${Date.now()}-0`,
         name: user?.username || user?.name || 'Player 1',
-        friendId: null
+        userId: user?.id || null // Use logged-in user's ID
       },
       {
         id: `player-${Date.now()}-1`,
         name: '',
-        friendId: null
+        userId: null
       }
     ];
     setPlayers(initialPlayers);
@@ -159,7 +173,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
       {
         id: `player-${Date.now()}-${prev.length}`,
         name: '',
-        friendId: null
+        userId: null
       }
     ]);
   };
@@ -204,17 +218,67 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
   };
 
   const handlePlayerNameChange = (playerId, name) => {
+    // Clear userId when name is manually changed (will be re-looked up on blur)
     setPlayers(prev => prev.map(p => 
-      p.id === playerId ? { ...p, name, friendId: null } : p
+      p.id === playerId ? { ...p, name, userId: null } : p
     ));
   };
 
+  // Look up user by username when input loses focus
+  const handlePlayerNameBlur = async (playerId, name) => {
+    const trimmedName = name?.trim();
+    if (!trimmedName) return;
+
+    // Clear any pending lookup for this player
+    if (lookupTimeouts.current[playerId]) {
+      clearTimeout(lookupTimeouts.current[playerId]);
+    }
+
+    // Check if name matches the logged-in user
+    if (user && trimmedName.toLowerCase() === user.username?.toLowerCase()) {
+      setPlayers(prev => prev.map(p => 
+        p.id === playerId ? { ...p, name: user.username, userId: user.id } : p
+      ));
+      return;
+    }
+
+    // Check if name matches any friend
+    const matchingFriend = friends.find(f => 
+      f.username.toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (matchingFriend) {
+      setPlayers(prev => prev.map(p => 
+        p.id === playerId ? { ...p, name: matchingFriend.username, userId: matchingFriend.id } : p
+      ));
+      return;
+    }
+
+    // Look up user in backend
+    setLookingUpPlayers(prev => new Set([...prev, playerId]));
+    try {
+      const result = await userService.lookupUserByUsername(trimmedName);
+      if (result.found && result.user) {
+        setPlayers(prev => prev.map(p => 
+          p.id === playerId ? { ...p, name: result.user.username, userId: result.user.id } : p
+        ));
+      }
+    } catch (error) {
+      console.warn('Error looking up user:', error);
+    } finally {
+      setLookingUpPlayers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(playerId);
+        return newSet;
+      });
+    }
+  };
+
   const handleSelectFriends = (selectedFriends) => {
-    // Add selected friends as new players
+    // Add selected friends as new players with their userId
     const newPlayers = selectedFriends.map((friend, idx) => ({
       id: `player-${Date.now()}-friend-${idx}`,
       name: friend.username,
-      friendId: friend.id
+      userId: friend.id // Store the friend's user ID
     }));
     
     setPlayers(prev => {
@@ -249,13 +313,13 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
 
   // Get available friends excluding already selected ones
   const getAvailableFriends = () => {
-    const selectedFriendIds = new Set(
+    const selectedUserIds = new Set(
       players
-        .map(p => p.friendId)
+        .map(p => p.userId)
         .filter(id => id !== null)
     );
     
-    return friends.filter(f => !selectedFriendIds.has(f.id));
+    return friends.filter(f => !selectedUserIds.has(f.id));
   };
 
   const handleStart = () => {
@@ -272,9 +336,12 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
       return;
     }
 
-    // Return player names
-    const playerNames = players.map(p => p.name.trim());
-    onStart(playerNames, templateSettings);
+    // Return full player data including userId for registered users
+    const playerData = players.map(p => ({
+      name: p.name.trim(),
+      userId: p.userId || null
+    }));
+    onStart(playerData, templateSettings);
     onClose();
   };
 
@@ -316,8 +383,10 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                           player={player}
                           index={index}
                           onNameChange={handlePlayerNameChange}
+                          onNameBlur={handlePlayerNameBlur}
                           onRemove={removePlayer}
                           canRemove={true}
+                          isLookingUp={lookingUpPlayers.has(player.id)}
                         />
                       ))}
                     </div>
@@ -400,7 +469,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
         isOpen={showSelectFriendsModal}
         onClose={() => setShowSelectFriendsModal(false)}
         onConfirm={handleSelectFriends}
-        alreadySelectedPlayers={players.filter(p => p.friendId).map(p => ({ userId: p.friendId, name: p.name }))}
+        alreadySelectedPlayers={players.filter(p => p.userId).map(p => ({ userId: p.userId, name: p.name }))}
       />
     </div>
   );

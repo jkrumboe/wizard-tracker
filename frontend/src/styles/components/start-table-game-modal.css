@@ -278,3 +278,39 @@
   color: var(--text-muted);
   font-size: 0.95rem;
 }
+
+/* Verified badge and lookup spinner for player items */
+.start-table-game-modal .player-item {
+  position: relative;
+}
+
+.start-table-game-modal .player-item.verified {
+  border-color: var(--success-color);
+}
+
+.start-table-game-modal .verified-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success-color);
+  flex-shrink: 0;
+}
+
+.start-table-game-modal .lookup-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

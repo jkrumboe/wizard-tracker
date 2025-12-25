@@ -232,12 +232,12 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     setShowStartModal(true);
   };
 
-  const handleStartGameWithPlayers = (playerNames, settings) => {
+  const handleStartGameWithPlayers = (playerData, settings) => {
     if (selectedTemplate) {
-      // Pass the player names to the parent component
+      // Pass the player data (with userId) to the parent component
       onSelectTemplate(selectedTemplate.name, {
         ...settings,
-        playerNames: playerNames
+        players: playerData // Now includes { name, userId } for each player
       });
     }
   };

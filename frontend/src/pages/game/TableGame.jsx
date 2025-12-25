@@ -779,16 +779,36 @@ const TableGame = () => {
     // Create a new game
     const firstPlayerName = user?.username || user?.name || "Player 1";
     const firstPlayerId = user?.id || user?.$id || generateSecureId('player');
-    const initialPlayers = settings.playerNames && Array.isArray(settings.playerNames) && settings.playerNames.length > 0
-      ? settings.playerNames.map((name, idx) => ({ 
-          id: idx === 0 ? firstPlayerId : generateSecureId('player'),
-          name: name, 
-          points: [] 
-        }))
+    
+    // settings.players now contains objects with { name, userId } instead of just strings
+    const playerData = settings.players || settings.playerNames;
+    
+    const initialPlayers = playerData && Array.isArray(playerData) && playerData.length > 0
+      ? playerData.map((playerInfo, idx) => {
+          // Handle both new format (object with name/userId) and legacy format (string)
+          const isObject = typeof playerInfo === 'object';
+          const name = isObject ? playerInfo.name : playerInfo;
+          const userId = isObject ? playerInfo.userId : null;
+          
+          // For the first player, use their userId if available, otherwise use logged-in user's ID
+          let playerId;
+          if (idx === 0) {
+            playerId = userId || firstPlayerId;
+          } else {
+            playerId = userId || generateSecureId('player');
+          }
+          
+          return { 
+            id: playerId,
+            name: name, 
+            userId: userId, // Store the userId for backend sync
+            points: [] 
+          };
+        })
       : [
-          { id: firstPlayerId, name: firstPlayerName, points: [] },
-          { id: generateSecureId('player'), name: "Player 2", points: [] },
-          { id: generateSecureId('player'), name: "Player 3", points: [] }
+          { id: firstPlayerId, name: firstPlayerName, userId: user?.id || null, points: [] },
+          { id: generateSecureId('player'), name: "Player 2", userId: null, points: [] },
+          { id: generateSecureId('player'), name: "Player 3", userId: null, points: [] }
         ];
     
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
