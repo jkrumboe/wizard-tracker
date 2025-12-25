@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
 import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
+import { getTableGameById } from "../../shared/api/tableGameService";
 import GameTemplateSelector from "../../components/game/GameTemplateSelector";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
 import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
@@ -39,6 +40,7 @@ const TableGame = () => {
   const [targetNumber, setTargetNumber] = useState(null);
   const [lowIsBetter, setLowIsBetter] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [isCloudGame, setIsCloudGame] = useState(false);
   
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
@@ -142,73 +144,84 @@ const TableGame = () => {
 
   // Check for gameId in URL parameters and load that game
   useEffect(() => {
-    if (id) {
-      // Only load if we're currently showing the template selector AND don't have this game loaded already
-      if (showTemplateSelector || currentGameId !== id) {
-        // Load the game from storage
-        const savedGame = LocalTableGameStorage.getTableGameById(id);
-        if (savedGame) {
-          const gameData = savedGame.gameData;
+    const loadGame = async () => {
+      if (id) {
+        // Only load if we're currently showing the template selector AND don't have this game loaded already
+        if (showTemplateSelector || currentGameId !== id) {
+          // Try to load the game - this will check local first, then cloud
+          const savedGame = await getTableGameById(id);
           
-          // Ensure players have proper structure with points arrays and IDs
-          const loadedPlayers = (gameData.players || []).map(player => ({
-            id: player.id || generateSecureId('player'),
-            name: player.name || 'Unknown',
-            points: Array.isArray(player.points) ? player.points : []
-          }));
-          
-          // Set all the state to display the game
-          setPlayers(loadedPlayers);
-          setRows(gameData.rows || 10);
-          setShowTemplateSelector(false);
-          setActiveTab('game');
-          setCurrentGameName(savedGame.name);
-          setCurrentGameId(savedGame.id);
-          
-          // Reset round to 1 for new games, or restore for existing games with data
-          // Find the last round that has any data entered
-          const lastRoundWithData = loadedPlayers.reduce((maxRound, player) => {
-            const playerLastRound = player.points.findIndex((p, idx) => {
-              // Check if this is the last non-empty point
-              const hasValue = p !== "" && p !== undefined && p !== null;
-              const nextIsEmpty = player.points.slice(idx + 1).every(
-                np => np === "" || np === undefined || np === null
-              );
-              return hasValue && nextIsEmpty;
-            });
-            return Math.max(maxRound, playerLastRound + 1);
-          }, 0);
-          
-          // Set currentRound to the appropriate round (last with data, or 1 if no data)
-          const restoredRound = lastRoundWithData > 0 ? lastRoundWithData : 1;
-          setCurrentRound(restoredRound);
-          
-          // Use saved game settings directly - don't sync with templates
-          // This prevents altered local variants from overriding games created with system templates
-          setTargetNumber(gameData.targetNumber || null);
-          setLowIsBetter(gameData.lowIsBetter || false);
-          console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
-          
-          setGameFinished(savedGame.gameFinished || false);
-          console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}, finished: ${savedGame.gameFinished}`);
-        } else {
-          console.error(`Game with ID ${id} not found in storage`);
+          if (savedGame) {
+            const gameData = savedGame.gameData || savedGame;
+            
+            // Ensure players have proper structure with points arrays and IDs
+            const loadedPlayers = (gameData.players || []).map(player => ({
+              id: player.id || generateSecureId('player'),
+              name: player.name || 'Unknown',
+              points: Array.isArray(player.points) ? player.points : []
+            }));
+            
+            // Set all the state to display the game
+            setPlayers(loadedPlayers);
+            setRows(gameData.rows || 10);
+            setShowTemplateSelector(false);
+            setIsCloudGame(savedGame.is_cloud || false);
+            // Cloud games open in standings view, local games in game view
+            setActiveTab(savedGame.is_cloud ? 'stats' : 'game');
+            if (savedGame.is_cloud) {
+              setStatsSubTab('standings');
+            }
+            setCurrentGameName(savedGame.name || gameData.gameName || 'Table Game');
+            setCurrentGameId(savedGame.id || savedGame.cloudId || id);
+            
+            // Reset round to 1 for new games, or restore for existing games with data
+            // Find the last round that has any data entered
+            const lastRoundWithData = loadedPlayers.reduce((maxRound, player) => {
+              const playerLastRound = player.points.findIndex((p, idx) => {
+                // Check if this is the last non-empty point
+                const hasValue = p !== "" && p !== undefined && p !== null;
+                const nextIsEmpty = player.points.slice(idx + 1).every(
+                  np => np === "" || np === undefined || np === null
+                );
+                return hasValue && nextIsEmpty;
+              });
+              return Math.max(maxRound, playerLastRound + 1);
+            }, 0);
+            
+            // Set currentRound to the appropriate round (last with data, or 1 if no data)
+            const restoredRound = lastRoundWithData > 0 ? lastRoundWithData : 1;
+            setCurrentRound(restoredRound);
+            
+            // Use saved game settings directly - don't sync with templates
+            // This prevents altered local variants from overriding games created with system templates
+            setTargetNumber(gameData.targetNumber || null);
+            setLowIsBetter(gameData.lowIsBetter || false);
+            console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
+            
+            setGameFinished(savedGame.gameFinished || gameData.gameFinished || false);
+            const source = savedGame.is_cloud ? 'cloud' : 'local';
+            console.debug(`Loaded ${source} game: "${savedGame.name || gameData.gameName}" (ID: ${id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}, finished: ${savedGame.gameFinished}`);
+          } else {
+            console.error(`Game with ID ${id} not found in storage or cloud`);
+          }
+        }
+      } else {
+        // No ID in URL - show template selector if we're currently viewing a game
+        if (!showTemplateSelector) {
+          setShowTemplateSelector(true);
+          setCurrentGameName("");
+          setCurrentGameId(null);
+          setCurrentRound(1); // Reset round when leaving game
+          setTargetNumber(null);
+          setLowIsBetter(false);
+          setGameFinished(false);
+          sessionStorage.removeItem('currentTableGameId');
+          sessionStorage.removeItem('currentTableGameState');
         }
       }
-    } else {
-      // No ID in URL - show template selector if we're currently viewing a game
-      if (!showTemplateSelector) {
-        setShowTemplateSelector(true);
-        setCurrentGameName("");
-        setCurrentGameId(null);
-        setCurrentRound(1); // Reset round when leaving game
-        setTargetNumber(null);
-        setLowIsBetter(false);
-        setGameFinished(false);
-        sessionStorage.removeItem('currentTableGameId');
-        sessionStorage.removeItem('currentTableGameState');
-      }
-    }
+    };
+    
+    loadGame();
   }, [id, showTemplateSelector, currentGameId]);
 
   // Listen for orientation changes
@@ -906,7 +919,7 @@ const TableGame = () => {
             <span className="game-info-header">
               {currentGameName || "Table Game"}
               <div className="total-calls">
-                Round {currentRound}
+                {isCloudGame ? `Rounds ${currentRound}` : `Round ${currentRound}`}
               </div>
             </span>
             <button 
@@ -925,7 +938,7 @@ const TableGame = () => {
             </button>
           )}
           
-          {gameFinished && (
+          {gameFinished && !isCloudGame && (
             <button className="finish-btn" onClick={handleEditGame}>
               Edit Game
             </button>
@@ -1144,17 +1157,20 @@ const TableGame = () => {
           )}
 
           {/* Bottom Section with Controls */}
+          {!isCloudGame && (
           <div className="game-bottom-section">
-            {/* Toggle Button for Game / Stats */}
-            <div className="toggle-section">
-              <button
-                className="game-control-btn"
-                onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
-                title={`Switch to ${activeTab === 'game' ? 'Stats' : 'Game'}`}
-              >
-                {activeTab === 'game' ? <BarChartIcon size={27} /> : <GamepadIcon size={27} />}
-              </button>
-            </div>
+            {/* Toggle Button for Game / Stats - hidden for cloud games (read-only view) */}
+            
+              <div className="toggle-section">
+                <button
+                  className="game-control-btn"
+                  onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
+                  title={`Switch to ${activeTab === 'game' ? 'Stats' : 'Game'}`}
+                >
+                  {activeTab === 'game' ? <BarChartIcon size={27} /> : <GamepadIcon size={27} />}
+                </button>
+              </div>
+            
 
             <div className="game-controls">
               {/* Pause button placeholder - can be added if needed */}
@@ -1178,6 +1194,7 @@ const TableGame = () => {
               <ArrowRightIcon />
             </button>
           </div>
+          )}
 
           {/* Delete Player Confirmation Modal */}
           <DeleteConfirmationModal

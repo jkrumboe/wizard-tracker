@@ -528,22 +528,82 @@ export async function getPlayerGameHistory(_id, _limit = 20) {
   return [];
 }
 
-// Get game by ID
-export async function getGameById(id) {
-  // Try local first for compatibility
-  const localGames = LocalGameStorage.getAllSavedGames();
-  const localGame = localGames[id];
-  if (localGame) return localGame;
-  // Try backend (wizard-games collection)
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(API_ENDPOINTS.wizardGames.getById(id), {
-    headers: {
-      'Authorization': `Bearer ${token}`
+/**
+ * Get game by ID - checks local storage first, then cloud
+ * @param {string} id - The game ID (can be local ID or cloud ID)
+ * @param {Object} options - Options for fetching
+ * @param {boolean} options.preferCloud - If true, check cloud first when online
+ * @returns {Promise<Object|null>} The game data or null if not found
+ */
+export async function getGameById(id, options = {}) {
+  const { preferCloud = false } = options;
+  
+  // Try local first for compatibility (unless preferCloud is true)
+  if (!preferCloud) {
+    const localGames = LocalGameStorage.getAllSavedGames();
+    const localGame = localGames[id];
+    if (localGame) {
+      return { ...localGame, is_local: true };
     }
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.game || null;
+  }
+  
+  // Try backend (wizard-games collection) if online
+  if (navigator.onLine) {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        const res = await fetch(API_ENDPOINTS.wizardGames.getById(id), {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.debug(`[getGameById] Cloud fetch for ${id}: status=${res.status}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Backend returns the game directly (not wrapped in { game: ... })
+          const cloudGame = data.game || data;
+          console.debug(`[getGameById] Cloud game data:`, { hasId: !!(cloudGame._id || cloudGame.id), hasGameData: !!cloudGame.gameData });
+          if (cloudGame && (cloudGame._id || cloudGame.id)) {
+            // Transform cloud game data to match expected format
+            const gameData = cloudGame.gameData || {};
+            return {
+              id: cloudGame._id || cloudGame.id || id,
+              cloudId: cloudGame._id || cloudGame.id,
+              localId: cloudGame.localId,
+              is_local: false,
+              is_cloud: true,
+              version: gameData.version || '3.0',
+              players: gameData.players || [],
+              round_data: gameData.round_data || gameData.roundData || [],
+              final_scores: gameData.final_scores || {},
+              winner_id: gameData.winner_id,
+              total_rounds: gameData.total_rounds || gameData.totalRounds,
+              created_at: cloudGame.createdAt || gameData.created_at,
+              gameFinished: gameData.gameFinished,
+              game_mode: gameData.game_mode || gameData.mode || 'Local',
+              gameState: gameData.gameState,
+              ...gameData // Spread remaining game data
+            };
+          }
+        } else {
+          console.debug(`[getGameById] Cloud fetch failed with status ${res.status}`);
+        }
+      }
+    } catch (error) {
+      console.debug('Error fetching cloud game:', error.message);
+    }
+  }
+  
+  // If preferCloud was true but cloud failed, try local as fallback
+  if (preferCloud) {
+    const localGames = LocalGameStorage.getAllSavedGames();
+    const localGame = localGames[id];
+    if (localGame) {
+      return { ...localGame, is_local: true };
+    }
+  }
+  
+  return null;
 }
 
 // Update game

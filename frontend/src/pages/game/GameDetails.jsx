@@ -84,9 +84,9 @@ const GameDetails = () => {
         // Handle player details differently based on game type
         let playerMap = {}
 
-        // For local games, player data is already included in the game object
-        if (gameData.is_local) {
-          // Try multiple sources for player data in local games
+        // For local games or cloud games, player data is already included in the game object
+        if (gameData.is_local || gameData.is_cloud) {
+          // Try multiple sources for player data in local/cloud games
           let playersSource = gameData.players || 
                              gameData.gameState?.players || 
                              [];
@@ -113,7 +113,7 @@ const GameDetails = () => {
             }
           })
         } 
-        // For server games, fetch player details from the API
+        // For server games (legacy), fetch player details from the API
         else {
           const playerIds = gameData.player_ids || []
           const playerPromises = playerIds.map((playerId) => getPlayerById(playerId))

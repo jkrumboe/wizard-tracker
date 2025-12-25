@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const TableGame = require('../models/TableGame');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');

@@ -17,6 +17,16 @@ const GameHistoryItem = ({ game }) => {
           });
           setPlayerDetails(playerMap);
         }
+        // Handle cloud games with players array
+        else if (game && game.isCloud && game.players && Array.isArray(game.players)) {
+          const playerMap = {};
+          game.players.forEach((player) => {
+            if (typeof player === 'object' && player.id) {
+              playerMap[player.id] = player;
+            }
+          });
+          setPlayerDetails(playerMap);
+        }
         // Handle legacy format with gameState wrapper
         else if (game && game.gameState && game.gameState.players) {
           const playerMap = {};
@@ -159,22 +169,24 @@ const GameHistoryItem = ({ game }) => {
             {/* <UsersIcon size={12} />{" "} */}
             {isTableGame
               ? Array.isArray(game.players) ? game.players.join(", ") : "No players"
-              : isV3Format && game.players
-                ? game.players.map(player => player.name || "Unknown Player").join(", ")
-                : game.gameState && game.gameState.players 
-                  ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                  : game.is_local && game.players
-                    ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
-                      ? game.players.join(", ") 
-                      : game.players.map(player => player.name || "Unknown Player").join(", ")
-                    : Array.isArray(player_ids)
-                      ? player_ids
-                          .map(
-                            (playerId) =>
-                              playerDetails[playerId]?.name || "Unknown Player"
-                          )
-                          .join(", ")
-                      : "No players"}
+              : game.isCloud && game.players && Array.isArray(game.players)
+                ? game.players.map(player => typeof player === 'object' ? player.name : player).filter(Boolean).join(", ") || "No players"
+                : isV3Format && game.players
+                  ? game.players.map(player => player.name || "Unknown Player").join(", ")
+                  : game.gameState && game.gameState.players 
+                    ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                    : game.is_local && game.players
+                      ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
+                        ? game.players.join(", ") 
+                        : game.players.map(player => player.name || "Unknown Player").join(", ")
+                      : Array.isArray(player_ids)
+                        ? player_ids
+                            .map(
+                              (playerId) =>
+                                playerDetails[playerId]?.name || "Unknown Player"
+                            )
+                            .join(", ")
+                        : "No players"}
         </div>
         <div className="actions-game-history">
           <div className="bottom-actions-game-history">

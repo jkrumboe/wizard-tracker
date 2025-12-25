@@ -103,11 +103,80 @@ export async function getUserCloudTableGamesList() {
 }
 
 /**
- * Get a specific table game from the backend
- * @param {string} gameId - The game ID
+ * Get a specific table game - checks local storage first, then cloud
+ * @param {string} gameId - The game ID (can be local ID or cloud ID)
+ * @param {Object} options - Options for fetching
+ * @param {boolean} options.preferCloud - If true, check cloud first when online
  * @returns {Promise<Object>} - The game data
  */
-export async function getTableGameById(gameId) {
+export async function getTableGameById(gameId, options = {}) {
+  const { preferCloud = false } = options;
+  
+  // Try local first (unless preferCloud is true)
+  if (!preferCloud) {
+    const localGame = LocalTableGameStorage.getTableGameById(gameId);
+    if (localGame) {
+      return { ...localGame, is_local: true };
+    }
+  }
+  
+  // Try cloud if online
+  if (navigator.onLine) {
+    const token = localStorage.getItem('auth_token');
+    
+    if (token) {
+      try {
+        const res = await fetch(API_ENDPOINTS.tableGames.getById(gameId), {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.game) {
+            // Transform cloud game to match local format
+            const cloudGame = data.game;
+            return {
+              id: cloudGame._id || cloudGame.id || gameId,
+              cloudId: cloudGame._id || cloudGame.id,
+              localId: cloudGame.localId,
+              name: cloudGame.name || cloudGame.gameTypeName || 'Table Game',
+              gameData: cloudGame.gameData || {},
+              gameFinished: cloudGame.gameFinished || false,
+              createdAt: cloudGame.createdAt,
+              is_local: false,
+              is_cloud: true
+            };
+          }
+        } else {
+          // Log non-ok responses for debugging
+          console.debug(`Table game fetch returned ${res.status} for ID: ${gameId}`);
+        }
+      } catch (error) {
+        console.debug('Error fetching cloud table game:', error.message);
+      }
+    }
+  }
+  
+  // If preferCloud was true but cloud failed, try local as fallback
+  if (preferCloud) {
+    const localGame = LocalTableGameStorage.getTableGameById(gameId);
+    if (localGame) {
+      return { ...localGame, is_local: true };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get a specific table game from the backend only (for cloud-only operations)
+ * @param {string} gameId - The cloud game ID
+ * @returns {Promise<Object>} - The game data
+ */
+export async function getCloudTableGameById(gameId) {
   const token = localStorage.getItem('auth_token');
   
   if (!token) {

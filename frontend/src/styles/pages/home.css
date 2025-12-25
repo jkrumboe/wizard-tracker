@@ -10,6 +10,17 @@
 .section-header h2 {
   margin: 0;
   color: var(--text);
+  font-size: 1.2rem;
+}
+
+.offline-indicator {
+  background: var(--warning-color, #f59e0b);
+  color: var(--text-on-warning, #1a1a1a);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 /* Friends section */
@@ -17,11 +28,11 @@
   display: flex;
   justify-content: center;
   margin: var(--spacing-md) 0;
+  margin-bottom: var(--spacing-sm);
   width: 100%;
 }
 
 .friends-button {
-  display: flex;
   background: var(--primary);
   color: var(--text);
   border: none;
