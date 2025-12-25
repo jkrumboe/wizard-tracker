@@ -8,6 +8,19 @@
   z-index: 1;
 }
 
+/* Loading state */
+.game-details.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 200px);
+}
+
+.game-details.loading-state .loading-spinner {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
 .game-details-header {
   display: grid;
   background-color: var(--card-bg);

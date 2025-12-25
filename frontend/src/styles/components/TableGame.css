@@ -56,6 +56,36 @@
   overflow-x: hidden;
 }
 
+/* Loading and error states */
+.table-game-container .game-loading-state,
+.table-game-container .game-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 200px);
+  gap: var(--spacing-md);
+}
+
+.table-game-container .loading-spinner {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.table-game-container .game-error-state .error {
+  color: var(--danger);
+  font-size: 1.1rem;
+}
+
+.table-game-container .game-error-state .back-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
 /* GameInProgress-style layout */
 .table-game-container .game-in-progress {
   display: flex;

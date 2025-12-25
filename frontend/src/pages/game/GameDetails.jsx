@@ -162,6 +162,15 @@ const GameDetails = () => {
     }
   }, [message]);
 
+  // Show loading state while fetching game data
+  if (loading) {
+    return (
+      <div className="game-details loading-state">
+        <div className="loading-spinner">Loading game...</div>
+      </div>
+    )
+  }
+
   if (error || !game) {
     return <div className="error">{error || "Game not found"}</div>
   }

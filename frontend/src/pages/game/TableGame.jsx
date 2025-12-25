@@ -41,6 +41,8 @@ const TableGame = () => {
   const [lowIsBetter, setLowIsBetter] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
   const [isCloudGame, setIsCloudGame] = useState(false);
+  const [isLoadingGame, setIsLoadingGame] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
@@ -148,8 +150,12 @@ const TableGame = () => {
       if (id) {
         // Only load if we're currently showing the template selector AND don't have this game loaded already
         if (showTemplateSelector || currentGameId !== id) {
-          // Try to load the game - this will check local first, then cloud
-          const savedGame = await getTableGameById(id);
+          setIsLoadingGame(true);
+          setLoadError(null);
+          
+          try {
+            // Try to load the game - this will check local first, then cloud
+            const savedGame = await getTableGameById(id);
           
           if (savedGame) {
             const gameData = savedGame.gameData || savedGame;
@@ -203,6 +209,13 @@ const TableGame = () => {
             console.debug(`Loaded ${source} game: "${savedGame.name || gameData.gameName}" (ID: ${id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}, finished: ${savedGame.gameFinished}`);
           } else {
             console.error(`Game with ID ${id} not found in storage or cloud`);
+            setLoadError('Game not found');
+          }
+          } catch (error) {
+            console.error('Error loading game:', error);
+            setLoadError(error.message || 'Failed to load game');
+          } finally {
+            setIsLoadingGame(false);
           }
         }
       } else {
@@ -896,6 +909,31 @@ const TableGame = () => {
       alert("Failed to save game. Please try again.");
     }
   };
+
+  // Show loading state while fetching game from URL
+  if (id && isLoadingGame) {
+    return (
+      <div className="table-game-container">
+        <div className="game-loading-state">
+          <div className="loading-spinner">Loading game...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if game couldn't be loaded
+  if (id && loadError && !currentGameId) {
+    return (
+      <div className="table-game-container">
+        <div className="game-error-state">
+          <div className="error">{loadError}</div>
+          <button className="back-btn" onClick={() => navigate('/table-game')}>
+            Back to Games
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="table-game-container">
