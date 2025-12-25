@@ -51,6 +51,10 @@ const WIZARD_GAME_SCHEMA = {
             maxLength: 100,
             description: "Player's display name"
           },
+          identityId: {
+            type: "string",
+            description: "Reference to PlayerIdentity document for user management"
+          },
           isDealer: {
             type: "boolean",
             description: "Whether this player was the dealer"

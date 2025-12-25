@@ -40,9 +40,10 @@ async function linkSingleGame(game, username, userObjectId, gameType) {
     return false;
   }
 
-  // Check if this game has at least one matching player (case-sensitive)
+  // Check if this game has at least one matching player (case-insensitive to match identity system)
+  const normalizedUsername = username.toLowerCase();
   const hasMatchingPlayer = game.gameData?.players?.some(
-    player => player.name && player.name === username
+    player => player.name && player.name.toLowerCase() === normalizedUsername
   );
 
   if (!hasMatchingPlayer) {
@@ -101,11 +102,11 @@ async function linkGamesToNewUser(username, userId) {
     // Build array of all names to search for (username + aliases)
     const searchNames = [username, ...aliasNames];
     
-    // Case-sensitive username matching with sanitized input
+    // Case-insensitive username matching with sanitized input (matches identity system)
     // Escape special regex characters to prevent regex injection
     const nameRegexes = searchNames.map(name => {
       const sanitizedName = escapeRegExp(name);
-      return new RegExp(`^${sanitizedName}$`);
+      return new RegExp(`^${sanitizedName}$`, 'i');
     });
 
     // ========== Link Regular Games (Game collection) ==========
@@ -123,9 +124,9 @@ async function linkGamesToNewUser(username, userId) {
 
       for (const game of games) {
         try {
-          // Check if game has any matching player with any of our search names
+          // Check if game has any matching player with any of our search names (case-insensitive)
           const matchingName = searchNames.find(name => 
-            game.gameData?.players?.some(player => player.name && player.name === name)
+            game.gameData?.players?.some(player => player.name && player.name.toLowerCase() === name.toLowerCase())
           );
           
           if (matchingName) {
@@ -172,8 +173,9 @@ async function linkGamesToNewUser(username, userId) {
 
       for (const game of wizardGames) {
         try {
+          // Case-insensitive match for wizard games
           const matchingName = searchNames.find(name => 
-            game.gameData?.players?.some(player => player.name && player.name === name)
+            game.gameData?.players?.some(player => player.name && player.name.toLowerCase() === name.toLowerCase())
           );
           
           if (matchingName) {

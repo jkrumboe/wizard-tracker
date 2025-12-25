@@ -23,6 +23,7 @@ async function initializeServer() {
   const tableGameRoutes = require('./routes/tableGames');
   const gameTemplateRoutes = require('./routes/gameTemplates');
   const gameSyncRoutes = require('./routes/gameSync');
+  const identityRoutes = require('./routes/identities');
   const errorHandler = require('./middleware/errorHandler');
   const { apiLimiter } = require('./middleware/rateLimiter');
 
@@ -63,6 +64,7 @@ async function initializeServer() {
   app.use('/api/table-games', apiLimiter, tableGameRoutes);
   app.use('/api/game-templates', apiLimiter, gameTemplateRoutes);
   app.use('/api/games', apiLimiter, gameSyncRoutes); // Game sync endpoints
+  app.use('/api/identities', apiLimiter, identityRoutes); // Player identity management
 
   // Health check route
   app.get('/api/health', (req, res) => {

@@ -67,6 +67,7 @@ const wizardGameSchema = new mongoose.Schema({
 wizardGameSchema.index({ userId: 1, createdAt: -1 });
 wizardGameSchema.index({ 'gameData.created_at': -1 });
 wizardGameSchema.index({ migratedFrom: 1, migratedAt: -1 });
+wizardGameSchema.index({ 'gameData.players.identityId': 1 }); // Identity lookups
 
 // Virtual for game version
 wizardGameSchema.virtual('version').get(function() {
@@ -77,5 +78,43 @@ wizardGameSchema.virtual('version').get(function() {
 wizardGameSchema.methods.isMigrated = function() {
   return this.migratedFrom !== null;
 };
+
+/**
+ * Resolve player identities before saving
+ * Automatically links players to PlayerIdentity records
+ */
+wizardGameSchema.pre('save', async function(next) {
+  // Only resolve identities for new games or if players are modified
+  if (!this.isNew && !this.isModified('gameData.players')) {
+    return next();
+  }
+
+  try {
+    // Lazy-load to avoid circular dependencies
+    const PlayerIdentity = mongoose.model('PlayerIdentity');
+    
+    if (this.gameData && this.gameData.players) {
+      for (const player of this.gameData.players) {
+        // Skip if already has identityId
+        if (player.identityId) continue;
+        
+        if (player.name) {
+          // Find or create identity for this player
+          const identity = await PlayerIdentity.findOrCreateByName(player.name, {
+            type: 'guest'
+          });
+          player.identityId = identity._id;
+        }
+      }
+      this.markModified('gameData.players');
+    }
+    
+    next();
+  } catch (error) {
+    // Log but don't fail - identity resolution is optional
+    console.error('Failed to resolve player identities:', error.message);
+    next();
+  }
+});
 
 module.exports = mongoose.model('WizardGame', wizardGameSchema, 'wizard');

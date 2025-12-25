@@ -4,12 +4,14 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const PlayerAlias = require('../models/PlayerAlias');
+const PlayerIdentity = require('../models/PlayerIdentity');
 const auth = require('../middleware/auth');
 const { authLimiter, friendsLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const cache = require('../utils/redis');
 const { linkGamesToNewUser } = require('../utils/gameUserLinkage');
+const identityService = require('../utils/identityService');
 const router = express.Router();
 
 // POST /users/register - Create new user (with strict rate limiting)
@@ -30,8 +32,11 @@ router.post('/register', authLimiter, async (req, res, next) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters long' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ username });
+    // Check if user already exists (case-insensitive to match identity system)
+    const escapedUsername = _.escapeRegExp(username);
+    const existingUser = await User.findOne({ 
+      username: { $regex: new RegExp(`^${escapedUsername}$`, 'i') }
+    });
     if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
@@ -55,11 +60,26 @@ router.post('/register', authLimiter, async (req, res, next) => {
       { expiresIn: '7d' }
     );
 
-    // ========== Link Previous Games to New User ==========
+    // ========== Claim/Create Player Identity & Link Previous Games ==========
     // This runs in the background and doesn't block the registration response
     // If it fails, registration still succeeds
     setImmediate(async () => {
       try {
+        // 1. Claim or create player identity for the new user
+        console.log('\n🎭 Claiming/creating identity for new user: %s', username);
+        const identityResult = await identityService.claimIdentitiesOnRegistration(user);
+        
+        if (identityResult.claimed.length > 0) {
+          console.log('✅ Claimed %d existing identities for %s', identityResult.claimed.length, username);
+        }
+        if (identityResult.created) {
+          console.log('✅ Created new identity for %s', username);
+        }
+        if (identityResult.errors.length > 0) {
+          console.warn('⚠️  Identity claim completed with errors:', identityResult.errors);
+        }
+
+        // 2. Also run legacy game linkage for backward compatibility
         console.log('\n🎮 Attempting to link previous games for new user: %s', username);
         const linkageResults = await linkGamesToNewUser(username, user._id);
         
@@ -74,8 +94,8 @@ router.post('/register', authLimiter, async (req, res, next) => {
         }
       } catch (linkError) {
         // Log the error but don't fail the registration
-        console.error('❌ Failed to link games for %s:', username, linkError.message);
-        console.error('   Registration succeeded, but game linkage failed');
+        console.error('❌ Failed to process identities/games for %s:', username, linkError.message);
+        console.error('   Registration succeeded, but identity/game processing failed');
       }
     });
 
@@ -662,6 +682,24 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
         console.error('Failed to create player alias:', aliasErr);
         // Don't fail the request if alias creation fails
       }
+
+      // Update PlayerIdentity with new display name
+      try {
+        const identityResult = await identityService.handleUsernameChange(
+          userDoc,
+          oldUsername,
+          trimmedName
+        );
+        if (identityResult.updated) {
+          console.log(`✅ Updated player identity: "${oldUsername}" → "${trimmedName}"`);
+        }
+        if (identityResult.errors.length > 0) {
+          console.warn('⚠️  Identity update completed with errors:', identityResult.errors);
+        }
+      } catch (identityErr) {
+        console.error('Failed to update player identity:', identityErr);
+        // Don't fail the request if identity update fails
+      }
     }
 
     // Clear leaderboard cache since username has changed
@@ -1199,6 +1237,104 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
       message: 'Friend request cancelled'
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/admin/preview-link-games - Preview what games would be linked (admin only)
+router.get('/admin/preview-link-games', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    console.log('🔍 Admin requested game linkage preview');
+
+    // Get all users with their aliases
+    const users = await User.find().select('_id username');
+    
+    const preview = {
+      totalUsers: users.length,
+      usersWithGames: 0,
+      totalGamesToLink: 0,
+      userDetails: []
+    };
+
+    // Check each user for linkable games
+    for (const user of users) {
+      try {
+        // Get user's aliases
+        const aliases = await PlayerAlias.find({ userId: user._id }).select('aliasName').lean();
+        const aliasNames = aliases.map(a => a.aliasName);
+        const searchNames = [user.username, ...aliasNames];
+
+        // Build case-insensitive regex patterns
+        const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const nameRegexes = searchNames.map(name => new RegExp(`^${escapeRegExp(name)}$`, 'i'));
+
+        // Count games that would be linked (not already linked to this user)
+        const Game = require('../models/Game');
+        const WizardGame = require('../models/WizardGame');
+        const TableGame = require('../models/TableGame');
+
+        const [gamesCount, wizardCount, tableCount] = await Promise.all([
+          Game.countDocuments({
+            'gameData.players': { $elemMatch: { name: { $in: nameRegexes } } },
+            $or: [
+              { userId: { $exists: false } },
+              { userId: null },
+              { userId: { $ne: user._id } }
+            ]
+          }),
+          WizardGame.countDocuments({
+            'gameData.players': { $elemMatch: { name: { $in: nameRegexes } } },
+            $or: [
+              { userId: { $exists: false } },
+              { userId: null },
+              { userId: { $ne: user._id } }
+            ]
+          }),
+          TableGame.countDocuments({
+            'gameData.players': { $elemMatch: { name: { $in: nameRegexes } } },
+            $or: [
+              { userId: { $exists: false } },
+              { userId: null },
+              { userId: { $ne: user._id } }
+            ]
+          })
+        ]);
+
+        const totalForUser = gamesCount + wizardCount + tableCount;
+
+        if (totalForUser > 0) {
+          preview.usersWithGames++;
+          preview.totalGamesToLink += totalForUser;
+          preview.userDetails.push({
+            userId: user._id.toString(),
+            username: user.username,
+            gamesToLink: totalForUser,
+            aliases: aliasNames,
+            gameBreakdown: {
+              games: gamesCount,
+              wizardGames: wizardCount,
+              tableGames: tableCount
+            }
+          });
+        }
+      } catch (userError) {
+        console.error(`Error checking user ${user.username}:`, userError.message);
+      }
+    }
+
+    // Sort by games to link (descending)
+    preview.userDetails.sort((a, b) => b.gamesToLink - a.gamesToLink);
+
+    console.log(`✅ Preview complete: ${preview.usersWithGames} users with ${preview.totalGamesToLink} games to link`);
+
+    res.json(preview);
+  } catch (error) {
+    console.error('❌ Error in game linkage preview:', error);
     next(error);
   }
 });

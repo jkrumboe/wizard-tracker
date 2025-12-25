@@ -656,6 +656,39 @@ class UserService {
     }
   }
 
+  async previewLinkAllGames() {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/preview-link-games`;
+      
+      console.log('UserService.previewLinkAllGames() - Fetching from:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to preview game linkage' }));
+        throw new Error(error.error || 'Failed to preview game linkage');
+      }
+
+      const result = await response.json();
+      console.log('UserService.previewLinkAllGames() - Response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error previewing game linkage:', error);
+      throw error;
+    }
+  }
+
   async linkAllUserGames() {
     if (this.skipBackend) {
       throw new Error('Backend server not available');

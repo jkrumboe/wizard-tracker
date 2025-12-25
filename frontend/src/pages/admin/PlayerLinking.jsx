@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import userService from '@/shared/api/userService';
-import { UserIcon, Link2Icon, Trash2Icon, PlusIcon, SearchIcon, XIcon } from 'lucide-react';
+import { UserIcon, Link2Icon, Trash2Icon, PlusIcon, SearchIcon, XIcon, InfoIcon, CheckCircleIcon, AlertCircleIcon } from 'lucide-react';
 import '@/styles/pages/admin.css';
 
 const PlayerLinking = () => {
@@ -283,15 +283,44 @@ const PlayerLinking = () => {
         <p>Link old player names to registered user accounts</p>
       </div>
 
+      {/* How It Works Info Card */}
+      <div className="admin-section info-card">
+        <div className="info-card-header">
+          <h3>🔗 How Player Aliases Work</h3>
+        </div>
+        <div className="info-card-content">
+          <div className="info-columns">
+            <div className="info-column">
+              <h4>When to Use</h4>
+              <ul>
+                <li>A user played games under a different name before registering</li>
+                <li>Someone misspelled their name in some games</li>
+                <li>A user changed their username and wants old games linked</li>
+              </ul>
+            </div>
+            <div className="info-column">
+              <h4>How Matching Works</h4>
+              <ul>
+                <li><strong>Case-insensitive:</strong> "Johnny" will match "johnny", "JOHNNY", etc.</li>
+                <li><strong>Immediate linking:</strong> Option to link all matching games right away</li>
+                <li><strong>Future games:</strong> New games with this name auto-link to the user</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {error && (
-        <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
-          {error}
+        <div className="alert alert-error">
+          <AlertCircleIcon size={18} />
+          <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="alert alert-success" style={{ marginBottom: '1rem' }}>
-          {success}
+        <div className="alert alert-success">
+          <CheckCircleIcon size={18} />
+          <span>{success}</span>
         </div>
       )}
 
