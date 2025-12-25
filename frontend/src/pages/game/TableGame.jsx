@@ -165,6 +165,24 @@ const TableGame = () => {
           setCurrentGameName(savedGame.name);
           setCurrentGameId(savedGame.id);
           
+          // Reset round to 1 for new games, or restore for existing games with data
+          // Find the last round that has any data entered
+          const lastRoundWithData = loadedPlayers.reduce((maxRound, player) => {
+            const playerLastRound = player.points.findIndex((p, idx) => {
+              // Check if this is the last non-empty point
+              const hasValue = p !== "" && p !== undefined && p !== null;
+              const nextIsEmpty = player.points.slice(idx + 1).every(
+                np => np === "" || np === undefined || np === null
+              );
+              return hasValue && nextIsEmpty;
+            });
+            return Math.max(maxRound, playerLastRound + 1);
+          }, 0);
+          
+          // Set currentRound to the appropriate round (last with data, or 1 if no data)
+          const restoredRound = lastRoundWithData > 0 ? lastRoundWithData : 1;
+          setCurrentRound(restoredRound);
+          
           // Use saved game settings directly - don't sync with templates
           // This prevents altered local variants from overriding games created with system templates
           setTargetNumber(gameData.targetNumber || null);
@@ -172,7 +190,7 @@ const TableGame = () => {
           console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
           
           setGameFinished(savedGame.gameFinished || false);
-          console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, finished: ${savedGame.gameFinished}`);
+          console.debug(`Loaded game: "${savedGame.name}" (ID: ${savedGame.id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}, finished: ${savedGame.gameFinished}`);
         } else {
           console.error(`Game with ID ${id} not found in storage`);
         }
@@ -183,6 +201,7 @@ const TableGame = () => {
         setShowTemplateSelector(true);
         setCurrentGameName("");
         setCurrentGameId(null);
+        setCurrentRound(1); // Reset round when leaving game
         setTargetNumber(null);
         setLowIsBetter(false);
         setGameFinished(false);
