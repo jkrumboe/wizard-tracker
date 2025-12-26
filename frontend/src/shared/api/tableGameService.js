@@ -51,7 +51,7 @@ export async function getUserCloudTableGamesList() {
   }
 
   try {
-    const res = await fetch(API_ENDPOINTS.tableGames.list, {
+    const res = await fetch(`${API_ENDPOINTS.tableGames.list}?allGames=true`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`

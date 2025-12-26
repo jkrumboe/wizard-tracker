@@ -81,20 +81,24 @@ router.post('/', auth, async (req, res, next) => {
   }
 });
 
-// GET /api/table-games - Get all table games for authenticated user
+// GET /api/table-games - Get table games (all or user-specific)
 router.get('/', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
+    const { allGames } = req.query;
     
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const tableGames = await TableGame.find({ userId })
+    // Build query - either all games or user-specific
+    const query = allGames === 'true' ? {} : { userId };
+
+    const tableGames = await TableGame.find(query)
       .select('_id localId name gameTypeName gameData gameFinished playerCount totalRounds createdAt updatedAt')
       .sort({ createdAt: -1 });
 
-    res.json({ games: tableGames });
+    res.json({ games: tableGames, total: tableGames.length });
   } catch (error) {
     next(error);
   }

@@ -345,30 +345,46 @@ router.get('/:id', auth, async (req, res) => {
 
 /**
  * GET /api/wizard-games
- * Get wizard games for authenticated user
+ * Get wizard games - all games or filtered by user
+ * Query params:
+ *   - allGames=true: Return all games (not user-specific)
+ *   - limit, skip, page: Pagination
  */
 router.get('/', auth, async (req, res) => {
   try {
     const userId = req.user._id;
-    const { limit = 50, skip = 0 } = req.query;
+    const { limit = 50, skip = 0, page, allGames } = req.query;
+    
+    // Build query - either all games or user-specific
+    const query = allGames === 'true' ? {} : { userId: userId };
     
     // Validate and sanitize pagination parameters to prevent injection
     const parsedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 200);
-    const parsedSkip = Math.max(parseInt(skip) || 0, 0);
+    // Support both 'skip' and 'page' parameters (page is 1-indexed)
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const parsedSkip = page ? (parsedPage - 1) * parsedLimit : Math.max(parseInt(skip) || 0, 0);
     
-    const games = await WizardGame.find({ userId: userId })
+    const games = await WizardGame.find(query)
       .sort({ createdAt: -1 })
       .limit(parsedLimit)
       .skip(parsedSkip)
       .select('-__v');
     
-    const total = await WizardGame.countDocuments({ userId: userId });
+    const total = await WizardGame.countDocuments(query);
+    const totalPages = Math.ceil(total / parsedLimit);
+    const currentPage = Math.floor(parsedSkip / parsedLimit) + 1;
     
     res.json({
       games: games,
       total: total,
       limit: parsedLimit,
-      skip: parsedSkip
+      skip: parsedSkip,
+      pagination: {
+        currentPage: currentPage,
+        totalPages: totalPages,
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1
+      }
     });
     
   } catch (error) {

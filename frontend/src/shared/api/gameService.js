@@ -87,7 +87,7 @@ export async function getUserCloudGamesList() {
     
     while (hasMore) {
       try {
-        const res = await fetch(`${API_ENDPOINTS.wizardGames.list}?page=${currentPage}&limit=100&sortOrder=desc`, {
+        const res = await fetch(`${API_ENDPOINTS.wizardGames.list}?page=${currentPage}&limit=100&sortOrder=desc&allGames=true`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

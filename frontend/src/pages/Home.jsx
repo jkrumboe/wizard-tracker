@@ -133,6 +133,12 @@ const Home = () => {
         getUserCloudTableGamesList()
       ]);
 
+      console.debug('Cloud games fetched:', {
+        wizardGamesCount: wizardGames.length,
+        tableGamesCount: tableGames.length,
+        tableGamesFinished: tableGames.filter(g => g.gameFinished).length
+      });
+
       // Format wizard games
       const formattedWizardGames = wizardGames.map(game => ({
         id: game.cloudId,
@@ -219,7 +225,7 @@ const Home = () => {
             setAllGames(cloudGames);
             setIsShowingCloudGames(true);
             setGameSyncStatuses({}); // No need to check sync status for cloud games
-            console.debug('📱 Showing cloud games');
+            console.debug('Showing cloud games');
           } catch (error) {
             // If cloud fetch fails, fall back to local games
             console.debug('Failed to fetch cloud games, falling back to local:', error.message);
@@ -248,7 +254,7 @@ const Home = () => {
           const localGames = await fetchLocalGames();
           setAllGames(localGames);
           setIsShowingCloudGames(false);
-          console.debug('📱 Showing local games (offline or not logged in)');
+          console.debug('Showing local games (offline or not logged in)');
           
           // Batch check sync status for wizard games if user is logged in
           if (user && localGames.length > 0) {
@@ -328,7 +334,7 @@ const Home = () => {
             ))}
           </div>
         ) : loading ? (
-          <div className="loading-message">📊 Loading games...</div>
+          <div className="loading-message">Loading games...</div>
         ) : (
           <>
             {allGames.length > 0 ? (
