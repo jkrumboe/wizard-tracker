@@ -316,11 +316,11 @@ router.post('/batch-check', auth, async (req, res) => {
 /**
  * GET /api/wizard-games/:id
  * Get a wizard game by MongoDB _id
+ * Any authenticated user can view any game (global view)
  */
 router.get('/:id', auth, async (req, res) => {
   try {
     const gameId = req.params.id;
-    const userId = req.user._id;
     
     // Validate ID format to prevent injection
     if (!mongoose.Types.ObjectId.isValid(gameId)) {
@@ -328,8 +328,7 @@ router.get('/:id', auth, async (req, res) => {
     }
 
     const game = await WizardGame.findOne({
-      _id: { $eq: gameId },
-      userId: userId
+      _id: { $eq: gameId }
     });
     
     if (!game) {
