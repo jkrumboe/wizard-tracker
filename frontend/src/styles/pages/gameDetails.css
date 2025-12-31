@@ -24,7 +24,7 @@
 .game-details-header {
   display: grid;
   background-color: var(--card-bg);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   position: relative;

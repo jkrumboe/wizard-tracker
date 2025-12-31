@@ -413,7 +413,7 @@ const GameDetails = () => {
           <div className="badge-controls-container">
             {/* {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>} */}
             <button className="settings-button share-button" onClick={handleShareGame}>
-              <ShareIcon size={24} />
+              <ShareIcon size={16} />
               Share
             </button>
           </div>
