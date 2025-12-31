@@ -8,6 +8,19 @@ import { generateSecureId } from '../utils/secureRandom.js';
 
 const LOCAL_TABLE_GAMES_STORAGE_KEY = "wizardTracker_tableGames";
 
+/**
+ * Check if a key is safe to use as an object property (prevents prototype pollution)
+ * @param {string} key - The key to validate
+ * @returns {boolean} - True if the key is safe to use
+ */
+function isSafeKey(key) {
+  return typeof key === 'string' && 
+         key !== '__proto__' && 
+         key !== 'constructor' && 
+         key !== 'prototype' &&
+         !key.startsWith('__');
+}
+
 export class LocalTableGameStorage {
   /**
    * Get the current user ID from localStorage
@@ -82,6 +95,10 @@ export class LocalTableGameStorage {
    * @returns {Object|null} - The game data or null if not found
    */
   static loadTableGame(gameId) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return null;
+    }
     const games = this.getAllSavedTableGames();
     const savedGame = games[gameId];
     
@@ -102,6 +119,10 @@ export class LocalTableGameStorage {
    * @param {string} gameId - The game ID to delete
    */
   static deleteTableGame(gameId) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedTableGames();
     delete games[gameId];
     localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(games));
@@ -288,6 +309,10 @@ export class LocalTableGameStorage {
    * @param {Object} updates - Object containing fields to update
    */
   static updateTableGame(gameId, updates) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedTableGamesAllUsers(); // Get all games to update
     if (games[gameId]) {
       games[gameId] = { ...games[gameId], ...updates };
@@ -329,6 +354,10 @@ export class LocalTableGameStorage {
    * @param {string} cloudLookupKey - The cloud lookup key for duplicate detection
    */
   static markGameAsUploaded(gameId, cloudGameId, cloudLookupKey = null) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedTableGamesAllUsers();
     if (games[gameId]) {
       games[gameId].isUploaded = true;
@@ -345,6 +374,9 @@ export class LocalTableGameStorage {
    * @returns {boolean} - True if game has been uploaded
    */
   static isGameUploaded(gameId) {
+    if (!isSafeKey(gameId)) {
+      return false;
+    }
     const games = this.getAllSavedTableGames();
     return games[gameId] && games[gameId].isUploaded === true;
   }
@@ -354,6 +386,10 @@ export class LocalTableGameStorage {
    * @param {string} gameId - The game ID
    */
   static clearUploadStatus(gameId) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedTableGamesAllUsers();
     if (games[gameId]) {
       games[gameId].isUploaded = false;
@@ -371,6 +407,9 @@ export class LocalTableGameStorage {
    * @returns {string|null} - The cloud game ID or null if not uploaded
    */
   static getCloudGameId(gameId) {
+    if (!isSafeKey(gameId)) {
+      return null;
+    }
     const games = this.getAllSavedTableGames();
     return games[gameId] && games[gameId].cloudGameId ? games[gameId].cloudGameId : null;
   }

@@ -8,6 +8,19 @@ import { generateSecureId } from '../utils/secureRandom.js';
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames";
 
+/**
+ * Check if a key is safe to use as an object property (prevents prototype pollution)
+ * @param {string} key - The key to validate
+ * @returns {boolean} - True if the key is safe to use
+ */
+function isSafeKey(key) {
+  return typeof key === 'string' && 
+         key !== '__proto__' && 
+         key !== 'constructor' && 
+         key !== 'prototype' &&
+         !key.startsWith('__');
+}
+
 export class LocalGameStorage {
   /**
    * Get the current user ID from localStorage
@@ -218,6 +231,10 @@ export class LocalGameStorage {
    * @returns {Object|null} - The game state in internal format or null if not found
    */
   static loadGame(gameId) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return null;
+    }
     const games = this.getAllSavedGames();
     const savedGame = games[gameId];
     
@@ -309,6 +326,10 @@ export class LocalGameStorage {
    * @param {string} gameId - The game ID to delete
    */
   static deleteGame(gameId) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedGames();
     delete games[gameId];
     localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
@@ -548,6 +569,9 @@ export class LocalGameStorage {
    * @returns {boolean} - True if game exists
    */
   static gameExists(gameId) {
+    if (!isSafeKey(gameId)) {
+      return false;
+    }
     const games = this.getAllSavedGames();
     return !!games[gameId];
   }
@@ -592,6 +616,10 @@ export class LocalGameStorage {
    * @param {Object} updates - Updates to apply
    */
   static updateGameMetadata(gameId, updates) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedGames();
     if (games[gameId]) {
       games[gameId] = { ...games[gameId], ...updates };
@@ -606,6 +634,10 @@ export class LocalGameStorage {
    * @param {string} cloudLookupKey - The cloud lookup key for duplicate detection
    */
   static markGameAsUploaded(gameId, cloudGameId, cloudLookupKey = null) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedGames();
     if (games[gameId]) {
       games[gameId].isUploaded = true;
@@ -624,6 +656,9 @@ export class LocalGameStorage {
    * @returns {boolean} - True if game has been uploaded
    */
   static isGameUploaded(gameId) {
+    if (!isSafeKey(gameId)) {
+      return false;
+    }
     const games = this.getAllSavedGames();
     return games[gameId]?.isUploaded === true;
   }
@@ -634,6 +669,9 @@ export class LocalGameStorage {
    * @returns {string|null} - The cloud game ID or null if not uploaded
    */
   static getCloudGameId(gameId) {
+    if (!isSafeKey(gameId)) {
+      return null;
+    }
     const games = this.getAllSavedGames();
     return games[gameId]?.cloudGameId || null;
   }
@@ -654,6 +692,10 @@ export class LocalGameStorage {
    * @param {string} gameId - Existing game ID for auto-save
    */
   static autoSaveGame(gameState, gameId) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return;
+    }
     const games = this.getAllSavedGames();
     if (games[gameId]) {
       const timestamp = new Date().toISOString();
