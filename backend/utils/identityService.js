@@ -272,6 +272,17 @@ async function handleAccountDeletion(user, options = {}) {
  * @returns {Object} Updated identity
  */
 async function adminAssignIdentity(identityId, userId, adminId) {
+  // Validate inputs to prevent injection
+  if (!mongoose.Types.ObjectId.isValid(identityId)) {
+    throw new Error('Invalid identity ID');
+  }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID');
+  }
+  if (!mongoose.Types.ObjectId.isValid(adminId)) {
+    throw new Error('Invalid admin ID');
+  }
+  
   const identity = await PlayerIdentity.findById(identityId);
   
   if (!identity) {
@@ -307,16 +318,28 @@ async function adminAssignIdentity(identityId, userId, adminId) {
  * @returns {Object} Merged identity
  */
 async function adminMergeIdentities(targetId, sourceIds, adminId) {
+  // Validate inputs to prevent injection
+  if (!mongoose.Types.ObjectId.isValid(targetId)) {
+    throw new Error('Invalid target identity ID');
+  }
+  if (!mongoose.Types.ObjectId.isValid(adminId)) {
+    throw new Error('Invalid admin ID');
+  }
+  if (!Array.isArray(sourceIds) || !sourceIds.every(id => mongoose.Types.ObjectId.isValid(id))) {
+    throw new Error('Invalid source identity IDs');
+  }
+  
   const result = await PlayerIdentity.mergeIdentities(targetId, sourceIds, adminId);
   
   // Update all games that reference the source identities
   const WizardGame = mongoose.model('WizardGame');
   
   for (const sourceId of sourceIds) {
+    // Use $eq operator to prevent NoSQL injection
     await WizardGame.updateMany(
-      { 'gameData.players.identityId': sourceId },
+      { 'gameData.players.identityId': { $eq: sourceId } },
       { $set: { 'gameData.players.$[elem].identityId': targetId } },
-      { arrayFilters: [{ 'elem.identityId': sourceId }] }
+      { arrayFilters: [{ 'elem.identityId': { $eq: sourceId } }] }
     );
   }
   
@@ -334,22 +357,35 @@ async function adminMergeIdentities(targetId, sourceIds, adminId) {
  * @returns {Object} New identity
  */
 async function adminSplitIdentity(identityId, aliasName, adminId) {
+  // Validate inputs to prevent injection
+  if (!mongoose.Types.ObjectId.isValid(identityId)) {
+    throw new Error('Invalid identity ID');
+  }
+  if (!mongoose.Types.ObjectId.isValid(adminId)) {
+    throw new Error('Invalid admin ID');
+  }
+  if (typeof aliasName !== 'string' || aliasName.length === 0 || aliasName.length > 100) {
+    throw new Error('Invalid alias name');
+  }
+  
   const identity = await PlayerIdentity.findById(identityId);
   
   if (!identity) {
     throw new Error('Identity not found');
   }
   
+  // Sanitize and normalize alias name for comparison
+  const sanitizedAliasName = String(aliasName).toLowerCase().trim();
   const alias = identity.aliases.find(a => 
-    a.normalizedName === aliasName.toLowerCase().trim()
+    a.normalizedName === sanitizedAliasName
   );
   
   if (!alias) {
     throw new Error('Alias not found on this identity');
   }
   
-  // Remove alias from original identity
-  await identity.removeAlias(aliasName);
+  // Remove alias from original identity (use sanitized name)
+  await identity.removeAlias(sanitizedAliasName);
   
   // Create new identity
   const newIdentity = await PlayerIdentity.create({
@@ -433,9 +469,14 @@ async function updateGameIdentities(game) {
  * @returns {Object} Aggregated statistics
  */
 async function getUserStats(userId) {
+  // Validate userId to prevent injection
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID');
+  }
+  
   const identities = await PlayerIdentity.find({
-    userId: userId,
-    isDeleted: false
+    userId: { $eq: userId },
+    isDeleted: { $eq: false }
   });
   
   const stats = {
@@ -490,6 +531,11 @@ async function searchIdentities(query, options = {}) {
  * @returns {Object} Identity with populated references
  */
 async function getIdentityDetails(identityId) {
+  // Validate identityId to prevent injection
+  if (!mongoose.Types.ObjectId.isValid(identityId)) {
+    return null;
+  }
+  
   const identity = await PlayerIdentity.findById(identityId)
     .populate('userId', 'username profilePicture role')
     .populate('createdBy', 'username')
@@ -524,34 +570,47 @@ async function getAllIdentities(options = {}) {
     search = null
   } = options;
   
-  const filter = { isDeleted: false };
+  // Validate and sanitize pagination parameters
+  const sanitizedPage = Math.max(1, Math.min(parseInt(page) || 1, 1000));
+  const sanitizedLimit = Math.max(1, Math.min(parseInt(limit) || 50, 200));
   
+  const filter = { isDeleted: { $eq: false } };
+  
+  // Validate type parameter (whitelist allowed values)
   if (type) {
-    filter.type = type;
+    const allowedTypes = ['user', 'guest', 'system'];
+    if (typeof type === 'string' && allowedTypes.includes(type)) {
+      filter.type = { $eq: type };
+    }
   }
   
   if (linked === true) {
     filter.userId = { $ne: null };
   } else if (linked === false) {
-    filter.userId = null;
+    filter.userId = { $eq: null };
   }
   
   if (search) {
-    const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    filter.$or = [
-      { displayName: regex },
-      { 'aliases.name': regex }
-    ];
+    // Ensure search is a string and limit length to prevent ReDoS
+    if (typeof search === 'string' && search.length > 0 && search.length <= 100) {
+      // Escape regex special characters and create safe regex
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedSearch, 'i');
+      filter.$or = [
+        { displayName: { $regex: regex } },
+        { 'aliases.name': { $regex: regex } }
+      ];
+    }
   }
   
-  const skip = (page - 1) * limit;
+  const skip = (sanitizedPage - 1) * sanitizedLimit;
   
   const [identities, total] = await Promise.all([
     PlayerIdentity.find(filter)
       .populate('userId', 'username profilePicture')
       .sort({ displayName: 1 })
       .skip(skip)
-      .limit(limit),
+      .limit(sanitizedLimit),
     PlayerIdentity.countDocuments(filter)
   ]);
   
