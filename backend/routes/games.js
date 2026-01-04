@@ -791,4 +791,334 @@ router.get('/stats', auth, async (req, res, next) => {
   }
 });
 
+// POST /games/friend-leaderboard - Get head-to-head statistics for selected players
+// PUBLIC ENDPOINT - No authentication required
+router.post('/friend-leaderboard', async (req, res, next) => {
+  try {
+    const { playerNames, gameType } = req.body;
+    
+    if (!Array.isArray(playerNames) || playerNames.length < 2) {
+      return res.status(400).json({ error: 'At least 2 player names are required' });
+    }
+    
+    if (playerNames.length > 10) {
+      return res.status(400).json({ error: 'Maximum 10 players allowed' });
+    }
+    
+    // Normalize player names for comparison
+    const normalizedPlayerNames = playerNames.map(name => name.toLowerCase().trim());
+    
+    // Fetch all player aliases to consolidate stats
+    const PlayerAlias = require('../models/PlayerAlias');
+    const allAliases = await PlayerAlias.find({}).populate('userId', 'username').lean();
+    const aliasToUsernameMap = {};
+    allAliases.forEach(alias => {
+      if (alias.userId && alias.userId.username) {
+        aliasToUsernameMap[alias.aliasName.toLowerCase()] = alias.userId.username.toLowerCase();
+      }
+    });
+    
+    // Helper function: Resolve a player name to the canonical username
+    const resolvePlayerName = (playerName) => {
+      const lowerName = playerName.toLowerCase();
+      if (aliasToUsernameMap[lowerName]) {
+        return aliasToUsernameMap[lowerName];
+      }
+      return lowerName;
+    };
+    
+    // Build a set of all canonical names we're interested in (including aliases)
+    const targetCanonicalNames = new Set();
+    normalizedPlayerNames.forEach(name => {
+      targetCanonicalNames.add(resolvePlayerName(name));
+    });
+    
+    // Also add the original names in case they ARE the canonical names
+    normalizedPlayerNames.forEach(name => targetCanonicalNames.add(name));
+    
+    // Fetch games
+    const TableGame = require('../models/TableGame');
+    const WizardGame = require('../models/WizardGame');
+    
+    const wizardGames = await WizardGame.find({}, {
+      'gameData.players': 1,
+      'gameData.winner_id': 1,
+      'gameData.winner_ids': 1,
+      'gameData.final_scores': 1,
+      'createdAt': 1
+    }).lean();
+    
+    const tableGames = await TableGame.find({}, {
+      'gameData': 1,
+      'gameTypeName': 1,
+      'lowIsBetter': 1,
+      'createdAt': 1
+    }).lean();
+    
+    // Initialize statistics
+    const playerStats = {};
+    const headToHead = {}; // headToHead[playerA][playerB] = { wins: 0, losses: 0, draws: 0, games: 0 }
+    const sharedGames = []; // Games where at least 2 of the selected players participated
+    
+    // Initialize stats for each player
+    targetCanonicalNames.forEach(name => {
+      playerStats[name] = {
+        name: name,
+        displayName: playerNames.find(n => resolvePlayerName(n) === name) || name,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        totalGames: 0,
+        totalScore: 0,
+        avgScore: 0,
+        winRate: 0,
+        gamesWithFriends: 0
+      };
+      headToHead[name] = {};
+      targetCanonicalNames.forEach(otherName => {
+        if (name !== otherName) {
+          headToHead[name][otherName] = { wins: 0, losses: 0, draws: 0, games: 0 };
+        }
+      });
+    });
+    
+    // Process Wizard games
+    wizardGames.forEach(game => {
+      const gameData = game.gameData;
+      if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
+      
+      const gameMode = 'Wizard';
+      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+      
+      // Get participants from this game that are in our target list
+      const participantsInGame = [];
+      const playerIdToCanonical = {};
+      
+      gameData.players.forEach(player => {
+        if (!player.name) return;
+        const canonical = resolvePlayerName(player.name);
+        if (targetCanonicalNames.has(canonical)) {
+          participantsInGame.push({ id: player.id, canonical, originalName: player.name });
+          playerIdToCanonical[player.id] = canonical;
+        }
+      });
+      
+      // Only process games where at least 2 of our target players participated
+      if (participantsInGame.length < 2) return;
+      
+      const winnerIdRaw = gameData.winner_ids || gameData.winner_id || gameData.totals?.winner_ids || gameData.totals?.winner_id;
+      const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+      const finalScores = gameData.final_scores || gameData.totals?.final_scores || {};
+      
+      // Determine who won among our participants
+      const participantWinners = participantsInGame.filter(p => winnerIds.includes(p.id));
+      const isDraw = participantWinners.length > 1;
+      
+      // Update stats for each participant
+      participantsInGame.forEach(participant => {
+        const stats = playerStats[participant.canonical];
+        if (!stats) return;
+        
+        stats.gamesWithFriends++;
+        stats.totalGames++;
+        
+        const isWinner = winnerIds.includes(participant.id);
+        
+        if (isDraw && isWinner) {
+          stats.draws++;
+        } else if (isWinner) {
+          stats.wins++;
+        } else {
+          stats.losses++;
+        }
+        
+        if (finalScores[participant.id] !== undefined) {
+          stats.totalScore += finalScores[participant.id];
+        }
+        
+        // Update head-to-head against other participants
+        participantsInGame.forEach(opponent => {
+          if (opponent.canonical === participant.canonical) return;
+          
+          const h2h = headToHead[participant.canonical]?.[opponent.canonical];
+          if (!h2h) return;
+          
+          h2h.games++;
+          
+          const opponentWon = winnerIds.includes(opponent.id);
+          
+          if (isDraw && isWinner && opponentWon) {
+            h2h.draws++;
+          } else if (isWinner && !opponentWon) {
+            h2h.wins++;
+          } else if (!isWinner && opponentWon) {
+            h2h.losses++;
+          } else if (!isWinner && !opponentWon) {
+            // Neither won - could be a draw with a non-participant or both lost
+            h2h.draws++;
+          }
+        });
+      });
+      
+      // Add to shared games
+      sharedGames.push({
+        id: game._id,
+        type: 'Wizard',
+        date: game.createdAt,
+        players: participantsInGame.map(p => ({
+          name: p.originalName,
+          canonical: p.canonical,
+          score: finalScores[p.id] || 0,
+          won: winnerIds.includes(p.id)
+        }))
+      });
+    });
+    
+    // Process Table games
+    tableGames.forEach(game => {
+      const outerGameData = game.gameData;
+      const gameData = outerGameData?.gameData || outerGameData;
+      
+      if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
+      
+      const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
+      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+      
+      // Get participants from this game that are in our target list
+      const participantsInGame = [];
+      const playerIndexToCanonical = {};
+      
+      gameData.players.forEach((player, index) => {
+        if (!player.name) return;
+        const canonical = resolvePlayerName(player.name);
+        if (targetCanonicalNames.has(canonical)) {
+          const playerId = `player_${index}`;
+          participantsInGame.push({ id: playerId, index, canonical, originalName: player.name });
+          playerIndexToCanonical[index] = canonical;
+        }
+      });
+      
+      // Only process games where at least 2 of our target players participated
+      if (participantsInGame.length < 2) return;
+      
+      // Calculate final scores from points arrays
+      const finalScores = {};
+      gameData.players.forEach((player, index) => {
+        const playerId = `player_${index}`;
+        const points = player.points || [];
+        const totalScore = points.reduce((sum, p) => {
+          const parsed = parseFloat(p);
+          return sum + (isNaN(parsed) ? 0 : parsed);
+        }, 0);
+        finalScores[playerId] = totalScore;
+      });
+      
+      // Find winner(s)
+      let winnerIds = [];
+      if (Object.keys(finalScores).length > 0) {
+        const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
+        const scores = Object.entries(finalScores);
+        
+        if (lowIsBetter) {
+          const minScore = Math.min(...scores.map(s => s[1]));
+          winnerIds = scores.filter(s => s[1] === minScore).map(s => s[0]);
+        } else {
+          const maxScore = Math.max(...scores.map(s => s[1]));
+          winnerIds = scores.filter(s => s[1] === maxScore).map(s => s[0]);
+        }
+      }
+      
+      const participantWinners = participantsInGame.filter(p => winnerIds.includes(p.id));
+      const isDraw = participantWinners.length > 1;
+      
+      // Update stats for each participant
+      participantsInGame.forEach(participant => {
+        const stats = playerStats[participant.canonical];
+        if (!stats) return;
+        
+        stats.gamesWithFriends++;
+        stats.totalGames++;
+        
+        const isWinner = winnerIds.includes(participant.id);
+        
+        if (isDraw && isWinner) {
+          stats.draws++;
+        } else if (isWinner) {
+          stats.wins++;
+        } else {
+          stats.losses++;
+        }
+        
+        if (finalScores[participant.id] !== undefined) {
+          stats.totalScore += finalScores[participant.id];
+        }
+        
+        // Update head-to-head against other participants
+        participantsInGame.forEach(opponent => {
+          if (opponent.canonical === participant.canonical) return;
+          
+          const h2h = headToHead[participant.canonical]?.[opponent.canonical];
+          if (!h2h) return;
+          
+          h2h.games++;
+          
+          const opponentWon = winnerIds.includes(opponent.id);
+          
+          if (isDraw && isWinner && opponentWon) {
+            h2h.draws++;
+          } else if (isWinner && !opponentWon) {
+            h2h.wins++;
+          } else if (!isWinner && opponentWon) {
+            h2h.losses++;
+          } else if (!isWinner && !opponentWon) {
+            h2h.draws++;
+          }
+        });
+      });
+      
+      // Add to shared games
+      sharedGames.push({
+        id: game._id,
+        type: gameMode,
+        date: game.createdAt,
+        players: participantsInGame.map(p => ({
+          name: p.originalName,
+          canonical: p.canonical,
+          score: finalScores[p.id] || 0,
+          won: winnerIds.includes(p.id)
+        }))
+      });
+    });
+    
+    // Calculate derived stats and build response
+    const leaderboard = Object.values(playerStats)
+      .filter(stats => stats.gamesWithFriends > 0)
+      .map(stats => ({
+        ...stats,
+        avgScore: stats.totalGames > 0 ? parseFloat((stats.totalScore / stats.totalGames).toFixed(1)) : 0,
+        winRate: stats.totalGames > 0 ? parseFloat(((stats.wins / stats.totalGames) * 100).toFixed(1)) : 0
+      }))
+      .sort((a, b) => {
+        // Sort by wins first, then win rate, then avg score
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+        return b.avgScore - a.avgScore;
+      });
+    
+    // Sort shared games by date (most recent first)
+    sharedGames.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    res.json({
+      leaderboard,
+      headToHead,
+      recentGames: sharedGames.slice(0, 10),
+      totalSharedGames: sharedGames.length
+    });
+    
+  } catch (error) {
+    console.error('[POST /api/games/friend-leaderboard] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

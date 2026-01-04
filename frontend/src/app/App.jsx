@@ -24,6 +24,7 @@ const Profile = lazy(() => import("@/pages/profile/Profile"))
 const UserProfile = lazy(() => import("@/pages/profile/UserProfile"))
 const ProfileEdit = lazy(() => import("@/pages/profile/ProfileEdit"))
 const Leaderboard = lazy(() => import("@/pages/profile/Leaderboard"))
+const FriendLeaderboard = lazy(() => import("@/pages/profile/FriendLeaderboard"))
 const Stats = lazy(() => import("@/pages/profile/Stats"))
 const Login = lazy(() => import("@/pages/auth/Login"))
 const SharedGamePage = lazy(() => import("@/pages/shared/SharedGamePage"))
@@ -257,6 +258,7 @@ function App() {
                     } />
                     <Route path="/user/:username" element={<UserProfile />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
+                    <Route path="/friend-leaderboard" element={<FriendLeaderboard />} />
                     <Route path="/stats/:name" element={<Stats />} />
                     <Route path="/profile/stats" element={<Stats />} />
                     <Route path="/new-game" element={<NewGame />} />

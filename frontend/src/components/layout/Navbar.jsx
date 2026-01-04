@@ -25,17 +25,20 @@ const GamesMenu = ({ show, onClose, user }) => {
         </div>
         <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
           <Link to="/new-game" className="modal-button" onClick={onClose}>
-            <GamepadIcon size={24} style={{ marginRight: 8 }} /> Wizard
+            Wizard
           </Link>
           <Link to="/table" className="modal-button" onClick={onClose}>
-            <UsersIcon size={24} style={{ marginRight: 8 }} /> Table
+            Table
           </Link>
           <Link to="/leaderboard" className="modal-button" onClick={onClose}>
-            <TrophyIcon size={24} style={{ marginRight: 8 }} /> Leaderboard
+            Leaderboard
+          </Link>
+          <Link to="/friend-leaderboard" className="modal-button" onClick={onClose}>
+            Compare with Friends
           </Link>
           {user && user.role === 'admin' && (
             <Link to="/admin" className="modal-button" onClick={onClose}>
-              <ShieldIcon size={24} style={{ marginRight: 8 }} /> Admin Panel
+              Admin Panel
             </Link>
           )}
         </div>

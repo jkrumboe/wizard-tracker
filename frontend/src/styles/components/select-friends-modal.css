@@ -52,6 +52,7 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  padding: 0 var(--spacing-sm);
 }
 
 .friend-selection-item.selected {
@@ -64,20 +65,21 @@
   display: flex;
   align-items: center;
   padding-left: 2vw;
+  width: 100%;
 }
 
 .friend-selection-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 25%;
   object-fit: cover;
   border: 2px solid var(--border);
 }
 
 .friend-selection-avatar-placeholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 25%;
   background: var(--primary);
   color: var(--text);
   display: flex;
@@ -90,21 +92,24 @@
 
 .friend-selection-details {
   flex: 1;
+  width: 100%;  
 }
 
 .friend-selection-name {
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text);
-  padding-left: 23vw;
+  width: calc(100% - 30px - 8px);
+  text-align: center;
+
 }
 
 .selection-checkmark {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   background: var(--primary);
   border-radius: 50%;
   color: var(--text);
@@ -157,8 +162,8 @@
   
   .friend-selection-avatar,
   .friend-selection-avatar-placeholder {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     font-size: 1rem;
   }
 }

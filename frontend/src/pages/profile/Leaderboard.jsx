@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
 import { lookupUserByUsername } from '@/shared/api/userService'
+import { UsersIcon } from '@/components/ui/Icon'
 import "@/styles/pages/leaderboard.css"
 
 const Leaderboard = () => {
@@ -226,11 +227,35 @@ const Leaderboard = () => {
           fontSize: '0.85rem', 
           color: 'var(--text-secondary)', 
           textAlign: 'center',
-          marginBottom: '1rem' 
+          marginBottom: '0.5rem' 
         }}>
           Last updated: {lastRefresh.toLocaleTimeString()}
         </div>
       )}
+      
+      <Link 
+        to="/friend-leaderboard" 
+        className="friend-leaderboard-link"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          padding: '10px 16px',
+          marginBottom: '1rem',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          color: 'var(--text-primary)',
+          textDecoration: 'none',
+          fontSize: '0.95rem',
+          fontWeight: '500',
+          transition: 'all 0.2s'
+        }}
+      >
+        <UsersIcon size={18} />
+        Compare with Friends
+      </Link>
       
       {/* <div className="leaderboard-stats">
         <span>Total Games: {totalGames}</span>
@@ -307,11 +332,8 @@ const Leaderboard = () => {
                 
                 return player ? (
                   <div key={player.id} className="leaderboard-row">
-                    <div className="rank-col">
-                      {globalRank === 1 && <span className="medal gold">🥇</span>}
-                      {globalRank === 2 && <span className="medal silver">🥈</span>}
-                      {globalRank === 3 && <span className="medal bronze">🥉</span>}
-                      {globalRank > 3 && globalRank}
+                    <div className={`rank-col ${globalRank === 1 ? 'gold' : globalRank === 2 ? 'silver' : globalRank === 3 ? 'bronze' : ''}`}>
+                      {globalRank}
                     </div>
                     <div 
                       className="player-col clickable"

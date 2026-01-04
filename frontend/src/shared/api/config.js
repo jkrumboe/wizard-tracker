@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
     batchCheck: `${API_BASE_URL}/api/games/batch-check`,
     stats: `${API_BASE_URL}/api/games/stats`,
     leaderboard: `${API_BASE_URL}/api/games/leaderboard`,
+    friendLeaderboard: `${API_BASE_URL}/api/games/friend-leaderboard`,
   },
   wizardGames: {
     list: `${API_BASE_URL}/api/wizard-games`,

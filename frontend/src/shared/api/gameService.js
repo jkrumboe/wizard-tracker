@@ -68,6 +68,38 @@ export async function getLeaderboard(gameType = 'all', page = 1, limit = 50) {
   }
 }
 
+// Get friend leaderboard data (public endpoint - no auth required)
+export async function getFriendLeaderboard(playerNames, gameType = 'all') {
+  const url = API_ENDPOINTS.games.friendLeaderboard;
+  
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        playerNames,
+        gameType: gameType || 'all'
+      })
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to fetch friend leaderboard (${res.status})`);
+    }
+    
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    // Handle network errors
+    if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+      throw new Error('Unable to connect to server.');
+    }
+    throw error;
+  }
+}
+
 /**
  * Get list of cloud games for the logged-in user (metadata only)
  * @returns {Promise<Array>} List of cloud games with metadata

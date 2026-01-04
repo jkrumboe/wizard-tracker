@@ -137,7 +137,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
                 return (
                   <div 
                     key={friend.id} 
-                    className={`friend-selection-item ${isSelected ? 'selected' : ''}`}
+                    className={`friend-item ${isSelected ? 'selected' : ''}`}
                     onClick={() => toggleFriendSelection(friend)}
                   >
                     <div className="friend-selection-info">
