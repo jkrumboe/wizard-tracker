@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, UsersIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
-import { localFriendsService } from '@/shared/api';
+import { localFriendsService, userService } from '@/shared/api';
+import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
 
 const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers = [] }) => {
+  const { user } = useUser();
   const [friends, setFriends] = useState([]);
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +22,25 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
   const loadFriends = async () => {
     setLoading(true);
     try {
-      const friendsList = await localFriendsService.getAllFriends();
+      let friendsList = [];
+      
+      // If user is logged in and online, fetch from server (cloud is source of truth)
+      if (user?.id && navigator.onLine) {
+        try {
+          friendsList = await userService.getFriends(user.id);
+          // Update local storage to match cloud
+          await localFriendsService.clearAllFriends();
+          for (const friend of friendsList) {
+            await localFriendsService.addFriend(friend);
+          }
+        } catch (cloudErr) {
+          console.warn('Could not fetch friends from cloud, using local:', cloudErr);
+          friendsList = await localFriendsService.getAllFriends();
+        }
+      } else {
+        // Offline fallback: use local storage
+        friendsList = await localFriendsService.getAllFriends();
+      }
       
       // Filter out friends who are already added as players
       const availableFriends = friendsList.filter(friend => 

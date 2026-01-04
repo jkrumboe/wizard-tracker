@@ -29,45 +29,41 @@ const FriendsModal = ({ isOpen, onClose }) => {
   // Use ref instead of state to track previous sent request IDs to avoid infinite loops
   const previousSentRequestIdsRef = useRef(new Set());
 
-  // Define loadFriends first since it's used by syncCloudFriendsToLocal
+  // Load friends from server (cloud) when online, fallback to local storage
   const loadFriends = useCallback(async () => {
     try {
-      const localFriends = await localFriendsService.getAllFriends();
-      setFriends(localFriends);
-    } catch (err) {
-      console.error('Error loading friends:', err);
-      setError('Failed to load friends');
-    }
-  }, []);
-
-  // Define syncCloudFriendsToLocal next since it uses loadFriends
-  const syncCloudFriendsToLocal = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      // Get friends from cloud
-      const cloudFriends = await userService.getFriends(user.id);
-      
-      if (cloudFriends.length > 0) {
-        // Get current local friends
-        const localFriends = await localFriendsService.getAllFriends();
-        const localFriendIds = new Set(localFriends.map(f => f.id));
+      // If user is logged in and online, always fetch from server
+      if (user?.id && navigator.onLine) {
+        const cloudFriends = await userService.getFriends(user.id);
+        setFriends(cloudFriends);
         
-        // Add any cloud friends that aren't in local storage
-        for (const cloudFriend of cloudFriends) {
-          if (!localFriendIds.has(cloudFriend.id)) {
-            console.log('Syncing new friend from cloud to local:', cloudFriend.username);
-            await localFriendsService.addFriend(cloudFriend);
-          }
+        // Update local storage to match cloud (full sync)
+        await localFriendsService.clearAllFriends();
+        for (const friend of cloudFriends) {
+          await localFriendsService.addFriend(friend);
         }
-        
-        // Reload friends list to show updates
-        await loadFriends();
+      } else {
+        // Offline fallback: use local storage
+        const localFriends = await localFriendsService.getAllFriends();
+        setFriends(localFriends);
       }
     } catch (err) {
-      console.warn('Could not sync friends from cloud:', err);
+      console.error('Error loading friends:', err);
+      // Fallback to local storage on error
+      try {
+        const localFriends = await localFriendsService.getAllFriends();
+        setFriends(localFriends);
+      } catch (localErr) {
+        setError('Failed to load friends');
+      }
     }
-  }, [user?.id, loadFriends]);
+  }, [user?.id]);
+
+  // Sync is now handled directly in loadFriends - this function is kept for compatibility
+  const syncCloudFriendsToLocal = useCallback(async () => {
+    // loadFriends now handles full sync from cloud
+    await loadFriends();
+  }, [loadFriends]);
 
   // Batch load all friends data (friends list + requests) in one API call
   const loadFriendsBatchData = useCallback(async () => {
@@ -80,26 +76,25 @@ const FriendsModal = ({ isOpen, onClose }) => {
       setReceivedRequests(batchData.receivedRequests);
       setSentRequests(batchData.sentRequests);
       
-      // Sync cloud friends to local storage if there are any
-      if (batchData.friends.length > 0) {
-        const localFriends = await localFriendsService.getAllFriends();
-        const localFriendIds = new Set(localFriends.map(f => f.id));
-        
-        // Add any cloud friends that aren't in local storage
-        for (const cloudFriend of batchData.friends) {
-          if (!localFriendIds.has(cloudFriend.id)) {
-            console.log('Syncing new friend from cloud to local:', cloudFriend.username);
-            await localFriendsService.addFriend(cloudFriend);
-          }
-        }
-        
-        // Reload friends list to show updates
-        await loadFriends();
+      // Set friends directly from cloud data (cloud is source of truth)
+      setFriends(batchData.friends);
+      
+      // Update local storage to match cloud (full sync)
+      await localFriendsService.clearAllFriends();
+      for (const friend of batchData.friends) {
+        await localFriendsService.addFriend(friend);
       }
     } catch (err) {
       console.error('Error loading friends batch data:', err);
+      // Fallback to local storage on error
+      try {
+        const localFriends = await localFriendsService.getAllFriends();
+        setFriends(localFriends);
+      } catch (localErr) {
+        console.error('Error loading local friends:', localErr);
+      }
     }
-  }, [user?.id, loadFriends]);
+  }, [user?.id]);
 
   const loadFriendRequests = useCallback(async () => {
     if (!user?.id) return;
