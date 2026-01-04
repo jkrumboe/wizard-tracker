@@ -37,7 +37,7 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.friend-leaderboard-container.selection-header h2 {
+.friend-leaderboard-container .selection-header h2 {
   margin: 0;
   font-size: 1.3rem;
   color: var(--text-primary);
@@ -124,7 +124,7 @@
   margin-bottom: var(--spacing-sm);
   height: 50vh;
   overflow-y: auto;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
 }
 
 .friend-item.selected {
@@ -199,12 +199,11 @@
 
 .compare-btn {
   width: 100%;
-  padding: 14px;
+  padding: var(--spacing-sm);
   background: var(--primary);
   color: var(--text);
   border: none;
-  border-radius: 10px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
