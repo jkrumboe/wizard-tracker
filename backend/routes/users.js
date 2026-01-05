@@ -875,36 +875,41 @@ router.get('/:userId/friends/batch-check', friendsLimiter, auth, async (req, res
     }
 
     res.json({
-      friends: user.friends.map(friend => ({
+      friends: (user.friends || []).map(friend => ({
         id: friend._id.toString(),
         username: friend.username,
         createdAt: friend.createdAt,
         profilePicture: friend.profilePicture || null
       })),
-      receivedRequests: receivedRequests.map(req => ({
-        id: req._id.toString(),
-        sender: {
-          id: req.sender._id.toString(),
-          username: req.sender.username,
-          profilePicture: req.sender.profilePicture || null,
-          createdAt: req.sender.createdAt
-        },
-        status: req.status,
-        createdAt: req.createdAt
-      })),
-      sentRequests: sentRequests.map(req => ({
-        id: req._id.toString(),
-        receiver: {
-          id: req.receiver._id.toString(),
-          username: req.receiver.username,
-          profilePicture: req.receiver.profilePicture || null,
-          createdAt: req.receiver.createdAt
-        },
-        status: req.status,
-        createdAt: req.createdAt
-      }))
+      receivedRequests: receivedRequests
+        .filter(req => req.sender) // Filter out requests with missing sender
+        .map(req => ({
+          id: req._id.toString(),
+          sender: {
+            id: req.sender._id.toString(),
+            username: req.sender.username,
+            profilePicture: req.sender.profilePicture || null,
+            createdAt: req.sender.createdAt
+          },
+          status: req.status,
+          createdAt: req.createdAt
+        })),
+      sentRequests: sentRequests
+        .filter(req => req.receiver) // Filter out requests with missing receiver
+        .map(req => ({
+          id: req._id.toString(),
+          receiver: {
+            id: req.receiver._id.toString(),
+            username: req.receiver.username,
+            profilePicture: req.receiver.profilePicture || null,
+            createdAt: req.receiver.createdAt
+          },
+          status: req.status,
+          createdAt: req.createdAt
+        }))
     });
   } catch (error) {
+    console.error('[GET /friends/batch-check] Error:', error);
     next(error);
   }
 });
