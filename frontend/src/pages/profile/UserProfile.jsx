@@ -235,7 +235,7 @@ const UserProfile = () => {
               <div>
                 <p style={{ margin: 0, fontWeight: 'bold' }}>{profileUser.username}</p>
                 {profileUser.createdAt && profileUser.isRegisteredUser !== false ? (
-                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)'}}>
                     Member since {new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
                       year: 'numeric', 
                       month: 'short', 

@@ -1393,8 +1393,8 @@ const Account = () => {
                     alt="Profile"
                     onClick={() => setShowProfilePictureModal(true)}
                     style={{
-                        width: '64px',
-                        height: '64px',
+                      width: '64px',
+                      height: '64px',
                       borderRadius: '25%',
                       cursor: 'pointer',
                     }}
