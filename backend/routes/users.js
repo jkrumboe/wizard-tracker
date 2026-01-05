@@ -374,7 +374,13 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const outerGameData = game.gameData;
       const gameData = outerGameData?.gameData || outerGameData; // Handle nested structure
       
-      if (!gameData || !game.gameFinished || !gameData.players) return;
+      if (!gameData || !game.gameFinished || !gameData.players) {
+        // Debug: Log why game was skipped
+        if (gameData?.players?.some(p => searchNamesLower.includes(p.name?.toLowerCase()))) {
+          console.log(`[Profile] SKIPPED game ${game._id}: gameFinished=${game.gameFinished}, hasGameData=${!!gameData}, hasPlayers=${!!gameData?.players}`);
+        }
+        return;
+      }
       
       // For table games, match by player name against username or any alias
       const userPlayer = gameData.players.find(p => {
@@ -390,6 +396,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       
       // Check if user's player ID is in winner_ids
       const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
+      
+      // Debug log for table games
+      console.log(`[Profile] Found table game ${game._id} (${game.gameTypeName}): player="${userPlayer.name}" id=${userPlayer.id}, winnerIds=${JSON.stringify(winnerIds)}, isWinner=${isWinner}`);
       
       if (isWinner) totalWins++;
       
