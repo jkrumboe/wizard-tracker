@@ -245,7 +245,7 @@
 .friend-leaderboard-container .leaderboard-row {
   display: grid;
   grid-template-columns: 50px 2fr 70px 70px 80px 90px;
-  padding: 14px 16px;
+  /* padding: 14px 16px; */
   align-items: center;
   gap: 10px;
 }
@@ -431,6 +431,7 @@
 .h2h-player-name {
   font-weight: 600;
   text-align: left !important;
+  padding-left: var(--spacing-sm) !important;
   background: var(--input-bg);
   width: 80px;
   overflow: hidden;
@@ -531,7 +532,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-sm);
-  overflow: scroll;
 }
   
 .recent-game-card-top {

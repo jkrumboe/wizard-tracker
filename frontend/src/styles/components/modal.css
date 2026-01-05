@@ -69,6 +69,13 @@
   transition: all 0.2s ease;
 }
 
+.profile-picture-modal .close-btn {
+  margin-bottom: var(--spacing-sm);
+  z-index: 10;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+
 .close-btn:hover {
   background: var(--border);
   color: var(--text);

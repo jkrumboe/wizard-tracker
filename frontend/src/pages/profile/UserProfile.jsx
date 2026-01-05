@@ -8,6 +8,7 @@ import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api'
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced'
 import StatsOverview from '@/components/stats/StatsOverview'
 import { ArrowLeftIcon, TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
+import ProfilePictureModal from '@/components/modals/ProfilePictureModal'
 import avatarService from '@/shared/api/avatarService'
 import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
@@ -23,6 +24,7 @@ const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('overview')
   const [statsGameType, setStatsGameType] = useState('wizard')
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar)
+  const [showProfilePictureModal, setShowProfilePictureModal] = useState(false)
   const [filters] = useState(getDefaultFilters())
 
   // Check if viewing own profile
@@ -232,11 +234,14 @@ const UserProfile = () => {
               <img
                 src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
                 alt={`${profileUser.username}'s avatar`}
+                onClick={() => setShowProfilePictureModal(true)}
                 style={{
                   width: '64px',
                   height: '64px',
                   borderRadius: '25%',
+                  cursor: 'pointer',
                 }}
+                title="Click to view full size"
                 onError={(e) => {
                   e.target.src = defaultAvatar
                 }}
@@ -329,6 +334,13 @@ const UserProfile = () => {
           </div>
         )}
       </div>
+
+      <ProfilePictureModal
+        isOpen={showProfilePictureModal}
+        onClose={() => setShowProfilePictureModal(false)}
+        imageUrl={sanitizeImageUrl(avatarUrl, defaultAvatar)}
+        altText={`${profileUser?.username}'s Profile Picture`}
+      />
     </div>
   )
 }

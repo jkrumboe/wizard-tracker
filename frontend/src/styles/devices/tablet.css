@@ -152,7 +152,6 @@
 
     .recent-games {
         width: 100%;
-        padding: var(--spacing-md);
         border-radius: var(--radius-lg);
         /* box-shadow: var(--shadow); */
         height: 100%;
@@ -657,5 +656,9 @@
         max-width: 220px;
         width: 100%;
         padding: 0 !important;
+    }
+
+    .friend-leaderboard-container .back-btn span {
+        margin-right: calc(50% + 18px);
     }
 }

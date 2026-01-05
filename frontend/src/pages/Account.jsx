@@ -13,6 +13,7 @@ import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, T
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
+import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
 import { SwipeableGameCard } from '@/components/common';
 import authService from '@/shared/api/authService';
 import avatarService from '@/shared/api/avatarService';
@@ -54,6 +55,7 @@ const Account = () => {
     setDebugLogs(prev => [...prev.slice(-20), logEntry]); // Keep last 20 logs
   };
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
+  const [showProfilePictureModal, setShowProfilePictureModal] = useState(false); // Profile picture modal
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
   const [checkingForUpdates, setCheckingForUpdates] = useState(false);
@@ -1389,12 +1391,14 @@ const Account = () => {
                   <img
                     src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
                     alt="Profile"
+                    onClick={() => setShowProfilePictureModal(true)}
                     style={{
                         width: '64px',
                         height: '64px',
                       borderRadius: '25%',
                       cursor: 'pointer',
                     }}
+                    title="Click to view full size"
                   />
                 <div>
                   <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
@@ -2055,6 +2059,13 @@ const Account = () => {
           onClose={() => setShowFilterModal(false)}
           onApplyFilters={handleApplyFilters}
           initialFilters={filters}
+        />
+
+        <ProfilePictureModal
+          isOpen={showProfilePictureModal}
+          onClose={() => setShowProfilePictureModal(false)}
+          imageUrl={sanitizeImageUrl(avatarUrl, defaultAvatar)}
+          altText="Profile Picture"
         />
 
         {/* Debug Panel for Mobile (Admin Only) */}
