@@ -815,16 +815,26 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       return res.status(400).json({ error: 'Maximum 10 players allowed' });
     }
     
-    // Normalize player names for comparison
-    const normalizedPlayerNames = playerNames.map(name => name.toLowerCase().trim());
+    // Helper to check for dangerous property names that could cause prototype pollution
+    const isDangerousKey = (key) => {
+      return key === '__proto__' || key === 'constructor' || key === 'prototype';
+    };
+    
+    // Normalize player names for comparison and filter out dangerous keys
+    const normalizedPlayerNames = playerNames
+      .map(name => name.toLowerCase().trim())
+      .filter(name => !isDangerousKey(name));
     
     // Fetch all player aliases to consolidate stats
     const PlayerAlias = require('../models/PlayerAlias');
     const allAliases = await PlayerAlias.find({}).populate('userId', 'username').lean();
-    const aliasToUsernameMap = {};
+    const aliasToUsernameMap = Object.create(null);
     allAliases.forEach(alias => {
       if (alias.userId && alias.userId.username) {
-        aliasToUsernameMap[alias.aliasName.toLowerCase()] = alias.userId.username.toLowerCase();
+        const aliasKey = alias.aliasName.toLowerCase();
+        if (!isDangerousKey(aliasKey)) {
+          aliasToUsernameMap[aliasKey] = alias.userId.username.toLowerCase();
+        }
       }
     });
     
@@ -865,13 +875,15 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       'createdAt': 1
     }).lean();
     
-    // Initialize statistics
-    const playerStats = {};
-    const headToHead = {}; // headToHead[playerA][playerB] = { wins: 0, losses: 0, draws: 0, games: 0 }
+    // Initialize statistics using Object.create(null) to prevent prototype pollution
+    const playerStats = Object.create(null);
+    const headToHead = Object.create(null); // headToHead[playerA][playerB] = { wins: 0, losses: 0, draws: 0, games: 0 }
     const sharedGames = []; // Games where at least 2 of the selected players participated
     
-    // Initialize stats for each player
+    // Initialize stats for each player (skip dangerous keys as extra safety)
     targetCanonicalNames.forEach(name => {
+      if (isDangerousKey(name)) return;
+      
       playerStats[name] = {
         name: name,
         displayName: playerNames.find(n => resolvePlayerName(n) === name) || name,
@@ -884,9 +896,9 @@ router.post('/friend-leaderboard', async (req, res, next) => {
         winRate: 0,
         gamesWithFriends: 0
       };
-      headToHead[name] = {};
+      headToHead[name] = Object.create(null);
       targetCanonicalNames.forEach(otherName => {
-        if (name !== otherName) {
+        if (name !== otherName && !isDangerousKey(otherName)) {
           headToHead[name][otherName] = { wins: 0, losses: 0, draws: 0, games: 0 };
         }
       });
