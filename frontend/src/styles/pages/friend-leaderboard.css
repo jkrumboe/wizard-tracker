@@ -639,7 +639,6 @@
   .friend-leaderboard-container .leaderboard-header,
   .friend-leaderboard-container .leaderboard-row {
     grid-template-columns: 40px 1.5fr 55px 55px 60px 70px;
-    padding: 10px 8px 8px 4px;
     font-size: 0.85rem;
   }
   
