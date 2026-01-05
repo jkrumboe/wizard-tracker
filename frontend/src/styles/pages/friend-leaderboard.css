@@ -97,8 +97,7 @@
 
 /* Friends List */
 .friend-leaderboard-container .friends-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  display: flex;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
   height: 50vh;
