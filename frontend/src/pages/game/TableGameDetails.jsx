@@ -8,6 +8,7 @@ import StatsChart from "@/components/game/StatsChart"
 import "@/styles/components/scorecard.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/pages/gameDetails.css"
+import "@/styles/pages/account.css"
 import "@/styles/components/TableGame.css"
 import { ArrowLeftIcon, ShareIcon, TrophyIcon } from "@/components/ui/Icon"
 
@@ -190,21 +191,21 @@ const TableGameDetails = () => {
       </div>
 
       {/* Tabs */}
-      <div className="stats-subtabs">
+      <div className="account-tabs">
         <button 
-          className={`stats-subtab-btn ${activeTab === 'standings' ? 'active' : ''}`}
+          className={`account-tab ${activeTab === 'standings' ? 'active' : ''}`}
           onClick={() => setActiveTab('standings')}
         >
           Standings
         </button>
         <button 
-          className={`stats-subtab-btn ${activeTab === 'chart' ? 'active' : ''}`}
+          className={`account-tab ${activeTab === 'chart' ? 'active' : ''}`}
           onClick={() => setActiveTab('chart')}
         >
           Chart
         </button>
         <button 
-          className={`stats-subtab-btn ${activeTab === 'table' ? 'active' : ''}`}
+          className={`account-tab ${activeTab === 'table' ? 'active' : ''}`}
           onClick={() => setActiveTab('table')}
         >
           Table

@@ -408,21 +408,21 @@ const GameDetails = () => {
 
         {/* Tabs - only show on mobile/portrait */}
         {!isLandscape && windowWidth <= 768 && (
-          <div className="stats-subtabs">
+          <div className="account-tabs">
             <button 
-              className={`stats-subtab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+              className={`account-tab ${activeTab === 'stats' ? 'active' : ''}`}
               onClick={() => setActiveTab('stats')}
             >
               Standings
             </button>
             <button 
-              className={`stats-subtab-btn ${activeTab === 'chart' ? 'active' : ''}`}
+              className={`account-tab ${activeTab === 'chart' ? 'active' : ''}`}
               onClick={() => setActiveTab('chart')}
             >
               Chart
             </button>
             <button 
-              className={`stats-subtab-btn ${activeTab === 'rounds' ? 'active' : ''}`}
+              className={`account-tab ${activeTab === 'rounds' ? 'active' : ''}`}
               onClick={() => setActiveTab('rounds')}
             >
               Rounds

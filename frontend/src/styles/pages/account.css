@@ -9,6 +9,10 @@
   border: 1px solid var(--border);
 }
 
+.game-details-container .account-tabs {
+  margin-bottom: var(--spacing-sm);
+}
+
 .account-tab {
   flex: 1;
   display: flex;
