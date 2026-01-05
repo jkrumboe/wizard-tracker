@@ -156,18 +156,51 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       const rounds = game.totalRounds || game.total_rounds || game.gameState?.maxRounds || 0;
       totalRounds += rounds;
       
-      // Determine if player won - handle winner_ids (new) and winner_id (legacy) as both single value and array
-      const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
-                         game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
-      const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+      // Determine if player won
+      let isWin = false;
       
-      const isWin = winnerIds.includes(currentPlayer.id) || 
-                    winnerIds.includes(playerId) ||
-                    winnerIds.some(wId => {
-                      const winnerName = game.winner_name || game.gameData?.winner_name || 
-                                        (game.players || game.gameState?.players)?.find(p => p.id === wId)?.name;
-                      return winnerName === currentPlayer.name;
-                    });
+      if (isTableGame && game.gameData?.players) {
+        // For table games: calculate winner from scores (most reliable method)
+        const players = game.gameData.players;
+        const gameLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
+        
+        // Calculate all player scores
+        const playerScores = players.map((p, idx) => {
+          const total = p.points?.reduce((sum, point) => sum + (parseFloat(point) || 0), 0) || 0;
+          return { index: idx, name: p.name, total };
+        });
+        
+        if (playerScores.length > 0) {
+          const scores = playerScores.map(p => p.total);
+          const winningScore = gameLowIsBetter 
+            ? Math.min(...scores)
+            : Math.max(...scores);
+          
+          // Check if current player has the winning score
+          const currentPlayerIdx = players.findIndex(p => 
+            p.name === currentPlayer.name || 
+            p.id === currentPlayer.id ||
+            p.username === currentPlayer.username
+          );
+          
+          if (currentPlayerIdx !== -1) {
+            isWin = playerScores[currentPlayerIdx]?.total === winningScore;
+          }
+        }
+      } else {
+        // For Wizard games: use winner_ids (new) and winner_id (legacy)
+        const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
+                           game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
+        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+        
+        isWin = winnerIds.includes(currentPlayer.id) || 
+                      winnerIds.includes(playerId) ||
+                      winnerIds.some(wId => {
+                        const winnerName = game.winner_name || game.gameData?.winner_name || 
+                                          (game.players || game.gameState?.players)?.find(p => p.id === wId)?.name;
+                        return winnerName === currentPlayer.name;
+                      });
+      }
       
       if (isWin) {
         wins++;

@@ -159,9 +159,13 @@ export const useGameStats = (games, user) => {
       let userWon = false;
       
       if (game.gameType === 'table') {
-        // Table game
+        // Table game - always calculate winner from scores (most reliable)
         if (game.gameData?.players && game.gameFinished !== false) {
-          const userPlayer = game.gameData.players.find(p => {
+          const players = game.gameData.players;
+          const lowIsBetter = game.gameData?.lowIsBetter || game.lowIsBetter || false;
+          
+          // Find user's player index
+          const userPlayerIndex = players.findIndex(p => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUserId = p.userId || p.id;
             return searchNamesLower.includes(playerNameLower) || 
@@ -169,33 +173,20 @@ export const useGameStats = (games, user) => {
                    (p.username && searchNamesLower.includes(p.username.toLowerCase()));
           });
           
-          if (userPlayer) {
-            const winnerIds = game.gameData?.winner_ids || game.winner_ids ||
-                             (game.gameData?.winner_id ? [game.gameData.winner_id] : null) ||
-                             (game.winner_id ? [game.winner_id] : null);
+          if (userPlayerIndex !== -1) {
+            // Calculate all player scores
+            const playersWithScores = players.map((player, idx) => {
+              const total = player.points?.reduce((sum, val) => sum + (parseFloat(val) || 0), 0) || 0;
+              return { index: idx, total };
+            });
             
-            if (winnerIds && winnerIds.length > 0) {
-              userWon = winnerIds.includes(userPlayer.id) || 
-                       winnerIds.includes(user.id) || 
-                       winnerIds.includes(user._id) ||
-                       winnerIds.includes(user.$id);
-            } else {
-              // Fallback: calculate winner by score
-              const players = game.gameData.players;
-              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
+            if (playersWithScores.length > 0) {
+              const scores = playersWithScores.map(p => p.total);
+              const winningScore = lowIsBetter 
+                ? Math.min(...scores)
+                : Math.max(...scores);
               
-              const playersWithScores = players.map(player => {
-                const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-                return { ...player, total };
-              });
-              
-              const userWithScore = playersWithScores.find(p => p.name === userPlayer.name);
-              const userScore = userWithScore?.total || 0;
-              
-              userWon = playersWithScores.every(p => {
-                if (p.name === userPlayer.name) return true;
-                return lowIsBetter ? userScore <= p.total : userScore >= p.total;
-              });
+              userWon = playersWithScores[userPlayerIndex]?.total === winningScore;
             }
           }
         }
