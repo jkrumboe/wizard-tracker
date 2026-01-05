@@ -70,7 +70,7 @@
 }
 
 .profile-picture-modal .close-btn {
-  margin-bottom: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
   z-index: 10;
   background: var(--card-bg);
   border: 1px solid var(--border);

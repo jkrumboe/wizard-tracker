@@ -31,12 +31,6 @@ const ProfilePictureModal = ({
           boxShadow: 'none',
         }}
       >
-        <button 
-          className="close-btn" 
-          onClick={onClose}
-        >
-          <XIcon size={20} />
-        </button>
         <img
           src={imageUrl}
           alt={altText}
@@ -49,6 +43,12 @@ const ProfilePictureModal = ({
             objectFit: 'contain',
           }}
         />
+        <button 
+          className="close-btn" 
+          onClick={onClose}
+        >
+          <XIcon size={20} />
+        </button>
       </div>
     </div>
   );

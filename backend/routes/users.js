@@ -394,11 +394,17 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const winnerIds = gameData.winner_ids || 
                        (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
       
-      // Check if user's player ID is in winner_ids
-      const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
+      // Get winner name(s) for fallback matching (for guests without proper IDs)
+      const winnerName = gameData.winner_name || outerGameData?.winner_name;
+      const winnerNamesLower = winnerName ? [winnerName.toLowerCase()] : [];
+      
+      // Check if user's player ID is in winner_ids OR if their name matches winner_name
+      const isWinnerById = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
+      const isWinnerByName = userPlayer.name && winnerNamesLower.includes(userPlayer.name.toLowerCase());
+      const isWinner = isWinnerById || isWinnerByName;
       
       // Debug log for table games
-      console.log(`[Profile] Found table game ${game._id} (${game.gameTypeName}): player="${userPlayer.name}" id=${userPlayer.id}, winnerIds=${JSON.stringify(winnerIds)}, isWinner=${isWinner}`);
+      console.log(`[Profile] Found table game ${game._id} (${game.gameTypeName}): player="${userPlayer.name}" id=${userPlayer.id}, winnerIds=${JSON.stringify(winnerIds)}, winnerName="${winnerName}", isWinner=${isWinner} (byId=${isWinnerById}, byName=${isWinnerByName})`);
       
       if (isWinner) totalWins++;
       

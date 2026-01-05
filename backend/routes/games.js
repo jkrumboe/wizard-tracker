@@ -374,6 +374,7 @@ router.get('/leaderboard', async (req, res, next) => {
       
       // Find winner(s) - highest or lowest score depending on lowIsBetter (supports draws)
       let winnerIds = [];
+      let winnerNameLower = null;
       if (Object.keys(finalScores).length > 0) {
         const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
         const scores = Object.entries(finalScores);
@@ -385,6 +386,12 @@ router.get('/leaderboard', async (req, res, next) => {
           const maxScore = Math.max(...scores.map(s => s[1]));
           winnerIds = scores.filter(s => s[1] === maxScore).map(s => s[0]);
         }
+      }
+      
+      // Fallback: check winner_name for players without proper IDs
+      const winnerName = gameData.winner_name || outerGameData?.winner_name;
+      if (winnerName) {
+        winnerNameLower = winnerName.toLowerCase();
       }
 
       gameData.players.forEach((player, index) => {
@@ -433,7 +440,10 @@ router.get('/leaderboard', async (req, res, next) => {
         
         stats.totalGames++;
         
-        const isWinner = winnerIds.includes(playerId);
+        // Check winner by ID or by name (fallback for guests without proper IDs)
+        const isWinnerById = winnerIds.includes(playerId);
+        const isWinnerByName = winnerNameLower && playerName.toLowerCase() === winnerNameLower;
+        const isWinner = isWinnerById || isWinnerByName;
         
         if (isWinner) {
           stats.wins++;
@@ -1015,8 +1025,9 @@ router.post('/friend-leaderboard', async (req, res, next) => {
         finalScores[playerId] = totalScore;
       });
       
-      // Find winner(s)
+      // Find winner(s) - first try to calculate from scores
       let winnerIds = [];
+      let winnerNameLower = null;
       const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
       if (Object.keys(finalScores).length > 0) {
         const scores = Object.entries(finalScores);
@@ -1030,7 +1041,20 @@ router.post('/friend-leaderboard', async (req, res, next) => {
         }
       }
       
-      const participantWinners = participantsInGame.filter(p => winnerIds.includes(p.id));
+      // Fallback: check winner_name for players without proper IDs
+      const winnerName = gameData.winner_name || outerGameData?.winner_name;
+      if (winnerName) {
+        winnerNameLower = winnerName.toLowerCase();
+      }
+      
+      // Check winners by ID or by name
+      const isWinnerByIdOrName = (participant) => {
+        if (winnerIds.includes(participant.id)) return true;
+        if (winnerNameLower && participant.originalName?.toLowerCase() === winnerNameLower) return true;
+        return false;
+      };
+      
+      const participantWinners = participantsInGame.filter(p => isWinnerByIdOrName(p));
       const isDraw = participantWinners.length > 1;
       
       // Update stats for each participant
@@ -1041,7 +1065,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
         stats.gamesWithFriends++;
         stats.totalGames++;
         
-        const isWinner = winnerIds.includes(participant.id);
+        const isWinner = isWinnerByIdOrName(participant);
         
         if (isDraw && isWinner) {
           stats.draws++;
@@ -1064,8 +1088,8 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           
           h2h.games++;
           
-          const iWon = winnerIds.includes(participant.id);
-          const opponentWon = winnerIds.includes(opponent.id);
+          const iWon = isWinnerByIdOrName(participant);
+          const opponentWon = isWinnerByIdOrName(opponent);
           
           if (iWon && opponentWon) {
             // Both tied for 1st - it's a draw between them
@@ -1090,7 +1114,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           name: p.originalName,
           canonical: p.canonical,
           score: finalScores[p.id] || 0,
-          won: winnerIds.includes(p.id)
+          won: isWinnerByIdOrName(p)
         }))
       });
     });
