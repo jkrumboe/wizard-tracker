@@ -402,6 +402,13 @@
     margin-bottom: 0;
   }
 
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm) !important;
+  }
+
   .round-card {
     display: flex;
     flex-direction: column;
@@ -471,6 +478,8 @@
   display: flex;
   justify-content: space-between;
   gap: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+
 }
 
 .stats-subtab-btn {
@@ -488,6 +497,7 @@
 
 .stats-subtab-btn.active {
   background-color: var(--primary);
+  border-color: var(--primary);
   color: var(--text);
 }
 

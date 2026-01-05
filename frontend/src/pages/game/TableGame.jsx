@@ -159,6 +159,14 @@ const TableGame = () => {
           
           if (savedGame) {
             const gameData = savedGame.gameData || savedGame;
+            const isFinished = savedGame.gameFinished || gameData.gameFinished || false;
+            const isCloud = savedGame.is_cloud || false;
+            
+            // Redirect to TableGameDetails for finished or cloud games
+            if (isFinished || isCloud) {
+              navigate(`/table-game/${id}`, { replace: true });
+              return;
+            }
             
             // Ensure players have proper structure with points arrays and IDs
             const loadedPlayers = (gameData.players || []).map(player => ({
@@ -171,12 +179,8 @@ const TableGame = () => {
             setPlayers(loadedPlayers);
             setRows(gameData.rows || 10);
             setShowTemplateSelector(false);
-            setIsCloudGame(savedGame.is_cloud || false);
-            // Cloud games open in standings view, local games in game view
-            setActiveTab(savedGame.is_cloud ? 'stats' : 'game');
-            if (savedGame.is_cloud) {
-              setStatsSubTab('standings');
-            }
+            setIsCloudGame(false);
+            setActiveTab('game');
             setCurrentGameName(savedGame.name || gameData.gameName || 'Table Game');
             setCurrentGameId(savedGame.id || savedGame.cloudId || id);
             
@@ -204,9 +208,8 @@ const TableGame = () => {
             setLowIsBetter(gameData.lowIsBetter || false);
             console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
             
-            setGameFinished(savedGame.gameFinished || gameData.gameFinished || false);
-            const source = savedGame.is_cloud ? 'cloud' : 'local';
-            console.debug(`Loaded ${source} game: "${savedGame.name || gameData.gameName}" (ID: ${id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}, finished: ${savedGame.gameFinished}`);
+            setGameFinished(false);
+            console.debug(`Loaded local game: "${savedGame.name || gameData.gameName}" (ID: ${id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}`);
           } else {
             console.error(`Game with ID ${id} not found in storage or cloud`);
             setLoadError('Game not found');
@@ -723,6 +726,9 @@ const TableGame = () => {
           console.warn('Auto-upload failed (game saved locally):', uploadError.message);
         }
       }
+      
+      // Navigate to the details page after finishing
+      navigate(`/table-game/${savedGameId}`, { replace: true });
     } catch (error) {
       console.error("Error saving finished game:", error);
       alert("Failed to save game. Please try again.");
@@ -973,12 +979,6 @@ const TableGame = () => {
           {targetNumber && hasReachedTarget() && !gameFinished && (
             <button className="finish-btn" onClick={handleFinishGame}>
               Finish Game
-            </button>
-          )}
-          
-          {gameFinished && !isCloudGame && (
-            <button className="finish-btn" onClick={handleEditGame}>
-              Edit Game
             </button>
           )}
 

@@ -10,7 +10,7 @@ import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRe
 
 // Eagerly import critical pages that should work offline
 import Account from "@/pages/Account"
-import { NewGame, GameDetails, GameInProgress, TableGame } from "@/pages/game"
+import { NewGame, GameDetails, GameInProgress, TableGame, TableGameDetails } from "@/pages/game"
 
 // Admin pages
 import AdminLayout from "@/pages/admin/AdminLayout"
@@ -264,6 +264,7 @@ function App() {
                     <Route path="/new-game" element={<NewGame />} />
                     <Route path="/table" element={<TableGame />} />
                     <Route path="/table/:id" element={<TableGame />} />
+                    <Route path="/table-game/:id" element={<TableGameDetails />} />
                     <Route path="/game/:id" element={<GameDetails />} />
                     <Route path="/game/current" element={<GameInProgress />} />
                     <Route path="/login" element= {

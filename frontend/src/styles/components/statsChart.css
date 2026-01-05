@@ -90,7 +90,6 @@
 .chart-wrapper {
   background-color: var(--card-bg);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xs);
   height: 300px;
   position: relative;
 }

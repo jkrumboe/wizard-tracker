@@ -20,10 +20,11 @@ import "@/styles/utils/performanceMetrics.css"
 import "@/styles/components/scorecard.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/components/chartToggle.css"
+import "@/styles/components/TableGame.css"
 import "@/styles/pages/account.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon, BarChartIcon, ChartLineIcon, ShareIcon, UsersIcon, TableIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, ShareIcon } from "@/components/ui/Icon"
 
 const GameDetails = () => {
   // Helper function to compare IDs regardless of type (string vs number)
@@ -37,7 +38,6 @@ const GameDetails = () => {
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('stats')
-  const [showChart, setShowChart] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [isLandscape] = useState(() => {
     if (typeof window !== 'undefined' && globalThis.screen && globalThis.screen.orientation) {
@@ -390,20 +390,11 @@ const GameDetails = () => {
           >
             <ArrowLeftIcon className="back-icon" />
           </button>
-          <div className="toggle-section">
-            {!isLandscape  && (
-              <button
-                className="game-control-btn"
-                id="game-toggle-details"
-                onClick={() => setActiveTab(activeTab === 'rounds' ? 'stats' : 'rounds')}
-                aria-label={`Switch to ${activeTab === 'rounds' ? 'statistics' : 'rounds'} view`}
-                aria-pressed={activeTab === 'stats'}
-              >
-                {activeTab === 'rounds' ? <BarChartIcon size={24} /> : <TableIcon size={24} />}
-              </button>
-            )}
+          
+          <div className="game-title-section">
+            <div className="game-name">Wizard</div>
+            <div className="game-date">{formattedDate}</div>
           </div>
-          <div className="game-date">{formattedDate}</div>
           
           {/* Container for mode badge and share button */}
           <div className="badge-controls-container">
@@ -413,44 +404,40 @@ const GameDetails = () => {
               Share
             </button>
           </div>
-          
-          {/* <div className="game-date">Duration: {duration}</div> */}
         </div>
+
+        {/* Tabs - only show on mobile/portrait */}
+        {!isLandscape && windowWidth <= 768 && (
+          <div className="stats-subtabs">
+            <button 
+              className={`stats-subtab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+              onClick={() => setActiveTab('stats')}
+            >
+              Standings
+            </button>
+            <button 
+              className={`stats-subtab-btn ${activeTab === 'chart' ? 'active' : ''}`}
+              onClick={() => setActiveTab('chart')}
+            >
+              Chart
+            </button>
+            <button 
+              className={`stats-subtab-btn ${activeTab === 'rounds' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rounds')}
+            >
+              Rounds
+            </button>
+          </div>
+        )}
 
         <div className="game-summary">
           {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">
               <div className="results-header">
                 <h2>Final Results</h2>
-                <button 
-                  className={`chart-toggle-btn ${showChart ? 'active' : ''}`} 
-                  onClick={() => setShowChart(!showChart)}
-                  aria-label={showChart ? "Show table view" : "Show chart view"}
-                >
-                  {showChart ? "Players" : "Chart"}
-                  {showChart ? <UsersIcon size={18} /> : <ChartLineIcon size={18} />}
-                </button>
               </div>
 
-              {showChart ? (
-                <div className="chart-view-container">
-                  {game.round_data && game.round_data.length > 0 ? (
-                    (() => {
-                      const chartData = prepareChartData();
-                      if (!chartData.playersData || chartData.playersData.length === 0) {
-                        return <div className="no-chart-data">Error: Missing player data for chart visualization</div>;
-                      }
-                      if (!chartData.roundData || chartData.roundData.length === 0) {
-                        return <div className="no-chart-data">Error: Missing round data for chart visualization</div>;
-                      }
-                      return <StatsChart playersData={chartData.playersData} roundData={chartData.roundData} />;
-                    })()
-                  ) : (
-                    <div className="no-chart-data">No round data available for chart visualization</div>
-                  )}
-                </div>
-              ) : (
-                <div className="results-table">
+              <div className="results-table">
                   {sortedPlayers.map((player) => (
                     <div key={player.id} className="results-row">
                       <div className="top-result-row">
@@ -501,7 +488,28 @@ const GameDetails = () => {
                   </div>
                 ))}
               </div>
-              )}
+            </div>
+          )}
+
+          {/* Chart Tab */}
+          {(isLandscape || activeTab === 'chart') && (
+            <div className="chart-section">
+              <div className="chart-view-container">
+                {game.round_data && game.round_data.length > 0 ? (
+                  (() => {
+                    const chartData = prepareChartData();
+                    if (!chartData.playersData || chartData.playersData.length === 0) {
+                      return <div className="no-chart-data">Error: Missing player data for chart visualization</div>;
+                    }
+                    if (!chartData.roundData || chartData.roundData.length === 0) {
+                      return <div className="no-chart-data">Error: Missing round data for chart visualization</div>;
+                    }
+                    return <StatsChart playersData={chartData.playersData} roundData={chartData.roundData} />;
+                  })()
+                ) : (
+                  <div className="no-chart-data">No round data available for chart visualization</div>
+                )}
+              </div>
             </div>
           )}
 
