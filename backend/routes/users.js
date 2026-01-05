@@ -1494,7 +1494,8 @@ router.get('/admin/all', auth, async (req, res, next) => {
 
     res.json({
       users: users.map(user => ({
-        _id: user._id.toString(),
+        id: user._id.toString(),
+        _id: user._id.toString(), // Keep for backwards compatibility
         username: user.username,
         email: user.email || null,
         role: user.role || 'user',

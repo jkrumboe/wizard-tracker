@@ -8,39 +8,6 @@ class UserService {
     this.skipBackend = SKIP_BACKEND;
   }
 
-  async getAllUsers() {
-    if (this.skipBackend) {
-      throw new Error('Backend server not available');
-    }
-    
-    try {
-      const token = localStorage.getItem('auth_token');
-      const endpoint = `${this.baseURL}/api/users/admin/all`;
-      
-      console.log('UserService.getAllUsers() - Fetching from:', endpoint);
-      
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to fetch users' }));
-        throw new Error(error.error || 'Failed to fetch users');
-      }
-
-      const result = await response.json();
-      console.log('UserService.getAllUsers() - Response:', result);
-      return result;
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-  }
-
   async updateUsername(userId, newUsername) {
     if (this.skipBackend) {
       throw new Error('Backend server not available');
