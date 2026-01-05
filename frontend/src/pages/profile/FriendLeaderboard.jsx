@@ -109,8 +109,8 @@ const FriendLeaderboard = () => {
   }
 
   const fetchLeaderboard = async () => {
-    if (selectedPlayers.length < 2) {
-      setError('Please select at least 2 players')
+    if (selectedPlayers.length < 1) {
+      setError('Please select at least 1 friend')
       return
     }
     
@@ -119,7 +119,11 @@ const FriendLeaderboard = () => {
     setShowPlayerSelect(false)
     
     try {
+      // Always include the logged-in user in the comparison
       const playerNames = selectedPlayers.map(p => p.username)
+      if (user?.username && !playerNames.includes(user.username)) {
+        playerNames.unshift(user.username)
+      }
       const data = await getFriendLeaderboard(playerNames)
       setLeaderboardData(data)
     } catch (err) {
@@ -158,16 +162,7 @@ const FriendLeaderboard = () => {
       {showPlayerSelect ? (
         <div className="player-selection-section">
           <div className="selection-header">
-            <h2>Select Players ({selectedPlayers.length}/10)</h2>
-            {isLoggedIn && user?.username && (
-              <button 
-                className="add-me-btn"
-                onClick={addCurrentUser}
-                disabled={selectedPlayers.some(p => p.isCurrentUser)}
-              >
-                + Add Me
-              </button>
-            )}
+            <h2>Select Friends ({selectedPlayers.length}/10)</h2>
           </div>
           
           {/* Selected players */}
@@ -239,9 +234,9 @@ const FriendLeaderboard = () => {
           <button 
             className="compare-btn"
             onClick={fetchLeaderboard}
-            disabled={selectedPlayers.length < 2}
+            disabled={selectedPlayers.length < 1}
           >
-            Compare Players ({selectedPlayers.length} selected)
+            Compare
           </button>
         </div>
       ) : (
@@ -335,8 +330,7 @@ const FriendLeaderboard = () => {
                               const winClass = h2h.wins > h2h.losses ? 'positive' : h2h.wins < h2h.losses ? 'negative' : 'neutral'
                               return (
                                 <td key={opponent.name} className={`h2h-record ${winClass}`}>
-                                  <span className='wins'>{h2h.wins}</span>-<span className="losses">{h2h.losses}</span>
-                                  -{h2h.draws > 0 && <span className="draws">{h2h.draws}</span>}
+                                  <span className='wins'>{h2h.wins}</span> - <span className="losses">{h2h.losses}</span>
                                 </td>
                               )
                             })}
@@ -345,7 +339,7 @@ const FriendLeaderboard = () => {
                       </tbody>
                     </table>
                   </div>
-                  <p className="h2h-legend">Win-Loss record (W-L or W-L-D with draws)</p>
+                  <p className="h2h-legend">Win-Loss record </p>
                 </div>
               )}
               

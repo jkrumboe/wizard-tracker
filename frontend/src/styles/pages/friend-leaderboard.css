@@ -43,27 +43,6 @@
   color: var(--text-primary);
 }
 
-.add-me-btn {
-  background: var(--primary);
-  color: var(--text);
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.add-me-btn:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
-
-.add-me-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Selected Players Chips */
 .friend-leaderboard-container .selected-players {
   display: flex;
@@ -461,12 +440,10 @@
 
 .h2h-record .wins{
   color: var(--success, #4caf50);
-  margin-right: 2px;
 }
 
 .h2h-record .losses {
   color: var(--error, #e74c3c);
-  margin: 0 1px;
 }
 
 .h2h-record .draws {
@@ -475,7 +452,7 @@
 }
 
 .h2h-record.positive {
-  color: var(--success, #4caf50);
+  color: var(--text);
   background: rgba(76, 175, 80, 0.1);
 }
 
