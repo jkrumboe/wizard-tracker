@@ -106,6 +106,10 @@
   padding: var(--spacing-sm) 0;
 }
 
+.friend-item {
+  max-height: 44px;
+}
+
 .friend-item.selected {
   border-color: var(--primary);
   background: rgba(var(--primary-rgb, 74, 144, 226), 0.1);
