@@ -273,14 +273,12 @@ const UserProfile = () => {
           className={`account-tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          <TrophyIcon size={20} />
           Overview
         </button>
         <button 
           className={`account-tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
         >
-          <BarChartIcon size={20} />
           Stats
         </button>
       </div>
