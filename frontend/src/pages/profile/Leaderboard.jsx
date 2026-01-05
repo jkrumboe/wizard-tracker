@@ -236,22 +236,6 @@ const Leaderboard = () => {
       <Link 
         to="/friend-leaderboard" 
         className="friend-leaderboard-link"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          padding: '10px 16px',
-          marginBottom: '1rem',
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border)',
-          borderRadius: '8px',
-          color: 'var(--text-primary)',
-          textDecoration: 'none',
-          fontSize: '0.95rem',
-          fontWeight: '500',
-          transition: 'all 0.2s'
-        }}
       >
         <UsersIcon size={18} />
         Compare with Friends

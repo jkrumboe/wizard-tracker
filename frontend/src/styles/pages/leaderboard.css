@@ -29,6 +29,23 @@
   cursor: pointer;
 }
 
+.friend-leaderboard-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-bottom: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
 /* Friend leaderboard link */
 .friend-leaderboard-link:hover {
   border-color: var(--primary) !important;
