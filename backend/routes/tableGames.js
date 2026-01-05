@@ -105,9 +105,11 @@ router.get('/', auth, async (req, res, next) => {
 });
 
 // GET /api/table-games/:id - Get specific table game by ID
+// Users can view games they own OR games they participated in
 router.get('/:id', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
+    const username = req.user.username;
     const gameId = req.params.id;
 
     if (!userId) {
@@ -119,10 +121,40 @@ router.get('/:id', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid game ID format' });
     }
 
-    const tableGame = await TableGame.findOne({ _id: { $eq: gameId }, userId });
+    // First try to find game by ID (without userId filter to allow viewing participated games)
+    const tableGame = await TableGame.findOne({ _id: { $eq: gameId } });
 
     if (!tableGame) {
       return res.status(404).json({ error: 'Table game not found' });
+    }
+
+    // Check if user has access: either owner or participant
+    const isOwner = tableGame.userId && tableGame.userId.toString() === userId.toString();
+    
+    // Get user's aliases to check for participation under different names
+    const PlayerAlias = require('../models/PlayerAlias');
+    const userAliases = await PlayerAlias.find({ userId: { $eq: userId } }).lean();
+    const aliasNames = userAliases.map(a => a.aliasName.toLowerCase());
+    
+    // Build set of all names to check (username + aliases)
+    const usernameLower = username?.toLowerCase();
+    const namesToCheck = new Set([usernameLower, ...aliasNames].filter(Boolean));
+    
+    // Check if user is a participant (by username, alias, or userId in players array)
+    const gameData = tableGame.gameData?.gameData || tableGame.gameData;
+    const players = gameData?.players || [];
+    
+    const isParticipant = players.some(player => {
+      if (!player) return false;
+      // Check by player ID matching user ID
+      if (player.id && player.id === userId.toString()) return true;
+      // Check by player name matching username or any alias (case-insensitive)
+      if (player.name && namesToCheck.has(player.name.toLowerCase())) return true;
+      return false;
+    });
+
+    if (!isOwner && !isParticipant) {
+      return res.status(403).json({ error: 'You do not have permission to view this game' });
     }
 
     res.json({ game: tableGame });

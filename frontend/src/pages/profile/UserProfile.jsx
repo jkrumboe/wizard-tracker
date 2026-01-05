@@ -205,7 +205,7 @@ const UserProfile = () => {
   return (
     <div className="settings-container">
       
-      <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '8px' }}>
+      <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '16px' }}>
         <button
                 onClick={() => navigate(-1)}
                 style={{
@@ -229,8 +229,25 @@ const UserProfile = () => {
                 <ArrowLeftIcon size={24} />
               </button>
         <div className="settings-option">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
+              
+              <div>
+                <p style={{ margin: 0, fontWeight: 'bold' }}>{profileUser.username}</p>
+                {profileUser.createdAt && profileUser.isRegisteredUser !== false ? (
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                    Member since {new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                    Guest Player
+                  </p>
+                )}
+              </div>
               <img
                 src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
                 alt={`${profileUser.username}'s avatar`}
@@ -246,16 +263,6 @@ const UserProfile = () => {
                   e.target.src = defaultAvatar
                 }}
               />
-              <div>
-                <p style={{ margin: 0, fontWeight: 'bold' }}>{profileUser.username}</p>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                  Member since {new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                </p>
-              </div>
             </div>
           </div>
         </div>

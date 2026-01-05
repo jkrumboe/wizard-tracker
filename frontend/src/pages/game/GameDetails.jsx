@@ -128,10 +128,6 @@ const GameDetails = () => {
 
         setPlayerDetails(playerMap)
         
-        // Debug logging to see what's in playerMap
-        // console.debug("Player map populated:", playerMap);
-        // console.debug("Game final_scores keys:", Object.keys(gameData.final_scores || {}));
-        
         setLoading(false)
       } catch (err) {
         console.error("Error fetching game details:", err)
@@ -463,8 +459,8 @@ const GameDetails = () => {
                         </div>
                         <div className="player-col">
                           <div className="player-info">
-                            {playerDetails[String(player.id)]?.userId ? (
-                              <Link to={`/user/${playerDetails[String(player.id)].userId}`} className="player-link">
+                            {player.name ? (
+                              <Link to={`/user/${player.name}`} className="player-link">
                                 {player.name}
                               </Link>
                             ) : (
@@ -517,12 +513,11 @@ const GameDetails = () => {
                     <tr>
                       <th className="round-header sticky-cell"/>
                       {sortedPlayers.map(player => {
-                        const playerDetail = playerDetails[String(player.id)];
                         return (
                           <th key={player.id} className="player-header">
                             <div className="player-header-name">
-                              {playerDetail?.userId ? (
-                                <Link to={`/user/${playerDetail.userId}`} className="player-link">
+                              {player.name ? (
+                                <Link to={`/user/${player.name}`} className="player-link">
                                   {player.name}
                                 </Link>
                               ) : (

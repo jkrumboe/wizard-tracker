@@ -372,8 +372,9 @@
 
 /* Theme Settings */
 .settings-option {
-  padding: 0 ;
-  gap: var(--spacing-md);
+  padding: 0;
+  width: 100%;
+  gap: var(--spacing-lg);
 }
 
 .settings-option:has(.checkbox-label) p {
