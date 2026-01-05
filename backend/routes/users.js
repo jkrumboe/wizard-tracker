@@ -391,20 +391,56 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       // Skip if user is not a player in this game
       if (!userPlayer) return;
       
-      const winnerIds = gameData.winner_ids || 
+      // Get the player index for matching with calculated winner
+      const userPlayerIndex = gameData.players.findIndex(p => p === userPlayer);
+      
+      // Calculate final scores from points arrays (like leaderboard does)
+      const finalScores = {};
+      gameData.players.forEach((player, index) => {
+        const playerId = `player_${index}`;
+        const points = player.points || [];
+        const totalScore = points.reduce((sum, p) => {
+          const parsed = parseFloat(p);
+          return sum + (isNaN(parsed) ? 0 : parsed);
+        }, 0);
+        finalScores[playerId] = totalScore;
+      });
+      
+      // Calculate winner(s) dynamically based on scores
+      let calculatedWinnerIds = [];
+      const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
+      
+      if (Object.keys(finalScores).length > 0) {
+        const scores = Object.entries(finalScores);
+        if (lowIsBetter) {
+          const minScore = Math.min(...scores.map(s => s[1]));
+          calculatedWinnerIds = scores.filter(s => s[1] === minScore).map(s => s[0]);
+        } else {
+          const maxScore = Math.max(...scores.map(s => s[1]));
+          calculatedWinnerIds = scores.filter(s => s[1] === maxScore).map(s => s[0]);
+        }
+      }
+      
+      // Use stored winner_ids as fallback
+      const storedWinnerIds = gameData.winner_ids || 
                        (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
       
       // Get winner name(s) for fallback matching (for guests without proper IDs)
       const winnerName = gameData.winner_name || outerGameData?.winner_name;
       const winnerNamesLower = winnerName ? [winnerName.toLowerCase()] : [];
       
-      // Check if user's player ID is in winner_ids OR if their name matches winner_name
-      const isWinnerById = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
+      // Check winner using calculated winners (primary), then stored winner_ids, then winner_name
+      const userPlayerId = `player_${userPlayerIndex}`;
+      const isWinnerByCalculation = calculatedWinnerIds.includes(userPlayerId);
+      const isWinnerByStoredId = storedWinnerIds.includes(userPlayer.id) || storedWinnerIds.some(id => String(id) === String(userPlayer.id));
       const isWinnerByName = userPlayer.name && winnerNamesLower.includes(userPlayer.name.toLowerCase());
-      const isWinner = isWinnerById || isWinnerByName;
+      const isWinner = isWinnerByCalculation || isWinnerByStoredId || isWinnerByName;
+      
+      // Use calculated winner IDs for the response
+      const winnerIds = calculatedWinnerIds.length > 0 ? calculatedWinnerIds : storedWinnerIds;
       
       // Debug log for table games
-      console.log(`[Profile] Found table game ${game._id} (${game.gameTypeName}): player="${userPlayer.name}" id=${userPlayer.id}, winnerIds=${JSON.stringify(winnerIds)}, winnerName="${winnerName}", isWinner=${isWinner} (byId=${isWinnerById}, byName=${isWinnerByName})`);
+      console.log(`[Profile] Found table game ${game._id} (${game.gameTypeName}): player="${userPlayer.name}" playerIndex=${userPlayerIndex}, calculatedWinners=${JSON.stringify(calculatedWinnerIds)}, storedWinnerIds=${JSON.stringify(storedWinnerIds)}, winnerName="${winnerName}", isWinner=${isWinner} (byCalc=${isWinnerByCalculation}, byStoredId=${isWinnerByStoredId}, byName=${isWinnerByName})`);
       
       if (isWinner) totalWins++;
       

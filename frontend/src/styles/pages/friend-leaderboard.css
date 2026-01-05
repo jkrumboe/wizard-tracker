@@ -4,8 +4,8 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding-bottom: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  margin-top: var(--spacing-md);
 }
 
 .friend-leaderboard-container h1 {

@@ -186,17 +186,20 @@ const FriendsModal = ({ isOpen, onClose }) => {
       if (!usersCache) {
         loadAllUsers();
       } else {
-        // Use cached users but filter only current user and existing friends
+        // Use cached users but filter out current user, existing friends, and users with received requests
         // Keep users with pending sent requests (they'll show a waiting icon)
         const friendIds = friends.map(f => f.id);
+        const receivedRequestSenderIds = receivedRequests.map(r => r.sender.id);
         const filteredUsers = usersCache.filter(u => 
-          u.id !== user?.id && !friendIds.includes(u.id)
+          u.id !== user?.id && 
+          !friendIds.includes(u.id) &&
+          !receivedRequestSenderIds.includes(u.id)
         );
         setAllUsers(filteredUsers);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, activeTab, user, usersCache, friends, sentRequests]);
+  }, [isOpen, activeTab, user, usersCache, friends, sentRequests, receivedRequests]);
 
   const loadAllUsers = async () => {
     setLoading(true);
@@ -216,13 +219,16 @@ const FriendsModal = ({ isOpen, onClose }) => {
       // Cache all users
       setUsersCache(users);
       
-      // Filter out current user and already added friends
+      // Filter out current user, existing friends, and users who sent us requests
       // Keep users with pending sent requests (they'll show a waiting icon)
       const friendIds = friends.map(f => f.id);
+      const receivedRequestSenderIds = receivedRequests.map(r => r.sender.id);
       const filteredUsers = users.filter(u => 
-        u.id !== user?.id && !friendIds.includes(u.id)
+        u.id !== user?.id && 
+        !friendIds.includes(u.id) &&
+        !receivedRequestSenderIds.includes(u.id)
       );
-      console.log('✅ Filtered users (excluding self and friends):', filteredUsers);
+      console.log('✅ Filtered users (excluding self, friends, and received requests):', filteredUsers);
       setAllUsers(filteredUsers);
     } catch (err) {
       console.error('❌ Error loading users:', err);
@@ -594,9 +600,17 @@ const FriendsModal = ({ isOpen, onClose }) => {
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="empty-message">
-                  {allUsers.length === 0
-                    ? 'No users available. Make sure you are online and logged in.'
-                    : 'No users match your search'
+                  {searchQuery 
+                    ? 'No users match your search'
+                    : !navigator.onLine
+                      ? 'You appear to be offline. Connect to the internet to find users.'
+                      : !user
+                        ? 'Please log in to add friends.'
+                        : usersCache && usersCache.length <= 1
+                          ? 'No other users registered yet. Invite your friends to join!'
+                          : allUsers.length === 0 && friends.length > 0
+                            ? "You're friends with everyone! No more users to add."
+                            : 'No users available to add as friends.'
                   }
                 </div>
               ) : (
