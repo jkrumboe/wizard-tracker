@@ -945,18 +945,20 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           
           h2h.games++;
           
+          const iWon = winnerIds.includes(participant.id);
           const opponentWon = winnerIds.includes(opponent.id);
           
-          if (isDraw && isWinner && opponentWon) {
+          if (iWon && opponentWon) {
+            // Both tied for 1st - it's a draw between them
             h2h.draws++;
-          } else if (isWinner && !opponentWon) {
+          } else if (iWon && !opponentWon) {
+            // I won (even if tied with others), opponent didn't
             h2h.wins++;
-          } else if (!isWinner && opponentWon) {
+          } else if (!iWon && opponentWon) {
+            // Opponent won, I didn't
             h2h.losses++;
-          } else if (!isWinner && !opponentWon) {
-            // Neither won - could be a draw with a non-participant or both lost
-            h2h.draws++;
           }
+          // If neither won (3rd player won), don't count as win/loss/draw
         });
       });
       
@@ -1015,8 +1017,8 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       
       // Find winner(s)
       let winnerIds = [];
+      const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
       if (Object.keys(finalScores).length > 0) {
-        const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
         const scores = Object.entries(finalScores);
         
         if (lowIsBetter) {
@@ -1062,17 +1064,20 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           
           h2h.games++;
           
+          const iWon = winnerIds.includes(participant.id);
           const opponentWon = winnerIds.includes(opponent.id);
           
-          if (isDraw && isWinner && opponentWon) {
+          if (iWon && opponentWon) {
+            // Both tied for 1st - it's a draw between them
             h2h.draws++;
-          } else if (isWinner && !opponentWon) {
+          } else if (iWon && !opponentWon) {
+            // I won (even if tied with others), opponent didn't
             h2h.wins++;
-          } else if (!isWinner && opponentWon) {
+          } else if (!iWon && opponentWon) {
+            // Opponent won, I didn't
             h2h.losses++;
-          } else if (!isWinner && !opponentWon) {
-            h2h.draws++;
           }
+          // If neither won (3rd player won), don't count as win/loss/draw
         });
       });
       
