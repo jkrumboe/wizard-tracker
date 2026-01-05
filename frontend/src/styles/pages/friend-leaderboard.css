@@ -310,7 +310,8 @@
 }
 
 .friend-leaderboard-container .player-col {
-  font-weight: 500;
+  width: 94px;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -203,13 +203,17 @@
   font-size: 1.5rem;
 }
 
-.player-col {
+
+.leaderboard-container .player-col {
   display: flex;
   align-items: center;
   gap: 12px;
   font-weight: 500;
   min-width: 0;
   overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-col.clickable {
