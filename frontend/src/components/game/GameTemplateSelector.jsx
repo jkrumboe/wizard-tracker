@@ -26,19 +26,42 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsTemplate, setDetailsTemplate] = useState(null);
 
-  useEffect(() => {
-    loadTemplates();
-    loadSystemTemplates();
-    // Automatically download templates from cloud on mount
-    handleDownloadTemplates();
-  }, [handleDownloadTemplates]);
-
   const loadTemplates = () => {
     const templatesList = LocalTableGameTemplate.getTemplatesList();
     // Filter out templates that have been approved as system templates
     const filteredTemplates = templatesList.filter(template => !template.approvedAsSystemTemplate);
     setTemplates(filteredTemplates);
   };
+
+  const loadSystemTemplates = async () => {
+    try {
+      const systemTemplatesList = await gameTemplateService.getSystemTemplates();
+      console.log('Loaded system templates:', systemTemplatesList);
+      setSystemTemplates(systemTemplatesList);
+    } catch (error) {
+      console.error('Error loading system templates:', error);
+      // If offline or error (including not logged in), continue with local templates only
+      setSystemTemplates([]);
+    }
+  };
+
+  const handleDownloadTemplates = async () => {
+    try {
+      await LocalTableGameTemplate.downloadFromCloud();
+      loadTemplates();
+      loadSystemTemplates();
+    } catch (error) {
+      console.error('Error downloading templates:', error);
+      // Fail silently - user can still use local templates
+    }
+  };
+
+  useEffect(() => {
+    loadTemplates();
+    loadSystemTemplates();
+    // Automatically download templates from cloud on mount
+    handleDownloadTemplates();
+  }, []);
 
   // Check if a local template is a variant of a system template
   const isLocalVariant = (localTemplate, systemTemplates) => {
@@ -128,18 +151,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
 
     // Reload templates to reflect changes
     loadTemplates();
-  };
-
-  const loadSystemTemplates = async () => {
-    try {
-      const systemTemplatesList = await gameTemplateService.getSystemTemplates();
-      console.log('Loaded system templates:', systemTemplatesList);
-      setSystemTemplates(systemTemplatesList);
-    } catch (error) {
-      console.error('Error loading system templates:', error);
-      // If offline or error (including not logged in), continue with local templates only
-      setSystemTemplates([]);
-    }
   };
 
   const getSavedGamesCount = (templateName) => {
@@ -298,17 +309,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     e.stopPropagation();
     setDetailsTemplate(template);
     setShowDetailsModal(true);
-  };
-
-  const handleDownloadTemplates = async () => {
-    try {
-      await LocalTableGameTemplate.downloadFromCloud();
-      loadTemplates();
-      loadSystemTemplates();
-    } catch (error) {
-      console.error('Error downloading templates:', error);
-      // Fail silently - user can still use local templates
-    }
   };
 
   const getTemplateBadge = (template) => {

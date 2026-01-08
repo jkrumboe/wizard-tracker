@@ -48,28 +48,6 @@ const Leaderboard = () => {
     }
   }
 
-  useEffect(() => {
-    fetchLeaderboard()
-    
-    // Set up auto-refresh every 30 seconds
-    const refreshInterval = setInterval(() => {
-      fetchLeaderboard(true) // true = silent refresh
-    }, 30000)
-    
-    // Listen for custom game upload events
-    const handleGameUploaded = () => {
-      console.log('🎮 Game uploaded event received, refreshing leaderboard...')
-      fetchLeaderboard(true)
-    }
-    
-    window.addEventListener('gameUploaded', handleGameUploaded)
-    
-    return () => {
-      clearInterval(refreshInterval)
-      window.removeEventListener('gameUploaded', handleGameUploaded)
-    }
-  }, [selectedGameType, fetchLeaderboard]);
-
   const fetchLeaderboard = async (silent = false) => {
     if (!silent) {
       setLoading(true)
@@ -93,6 +71,28 @@ const Leaderboard = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchLeaderboard()
+    
+    // Set up auto-refresh every 30 seconds
+    const refreshInterval = setInterval(() => {
+      fetchLeaderboard(true) // true = silent refresh
+    }, 30000)
+    
+    // Listen for custom game upload events
+    const handleGameUploaded = () => {
+      console.log('🎮 Game uploaded event received, refreshing leaderboard...')
+      fetchLeaderboard(true)
+    }
+    
+    window.addEventListener('gameUploaded', handleGameUploaded)
+    
+    return () => {
+      clearInterval(refreshInterval)
+      window.removeEventListener('gameUploaded', handleGameUploaded)
+    }
+  }, [selectedGameType]);
 
   const handleSort = (field) => {
     if (sortBy === field) {

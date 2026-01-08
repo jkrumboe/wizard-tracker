@@ -13,6 +13,7 @@ Tests run automatically on every push to `main` or `develop` branches and on pul
 **Workflow File:** `.github/workflows/test.yml`
 
 **Jobs:**
+
 - **test-backend**: Runs backend tests with MongoDB and Redis services
 - **test-frontend**: Runs frontend tests and linting
 - **integration-tests**: Runs full integration tests after backend and frontend tests pass
@@ -36,6 +37,7 @@ Tests run automatically after executing the "Update Version" task in VS Code.
 **Task:** `Update Version` (workspace root)
 
 When you run this task:
+
 1. Updates version numbers in all frontend files
 2. Runs all backend and frontend tests automatically from workspace root
 3. Reports any failures
@@ -51,19 +53,23 @@ This ensures version updates are only applied when all tests pass.
 The `api.test.js` tests require MongoDB and Redis to be running. You have two options:
 
 1. **Run Docker Containers** (Recommended):
+
    ```bash
    docker compose up -d
    ```
+
    This starts MongoDB and Redis in the background.
 
 2. **Skip API Tests**: If MongoDB/Redis are not available, the API tests will automatically skip with warnings. Other tests will still run.
 
 ### Run All Tests
+
 ```bash
 npm test
 ```
 
 ### Run Backend Tests Only
+
 ```bash
 npm run test:backend
 # or
@@ -71,6 +77,7 @@ cd backend && npm test
 ```
 
 ### Run Frontend Tests Only
+
 ```bash
 npm run test:frontend
 # or
@@ -78,11 +85,13 @@ cd frontend && npm test
 ```
 
 ### Run Tests in Watch Mode
+
 ```bash
 npm run test:watch
 ```
 
 ### Run Specific Test File
+
 ```bash
 # Backend
 cd backend && npm test -- tests/api.test.js
@@ -94,7 +103,9 @@ cd frontend && npm test -- src/shared/utils/__tests__/wizardGameFormatter.test.j
 ## Test Files
 
 ### Backend Tests
+
 Located in `backend/tests/`:
+
 - `api.test.js` - API endpoint tests
 - `wizardGameSchema.test.js` - Game schema validation tests
 - `wizardGameIntegration.test.js` - Integration tests
@@ -102,13 +113,17 @@ Located in `backend/tests/`:
 - `realWorldMigration.test.js` - Real-world migration scenarios
 
 ### Frontend Tests
+
 Located in `frontend/src/`:
+
 - `shared/utils/__tests__/wizardGameFormatter.test.js` - Game formatting tests
 
 ## Test Configuration
 
 ### Backend (Jest)
+
 Configuration in `backend/package.json`:
+
 ```json
 {
   "scripts": {
@@ -119,7 +134,9 @@ Configuration in `backend/package.json`:
 ```
 
 ### Frontend
+
 Configuration in `frontend/package.json`:
+
 ```json
 {
   "scripts": {
@@ -131,6 +148,7 @@ Configuration in `frontend/package.json`:
 ## Environment Variables for Tests
 
 Tests use the following environment variables:
+
 - `NODE_ENV=test` - Set test environment
 - `MONGODB_URI` - Test database connection (uses separate test DB)
 - `REDIS_URL` - Redis connection for tests
@@ -139,6 +157,7 @@ Tests use the following environment variables:
 ## CI/CD Environment
 
 GitHub Actions provides:
+
 - MongoDB 7 service container
 - Redis 7 service container
 - Node.js 18 runtime
@@ -147,16 +166,19 @@ GitHub Actions provides:
 ## Troubleshooting
 
 ### Tests Fail Locally But Pass in CI
+
 - Check environment variables
 - Ensure MongoDB and Redis are running locally
 - Verify Node.js version matches CI (18+)
 
 ### Tests Fail During Version Update
+
 The version will not be updated if tests fail. Fix the failing tests and run the task again.
 
 ## Adding New Tests
 
 ### Backend Test Template
+
 ```javascript
 const request = require('supertest');
 const app = require('../server');
@@ -173,6 +195,7 @@ describe('Feature Name', () => {
 ```
 
 ### Frontend Test Template
+
 ```javascript
 import { describe, it, expect } from 'vitest';
 import { functionToTest } from '../module';
