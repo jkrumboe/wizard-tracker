@@ -339,7 +339,7 @@ const FriendLeaderboard = () => {
                       </tbody>
                     </table>
                   </div>
-                  <p className="h2h-legend">Win-Loss record </p>
+                  {/* <p className="h2h-legend">Win-Loss record </p> */}
                 </div>
               )}
               
