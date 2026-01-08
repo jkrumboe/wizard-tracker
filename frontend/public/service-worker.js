@@ -1,5 +1,6 @@
 // Service Worker for KeepWiz PWA - Automatic Updates + Offline Sync
 // Uses Workbox for precaching with error recovery
+// Chrome 121+ Compliant: Event listeners registered at top level during initial evaluation
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
@@ -32,64 +33,8 @@ const broadcastUpdateProgress = async (state) => {
   });
 };
 
-// Precache and route assets - MUST be called synchronously at top level
-// This will be replaced by Vite PWA plugin with the actual manifest
-try {
-  const manifest = self.__WB_MANIFEST || [];
-  updateState.totalAssets = manifest.length;
-  
-  // Call precacheAndRoute synchronously so event listeners are registered immediately
-  precacheAndRoute(manifest, {
-    ignoreURLParametersMatching: [/^v/, /^_/],
-    directoryIndex: null,
-  });
-  
-  // Cleanup can happen async
-  cleanupOutdatedCaches();
-  
-  console.debug(`Service Worker v${APP_VERSION} initialized with ${manifest.length} assets to precache`);
-} catch (_error) {
-  console.error('Precaching setup failed:', _error);
-}
-
-// API endpoints that should be cached for offline access
-const API_CACHE_PATTERNS = [
-  /\/api\/games\/\w+$/,  // GET game details
-  /\/api\/users\/me$/     // User profile
-];
-
-// API endpoints for write operations (POST, PUT, DELETE)
-const WRITE_API_PATTERNS = [
-  /\/api\/games\/\w+\/events$/,
-  /\/api\/games\/\w+\/snapshots$/,
-  /\/api\/games\/\w+$/
-];
-
-// Workbox Runtime Caching Strategies
-
-// Cache Google Fonts with CacheFirst strategy
-registerRoute(
-  ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
-  new CacheFirst({
-    cacheName: 'google-fonts-cache',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }), // 1 year
-    ],
-  })
-);
-
-// Cache images with CacheFirst strategy
-registerRoute(
-  ({ request }) => request.destination === 'image',
-  new CacheFirst({
-    cacheName: 'images-cache',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }), // 30 days
-    ],
-  })
-);
+// CRITICAL: Install and Activate event listeners MUST be registered during initial evaluation
+// for Chrome 121+ compliance. These are registered BEFORE any async operations.
 
 // Install event - Workbox handles precaching, we just skip waiting
 self.addEventListener("install", (event) => {
@@ -143,6 +88,68 @@ self.addEventListener("activate", (event) => {
     })
   );
 });
+
+// Precache and route assets - Called synchronously at top level AFTER event listeners
+// This will be replaced by Vite PWA plugin with the actual manifest
+try {
+  const manifest = self.__WB_MANIFEST || [];
+  updateState.totalAssets = manifest.length;
+  
+  // Call precacheAndRoute synchronously - Workbox registers its own install handler internally
+  // Enhanced error handling for bad-precaching-response errors
+  precacheAndRoute(manifest, {
+    ignoreURLParametersMatching: [/^v/, /^_/],
+    directoryIndex: null,
+  });
+  
+  // Cleanup can happen async
+  cleanupOutdatedCaches();
+  
+  console.debug(`Service Worker v${APP_VERSION} initialized with ${manifest.length} assets to precache`);
+} catch (error) {
+  // Log but don't throw - allow SW to continue functioning
+  console.error('Precaching setup failed (this may indicate stale manifest):', error);
+  console.info('Service worker will continue to function. Perform a hard refresh to clear old caches.');
+}
+
+// API endpoints that should be cached for offline access
+const API_CACHE_PATTERNS = [
+  /\/api\/games\/\w+$/,  // GET game details
+  /\/api\/users\/me$/     // User profile
+];
+
+// API endpoints for write operations (POST, PUT, DELETE)
+const WRITE_API_PATTERNS = [
+  /\/api\/games\/\w+\/events$/,
+  /\/api\/games\/\w+\/snapshots$/,
+  /\/api\/games\/\w+$/
+];
+
+// Workbox Runtime Caching Strategies
+
+// Cache Google Fonts with CacheFirst strategy
+registerRoute(
+  ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+  new CacheFirst({
+    cacheName: 'google-fonts-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 }), // 1 year
+    ],
+  })
+);
+
+// Cache images with CacheFirst strategy
+registerRoute(
+  ({ request }) => request.destination === 'image',
+  new CacheFirst({
+    cacheName: 'images-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }), // 30 days
+    ],
+  })
+);
 
 // Handle messages from clients
 self.addEventListener('message', (event) => {
