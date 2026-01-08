@@ -94,6 +94,7 @@ registerRoute(
 // Install event - Workbox handles precaching, we just skip waiting
 self.addEventListener("install", (event) => {
   console.debug(`Service Worker installing version ${APP_VERSION}...`);
+  self.skipWaiting(); // Force immediate activation
   
   // Notify clients that a new version is installing
   event.waitUntil(

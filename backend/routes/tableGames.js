@@ -205,16 +205,26 @@ router.get('/:id', auth, async (req, res, next) => {
       isDeleted: false 
     });
     
-    // Get all identity IDs associated with this user (including linked identities)
+    // Get all identity IDs associated with this user (including linked/merged identities)
     const userIdentityIds = new Set();
     if (userIdentity) {
       userIdentityIds.add(userIdentity._id.toString());
+      // Add linked identities
       if (userIdentity.linkedIdentities) {
         userIdentity.linkedIdentities.forEach(li => {
           userIdentityIds.add(li.identityId.toString());
         });
       }
     }
+    
+    // Also find any guest identities that were merged into this user's identity
+    const mergedIdentities = await PlayerIdentity.find({
+      mergedInto: userIdentity?._id,
+      isDeleted: false
+    }).select('_id');
+    mergedIdentities.forEach(mi => {
+      userIdentityIds.add(mi._id.toString());
+    });
     
     // Check by name for legacy support
     const usernameLower = username?.toLowerCase();
