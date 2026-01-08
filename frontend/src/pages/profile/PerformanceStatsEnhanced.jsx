@@ -640,25 +640,25 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         {stats.achievements.length > 0 ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: 'var(--spacing-md)'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+            gap: 'var(--spacing-sm)'
           }}>
             {stats.achievements.map((achievement, idx) => (
               <div key={idx} style={{
                 background: 'var(--card-bg)',
-                padding: 'var(--spacing-md)',
+                padding: 'var(--spacing-sm)',
                 borderRadius: 'var(--radius-md)',
                 border: '2px solid var(--primary)',
                 textAlign: 'center',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
               }}>
-                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-xs)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>
                   {achievement.icon}
                 </div>
-                <div style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '0.15rem' }}>
                   {achievement.name}
                 </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>
                   {achievement.description}
                 </div>
               </div>
