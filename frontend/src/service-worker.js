@@ -1,5 +1,5 @@
 // Service Worker for KeepWiz PWA
-const CACHE_NAME = "keep-wiz-v1.13.10"
+const CACHE_NAME = "keep-wiz-v1.13.11"
 const SW_VERSION = "1.11.0" // Separate version for easier tracking
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png"]
 
