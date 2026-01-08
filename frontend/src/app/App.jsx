@@ -256,7 +256,7 @@ function App() {
                         <Profile />
                       </AuthProtectedRoute>
                     } />
-                    <Route path="/user/:username" element={<UserProfile />} />
+                    <Route path="/user/:id" element={<UserProfile />} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/friend-leaderboard" element={<FriendLeaderboard />} />
                     <Route path="/stats/:name" element={<Stats />} />

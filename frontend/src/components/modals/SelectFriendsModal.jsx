@@ -42,11 +42,9 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
         friendsList = await localFriendsService.getAllFriends();
       }
       
-      // Filter out friends who are already added as players
+      // Filter out friends who are already added as players (by userId only)
       const availableFriends = friendsList.filter(friend => 
-        !alreadySelectedPlayers.some(player => 
-          player.userId === friend.id || player.name === friend.username
-        )
+        !alreadySelectedPlayers.some(player => player.userId === friend.id)
       );
       
       setFriends(availableFriends);

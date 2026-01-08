@@ -232,7 +232,14 @@ const GameDetails = () => {
       // Collect all rounds for this player
       const playerRounds = (game.round_data || []).map((round) => {
         if (!round || !round.players) return null;
-        return round.players.find((p) => compareIds(p.id, playerId));
+        // Check both direct ID match and originalId match
+        return round.players.find((p) => {
+          // Direct match
+          if (compareIds(p.id, playerId)) return true;
+          // Check if p.id is an originalId that maps to this playerId
+          const playerInGame = game.players?.find(gp => gp.originalId === p.id);
+          return playerInGame && compareIds(playerInGame.id, playerId);
+        });
       }).filter(Boolean);
 
       const totalRounds = playerRounds.length;
@@ -257,13 +264,9 @@ const GameDetails = () => {
       : 0;
       const bidAccuracy = totalRounds ? ((correctBids / totalRounds) * 100) : 0;
 
-      // Ensure we're using the same ID format as in sortedPlayers
-      const normalizedId = typeof playerId === "string" ? 
-        (playerId.includes("e") ? playerId : Number(playerId)) : 
-        playerId;
-      
+      // Keep playerId as-is (string format from final_scores keys)
       return {
-        id: normalizedId,
+        id: playerId,
         totalBids,
         totalTricks,
         correctBids,
@@ -316,32 +319,55 @@ const GameDetails = () => {
         playerData = playerDetails[stringId] || playerDetails[playerStat.id];
       }
       
+      // Ensure we have a valid player name
+      const playerName = playerData?.name || `Player ${Object.keys(game.final_scores || game.gameState?.final_scores || {}).indexOf(stringId) + 1}`;
+      
       return {
-        id: playerStat.id, // Keep the original ID format for StatsChart
-        name: playerData?.name || `Player ${Object.keys(game.final_scores || game.gameState?.final_scores || {}).indexOf(stringId) + 1}`,
+        id: stringId, // Use string ID consistently for StatsChart
+        name: playerName,
         correctBids: playerStat.correctBids || 0,
         overBids: playerStat.overbids || 0,
         underBids: playerStat.underbids || 0,
         roundsPlayed: game.round_data.length || 0
       };
-    });
+    }).filter(p => p.name && p.id); // Filter out any invalid entries
     
     // Prepare round data with accumulated scores
     const roundData = game.round_data.map((round, roundIndex) => {
       // Calculate accumulated scores for each player up to this round
       const players = round.players.map(player => {
+        // Map originalId to actual player id if needed
+        let actualPlayerId = player.id;
+        const playerInGameData = game.players?.find(p => p.originalId === player.id || String(p.id) === String(player.id));
+        if (playerInGameData) {
+          actualPlayerId = playerInGameData.id;
+        }
+        
+        // Use string ID consistently
+        const stringPlayerId = String(actualPlayerId);
+        
         // Find all rounds for this player up to the current round
         const playerRounds = game.round_data
           .slice(0, roundIndex + 1)
-          .map(r => r.players.find(p => compareIds(p.id, player.id)))
+          .map(r => {
+            // Find player by id or originalId
+            const foundPlayer = r.players.find(p => {
+              const playerWithOriginalId = game.players?.find(gp => gp.originalId === p.id || String(gp.id) === String(p.id));
+              const mappedId = playerWithOriginalId ? String(playerWithOriginalId.id) : String(p.id);
+              return mappedId === stringPlayerId;
+            });
+            return foundPlayer;
+          })
           .filter(Boolean);
           
         // Calculate total score up to this round
         const totalScore = playerRounds.reduce((sum, r) => sum + (r.score || 0), 0);
         
         return {
-          ...player,
-          totalScore
+          id: stringPlayerId,  // Use string ID consistently
+          name: playerInGameData?.name || player.name,
+          totalScore,
+          score: player.score  // Include round score for other chart types
         };
       });
       

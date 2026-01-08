@@ -32,8 +32,8 @@ const Account = () => {
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
-  const [cloudGames, setCloudGames] = useState([]); // Games from API (includes alias consolidation)
-  const [profileData, setProfileData] = useState(null); // Profile data including aliases
+  const [cloudGames, setCloudGames] = useState([]); // Games from API (includes identity consolidation)
+  const [profileData, setProfileData] = useState(null); // Profile data including identities
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
@@ -376,13 +376,13 @@ const Account = () => {
     }
 
     try {
-      console.log('🔄 [Account] Fetching cloud games for user:', user.username);
+      console.log('🔄 [Account] Fetching cloud games for userId:', user.id);
       const userService = (await import('@/shared/api/userService')).default;
-      const data = await userService.getUserPublicProfile(user.username);
+      const data = await userService.getUserPublicProfile(user.id);
       
       console.log('✅ [Account] Fetched cloud games from API:', {
         username: data.username,
-        aliases: data.aliases,
+        identities: data.identities,
         totalGames: data.totalGames,
         gamesCount: data.games?.length || 0
       });
@@ -1277,7 +1277,7 @@ const Account = () => {
 
   // Calculate overview stats from all games using shared hook
   const allGamesForOverview = useMemo(() => {
-    // If user is logged in, only use cloud games (which include alias consolidation)
+    // If user is logged in, only use cloud games (which include identity consolidation)
     // Local games are for upload management in the Games tab
     if (user && cloudGames.length > 0) {
       return cloudGames;
@@ -1289,12 +1289,12 @@ const Account = () => {
     return [...localWizardGames, ...localTableGames];
   }, [savedGames, savedTableGames, cloudGames, user]);
 
-  // Create user object with aliases for stats calculation
+  // Create user object with identities for stats calculation
   const userWithAliases = useMemo(() => {
     if (!user) return null;
     return {
       ...user,
-      aliases: profileData?.aliases || [user.username]
+      aliases: profileData?.identities || [user.username]
     };
   }, [user, profileData]);
 
@@ -1306,7 +1306,7 @@ const Account = () => {
 
   // Get all games for stats tab
   const allGamesForStats = useMemo(() => {
-    // If user is logged in, use cloud games (which include alias consolidation)
+    // If user is logged in, use cloud games (which include identity consolidation)
     // Otherwise use local games
     const gamesSource = user && cloudGames.length > 0 
       ? cloudGames 

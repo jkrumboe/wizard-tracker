@@ -17,6 +17,16 @@ const GameHistoryItem = ({ game }) => {
           });
           setPlayerDetails(playerMap);
         }
+        // Handle API response with gameData.players
+        else if (game && game.gameData && game.gameData.players) {
+          const playerMap = {};
+          game.gameData.players.forEach((player) => {
+            if (typeof player === 'object' && player.id) {
+              playerMap[player.id] = player;
+            }
+          });
+          setPlayerDetails(playerMap);
+        }
         // Handle cloud games with players array
         else if (game && game.isCloud && game.players && Array.isArray(game.players)) {
           const playerMap = {};
@@ -89,16 +99,6 @@ const GameHistoryItem = ({ game }) => {
        ((game.gameState && game.gameState.player_ids) || 
        (game.gameState && game.gameState.players && game.gameState.players.map(p => p.id)) || [])));
   
-  // Find winner_id from various possible locations - support both single ID and array
-  const winner_id_raw = game.winner_id || 
-                 (game.gameData && game.gameData.totals && game.gameData.totals.winner_id) ||
-                 (game.gameState && game.gameState.winner_id) ||
-                 (game.gameState && game.gameState.roundData && determineWinner(game.gameState));
-  
-  // Normalize winner_id to always be an array
-  const winner_ids = Array.isArray(winner_id_raw) ? winner_id_raw : (winner_id_raw ? [winner_id_raw] : []);
-  
-  const game_mode = isTableGame ? game.name : (game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local");
   const total_rounds = game.total_rounds || game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0;
   
   const formattedDate = new Date(created_at).toLocaleString("en-DE", {
@@ -110,30 +110,57 @@ const GameHistoryItem = ({ game }) => {
       hour12: false
     });
   
-  // Helper function to determine winner from game state - returns array for draws
-  function determineWinner(gameState) {
-    const rounds = gameState?.roundData || gameState?.round_data;
-    if (!gameState || !rounds || !rounds.length) return [];
+  // Helper function to determine winner from final scores
+  function determineWinnerFromScores(players, finalScores) {
+    if (!players || !finalScores) return [];
     
-    const lastRound = rounds[rounds.length - 1];
-    if (!lastRound || !lastRound.players) return [];
-    
-    // Find player(s) with highest score (supports draws)
     let highestScore = -Infinity;
     let winnerIds = [];
     
-    lastRound.players.forEach(player => {
-      if (player.totalScore > highestScore) {
-        highestScore = player.totalScore;
+    players.forEach(player => {
+      const score = finalScores[player.id] || finalScores[player.name] || 0;
+      if (score > highestScore) {
+        highestScore = score;
         winnerIds = [player.id];
-      } else if (player.totalScore === highestScore && highestScore > -Infinity) {
+      } else if (score === highestScore && highestScore > -Infinity) {
         winnerIds.push(player.id);
       }
     });
     
-    return winnerIds.length === 1 ? winnerIds[0] : winnerIds;
+    return winnerIds;
   }
   
+  // Determine winner_ids with multiple fallbacks
+  let winner_id_raw = game.winner_ids ||  // From API response (wizard games)
+                 game.winner_id || 
+                 (game.gameData && game.gameData.winner_ids) ||  // Check gameData.winner_ids
+                 (game.gameData && game.gameData.totals && game.gameData.totals.winner_ids) ||
+                 (game.gameData && game.gameData.totals && game.gameData.totals.winner_id) ||
+                 (game.gameState && game.gameState.winner_id);
+  
+  // If still no winner, try to determine from final_scores
+  if (!winner_id_raw || (Array.isArray(winner_id_raw) && winner_id_raw.length === 0)) {
+    const players = game.gameData?.players || game.players || game.gameState?.players;
+    const finalScores = game.gameData?.final_scores || game.gameData?.totals?.final_scores || game.final_scores || game.gameState?.final_scores;
+    
+    if (players && finalScores) {
+      winner_id_raw = determineWinnerFromScores(players, finalScores);
+    }
+  }
+  
+  // Normalize winner_id to always be an array
+  let winner_ids = Array.isArray(winner_id_raw) ? winner_id_raw : (winner_id_raw ? [winner_id_raw] : []);
+  
+  // Map originalIds to actual player ids if needed
+  const players = game.gameData?.players || game.players || game.gameState?.players || [];
+  winner_ids = winner_ids.map(winnerId => {
+    // Check if this is an originalId that needs to be mapped
+    const playerWithOriginalId = players.find(p => p.originalId === winnerId);
+    return playerWithOriginalId ? playerWithOriginalId.id : winnerId;
+  });
+  
+  const game_mode = isTableGame ? game.name : (game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local");
+
   // Get winner name(s) for display
   const getWinnerDisplay = () => {
     if (isTableGame) return game.winner_name || "Not determined";
@@ -163,24 +190,26 @@ const GameHistoryItem = ({ game }) => {
             {/* <UsersIcon size={12} />{" "} */}
             {isTableGame
               ? Array.isArray(game.players) ? game.players.join(", ") : "No players"
-              : game.isCloud && game.players && Array.isArray(game.players)
-                ? game.players.map(player => typeof player === 'object' ? player.name : player).filter(Boolean).join(", ") || "No players"
-                : isV3Format && game.players
-                  ? game.players.map(player => player.name || "Unknown Player").join(", ")
-                  : game.gameState && game.gameState.players 
-                    ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
-                    : game.is_local && game.players
-                      ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
-                        ? game.players.join(", ") 
-                        : game.players.map(player => player.name || "Unknown Player").join(", ")
-                      : Array.isArray(player_ids)
-                        ? player_ids
-                            .map(
-                              (playerId) =>
-                                playerDetails[playerId]?.name || "Unknown Player"
-                            )
-                            .join(", ")
-                        : "No players"}
+              : game.gameData && game.gameData.players
+                ? game.gameData.players.map(player => player.name || "Unknown Player").join(", ")
+                : game.isCloud && game.players && Array.isArray(game.players)
+                  ? game.players.map(player => typeof player === 'object' ? player.name : player).filter(Boolean).join(", ") || "No players"
+                  : isV3Format && game.players
+                    ? game.players.map(player => player.name || "Unknown Player").join(", ")
+                    : game.gameState && game.gameState.players 
+                      ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                      : game.is_local && game.players
+                        ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
+                          ? game.players.join(", ") 
+                          : game.players.map(player => player.name || "Unknown Player").join(", ")
+                        : Array.isArray(player_ids)
+                          ? player_ids
+                              .map(
+                                (playerId) =>
+                                  playerDetails[playerId]?.name || "Unknown Player"
+                              )
+                              .join(", ")
+                          : "No players"}
         </div>
         <div className="actions-game-history">
           <div className="bottom-actions-game-history">

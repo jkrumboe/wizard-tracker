@@ -173,56 +173,40 @@ router.get('/leaderboard', async (req, res, next) => {
     const TableGame = require('../models/TableGame');
     const WizardGame = require('../models/WizardGame');
     
-    // Fetch all users to create a username -> userId mapping for player linking
+    // Fetch all users and player identities for ID-based matching
     const User = require('../models/User');
-    const allUsers = await User.find({}).select('_id username').lean();
-    const usernameToUserIdMap = {};
+    const PlayerIdentity = require('../models/PlayerIdentity');
+    
+    const allUsers = await User.find({ role: { $ne: 'guest' } }).select('_id username').lean();
+    const userIdMap = {}; // Maps userId string -> user object
     allUsers.forEach(user => {
-      usernameToUserIdMap[user.username.toLowerCase()] = user._id.toString();
+      userIdMap[user._id.toString()] = user;
     });
-    console.log(`[Leaderboard] Loaded ${allUsers.length} users for username mapping`);
+    console.log(`[Leaderboard] Loaded ${allUsers.length} users`);
     
-    // Fetch all player aliases to consolidate stats
-    const PlayerAlias = require('../models/PlayerAlias');
-    const allAliases = await PlayerAlias.find({}).populate('userId', 'username').lean();
-    const aliasToUsernameMap = {}; // Maps alias name -> registered username
-    allAliases.forEach(alias => {
-      if (alias.userId && alias.userId.username) {
-        aliasToUsernameMap[alias.aliasName.toLowerCase()] = alias.userId.username.toLowerCase();
+    // Load all identities to map identityId -> userId
+    const allIdentities = await PlayerIdentity.find({ isDeleted: false })
+      .select('_id userId displayName')
+      .lean();
+    const identityToUserIdMap = {}; // Maps identityId string -> userId string
+    const userDisplayNames = {}; // Maps userId string -> display name
+    
+    allIdentities.forEach(identity => {
+      const identityIdStr = identity._id.toString();
+      const userIdStr = identity.userId?.toString();
+      
+      if (userIdStr) {
+        identityToUserIdMap[identityIdStr] = userIdStr;
+        
+        // Use registered username if available, otherwise use identity displayName
+        if (!userDisplayNames[userIdStr]) {
+          const user = userIdMap[userIdStr];
+          userDisplayNames[userIdStr] = user ? user.username : identity.displayName;
+        }
       }
     });
-    console.log(`[Leaderboard] Loaded ${allAliases.length} player aliases for consolidation`);
     
-    // Track original name casing for display
-    const originalNameCasing = {}; // Maps lowercase canonical name -> first seen original casing
-    
-    // Helper function: Resolve a player name to the canonical username (via alias or direct match)
-    const resolvePlayerName = (playerName) => {
-      const lowerName = playerName.toLowerCase();
-      // First check if this name is an alias - if so, use the linked username
-      if (aliasToUsernameMap[lowerName]) {
-        return aliasToUsernameMap[lowerName];
-      }
-      // Otherwise use the name as-is (lowercase for grouping)
-      return lowerName;
-    };
-    
-    // Helper function: Get the display name for a canonical username
-    const getDisplayName = (canonicalName, originalPlayerName) => {
-      // First, check if there's a registered user with this username
-      const user = allUsers.find(u => u.username.toLowerCase() === canonicalName);
-      if (user) {
-        return user.username; // Use registered user's actual casing
-      }
-      
-      // For non-registered players, preserve the original casing from games
-      // Store the first seen casing for this canonical name
-      if (!originalNameCasing[canonicalName] && originalPlayerName) {
-        originalNameCasing[canonicalName] = originalPlayerName;
-      }
-      
-      return originalNameCasing[canonicalName] || canonicalName;
-    };
+    console.log(`[Leaderboard] Loaded ${allIdentities.length} player identities`);
     
     // Get wizard games from WizardGame collection - only fetch needed fields
     const wizardGames = await WizardGame.find({}, {
@@ -242,7 +226,7 @@ router.get('/leaderboard', async (req, res, next) => {
       'createdAt': 1
     }).lean(); // Use lean() for better performance
     
-    // Calculate player statistics grouped by NAME (not ID)
+    // Calculate player statistics grouped by USER ID (using identity system)
     const playerStats = {};
     const gameTypeSet = new Set(['all', 'Wizard']); // Start with 'all' and 'Wizard'
     const gameTypeSettings = { 'Wizard': { lowIsBetter: false } }; // Track lowIsBetter per game type
@@ -275,47 +259,44 @@ router.get('/leaderboard', async (req, res, next) => {
       gameData.players.forEach(player => {
         const playerId = player.id;
         const playerName = player.name;
+        const identityId = player.identityId;
         
-        // Skip players without a name
-        if (!playerName) return;
+        // Skip players without identity (shouldn't happen after migration)
+        if (!identityId) {
+          console.warn(`[Leaderboard] Player without identityId in game: ${playerName}`);
+          return;
+        }
 
         // Filter by game type if specified
         if (gameType && gameType !== 'all' && gameType !== gameMode) {
           return;
         }
 
-        // Resolve player name to canonical username (via alias if applicable)
-        const canonicalName = resolvePlayerName(playerName);
-        const displayName = getDisplayName(canonicalName, playerName);
+        // Map identityId to userId using identity system
+        const identityIdStr = identityId.toString();
+        const userId = identityToUserIdMap[identityIdStr];
         
-        if (!playerStats[canonicalName]) {
-          // Look up userId by matching canonical username
-          const lookupUserId = usernameToUserIdMap[canonicalName];
-          
-          playerStats[canonicalName] = {
-            id: canonicalName,
-            name: displayName, // Use registered username for display
-            userId: lookupUserId, // Store userId for linking to profiles
+        if (!userId) {
+          console.warn(`[Leaderboard] No userId found for identity ${identityIdStr}`);
+          return;
+        }
+        
+        const displayName = userDisplayNames[userId] || playerName;
+        
+        if (!playerStats[userId]) {
+          playerStats[userId] = {
+            id: userId,
+            name: displayName,
+            userId: userId,
             totalGames: 0,
             wins: 0,
             totalScore: 0,
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else {
-          // Update display name if user has changed their username
-          playerStats[canonicalName].name = displayName;
-          
-          // Try to look up by username if we didn't have it before
-          if (!playerStats[canonicalName].userId) {
-            const lookupUserId = usernameToUserIdMap[canonicalName];
-            if (lookupUserId) {
-              playerStats[canonicalName].userId = lookupUserId;
-            }
-          }
         }
 
-        const stats = playerStats[canonicalName];
+        const stats = playerStats[userId];
         
         stats.totalGames++;
         
@@ -397,46 +378,44 @@ router.get('/leaderboard', async (req, res, next) => {
       gameData.players.forEach((player, index) => {
         const playerId = `player_${index}`;
         const playerName = player.name;
+        const identityId = player.identityId;
         
-        if (!playerName) return;
+        // Skip players without identity
+        if (!identityId) {
+          console.warn(`[Leaderboard] Player without identityId in table game: ${playerName}`);
+          return;
+        }
 
         // Filter by game type if specified
         if (gameType && gameType !== 'all' && gameType !== gameMode) {
           return;
         }
 
-        // Resolve player name to canonical username (via alias if applicable)
-        const canonicalName = resolvePlayerName(playerName);
-        const displayName = getDisplayName(canonicalName, playerName);
+        // Map identityId to userId using identity system
+        const identityIdStr = identityId.toString();
+        const userId = identityToUserIdMap[identityIdStr];
         
-        if (!playerStats[canonicalName]) {
-          // Look up userId by matching canonical username
-          const lookupUserId = usernameToUserIdMap[canonicalName];
-          
-          playerStats[canonicalName] = {
-            id: canonicalName,
-            name: displayName, // Use registered username for display
-            userId: lookupUserId, // Store userId for linking to profiles
+        if (!userId) {
+          console.warn(`[Leaderboard] No userId found for identity ${identityIdStr}`);
+          return;
+        }
+        
+        const displayName = userDisplayNames[userId] || playerName;
+        
+        if (!playerStats[userId]) {
+          playerStats[userId] = {
+            id: userId,
+            name: displayName,
+            userId: userId,
             totalGames: 0,
             wins: 0,
             totalScore: 0,
             gameTypes: {},
             lastPlayed: game.createdAt
           };
-        } else {
-          // Update display name if user has changed their username
-          playerStats[canonicalName].name = displayName;
-          
-          // Try to look up by username if we didn't have it before
-          if (!playerStats[canonicalName].userId) {
-            const lookupUserId = usernameToUserIdMap[canonicalName];
-            if (lookupUserId) {
-              playerStats[canonicalName].userId = lookupUserId;
-            }
-          }
         }
 
-        const stats = playerStats[canonicalName];
+        const stats = playerStats[userId];
         
         stats.totalGames++;
         
@@ -828,7 +807,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     // Build identity lookup maps using PlayerIdentity
     const PlayerIdentity = require('../models/PlayerIdentity');
     
-    // Find all identities that match the player names (by name or alias)
+    // Find all identities that match the player names (by name or identity aliases)
     const matchingIdentities = await PlayerIdentity.find({
       isDeleted: false,
       $or: [
@@ -841,19 +820,6 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     const nameToIdentityMap = Object.create(null); // name -> identityId
     const identityToCanonicalMap = Object.create(null); // identityId -> canonicalName
     const identityIdSet = new Set();
-    
-    // Also use PlayerAlias as fallback for legacy compatibility
-    const PlayerAlias = require('../models/PlayerAlias');
-    const allAliases = await PlayerAlias.find({}).populate('userId', 'username').lean();
-    const aliasToUsernameMap = Object.create(null);
-    allAliases.forEach(alias => {
-      if (alias.userId && alias.userId.username) {
-        const aliasKey = alias.aliasName.toLowerCase();
-        if (!isDangerousKey(aliasKey)) {
-          aliasToUsernameMap[aliasKey] = alias.userId.username.toLowerCase();
-        }
-      }
-    });
     
     // Process matching identities
     matchingIdentities.forEach(identity => {
@@ -907,15 +873,10 @@ router.post('/friend-leaderboard', async (req, res, next) => {
         }
       }
       
-      // Fallback to PlayerAlias
-      if (lowerName && aliasToUsernameMap[lowerName]) {
-        return aliasToUsernameMap[lowerName];
-      }
-      
       return lowerName;
     };
     
-    // Build a set of all canonical names we're interested in (including aliases)
+    // Build a set of all canonical names we're interested in (including identity aliases)
     const targetCanonicalNames = new Set();
     normalizedPlayerNames.forEach(name => {
       targetCanonicalNames.add(resolvePlayerName(name));

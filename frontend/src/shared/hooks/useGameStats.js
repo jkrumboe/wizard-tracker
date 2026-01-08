@@ -5,7 +5,7 @@ import { useMemo } from 'react';
  * Works with both localStorage games and API games
  * 
  * @param {Array} games - Array of game objects (wizard + table games)
- * @param {Object} user - Current user object (should include `aliases` array from API)
+ * @param {Object} user - Current user object (should include `identities` array from API)
  * @returns {Object} - { gameTypes: [], recentResults: [] }
  */
 export const useGameStats = (games, user) => {
@@ -22,8 +22,10 @@ export const useGameStats = (games, user) => {
     const userIdentifiers = [user.id, user._id, user.$id, user.username].filter(Boolean);
     const usernameLower = user.username?.toLowerCase();
     
-    // Get all searchable names (username + aliases) from user object
-    const searchNames = user.aliases || [user.username];
+    // Get all searchable names (username + identity names) from user object
+    const searchNames = user.identities 
+      ? user.identities.map(identity => identity.displayName || identity.name).filter(Boolean)
+      : [user.username];
     const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
 
     allGamesList.forEach(game => {
@@ -61,7 +63,7 @@ export const useGameStats = (games, user) => {
       // Different handling for table games vs wizard games
       if (game.gameType === 'table') {
         // Table games: check gameData.players
-        // Match by player name (including aliases) OR userId
+        // Match by player name (including identity names) OR userId
         if (game.gameData?.players) {
           const players = game.gameData.players;
           
@@ -70,7 +72,7 @@ export const useGameStats = (games, user) => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUserId = p.userId;
             
-            // Match by any of the user's names (including aliases) OR by userId
+            // Match by any of the user's names (including identity names) OR by userId
             return searchNamesLower.includes(playerNameLower) ||
                    userIdentifiers.includes(playerUserId) ||
                    String(playerUserId) === String(user._id) ||
@@ -111,7 +113,7 @@ export const useGameStats = (games, user) => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUsernameLower = p.username?.toLowerCase();
             
-            // Match by any of the user's names (including aliases) OR by userId
+            // Match by any of the user's names (including identity names) OR by userId
             return searchNamesLower.includes(playerNameLower) ||
                    searchNamesLower.includes(playerUsernameLower) ||
                    userIdentifiers.includes(p.id) ||

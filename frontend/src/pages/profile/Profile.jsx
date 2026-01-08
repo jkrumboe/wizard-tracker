@@ -19,7 +19,7 @@ const Profile = () => {
   const { id: paramId } = useParams()
   const navigate = useNavigate()
   const { user } = useUser()
-  // For now, only allow viewing your own profile (paramId support can be added later)
+  // Support viewing other profiles by userId
   const isOwnProfile = !paramId || paramId === user?.id
   
   const [allGames, setAllGames] = useState([])
@@ -40,22 +40,34 @@ const Profile = () => {
     setFilters(newFilters);
   };
 
-  // Create player object from user data if this is own profile
+  // Create player object from user data or profileData
   const currentPlayer = useMemo(() => {
+    // If viewing own profile and user is available
     if (isOwnProfile && user) {
       return {
         id: user.id,
         name: user.name || user.username || 'User',
         username: user.username,
         avatar: avatarUrl,
-        // Add other default properties
         tags: [],
         created_at: user.createdAt,
-        updated_at: user.createdAt // For now, same as created
+        updated_at: user.createdAt
+      }
+    }
+    // If viewing another user's profile and profileData is loaded
+    if (!isOwnProfile && profileData) {
+      return {
+        id: profileData.id || profileData._id,
+        name: profileData.username,
+        username: profileData.username,
+        avatar: profileData.profilePicture || defaultAvatar,
+        tags: [],
+        created_at: profileData.createdAt,
+        updated_at: profileData.createdAt
       }
     }
     return null
-  }, [user, isOwnProfile, avatarUrl])
+  }, [user, profileData, isOwnProfile, avatarUrl])
 
 const canEdit = useMemo(() => {
   // Only allow editing your own profile
@@ -65,11 +77,11 @@ const canEdit = useMemo(() => {
 useEffect(() => {
   const fetchData = async () => {
     try {
-      if (!isOwnProfile || !user) {
-        if (!isOwnProfile) {
-          setError("Viewing other users' profiles is not yet supported");
-        }
-        // Clear games when user logs out
+      // Determine which user to fetch data for
+      const targetUserId = paramId || user?.id;
+      
+      if (!targetUserId) {
+        setError("No user specified");
         setAllGames([]);
         return;
       }
@@ -77,24 +89,24 @@ useEffect(() => {
       // For now, just set empty default data since playerService is not implemented
       // setDefaultTags([]);
       
-      // Fetch all games for current user from API (includes alias consolidation)
+      // Fetch profile data from API using userId
       try {
-        console.log('🔄 [Account] Fetching profile data for user:', user.username);
+        console.log('🔄 [Profile] Fetching profile data for userId:', targetUserId);
         const userService = (await import('@/shared/api/userService')).default;
-        const profileData = await userService.getUserPublicProfile(user.username);
+        const profileData = await userService.getUserPublicProfile(targetUserId);
         
-        console.log('✅ [Account] Fetched profile data from API:', {
+        console.log('✅ [Profile] Fetched profile data from API:', {
           username: profileData.username,
-          aliases: profileData.aliases,
+          identities: profileData.identities,
           totalGames: profileData.totalGames,
           totalWins: profileData.totalWins,
           gamesCount: profileData.games?.length || 0
         });
         
-        // Store profile data including aliases
+        // Store profile data including identities
         setProfileData(profileData);
         
-        // Use games from API which includes alias consolidation
+        // Use games from API which includes identity consolidation
         const userGames = profileData.games || [];
         
         // Filter to only finished games (for stats display)
@@ -123,7 +135,7 @@ useEffect(() => {
   };
 
   if (user) fetchData();
-}, [user, isOwnProfile]);
+}, [user, paramId]); // Add paramId to dependencies
 
 // Load avatar URL when user is available
 useEffect(() => {
@@ -174,8 +186,8 @@ const calculatedStats = useMemo(() => {
   let wins = 0;
   let losses = 0;
   
-  // Get current username and all aliases
-  const searchNames = profileData?.aliases || [user.username];
+  // Get current username and all identities
+  const searchNames = profileData?.identities || [user.username];
   const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
   const currentUserId = user.id || user.$id;
 

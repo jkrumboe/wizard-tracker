@@ -438,42 +438,102 @@ router.get('/link/my-identities', auth, async (req, res, next) => {
 
 /**
  * GET /identities/link/guest-identities
- * Get all unlinked guest identities (for linking UI)
+ * Get all identities for the linking UI
+ * Returns both unlinked (guest) and linked identities with flags
  */
 router.get('/link/guest-identities', auth, async (req, res, next) => {
   try {
-    const { search, page = 1, limit = 50 } = req.query;
+    const { search, page = 1, limit = 100, includeLinked = 'true' } = req.query;
     
-    const filter = {
-      isDeleted: false,
-      userId: null,
-      mergedInto: null,
-      type: { $in: ['guest', 'imported'] }
+    // Get all guest user IDs
+    const guestUsers = await User.find({ role: 'guest' }, '_id').lean();
+    const guestUserIds = guestUsers.map(u => u._id);
+    
+    // Base filter
+    let filter = {
+      isDeleted: false
     };
+    
+    // If not including linked, only show unlinked/guest-linked identities
+    if (includeLinked !== 'true') {
+      filter.$or = [
+        { userId: null, mergedInto: null },
+        { userId: { $in: guestUserIds }, mergedInto: null }
+      ];
+    } else {
+      // When including linked, show either unlinked OR merged identities
+      filter.$or = [
+        { userId: null, mergedInto: null },
+        { userId: { $in: guestUserIds }, mergedInto: null },
+        { mergedInto: { $ne: null } }
+      ];
+    }
     
     if (search && typeof search === 'string' && search.length > 0 && search.length <= 100) {
       const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escapedSearch, 'i');
-      filter.$or = [
-        { displayName: { $regex: regex } },
-        { 'aliases.name': { $regex: regex } }
-      ];
+      
+      if (filter.$or) {
+        // Combine with existing $or using $and
+        filter.$and = [
+          { $or: filter.$or },
+          { $or: [
+            { displayName: { $regex: regex } },
+            { 'aliases.name': { $regex: regex } },
+            { 'userId.username': { $regex: regex } }
+          ]}
+        ];
+        delete filter.$or;
+      } else {
+        filter.$or = [
+          { displayName: { $regex: regex } },
+          { 'aliases.name': { $regex: regex } }
+        ];
+      }
     }
     
     const sanitizedPage = Math.max(1, Math.min(parseInt(page) || 1, 1000));
-    const sanitizedLimit = Math.max(1, Math.min(parseInt(limit) || 50, 200));
+    const sanitizedLimit = Math.max(1, Math.min(parseInt(limit) || 100, 200));
     const skip = (sanitizedPage - 1) * sanitizedLimit;
     
     const [identities, total] = await Promise.all([
       PlayerIdentity.find(filter)
+        .populate('userId', 'username role profilePicture')
+        .populate('mergedInto', 'displayName userId')
+        .populate({
+          path: 'mergedInto',
+          populate: { path: 'userId', select: 'username role profilePicture' }
+        })
         .sort({ displayName: 1 })
         .skip(skip)
         .limit(sanitizedLimit),
       PlayerIdentity.countDocuments(filter)
     ]);
     
+    // Enrich identities with linking status
+    const guestIdSet = new Set(guestUserIds.map(id => id.toString()));
+    const enrichedIdentities = identities.map(identity => {
+      const obj = identity.toObject();
+      const userRole = identity.userId?.role;
+      const userIdStr = identity.userId?._id?.toString();
+      
+      // Check if it's a merged guest identity (linked to a user)
+      const isMerged = !!identity.mergedInto;
+      
+      obj.linkedToGuestUser = userIdStr && guestIdSet.has(userIdStr) && !isMerged;
+      obj.linkedToUser = isMerged && identity.mergedInto?.userId ? {
+        _id: identity.mergedInto.userId._id,
+        username: identity.mergedInto.userId.username,
+        role: identity.mergedInto.userId.role
+      } : null;
+      obj.gameCount = identity.stats?.totalGames || 0;
+      obj.linkedAt = isMerged ? identity.updatedAt : null;
+      
+      return obj;
+    });
+    
     res.json({
-      identities,
+      identities: enrichedIdentities,
       pagination: {
         page: sanitizedPage,
         limit: sanitizedLimit,

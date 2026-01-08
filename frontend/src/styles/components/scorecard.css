@@ -275,16 +275,11 @@
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 30px;
+    width: 20px;
   }
 
   .table-game-container .round-header {
     width: 50px;
-  }
-
-  /* Tighter constraints for player header names on mobile */
-  .player-header-name {
-    font-size: 0.85rem;
   }
   
   .player-header {

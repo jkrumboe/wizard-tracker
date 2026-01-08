@@ -261,6 +261,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       return res.status(400).json({ error: 'Username or user ID is required' });
     }
 
+    const mongoose = require('mongoose');
+    const User = require('../models/User');
+    
     // Try to find registered user - by ID first, then by username
     let user;
     if (mongoose.Types.ObjectId.isValid(usernameOrId)) {
@@ -270,46 +273,48 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture');
     }
     
-    // If no registered user found, create a virtual user object for the player name
-    const playerName = user ? user.username : usernameOrId;
-    const isRegisteredUser = !!user;
-
-    // If user is registered, fetch all their aliases to include games under alias names
-    const PlayerAlias = require('../models/PlayerAlias');
-    let searchNames = [playerName]; // Start with the username
-    
-    if (user) {
-      const aliases = await PlayerAlias.find({ userId: user._id }).select('aliasName').lean();
-      const aliasNames = aliases.map(alias => alias.aliasName);
-      searchNames = [...searchNames, ...aliasNames];
-      console.log(`[Profile] User "${playerName}" (ID: ${user._id}) has ${aliases.length} alias(es): ${aliasNames.join(', ')}`);
-      console.log(`[Profile] Will search for games with names: ${searchNames.join(', ')}`);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    // Create array of lowercase names for matching
-    const searchNamesLower = searchNames.map(name => name.toLowerCase());
-    console.log(`[Profile] Lowercase search names: ${searchNamesLower.join(', ')}`);
 
-    // Get user's games from WizardGame and TableGame collections (not legacy Game collection)
+    console.log(`[Profile] Fetching games for user "${user.username}" (ID: ${user._id}) using identity system`);
+
+    // Use PlayerIdentity system to find all identities linked to this user
+    const PlayerIdentity = require('../models/PlayerIdentity');
+    const identities = await PlayerIdentity.find({ userId: user._id }).select('_id displayName').lean();
+    const identityIds = identities.map(id => id._id);
+    
+    console.log(`[Profile] Found ${identities.length} identities for user: ${identities.map(i => i.displayName).join(', ')}`);
+
+    // Get user's games from WizardGame and TableGame collections
     const WizardGame = require('../models/WizardGame');
     const TableGame = require('../models/TableGame');
     
-    // Fetch ALL wizard games (not just by userId) since players might be identified by name
-    const wizardGames = await WizardGame.find({})
+    // Fetch wizard games where user's identities appear as players
+    const wizardGames = await WizardGame.find({
+      'gameData.players.identityId': { $in: identityIds }
+    })
       .select('gameData createdAt localId userId')
       .sort({ createdAt: -1 })
       .lean();
 
-    // Fetch ALL table games
-    const tableGames = await TableGame.find({})
+    // Fetch table games where user's identities appear as players  
+    const tableGames = await TableGame.find({
+      'gameData.players.identityId': { $in: identityIds }
+    })
       .select('gameData gameTypeName name lowIsBetter createdAt gameFinished userId')
       .sort({ createdAt: -1 })
       .lean();
+
+    console.log(`[Profile] Found ${wizardGames.length} wizard games and ${tableGames.length} table games`);
 
     // Process games to extract relevant stats
     const allGames = [];
     const seenGameIds = new Set(); // Track unique games to avoid duplicates
     let totalWins = 0;
+    
+    // Convert identityIds to strings for comparison
+    const identityIdStrings = identityIds.map(id => id.toString());
     
     // Process wizard games
     wizardGames.forEach(game => {
@@ -323,21 +328,10 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const gameId = gameData.gameId || game.localId || String(game._id);
       if (seenGameIds.has(gameId)) return; // Skip duplicates
       
-      // Find if user is a player in this game - match by username OR userId OR any alias
+      // Find if user is a player in this game - match by identityId
       const userPlayer = gameData.players.find(p => {
-        const playerNameLower = p.name?.toLowerCase();
-        const playerUsernameLower = p.username?.toLowerCase();
-        
-        // Check if player name matches any of our search names (username + aliases)
-        const nameMatches = playerNameLower && searchNamesLower.includes(playerNameLower);
-        const usernameMatches = playerUsernameLower && searchNamesLower.includes(playerUsernameLower);
-        
-        // Also match by userId if available
-        const userIdMatches = user && (p.userId === String(user._id) || 
-                     p.userId === user._id ||
-                     String(p.userId) === String(user._id));
-        
-        return nameMatches || usernameMatches || userIdMatches;
+        if (!p.identityId) return false;
+        return identityIdStrings.includes(p.identityId.toString());
       });
       
       // Skip if user is not a player in this game
@@ -375,17 +369,13 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const gameData = outerGameData?.gameData || outerGameData; // Handle nested structure
       
       if (!gameData || !game.gameFinished || !gameData.players) {
-        // Debug: Log why game was skipped
-        if (gameData?.players?.some(p => searchNamesLower.includes(p.name?.toLowerCase()))) {
-          console.log(`[Profile] SKIPPED game ${game._id}: gameFinished=${game.gameFinished}, hasGameData=${!!gameData}, hasPlayers=${!!gameData?.players}`);
-        }
         return;
       }
       
-      // For table games, match by player name against username or any alias
+      // Match by identityId
       const userPlayer = gameData.players.find(p => {
-        const playerNameLower = p.name?.toLowerCase();
-        return playerNameLower && searchNamesLower.includes(playerNameLower);
+        if (!p.identityId) return false;
+        return identityIdStrings.includes(p.identityId.toString());
       });
       
       // Skip if user is not a player in this game
@@ -465,15 +455,15 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     const limitedGames = allGames.slice(0, 200);
 
     res.json({
-      id: user?._id || null,
-      _id: user?._id || null,
-      username: playerName,
-      createdAt: user?.createdAt || null,
-      profilePicture: user?.profilePicture || null,
-      isRegisteredUser: isRegisteredUser,
+      id: user._id,
+      _id: user._id,
+      username: user.username,
+      createdAt: user.createdAt,
+      profilePicture: user.profilePicture,
+      isRegisteredUser: true,
       totalGames: limitedGames.length,
       totalWins: totalWins,
-      aliases: searchNames, // Include all search names (username + aliases) for frontend matching
+      identities: identities.map(i => i.displayName), // Include identity display names
       games: limitedGames
     });
   } catch (error) {
@@ -796,7 +786,7 @@ router.get('/all', auth, async (req, res, next) => {
   try {
     // Get all users but exclude password and limit data
     const users = await User.find()
-      .select('_id username createdAt profilePicture')
+      .select('_id username createdAt profilePicture role')
       .sort({ username: 1 })
       .lean(); // Use lean() for better performance
 
@@ -805,7 +795,8 @@ router.get('/all', auth, async (req, res, next) => {
         id: user._id.toString(),
         username: user.username,
         createdAt: user.createdAt,
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        role: user.role || 'user'
       }))
     });
   } catch (error) {

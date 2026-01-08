@@ -49,14 +49,21 @@ const Stats = () => {
         
         // Filter games to only include games where the current user ACTUALLY PLAYED
         const userGames = localGames.filter(game => {
-          // Check if user is in the players list by name/username
+          // Check if user is in the players list by userId/identityId first, then name/username
           if (game.gameState?.players && Array.isArray(game.gameState.players)) {
             const isInPlayers = game.gameState.players.some(player => {
+              const playerUserId = player.userId;
+              const playerIdentityId = player.identityId;
               const playerName = player.name?.toLowerCase().trim();
               const playerUsername = player.username?.toLowerCase().trim();
               const currentName = currentPlayer.name?.toLowerCase().trim();
               const currentUsername = currentPlayer.username?.toLowerCase().trim();
               
+              // Prefer ID-based matching
+              if (playerUserId && userIdentifiers.includes(playerUserId)) return true;
+              if (playerIdentityId === currentPlayer.identityId) return true;
+              
+              // Fallback to name matching for legacy games
               return playerName === currentName || playerUsername === currentUsername;
             });
             

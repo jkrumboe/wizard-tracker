@@ -1,7 +1,19 @@
 /**
  * Game User Linkage Utility
- * Retroactively links games to newly registered users by matching username
  * 
+ * ⚠️ DEPRECATED: This utility is being replaced by the PlayerIdentity system.
+ * 
+ * The new identity system provides:
+ * - Automatic identity creation during migrations
+ * - claimIdentitiesOnRegistration() in identityService
+ * - Admin UI for manual linking via Player Linking page
+ * 
+ * This file is kept for backward compatibility but will be removed in a future version.
+ * New code should use the PlayerIdentity system instead of name-based matching.
+ * 
+ * ---
+ * 
+ * Legacy behavior:
  * When a user creates an account, this utility:
  * 1. Finds all games where the username appears as a player
  * 2. Updates the game's userId field to link it to the new account
@@ -62,11 +74,16 @@ async function linkSingleGame(game, username, userObjectId, gameType) {
 /**
  * Link all games containing a username to a newly registered user
  * Also checks for player aliases to link games with different player names
+ * 
+ * ⚠️ DEPRECATED: Use identityService.claimIdentitiesOnRegistration() instead
+ * 
  * @param {String} username - The username to search for
  * @param {String|ObjectId} userId - The user's ID to link games to
  * @returns {Object} Results of the linkage operation
  */
 async function linkGamesToNewUser(username, userId) {
+  console.warn('⚠️  [DEPRECATED] gameUserLinkage.linkGamesToNewUser() is deprecated. Use identityService.claimIdentitiesOnRegistration() instead.');
+  
   const results = {
     success: false,
     gamesLinked: 0,

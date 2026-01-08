@@ -10,7 +10,7 @@
 }
 
 .game-details-container .account-tabs {
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .account-tab {

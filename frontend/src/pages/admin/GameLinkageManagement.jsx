@@ -85,7 +85,7 @@ const GameLinkageManagement = () => {
               <h4>Matching Process</h4>
               <ul>
                 <li><strong>Case-insensitive:</strong> "John" matches "john", "JOHN", etc.</li>
-                <li><strong>Aliases included:</strong> Player aliases are also checked</li>
+                <li><strong>Identities included:</strong> Player identities are also checked</li>
                 <li><strong>All game types:</strong> Regular games, Wizard games, and Table games</li>
               </ul>
             </div>
@@ -105,7 +105,7 @@ const GameLinkageManagement = () => {
       <div className="admin-section">
         <div className="section-header">
           <h2>Link All User Games</h2>
-          <p>Scan all registered users and link games where their username (or alias) appears as a player.</p>
+          <p>Scan all registered users and link games where their username (or identity) appears as a player.</p>
         </div>
 
         <div className="action-buttons-row">
@@ -206,9 +206,9 @@ const GameLinkageManagement = () => {
                         <span className="game-count badge">
                           {user.gamesToLink} game{user.gamesToLink !== 1 ? 's' : ''}
                         </span>
-                        {user.aliases && user.aliases.length > 0 && (
+                        {user.identities && user.identities.length > 1 && (
                           <span className="aliases-badge">
-                            + {user.aliases.length} alias{user.aliases.length !== 1 ? 'es' : ''}
+                            {user.identities.length} identit{user.identities.length !== 1 ? 'ies' : 'y'}
                           </span>
                         )}
                       </div>
@@ -240,11 +240,11 @@ const GameLinkageManagement = () => {
                             </div>
                           )}
                         </div>
-                        {user.aliases && user.aliases.length > 0 && (
+                        {user.identities && user.identities.length > 0 && (
                           <div className="aliases-list">
-                            <span className="aliases-label">Aliases:</span>
-                            {user.aliases.map((alias, i) => (
-                              <span key={i} className="alias-tag">{alias}</span>
+                            <span className="aliases-label">Identities:</span>
+                            {user.identities.map((identity, i) => (
+                              <span key={i} className="alias-tag">{identity.displayName || identity.name}</span>
                             ))}
                           </div>
                         )}

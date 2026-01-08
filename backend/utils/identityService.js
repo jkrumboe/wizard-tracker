@@ -724,8 +724,14 @@ async function linkGuestToUser(guestIdentityId, userId, linkedBy) {
     if (!guestIdentity) {
       throw new Error('Guest identity not found');
     }
+    
+    // Check if already linked to a real (non-guest) user
     if (guestIdentity.userId) {
-      throw new Error('Identity is already linked to a user');
+      const User = mongoose.model('User');
+      const linkedUser = await User.findById(guestIdentity.userId);
+      if (linkedUser && linkedUser.role !== 'guest') {
+        throw new Error('Identity is already linked to a user');
+      }
     }
     
     // Get or create the user's identity

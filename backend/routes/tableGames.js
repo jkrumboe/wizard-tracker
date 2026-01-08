@@ -216,12 +216,9 @@ router.get('/:id', auth, async (req, res, next) => {
       }
     }
     
-    // Also check by name/alias for legacy support
-    const PlayerAlias = require('../models/PlayerAlias');
-    const userAliases = await PlayerAlias.find({ userId: { $eq: userId } }).lean();
-    const aliasNames = userAliases.map(a => a.aliasName.toLowerCase());
+    // Check by name for legacy support
     const usernameLower = username?.toLowerCase();
-    const namesToCheck = new Set([usernameLower, ...aliasNames].filter(Boolean));
+    const namesToCheck = new Set([usernameLower].filter(Boolean));
     
     // Check if user is a participant
     const gameData = tableGame.gameData?.gameData || tableGame.gameData;

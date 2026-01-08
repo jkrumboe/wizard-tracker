@@ -15,7 +15,7 @@ import '@/styles/pages/account.css'
 
 const UserProfile = () => {
   const navigate = useNavigate()
-  const { username } = useParams()
+  const { id: userId } = useParams()
   const { user: currentUser } = useUser()
   
   const [profileUser, setProfileUser] = useState(null)
@@ -27,8 +27,8 @@ const UserProfile = () => {
   const [showProfilePictureModal, setShowProfilePictureModal] = useState(false)
   const [filters] = useState(getDefaultFilters())
 
-  // Check if viewing own profile
-  const isOwnProfile = currentUser && (currentUser.username?.toLowerCase() === username?.toLowerCase())
+  // Check if viewing own profile by comparing userId
+  const isOwnProfile = currentUser && currentUser.id === userId
   
   // Load games from localStorage if viewing own profile
   const localGamesData = useMemo(() => {
@@ -44,23 +44,22 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!username) {
-        setError('No username provided')
+      if (!userId) {
+        setError('No user ID provided')
         setLoading(false)
         return
       }
 
-      console.log('🔍 [UserProfile] Fetching profile for username:', username);
+      console.log('🔍 [UserProfile] Fetching profile for userId:', userId);
       console.log('🔍 [UserProfile] Current user:', currentUser);
       console.log('🔍 [UserProfile] Is own profile?', isOwnProfile);
 
       try {
         setLoading(true)
         
-        // Always fetch from API to get complete profile with alias consolidation
-        // Even for own profile, we need backend data to include games under old usernames
-        console.log('🌐 [UserProfile] Fetching from API for username:', username);
-        const data = await getUserPublicProfile(username)
+        // Fetch from API using userId
+        console.log('🌐 [UserProfile] Fetching from API for userId:', userId);
+        const data = await getUserPublicProfile(userId)
         console.log('✅ [UserProfile] Profile data received:', {
           username: data.username,
           gamesCount: data.games?.length || 0,
@@ -83,7 +82,7 @@ const UserProfile = () => {
     }
 
     fetchUserProfile()
-  }, [username, isOwnProfile, localGamesData, currentUser])
+  }, [userId, isOwnProfile, localGamesData, currentUser])
 
   // Handler for game type card clicks
   const handleGameTypeClick = useCallback((gameTypeName) => {
@@ -93,7 +92,7 @@ const UserProfile = () => {
 
   // Get games for stats tab (always use API data from profileUser)
   const allGamesForStats = useMemo(() => {
-    // Always use profileUser games (from API) to include alias consolidation
+    // Always use profileUser games (from API) to include identity consolidation
     const gamesSource = profileUser?.games || [];
     
     if (!gamesSource || gamesSource.length === 0) return [];
