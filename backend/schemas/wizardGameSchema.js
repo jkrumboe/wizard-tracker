@@ -35,8 +35,8 @@ const WIZARD_GAME_SCHEMA = {
     players: {
       type: "array",
       minItems: 2,
-      maxItems: 10,
-      description: "Array of players in the game (2-10 players)",
+      maxItems: 6,
+      description: "Array of players in the game (2-6 players)",
       items: {
         type: "object",
         required: ["id", "name"],
@@ -161,8 +161,8 @@ function validateWizardGameData(gameData) {
       errors.push('players must be an array');
     } else if (gameData.players.length < 2) {
       errors.push('At least 2 players required');
-    } else if (gameData.players.length > 10) {
-      errors.push('Maximum 10 players allowed');
+    } else if (gameData.players.length > 6) {
+      errors.push('Maximum 6 players allowed');
     } else {
       gameData.players.forEach((player, idx) => {
         if (!player.id) errors.push(`Player ${idx}: id is required`);
@@ -221,18 +221,35 @@ function validateWizardGameData(gameData) {
 
 /**
  * Normalizes winner_id/winner_ids to always be an array
- * @param {Object} gameData - Game data with winner_id or winner_ids
+ * @param {Object|String|Array} gameDataOrValue - Game data with winner_id/winner_ids, or direct value
  * @returns {Array} Array of winner IDs
  */
-function normalizeWinnerId(gameData) {
-  // Prefer winner_ids (new format)
-  if (gameData.winner_ids) {
-    return Array.isArray(gameData.winner_ids) ? gameData.winner_ids : [gameData.winner_ids];
+function normalizeWinnerId(gameDataOrValue) {
+  // Handle null/undefined
+  if (!gameDataOrValue) {
+    return [];
   }
-  // Fallback to winner_id (legacy format)
-  if (gameData.winner_id) {
-    return Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id];
+  
+  // Handle direct array/string values (for backward compatibility)
+  if (Array.isArray(gameDataOrValue)) {
+    return gameDataOrValue;
   }
+  if (typeof gameDataOrValue === 'string') {
+    return [gameDataOrValue];
+  }
+  
+  // Handle object with winner_ids/winner_id properties
+  if (typeof gameDataOrValue === 'object') {
+    // Prefer winner_ids (new format)
+    if (gameDataOrValue.winner_ids) {
+      return Array.isArray(gameDataOrValue.winner_ids) ? gameDataOrValue.winner_ids : [gameDataOrValue.winner_ids];
+    }
+    // Fallback to winner_id (legacy format)
+    if (gameDataOrValue.winner_id) {
+      return Array.isArray(gameDataOrValue.winner_id) ? gameDataOrValue.winner_id : [gameDataOrValue.winner_id];
+    }
+  }
+  
   return [];
 }
 

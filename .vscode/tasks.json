@@ -43,11 +43,27 @@
             "label": "Update Version",
             "type": "shell",
             "command": "cmd",
-            "args": ["/C", "npm run update-version"],
+            "args": ["/C", "cd frontend && npm run update-version && cd .. && npm test"],
             "options": {
-                "cwd": "${workspaceFolder}/frontend"
+                "cwd": "${workspaceFolder}"
             },
             "group": "build",
+            "isBackground": false,
+            "problemMatcher": []
+        },
+        
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/C", "npm test"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
             "isBackground": false,
             "problemMatcher": []
         }
