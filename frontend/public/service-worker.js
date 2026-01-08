@@ -32,59 +32,25 @@ const broadcastUpdateProgress = async (state) => {
   });
 };
 
-// Precache and route assets with error recovery and progress tracking
-const setupPrecaching = async () => {
-  try {
-    const manifest = self.__WB_MANIFEST || [];
-    updateState.totalAssets = manifest.length;
-    
-    // Track precaching progress
-    if (manifest.length > 0) {
-      await broadcastUpdateProgress({ status: 'downloading', progress: 0, totalAssets: manifest.length });
-    }
-    
-    // Filter out any potentially stale entries from manifest
-    // This helps when old service workers have outdated file references
-    const validManifest = manifest.filter(_entry => {
-      // Keep entries that don't look like versioned build artifacts
-      // or assume they're current
-      return true; // Workbox will handle 404s gracefully
-    });
-    
-    // This will be replaced by Vite PWA plugin with the actual manifest
-    // Use a custom handler that doesn't fail on individual 404s
-    precacheAndRoute(validManifest, {
-      // Ignore errors for individual URLs - don't fail entire precache
-      ignoreURLParametersMatching: [/^v/, /^_/],
-      directoryIndex: null,
-      // Add handler to skip 404s during precaching
-      urlManipulation: ({ url }) => {
-        return [url];
-      }
-    });
-    cleanupOutdatedCaches();
-    
-    console.debug(`Service Worker v${APP_VERSION} precaching complete (${validManifest.length} assets)`);
-    await broadcastUpdateProgress({ status: 'ready', progress: 100, cachedAssets: validManifest.length });
-  } catch (_error) {
-    console.error('Precaching failed:', _error);
-    await broadcastUpdateProgress({ status: 'error', error: _error.message });
-    
-    // On error, clear ALL caches to force fresh state
-    // This handles the case where old SW has stale manifest
-    try {
-      const cacheNames = await caches.keys();
-      console.warn(`Clearing ${cacheNames.length} caches due to precache error`);
-      await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-      console.debug('Cache cleanup complete, app will use network for all requests');
-    } catch (cleanupError) {
-      console.error('Cache cleanup also failed:', cleanupError);
-    }
-  }
-};
-
-// Execute precaching setup
-setupPrecaching();
+// Precache and route assets - MUST be called synchronously at top level
+// This will be replaced by Vite PWA plugin with the actual manifest
+try {
+  const manifest = self.__WB_MANIFEST || [];
+  updateState.totalAssets = manifest.length;
+  
+  // Call precacheAndRoute synchronously so event listeners are registered immediately
+  precacheAndRoute(manifest, {
+    ignoreURLParametersMatching: [/^v/, /^_/],
+    directoryIndex: null,
+  });
+  
+  // Cleanup can happen async
+  cleanupOutdatedCaches();
+  
+  console.debug(`Service Worker v${APP_VERSION} initialized with ${manifest.length} assets to precache`);
+} catch (_error) {
+  console.error('Precaching setup failed:', _error);
+}
 
 // API endpoints that should be cached for offline access
 const API_CACHE_PATTERNS = [
