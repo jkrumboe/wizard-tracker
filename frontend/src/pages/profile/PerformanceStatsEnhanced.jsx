@@ -481,7 +481,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       
       {/* OVERVIEW SECTION */}
       <div>
-        <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Overview</h3>
+        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Overview</h2>
         
         {/* Overall Stats Grid */}
         <div style={{ 
@@ -545,7 +545,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
 
       {/* INSIGHTS SECTION */}
       <div>
-        <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h3>
+        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h2>
         
         {/* Performance Metrics */}
         <div style={{
@@ -636,7 +636,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
 
       {/* ACHIEVEMENTS SECTION */}
       <div>
-        <h3 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Achievements</h3>
+        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Achievements</h2>
         {stats.achievements.length > 0 ? (
           <div style={{
             display: 'grid',
