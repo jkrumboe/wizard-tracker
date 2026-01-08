@@ -162,12 +162,19 @@ async function resolveOrCreateIdentity(playerName) {
 
   // Create guest user if doesn't exist
   if (!user) {
+    // Pad short usernames to meet minimum length requirement (3 chars)
+    let username = playerName.trim();
+    if (username.length < 3) {
+      username = `Player_${username}`;
+    }
+    
     user = await User.create({
-      username: playerName.trim(),
+      username,
       role: 'guest',
       passwordHash: null,
       guestMetadata: {
-        originalGuestId: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        originalGuestId: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        originalShortName: playerName.trim().length < 3 ? playerName.trim() : undefined
       }
     });
     userCreated = true;
@@ -177,7 +184,7 @@ async function resolveOrCreateIdentity(playerName) {
   identity = await PlayerIdentity.create({
     displayName: playerName.trim(),
     normalizedName,
-    type: user.role === 'guest' ? 'guest' : 'registered',
+    type: user.role === 'guest' ? 'guest' : 'user',
     userId: user._id
   });
   created = true;
@@ -213,14 +220,21 @@ async function linkIdentitiesToUsers() {
     });
 
     if (!user) {
+      // Pad short usernames to meet minimum length requirement (3 chars)
+      let username = identity.displayName;
+      if (username.length < 3) {
+        username = `Player_${username}`;
+      }
+      
       // Create guest user
       user = await User.create({
-        username: identity.displayName,
+        username,
         role: 'guest',
         passwordHash: null,
         guestMetadata: {
           originalGuestId: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          identityId: identity._id
+          identityId: identity._id,
+          originalShortName: identity.displayName.length < 3 ? identity.displayName : undefined
         }
       });
       stats.guestUsersCreated++;
@@ -228,7 +242,7 @@ async function linkIdentitiesToUsers() {
 
     // Link identity to user
     identity.userId = user._id;
-    identity.type = user.role === 'guest' ? 'guest' : 'registered';
+    identity.type = user.role === 'guest' ? 'guest' : 'user';
     await identity.save();
     stats.identitiesLinked++;
   }
