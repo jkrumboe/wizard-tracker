@@ -3,7 +3,6 @@ import authService from '../api/authService'
 import defaultAvatar from '../../assets/default-avatar.png'
 import { LocalUserProfileService, LocalGameStorage, LocalTableGameStorage } from '../api'
 import { stateRecovery } from '../utils/stateRecovery'
-import { sessionCache } from '../utils/sessionCache'
 
 export const UserContext = createContext(undefined)
 

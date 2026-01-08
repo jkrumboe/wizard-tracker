@@ -53,7 +53,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
       try {
         const localFriends = await localFriendsService.getAllFriends();
         setFriends(localFriends);
-      } catch (localErr) {
+      } catch {
         setError('Failed to load friends');
       }
     }

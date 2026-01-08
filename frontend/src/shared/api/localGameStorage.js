@@ -253,7 +253,6 @@ export class LocalGameStorage {
         // Also add round numbers and fill missing future rounds for paused games
         const savedRounds = savedGame.round_data || [];
         const totalRounds = savedGame.total_rounds || internalState.maxRounds || 20;
-        const currentRound = internalState.currentRound || 1;
         
         // Create all rounds (both saved and future ones)
         const roundData = [];
@@ -519,7 +518,7 @@ export class LocalGameStorage {
                 ? (game._internalState ? game._internalState.isPaused : !game.gameFinished)
                 : (game.isPaused || (game.gameState && game.gameState.isPaused) || false),
               gameFinished: game.gameFinished || (game.gameState && game.gameState.gameFinished) || false,
-              totalRounds: isV3Format
+              total_rounds: isV3Format
                 ? game.total_rounds
                 : (game.totalRounds || (game.gameState && game.gameState.maxRounds) || 0)
             };

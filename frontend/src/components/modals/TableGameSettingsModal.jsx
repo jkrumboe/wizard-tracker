@@ -98,7 +98,6 @@ const TableGameSettingsModal = ({
   onClose, 
   players, 
   rows,
-  currentRound,
   targetNumber,
   lowIsBetter,
   onUpdateSettings,

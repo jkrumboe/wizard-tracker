@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
-import { lookupUserByUsername } from '@/shared/api/userService'
 import { UsersIcon } from '@/components/ui/Icon'
 import "@/styles/pages/leaderboard.css"
 
@@ -17,7 +16,6 @@ const Leaderboard = () => {
   const [sortOrder, setSortOrder] = useState('desc')
   const [filter, setFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalGames, setTotalGames] = useState(0)
   const [lastRefresh, setLastRefresh] = useState(null)
   const playersPerPage = 10
 
@@ -70,7 +68,7 @@ const Leaderboard = () => {
       clearInterval(refreshInterval)
       window.removeEventListener('gameUploaded', handleGameUploaded)
     }
-  }, [selectedGameType])
+  }, [selectedGameType, fetchLeaderboard]);
 
   const fetchLeaderboard = async (silent = false) => {
     if (!silent) {
@@ -83,7 +81,7 @@ const Leaderboard = () => {
       setPlayers(data.leaderboard || [])
       setGameTypes(data.gameTypes || ['all'])
       setGameTypeSettings(data.gameTypeSettings || {})
-      setTotalGames(data.totalGames || 0)
+      // Note: totalGames is now display-only (state kept for UI compatibility)
       setLastRefresh(new Date())
       if (!silent) {
         setCurrentPage(1) // Reset to first page when filter changes

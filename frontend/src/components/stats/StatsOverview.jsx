@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React from 'react';
 import { useGameStats } from '@/shared/hooks/useGameStats';
 import '@/styles/pages/account.css';
 

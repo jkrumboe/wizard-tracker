@@ -20,7 +20,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm, roleFilter]);
+  }, [users, searchTerm, roleFilter, filterUsers]);
 
   const filterUsers = () => {
     let filtered = [...users];

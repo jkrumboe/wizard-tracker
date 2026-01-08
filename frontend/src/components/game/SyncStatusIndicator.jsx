@@ -45,7 +45,7 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
       if (unsubscribe) unsubscribe();
       clearInterval(pollInterval);
     };
-  }, [gameId]);
+  }, [gameId, handleSyncEvent, loadSyncStatus]);
 
   const loadSyncStatus = async () => {
     if (!gameId) return;

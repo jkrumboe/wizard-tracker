@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
-import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 
 // Services
 import { getGameById } from "@/shared/api/gameService"
@@ -13,8 +12,6 @@ import { ensureGameSynced } from '@/shared/utils/ensureGameSynced';
 // Components
 import StatsChart from "@/components/game/StatsChart"
 import { AdvancedStats } from "@/components/game"
-// Assets
-import defaultAvatar from "@/assets/default-avatar.png"
 // Styles
 import "@/styles/utils/performanceMetrics.css"
 import "@/styles/components/scorecard.css"

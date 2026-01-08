@@ -158,8 +158,6 @@ const GameHistoryItem = ({ game }) => {
     const playerWithOriginalId = players.find(p => p.originalId === winnerId);
     return playerWithOriginalId ? playerWithOriginalId.id : winnerId;
   });
-  
-  const game_mode = isTableGame ? game.name : (game.game_mode || game.mode || (game.gameState && game.gameState.mode) || "Local");
 
   // Get winner name(s) for display
   const getWinnerDisplay = () => {

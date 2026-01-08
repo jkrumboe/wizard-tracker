@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import { getSyncManager } from '../sync/syncManager';
-import { persistenceMiddleware, resumeGame, forceSave } from '../sync/persistenceMiddleware';
+import { persistenceMiddleware, resumeGame } from '../sync/persistenceMiddleware';
 import { db } from '../db/database';
 
 export const GameSyncContext = createContext({

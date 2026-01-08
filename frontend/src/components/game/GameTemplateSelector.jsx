@@ -31,7 +31,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     loadSystemTemplates();
     // Automatically download templates from cloud on mount
     handleDownloadTemplates();
-  }, []);
+  }, [handleDownloadTemplates]);
 
   const loadTemplates = () => {
     const templatesList = LocalTableGameTemplate.getTemplatesList();

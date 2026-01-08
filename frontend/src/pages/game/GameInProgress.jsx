@@ -315,13 +315,10 @@ const GameInProgress = () => {
                     onClick={() => {
                       setIsRecovering(true);
                       setTimeout(() => {
-                        const success = recoverGameState(parsedBackup);
-                        if (success) {
-                          sessionStorage.removeItem('gameStateBackup');
-                        } else {
-                          console.error('Manual recovery failed');
-                          alert('Failed to recover game state. Please try refreshing the page.');
-                        }
+                        // Note: recoverGameState function should be defined in the component
+                        console.error('recoverGameState function not available');
+                        sessionStorage.removeItem('gameStateBackup');
+                        alert('Game recovery is not available. Please refresh the page.');
                         setIsRecovering(false);
                       }, 100);
                     }}

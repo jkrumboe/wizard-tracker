@@ -20,7 +20,6 @@ export const useGameStats = (games, user) => {
 
     // Get user identifiers
     const userIdentifiers = [user.id, user._id, user.$id, user.username].filter(Boolean);
-    const usernameLower = user.username?.toLowerCase();
     
     // Get all searchable names (username + identity names) from user object
     const searchNames = user.identities 

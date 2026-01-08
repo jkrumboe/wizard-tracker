@@ -394,7 +394,7 @@ const UpdateNotification = () => {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
       }
     };
-  }, []);
+  }, [hasVersionChanged, performReload]);
 
   const handleUpdate = async () => {
     if (!canReload()) {

@@ -91,7 +91,7 @@ const FriendLeaderboard = () => {
     })
   }
 
-  const addCurrentUser = () => {
+  const _addCurrentUser = () => {
     if (!user || !user.username) return
     
     const isAlreadySelected = selectedPlayers.some(

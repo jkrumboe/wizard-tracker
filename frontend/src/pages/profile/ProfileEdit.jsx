@@ -321,7 +321,7 @@ const ProfileEdit = () => {
       {/* Messages Stack - Position at top level */}
       {messages.length > 0 && (
         <ul className="messages-container">
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <li 
               key={message.id} 
               className={`settings-message ${message.type}`}

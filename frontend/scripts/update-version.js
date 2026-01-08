@@ -184,6 +184,7 @@ function generateRandomHex(length) {
 }
 
 // Generate a secure random password
+// eslint-disable-next-line no-unused-vars
 function generateRandomPassword(length = 24) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
   const passwordChars = [];

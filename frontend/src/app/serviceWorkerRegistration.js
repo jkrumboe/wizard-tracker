@@ -1,5 +1,4 @@
 // Enhanced service worker registration with custom update UI
-let isReloading = false;
 let updateCheckInProgress = false;
 let lastUpdateCheck = 0;
 const UPDATE_CHECK_INTERVAL = 300000; // 5 minutes

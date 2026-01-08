@@ -282,7 +282,7 @@ async function handleWriteOperation(request) {
     // Try network first
     const response = await fetch(request);
     return response;
-  } catch (error) {
+  } catch {
     // Network failed - queue for background sync
     console.debug('Write operation failed, will retry when online:', request.url);
     

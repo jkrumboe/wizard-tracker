@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
-import { useGameStats } from '@/shared/hooks/useGameStats';
+
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
@@ -21,7 +21,7 @@ import defaultAvatar from "@/assets/default-avatar.png";
 import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
-import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters';
+import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced';
 import StatsOverview from '@/components/stats/StatsOverview';
 import '@/styles/pages/account.css';
@@ -365,7 +365,7 @@ const Account = () => {
         }
       }, 1000); // Reduced delay since batch check is much faster
     }
-  }, [user, savedGames, savedTableGames]);
+  }, [user]);
 
   // Load cloud games from API if user is logged in
   const loadCloudGames = useCallback(async () => {
@@ -536,9 +536,7 @@ const Account = () => {
     }
   };
 
-  const handleThemeModeChange = (e) => {
-    setUseSystemTheme(e.target.checked);
-  };
+
 
   const handleAutoUpdateChange = (e) => {
     const newValue = e.target.checked;
@@ -691,7 +689,7 @@ const Account = () => {
         setMigrationStatus(getMigrationStatus());
         setNeedsMigration(false);
         // Reload games to show migrated format
-        loadAllGames();
+        loadSavedGames();
       } else {
         setMessage({ 
           text: result.message || 'Migration failed', 

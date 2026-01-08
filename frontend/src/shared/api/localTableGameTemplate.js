@@ -345,7 +345,7 @@ export class LocalTableGameTemplate {
 
       // Ensure template is synced to cloud first
       if (!template.cloudId) {
-        const cloudTemplate = await this.syncToCloud(templateId);
+        await this.syncToCloud(templateId);
         // Reload template from storage to get updated cloudId
         const updatedTemplate = this.getTemplate(templateId);
         if (!updatedTemplate || !updatedTemplate.cloudId) {

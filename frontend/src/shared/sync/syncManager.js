@@ -277,7 +277,7 @@ export class SyncManager {
    */
   async applyMergedState(gameId, mergedState) {
     const { createGameSnapshot } = await import('../schemas/gameSnapshot.js');
-    const metadata = await db.getSyncMetadata(gameId);
+    await db.getSyncMetadata(gameId);
     
     const snapshot = createGameSnapshot({
       gameId,

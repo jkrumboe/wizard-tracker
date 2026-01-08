@@ -11,7 +11,6 @@ import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils
 
 // Temporarily remove playerService imports since they're not implemented yet
 // import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
-import { getRecentLocalGames } from '@/shared/api/gameService'
 import avatarService from '@/shared/api/avatarService'
 import defaultAvatar from "@/assets/default-avatar.png";
 

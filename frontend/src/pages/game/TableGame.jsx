@@ -238,7 +238,7 @@ const TableGame = () => {
     };
     
     loadGame();
-  }, [id, showTemplateSelector, currentGameId]);
+  }, [id, showTemplateSelector, currentGameId, navigate]);
 
   // Listen for orientation changes
   useEffect(() => {
@@ -502,7 +502,7 @@ const TableGame = () => {
   };
 
   // Insert a player at a specific index
-  const insertPlayer = (idx) => {
+  const _insertPlayer = (idx) => {
     const newPlayers = [...players];
     // Suggest a default name, but user can change it
     const defaultName = `Player ${players.length + 1}`;
@@ -511,7 +511,7 @@ const TableGame = () => {
   };
 
   // Remove a player at a specific index
-  const removePlayer = (idx) => {
+  const _removePlayer = (idx) => {
     if (players.length <= MIN_PLAYERS) return; // Prevent removing below minimum
     setPlayerToDelete(idx);
     setShowDeletePlayerConfirm(true);
@@ -536,7 +536,7 @@ const TableGame = () => {
 
   // Note: Player reordering functions removed as they're not used in the new UI
 
-  const addRow = () => {
+  const _addRow = () => {
     setRows(rows + 1);
   };
 
@@ -735,7 +735,7 @@ const TableGame = () => {
     }
   };
 
-  const handleEditGame = () => {
+  const _handleEditGame = () => {
     setGameFinished(false);
     // Save with the updated finished status
     try {
@@ -878,7 +878,7 @@ const TableGame = () => {
     navigate(-1);
   };
 
-  const saveGame = () => {
+  const _saveGame = () => {
     try {
       const gameData = {
         players: players,

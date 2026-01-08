@@ -3,13 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 import { getUserPublicProfile } from '@/shared/api/userService'
-import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters'
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api'
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced'
 import StatsOverview from '@/components/stats/StatsOverview'
 import { ArrowLeftIcon, TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal'
-import avatarService from '@/shared/api/avatarService'
 import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
 
@@ -25,7 +23,6 @@ const UserProfile = () => {
   const [statsGameType, setStatsGameType] = useState('wizard')
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar)
   const [showProfilePictureModal, setShowProfilePictureModal] = useState(false)
-  const [filters] = useState(getDefaultFilters())
 
   // Check if viewing own profile by comparing userId
   const isOwnProfile = currentUser && currentUser.id === userId
@@ -40,7 +37,7 @@ const UserProfile = () => {
       tableGames: savedTableGames,
       allGames: [...Object.values(savedGames), ...savedTableGames]
     };
-  }, [isOwnProfile, currentUser]);
+  }, [isOwnProfile]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -110,10 +107,6 @@ const UserProfile = () => {
       );
     }
   }, [profileUser?.games, statsGameType]);
-
-  const filteredGamesForStats = useMemo(() => {
-    return filterGames(allGamesForStats, filters)
-  }, [allGamesForStats, filters])
 
   // Get available game types for stats selector
   const availableGameTypes = useMemo(() => {

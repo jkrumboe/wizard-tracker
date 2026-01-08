@@ -28,7 +28,7 @@ const Home = () => {
   const [showFriendsModal, setShowFriendsModal] = useState(false)
   const [filters, setFilters] = useState(getDefaultFilters())
   const [gameSyncStatuses, setGameSyncStatuses] = useState({})
-  const [isShowingCloudGames, setIsShowingCloudGames] = useState(false)
+  const [_isShowingCloudGames, setIsShowingCloudGames] = useState(false)
   
   // Apply filters to games
   const filteredGames = useMemo(() => {
