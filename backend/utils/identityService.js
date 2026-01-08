@@ -12,6 +12,8 @@ const PlayerIdentity = require('../models/PlayerIdentity');
  * - Username changes propagating to identities
  * - Account deletion handling
  * - Admin identity management (assign, merge, split)
+ * - Table game and wizard game identity linking
+ * - Guest to user conversion with game updates
  */
 
 // ============================================
@@ -117,6 +119,63 @@ async function claimIdentitiesOnRegistration(user) {
     result.claimed.push(...additionalClaimed.filter(id => 
       !result.claimed.some(c => c.equals ? c.equals(id) : c.toString() === id.toString())
     ));
+    
+    // Get the user's final identity (the one we created or claimed)
+    const userIdentity = result.created || 
+      (result.claimed.length > 0 ? await PlayerIdentity.findById(result.claimed[0]) : null);
+    
+    if (userIdentity) {
+      // Update games that reference any of the claimed guest identities
+      // This links old games played as guest to the new user
+      const allClaimedIds = [...result.claimed];
+      
+      for (const claimedId of allClaimedIds) {
+        if (claimedId.toString() !== userIdentity._id.toString()) {
+          try {
+            // Update TableGames
+            const TableGame = mongoose.model('TableGame');
+            await TableGame.updatePlayerIdentity(claimedId, userIdentity._id);
+            
+            // Update WizardGames
+            const WizardGame = mongoose.model('WizardGame');
+            await WizardGame.updateMany(
+              { 'gameData.players.identityId': { $eq: claimedId } },
+              { 
+                $set: { 
+                  'gameData.players.$[elem].identityId': userIdentity._id,
+                  'gameData.players.$[elem].previousIdentityId': claimedId
+                }
+              },
+              { arrayFilters: [{ 'elem.identityId': { $eq: claimedId } }] }
+            );
+            
+            // Add to linked identities for reversibility
+            if (!userIdentity.linkedIdentities) {
+              userIdentity.linkedIdentities = [];
+            }
+            const guestIdentity = await PlayerIdentity.findById(claimedId);
+            if (guestIdentity) {
+              userIdentity.linkedIdentities.push({
+                identityId: claimedId,
+                linkedAt: new Date(),
+                linkedBy: userId,
+                originalDisplayName: guestIdentity.displayName
+              });
+              guestIdentity.mergedInto = userIdentity._id;
+              await guestIdentity.save();
+            }
+            
+            console.log(`[IdentityService] Linked claimed identity ${claimedId} games to user ${userId}`);
+          } catch (linkError) {
+            console.error(`[IdentityService] Error linking games for claimed identity ${claimedId}:`, linkError.message);
+          }
+        }
+      }
+      
+      if (userIdentity.linkedIdentities && userIdentity.linkedIdentities.length > 0) {
+        await userIdentity.save();
+      }
+    }
     
   } catch (error) {
     console.error('[IdentityService] Error claiming identities:', error);
@@ -625,6 +684,427 @@ async function getAllIdentities(options = {}) {
   };
 }
 
+// ============================================
+// Player Linking (Guest to User Conversion)
+// ============================================
+
+/**
+ * Link a guest identity to a user account
+ * This is the core function for converting guest players to registered users
+ * Updates all games (TableGame and WizardGame) to use the user's identity
+ * 
+ * @param {String} guestIdentityId - The guest identity to link
+ * @param {String} userId - The user to link to
+ * @param {String} linkedBy - User performing the action (admin or the user themselves)
+ * @returns {Object} Result with update counts
+ */
+async function linkGuestToUser(guestIdentityId, userId, linkedBy) {
+  // Validate inputs
+  if (!mongoose.Types.ObjectId.isValid(guestIdentityId)) {
+    throw new Error('Invalid guest identity ID');
+  }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID');
+  }
+  
+  const result = {
+    success: false,
+    guestIdentity: null,
+    userIdentity: null,
+    gamesUpdated: {
+      tableGames: 0,
+      wizardGames: 0
+    },
+    errors: []
+  };
+  
+  try {
+    // Get the guest identity
+    const guestIdentity = await PlayerIdentity.findById(guestIdentityId);
+    if (!guestIdentity) {
+      throw new Error('Guest identity not found');
+    }
+    if (guestIdentity.userId) {
+      throw new Error('Identity is already linked to a user');
+    }
+    
+    // Get or create the user's identity
+    const User = mongoose.model('User');
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    let userIdentity = await PlayerIdentity.findOne({
+      userId: userId,
+      isDeleted: false
+    });
+    
+    if (!userIdentity) {
+      // Create identity for user
+      userIdentity = await PlayerIdentity.create({
+        displayName: user.username,
+        normalizedName: user.username.toLowerCase().trim(),
+        userId: userId,
+        type: 'user',
+        createdBy: linkedBy
+      });
+    }
+    
+    // Add guest identity as linked identity for reversibility
+    userIdentity.linkedIdentities.push({
+      identityId: guestIdentity._id,
+      linkedAt: new Date(),
+      linkedBy: linkedBy,
+      originalDisplayName: guestIdentity.displayName
+    });
+    
+    // Add guest's aliases to user identity
+    for (const alias of guestIdentity.aliases) {
+      if (!userIdentity.aliases.some(a => a.normalizedName === alias.normalizedName)) {
+        userIdentity.aliases.push({
+          name: alias.name,
+          normalizedName: alias.normalizedName,
+          addedAt: new Date(),
+          addedBy: linkedBy
+        });
+      }
+    }
+    
+    // Add guest's display name as alias if different
+    if (guestIdentity.normalizedName !== userIdentity.normalizedName) {
+      if (!userIdentity.aliases.some(a => a.normalizedName === guestIdentity.normalizedName)) {
+        userIdentity.aliases.push({
+          name: guestIdentity.displayName,
+          normalizedName: guestIdentity.normalizedName,
+          addedAt: new Date(),
+          addedBy: linkedBy
+        });
+      }
+    }
+    
+    await userIdentity.save();
+    
+    // Update all TableGames to use user's identity
+    const TableGame = mongoose.model('TableGame');
+    const tableGameResult = await TableGame.updatePlayerIdentity(guestIdentity._id, userIdentity._id);
+    result.gamesUpdated.tableGames = tableGameResult.modifiedCount || 0;
+    
+    // Update all WizardGames to use user's identity
+    const WizardGame = mongoose.model('WizardGame');
+    const wizardGameResult = await WizardGame.updateMany(
+      { 'gameData.players.identityId': { $eq: guestIdentity._id } },
+      { 
+        $set: { 
+          'gameData.players.$[elem].identityId': userIdentity._id,
+          'gameData.players.$[elem].previousIdentityId': guestIdentity._id
+        }
+      },
+      { arrayFilters: [{ 'elem.identityId': { $eq: guestIdentity._id } }] }
+    );
+    result.gamesUpdated.wizardGames = wizardGameResult.modifiedCount || 0;
+    
+    // Mark guest identity as merged into user identity
+    guestIdentity.mergedInto = userIdentity._id;
+    guestIdentity.type = 'imported'; // Keep for historical reference
+    await guestIdentity.save();
+    
+    result.success = true;
+    result.guestIdentity = guestIdentity;
+    result.userIdentity = userIdentity;
+    
+    console.log(`[IdentityService] Linked guest "${guestIdentity.displayName}" to user "${user.username}". Updated ${result.gamesUpdated.tableGames} table games, ${result.gamesUpdated.wizardGames} wizard games.`);
+    
+  } catch (error) {
+    console.error('[IdentityService] Error linking guest to user:', error);
+    result.errors.push(error.message);
+  }
+  
+  return result;
+}
+
+/**
+ * Link multiple guest identities to a user
+ * Useful for players who played under multiple names before registering
+ * 
+ * @param {Array} guestIdentityIds - Array of guest identity IDs
+ * @param {String} userId - The user to link to
+ * @param {String} linkedBy - User performing the action
+ * @returns {Object} Combined result
+ */
+async function linkMultipleGuestsToUser(guestIdentityIds, userId, linkedBy) {
+  const result = {
+    success: true,
+    linked: [],
+    failed: [],
+    totalGamesUpdated: {
+      tableGames: 0,
+      wizardGames: 0
+    }
+  };
+  
+  for (const guestIdentityId of guestIdentityIds) {
+    try {
+      const linkResult = await linkGuestToUser(guestIdentityId, userId, linkedBy);
+      if (linkResult.success) {
+        result.linked.push(guestIdentityId);
+        result.totalGamesUpdated.tableGames += linkResult.gamesUpdated.tableGames;
+        result.totalGamesUpdated.wizardGames += linkResult.gamesUpdated.wizardGames;
+      } else {
+        result.failed.push({ id: guestIdentityId, errors: linkResult.errors });
+      }
+    } catch (error) {
+      result.failed.push({ id: guestIdentityId, errors: [error.message] });
+    }
+  }
+  
+  if (result.failed.length > 0) {
+    result.success = result.linked.length > 0;
+  }
+  
+  return result;
+}
+
+/**
+ * Unlink a guest identity from a user (revert linking)
+ * Restores the guest identity and updates all games back
+ * 
+ * @param {String} guestIdentityId - The guest identity to unlink
+ * @param {String} userId - The user to unlink from
+ * @param {String} unlinkedBy - User performing the action
+ * @returns {Object} Result with update counts
+ */
+async function unlinkGuestFromUser(guestIdentityId, userId, unlinkedBy) {
+  // Validate inputs
+  if (!mongoose.Types.ObjectId.isValid(guestIdentityId)) {
+    throw new Error('Invalid guest identity ID');
+  }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID');
+  }
+  
+  const result = {
+    success: false,
+    gamesUpdated: {
+      tableGames: 0,
+      wizardGames: 0
+    },
+    errors: []
+  };
+  
+  try {
+    // Get the user's identity
+    const userIdentity = await PlayerIdentity.findOne({
+      userId: userId,
+      isDeleted: false
+    });
+    
+    if (!userIdentity) {
+      throw new Error('User identity not found');
+    }
+    
+    // Check if guest identity was linked to this user
+    const linkedEntry = userIdentity.linkedIdentities.find(
+      li => li.identityId.toString() === guestIdentityId
+    );
+    
+    if (!linkedEntry) {
+      throw new Error('Guest identity was not linked to this user');
+    }
+    
+    // Get the guest identity
+    const guestIdentity = await PlayerIdentity.findById(guestIdentityId);
+    if (!guestIdentity) {
+      throw new Error('Guest identity not found');
+    }
+    
+    // Update all TableGames back to guest identity
+    const TableGame = mongoose.model('TableGame');
+    const tableGameResult = await TableGame.updateMany(
+      { 'gameData.players.previousIdentityId': { $eq: guestIdentity._id } },
+      { 
+        $set: { 'gameData.players.$[elem].identityId': guestIdentity._id },
+        $unset: { 'gameData.players.$[elem].previousIdentityId': '' }
+      },
+      { arrayFilters: [{ 'elem.previousIdentityId': { $eq: guestIdentity._id } }] }
+    );
+    result.gamesUpdated.tableGames = tableGameResult.modifiedCount || 0;
+    
+    // Update all WizardGames back to guest identity
+    const WizardGame = mongoose.model('WizardGame');
+    const wizardGameResult = await WizardGame.updateMany(
+      { 'gameData.players.previousIdentityId': { $eq: guestIdentity._id } },
+      { 
+        $set: { 'gameData.players.$[elem].identityId': guestIdentity._id },
+        $unset: { 'gameData.players.$[elem].previousIdentityId': '' }
+      },
+      { arrayFilters: [{ 'elem.previousIdentityId': { $eq: guestIdentity._id } }] }
+    );
+    result.gamesUpdated.wizardGames = wizardGameResult.modifiedCount || 0;
+    
+    // Remove linked entry from user identity
+    userIdentity.linkedIdentities = userIdentity.linkedIdentities.filter(
+      li => li.identityId.toString() !== guestIdentityId
+    );
+    await userIdentity.save();
+    
+    // Restore guest identity
+    guestIdentity.mergedInto = null;
+    guestIdentity.type = 'guest';
+    await guestIdentity.save();
+    
+    result.success = true;
+    
+    console.log(`[IdentityService] Unlinked guest "${guestIdentity.displayName}" from user. Reverted ${result.gamesUpdated.tableGames} table games, ${result.gamesUpdated.wizardGames} wizard games.`);
+    
+  } catch (error) {
+    console.error('[IdentityService] Error unlinking guest from user:', error);
+    result.errors.push(error.message);
+  }
+  
+  return result;
+}
+
+/**
+ * Get all identities that can be linked to a user
+ * Shows guest identities that match names similar to the user's username
+ * 
+ * @param {String} userId - The user to find matches for
+ * @returns {Object} Suggested identities
+ */
+async function getSuggestedIdentities(userId) {
+  // Validate userId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID');
+  }
+  
+  const User = mongoose.model('User');
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  const userIdentity = await PlayerIdentity.findOne({
+    userId: userId,
+    isDeleted: false
+  });
+  
+  const normalizedUsername = user.username.toLowerCase().trim();
+  
+  // Find guest identities that might belong to this user
+  // Search by name similarity and aliases
+  const suggestedIdentities = await PlayerIdentity.find({
+    isDeleted: false,
+    userId: null,
+    mergedInto: null,
+    $or: [
+      { normalizedName: normalizedUsername },
+      { 'aliases.normalizedName': normalizedUsername },
+      // Fuzzy match: names containing username
+      { normalizedName: { $regex: new RegExp(normalizedUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } }
+    ]
+  }).limit(20);
+  
+  // Get already linked identities for reference
+  const linkedIdentities = userIdentity?.linkedIdentities?.map(li => li.identityId.toString()) || [];
+  
+  return {
+    suggestions: suggestedIdentities.filter(si => !linkedIdentities.includes(si._id.toString())),
+    alreadyLinked: linkedIdentities
+  };
+}
+
+/**
+ * Update all games when identity is merged or display name changes
+ * Ensures consistency across TableGame and WizardGame collections
+ * 
+ * @param {String} identityId - The identity that changed
+ * @param {String} newDisplayName - New display name (optional, for name changes)
+ * @returns {Object} Update counts
+ */
+async function propagateIdentityChanges(identityId, newDisplayName = null) {
+  // Validate identityId
+  if (!mongoose.Types.ObjectId.isValid(identityId)) {
+    throw new Error('Invalid identity ID');
+  }
+  
+  const result = {
+    tableGames: 0,
+    wizardGames: 0
+  };
+  
+  if (newDisplayName) {
+    // Update player names in all games (for display purposes)
+    const TableGame = mongoose.model('TableGame');
+    const tableResult = await TableGame.updateMany(
+      { 'gameData.players.identityId': { $eq: mongoose.Types.ObjectId(identityId) } },
+      { $set: { 'gameData.players.$[elem].name': newDisplayName } },
+      { arrayFilters: [{ 'elem.identityId': { $eq: mongoose.Types.ObjectId(identityId) } }] }
+    );
+    result.tableGames = tableResult.modifiedCount || 0;
+    
+    const WizardGame = mongoose.model('WizardGame');
+    const wizardResult = await WizardGame.updateMany(
+      { 'gameData.players.identityId': { $eq: mongoose.Types.ObjectId(identityId) } },
+      { $set: { 'gameData.players.$[elem].name': newDisplayName } },
+      { arrayFilters: [{ 'elem.identityId': { $eq: mongoose.Types.ObjectId(identityId) } }] }
+    );
+    result.wizardGames = wizardResult.modifiedCount || 0;
+  }
+  
+  return result;
+}
+
+/**
+ * Get all linked identities for a user (including the primary identity)
+ * 
+ * @param {String} userId - The user ID
+ * @returns {Object} All identities associated with this user
+ */
+async function getUserIdentities(userId) {
+  // Validate userId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error('Invalid user ID');
+  }
+  
+  const primaryIdentity = await PlayerIdentity.findOne({
+    userId: userId,
+    isDeleted: false
+  }).populate('linkedIdentities.identityId');
+  
+  if (!primaryIdentity) {
+    return {
+      primary: null,
+      linked: [],
+      aliases: []
+    };
+  }
+  
+  // Get details of linked identities
+  const linkedDetails = [];
+  for (const linked of primaryIdentity.linkedIdentities) {
+    const identity = await PlayerIdentity.findById(linked.identityId);
+    if (identity) {
+      linkedDetails.push({
+        id: identity._id,
+        displayName: linked.originalDisplayName || identity.displayName,
+        linkedAt: linked.linkedAt,
+        aliases: identity.aliases.map(a => a.name)
+      });
+    }
+  }
+  
+  return {
+    primary: {
+      id: primaryIdentity._id,
+      displayName: primaryIdentity.displayName,
+      normalizedName: primaryIdentity.normalizedName
+    },
+    linked: linkedDetails,
+    aliases: primaryIdentity.aliases.map(a => a.name)
+  };
+}
+
 module.exports = {
   // User lifecycle
   claimIdentitiesOnRegistration,
@@ -639,6 +1119,14 @@ module.exports = {
   // Game integration
   resolvePlayerIdentities,
   updateGameIdentities,
+  
+  // Player linking (Guest to User conversion)
+  linkGuestToUser,
+  linkMultipleGuestsToUser,
+  unlinkGuestFromUser,
+  getSuggestedIdentities,
+  getUserIdentities,
+  propagateIdentityChanges,
   
   // Statistics
   getUserStats,

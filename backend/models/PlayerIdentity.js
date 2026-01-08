@@ -70,6 +70,22 @@ const playerIdentitySchema = new mongoose.Schema({
     lastGameAt: { type: Date, default: null }
   },
   
+  // Track merged/linked identities for reversibility
+  // When guest identities are linked to this user identity, store them here
+  linkedIdentities: [{
+    identityId: { type: mongoose.Schema.Types.ObjectId, ref: 'PlayerIdentity' },
+    linkedAt: { type: Date, default: Date.now },
+    linkedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    originalDisplayName: { type: String }
+  }],
+  
+  // If this identity was merged into another, track the parent
+  mergedInto: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PlayerIdentity',
+    default: null
+  },
+  
   // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

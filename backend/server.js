@@ -38,6 +38,10 @@ async function initializeServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ MongoDB connected');
+    
+    // Run database migrations
+    const { runMigrations } = require('./scripts/runMigrations');
+    await runMigrations();
   } catch (err) {
     console.error('MongoDB connection error:', err);
   }

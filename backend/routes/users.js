@@ -1994,5 +1994,39 @@ router.get('/admin/player-names', auth, async (req, res, next) => {
   }
 });
 
+// GET /users/admin/migrations - Get migration status (admin only)
+router.get('/admin/migrations', auth, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { getMigrationStatus } = require('../scripts/runMigrations');
+    const status = await getMigrationStatus();
+
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting migration status:', error);
+    next(error);
+  }
+});
+
+// POST /users/admin/migrations/run - Manually run pending migrations (admin only)
+router.post('/admin/migrations/run', auth, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { runMigrations } = require('../scripts/runMigrations');
+    const result = await runMigrations();
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error running migrations:', error);
+    next(error);
+  }
+});
+
 module.exports = router;
 

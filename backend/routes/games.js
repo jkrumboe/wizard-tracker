@@ -825,7 +825,24 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       .map(name => name.toLowerCase().trim())
       .filter(name => !isDangerousKey(name));
     
-    // Fetch all player aliases to consolidate stats
+    // Build identity lookup maps using PlayerIdentity
+    const PlayerIdentity = require('../models/PlayerIdentity');
+    
+    // Find all identities that match the player names (by name or alias)
+    const matchingIdentities = await PlayerIdentity.find({
+      isDeleted: false,
+      $or: [
+        { normalizedName: { $in: normalizedPlayerNames } },
+        { 'aliases.normalizedName': { $in: normalizedPlayerNames } }
+      ]
+    }).populate('userId', 'username').lean();
+    
+    // Build maps for identity resolution
+    const nameToIdentityMap = Object.create(null); // name -> identityId
+    const identityToCanonicalMap = Object.create(null); // identityId -> canonicalName
+    const identityIdSet = new Set();
+    
+    // Also use PlayerAlias as fallback for legacy compatibility
     const PlayerAlias = require('../models/PlayerAlias');
     const allAliases = await PlayerAlias.find({}).populate('userId', 'username').lean();
     const aliasToUsernameMap = Object.create(null);
@@ -838,12 +855,63 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       }
     });
     
+    // Process matching identities
+    matchingIdentities.forEach(identity => {
+      const identityId = identity._id.toString();
+      const canonicalName = identity.userId?.username?.toLowerCase() || identity.displayName.toLowerCase();
+      
+      identityToCanonicalMap[identityId] = canonicalName;
+      identityIdSet.add(identityId);
+      
+      // Map display name to identity
+      if (!isDangerousKey(identity.normalizedName)) {
+        nameToIdentityMap[identity.normalizedName] = identityId;
+      }
+      
+      // Map all aliases to identity
+      if (identity.aliases) {
+        identity.aliases.forEach(alias => {
+          if (!isDangerousKey(alias.normalizedName)) {
+            nameToIdentityMap[alias.normalizedName] = identityId;
+          }
+        });
+      }
+      
+      // Also check linked identities
+      if (identity.linkedIdentities) {
+        identity.linkedIdentities.forEach(li => {
+          const linkedId = li.identityId.toString();
+          identityToCanonicalMap[linkedId] = canonicalName;
+          identityIdSet.add(linkedId);
+        });
+      }
+    });
+    
     // Helper function: Resolve a player name to the canonical username
-    const resolvePlayerName = (playerName) => {
-      const lowerName = playerName.toLowerCase();
-      if (aliasToUsernameMap[lowerName]) {
+    const resolvePlayerName = (playerName, playerId = null, identityId = null) => {
+      const lowerName = playerName?.toLowerCase().trim();
+      
+      // First try by identityId if available
+      if (identityId) {
+        const idStr = identityId.toString();
+        if (identityToCanonicalMap[idStr]) {
+          return identityToCanonicalMap[idStr];
+        }
+      }
+      
+      // Then try by name in identity map
+      if (lowerName && nameToIdentityMap[lowerName]) {
+        const identityId = nameToIdentityMap[lowerName];
+        if (identityToCanonicalMap[identityId]) {
+          return identityToCanonicalMap[identityId];
+        }
+      }
+      
+      // Fallback to PlayerAlias
+      if (lowerName && aliasToUsernameMap[lowerName]) {
         return aliasToUsernameMap[lowerName];
       }
+      
       return lowerName;
     };
     
@@ -918,9 +986,15 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       
       gameData.players.forEach(player => {
         if (!player.name) return;
-        const canonical = resolvePlayerName(player.name);
+        // Use identityId for resolution if available, fallback to name
+        const canonical = resolvePlayerName(player.name, player.id, player.identityId);
         if (targetCanonicalNames.has(canonical)) {
-          participantsInGame.push({ id: player.id, canonical, originalName: player.name });
+          participantsInGame.push({ 
+            id: player.id, 
+            identityId: player.identityId?.toString(),
+            canonical, 
+            originalName: player.name 
+          });
           playerIdToCanonical[player.id] = canonical;
         }
       });
@@ -1014,10 +1088,17 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       
       gameData.players.forEach((player, index) => {
         if (!player.name) return;
-        const canonical = resolvePlayerName(player.name);
+        // Use identityId for resolution if available, fallback to name
+        const canonical = resolvePlayerName(player.name, player.id || player.originalId, player.identityId);
         if (targetCanonicalNames.has(canonical)) {
-          const playerId = `player_${index}`;
-          participantsInGame.push({ id: playerId, index, canonical, originalName: player.name });
+          const playerId = player.id || player.originalId || `player_${index}`;
+          participantsInGame.push({ 
+            id: playerId, 
+            index, 
+            identityId: player.identityId?.toString(),
+            canonical, 
+            originalName: player.name 
+          });
           playerIndexToCanonical[index] = canonical;
         }
       });
@@ -1028,7 +1109,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       // Calculate final scores from points arrays
       const finalScores = {};
       gameData.players.forEach((player, index) => {
-        const playerId = `player_${index}`;
+        const playerId = player.id || player.originalId || `player_${index}`;
         const points = player.points || [];
         const totalScore = points.reduce((sum, p) => {
           const parsed = parseFloat(p);

@@ -856,6 +856,177 @@ class UserService {
       throw error;
     }
   }
+
+  // ==================== Identity Linking (New System) ====================
+  
+  /**
+   * Get guest identities available for linking
+   */
+  async getGuestIdentities(options = {}) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const params = new URLSearchParams();
+      if (options.search) params.append('search', options.search);
+      if (options.page) params.append('page', options.page);
+      if (options.limit) params.append('limit', options.limit);
+      
+      const endpoint = `${this.baseURL}/api/identities/link/guest-identities?${params}`;
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch guest identities' }));
+        throw new Error(error.error || 'Failed to fetch guest identities');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching guest identities:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get identities linked to a user
+   */
+  async getUserIdentities(userId = null) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = userId 
+        ? `${this.baseURL}/api/identities/admin/user/${userId}/identities`
+        : `${this.baseURL}/api/identities/link/my-identities`;
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch user identities' }));
+        throw new Error(error.error || 'Failed to fetch user identities');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching user identities:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Link a guest identity to a user (admin)
+   */
+  async linkGuestIdentity(guestIdentityId, userId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/identities/admin/link`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ guestIdentityId, userId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to link identity' }));
+        throw new Error(error.error || 'Failed to link identity');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error linking identity:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unlink a guest identity from a user (admin)
+   */
+  async unlinkGuestIdentity(guestIdentityId, userId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/identities/admin/unlink-guest`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ guestIdentityId, userId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to unlink identity' }));
+        throw new Error(error.error || 'Failed to unlink identity');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error unlinking identity:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get suggested identities to link for current user
+   */
+  async getSuggestedIdentities() {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/identities/link/suggestions`;
+      
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch suggested identities' }));
+        throw new Error(error.error || 'Failed to fetch suggested identities');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching suggested identities:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

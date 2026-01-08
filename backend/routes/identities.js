@@ -406,4 +406,258 @@ router.post('/admin/recalculate-all', auth, requireAdmin, async (req, res, next)
   }
 });
 
+// ============================================
+// Player Linking Routes (Guest to User)
+// ============================================
+
+/**
+ * GET /identities/link/suggestions
+ * Get suggested guest identities to link to current user
+ */
+router.get('/link/suggestions', auth, async (req, res, next) => {
+  try {
+    const result = await identityService.getSuggestedIdentities(req.user._id);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/link/my-identities
+ * Get all identities linked to current user
+ */
+router.get('/link/my-identities', auth, async (req, res, next) => {
+  try {
+    const result = await identityService.getUserIdentities(req.user._id);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/link/guest-identities
+ * Get all unlinked guest identities (for linking UI)
+ */
+router.get('/link/guest-identities', auth, async (req, res, next) => {
+  try {
+    const { search, page = 1, limit = 50 } = req.query;
+    
+    const filter = {
+      isDeleted: false,
+      userId: null,
+      mergedInto: null,
+      type: { $in: ['guest', 'imported'] }
+    };
+    
+    if (search && typeof search === 'string' && search.length > 0 && search.length <= 100) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedSearch, 'i');
+      filter.$or = [
+        { displayName: { $regex: regex } },
+        { 'aliases.name': { $regex: regex } }
+      ];
+    }
+    
+    const sanitizedPage = Math.max(1, Math.min(parseInt(page) || 1, 1000));
+    const sanitizedLimit = Math.max(1, Math.min(parseInt(limit) || 50, 200));
+    const skip = (sanitizedPage - 1) * sanitizedLimit;
+    
+    const [identities, total] = await Promise.all([
+      PlayerIdentity.find(filter)
+        .sort({ displayName: 1 })
+        .skip(skip)
+        .limit(sanitizedLimit),
+      PlayerIdentity.countDocuments(filter)
+    ]);
+    
+    res.json({
+      identities,
+      pagination: {
+        page: sanitizedPage,
+        limit: sanitizedLimit,
+        total,
+        pages: Math.ceil(total / sanitizedLimit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /identities/link
+ * Link a guest identity to current user
+ * This updates all games where the guest participated
+ */
+router.post('/link', auth, async (req, res, next) => {
+  try {
+    const { guestIdentityId } = req.body;
+    
+    if (!guestIdentityId) {
+      return res.status(400).json({ error: 'guestIdentityId is required' });
+    }
+    
+    const result = await identityService.linkGuestToUser(
+      guestIdentityId,
+      req.user._id,
+      req.user._id
+    );
+    
+    if (!result.success) {
+      return res.status(400).json({ 
+        error: result.errors[0] || 'Failed to link identity',
+        errors: result.errors
+      });
+    }
+    
+    res.json({
+      message: 'Guest identity linked successfully',
+      guestIdentity: result.guestIdentity,
+      userIdentity: result.userIdentity,
+      gamesUpdated: result.gamesUpdated
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /identities/link/multiple
+ * Link multiple guest identities to current user
+ */
+router.post('/link/multiple', auth, async (req, res, next) => {
+  try {
+    const { guestIdentityIds } = req.body;
+    
+    if (!Array.isArray(guestIdentityIds) || guestIdentityIds.length === 0) {
+      return res.status(400).json({ error: 'guestIdentityIds array is required' });
+    }
+    
+    if (guestIdentityIds.length > 20) {
+      return res.status(400).json({ error: 'Maximum 20 identities can be linked at once' });
+    }
+    
+    const result = await identityService.linkMultipleGuestsToUser(
+      guestIdentityIds,
+      req.user._id,
+      req.user._id
+    );
+    
+    res.json({
+      success: result.success,
+      linked: result.linked,
+      failed: result.failed,
+      totalGamesUpdated: result.totalGamesUpdated
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /identities/unlink
+ * Unlink a guest identity from current user (revert linking)
+ */
+router.post('/unlink', auth, async (req, res, next) => {
+  try {
+    const { guestIdentityId } = req.body;
+    
+    if (!guestIdentityId) {
+      return res.status(400).json({ error: 'guestIdentityId is required' });
+    }
+    
+    const result = await identityService.unlinkGuestFromUser(
+      guestIdentityId,
+      req.user._id,
+      req.user._id
+    );
+    
+    if (!result.success) {
+      return res.status(400).json({ 
+        error: result.errors[0] || 'Failed to unlink identity',
+        errors: result.errors
+      });
+    }
+    
+    res.json({
+      message: 'Guest identity unlinked successfully',
+      gamesUpdated: result.gamesUpdated
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /identities/admin/link
+ * Admin: Link a guest identity to any user
+ */
+router.post('/admin/link', auth, requireAdmin, async (req, res, next) => {
+  try {
+    const { guestIdentityId, userId } = req.body;
+    
+    if (!guestIdentityId || !userId) {
+      return res.status(400).json({ error: 'guestIdentityId and userId are required' });
+    }
+    
+    const result = await identityService.linkGuestToUser(
+      guestIdentityId,
+      userId,
+      req.user._id
+    );
+    
+    if (!result.success) {
+      return res.status(400).json({ 
+        error: result.errors[0] || 'Failed to link identity',
+        errors: result.errors
+      });
+    }
+    
+    res.json({
+      message: 'Guest identity linked successfully',
+      guestIdentity: result.guestIdentity,
+      userIdentity: result.userIdentity,
+      gamesUpdated: result.gamesUpdated
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /identities/admin/unlink-guest
+ * Admin: Unlink a guest identity from any user
+ */
+router.post('/admin/unlink-guest', auth, requireAdmin, async (req, res, next) => {
+  try {
+    const { guestIdentityId, userId } = req.body;
+    
+    if (!guestIdentityId || !userId) {
+      return res.status(400).json({ error: 'guestIdentityId and userId are required' });
+    }
+    
+    const result = await identityService.unlinkGuestFromUser(
+      guestIdentityId,
+      userId,
+      req.user._id
+    );
+    
+    if (!result.success) {
+      return res.status(400).json({ 
+        error: result.errors[0] || 'Failed to unlink identity',
+        errors: result.errors
+      });
+    }
+    
+    res.json({
+      message: 'Guest identity unlinked successfully',
+      gamesUpdated: result.gamesUpdated
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

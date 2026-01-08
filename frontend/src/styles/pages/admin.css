@@ -2040,3 +2040,253 @@
     gap: 0.5rem;
   }
 }
+
+/* Player Identity Linking Styles */
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  background-color: var(--hover-color);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-bottom-color: var(--card-bg);
+  margin-bottom: -1px;
+}
+
+.linking-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.identity-list-panel,
+.linking-form-panel {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.identity-list-panel h3,
+.linking-form-panel h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.identity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.identity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-color);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.identity-item:hover {
+  border-color: var(--primary);
+  background-color: var(--hover-color);
+}
+
+.identity-item.selected {
+  border-color: var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.identity-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.identity-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.identity-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.identity-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.linking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.selected-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--bg-color);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.selected-identity strong {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.identity-badge,
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  background-color: var(--primary);
+  color: var(--text);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.user-badge {
+  background-color: #22c55e;
+}
+
+.link-preview {
+  padding: 1rem;
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px dashed #22c55e;
+  border-radius: 8px;
+}
+
+.link-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.link-arrow svg {
+  color: #22c55e;
+}
+
+.no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.no-selection svg {
+  opacity: 0.5;
+}
+
+.no-selection p {
+  margin: 0;
+  max-width: 250px;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--hover-color);
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.admin-header .btn-icon {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .linking-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .identity-list {
+    max-height: 250px;
+  }
+  
+  .admin-tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    border-radius: 8px;
+  }
+  
+  .tab-btn.active {
+    border-bottom-color: var(--border);
+    margin-bottom: 0;
+  }
+}
