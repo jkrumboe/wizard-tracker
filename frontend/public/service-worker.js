@@ -45,7 +45,7 @@ const setupPrecaching = async () => {
     
     // Filter out any potentially stale entries from manifest
     // This helps when old service workers have outdated file references
-    const validManifest = manifest.filter(entry => {
+    const validManifest = manifest.filter(_entry => {
       // Keep entries that don't look like versioned build artifacts
       // or assume they're current
       return true; // Workbox will handle 404s gracefully
