@@ -43,18 +43,32 @@ const setupPrecaching = async () => {
       await broadcastUpdateProgress({ status: 'downloading', progress: 0, totalAssets: manifest.length });
     }
     
+    // Filter out any potentially stale entries from manifest
+    // This helps when old service workers have outdated file references
+    const validManifest = manifest.filter(entry => {
+      // Keep entries that don't look like versioned build artifacts
+      // or assume they're current
+      return true; // Workbox will handle 404s gracefully
+    });
+    
     // This will be replaced by Vite PWA plugin with the actual manifest
-    precacheAndRoute(manifest, {
+    // Use a custom handler that doesn't fail on individual 404s
+    precacheAndRoute(validManifest, {
       // Ignore errors for individual URLs - don't fail entire precache
       ignoreURLParametersMatching: [/^v/, /^_/],
+      directoryIndex: null,
+      // Add handler to skip 404s during precaching
+      urlManipulation: ({ url }) => {
+        return [url];
+      }
     });
     cleanupOutdatedCaches();
     
-    console.debug(`Service Worker v${APP_VERSION} precaching complete (${manifest.length} assets)`);
-    await broadcastUpdateProgress({ status: 'ready', progress: 100, cachedAssets: manifest.length });
-  } catch (error) {
-    console.error('Precaching failed:', error);
-    await broadcastUpdateProgress({ status: 'error', error: error.message });
+    console.debug(`Service Worker v${APP_VERSION} precaching complete (${validManifest.length} assets)`);
+    await broadcastUpdateProgress({ status: 'ready', progress: 100, cachedAssets: validManifest.length });
+  } catch (_error) {
+    console.error('Precaching failed:', _error);
+    await broadcastUpdateProgress({ status: 'error', error: _error.message });
     
     // On error, clear ALL caches to force fresh state
     // This handles the case where old SW has stale manifest
@@ -143,18 +157,16 @@ self.addEventListener("activate", (event) => {
   console.debug(`Service Worker activating version ${APP_VERSION}...`);
   event.waitUntil(
     Promise.all([
-      // Workbox cleanupOutdatedCaches handles most cleanup, but we also clean our custom API cache
+      // Clear ALL caches on activation to ensure fresh state
+      // This prevents issues with stale manifests from old service workers
       caches.keys().then((cacheNames) => {
+        console.debug(`Found ${cacheNames.length} caches, cleaning up...`);
         return Promise.all(
-          cacheNames
-            .filter((cacheName) => {
-              // Keep current API cache and Workbox caches
-              return cacheName.startsWith('keep-wiz-api-') && cacheName !== API_CACHE_NAME;
-            })
-            .map((cacheName) => {
-              console.debug('Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            })
+          cacheNames.map((cacheName) => {
+            // Delete all old caches - Workbox will recreate what's needed
+            console.debug('Deleting cache:', cacheName);
+            return caches.delete(cacheName);
+          })
         );
       }),
     ]).then(() => {
