@@ -153,17 +153,11 @@ const GameHistoryItem = ({ game }) => {
         <div className="game-info">
           <div className="game-name">
             {isTableGame ? game.name : (game.game_name || "Wizard")}
-            <div className="game-winner">
-              {getWinnerDisplay()}
-            </div>
+            
           </div>
-          {game.isUploaded ? (
-            <span className="mode-badge synced" title="Synced to Cloud">Synced</span>
-          ) : isTableGame ? (
-            <span className="mode-badge table">Table Game</span>
-          ) : (
-            <span className={`mode-badge ${(game_mode || 'local').toLowerCase()}`}>{game_mode || 'Local'}</span>
-          )}
+          <div className="game-winner">
+            {getWinnerDisplay()}
+          </div>
         </div>
         <div className="game-players">
             {/* <UsersIcon size={12} />{" "} */}
