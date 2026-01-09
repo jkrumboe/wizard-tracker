@@ -197,7 +197,7 @@ const UserProfile = () => {
   return (
     <div className="settings-container">
       
-      <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '16px' }}>
+      <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-md)', borderBottom: 'none', gap: '16px' }}>
         <button
                 onClick={() => navigate(-1)}
                 style={{
