@@ -379,11 +379,13 @@
   position: relative;
   background-color: var(--input-bg);
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .h2h-matrix table {
   width: 100%;
   border-collapse: collapse;
+  border-top: none !important;
   min-width: 400px;
 }
 
@@ -413,6 +415,14 @@
   height: 44px;
   min-height: 44px;
   box-sizing: border-box;
+}
+
+.h2h-matrix tr th {
+  border-top: none ;
+}
+
+.h2h-matrix tbody tr:last-child td {
+  border-bottom: none ;
 }
 
 .h2h-matrix th:not(:first-child) {
@@ -508,6 +518,7 @@
   padding: var(--spacing-sm);
   border: 1px solid var(--border);
   max-height: 200vh;
+  overflow-y: scroll;
 }
 
 .recent-games-section h2 {
