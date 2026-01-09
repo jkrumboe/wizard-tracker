@@ -242,7 +242,7 @@ const FriendLeaderboard = () => {
       ) : (
         <div className="leaderboard-results">
           <button className="back-btn" onClick={resetSelection}>
-            <ArrowLeftIcon size={18} /> <span>Change Players</span>
+            <ArrowLeftIcon size={24} /> <span>Change Players</span>
           </button>
           
           {loading ? (
