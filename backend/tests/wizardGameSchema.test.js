@@ -138,15 +138,18 @@ describe('Wizard Game Schema Validation', () => {
       expect(result.errors).toContain('players array is required');
     });
 
-    it('should require at least 2 players', () => {
-      const invalidData = { ...validGameData, players: [{ id: 'p1', name: 'Player 1' }] };
+    it('should require at least 3 players', () => {
+      const invalidData = { ...validGameData, players: [
+        { id: 'p1', name: 'Player 1' },
+        { id: 'p2', name: 'Player 2' }
+      ] };
       const result = validateWizardGameData(invalidData);
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('At least 2 players required');
+      expect(result.errors).toContain('At least 3 players required');
     });
 
-    it('should reject more than 6 players', () => {
-      const invalidData = { 
+    it('should allow more than 6 players', () => {
+      const sevenPlayerData = { 
         ...validGameData, 
         players: [
           { id: 'p1', name: 'Player 1' },
@@ -156,11 +159,27 @@ describe('Wizard Game Schema Validation', () => {
           { id: 'p5', name: 'Player 5' },
           { id: 'p6', name: 'Player 6' },
           { id: 'p7', name: 'Player 7' }
-        ] 
+        ],
+        round_data: [
+          {
+            players: [
+              { id: 'p1', call: 0, made: 0, score: 20 },
+              { id: 'p2', call: 0, made: 0, score: 20 },
+              { id: 'p3', call: 0, made: 0, score: 20 },
+              { id: 'p4', call: 0, made: 0, score: 20 },
+              { id: 'p5', call: 0, made: 0, score: 20 },
+              { id: 'p6', call: 0, made: 0, score: 20 },
+              { id: 'p7', call: 0, made: 0, score: 20 }
+            ]
+          }
+        ],
+        final_scores: {
+          'p1': 20, 'p2': 20, 'p3': 20, 'p4': 20, 'p5': 20, 'p6': 20, 'p7': 20
+        },
+        winner_id: ['p1']
       };
-      const result = validateWizardGameData(invalidData);
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Maximum 6 players allowed');
+      const result = validateWizardGameData(sevenPlayerData);
+      expect(result.isValid).toBe(true);
     });
 
     it('should require player id', () => {
@@ -168,7 +187,8 @@ describe('Wizard Game Schema Validation', () => {
         ...validGameData, 
         players: [
           { name: 'Player 1' },
-          { id: 'p2', name: 'Player 2' }
+          { id: 'p2', name: 'Player 2' },
+          { id: 'p3', name: 'Player 3' }
         ] 
       };
       const result = validateWizardGameData(invalidData);
@@ -181,7 +201,8 @@ describe('Wizard Game Schema Validation', () => {
         ...validGameData, 
         players: [
           { id: 'p1' },
-          { id: 'p2', name: 'Player 2' }
+          { id: 'p2', name: 'Player 2' },
+          { id: 'p3', name: 'Player 3' }
         ] 
       };
       const result = validateWizardGameData(invalidData);

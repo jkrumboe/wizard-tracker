@@ -159,10 +159,8 @@ function validateWizardGameData(gameData) {
   if (gameData.players) {
     if (!Array.isArray(gameData.players)) {
       errors.push('players must be an array');
-    } else if (gameData.players.length < 2) {
-      errors.push('At least 2 players required');
-    } else if (gameData.players.length > 6) {
-      errors.push('Maximum 6 players allowed');
+    } else if (gameData.players.length < 3) {
+      errors.push('At least 3 players required');
     } else {
       gameData.players.forEach((player, idx) => {
         if (!player.id) errors.push(`Player ${idx}: id is required`);
