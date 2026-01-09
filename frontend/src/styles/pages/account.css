@@ -56,38 +56,42 @@
 
 .game-type-card {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: var(--spacing-sm) var(--spacing-md);
   transition: all 0.2s ease;
+  gap: var(--spacing-sm);
 }
 
 .game-type-card:hover {
   border: 1px solid var(--primary);
 }
 
+.game-type-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .game-type-name {
   font-size: 1.25rem;
   font-weight: 700;
-  margin: 0 0 var(--spacing-xs) 0;
+  margin: 0;
   color: var(--text);
   text-transform: capitalize;
 }
 
 .game-type-stats {
   display: flex;
-  width: 70%;
+  gap: var(--spacing-md);
 }
 
 .stat-item {
-  flex: 1;
   display: flex;
   flex-direction: row;
   gap: 4px;
-  min-width: none;
+  align-items: baseline;
 }
 
 .stat-label {
@@ -108,6 +112,13 @@
   color: var(--success);
 }
 
+/* Recent performance per game type */
+.game-type-recent-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
 .recent-results {
   display: flex;
   flex-direction: column;
@@ -120,12 +131,14 @@
   color: var(--text-light);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .results-string {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: 4px;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .results-string.large {
@@ -142,6 +155,12 @@
   font-weight: 700;
   border-radius: 6px;
   transition: transform 0.2s ease;
+}
+
+.result-letter.empty {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  opacity: 0.3;
 }
 
 .results-string.large .result-letter {
@@ -165,9 +184,10 @@
 }
 
 .results-description {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-light);
   text-align: center;
+  margin: 0;
 }
 
 .game-type-selector {

@@ -31,7 +31,7 @@ const StatsOverview = ({ games, user, onGameTypeClick }) => {
 
   return (
     <>
-      {/* Game Types Grid */}
+      {/* Game Types Grid with Recent Performance */}
       <div className="overview-grid">
         {overviewStats.gameTypes.map(gameType => (
           <div 
@@ -40,39 +40,51 @@ const StatsOverview = ({ games, user, onGameTypeClick }) => {
             onClick={() => onGameTypeClick?.(gameType.name)}
             style={{ cursor: onGameTypeClick ? 'pointer' : 'default' }}
           >
-            <h3 className="game-type-name">{gameType.name}</h3>
-            <div className="game-type-stats">
-              <div className="stat-item">
-                <span className="stat-label">Win%:</span>
-                <span className="stat-value win-rate">
-                  {Math.round((gameType.wins / gameType.matches) * 100)}
-                </span>
+            <div className="game-type-header">
+              <h3 className="game-type-name">{gameType.name}</h3>
+              <div className="game-type-stats">
+                <div className="stat-item">
+                  <span className="stat-label">Win%:</span>
+                  <span className="stat-value win-rate">
+                    {Math.round((gameType.wins / gameType.matches) * 100)}
+                  </span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label">Matches:</span>
+                  <span className="stat-value">{gameType.matches}</span>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-label">Matches:</span>
-                <span className="stat-value">{gameType.matches}</span>
+            </div>
+            
+            {/* Recent Performance per Game Type */}
+            <div className="game-type-recent-results">
+              <div className="results-string">
+                {(() => {
+                  const results = gameType.recentResults || [];
+                  const paddedResults = [...results];
+                  // Pad with empty placeholders to always show 10 slots
+                  while (paddedResults.length < 10) {
+                    paddedResults.push(null);
+                  }
+                  return paddedResults.map((result, idx) => (
+                    <span 
+                      key={idx} 
+                      className={`result-letter ${
+                        result === 'W' ? 'win' : 
+                        result === 'L' ? 'loss' : 
+                        'empty'
+                      }`}
+                    >
+                      {result || ''}
+                    </span>
+                  ));
+                })()}
               </div>
+              <p className="results-description">Last {gameType.recentResults?.length || 0} games</p>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Overall Recent Results */}
-      {overviewStats.recentResults.length > 0 && (
-        <div className="settings-section">
-          <h3 className="settings-section-title">Recent Performance</h3>
-          <div className="overall-recent-results">
-            <div className="results-string large">
-              {overviewStats.recentResults.map((result, idx) => (
-                <span key={idx} className={`result-letter ${result === 'W' ? 'win' : 'loss'}`}>
-                  {result}
-                </span>
-              ))}
-            </div>
-            <p className="results-description">Last 10 games</p>
-          </div>
-        </div>
-      )}
     </>
   );
 };
