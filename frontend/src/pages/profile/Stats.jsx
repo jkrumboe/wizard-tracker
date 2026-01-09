@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PerformanceStatsEnhanced from './PerformanceStatsEnhanced'
 import { useUser } from '@/shared/hooks/useUser'
-import { getRecentLocalGames } from '@/shared/api/gameService'
+import { userService } from '@/shared/api/userService'
 import { ArrowLeftCircleIcon } from '@/components/ui/Icon'
 import "@/styles/components/TableGame.css";
 
@@ -33,71 +33,62 @@ const Stats = () => {
           return;
         }
 
-        // Fetch all local games
-        const localGames = await getRecentLocalGames(100);
+        // Fetch user profile from backend - includes games from linked guest identities
+        const profileData = await userService.getUserPublicProfile(user.username);
         
-        // Get all possible identifiers for the current user
-        const userIdentifiers = [
-          currentPlayer.id,
-          currentPlayer.name,
-          currentPlayer.username,
-          user.id,
-          user.name,
-          user.username,
-          user.$id
-        ].filter(Boolean);
-        
-        // Filter games to only include games where the current user ACTUALLY PLAYED
-        const userGames = localGames.filter(game => {
-          // Check if user is in the players list by userId/identityId first, then name/username
-          if (game.gameState?.players && Array.isArray(game.gameState.players)) {
-            const isInPlayers = game.gameState.players.some(player => {
-              const playerUserId = player.userId;
-              const playerIdentityId = player.identityId;
-              const playerName = player.name?.toLowerCase().trim();
-              const playerUsername = player.username?.toLowerCase().trim();
-              const currentName = currentPlayer.name?.toLowerCase().trim();
-              const currentUsername = currentPlayer.username?.toLowerCase().trim();
-              
-              // Prefer ID-based matching
-              if (playerUserId && userIdentifiers.includes(playerUserId)) return true;
-              if (playerIdentityId === currentPlayer.identityId) return true;
-              
-              // Fallback to name matching for legacy games
-              return playerName === currentName || playerUsername === currentUsername;
-            });
-            
-            if (isInPlayers) return true;
+        if (!profileData || !profileData.games) {
+          setAllGames([]);
+          return;
+        }
+
+        // The backend already filters games for this user and their linked identities
+        // Transform the games to match the expected format for the stats component
+        const transformedGames = profileData.games.map(game => {
+          if (game.gameType === 'wizard') {
+            // Wizard game format
+            return {
+              gameId: game.id,
+              gameType: 'wizard',
+              gameFinished: true,
+              created_at: game.created_at,
+              gameState: {
+                ...game.gameData,
+                gameFinished: true,
+                players: game.gameData.players,
+                final_scores: game.gameData.final_scores,
+                total_rounds: game.gameData.total_rounds,
+                round_data: game.gameData.round_data,
+                winner_ids: game.gameData.winner_ids
+              }
+            };
+          } else {
+            // Table game format
+            return {
+              gameId: game.id,
+              gameType: 'table',
+              gameTypeName: game.name || game.gameTypeName,
+              name: game.name || game.gameTypeName,
+              gameFinished: true,
+              lowIsBetter: game.lowIsBetter,
+              created_at: game.created_at,
+              gameData: game.gameData,
+              gameState: {
+                players: game.gameData.players,
+                lowIsBetter: game.lowIsBetter
+              },
+              winner_ids: game.winner_ids
+            };
           }
-          
-          // Fallback: Check by ID
-          if (game.gameState?.players) {
-            const isInPlayersById = game.gameState.players.some(player => {
-              const playerIdentifiers = [player.id, player.userId].filter(Boolean);
-              return playerIdentifiers.some(playerId => userIdentifiers.includes(playerId));
-            });
-            
-            if (isInPlayersById) return true;
-          }
-          
-          // Check player_ids array
-          if (game.player_ids && Array.isArray(game.player_ids)) {
-            if (game.player_ids.some(playerId => userIdentifiers.includes(playerId))) {
-              return true;
-            }
-          }
-          
-          return false;
         });
         
-        setAllGames(userGames || []);
+        setAllGames(transformedGames);
       } catch (err) {
         console.error('Error fetching stats data:', err)
         setError('Failed to load statistics')
       }
     }
     
-    if (currentPlayer) {
+    if (currentPlayer && user.username) {
       fetchData()
     }
   }, [currentPlayer, user])

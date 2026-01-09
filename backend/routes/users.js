@@ -281,26 +281,39 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
 
     // Use PlayerIdentity system to find all identities linked to this user
     const PlayerIdentity = require('../models/PlayerIdentity');
+    
+    // Find identities directly owned by this user
     const identities = await PlayerIdentity.find({ userId: user._id }).select('_id displayName').lean();
     const identityIds = identities.map(id => id._id);
     
+    // ALSO find guest identities that were merged into any of these identities
+    const mergedGuestIdentities = await PlayerIdentity.find({
+      mergedInto: { $in: identityIds }
+    }).select('_id displayName').lean();
+    
+    // Combine all identity IDs (owned + merged guests)
+    const allIdentityIds = [...identityIds, ...mergedGuestIdentities.map(id => id._id)];
+    
     console.log(`[Profile] Found ${identities.length} identities for user: ${identities.map(i => i.displayName).join(', ')}`);
+    if (mergedGuestIdentities.length > 0) {
+      console.log(`[Profile] Found ${mergedGuestIdentities.length} merged guest identities: ${mergedGuestIdentities.map(i => i.displayName).join(', ')}`);
+    }
 
     // Get user's games from WizardGame and TableGame collections
     const WizardGame = require('../models/WizardGame');
     const TableGame = require('../models/TableGame');
     
-    // Fetch wizard games where user's identities appear as players
+    // Fetch wizard games where user's identities (including merged guests) appear as players
     const wizardGames = await WizardGame.find({
-      'gameData.players.identityId': { $in: identityIds }
+      'gameData.players.identityId': { $in: allIdentityIds }
     })
       .select('gameData createdAt localId userId')
       .sort({ createdAt: -1 })
       .lean();
 
-    // Fetch table games where user's identities appear as players  
+    // Fetch table games where user's identities (including merged guests) appear as players
     const tableGames = await TableGame.find({
-      'gameData.players.identityId': { $in: identityIds }
+      'gameData.players.identityId': { $in: allIdentityIds }
     })
       .select('gameData gameTypeName name lowIsBetter createdAt gameFinished userId')
       .sort({ createdAt: -1 })
@@ -313,8 +326,8 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     const seenGameIds = new Set(); // Track unique games to avoid duplicates
     let totalWins = 0;
     
-    // Convert identityIds to strings for comparison
-    const identityIdStrings = identityIds.map(id => id.toString());
+    // Convert ALL identityIds (including merged guests) to strings for comparison
+    const identityIdStrings = allIdentityIds.map(id => id.toString());
     
     // Process wizard games
     wizardGames.forEach(game => {
