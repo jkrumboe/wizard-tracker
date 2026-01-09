@@ -2050,7 +2050,7 @@
   padding-bottom: 0.5rem;
 }
 
-.tab-btn {
+.admin-tabs .tab-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2064,12 +2064,12 @@
   transition: all 0.2s ease;
 }
 
-.tab-btn:hover {
+.admin-tabs .tab-btn:hover {
   color: var(--text);
   background-color: var(--hover-color);
 }
 
-.tab-btn.active {
+.admin-tabs .tab-btn.active {
   color: var(--primary);
   background-color: var(--card-bg);
   border: 1px solid var(--border);
