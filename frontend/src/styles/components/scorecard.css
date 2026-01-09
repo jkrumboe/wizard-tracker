@@ -275,7 +275,7 @@
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 20px;
+    width: 30px;
   }
 
   .table-game-container .round-header {
