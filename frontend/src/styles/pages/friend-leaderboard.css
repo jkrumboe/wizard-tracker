@@ -517,8 +517,8 @@
   border-radius: 12px;
   padding: var(--spacing-sm);
   border: 1px solid var(--border);
-  max-height: 200vh;
-  overflow-y: scroll;
+  /* max-height: 200vh;
+  overflow-y: scroll; */
 }
 
 .recent-games-section h2 {
