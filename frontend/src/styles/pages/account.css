@@ -1169,7 +1169,8 @@
 }
 
 .settings-button.danger-button {
-  background-color: var(--card-bg-alt) !important;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border) !important;
 }
 
 .settings-note {
