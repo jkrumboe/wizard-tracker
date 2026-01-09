@@ -61,12 +61,12 @@ export const useGameStats = (games, user) => {
 
       // Different handling for table games vs wizard games
       if (game.gameType === 'table') {
-        // Table games: check gameData.players
-        // Match by player name (including identity names) OR userId
+        // Table games: use winner_ids from API (already calculated by backend)
+        // Or fallback to calculating from points if it's a local game
         if (game.gameData?.players) {
           const players = game.gameData.players;
           
-          // Find the user's player index
+          // Find the user's player
           const userPlayerIndex = players.findIndex(p => {
             const playerNameLower = p.name?.toLowerCase();
             const playerUserId = p.userId;
@@ -80,27 +80,36 @@ export const useGameStats = (games, user) => {
           
           if (userPlayerIndex !== -1) {
             userPlayer = players[userPlayerIndex];
-          }
-          
-          if (userPlayer && game.gameFinished !== false) {
-            // Always calculate winner by score for table games (most reliable method)
-            const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
             
-            const playersWithScores = players.map((player, index) => {
-              const total = player.points?.reduce((sum, val) => sum + (parseFloat(val) || 0), 0) || 0;
-              return { name: player.name, index, total };
-            });
+            // First, try to use winner_ids from the API (most reliable for synced games)
+            const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
+            const userPlayerId = `player_${userPlayerIndex}`;
             
-            // Find the winning score(s)
-            if (playersWithScores.length > 0) {
-              const scores = playersWithScores.map(p => p.total);
-              const winningScore = lowIsBetter 
-                ? Math.min(...scores)
-                : Math.max(...scores);
+            if (winnerIds && winnerIds.length > 0) {
+              // Use winner_ids from API
+              userWon = winnerIds.includes(userPlayerId) || 
+                       winnerIds.includes(userPlayer.id) ||
+                       winnerIds.some(id => String(id) === String(userPlayer.id));
+            } else if (game.gameFinished !== false && players[userPlayerIndex].points) {
+              // Fallback: calculate from points for local games
+              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
               
-              // User won if their score equals the winning score
-              const userScore = playersWithScores[userPlayerIndex]?.total || 0;
-              userWon = userScore === winningScore;
+              const playersWithScores = players.map((player, index) => {
+                const total = player.points?.reduce((sum, val) => sum + (parseFloat(val) || 0), 0) || 0;
+                return { name: player.name, index, total };
+              });
+              
+              // Find the winning score(s)
+              if (playersWithScores.length > 0) {
+                const scores = playersWithScores.map(p => p.total);
+                const winningScore = lowIsBetter 
+                  ? Math.min(...scores)
+                  : Math.max(...scores);
+                
+                // User won if their score equals the winning score
+                const userScore = playersWithScores[userPlayerIndex]?.total || 0;
+                userWon = userScore === winningScore;
+              }
             }
           }
         }
@@ -160,10 +169,10 @@ export const useGameStats = (games, user) => {
       let userWon = false;
       
       if (game.gameType === 'table') {
-        // Table game - always calculate winner from scores (most reliable)
-        if (game.gameData?.players && game.gameFinished !== false) {
+        // Table game - use winner_ids from API (already calculated by backend)
+        // Or fallback to calculating from scores for local games
+        if (game.gameData?.players) {
           const players = game.gameData.players;
-          const lowIsBetter = game.gameData?.lowIsBetter || game.lowIsBetter || false;
           
           // Find user's player index
           const userPlayerIndex = players.findIndex(p => {
@@ -175,19 +184,34 @@ export const useGameStats = (games, user) => {
           });
           
           if (userPlayerIndex !== -1) {
-            // Calculate all player scores
-            const playersWithScores = players.map((player, idx) => {
-              const total = player.points?.reduce((sum, val) => sum + (parseFloat(val) || 0), 0) || 0;
-              return { index: idx, total };
-            });
+            const userPlayerId = `player_${userPlayerIndex}`;
             
-            if (playersWithScores.length > 0) {
-              const scores = playersWithScores.map(p => p.total);
-              const winningScore = lowIsBetter 
-                ? Math.min(...scores)
-                : Math.max(...scores);
+            // First, try to use winner_ids from the API (most reliable for synced games)
+            const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
+            
+            if (winnerIds && winnerIds.length > 0) {
+              // Use winner_ids from API
+              userWon = winnerIds.includes(userPlayerId) || 
+                       winnerIds.includes(players[userPlayerIndex].id) ||
+                       winnerIds.some(id => String(id) === String(players[userPlayerIndex].id));
+            } else if (game.gameFinished !== false && players[userPlayerIndex].points) {
+              // Fallback: calculate from points for local games
+              const lowIsBetter = game.gameData?.lowIsBetter || game.lowIsBetter || false;
               
-              userWon = playersWithScores[userPlayerIndex]?.total === winningScore;
+              // Calculate all player scores
+              const playersWithScores = players.map((player, idx) => {
+                const total = player.points?.reduce((sum, val) => sum + (parseFloat(val) || 0), 0) || 0;
+                return { index: idx, total };
+              });
+              
+              if (playersWithScores.length > 0) {
+                const scores = playersWithScores.map(p => p.total);
+                const winningScore = lowIsBetter 
+                  ? Math.min(...scores)
+                  : Math.max(...scores);
+                
+                userWon = playersWithScores[userPlayerIndex]?.total === winningScore;
+              }
             }
           }
         }
