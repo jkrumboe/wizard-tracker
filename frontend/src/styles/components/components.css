@@ -1503,7 +1503,6 @@
   }
 
   .leaderboard-table {
-    margin-top: var(--spacing-md);
     justify-content: center;
     align-items: center;
   }
@@ -2085,8 +2084,6 @@
   flex-direction: column;
 }
 
-
-
 .recent-games h2 {
   color: var(--primary);
   position: relative;
@@ -2223,7 +2220,7 @@
 .home-container {
   display: flex;
   flex-direction: column;
-  height: calc(96vh - var(--bottom-nav-height));
+  height: calc(100vh - var(--bottom-nav-height) - 24px);
   max-width: 960px;
   margin-top: var(--spacing-md);
 }

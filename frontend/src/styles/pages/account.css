@@ -5,12 +5,12 @@
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 4px;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   border: 1px solid var(--border);
 }
 
 .game-details-container .account-tabs {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .account-tab {
@@ -59,7 +59,7 @@
   flex-direction: column;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm);
   transition: all 0.2s ease;
   gap: var(--spacing-sm);
 }
@@ -360,7 +360,7 @@
   background-color: var(--card-bg);
   border-radius: 12px;
   padding: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
 }
 
 .settings-section:has(.game-history),

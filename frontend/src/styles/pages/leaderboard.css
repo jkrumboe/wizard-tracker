@@ -35,7 +35,7 @@
   justify-content: center;
   gap: 8px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-sm);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 8px;

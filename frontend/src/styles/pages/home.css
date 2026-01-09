@@ -27,8 +27,7 @@
 .friends-section {
   display: flex;
   justify-content: center;
-  margin: var(--spacing-md) 0;
-  margin-bottom: var(--spacing-sm);
+  margin: var(--spacing-sm) 0;
   width: 100%;
 }
 
