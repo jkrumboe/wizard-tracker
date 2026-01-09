@@ -269,7 +269,7 @@ const TableGameDetails = () => {
                 <table className="scorecard-table">
                   <thead>
                     <tr>
-                      <th className="round-header sticky-cell">Round</th>
+                      <th className="round-header sticky-cell"/>
                       {players.map((player, idx) => (
                         <th key={idx} className="player-header">
                           <div className="player-header-name">
