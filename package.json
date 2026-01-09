@@ -1,6 +1,6 @@
 {
   "name": "wizard-tracker",
-  "version": "1.13.15",
+  "version": "1.13.16",
   "description": "Card game score tracking application with React frontend and MongoDB backend",
   "scripts": {
     "init": "node scripts/init.js",
