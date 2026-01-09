@@ -318,13 +318,13 @@
     background-color: var(--card-bg);
     border-radius: var(--radius-lg);
     text-align: center;
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
     border: 1px solid var(--border);
     transition: transform 0.3s;
   }
   
   .stat-title {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: var(--text-light);
     text-transform: uppercase;
     letter-spacing: 0.05em;
