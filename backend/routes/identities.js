@@ -510,8 +510,42 @@ router.get('/link/guest-identities', auth, async (req, res, next) => {
       PlayerIdentity.countDocuments(filter)
     ]);
     
-    // Enrich identities with linking status
+    // Enrich identities with linking status and game counts
     const guestIdSet = new Set(guestUserIds.map(id => id.toString()));
+    
+    // Calculate game counts dynamically for all identities
+    const WizardGame = require('../models/WizardGame');
+    const identityIds = identities.map(id => id._id);
+    
+    const gameCounts = await WizardGame.aggregate([
+      {
+        $match: {
+          'gameData.players.identityId': { $in: identityIds },
+          isDeleted: { $ne: true }
+        }
+      },
+      {
+        $unwind: '$gameData.players'
+      },
+      {
+        $match: {
+          'gameData.players.identityId': { $in: identityIds }
+        }
+      },
+      {
+        $group: {
+          _id: '$gameData.players.identityId',
+          gameCount: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Create a map of identity ID to game count
+    const gameCountMap = new Map();
+    gameCounts.forEach(gc => {
+      gameCountMap.set(gc._id.toString(), gc.gameCount);
+    });
+    
     const enrichedIdentities = identities.map(identity => {
       const obj = identity.toObject();
       const userRole = identity.userId?.role;
@@ -526,7 +560,8 @@ router.get('/link/guest-identities', auth, async (req, res, next) => {
         username: identity.mergedInto.userId.username,
         role: identity.mergedInto.userId.role
       } : null;
-      obj.gameCount = identity.stats?.totalGames || 0;
+      // Use dynamically calculated game count instead of cached stats
+      obj.gameCount = gameCountMap.get(identity._id.toString()) || 0;
       obj.linkedAt = isMerged ? identity.updatedAt : null;
       
       return obj;
