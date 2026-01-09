@@ -26,14 +26,20 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       if (p.username && currentPlayer.username && 
           p.username.toLowerCase() === currentPlayer.username.toLowerCase()) return true;
       
-      // Name match against current player name
+      // Name match against current player name/username
       if (p.name && currentPlayer.name && 
           p.name.toLowerCase() === currentPlayer.name.toLowerCase()) return true;
+      if (p.name && currentPlayer.username && 
+          p.name.toLowerCase() === currentPlayer.username.toLowerCase()) return true;
       
       // Name match against linked identities (e.g., "Feemke" matches identity "feemi")
+      // Identities can be strings (from API) or objects with displayName/name properties
       if (p.name && currentPlayer.identities && Array.isArray(currentPlayer.identities)) {
         const playerNameLower = p.name.toLowerCase();
-        if (currentPlayer.identities.some(identity => identity.toLowerCase() === playerNameLower)) {
+        if (currentPlayer.identities.some(identity => {
+          const identityName = typeof identity === 'string' ? identity : (identity.displayName || identity.name);
+          return identityName && identityName.toLowerCase() === playerNameLower;
+        })) {
           return true;
         }
       }

@@ -22,9 +22,14 @@ export const useGameStats = (games, user) => {
     const userIdentifiers = [user.id, user._id, user.$id, user.username].filter(Boolean);
     
     // Get all searchable names (username + identity names) from user object
-    const searchNames = user.identities 
-      ? user.identities.map(identity => identity.displayName || identity.name).filter(Boolean)
-      : [user.username];
+    // Identities can be either strings (from API) or objects with displayName/name properties
+    // Always include username as a fallback
+    const identityNames = user.identities 
+      ? user.identities.map(identity => 
+          typeof identity === 'string' ? identity : (identity.displayName || identity.name)
+        ).filter(Boolean)
+      : [];
+    const searchNames = [...new Set([user.username, ...identityNames])].filter(Boolean);
     const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
 
     allGamesList.forEach(game => {
@@ -81,18 +86,10 @@ export const useGameStats = (games, user) => {
           if (userPlayerIndex !== -1) {
             userPlayer = players[userPlayerIndex];
             
-            // First, try to use winner_ids from the API (most reliable for synced games)
-            const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
-            const userPlayerId = `player_${userPlayerIndex}`;
-            
-            if (winnerIds && winnerIds.length > 0) {
-              // Use winner_ids from API
-              userWon = winnerIds.includes(userPlayerId) || 
-                       winnerIds.includes(userPlayer.id) ||
-                       winnerIds.some(id => String(id) === String(userPlayer.id));
-            } else if (game.gameFinished !== false && players[userPlayerIndex].points) {
-              // Fallback: calculate from points for local games
-              const lowIsBetter = game.gameData.lowIsBetter || game.lowIsBetter || false;
+            // For table games: ALWAYS calculate winner from scores (most reliable method)
+            // This handles both old schema (winner_name only) and new schema (winner_ids)
+            if (players[userPlayerIndex].points && players[userPlayerIndex].points.length > 0) {
+              const lowIsBetter = game.gameData?.lowIsBetter || game.lowIsBetter || false;
               
               const playersWithScores = players.map((player, index) => {
                 const total = player.points?.reduce((sum, val) => sum + (parseFloat(val) || 0), 0) || 0;
@@ -109,6 +106,20 @@ export const useGameStats = (games, user) => {
                 // User won if their score equals the winning score
                 const userScore = playersWithScores[userPlayerIndex]?.total || 0;
                 userWon = userScore === winningScore;
+              }
+            } else {
+              // Fallback: use winner_ids from API or winner_name for old schema
+              const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
+              const userPlayerId = `player_${userPlayerIndex}`;
+              const winnerName = game.gameData?.winner_name || game.winner_name;
+              
+              if (winnerIds && winnerIds.length > 0) {
+                userWon = winnerIds.includes(userPlayerId) || 
+                         winnerIds.includes(userPlayer.id) ||
+                         winnerIds.some(id => String(id) === String(userPlayer.id));
+              } else if (winnerName && userPlayer.name) {
+                // Old schema fallback: match by winner_name
+                userWon = winnerName.toLowerCase() === userPlayer.name.toLowerCase();
               }
             }
           }
@@ -169,8 +180,7 @@ export const useGameStats = (games, user) => {
       let userWon = false;
       
       if (game.gameType === 'table') {
-        // Table game - use winner_ids from API (already calculated by backend)
-        // Or fallback to calculating from scores for local games
+        // Table game - calculate winner from scores (most reliable method)
         if (game.gameData?.players) {
           const players = game.gameData.players;
           
@@ -184,18 +194,10 @@ export const useGameStats = (games, user) => {
           });
           
           if (userPlayerIndex !== -1) {
-            const userPlayerId = `player_${userPlayerIndex}`;
+            const userPlayer = players[userPlayerIndex];
             
-            // First, try to use winner_ids from the API (most reliable for synced games)
-            const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
-            
-            if (winnerIds && winnerIds.length > 0) {
-              // Use winner_ids from API
-              userWon = winnerIds.includes(userPlayerId) || 
-                       winnerIds.includes(players[userPlayerIndex].id) ||
-                       winnerIds.some(id => String(id) === String(players[userPlayerIndex].id));
-            } else if (game.gameFinished !== false && players[userPlayerIndex].points) {
-              // Fallback: calculate from points for local games
+            // Calculate winner from scores (most reliable for all schema versions)
+            if (userPlayer.points && userPlayer.points.length > 0) {
               const lowIsBetter = game.gameData?.lowIsBetter || game.lowIsBetter || false;
               
               // Calculate all player scores
@@ -211,6 +213,19 @@ export const useGameStats = (games, user) => {
                   : Math.max(...scores);
                 
                 userWon = playersWithScores[userPlayerIndex]?.total === winningScore;
+              }
+            } else {
+              // Fallback: use winner_ids or winner_name
+              const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
+              const userPlayerId = `player_${userPlayerIndex}`;
+              const winnerName = game.gameData?.winner_name || game.winner_name;
+              
+              if (winnerIds && winnerIds.length > 0) {
+                userWon = winnerIds.includes(userPlayerId) || 
+                         winnerIds.includes(userPlayer.id) ||
+                         winnerIds.some(id => String(id) === String(userPlayer.id));
+              } else if (winnerName && userPlayer.name) {
+                userWon = winnerName.toLowerCase() === userPlayer.name.toLowerCase();
               }
             }
           }

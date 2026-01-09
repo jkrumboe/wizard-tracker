@@ -1292,7 +1292,7 @@ const Account = () => {
     if (!user) return null;
     return {
       ...user,
-      aliases: profileData?.identities || [user.username]
+      identities: profileData?.identities || [user.username]
     };
   }, [user, profileData]);
 

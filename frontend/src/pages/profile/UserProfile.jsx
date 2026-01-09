@@ -150,7 +150,8 @@ const UserProfile = () => {
       return {
         id: profileUser.id || profileUser._id,
         name: profileUser.username,
-        username: profileUser.username
+        username: profileUser.username,
+        identities: profileUser.identities // Include linked identity names for player matching
       }
     }
     return null
