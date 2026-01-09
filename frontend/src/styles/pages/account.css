@@ -124,23 +124,23 @@
 
 .results-string {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex-wrap: wrap;
 }
 
 .results-string.large {
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .result-letter {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  font-size: 0.85rem;
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
   font-weight: 700;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: transform 0.2s ease;
 }
 
@@ -149,13 +149,15 @@
 }
 
 .result-letter.win {
-  background: #4caf4f27;
+  /* background: #4caf4f27; */
   color: var(--success-color);
+  border: 1px solid var(--success-color);
 }
 
 .result-letter.loss {
-  background: #f4433621;
+  /* background: #f4433621; */
   color: var(--error-color);
+  border: 1px solid var(--error-color);
 }
 
 .overall-recent-results {
