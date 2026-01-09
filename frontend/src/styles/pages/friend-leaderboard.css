@@ -214,7 +214,7 @@
   width: 100%;
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 10px 20px;
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
@@ -363,7 +363,7 @@
 .head-to-head-section {
   background: var(--card-bg);
   border-radius: 12px;
-  padding: var(--spacing-md) var(--spacing-sm);
+  padding: var(--spacing-sm);
   border: 1px solid var(--border);
   margin-bottom: var(--spacing-lg);
 }
@@ -508,6 +508,7 @@
   border-radius: 12px;
   padding: var(--spacing-sm);
   border: 1px solid var(--border);
+  max-height: 200vh;
 }
 
 .recent-games-section h2 {
