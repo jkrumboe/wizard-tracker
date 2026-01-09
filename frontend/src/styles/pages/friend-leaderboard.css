@@ -377,6 +377,7 @@
 .h2h-matrix {
   overflow-x: auto;
   position: relative;
+  background-color: var(--input-bg);
   border-right: 1px solid var(--border);
   border-left: 1px solid var(--border);
 }
