@@ -346,7 +346,7 @@ const FriendLeaderboard = () => {
               {/* Recent Games */}
               {leaderboardData.recentGames?.length > 0 && (
                 <div className="recent-games-section">
-                  {/* <h2>Recent Games Together ({leaderboardData.totalSharedGames} total)</h2> */}
+                  <h2>Shared Games ({leaderboardData.totalSharedGames} total)</h2>
                   <div className="recent-games-list">
                     {leaderboardData.recentGames.map((game, index) => (
                       <div key={index} className="recent-game-card">

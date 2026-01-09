@@ -1228,7 +1228,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     res.json({
       leaderboard,
       headToHead,
-      recentGames: sharedGames.slice(0, 10),
+      recentGames: sharedGames,
       totalSharedGames: sharedGames.length
     });
     
