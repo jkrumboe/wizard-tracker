@@ -211,8 +211,39 @@ const calculatedStats = useMemo(() => {
                        game.winner_id || game.gameData?.winner_id || game.gameData?.totals?.winner_id;
     const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
     
-    const isWin = winnerIds.includes(userPlayer.id) || 
-                  winnerIds.some(wId => String(wId) === String(userPlayer.id));
+    // Find user's player index for position-based winner_ids matching (e.g., "player_4")
+    const userPlayerIndex = players.findIndex(p => p === userPlayer);
+    const userPositionId = `player_${userPlayerIndex}`;
+    
+    // Check if this is a table game with points (needs score-based winner calculation)
+    const isTableGame = game.gameType === 'table' || (userPlayer.points && Array.isArray(userPlayer.points));
+    let isWin = false;
+    
+    if (isTableGame && userPlayer.points) {
+      // For table games: calculate winner from scores (most reliable method)
+      const gameLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
+      
+      // Calculate all player scores
+      const playerScores = players.map((p, idx) => {
+        const total = p.points?.reduce((sum, point) => sum + (parseFloat(point) || 0), 0) || 0;
+        return { index: idx, total };
+      });
+      
+      if (playerScores.length > 0) {
+        const scores = playerScores.map(p => p.total);
+        const winningScore = gameLowIsBetter 
+          ? Math.min(...scores)
+          : Math.max(...scores);
+        
+        // Check if current player has the winning score
+        isWin = playerScores[userPlayerIndex]?.total === winningScore;
+      }
+    } else {
+      // For Wizard games or games without points array: use winner_ids
+      isWin = winnerIds.includes(userPlayer.id) || 
+              winnerIds.includes(userPositionId) ||
+              winnerIds.some(wId => String(wId) === String(userPlayer.id));
+    }
     
     if (isWin) {
       wins++;

@@ -12,8 +12,13 @@
     .settings-container,
     .home-container,
     .game-in-progress {
+        padding-top: var(--spacing-sm);
         padding-left: var(--spacing-md);
         width: 100%;
+    }
+
+    .overview-grid {
+        margin-bottom: 0;
     }
 
     /* Game Details*/

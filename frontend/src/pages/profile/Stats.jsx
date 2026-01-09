@@ -10,19 +10,21 @@ const Stats = () => {
   const navigate = useNavigate()
   const { user } = useUser()
   const [allGames, setAllGames] = useState([])
+  const [profileIdentities, setProfileIdentities] = useState([])
   const [error, setError] = useState(null)
 
-  // Create player object from user data
+  // Create player object from user data - include identities for matching
   const currentPlayer = useMemo(() => {
     if (user) {
       return {
         id: user.id,
         name: user.name || user.username || 'User',
-        username: user.username
+        username: user.username,
+        identities: profileIdentities // Include linked identity names for matching
       }
     }
     return null
-  }, [user])
+  }, [user, profileIdentities])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,8 +40,12 @@ const Stats = () => {
         
         if (!profileData || !profileData.games) {
           setAllGames([]);
+          setProfileIdentities([]);
           return;
         }
+
+        // Store identity names for player matching in games
+        setProfileIdentities(profileData.identities || [user.username]);
 
         // The backend already filters games for this user and their linked identities
         // Transform the games to match the expected format for the stats component

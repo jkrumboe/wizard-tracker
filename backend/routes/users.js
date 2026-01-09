@@ -476,7 +476,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       isRegisteredUser: true,
       totalGames: limitedGames.length,
       totalWins: totalWins,
-      identities: identities.map(i => i.displayName), // Include identity display names
+      identities: [...identities.map(i => i.displayName), ...mergedGuestIdentities.map(i => i.displayName)], // Include all identity display names (owned + merged guests)
       games: limitedGames
     });
   } catch (error) {
