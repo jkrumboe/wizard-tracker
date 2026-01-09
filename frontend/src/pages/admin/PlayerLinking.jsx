@@ -146,7 +146,8 @@ const PlayerLinking = () => {
       setError('');
       setSuccess('');
 
-      const result = await userService.unlinkGuestIdentity(identity._id);
+      // Pass both guestIdentityId and userId to the API
+      const result = await userService.unlinkGuestIdentity(identity._id, identity.linkedToUser?._id);
 
       setSuccess(
         `Successfully unlinked "${identity.displayName}". ` +
