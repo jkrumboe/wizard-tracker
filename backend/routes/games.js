@@ -816,6 +816,13 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       ]
     }).populate('userId', 'username').lean();
     
+    // Also find guest identities that are merged into the matching identities
+    const matchingIdentityIds = matchingIdentities.map(i => i._id);
+    const mergedGuestIdentities = await PlayerIdentity.find({
+      isDeleted: false,
+      mergedInto: { $in: matchingIdentityIds }
+    }).lean();
+    
     // Build maps for identity resolution
     const nameToIdentityMap = Object.create(null); // name -> identityId
     const identityToCanonicalMap = Object.create(null); // identityId -> canonicalName
@@ -850,6 +857,33 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           identityToCanonicalMap[linkedId] = canonicalName;
           identityIdSet.add(linkedId);
         });
+      }
+    });
+    
+    // Process merged guest identities (e.g., Feemke merged into feemi)
+    mergedGuestIdentities.forEach(guestIdentity => {
+      const guestIdentityId = guestIdentity._id.toString();
+      const parentIdentityId = guestIdentity.mergedInto.toString();
+      
+      // Find the canonical name from the parent identity
+      if (identityToCanonicalMap[parentIdentityId]) {
+        const canonicalName = identityToCanonicalMap[parentIdentityId];
+        identityToCanonicalMap[guestIdentityId] = canonicalName;
+        identityIdSet.add(guestIdentityId);
+        
+        // Map the guest's display name to point to this identity
+        if (!isDangerousKey(guestIdentity.normalizedName)) {
+          nameToIdentityMap[guestIdentity.normalizedName] = guestIdentityId;
+        }
+        
+        // Map the guest's aliases too
+        if (guestIdentity.aliases) {
+          guestIdentity.aliases.forEach(alias => {
+            if (!isDangerousKey(alias.normalizedName)) {
+              nameToIdentityMap[alias.normalizedName] = guestIdentityId;
+            }
+          });
+        }
       }
     });
     
