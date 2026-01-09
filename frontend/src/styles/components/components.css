@@ -348,7 +348,7 @@
   .game-details-container {
     padding: 0;
     overflow: hidden;
-    padding-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
     min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
     width: 100%;
     position: relative;
@@ -897,7 +897,7 @@
   /* Stats Page */
   .stats-container {
     max-width: 960px;
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-md) 0;
   }
   
   .stats-header {
@@ -1010,7 +1010,7 @@
 
 /* New Game Page */
 .new-game-container {
-  padding-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   max-width: 960px;
   flex: 1;
   display: flex;
@@ -1678,7 +1678,7 @@
 .game-details-container {
   min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
   padding: 0;
-  padding-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   width: 100%;
   position: relative;
   z-index: 1;
@@ -1983,7 +1983,7 @@
 
 .loading-container {
   text-align: center;
-  padding: var(--spacing-xl) 0;
+  padding: var(--spacing-md) 0;
   color: var(--text-muted);
 }
 
@@ -2225,7 +2225,7 @@
   flex-direction: column;
   height: calc(96vh - var(--bottom-nav-height));
   max-width: 960px;
-  margin-top: var(--spacing-lg);
+  margin-top: var(--spacing-md);
 }
 
 .home-container .recent-games {

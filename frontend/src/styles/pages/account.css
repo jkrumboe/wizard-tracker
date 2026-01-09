@@ -338,7 +338,7 @@
 .settings-container {
   max-width: 900px;
   margin: 0 auto;
-  padding-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   width: 100%;
   flex: 1;
 }

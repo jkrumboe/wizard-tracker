@@ -144,8 +144,7 @@
         flex-direction: column;
         align-items: center;
         width: 100%;
-          height: calc(96vh - var(--bottom-nav-height));
-
+        height: calc(96vh - var(--bottom-nav-height));
     }
 
     .home-header {

@@ -1,7 +1,7 @@
 /* Game Details Page Styles */
 .game-details-container {
   padding: 0;
-  padding-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
   min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
   width: 100%;
   position: relative;
