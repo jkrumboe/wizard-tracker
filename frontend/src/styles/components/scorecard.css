@@ -51,6 +51,7 @@
   width: 100%;
   max-width: 100%;
   display: block;
+  padding: 0.125rem 0;
 }
 
 /* Adjust for 4-6 players - corrected media query */
@@ -275,7 +276,7 @@
   
   /* Ensure sticky columns look correct on mobile */
   .round-number, .round-header, .total-label {
-    width: 30px;
+    width: 35px;
   }
 
   .table-game-container .round-header {
