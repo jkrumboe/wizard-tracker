@@ -185,7 +185,7 @@ const GameHistoryItem = ({ game }) => {
           </div>
         </div>
         <div className="game-players">
-            {/* <UsersIcon size={12} />{" "} */}
+            <UsersIcon size={12} />{" "}
             {isTableGame
               ? Array.isArray(game.players) ? game.players.join(", ") : "No players"
               : game.gameData && game.gameData.players

@@ -545,7 +545,7 @@ const NewGame = () => {
                           <div>Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds || 0}</div>
                         </div>
                         <div className="game-players">
-                          {/* Players:{" "} */}
+                          <UsersIcon size={12} />{" "}
                           {playerNames.length > 0 ? playerNames.join(", ") : "No players"}
                         </div>
                         <div className="actions-game-history">

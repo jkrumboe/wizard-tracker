@@ -1758,7 +1758,7 @@ const Account = () => {
                           </span>
                         </div>
                         <div className="game-players">
-                          {/* <UsersIcon size={12} />{" "} */}
+                          <UsersIcon size={12} />{" "}
                           {game.players && game.players.length > 0
                             ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
                                 ? game.players.join(", ")
@@ -1867,7 +1867,7 @@ const Account = () => {
                           )}               
                         </div>
                         <div className="game-players">
-                          {/* <UsersIcon size={12} />{" "} */}
+                          <UsersIcon size={12} />{" "}
                           {game.players.join(", ")}
                         </div>
                         <div className="actions-game-history">
