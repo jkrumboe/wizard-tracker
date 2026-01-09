@@ -400,7 +400,10 @@ const GameInProgress = () => {
 
   // Calculate comprehensive game statistics for all players
   const calculateDetailedGameStats = () => {
-    const allRoundsData = gameState.roundData.slice(0, currentRoundIndex + 1);
+    // Only include completed rounds for accuracy calculations
+    // If current round is not complete, exclude it from stats
+    const completedRoundsCount = isRoundComplete ? currentRoundIndex + 1 : currentRoundIndex;
+    const allRoundsData = gameState.roundData.slice(0, completedRoundsCount);
     const currentPlayers = currentRound?.players || [];
 
     return currentPlayers.map((player) => {
