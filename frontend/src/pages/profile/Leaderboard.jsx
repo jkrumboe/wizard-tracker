@@ -201,9 +201,80 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <h2>Loading Leaderboard...</h2>
+      <div className="leaderboard-container">
+        <h1 style={{marginBottom: '0'}}>Leaderboard</h1>
+        
+        <div style={{ 
+          fontSize: '0.85rem', 
+          color: 'var(--text-secondary)', 
+          textAlign: 'center',
+          marginBottom: '0.5rem' 
+        }}>
+          Loading...
+        </div>
+        
+        <Link 
+          to="/friend-leaderboard" 
+          className="friend-leaderboard-link"
+          style={{ pointerEvents: 'none', opacity: 0.7 }}
+        >
+          <UsersIcon size={18} />
+          Compare with Friends
+        </Link>
+
+        <div className="filter-container">
+          <input
+            type="text"
+            placeholder="Search players..."
+            className="search-input"
+            disabled
+          />
+          <select 
+            className="game-type-select"
+            disabled
+            value={selectedGameType}
+          >
+            <option>{selectedGameType}</option>
+          </select>
+        </div>
+
+        <div className="leaderboard-table">
+          <div className="leaderboard-header">
+            <div className="rank-col"/>
+            <div className="player-col">Player</div>
+            <div className="wins-col">Wins</div>
+            <div className="winrate-col">Win%</div>
+            <div className="score-col">Ø Score</div>
+          </div>
+
+          <div className="leaderboard-body">
+            {Array.from({ length: playersPerPage }).map((_, index) => (
+              <div key={`skeleton-${index}`} className="leaderboard-row skeleton-row">
+                <div className="rank-col">
+                  <div className="skeleton skeleton-rank"></div>
+                </div>
+                <div className="player-col">
+                  <div className="skeleton skeleton-name" style={{ width: `${60 + Math.random() * 40}%` }}></div>
+                </div>
+                <div className="wins-col">
+                  <div className="skeleton skeleton-stat"></div>
+                </div>
+                <div className="winrate-col">
+                  <div className="skeleton skeleton-stat"></div>
+                </div>
+                <div className="score-col">
+                  <div className="skeleton skeleton-stat"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="pagination-controls">
+          <button disabled>Previous</button>
+          <span>- of -</span>
+          <button disabled>Next</button>
+        </div>
       </div>
     )
   }

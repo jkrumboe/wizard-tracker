@@ -432,3 +432,59 @@
     font-size: 0.9rem;
   } */
 }
+/* Skeleton Loading Styles */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--hover-bg, rgba(255, 255, 255, 0.1)) 50%,
+    var(--border) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+.skeleton-row {
+  opacity: 0.7;
+}
+
+.skeleton-rank {
+  width: 24px;
+  height: 20px;
+  margin: 0 auto;
+}
+
+.skeleton-name {
+  height: 18px;
+  min-width: 80px;
+}
+
+.skeleton-stat {
+  width: 40px;
+  height: 18px;
+  margin: 0 auto;
+}
+
+.skeleton-text {
+  height: 16px;
+  display: inline-block;
+}
+
+.skeleton-input {
+  height: 40px;
+  border-radius: 8px;
+}
+
+.skeleton-link {
+  pointer-events: none;
+}
