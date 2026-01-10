@@ -207,25 +207,63 @@ router.post('/', auth, async (req, res) => {
     
     const userId = req.user._id;
     
-    // Check for duplicates
-    const existingGame = await WizardGame.findOne({
-      $or: [
-        { localId: localId },
-        {
-          userId: userId,
-          'gameData.created_at': gameData.created_at
-        }
-      ]
-    });
+    // Check for duplicates - first by localId (exact match)
+    const existingByLocalId = await WizardGame.findOne({ localId: localId });
     
-    if (existingGame) {
+    if (existingByLocalId) {
       return res.status(409).json({
         error: 'Game already exists',
         existingGame: {
-          id: existingGame._id,
-          localId: existingGame.localId
+          id: existingByLocalId._id,
+          localId: existingByLocalId.localId
         }
       });
+    }
+    
+    // Content-based duplicate detection (detects re-uploaded games across users)
+    // Uses created_at + total_rounds + sorted player names + final_scores as fingerprint
+    if (gameData.created_at && gameData.gameFinished) {
+      // Build query for potential duplicates based on content
+      const playerNames = (gameData.players || [])
+        .map(p => p.name)
+        .filter(Boolean)
+        .sort()
+        .join(',');
+      
+      // Find games with same created_at timestamp and total_rounds
+      const potentialDuplicates = await WizardGame.find({
+        'gameData.created_at': gameData.created_at,
+        'gameData.total_rounds': gameData.total_rounds,
+        'gameData.gameFinished': true
+      }).lean();
+      
+      // Check for content match
+      for (const existing of potentialDuplicates) {
+        const existingPlayerNames = (existing.gameData?.players || [])
+          .map(p => p.name)
+          .filter(Boolean)
+          .sort()
+          .join(',');
+        
+        // Match by player names
+        if (existingPlayerNames === playerNames) {
+          // Additional check: compare final scores if available
+          const newScoreValues = Object.values(gameData.final_scores || {}).sort((a, b) => a - b).join(',');
+          const existingScoreValues = Object.values(existing.gameData?.final_scores || {}).sort((a, b) => a - b).join(',');
+          
+          if (newScoreValues === existingScoreValues) {
+            console.log(`[POST /api/wizard-games] Duplicate detected by content: existing=${existing._id}, new localId=${localId}`);
+            return res.status(409).json({
+              error: 'Game already exists (duplicate content detected)',
+              existingGame: {
+                id: existing._id,
+                localId: existing.localId
+              },
+              reason: 'A game with the same timestamp, players, and scores already exists'
+            });
+          }
+        }
+      }
     }
     
     // Create wizard game

@@ -29,8 +29,8 @@ router.post('/', auth, async (req, res, next) => {
       return res.status(401).json({ error: 'Authentication required to upload table games' });
     }
 
-    // Check for duplicate by localId
-    const existingByLocalId = await TableGame.findOne({ localId, userId });
+    // Check for duplicate by localId (exact match across all users)
+    const existingByLocalId = await TableGame.findOne({ localId });
     if (existingByLocalId) {
       console.debug(`[POST /api/table-games] Duplicate found by localId: ${localId}`);
       return res.status(200).json({ 
@@ -38,6 +38,54 @@ router.post('/', auth, async (req, res, next) => {
         duplicate: true,
         message: 'Table game already exists with this localId'
       });
+    }
+
+    // Content-based duplicate detection (detects re-uploaded games across users)
+    if (gameData.created_at && gameData.gameFinished) {
+      const playerNames = (gameData.players || [])
+        .map(p => p.name)
+        .filter(Boolean)
+        .sort()
+        .join(',');
+      
+      const totalRounds = gameData.rows || 0;
+      
+      // Find games with same created_at and similar structure
+      const potentialDuplicates = await TableGame.find({
+        'gameData.created_at': gameData.created_at,
+        'gameData.gameFinished': true,
+        totalRounds: totalRounds
+      }).lean();
+      
+      for (const existing of potentialDuplicates) {
+        const existingPlayerNames = (existing.gameData?.players || [])
+          .map(p => p.name)
+          .filter(Boolean)
+          .sort()
+          .join(',');
+        
+        if (existingPlayerNames === playerNames) {
+          // Compare final totals if available
+          const getPlayerTotals = (players) => {
+            return (players || [])
+              .map(p => (p.points || []).reduce((sum, pt) => sum + (Number(pt) || 0), 0))
+              .sort((a, b) => a - b)
+              .join(',');
+          };
+          
+          const newTotals = getPlayerTotals(gameData.players);
+          const existingTotals = getPlayerTotals(existing.gameData?.players);
+          
+          if (newTotals === existingTotals) {
+            console.log(`[POST /api/table-games] Duplicate detected by content: existing=${existing._id}, new localId=${localId}`);
+            return res.status(200).json({ 
+              game: existing, 
+              duplicate: true,
+              message: 'Table game already exists (duplicate content detected)'
+            });
+          }
+        }
+      }
     }
 
     // Extract metadata from gameData
