@@ -714,9 +714,9 @@
   font-size: 1rem;
 }
 
-.game-details-container .scorecard-table .round-score {
+/* .game-details-container .scorecard-table .round-score {
   font-size: 1.2rem;
-}
+} */
 
 /* Table view within stats section */
 .game-in-progress .stats-subtabs ~ .rounds-section {
