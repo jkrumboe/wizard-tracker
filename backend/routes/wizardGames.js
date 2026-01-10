@@ -231,10 +231,15 @@ router.post('/', auth, async (req, res) => {
         .join(',');
       
       // Find games with same created_at timestamp and total_rounds
+      // Validate and sanitize user input to prevent NoSQL injection
+      const sanitizedCreatedAt = typeof gameData.created_at === 'string' ? gameData.created_at : String(gameData.created_at || '');
+      const sanitizedTotalRounds = typeof gameData.total_rounds === 'number' ? gameData.total_rounds : parseInt(gameData.total_rounds, 10) || 0;
+      
+      // Using $eq operator to ensure values are treated as literals, not query objects
       const potentialDuplicates = await WizardGame.find({
-        'gameData.created_at': gameData.created_at,
-        'gameData.total_rounds': gameData.total_rounds,
-        'gameData.gameFinished': true
+        'gameData.created_at': { $eq: sanitizedCreatedAt },
+        'gameData.total_rounds': { $eq: sanitizedTotalRounds },
+        'gameData.gameFinished': { $eq: true }
       }).lean();
       
       // Check for content match

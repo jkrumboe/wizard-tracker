@@ -50,11 +50,16 @@ router.post('/', auth, async (req, res, next) => {
       
       const totalRounds = gameData.rows || 0;
       
+      // Validate and sanitize user input to prevent NoSQL injection
+      const sanitizedCreatedAt = typeof gameData.created_at === 'string' ? gameData.created_at : String(gameData.created_at || '');
+      const sanitizedTotalRounds = typeof totalRounds === 'number' ? totalRounds : parseInt(totalRounds, 10) || 0;
+      
       // Find games with same created_at and similar structure
+      // Using $eq operator to ensure values are treated as literals, not query objects
       const potentialDuplicates = await TableGame.find({
-        'gameData.created_at': gameData.created_at,
-        'gameData.gameFinished': true,
-        totalRounds: totalRounds
+        'gameData.created_at': { $eq: sanitizedCreatedAt },
+        'gameData.gameFinished': { $eq: true },
+        totalRounds: { $eq: sanitizedTotalRounds }
       }).lean();
       
       for (const existing of potentialDuplicates) {
