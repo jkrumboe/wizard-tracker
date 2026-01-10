@@ -160,9 +160,73 @@ const UserProfile = () => {
   if (loading) {
     return (
       <div className="settings-container">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading profile...</p>
+        <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '16px' }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '60px',
+              color: 'var(--text-primary)',
+              borderRadius: 'var(--radius-md)',
+              transition: 'background-color 0.2s',
+              boxShadow: 'none',
+            }}
+            title="Go back"
+          >
+            <ArrowLeftIcon size={24} />
+          </button>
+          <div className="settings-option">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
+                <div>
+                  <div className="skeleton" style={{ width: '120px', height: '20px', marginBottom: '8px', borderRadius: '4px' }}></div>
+                  <div className="skeleton" style={{ width: '160px', height: '14px', borderRadius: '4px' }}></div>
+                </div>
+                <div className="skeleton" style={{ width: '64px', height: '64px', borderRadius: '25%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="account-tabs">
+          <button className="account-tab active">Overview</button>
+          <button className="account-tab">Stats</button>
+        </div>
+
+        <div className="account-content">
+          <div className="tab-content">
+            <div className="overview-grid">
+              <div className="game-type-card" style={{ cursor: 'default' }}>
+                <div className="game-type-header">
+                  <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
+                  <div className="game-type-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">Win%:</span>
+                      <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Matches:</span>
+                      <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
+                    </div>
+                  </div>
+                </div>
+                <div className="game-type-recent-results">
+                  <div className="results-string">
+                    {Array.from({ length: 10 }).map((_, idx) => (
+                      <span key={idx} className="result-letter empty"></span>
+                    ))}
+                  </div>
+                  <p className="results-description">Last <span className="skeleton" style={{ width: '8px', height: '14px', borderRadius: '3px', display: 'inline-block', verticalAlign: 'middle', marginBottom: '2px' }}></span> games</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
