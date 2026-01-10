@@ -810,26 +810,48 @@ const GameInProgress = () => {
             
             {(statsSubTab === 'details' || isLandscape) && (
               <div className="results-table">
-                {detailedStats.map((playerStats, index) => (
-                  <div key={playerStats.id} className="results-row">
-                    <div className="top-result-row">
-                      <div className="rank-col">{index + 1}</div>
-                      <div className="player-col">
-                        <div className="player-info">
-                          <span>{playerStats.name}</span>
+                {(() => {
+                  // Sort players by total points (highest first)
+                  const sortedStats = [...detailedStats].sort((a, b) => 
+                    (b.totalPoints || 0) - (a.totalPoints || 0)
+                  );
+                  
+                  // Calculate ranks with tie handling
+                  let currentRank = 1;
+                  return sortedStats.map((playerStats, index) => {
+                    // Check if this player's score is different from previous player
+                    if (index > 0 && (sortedStats[index - 1].totalPoints || 0) !== (playerStats.totalPoints || 0)) {
+                      currentRank = index + 1;
+                    }
+                    
+                    // Determine medal class based on rank
+                    let medalClass = '';
+                    if (currentRank === 1) medalClass = 'gold';
+                    else if (currentRank === 2) medalClass = 'silver';
+                    else if (currentRank === 3) medalClass = 'bronze';
+                    
+                    return (
+                      <div key={playerStats.id} className="results-row">
+                        <div className="top-result-row">
+                          <div className={`rank-col ${medalClass}`}>{currentRank}</div>
+                          <div className="player-col">
+                            <div className="player-info">
+                              <span>{playerStats.name}</span>
+                            </div>
+                          </div>
+                          <div className="score-col">{playerStats.totalPoints || 0}</div>
+                          <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
+                            {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
+                          </button>
                         </div>
+                        <AdvancedStats 
+                          playerStats={playerStats} 
+                          isVisible={selectedPlayerId === playerStats.id} 
+                        />
                       </div>
-                      <div className="score-col">{playerStats.totalPoints || 0}</div>
-                      <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
-                        {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
-                      </button>
-                    </div>
-                    <AdvancedStats 
-                      playerStats={playerStats} 
-                      isVisible={selectedPlayerId === playerStats.id} 
-                    />
-                  </div>
-                ))}
+                    );
+                  });
+                })()}
               </div>
             )}
 
