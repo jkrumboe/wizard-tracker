@@ -33,6 +33,7 @@ const Account = () => {
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
   const [cloudGames, setCloudGames] = useState([]); // Games from API (includes identity consolidation)
+  const [cloudGamesLoading, setCloudGamesLoading] = useState(true); // Track if cloud games are loading
   const [profileData, setProfileData] = useState(null); // Profile data including identities
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
@@ -372,10 +373,12 @@ const Account = () => {
     if (!user) {
       setCloudGames([]);
       setProfileData(null);
+      setCloudGamesLoading(false);
       return;
     }
 
     try {
+      setCloudGamesLoading(true);
       console.log('🔄 [Account] Fetching cloud games for userId:', user.id);
       const userService = (await import('@/shared/api/userService')).default;
       const data = await userService.getUserPublicProfile(user.id);
@@ -392,6 +395,8 @@ const Account = () => {
     } catch (error) {
       console.error('[Account] Failed to fetch cloud games:', error);
       setCloudGames([]);
+    } finally {
+      setCloudGamesLoading(false);
     }
   }, [user]);
 
@@ -1463,11 +1468,39 @@ const Account = () => {
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="tab-content">
-            <StatsOverview 
-              games={allGamesForOverview} 
-              user={userWithAliases || user} 
-              onGameTypeClick={handleGameTypeClick}
-            />
+            {cloudGamesLoading && user ? (
+              <div className="overview-grid">
+                <div className="game-type-card" style={{ cursor: 'default' }}>
+                  <div className="game-type-header">
+                    <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
+                    <div className="game-type-stats">
+                      <div className="stat-item">
+                        <span className="stat-label">Win%:</span>
+                        <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Matches:</span>
+                        <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="game-type-recent-results">
+                    <div className="results-string">
+                      {Array.from({ length: 10 }).map((_, idx) => (
+                        <span key={idx} className="result-letter empty"></span>
+                      ))}
+                    </div>
+                    <p className="results-description">Last <span className="skeleton" style={{ width: '16px', height: '12px', borderRadius: '3px', display: 'inline-block', verticalAlign: 'middle' }}></span> games</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <StatsOverview 
+                games={allGamesForOverview} 
+                user={userWithAliases || user} 
+                onGameTypeClick={handleGameTypeClick}
+              />
+            )}
           </div>
         )}
 
