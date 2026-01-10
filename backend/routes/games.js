@@ -258,6 +258,7 @@ router.get('/leaderboard', async (req, res, next) => {
 
       gameData.players.forEach(player => {
         const playerId = player.id;
+        const playerOriginalId = player.originalId;
         const playerName = player.name;
         const identityId = player.identityId;
         
@@ -301,7 +302,11 @@ router.get('/leaderboard', async (req, res, next) => {
         stats.totalGames++;
         
         // Check if player is one of the winners (handles draws)
-        const isWinner = winnerIds.includes(playerId);
+        // Check both player.id and player.originalId since winner_ids may contain either
+        const isWinner = winnerIds.includes(playerId) || 
+                        (playerOriginalId && winnerIds.includes(playerOriginalId)) ||
+                        winnerIds.some(id => String(id) === String(playerId)) ||
+                        (playerOriginalId && winnerIds.some(id => String(id) === String(playerOriginalId)));
         
         if (isWinner) {
           stats.wins++;

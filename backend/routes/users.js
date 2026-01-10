@@ -355,8 +355,12 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       const winnerIds = gameData.winner_ids || 
                        (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
       
-      // Check if user's player ID is in winner_ids
-      const isWinner = winnerIds.includes(userPlayer.id) || winnerIds.some(id => String(id) === String(userPlayer.id));
+      // Check if user's player ID or originalId is in winner_ids
+      // winner_ids may contain either the migrated player.id or the original player.originalId
+      const isWinner = winnerIds.includes(userPlayer.id) || 
+                      winnerIds.some(id => String(id) === String(userPlayer.id)) ||
+                      (userPlayer.originalId && winnerIds.includes(userPlayer.originalId)) ||
+                      (userPlayer.originalId && winnerIds.some(id => String(id) === String(userPlayer.originalId)));
       
       if (isWinner) totalWins++;
       
