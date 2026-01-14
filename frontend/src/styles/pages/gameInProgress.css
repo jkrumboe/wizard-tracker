@@ -231,9 +231,9 @@
   border-width: 2px !important;
 }
 
-.game-in-progress .results-row {
+/* .game-in-progress .results-row {
   flex-direction: column;
-}
+} */
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {  
