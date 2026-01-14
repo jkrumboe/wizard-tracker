@@ -181,6 +181,20 @@
   text-decoration: none;
   transition: color 0.2s ease;
   font-weight: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.results-table .player-link {
+  max-width: 220px;
+}
+
+.player-header .player-link {
+  max-width: 100px;
+  align-self: center;
+  margin: 0 auto;
 }
 
 .player-link:hover {

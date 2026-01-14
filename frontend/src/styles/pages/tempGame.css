@@ -773,6 +773,9 @@
   color: var(--text);
   align-items: center;
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-badges {

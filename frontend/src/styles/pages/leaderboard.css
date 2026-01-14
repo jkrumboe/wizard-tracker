@@ -222,9 +222,7 @@
 
 
 .leaderboard-container .player-col {
-  display: flex;
   align-items: center;
-  gap: 12px;
   font-weight: 500;
   min-width: 0;
   overflow: hidden;
@@ -406,6 +404,9 @@
   .player-name {
     font-size: 0.85rem;
     max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* .wins-col,

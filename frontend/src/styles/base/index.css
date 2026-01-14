@@ -197,6 +197,13 @@ h6 {
   color: var(--text);
 }
 
+/* Text truncation utility - use for long names */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 h1 {
   font-size: 1.875rem;
 }

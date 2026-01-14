@@ -11,6 +11,14 @@
   overflow: hidden;
 }
 
+.player-name-container .player-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .role-badge {
   display: inline-flex;
   align-items: center;
