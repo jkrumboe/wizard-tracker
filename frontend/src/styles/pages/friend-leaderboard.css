@@ -364,7 +364,7 @@
   border-radius: 12px;
   padding: var(--spacing-sm);
   border: 1px solid var(--border);
-  margin-bottom: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
 }
 
 .head-to-head-section h2 {
