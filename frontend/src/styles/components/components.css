@@ -1574,7 +1574,7 @@
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
-    max-width: 80px;
+    /* max-width: 80px; */
   }
 
   .sorted {

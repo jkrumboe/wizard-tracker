@@ -184,11 +184,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 140px;
+  max-width: 220px;
 }
 
-.results-table .player-link {
-  max-width: 220px;
+.results-table:has(.adv-stats-btn) .player-link {
+    max-width: 140px;
 }
 
 .player-header .player-link {
