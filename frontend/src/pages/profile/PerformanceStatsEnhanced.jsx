@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
-import { CircleSlash2, Trophy, TrendingDown, Target } from 'lucide-react';
+import { CircleSlash2, Trophy, TrendingDown, Target, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import "@/styles/pages/performancestats.css";
 
@@ -467,15 +467,22 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
 
     // Calculate achievements
     const achievements = [];
-    if (wins >= 10) achievements.push({ icon: '🏆', name: 'Veteran', description: '10+ wins' });
-    if (wins >= 50) achievements.push({ icon: '👑', name: 'Champion', description: '50+ wins' });
-    if (wins >= 100) achievements.push({ icon: '⭐', name: 'Legend', description: '100+ wins' });
-    if (longestWinStreak >= 5) achievements.push({ icon: '🔥', name: 'Hot Streak', description: `${longestWinStreak} win streak` });
-    if (winRate >= 70) achievements.push({ icon: '💎', name: 'Elite', description: `${winRate.toFixed(0)}% win rate` });
-    if (perfectBidsCount >= 1) achievements.push({ icon: '🎯', name: 'Perfect Predictor', description: `${perfectBidsCount} perfect games` });
-    if (bidAccuracy >= 80) achievements.push({ icon: '🧠', name: 'Mind Reader', description: `${bidAccuracy.toFixed(0)}% bid accuracy` });
-    if (comebackWins >= 5) achievements.push({ icon: '💪', name: 'Comeback King', description: `${comebackWins} close wins` });
-    if (dominantWins >= 5) achievements.push({ icon: '⚡', name: 'Dominator', description: `${dominantWins} dominant wins` });
+    // Games played milestones
+    if (totalGames >= 1) achievements.push({ icon: <Gamepad2 size={32} color="var(--primary)" />, name: 'First Game', description: 'Played your first game' });
+    if (totalGames >= 5) achievements.push({ icon: <Dices size={32} color="var(--primary)" />, name: 'Getting Started', description: '5 games played' });
+    if (totalGames >= 10) achievements.push({ icon: <Spade size={32} color="var(--primary)" />, name: 'Regular Player', description: '10 games played' });
+    if (totalGames >= 25) achievements.push({ icon: <Gem size={32} color="var(--primary)" />, name: 'Dedicated', description: '25 games played' });
+    if (totalGames >= 50) achievements.push({ icon: <Medal size={32} color="var(--primary)" />, name: 'Committed', description: '50 games played' });
+    // Win milestones
+    if (wins >= 10) achievements.push({ icon: <Trophy size={32} color="#cea51f" />, name: 'Veteran', description: '10+ wins' });
+    if (wins >= 50) achievements.push({ icon: <Crown size={32} color="#cea51f" />, name: 'Champion', description: '50+ wins' });
+    if (wins >= 100) achievements.push({ icon: <Star size={32} color="#cea51f" />, name: 'Legend', description: '100+ wins' });
+    if (longestWinStreak >= 5) achievements.push({ icon: <Flame size={32} color="#EF4444" />, name: 'Hot Streak', description: `${longestWinStreak} win streak` });
+    if (winRate >= 70) achievements.push({ icon: <Gem size={32} color="#cea51f" />, name: 'Elite', description: `${winRate.toFixed(0)}% win rate` });
+    if (perfectBidsCount >= 1) achievements.push({ icon: <Target size={32} color="#cea51f" />, name: 'Perfect Predictor', description: `${perfectBidsCount} perfect games` });
+    if (bestBidAccuracyGame?.bidAccuracy >= 80) achievements.push({ icon: <Brain size={32} color="var(--secondary)" />, name: 'Mind Reader', description: '+80% accuracy in a game' });
+    if (comebackWins >= 5) achievements.push({ icon: <Undo2 size={32} color="#cea51f" />, name: 'Comeback King', description: `${comebackWins} close wins` });
+    if (dominantWins >= 5) achievements.push({ icon: <Zap size={32} color="#EF4444" />, name: 'Dominator', description: `${dominantWins} dominant wins` });
 
     return {
       totalGames,
