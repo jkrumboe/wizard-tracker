@@ -134,28 +134,9 @@
 .leaderboard-row {
   display: grid;
   grid-template-columns: 60px 2fr 100px 100px 120px;
-  padding: 0;
+  padding: 16px;
   align-items: center;
-  gap: 0;
-}
-
-.leaderboard-header > div,
-.leaderboard-row > div {
-  border-right: 1px solid var(--border);
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.leaderboard-header > div:last-child,
-.leaderboard-row > div:last-child {
-  border-right: none;
-}
-
-.leaderboard-row > div.player-col {
-  justify-content: flex-start;
-  padding-left: 8px;
+  gap: 12px;
 }
 
 .leaderboard-header {
@@ -400,7 +381,7 @@
   .leaderboard-row {
     grid-template-columns: 40px 1fr 50px 50px 60px;
     gap: 4px;
-    padding: 0;
+    padding: 6px 6px;
     font-size: 0.9rem;
   }
 

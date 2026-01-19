@@ -916,17 +916,6 @@ const TableGame = () => {
     }
   };
 
-  // Show loading state while fetching game from URL
-  if (id && isLoadingGame) {
-    return (
-      <div className="table-game-container">
-        <div className="game-loading-state">
-          <div className="loading-spinner">Loading game...</div>
-        </div>
-      </div>
-    );
-  }
-
   // Show error state if game couldn't be loaded
   if (id && loadError && !currentGameId) {
     return (

@@ -215,7 +215,7 @@ const GameHistoryItem = ({ game }) => {
             <div className="game-date"> {formattedDate}
             </div>
           </div>
-          <Link to={isTableGame ? `/table/${id}` : `/game/${id}`} className="game-details">
+          <Link to={isTableGame ? `/table-game/${id}` : `/game/${id}`} className="game-details">
             View Details
           </Link>
         </div>

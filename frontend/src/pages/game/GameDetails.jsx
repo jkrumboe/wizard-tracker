@@ -23,6 +23,56 @@ import "@/styles/pages/gameDetails.css"
 // Icon imports
 import { ArrowLeftIcon, ShareIcon } from "@/components/ui/Icon"
 
+// Skeleton Loading Component
+const GameDetailsSkeleton = () => (
+  <div className="game-details-container">
+    <div className="game-details-header">
+      <button className="back-link" disabled>
+        <ArrowLeftIcon className="back-icon" />
+      </button>
+      
+      <div className="game-title-section">
+        <div className="skeleton skeleton-text" style={{ width: '90px', height: '24px' }}></div>
+        <div className="skeleton skeleton-text" style={{ width: '120px', height: '20px', marginTop: '4px' }}></div>
+      </div>
+      
+      <div className="badge-controls-container">
+        <div className="skeleton skeleton-text" style={{ width: '70px', height: '16px', borderRadius: 'var(--radius-sm)' }}></div>
+      </div>
+    </div>
+
+    {/* Skeleton Tabs */}
+    <div className="account-tabs">
+      <div className="skeleton skeleton-text" style={{ width: '33%', height: '34px', borderRadius: 'var(--radius-md)' }}></div>
+      <div className="skeleton skeleton-text" style={{ width: '33%', height: '34px', borderRadius: 'var(--radius-md)' }}></div>
+      <div className="skeleton skeleton-text" style={{ width: '33%', height: '34px', borderRadius: 'var(--radius-md)' }}></div>
+    </div>
+
+    <div className="game-summary">
+      <div className="results-section">
+        <div className="skeleton skeleton-text" style={{ width: '120px', height: '24px', marginBottom: '12px' }}></div>
+        <div className="results-table">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={`skeleton-row-${index}`} className="results-row skeleton-row">
+              <div className="top-result-row">
+                <div className="rank-col">
+                  <div className="skeleton skeleton-rank"></div>
+                </div>
+                <div className="player-col">
+                  <div className="skeleton skeleton-name" style={{ width: `${60 + Math.random() * 30}%` }}></div>
+                </div>
+                <div className="score-col">
+                  <div className="skeleton skeleton-stat"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
 const GameDetails = () => {
   // Helper function to compare IDs regardless of type (string vs number)
   const compareIds = (id1, id2) => String(id1) === String(id2);
@@ -45,6 +95,11 @@ const GameDetails = () => {
       ? globalThis.innerWidth > globalThis.innerHeight
       : true;
   });
+
+  // DEBUG: Keep skeleton visible for styling - REMOVE THIS LATER
+  // if (true) {
+  //   return <GameDetailsSkeleton />
+  // }
 
   const [windowWidth, setWindowWidth] = useState(() => {
     // Safely handle window access for SSR
@@ -157,11 +212,7 @@ const GameDetails = () => {
 
   // Show loading state while fetching game data
   if (loading) {
-    return (
-      <div className="game-details loading-state">
-        <div className="loading-spinner">Loading game...</div>
-      </div>
-    )
+    return <GameDetailsSkeleton />
   }
 
   if (error || !game) {
