@@ -245,9 +245,24 @@
 .friend-leaderboard-container .leaderboard-row {
   display: grid;
   grid-template-columns: 50px 2fr 70px 70px 80px 90px;
-  /* padding: 14px 16px; */
+  padding: 0;
   align-items: center;
-  gap: 10px;
+  gap: 0;
+}
+
+.friend-leaderboard-container .leaderboard-header > div,
+.friend-leaderboard-container .leaderboard-row > div {
+  padding: 14px 8px;
+  border-right: 1px solid var(--border);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.friend-leaderboard-container .leaderboard-header > div:last-child,
+.friend-leaderboard-container .leaderboard-row > div:last-child {
+  border-right: none;
 }
 
 .friend-leaderboard-container .leaderboard-header {
@@ -264,6 +279,11 @@
 
 .friend-leaderboard-container .leaderboard-header .player-col {
   text-align: left;
+  justify-content: flex-start;
+}
+
+.friend-leaderboard-container .leaderboard-row > div.player-col {
+  justify-content: flex-start;
 }
 
 .friend-leaderboard-container .leaderboard-row {

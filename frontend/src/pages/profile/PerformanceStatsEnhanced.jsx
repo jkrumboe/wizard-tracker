@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter } from 'recharts';
+import { useMemo, useState } from 'react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
+import { CircleSlash2, Trophy, TrendingDown, Target } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import "@/styles/pages/performancestats.css";
 
@@ -288,6 +289,10 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       // Bid accuracy tracking (if available)
       // Check ALL possible locations: round_data, gameData.round_data, gameState.roundData
       const roundData = game.round_data || game.gameData?.round_data || game.gameState?.roundData;
+      let gameBidAccuracy = null;
+      let gameCorrectBids = 0;
+      let gameTotalBids = 0;
+      
       if (roundData && Array.isArray(roundData)) {
         let perfectGameRounds = 0;
         let completedGameRounds = 0;
@@ -300,15 +305,22 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
             
             if (roundPlayer && roundPlayer.call !== null && roundPlayer.made !== null) {
               totalBids++;
+              gameTotalBids++;
               completedGameRounds++;
               
               if (roundPlayer.call === roundPlayer.made) {
                 correctBids++;
+                gameCorrectBids++;
                 perfectGameRounds++;
               }
             }
           }
         });
+        
+        // Calculate bid accuracy for this game
+        if (gameTotalBids > 0) {
+          gameBidAccuracy = (gameCorrectBids / gameTotalBids) * 100;
+        }
         
         // Check if ALL rounds in this game were perfect
         if (completedGameRounds > 0 && perfectGameRounds === completedGameRounds) {
@@ -379,7 +391,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
         game: index + 1,
         score: playerScore,
         date: gameDate.toLocaleDateString(),
-        winRate: ((wins / totalGames) * 100).toFixed(1)
+        winRate: ((wins / totalGames) * 100).toFixed(1),
+        bidAccuracy: gameBidAccuracy !== null ? parseFloat(gameBidAccuracy.toFixed(1)) : null
       });
       
       winLossData.push({
@@ -394,6 +407,19 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
     const averageScore = totalGames > 0 ? totalScore / totalGames : 0;
     const averageRoundsPerGame = totalGames > 0 ? totalRounds / totalGames : 0;
     const bidAccuracy = totalBids > 0 ? (correctBids / totalBids) * 100 : 0;
+    
+    // Find best and worst bid accuracy games
+    const gamesWithBidAccuracy = performanceData.filter(g => g.bidAccuracy !== null);
+    let bestBidAccuracyGame = null;
+    let worstBidAccuracyGame = null;
+    if (gamesWithBidAccuracy.length > 0) {
+      bestBidAccuracyGame = gamesWithBidAccuracy.reduce((best, curr) => 
+        curr.bidAccuracy > best.bidAccuracy ? curr : best
+      );
+      worstBidAccuracyGame = gamesWithBidAccuracy.reduce((worst, curr) => 
+        curr.bidAccuracy < worst.bidAccuracy ? curr : worst
+      );
+    }
 
     // Calculate recent trend - use the already calculated wins from performance data
     let recentTrend = 'neutral';
@@ -470,6 +496,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
       longestLossStreak,
       bestGame: bestGameData,
       worstGame: worstGameData,
+      bestBidAccuracyGame,
+      worstBidAccuracyGame,
       playerCountData,
       dayOfWeekData,
       hourlyData,
@@ -496,7 +524,58 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
   if (!stats) return null;
 
   return (
-    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+    <PerformanceStatsContent stats={stats} isWizardGame={isWizardGame} />
+  );
+};
+
+// Separate component to use useState (since stats is computed in useMemo)
+const PerformanceStatsContent = ({ stats, isWizardGame }) => {
+  const [insightType, setInsightType] = useState('score');
+  
+  // Prepare chart data with best/worst markers
+  const chartData = useMemo(() => {
+    if (!stats.performanceOverTime) return [];
+    
+    const bestScore = stats.bestGame?.score;
+    const worstScore = stats.worstGame?.score;
+    const bestBidGame = stats.bestBidAccuracyGame?.game;
+    const worstBidGame = stats.worstBidAccuracyGame?.game;
+    
+    return stats.performanceOverTime.map((d) => ({
+      ...d,
+      isBestScore: d.score === bestScore,
+      isWorstScore: d.score === worstScore,
+      isBestBid: d.game === bestBidGame,
+      isWorstBid: d.game === worstBidGame
+    }));
+  }, [stats]);
+
+  // Custom dot renderer for highlighting best/worst
+  const renderScoreDot = (props) => {
+    const { cx, cy, payload } = props;
+    if (payload.isBestScore) {
+      return <circle cx={cx} cy={cy} r={6} fill="#1DBF73" stroke="#fff" strokeWidth={2} />;
+    }
+    if (payload.isWorstScore) {
+      return <circle cx={cx} cy={cy} r={6} fill="#EF4444" stroke="#fff" strokeWidth={2} />;
+    }
+    return <circle cx={cx} cy={cy} r={3} fill="#4F46E5" />;
+  };
+
+  const renderBidDot = (props) => {
+    const { cx, cy, payload } = props;
+    if (payload.bidAccuracy === null) return null;
+    if (payload.isBestBid) {
+      return <circle cx={cx} cy={cy} r={6} fill="#1DBF73" stroke="#fff" strokeWidth={2} />;
+    }
+    if (payload.isWorstBid) {
+      return <circle cx={cx} cy={cy} r={6} fill="#EF4444" stroke="#fff" strokeWidth={2} />;
+    }
+    return <circle cx={cx} cy={cy} r={3} fill="#4F46E5" />;
+  };
+
+  return (
+    <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
       
       {/* OVERVIEW SECTION */}
       <div>
@@ -507,21 +586,21 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
           gap: 'var(--spacing-sm)',
-          marginBottom: 'var(--spacing-md)'
+          marginBottom: 'var(--spacing-sm)'
         }}>
           <StatCard title="Total Games" value={stats.totalGames} />
+          <StatCard title="Win Rate" value={`${stats.winRate}%`} />
           <StatCard title="Wins" value={stats.wins} />
           <StatCard title="Losses" value={stats.losses} />
-          <StatCard title="Win Rate" value={`${stats.winRate}%`} />
-          <StatCard title="Avg Score" value={stats.averageScore} />
-          <StatCard title="Top Score" value={stats.isLowIsBetter ? stats.lowestScore : stats.highestScore} />
+          {/* <StatCard title="Avg Score" value={stats.averageScore} /> */}
+          {/* <StatCard title="Top Score" value={stats.isLowIsBetter ? stats.lowestScore : stats.highestScore} /> */}
         </div>
 
         {/* Streak & Trend Cards */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 'var(--spacing-md)'
+          gap: 'var(--spacing-sm)'
         }}>
           {/* Current Streak */}
           {stats.currentStreak.count > 0 && (
@@ -564,55 +643,162 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
 
       {/* INSIGHTS SECTION */}
       <div>
-        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h2>
+        <div className="performance-insights-header">
+          <h2 style={{ margin: '0', fontSize: '1.25rem', fontWeight: '600', marginBottom: 'var(--spacing-sm)' }}>Performance Insights</h2>
+          
+          {/* Insight Type Selector */}
+          {isWizardGame && (
+            <select
+              value={insightType}
+              onChange={(e) => setInsightType(e.target.value)}
+              className="game-type-selector"
+              style={{ width: 'auto', minWidth: '140px' }}
+            >
+              <option value="score">Scores</option>
+              <option value="bidAccuracy">Bid Accuracy</option>
+            </select>
+          )}
+        </div>
         
-        {/* Performance Metrics */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: 'var(--spacing-sm)',
-          marginBottom: 'var(--spacing-sm)'
-        }}>
-          {isWizardGame && <StatCard title="Bid Accuracy" value={`${stats.bidAccuracy}%`} />}
-          {isWizardGame && <StatCard title="Perfect Games" value={stats.perfectBids} />}
-          <StatCard title="Best Score" value={stats.bestGame?.score || 0} />
-          <StatCard title="Worst Score" value={stats.worstGame?.score || 0} />
-        </div>
+        {/* Score View */}
+        {insightType === 'score' && (
+          <>
+            {/* Score Metrics */}
+            <div style={{
+              display: 'flex',
+              width: '100%',
+              justifyContent: 'space-between',
+              gap: 'var(--spacing-md)',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <StatCard title="Average Score" icon={<CircleSlash2 size={16} />} value={stats.averageScore} />
+              <StatCard title="Best Score" icon={<Trophy size={16} />} value={stats.bestGame?.score || 0} color="green" />
+              <StatCard title="Worst Score" icon={<TrendingDown size={16} />} value={stats.worstGame?.score || 0} color="red" />
+            </div>
 
-        {/* Score Performance Over Time */}
-        <div style={{ marginBottom: 'var(--spacing-xs)' }}>
-          <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Score Progression</h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={stats.performanceOverTime} margin={{ top: 5, right: 0, left: -20, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis 
-                dataKey="game" 
-                stroke="var(--text)"
-                tick={{ fill: 'var(--text)' }}
-                label={{ value: 'Game Number', position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
-              />
-              <YAxis 
-                stroke="var(--text)"
-                tick={{ fill: 'var(--text)' }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'var(--card-bg)', 
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  color: 'var(--text)'
-                }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="score" 
-                stroke="#1DBF73" 
-                fill="#1DBF73" 
-                fillOpacity={0.3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+            {/* Score Chart with Avg Line and Best/Worst Highlighted */}
+            <div style={{ marginBottom: 'var(--spacing-xs)' }}>
+              <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Score Progression</h4>
+              
+              <ResponsiveContainer width="100%" height={200}>
+                <ComposedChart data={chartData} margin={{ top: 5, right: 0, left: -20}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis 
+                    dataKey="game" 
+                    stroke="var(--text)"
+                    tick={{ fill: 'var(--text)' }}
+                    label={{ position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
+                  />
+                  <YAxis 
+                    stroke="var(--text)"
+                    tick={{ fill: 'var(--text)' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--card-bg)', 
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-lg)',
+                      color: 'var(--text)'
+                    }}
+                    formatter={(value, name) => {
+                      if (name === 'score') return [value, 'Score'];
+                      return [value, name];
+                    }}
+                  />
+                  <ReferenceLine y={parseFloat(stats.averageScore)} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="#4F46E5" 
+                    fill="#4F46E5" 
+                    fillOpacity={0.2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="#4F46E5"
+                    strokeWidth={2}
+                    dot={renderScoreDot}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center'  }}>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>Best</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>Worst</span>
+                <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#F59E0B', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Bid Accuracy View */}
+        {insightType === 'bidAccuracy' && isWizardGame && (
+          <>
+            {/* Bid Accuracy Metrics */}
+            <div style={{
+              display: 'flex',
+              width: '100%',
+              justifyContent: 'space-between',
+              gap: 'var(--spacing-md)',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <StatCard title="Average Accuracy" icon={<CircleSlash2 size={16} />} value={`${stats.bidAccuracy}%`} />
+              <StatCard title="Best Accuracy" icon={<Target size={16} />} value={stats.bestBidAccuracyGame?.bidAccuracy !== undefined ? `${stats.bestBidAccuracyGame.bidAccuracy}%` : 'N/A'} color="green" />
+              <StatCard title="Worst Accuracy" icon={<TrendingDown size={16} />} value={stats.worstBidAccuracyGame?.bidAccuracy !== undefined ? `${stats.worstBidAccuracyGame.bidAccuracy}%` : 'N/A'} color="red" />
+            </div>
+
+            {/* Bid Accuracy Chart */}
+            <div style={{ marginBottom: 'var(--spacing-xs)' }}>
+              <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Bid Accuracy Progression</h4>
+              <ResponsiveContainer width="100%" height={200}>
+                <ComposedChart data={chartData.filter(d => d.bidAccuracy !== null)} margin={{ top: 5, right: 0, left: -10}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis 
+                    dataKey="game" 
+                    stroke="var(--text)"
+                    tick={{ fill: 'var(--text)' }}
+                    label={{ position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
+                  />
+                  <YAxis 
+                    stroke="var(--text)"
+                    tick={{ fill: 'var(--text)' }}
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--card-bg)', 
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-lg)',
+                      color: 'var(--text)'
+                    }}
+                    formatter={(value) => [`${value}%`, 'Bid Accuracy']}
+                  />
+                  <ReferenceLine y={parseFloat(stats.bidAccuracy)} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="bidAccuracy" 
+                    stroke="#4F46E5" 
+                    fill="#4F46E5" 
+                    fillOpacity={0.2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="bidAccuracy" 
+                    stroke="#4F46E5"
+                    strokeWidth={2}
+                    dot={renderBidDot}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center' }}>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>Best</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>Worst</span>
+                <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#F59E0B', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Win Rate Over Time */}
         <div>
