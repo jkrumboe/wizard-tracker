@@ -239,6 +239,10 @@ const ProfileEdit = () => {
       }
       cb(valid);
     };
+    reader.onerror = function() {
+      console.error('FileReader error during image validation');
+      cb(false);
+    };
     // Just read enough bytes for all header checks
     reader.readAsArrayBuffer(file.slice(0, 12));
   };

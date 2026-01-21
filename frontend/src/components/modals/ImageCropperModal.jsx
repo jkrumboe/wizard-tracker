@@ -12,21 +12,71 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  // Pre-resize large images to avoid memory issues on mobile
+  const resizeImageIfNeeded = async (file) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        
+        // If image is small enough, just use the file directly
+        const MAX_DIMENSION = 2048;
+        if (img.width <= MAX_DIMENSION && img.height <= MAX_DIMENSION) {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+          return;
+        }
+        
+        // Resize large images
+        const scale = Math.min(MAX_DIMENSION / img.width, MAX_DIMENSION / img.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      
+      img.src = url;
+    });
+  };
 
   // Load image when file changes
   useEffect(() => {
     if (imageFile && isOpen) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImageSrc(e.target.result);
-      };
-      reader.readAsDataURL(imageFile);
+      setLoadError(null);
+      
+      resizeImageIfNeeded(imageFile)
+        .then((dataUrl) => {
+          if (dataUrl) {
+            setImageSrc(dataUrl);
+          } else {
+            setLoadError('Failed to load image. Please try a different file.');
+          }
+        })
+        .catch(() => {
+          setLoadError('Failed to load image. Please try a different file.');
+        });
     }
 
     return () => {
       setImageSrc(null);
       setCrop({ x: 0, y: 0 });
       setZoom(1);
+      setLoadError(null);
     };
   }, [imageFile, isOpen]);
 
@@ -116,6 +166,16 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
         </div>
 
         <div className="modal-content">
+          {loadError && (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-error)' }}>
+              {loadError}
+            </div>
+          )}
+          {!loadError && !imageSrc && (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+              Loading image...
+            </div>
+          )}
           {imageSrc && (
             <>
               <div className="crop-container" style={{ position: 'relative', height: '35vh', width: '75vw', margin: '0 auto' }}>
