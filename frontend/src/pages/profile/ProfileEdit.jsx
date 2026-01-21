@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/shared/hooks/useUser';
 import { XIcon } from "@/components/ui/Icon";
@@ -22,6 +22,8 @@ const ProfileEdit = () => {
   const [showCropper, setShowCropper] = useState(false);
   const [messages, setMessages] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const fileInputRef = useRef(null);
+  const filePickerOpenTime = useRef(null);
 
   // Add a message to the queue
   const addMessage = (text, type = 'error') => {
@@ -237,57 +239,89 @@ const ProfileEdit = () => {
         arr[8] === 0x57 && arr[9] === 0x45 && arr[10] === 0x42 && arr[11] === 0x50) {
         valid = true;
       }
+      // HEIF/HEIC: ftyp followed by heic, heix, mif1, etc.
+      else if (arr.length >= 12 &&
+        arr[4] === 0x66 && arr[5] === 0x74 && arr[6] === 0x79 && arr[7] === 0x70) {
+        // Check for HEIF variants: heic, heix, mif1, msf1
+        valid = true; // Accept any ftyp-based format, iOS will convert
+      }
       cb(valid);
     };
-    reader.onerror = function() {
-      console.error('FileReader error during image validation');
+    reader.onerror = function(error) {
+      console.error('FileReader error during image validation:', error);
       cb(false);
     };
     // Just read enough bytes for all header checks
-    reader.readAsArrayBuffer(file.slice(0, 12));
+    try {
+      reader.readAsArrayBuffer(file.slice(0, 12));
+    } catch (error) {
+      console.error('Failed to read file slice:', error);
+      cb(false);
+    }
   };
 
   const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        
-        // Validate file type
-        const rasterImageTypes = [
-          'image/png',
-          'image/jpeg',
-          'image/jpg',
-          'image/gif',
-          'image/bmp',
-          'image/webp'
-        ];
-        if (!rasterImageTypes.includes(file.type)) {
-          addMessage('Only PNG, JPEG, JPG, GIF, BMP, and WEBP images allowed', 'error');
-          return;
-        }
-        
-        // Validate file size (max 10MB - we'll compress it)
-        if (file.size > 10 * 1024 * 1024) {
-          addMessage('File size must be less than 10MB', 'error');
-          return;
-        }
-        
-        // Validate actual file content
-        isValidRasterImage(file, (isValid) => {
-          if (!isValid) {
-            addMessage('File format does not match allowed image types', 'error');
-            return;
-          }
-          
-          // Store the file and open cropper
-          setSelectedAvatarFile(file);
-          setShowCropper(true);
-        });
-        
-      } catch (err) {
-        console.error("File selection failed:", err);
-        addMessage(err.message || 'Failed to select file', 'error');
+    const file = e.target.files?.[0];
+    
+    if (!file) {
+      return;
+    }
+    
+    try {
+      // Validate file type - include HEIF/HEIC for iOS
+      const rasterImageTypes = [
+        'image/png',
+        'image/jpeg',
+        'image/jpg',
+        'image/gif',
+        'image/bmp',
+        'image/webp',
+        'image/heif',
+        'image/heic',
+        'image/heif-sequence',
+        'image/heic-sequence'
+      ];
+      
+      // Some mobile browsers may not set type correctly
+      const fileExtension = file.name?.split('.').pop()?.toLowerCase();
+      const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'heif', 'heic'];
+      
+      if (!rasterImageTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+        addMessage(`Invalid file type: ${file.type || 'unknown'}. Only PNG, JPEG, GIF, BMP, and WEBP images are allowed.`, 'error');
+        return;
       }
+      
+      // Validate file size (max 10MB - we'll compress it)
+      if (file.size > 10 * 1024 * 1024) {
+        addMessage(`File size (${(file.size / 1024 / 1024).toFixed(1)}MB) exceeds 10MB limit`, 'error');
+        return;
+      }
+      
+      // Validate actual file content with timeout
+      const validationPromise = new Promise((resolve) => {
+        const timeoutId = setTimeout(() => {
+          resolve(false);
+        }, 5000); // 5 second timeout
+        
+        isValidRasterImage(file, (isValid) => {
+          clearTimeout(timeoutId);
+          resolve(isValid);
+        });
+      });
+      
+      const isValid = await validationPromise;
+      
+      if (!isValid) {
+        addMessage('Could not verify image format. Please try a different image file.', 'error');
+        return;
+      }
+      
+      // Store the file and open cropper
+      setSelectedAvatarFile(file);
+      setShowCropper(true);
+      
+    } catch (err) {
+      addMessage(`Failed to process image: ${err.message || 'Unknown error'}`, 'error');
     }
   };
 
@@ -386,10 +420,36 @@ const ProfileEdit = () => {
             }}>
               <span>{croppedAvatarBlob ? 'New Picture' : 'Change Picture'}</span>
               <input
+                ref={fileInputRef}
                 type="file"
                 className="edit-avatar"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                accept="image/*,image/heic,image/heif"
                 onChange={handleFileSelect}
+                onClick={() => {
+                  filePickerOpenTime.current = Date.now();
+                  
+                  // iOS workaround: detect when picker closes without selecting
+                  const checkForFile = () => {
+                    setTimeout(() => {
+                      if (fileInputRef.current) {
+                        const hasFiles = fileInputRef.current.files?.length > 0;
+                        const timeSinceOpen = Date.now() - filePickerOpenTime.current;
+                        
+                        if (!hasFiles && timeSinceOpen > 1000 && timeSinceOpen < 60000) {
+                          addMessage('This image is stored in a restricted location (WhatsApp, iCloud, etc). On iPhone: long-press the image → "Save to Photos" first, then try again from your Camera Roll.', 'error');
+                        }
+                      }
+                    }, 500);
+                  };
+                  
+                  // Listen for window focus (when picker closes)
+                  window.addEventListener('focus', checkForFile, { once: true });
+                  
+                  // Fallback timeout in case focus doesn't fire
+                  setTimeout(() => {
+                    window.removeEventListener('focus', checkForFile);
+                  }, 60000);
+                }}
                 disabled={uploadingAvatar}
                 hidden
               />
