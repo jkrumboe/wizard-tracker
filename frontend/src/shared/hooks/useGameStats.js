@@ -32,7 +32,14 @@ export const useGameStats = (games, user) => {
     const searchNames = [...new Set([user.username, ...identityNames])].filter(Boolean);
     const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
 
-    allGamesList.forEach(game => {
+    // Sort games by date (oldest first) so when we unshift results, newest ends up at front
+    const sortedGamesList = [...allGamesList].sort((a, b) => {
+      const dateA = new Date(a.created_at || a.savedAt || a.lastPlayed || 0);
+      const dateB = new Date(b.created_at || b.savedAt || b.lastPlayed || 0);
+      return dateA - dateB; // Oldest first
+    });
+
+    sortedGamesList.forEach(game => {
       // Skip paused or unfinished games
       if (game.isPaused || game.gameFinished === false) return;
 

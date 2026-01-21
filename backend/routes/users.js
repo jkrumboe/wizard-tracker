@@ -471,6 +471,11 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     allGames.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     const limitedGames = allGames.slice(0, 200);
 
+    // Set Cache-Control to prevent stale profile data after game completion
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
     res.json({
       id: user._id,
       _id: user._id,

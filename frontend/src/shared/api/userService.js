@@ -604,6 +604,7 @@ class UserService {
         headers: {
           'Content-Type': 'application/json',
         },
+        cache: 'no-store', // Prevent browser from caching profile data - ensures fresh data after game completion
       });
 
       if (!response.ok) {
