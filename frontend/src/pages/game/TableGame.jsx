@@ -41,7 +41,7 @@ const TableGame = () => {
   const [lowIsBetter, setLowIsBetter] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
   const [isCloudGame, setIsCloudGame] = useState(false);
-  const [isLoadingGame, setIsLoadingGame] = useState(false);
+  const [_isLoadingGame, setIsLoadingGame] = useState(false);
   const [loadError, setLoadError] = useState(null);
   
   // Initialize players with the logged-in user as the first player if available
