@@ -20,24 +20,61 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
+    const loadSyncStatusInner = async () => {
+      if (!gameId) return;
+
+      try {
+        const metadata = await db.getSyncMetadata(gameId);
+        setSyncStatus(metadata);
+      } catch (error) {
+        console.error('Failed to load sync status:', error);
+      }
+    };
+
+    const handleSyncEventInner = (event) => {
+      if (!gameId || (event.gameId && event.gameId !== gameId)) {
+        return;
+      }
+
+      switch (event.type) {
+        case 'online':
+          setIsOnline(true);
+          break;
+        case 'offline':
+          setIsOnline(false);
+          break;
+        case 'sync_start':
+          setIsSyncing(true);
+          break;
+        case 'sync_complete':
+        case 'sync_error':
+        case 'sync_conflict':
+          setIsSyncing(false);
+          loadSyncStatusInner();
+          break;
+        default:
+          break;
+      }
+    };
+
     globalThis.addEventListener('online', handleOnline);
     globalThis.addEventListener('offline', handleOffline);
 
     // Load initial sync status
-    loadSyncStatus();
+    loadSyncStatusInner();
 
     // Set up sync manager listener
     let unsubscribe;
     try {
       const syncManager = getSyncManager();
-      unsubscribe = syncManager.addListener(handleSyncEvent);
+      unsubscribe = syncManager.addListener(handleSyncEventInner);
     } catch (error) {
       // Sync manager not initialized yet
       console.debug('Sync manager not available:', error.message);
     }
 
     // Poll for status updates every 10 seconds
-    const pollInterval = setInterval(loadSyncStatus, 10000);
+    const pollInterval = setInterval(loadSyncStatusInner, 10000);
 
     return () => {
       globalThis.removeEventListener('online', handleOnline);
@@ -45,44 +82,7 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
       if (unsubscribe) unsubscribe();
       clearInterval(pollInterval);
     };
-  }, [gameId, handleSyncEvent, loadSyncStatus]);
-
-  const loadSyncStatus = async () => {
-    if (!gameId) return;
-
-    try {
-      const metadata = await db.getSyncMetadata(gameId);
-      setSyncStatus(metadata);
-    } catch (error) {
-      console.error('Failed to load sync status:', error);
-    }
-  };
-
-  const handleSyncEvent = (event) => {
-    if (!gameId || (event.gameId && event.gameId !== gameId)) {
-      return;
-    }
-
-    switch (event.type) {
-      case 'online':
-        setIsOnline(true);
-        break;
-      case 'offline':
-        setIsOnline(false);
-        break;
-      case 'sync_start':
-        setIsSyncing(true);
-        break;
-      case 'sync_complete':
-      case 'sync_error':
-      case 'sync_conflict':
-        setIsSyncing(false);
-        loadSyncStatus();
-        break;
-      default:
-        break;
-    }
-  };
+  }, [gameId]);
 
   const handleForceSync = async () => {
     if (!gameId || isSyncing || !isOnline) {
@@ -97,7 +97,15 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
       console.error('Force sync failed:', error);
     } finally {
       setIsSyncing(false);
-      loadSyncStatus();
+      // Reload sync status after force sync
+      if (gameId) {
+        try {
+          const metadata = await db.getSyncMetadata(gameId);
+          setSyncStatus(metadata);
+        } catch (err) {
+          console.error('Failed to load sync status:', err);
+        }
+      }
     }
   };
 

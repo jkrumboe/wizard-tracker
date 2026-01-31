@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { XIcon, UsersIcon, PlayIcon, PlusIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { GripVertical, Dices as DiceIcon } from 'lucide-react';
-import { localFriendsService, userService } from '@/shared/api';
+import { userService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
 import SelectFriendsModal from '@/components/modals/SelectFriendsModal';
 import '@/styles/components/modal.css';

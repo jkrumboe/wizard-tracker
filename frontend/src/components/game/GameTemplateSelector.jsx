@@ -61,6 +61,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     loadSystemTemplates();
     // Automatically download templates from cloud on mount
     handleDownloadTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check if a local template is a variant of a system template

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getFriendLeaderboard } from '@/shared/api/gameService'
-import { localFriendsService, userService } from '@/shared/api'
+import { userService } from '@/shared/api'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 import { ArrowLeftIcon } from '@/components/ui/Icon'

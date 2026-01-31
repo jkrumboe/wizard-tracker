@@ -28,7 +28,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
       
       try {
         url = URL.createObjectURL(file);
-      } catch (error) {
+      } catch {
         clearTimeout(timeoutId);
         reject(new Error('Failed to read image file'));
         return;
@@ -67,7 +67,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
           
           const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
           resolve(dataUrl);
-        } catch (error) {
+        } catch {
           reject(new Error('Failed to resize image. Try a smaller image.'));
         }
       };
@@ -106,7 +106,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
       setLoadError(null);
       setIsLoading(false);
     };
-  }, [imageFile, isOpen, debugLog]);
+  }, [imageFile, isOpen]);
 
   const onCropChange = useCallback((crop) => {
     setCrop(crop);

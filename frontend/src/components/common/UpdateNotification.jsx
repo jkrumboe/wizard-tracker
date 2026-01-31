@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { XIcon } from '@/components/ui/Icon';
 
 const RELOAD_COOLDOWN_MS = 10000; // 10 seconds between reloads
@@ -90,7 +90,7 @@ const UpdateNotification = () => {
   };
 
   // Get version from service worker
-  const getServiceWorkerVersion = async () => {
+  const getServiceWorkerVersion = useCallback(async () => {
     if (!('serviceWorker' in navigator)) return null;
     
     try {
@@ -116,10 +116,10 @@ const UpdateNotification = () => {
       console.error('Error getting service worker version:', error);
       return null;
     }
-  };
+  }, []);
 
   // Check if version actually changed
-  const hasVersionChanged = async () => {
+  const hasVersionChanged = useCallback(async () => {
     const newSWVersion = await getServiceWorkerVersion();
     const lastVersion = localStorage.getItem(LAST_SW_VERSION_KEY);
     
@@ -150,10 +150,10 @@ const UpdateNotification = () => {
     }
     
     return changed;
-  };
+  }, [getServiceWorkerVersion]);
 
   // Perform reload with safety checks
-  const performReload = async () => {
+  const performReload = useCallback(async () => {
     if (updateHandledRef.current) {
       console.debug('❌ Update already handled');
       return;
@@ -202,7 +202,7 @@ const UpdateNotification = () => {
       sessionStorage.removeItem('sw_update_ready');
       globalThis.location.reload();
     }, 500);
-  };
+  }, [hasVersionChanged, getServiceWorkerVersion]);
 
   useEffect(() => {
     // Clear update-in-progress flag on mount (in case of crash/manual reload)
@@ -394,7 +394,7 @@ const UpdateNotification = () => {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
       }
     };
-  }, [hasVersionChanged, performReload]);
+  }, [hasVersionChanged, performReload, getServiceWorkerVersion]);
 
   const handleUpdate = async () => {
     if (!canReload()) {

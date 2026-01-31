@@ -92,6 +92,7 @@ const Leaderboard = () => {
       clearInterval(refreshInterval)
       window.removeEventListener('gameUploaded', handleGameUploaded)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGameType]);
 
   const handleSort = (field) => {

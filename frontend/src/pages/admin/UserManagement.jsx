@@ -19,10 +19,6 @@ const UserManagement = () => {
   }, []);
 
   useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, roleFilter, filterUsers]);
-
-  const filterUsers = () => {
     let filtered = [...users];
     
     // Apply search filter
@@ -38,7 +34,7 @@ const UserManagement = () => {
     }
     
     setFilteredUsers(filtered);
-  };
+  }, [users, searchTerm, roleFilter]);
 
   const loadUsers = async () => {
     try {
