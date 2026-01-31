@@ -1539,6 +1539,7 @@ const Account = () => {
                     games={allGamesForStats} 
                     currentPlayer={currentPlayer} 
                     isWizardGame={statsGameType === 'wizard'}
+                    gameType={statsGameType}
                   />
                 ) : (
                   <div className="settings-section">

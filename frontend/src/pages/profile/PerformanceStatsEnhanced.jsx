@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
-import { CircleSlash2, Trophy, TrendingDown, Target, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap } from 'lucide-react';
+import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
+import { useUserElo } from '@/shared/hooks/useElo';
+import '@/styles/pages/account.css';
 import "@/styles/pages/performancestats.css";
 
 const COLORS = ['#1DBF73', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
-const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true }) => {
+const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, gameType = 'wizard' }) => {
   // Calculate comprehensive statistics from games
   const stats = useMemo(() => {
     if (!games || games.length === 0) {
@@ -531,12 +533,12 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true })
   if (!stats) return null;
 
   return (
-    <PerformanceStatsContent stats={stats} isWizardGame={isWizardGame} />
+    <PerformanceStatsContent stats={stats} isWizardGame={isWizardGame} gameType={gameType} />
   );
 };
 
 // Separate component to use useState (since stats is computed in useMemo)
-const PerformanceStatsContent = ({ stats, isWizardGame }) => {
+const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
   const [insightType, setInsightType] = useState('score');
   
   // Prepare chart data with best/worst markers
@@ -807,43 +809,8 @@ const PerformanceStatsContent = ({ stats, isWizardGame }) => {
           </>
         )}
 
-        {/* Win Rate Over Time */}
-        <div>
-          <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)'  }}>Win Rate Progression</h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={stats.performanceOverTime} margin={{ top: 5, right: 0, left: -10, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis 
-                dataKey="game" 
-                stroke="var(--text)"
-                tick={{ fill: 'var(--text)' }}
-                label={{ value: 'Game Number', position: 'insideBottom', offset: -5, fill: 'var(--text)' }}
-              />
-              <YAxis 
-                stroke="var(--text)"
-                tick={{ fill: 'var(--text)' }}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'var(--card-bg)', 
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  color: 'var(--text)'
-                }}
-                formatter={(value) => `${value}%`}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="winRate" 
-                stroke="#4F46E5" 
-                strokeWidth={2}
-                dot={{ fill: '#4F46E5', r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {/* ELO Rating Section */}
+        <EloRatingSection gameType={gameType} />
       </div>      
 
       {/* ACHIEVEMENTS SECTION */}
@@ -890,6 +857,158 @@ const PerformanceStatsContent = ({ stats, isWizardGame }) => {
         )}
       </div>
 
+    </div>
+  );
+};
+
+// ELO Rating Section Component
+const EloRatingSection = ({ gameType = 'wizard' }) => {
+  // Normalize game type for API
+  const normalizedGameType = gameType?.toLowerCase().trim().replace(/\s+/g, '-') || 'wizard';
+  const { elo, loading: eloLoading } = useUserElo(normalizedGameType);
+
+  // Get ELO display values
+  const currentRating = elo?.currentRating || elo?.rating || 1000;
+  const peakRating = elo?.peak || currentRating;
+  const floorRating = elo?.floor || currentRating;
+  const eloGamesPlayed = elo?.gamesPlayed || 0;
+  const streak = elo?.streak || 0;
+  const hasElo = elo?.hasIdentity !== false;
+
+  // Prepare ELO history for chart with best/worst markers
+  const eloHistoryData = useMemo(() => {
+    if (!elo?.history || elo.history.length === 0) return [];
+    
+    // Reverse to show chronological order (oldest first)
+    const history = [...elo.history].reverse();
+    let runningRating = 1000;
+    
+    const data = history.map((entry, idx) => {
+      runningRating = entry.ratingAfter || (runningRating + entry.change);
+      return {
+        game: idx + 1,
+        rating: runningRating,
+        change: entry.change,
+        date: entry.date ? new Date(entry.date).toLocaleDateString() : ''
+      };
+    });
+
+    // Find best and worst ratings
+    if (data.length > 0) {
+      const ratings = data.map(d => d.rating);
+      const maxRating = Math.max(...ratings);
+      const minRating = Math.min(...ratings);
+      
+      data.forEach(d => {
+        d.isBest = d.rating === maxRating;
+        d.isWorst = d.rating === minRating;
+      });
+    }
+
+    return data;
+  }, [elo?.history]);
+
+  // Calculate average rating from history
+  const avgRating = useMemo(() => {
+    if (eloHistoryData.length === 0) return 1000;
+    const sum = eloHistoryData.reduce((acc, d) => acc + d.rating, 0);
+    return Math.round(sum / eloHistoryData.length);
+  }, [eloHistoryData]);
+
+  // Custom dot renderer for highlighting best/worst
+  const renderEloDot = (props) => {
+    const { cx, cy, payload } = props;
+    if (payload.isBest) {
+      return <circle cx={cx} cy={cy} r={6} fill="#1DBF73" stroke="#fff" strokeWidth={2} />;
+    }
+    if (payload.isWorst) {
+      return <circle cx={cx} cy={cy} r={6} fill="#EF4444" stroke="#fff" strokeWidth={2} />;
+    }
+    return <circle cx={cx} cy={cy} r={3} fill="#4F46E5" />;
+  };
+
+  return (
+    <div className="elo-rating-card">
+      <div className="elo-header">
+        <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>ELO Rating</h4>
+        {eloLoading && <span className="elo-loading">Loading...</span>}
+      </div>
+      
+      {hasElo ? (
+        <div className="elo-content">
+          {/* ELO Progression Chart */}
+          {eloHistoryData.length > 1 && (
+            <div>
+              {/* ELO Metrics */}
+              <div style={{
+                display: 'flex',
+                width: '100%',
+                justifyContent: 'space-between',
+                gap: 'var(--spacing-md)',
+                marginBottom: 'var(--spacing-sm)'
+              }}>
+                <StatCard title="ELO" icon={<TrendingUp size={16} />} value={currentRating} />
+                <StatCard title="Peak" icon={<Trophy size={16} />} value={peakRating} color="green" />
+                <StatCard title="Floor" icon={<TrendingDown size={16} />} value={floorRating} color="red" />
+              </div>
+
+              <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Rating Progression</h4>
+              <ResponsiveContainer width="100%" height={200}>
+                <ComposedChart data={eloHistoryData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis 
+                    dataKey="game" 
+                    stroke="var(--text)"
+                    tick={{ fill: 'var(--text)' }}
+                  />
+                  <YAxis 
+                    stroke="var(--text)"
+                    tick={{ fill: 'var(--text)' }}
+                    domain={['dataMin - 50', 'dataMax + 50']}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--card-bg)', 
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-lg)',
+                      color: 'var(--text)'
+                    }}
+                    formatter={(value, name) => {
+                      if (name === 'rating') return [value, 'Rating'];
+                      if (name === 'change') return [value > 0 ? `+${value}` : value, 'Change'];
+                      return [value, name];
+                    }}
+                  />
+                  <ReferenceLine y={avgRating} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="rating" 
+                    stroke="#4F46E5" 
+                    fill="#4F46E5" 
+                    fillOpacity={0.2}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="rating" 
+                    stroke="#4F46E5"
+                    strokeWidth={2}
+                    dot={renderEloDot}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center' }}>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>Best</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>Worst</span>
+                <span><span style={{ display: 'inline-block', width: 20, height: 2, background: 'var(--text)', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="elo-no-data">
+          <p>Play ranked games to get your ELO rating!</p>
+        </div>
+      )}
     </div>
   );
 };

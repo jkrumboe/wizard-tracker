@@ -3,6 +3,7 @@ const PlayerIdentity = require('../models/PlayerIdentity');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const identityService = require('../utils/identityService');
+const eloService = require('../utils/eloService');
 const router = express.Router();
 
 /**
@@ -753,6 +754,193 @@ router.post('/admin/unlink-guest', auth, requireAdmin, async (req, res, next) =>
   } catch (error) {
     next(error);
   }
+});
+
+// ============================================
+// ELO Rating Routes
+// ============================================
+
+/**
+ * GET /identities/elo/rankings
+ * Get ELO leaderboard for a specific game type (public)
+ * Query params: gameType (required), page, limit, minGames
+ */
+router.get('/elo/rankings', async (req, res, next) => {
+  try {
+    const { 
+      gameType = 'wizard',
+      page = 1, 
+      limit = 50, 
+      minGames 
+    } = req.query;
+    
+    const result = await eloService.getEloRankings({
+      gameType,
+      page: Math.max(1, parseInt(page)),
+      limit: Math.min(100, Math.max(1, parseInt(limit))),
+      minGames: minGames ? parseInt(minGames) : undefined
+    });
+    
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/elo/history/:id
+ * Get ELO history for a specific identity and game type
+ * Query params: gameType, limit
+ */
+router.get('/elo/history/:id', async (req, res, next) => {
+  try {
+    const { gameType = 'wizard', limit = 20 } = req.query;
+    
+    const result = await eloService.getEloHistory(
+      req.params.id,
+      { 
+        gameType,
+        limit: Math.min(50, parseInt(limit)) 
+      }
+    );
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Identity not found' });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/elo/all/:id
+ * Get all ELO ratings for an identity across all game types
+ */
+router.get('/elo/all/:id', async (req, res, next) => {
+  try {
+    const result = await eloService.getAllEloForIdentity(req.params.id);
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Identity not found' });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/elo/me
+ * Get current user's ELO rating and history for a specific game type
+ * Query params: gameType (default: 'wizard')
+ */
+router.get('/elo/me', auth, async (req, res, next) => {
+  try {
+    const { gameType = 'wizard' } = req.query;
+    
+    // Find user's primary identity
+    const identity = await PlayerIdentity.findOne({
+      userId: req.user._id,
+      isDeleted: false
+    });
+    
+    if (!identity) {
+      return res.json({
+        hasIdentity: false,
+        gameType,
+        rating: eloService.CONFIG.DEFAULT_RATING,
+        message: 'No identity linked to your account'
+      });
+    }
+    
+    const result = await eloService.getEloHistory(identity._id, { 
+      gameType, 
+      limit: 20 
+    });
+    
+    // Also get all game types this user has ELO for
+    const allElo = await eloService.getAllEloForIdentity(identity._id);
+    
+    res.json({
+      hasIdentity: true,
+      gameType,
+      allGameTypes: allElo?.gameTypes || [],
+      ...result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/elo/me/all
+ * Get current user's ELO ratings for ALL game types
+ */
+router.get('/elo/me/all', auth, async (req, res, next) => {
+  try {
+    // Find user's primary identity
+    const identity = await PlayerIdentity.findOne({
+      userId: req.user._id,
+      isDeleted: false
+    });
+    
+    if (!identity) {
+      return res.json({
+        hasIdentity: false,
+        eloByGameType: {},
+        gameTypes: [],
+        message: 'No identity linked to your account'
+      });
+    }
+    
+    const result = await eloService.getAllEloForIdentity(identity._id);
+    
+    res.json({
+      hasIdentity: true,
+      ...result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /identities/elo/recalculate
+ * Admin: Recalculate all ELO ratings from scratch
+ * Body: { dryRun: boolean, gameType?: string }
+ */
+router.post('/elo/recalculate', auth, requireAdmin, async (req, res, next) => {
+  try {
+    const { dryRun = true, gameType = null } = req.body;
+    
+    // This is a heavy operation, run it in the background
+    // For now, run synchronously with timeout
+    const result = await eloService.recalculateAllElo({ dryRun, gameType });
+    
+    res.json({
+      message: dryRun ? 'Dry run complete' : 'ELO ratings recalculated',
+      ...result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /identities/elo/config
+ * Get ELO system configuration (public)
+ */
+router.get('/elo/config', (req, res) => {
+  res.json({
+    defaultRating: eloService.CONFIG.DEFAULT_RATING,
+    minRating: eloService.CONFIG.MIN_RATING,
+    minGamesForRanking: eloService.CONFIG.MIN_GAMES_FOR_RANKING,
+    kFactors: eloService.CONFIG.K_FACTOR,
+    gamesThresholds: eloService.CONFIG.GAMES_THRESHOLD
+  });
 });
 
 module.exports = router;

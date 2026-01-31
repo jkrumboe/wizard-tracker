@@ -57,6 +57,12 @@ export const API_ENDPOINTS = {
     approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
     rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
   },
+  elo: {
+    rankings: `${API_BASE_URL}/api/identities/elo/rankings`,
+    history: (id) => `${API_BASE_URL}/api/identities/elo/history/${id}`,
+    me: `${API_BASE_URL}/api/identities/elo/me`,
+    config: `${API_BASE_URL}/api/identities/elo/config`,
+  },
   users: {
     updateName: (id) => `${API_BASE_URL}/api/users/${id}/name`,
     lookup: (username) => `${API_BASE_URL}/api/users/lookup/${encodeURIComponent(username)}`,

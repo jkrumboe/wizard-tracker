@@ -252,4 +252,35 @@ tableGameSchema.statics.updatePlayerIdentity = async function(oldIdentityId, new
   return result;
 };
 
+// Post-save hook for ELO updates
+tableGameSchema.post('save', async function(doc) {
+  // Only update ELO for finished games
+  if (!doc.gameFinished && !doc.gameData?.gameFinished) {
+    return;
+  }
+  
+  // Skip if ELO updates are disabled (e.g., during migration)
+  if (process.env.SKIP_ELO_UPDATES === 'true') {
+    return;
+  }
+  
+  try {
+    // Lazy-load to avoid circular dependencies
+    const eloService = require('../utils/eloService');
+    
+    // Get game type from gameTypeName or gameType
+    const gameType = doc.gameTypeName || doc.gameType || 'table';
+    
+    // Update ELO ratings for all players in this game
+    const updates = await eloService.updateRatingsForGame(doc, gameType);
+    
+    if (updates.length > 0) {
+      console.log(`ELO updated for ${updates.length} players after ${gameType} game ${doc._id}`);
+    }
+  } catch (error) {
+    // Log but don't fail - ELO updates are non-critical
+    console.error('Failed to update ELO ratings for table game:', error.message);
+  }
+});
+
 module.exports = mongoose.model('TableGame', tableGameSchema);

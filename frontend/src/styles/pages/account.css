@@ -112,6 +112,141 @@
   color: var(--success);
 }
 
+/* ELO Rating Card */
+.elo-rating-card {
+  margin-bottom: var(--spacing-sm);
+}
+
+.elo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.elo-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.elo-loading {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+.elo-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.elo-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.elo-rating {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.elo-label {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-top: var(--spacing-xs);
+}
+
+.elo-details {
+  display: flex;
+  justify-content: space-around;
+  padding: var(--spacing-sm) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.elo-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.elo-stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.elo-stat-value.streak-positive {
+  color: var(--success-color);
+}
+
+.elo-stat-value.streak-negative {
+  color: var(--error-color);
+}
+
+.elo-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.elo-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.elo-history-label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.elo-history-items {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.elo-change {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--surface);
+}
+
+.elo-change.positive {
+  color: var(--success-color);
+  background: rgba(76, 175, 79, 0.1);
+}
+
+.elo-change.negative {
+  color: var(--error-color);
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.elo-no-data {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--text-light);
+}
+
+.elo-no-data p {
+  margin: 0;
+}
+
 /* Recent performance per game type */
 .game-type-recent-results {
   display: flex;

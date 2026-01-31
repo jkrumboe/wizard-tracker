@@ -70,6 +70,29 @@ const playerIdentitySchema = new mongoose.Schema({
     lastGameAt: { type: Date, default: null }
   },
   
+  // ELO Rating System - Per Game Type
+  // Key is game type: 'wizard', 'flip-7', 'dutch', etc.
+  eloByGameType: {
+    type: Map,
+    of: {
+      rating: { type: Number, default: 1000 },           // Current ELO rating
+      peak: { type: Number, default: 1000 },             // Highest rating achieved
+      floor: { type: Number, default: 1000 },            // Lowest rating achieved
+      gamesPlayed: { type: Number, default: 0 },         // Games counted for ELO
+      lastUpdated: { type: Date, default: null },        // Last rating update
+      streak: { type: Number, default: 0 },              // Current win/loss streak (positive = wins)
+      history: [{                                         // Rating change history
+        rating: { type: Number, required: true },
+        change: { type: Number, required: true },
+        gameId: { type: mongoose.Schema.Types.ObjectId },
+        opponents: [{ type: String }],                   // Opponent names for context
+        placement: { type: Number },                     // 1st, 2nd, 3rd, etc.
+        date: { type: Date, default: Date.now }
+      }]
+    },
+    default: new Map()
+  },
+  
   // Track merged/linked identities for reversibility
   // When guest identities are linked to this user identity, store them here
   linkedIdentities: [{
@@ -104,6 +127,9 @@ playerIdentitySchema.index({ normalizedName: 1, isDeleted: 1 });
 playerIdentitySchema.index({ userId: 1, isDeleted: 1 });
 playerIdentitySchema.index({ 'aliases.normalizedName': 1 });
 playerIdentitySchema.index({ type: 1, isDeleted: 1 });
+
+// ELO ranking indexes - for each game type lookup
+// Note: Map fields require wildcard or specific key indexes
 
 // Unique index to prevent duplicate user identities with same userId
 // Each user can only have one primary identity linked to their account

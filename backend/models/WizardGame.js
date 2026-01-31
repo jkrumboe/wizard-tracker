@@ -117,4 +117,34 @@ wizardGameSchema.pre('save', async function(next) {
   }
 });
 
+/**
+ * Post-save hook to update ELO ratings when a game finishes
+ */
+wizardGameSchema.post('save', async function(doc) {
+  // Only update ELO for finished games
+  if (!doc.gameData?.gameFinished) {
+    return;
+  }
+  
+  // Skip if ELO updates are disabled (e.g., during migration)
+  if (process.env.SKIP_ELO_UPDATES === 'true') {
+    return;
+  }
+  
+  try {
+    // Lazy-load to avoid circular dependencies
+    const eloService = require('../utils/eloService');
+    
+    // Update ELO ratings for all players in this game (game type: wizard)
+    const updates = await eloService.updateRatingsForGame(doc, 'wizard');
+    
+    if (updates.length > 0) {
+      console.log(`ELO updated for ${updates.length} players after wizard game ${doc._id}`);
+    }
+  } catch (error) {
+    // Log but don't fail - ELO updates are non-critical
+    console.error('Failed to update ELO ratings:', error.message);
+  }
+});
+
 module.exports = mongoose.model('WizardGame', wizardGameSchema, 'wizard');

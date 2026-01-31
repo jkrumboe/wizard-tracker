@@ -184,12 +184,14 @@ router.get('/leaderboard', async (req, res, next) => {
     });
     console.log(`[Leaderboard] Loaded ${allUsers.length} users`);
     
-    // Load all identities to map identityId -> userId
+    // Load all identities to map identityId -> userId and get ELO data
     const allIdentities = await PlayerIdentity.find({ isDeleted: false })
-      .select('_id userId displayName')
+      .select('_id userId displayName eloByGameType')
       .lean();
     const identityToUserIdMap = {}; // Maps identityId string -> userId string
     const userDisplayNames = {}; // Maps userId string -> display name
+    
+    const userEloByGameType = {}; // Maps userId string -> { gameType: elo data }
     
     allIdentities.forEach(identity => {
       const identityIdStr = identity._id.toString();
@@ -202,6 +204,11 @@ router.get('/leaderboard', async (req, res, next) => {
         if (!userDisplayNames[userIdStr]) {
           const user = userIdMap[userIdStr];
           userDisplayNames[userIdStr] = user ? user.username : identity.displayName;
+        }
+        
+        // Store ELO data for this user
+        if (identity.eloByGameType) {
+          userEloByGameType[userIdStr] = identity.eloByGameType;
         }
       }
     });
@@ -454,6 +461,12 @@ router.get('/leaderboard', async (req, res, next) => {
       });
     });
 
+    // Helper function to normalize game type for ELO lookup
+    const normalizeGameType = (type) => {
+      if (!type) return 'wizard';
+      return type.toLowerCase().replace(/\s+/g, '-');
+    };
+
     // Convert to array and calculate derived stats
     const leaderboard = Object.values(playerStats).map(player => {
       const winRate = player.totalGames > 0 
@@ -463,10 +476,34 @@ router.get('/leaderboard', async (req, res, next) => {
         ? (player.totalScore / player.totalGames).toFixed(1) 
         : 0;
 
+      // Get ELO for this player for the selected game type
+      const userElo = userEloByGameType[player.userId];
+      let elo = 1000; // Default ELO
+      if (userElo) {
+        if (gameType && gameType !== 'all') {
+          const normalizedType = normalizeGameType(gameType);
+          const eloData = userElo[normalizedType] || userElo.get?.(normalizedType);
+          if (eloData) {
+            elo = eloData.rating || 1000;
+          }
+        } else {
+          // For 'all', use the highest ELO across all game types
+          let maxElo = 1000;
+          const eloEntries = userElo instanceof Map ? [...userElo.entries()] : Object.entries(userElo);
+          for (const [, eloData] of eloEntries) {
+            if (eloData && eloData.rating > maxElo) {
+              maxElo = eloData.rating;
+            }
+          }
+          elo = maxElo;
+        }
+      }
+
       return {
         ...player,
         winRate: parseFloat(winRate),
-        avgScore: parseFloat(avgScore)
+        avgScore: parseFloat(avgScore),
+        elo: Math.round(elo)
       };
     });
 
@@ -475,13 +512,13 @@ router.get('/leaderboard', async (req, res, next) => {
       ? gameTypeSettings[gameType]?.lowIsBetter || false 
       : false;
 
-    // Sort by wins, then win rate, then by score (considering lowIsBetter), then total games
+    // Sort by ELO, then wins, then avg score (considering lowIsBetter), then win rate
     leaderboard.sort((a, b) => {
-      // Primary sort: wins
-      if (b.wins !== a.wins) return b.wins - a.wins;
+      // Primary sort: ELO (higher is better)
+      if (b.elo !== a.elo) return b.elo - a.elo;
       
-      // Tiebreaker 1: win rate
-      if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+      // Tiebreaker 1: wins
+      if (b.wins !== a.wins) return b.wins - a.wins;
       
       // Tiebreaker 2: average score (direction depends on game type)
       if (a.avgScore !== b.avgScore) {
@@ -494,8 +531,8 @@ router.get('/leaderboard', async (req, res, next) => {
         }
       }
       
-      // Tiebreaker 3: total games
-      return b.totalGames - a.totalGames;
+      // Tiebreaker 3: win rate
+      return b.winRate - a.winRate;
     });
 
     // Get unique game types

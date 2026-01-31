@@ -12,7 +12,7 @@ const Leaderboard = () => {
   const [selectedGameType, setSelectedGameType] = useState('Wizard') // Default to Wizard
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [sortBy, setSortBy] = useState('wins')
+  const [sortBy, setSortBy] = useState('elo')
   const [sortOrder, setSortOrder] = useState('desc')
   const [filter, setFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -140,19 +140,19 @@ const Leaderboard = () => {
         aVal = a.totalGames;
         bVal = b.totalGames;
         break;
-      case 'avgScore':
-        aVal = a.avgScore;
-        bVal = b.avgScore;
-        break;
       case 'wins':
+        aVal = a.wins;
+        bVal = b.wins;
+        break;
+      case 'elo':
       default:
-        // Primary sort by wins
-        if (a.wins !== b.wins) {
-          return sortOrder === 'asc' ? a.wins - b.wins : b.wins - a.wins;
+        // Primary sort by ELO
+        if ((a.elo || 1000) !== (b.elo || 1000)) {
+          return sortOrder === 'asc' ? (a.elo || 1000) - (b.elo || 1000) : (b.elo || 1000) - (a.elo || 1000);
         }
-        // Tiebreaker 1: win rate
-        if (a.winRate !== b.winRate) {
-          return b.winRate - a.winRate;
+        // Tiebreaker 1: wins
+        if (a.wins !== b.wins) {
+          return b.wins - a.wins;
         }
         // Tiebreaker 2: average score (direction depends on game type)
         if (a.avgScore !== b.avgScore) {
@@ -164,22 +164,22 @@ const Leaderboard = () => {
             return b.avgScore - a.avgScore;
           }
         }
-        // Tiebreaker 3: total games
-        return b.totalGames - a.totalGames;
+        // Tiebreaker 3: win rate
+        return b.winRate - a.winRate;
     }
     
-    // For non-wins sorting, apply the primary sort
+    // For non-elo sorting, apply the primary sort
     if (aVal !== bVal) {
       return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
     }
     
-    // Tiebreaker for other sorts: use wins as secondary sort
-    if (a.wins !== b.wins) {
-      return b.wins - a.wins;
+    // Tiebreaker for other sorts: use ELO as secondary sort
+    if ((a.elo || 1000) !== (b.elo || 1000)) {
+      return (b.elo || 1000) - (a.elo || 1000);
     }
     
-    // Final tiebreaker: win rate
-    return b.winRate - a.winRate;
+    // Final tiebreaker: wins
+    return b.wins - a.wins;
   })
 
   const totalPages = Math.ceil(sortedPlayers.length / playersPerPage)
@@ -245,7 +245,7 @@ const Leaderboard = () => {
             <div className="player-col">Player</div>
             <div className="wins-col">Wins</div>
             <div className="winrate-col">Win%</div>
-            <div className="score-col">Ø Score</div>
+            <div className="score-col">ELO</div>
           </div>
 
           <div className="leaderboard-body">
@@ -376,10 +376,10 @@ const Leaderboard = () => {
                 Games {sortBy === 'totalGames' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div> */}
               <div 
-                className={`score-col ${sortBy === 'avgScore' ? 'sorted' : ''}`}
-                onClick={() => handleSort('avgScore')}
+                className={`score-col ${sortBy === 'elo' ? 'sorted' : ''}`}
+                onClick={() => handleSort('elo')}
               >
-                Ø Score {sortBy === 'avgScore' && (sortOrder === 'asc' ? '↑' : '↓')}
+                ELO {sortBy === 'elo' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
             </div>
 
@@ -407,7 +407,7 @@ const Leaderboard = () => {
                     <div className="wins-col">{player.wins}</div>
                     <div className="winrate-col">{player.winRate}%</div>
                     {/* <div className="games-col">{player.totalGames}</div> */}
-                    <div className="score-col">{player.avgScore}</div>
+                    <div className="score-col">{player.elo || 1000}</div>
                   </div>
                 ) : (
                   <div key={`empty-${index}`} className="leaderboard-row empty-row">

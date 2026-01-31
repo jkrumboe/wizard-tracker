@@ -181,6 +181,10 @@
   pointer-events: none;
 }
 
+.leaderboard-row .score-col {
+  color: var(--primary);
+}
+
 .player-name {
   font-weight: 400;
   font-size: 1.1rem;

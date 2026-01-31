@@ -124,7 +124,7 @@ const Stats = () => {
           </button>
         </div>
 
-        <PerformanceStatsEnhanced games={allGames} currentPlayer={currentPlayer} />
+        <PerformanceStatsEnhanced games={allGames} currentPlayer={currentPlayer} gameType="wizard" />
       </div>
   )
 }
