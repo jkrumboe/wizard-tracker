@@ -124,38 +124,59 @@ export async function getTableGameById(gameId, options = {}) {
   if (navigator.onLine) {
     const token = localStorage.getItem('auth_token');
     
-    // Use authenticated endpoint if logged in, otherwise use public endpoint
-    const endpoint = token 
-      ? API_ENDPOINTS.tableGames.getById(gameId)
-      : API_ENDPOINTS.tableGames.getPublicById(gameId);
+    // Helper function to transform cloud game to local format
+    const transformCloudGame = (cloudGame) => ({
+      id: cloudGame._id || cloudGame.id || gameId,
+      cloudId: cloudGame._id || cloudGame.id,
+      localId: cloudGame.localId,
+      name: cloudGame.name || cloudGame.gameTypeName || 'Table Game',
+      gameData: cloudGame.gameData || {},
+      gameFinished: cloudGame.gameFinished || false,
+      createdAt: cloudGame.createdAt,
+      is_local: false,
+      is_cloud: true
+    });
+    
+    // Helper function to fetch from public endpoint
+    const fetchFromPublicEndpoint = async () => {
+      const publicEndpoint = API_ENDPOINTS.tableGames.getPublicById(gameId);
+      const publicRes = await fetch(publicEndpoint, { method: 'GET' });
+      if (publicRes.ok) {
+        const publicData = await publicRes.json();
+        if (publicData.game) {
+          return transformCloudGame(publicData.game);
+        }
+      }
+      return null;
+    };
     
     try {
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch(endpoint, {
-        method: 'GET',
-        headers
-      });
+      // Try authenticated endpoint first if logged in
+      if (token) {
+        const authEndpoint = API_ENDPOINTS.tableGames.getById(gameId);
+        const res = await fetch(authEndpoint, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.game) {
-          // Transform cloud game to match local format
-          const cloudGame = data.game;
-          return {
-            id: cloudGame._id || cloudGame.id || gameId,
-            cloudId: cloudGame._id || cloudGame.id,
-            localId: cloudGame.localId,
-            name: cloudGame.name || cloudGame.gameTypeName || 'Table Game',
-            gameData: cloudGame.gameData || {},
-            gameFinished: cloudGame.gameFinished || false,
-            createdAt: cloudGame.createdAt,
-            is_local: false,
-            is_cloud: true
-          };
+        if (res.ok) {
+          const data = await res.json();
+          if (data.game) {
+            return transformCloudGame(data.game);
+          }
+        } else if (res.status === 403) {
+          // User doesn't have permission - fall back to public endpoint
+          // This allows logged-in users to view shared games they don't own
+          console.debug(`Table game ${gameId} not accessible to user, trying public endpoint`);
+          const publicResult = await fetchFromPublicEndpoint();
+          if (publicResult) return publicResult;
+        } else {
+          console.debug(`Table game fetch returned ${res.status} for ID: ${gameId}`);
         }
       } else {
-        // Log non-ok responses for debugging
-        console.debug(`Table game fetch returned ${res.status} for ID: ${gameId}`);
+        // Not logged in - use public endpoint directly
+        const publicResult = await fetchFromPublicEndpoint();
+        if (publicResult) return publicResult;
       }
     } catch (error) {
       console.debug('Error fetching cloud table game:', error.message);
