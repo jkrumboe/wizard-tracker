@@ -535,6 +535,125 @@ router.get('/leaderboard', async (req, res, next) => {
   }
 });
 
+// GET /games/recent - Get recent games (public endpoint for homepage)
+// PUBLIC ENDPOINT - No authentication required
+router.get('/recent', async (req, res, next) => {
+  try {
+    const { limit = 50 } = req.query;
+    const limitNum = Math.min(parseInt(limit) || 50, 100); // Max 100 games
+
+    // Create cache key
+    const cacheKey = `recent-games:${limitNum}`;
+
+    // Try to get from cache first
+    if (cache.isConnected) {
+      const cached = await cache.get(cacheKey);
+      if (cached) {
+        console.debug('✅ Recent games served from cache');
+        return res.json(cached);
+      }
+    }
+
+    // Fetch both Wizard games and Table games
+    const TableGame = require('../models/TableGame');
+    const WizardGame = require('../models/WizardGame');
+
+    // Get recent wizard games
+    const wizardGames = await WizardGame.find({})
+      .select('_id localId gameData createdAt')
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .lean();
+
+    // Get recent table games (only finished ones)
+    const tableGames = await TableGame.find({ gameFinished: true })
+      .select('_id localId name gameTypeName gameData gameFinished playerCount totalRounds createdAt')
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .lean();
+
+    // Format wizard games
+    const formattedWizardGames = wizardGames.map(game => {
+      const gameData = game.gameData || {};
+      return {
+        id: game._id,
+        cloudId: game._id,
+        localId: game.localId,
+        players: (gameData.players || []).map(p => ({
+          name: p.name || p.username || 'Unknown',
+          id: p.id
+        })),
+        winner_id: gameData.winner_id || gameData.winner_ids?.[0],
+        final_scores: gameData.final_scores || {},
+        created_at: game.createdAt || gameData.created_at,
+        total_rounds: gameData.total_rounds || 0,
+        gameFinished: gameData.gameFinished !== false,
+        gameType: 'wizard'
+      };
+    });
+
+    // Format table games
+    const formattedTableGames = tableGames.map(game => {
+      const gameData = game.gameData || {};
+      const players = gameData.players || [];
+      
+      // Calculate winner based on scores
+      let winnerName = "Not determined";
+      if (players.length > 0) {
+        const playersWithScores = players.map(player => {
+          const total = (player.points || []).reduce((sum, val) => sum + (parseInt(val, 10) || 0), 0);
+          return { ...player, total };
+        });
+
+        const lowIsBetter = gameData.lowIsBetter || false;
+        const winner = playersWithScores.reduce((best, current) => {
+          if (!best) return current;
+          if (lowIsBetter) {
+            return current.total < best.total ? current : best;
+          } else {
+            return current.total > best.total ? current : best;
+          }
+        }, null);
+
+        winnerName = winner?.name || "Not determined";
+      }
+
+      return {
+        id: game._id,
+        cloudId: game._id,
+        localId: game.localId,
+        name: game.name || game.gameTypeName || 'Table Game',
+        players: players.map(p => p.name || 'Unknown'),
+        created_at: game.createdAt,
+        totalRounds: game.totalRounds || 0,
+        gameFinished: game.gameFinished,
+        gameType: 'table',
+        winner_name: winnerName
+      };
+    });
+
+    // Combine and sort by date
+    const allGames = [...formattedWizardGames, ...formattedTableGames]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, limitNum);
+
+    const response = {
+      games: allGames,
+      totalGames: allGames.length
+    };
+
+    // Cache the result for 2 minutes
+    if (cache.isConnected) {
+      await cache.set(cacheKey, response, 120); // 2 minute TTL
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('[GET /api/games/recent] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /games/batch-check - Check existence of multiple games by their IDs
 // IMPORTANT: This must come BEFORE /:id route to avoid conflicts
 router.post('/batch-check', auth, async (req, res) => {

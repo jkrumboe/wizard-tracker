@@ -206,12 +206,29 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
   }, [isOpen, user]);
 
   const loadFriends = async () => {
+    // Only load friends if user is logged in
+    if (!user?.id) {
+      setFriends([]);
+      return;
+    }
+    
     setLoading(true);
     try {
-      const friendsList = await localFriendsService.getAllFriends();
-      setFriends(friendsList);
+      // If user is logged in and online, fetch from server
+      if (navigator.onLine) {
+        try {
+          const cloudFriends = await userService.getFriends(user.id);
+          setFriends(cloudFriends);
+        } catch (err) {
+          console.warn('Could not fetch friends from cloud:', err);
+          setFriends([]);
+        }
+      } else {
+        setFriends([]);
+      }
     } catch (err) {
       console.error('Error loading friends:', err);
+      setFriends([]);
     } finally {
       setLoading(false);
     }

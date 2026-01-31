@@ -411,6 +411,26 @@ const FriendsModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  // Show login required message if user is not logged in
+  if (!user) {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>Friends</h2>
+            <button className="close-btn" onClick={onClose}>
+              <XIcon size={20} />
+            </button>
+          </div>
+          <div className="modal-body" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <UsersIcon size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
+            <p>Please log in to view and manage your friends.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>

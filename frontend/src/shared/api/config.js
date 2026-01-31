@@ -31,11 +31,13 @@ export const API_ENDPOINTS = {
     stats: `${API_BASE_URL}/api/games/stats`,
     leaderboard: `${API_BASE_URL}/api/games/leaderboard`,
     friendLeaderboard: `${API_BASE_URL}/api/games/friend-leaderboard`,
+    recent: `${API_BASE_URL}/api/games/recent`,
   },
   wizardGames: {
     list: `${API_BASE_URL}/api/wizard-games`,
     create: `${API_BASE_URL}/api/wizard-games`,
     getById: (id) => `${API_BASE_URL}/api/wizard-games/${id}`,
+    getPublicById: (id) => `${API_BASE_URL}/api/wizard-games/public/${id}`,
     batchCheck: `${API_BASE_URL}/api/wizard-games/batch-check`,
     stats: `${API_BASE_URL}/api/wizard-games/stats`,
     migrate: `${API_BASE_URL}/api/wizard-games/migrate`,
@@ -44,6 +46,7 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/table-games`,
     create: `${API_BASE_URL}/api/table-games`,
     getById: (id) => `${API_BASE_URL}/api/table-games/${id}`,
+    getPublicById: (id) => `${API_BASE_URL}/api/table-games/public/${id}`,
   },
   gameTemplates: {
     list: `${API_BASE_URL}/api/game-templates`,

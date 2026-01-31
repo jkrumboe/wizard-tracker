@@ -4,7 +4,7 @@ import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import GameFilterModal from '@/components/modals/GameFilterModal'
 import FriendsModal from '@/components/modals/FriendsModal'
-import { getRecentLocalGames, getUserCloudGamesList } from '@/shared/api/gameService'
+import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames } from '@/shared/api/gameService'
 import { getUserCloudTableGamesList } from '@/shared/api/tableGameService'
 import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
@@ -250,26 +250,31 @@ const Home = () => {
             }
           }
         } else {
-          // Offline or not logged in - show local games
-          const localGames = await fetchLocalGames();
-          setAllGames(localGames);
-          setIsShowingCloudGames(false);
-          console.debug('Showing local games (offline or not logged in)');
-          
-          // Batch check sync status for wizard games if user is logged in
-          if (user && localGames.length > 0) {
+          // Not logged in - try to fetch public games from server, fall back to local games
+          if (isOnline) {
             try {
-              const wizardGameIds = localGames
-                .filter(game => game.gameType !== 'table' && game.id)
-                .map(game => game.id);
-              
-              if (wizardGameIds.length > 0) {
-                const syncStatuses = await batchCheckGamesSyncStatus(wizardGameIds);
-                setGameSyncStatuses(syncStatuses);
-              }
+              const publicGames = await getRecentPublicGames(100);
+              // Format the public games to match expected structure
+              const formattedPublicGames = publicGames.map(game => ({
+                ...game,
+                isCloud: true,
+                isUploaded: true
+              }));
+              setAllGames(formattedPublicGames);
+              setIsShowingCloudGames(true);
+              console.debug('Showing public games (not logged in)');
             } catch (error) {
-              console.debug('Error batch checking sync status on Home:', error.message);
+              console.debug('Failed to fetch public games, falling back to local:', error.message);
+              const localGames = await fetchLocalGames();
+              setAllGames(localGames);
+              setIsShowingCloudGames(false);
             }
+          } else {
+            // Offline - show local games only
+            const localGames = await fetchLocalGames();
+            setAllGames(localGames);
+            setIsShowingCloudGames(false);
+            console.debug('Showing local games (offline)');
           }
         }
       } catch (error) {

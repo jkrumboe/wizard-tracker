@@ -20,12 +20,19 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
   }, [isOpen]);
 
   const loadFriends = async () => {
+    // Don't load friends if not logged in
+    if (!user?.id) {
+      setFriends([]);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       let friendsList = [];
       
-      // If user is logged in and online, fetch from server (cloud is source of truth)
-      if (user?.id && navigator.onLine) {
+      // Fetch from server (cloud is source of truth)
+      if (navigator.onLine) {
         try {
           friendsList = await userService.getFriends(user.id);
           // Update local storage to match cloud
@@ -34,12 +41,11 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
             await localFriendsService.addFriend(friend);
           }
         } catch (cloudErr) {
-          console.warn('Could not fetch friends from cloud, using local:', cloudErr);
-          friendsList = await localFriendsService.getAllFriends();
+          console.warn('Could not fetch friends from cloud:', cloudErr);
+          friendsList = [];
         }
       } else {
-        // Offline fallback: use local storage
-        friendsList = await localFriendsService.getAllFriends();
+        friendsList = [];
       }
       
       // Filter out friends who are already added as players (by userId only)
@@ -86,6 +92,34 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
   };
 
   if (!isOpen) return null;
+
+  // Show login required message if user is not logged in
+  if (!user) {
+    return (
+      <div className="modal-overlay" onClick={handleClose}>
+        <div className="modal-container select-friends-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>
+              <UsersIcon size={20} />
+              Select Friends
+            </h2>
+            <button className="close-btn" onClick={handleClose}>
+              <XIcon size={20} />
+            </button>
+          </div>
+          <div className="modal-content" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <UsersIcon size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
+            <p>Please log in to select friends as players.</p>
+          </div>
+          <div className="modal-actions">
+            <button type="button" onClick={handleClose} className="cancel-button">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={handleClose}>

@@ -101,6 +101,37 @@ export async function getFriendLeaderboard(playerNames, gameType = 'all') {
 }
 
 /**
+ * Get recent games from cloud (public endpoint - no auth required)
+ * @param {number} limit - Maximum number of games to fetch
+ * @returns {Promise<Array>} List of recent games
+ */
+export async function getRecentPublicGames(limit = 50) {
+  const params = new URLSearchParams({
+    limit: limit.toString()
+  });
+  
+  const url = `${API_ENDPOINTS.games.recent}?${params}`;
+  
+  try {
+    const res = await fetch(url);
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to fetch recent games (${res.status})`);
+    }
+    
+    const data = await res.json();
+    return data.games || [];
+  } catch (error) {
+    // Handle network errors
+    if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+      throw new Error('Unable to connect to server.');
+    }
+    throw error;
+  }
+}
+
+/**
  * Get list of cloud games for the logged-in user (metadata only)
  * @returns {Promise<Array>} List of cloud games with metadata
  */
@@ -583,43 +614,44 @@ export async function getGameById(id, options = {}) {
   if (navigator.onLine) {
     try {
       const token = localStorage.getItem('auth_token');
-      if (token) {
-        const res = await fetch(API_ENDPOINTS.wizardGames.getById(id), {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        console.debug(`[getGameById] Cloud fetch for ${id}: status=${res.status}`);
-        if (res.ok) {
-          const data = await res.json();
-          // Backend returns the game directly (not wrapped in { game: ... })
-          const cloudGame = data.game || data;
-          console.debug(`[getGameById] Cloud game data:`, { hasId: !!(cloudGame._id || cloudGame.id), hasGameData: !!cloudGame.gameData });
-          if (cloudGame && (cloudGame._id || cloudGame.id)) {
-            // Transform cloud game data to match expected format
-            const gameData = cloudGame.gameData || {};
-            return {
-              id: cloudGame._id || cloudGame.id || id,
-              cloudId: cloudGame._id || cloudGame.id,
-              localId: cloudGame.localId,
-              is_local: false,
-              is_cloud: true,
-              version: gameData.version || '3.0',
-              players: gameData.players || [],
-              round_data: gameData.round_data || gameData.roundData || [],
-              final_scores: gameData.final_scores || {},
-              winner_id: gameData.winner_id,
-              total_rounds: gameData.total_rounds || gameData.totalRounds,
-              created_at: cloudGame.createdAt || gameData.created_at,
-              gameFinished: gameData.gameFinished,
-              game_mode: gameData.game_mode || gameData.mode || 'Local',
-              gameState: gameData.gameState,
-              ...gameData // Spread remaining game data
-            };
-          }
-        } else {
-          console.debug(`[getGameById] Cloud fetch failed with status ${res.status}`);
+      
+      // Use authenticated endpoint if logged in, otherwise use public endpoint
+      const endpoint = token 
+        ? API_ENDPOINTS.wizardGames.getById(id)
+        : API_ENDPOINTS.wizardGames.getPublicById(id);
+      
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(endpoint, { headers });
+      console.debug(`[getGameById] Cloud fetch for ${id}: status=${res.status}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Backend returns the game directly (not wrapped in { game: ... })
+        const cloudGame = data.game || data;
+        console.debug(`[getGameById] Cloud game data:`, { hasId: !!(cloudGame._id || cloudGame.id), hasGameData: !!cloudGame.gameData });
+        if (cloudGame && (cloudGame._id || cloudGame.id)) {
+          // Transform cloud game data to match expected format
+          const gameData = cloudGame.gameData || {};
+          return {
+            id: cloudGame._id || cloudGame.id || id,
+            cloudId: cloudGame._id || cloudGame.id,
+            localId: cloudGame.localId,
+            is_local: false,
+            is_cloud: true,
+            version: gameData.version || '3.0',
+            players: gameData.players || [],
+            round_data: gameData.round_data || gameData.roundData || [],
+            final_scores: gameData.final_scores || {},
+            winner_id: gameData.winner_id,
+            total_rounds: gameData.total_rounds || gameData.totalRounds,
+            created_at: cloudGame.createdAt || gameData.created_at,
+            gameFinished: gameData.gameFinished,
+            game_mode: gameData.game_mode || gameData.mode || 'Local',
+            gameState: gameData.gameState,
+            ...gameData // Spread remaining game data
+          };
         }
+      } else {
+        console.debug(`[getGameById] Cloud fetch failed with status ${res.status}`);
       }
     } catch (error) {
       console.debug('Error fetching cloud game:', error.message);
@@ -655,6 +687,7 @@ const gameService = {
   getGames,
   getRecentGames,
   getRecentLocalGames,
+  getRecentPublicGames,
   getPausedLocalGames,
   getAllLocalGames,
   createGame,

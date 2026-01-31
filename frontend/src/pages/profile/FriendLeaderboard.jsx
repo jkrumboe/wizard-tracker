@@ -56,12 +56,11 @@ const FriendLeaderboard = () => {
           friendsList = await userService.getFriends(user.id)
         } catch (err) {
           console.warn('Failed to fetch friends from server:', err)
-          // Fall back to local storage
-          friendsList = await localFriendsService.getAllFriends()
+          friendsList = []
         }
       } else {
-        // Use local storage for non-logged-in users
-        friendsList = await localFriendsService.getAllFriends()
+        // Not logged in - don't show any friends
+        friendsList = []
       }
       
       setFriends(friendsList || [])

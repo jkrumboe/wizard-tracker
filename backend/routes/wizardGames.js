@@ -8,6 +8,35 @@ const { migrateWizardGame, validateMigratedGame } = require('../utils/wizardGame
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
 
 /**
+ * GET /api/wizard-games/public/:id
+ * Get a wizard game by MongoDB _id (public, no auth required)
+ * PUBLIC ENDPOINT - No authentication required
+ */
+router.get('/public/:id', async (req, res) => {
+  try {
+    const gameId = req.params.id;
+    
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
+    const game = await WizardGame.findOne({
+      _id: { $eq: gameId }
+    });
+    
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    
+    res.json(game);
+  } catch (error) {
+    console.error('[GET /api/wizard-games/public/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /api/wizard-games/migrate
  * Migrate games from legacy 'games' collection to new 'wizard' collection
  * Accepts either:

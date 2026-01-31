@@ -124,39 +124,41 @@ export async function getTableGameById(gameId, options = {}) {
   if (navigator.onLine) {
     const token = localStorage.getItem('auth_token');
     
-    if (token) {
-      try {
-        const res = await fetch(API_ENDPOINTS.tableGames.getById(gameId), {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+    // Use authenticated endpoint if logged in, otherwise use public endpoint
+    const endpoint = token 
+      ? API_ENDPOINTS.tableGames.getById(gameId)
+      : API_ENDPOINTS.tableGames.getPublicById(gameId);
+    
+    try {
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.game) {
-            // Transform cloud game to match local format
-            const cloudGame = data.game;
-            return {
-              id: cloudGame._id || cloudGame.id || gameId,
-              cloudId: cloudGame._id || cloudGame.id,
-              localId: cloudGame.localId,
-              name: cloudGame.name || cloudGame.gameTypeName || 'Table Game',
-              gameData: cloudGame.gameData || {},
-              gameFinished: cloudGame.gameFinished || false,
-              createdAt: cloudGame.createdAt,
-              is_local: false,
-              is_cloud: true
-            };
-          }
-        } else {
-          // Log non-ok responses for debugging
-          console.debug(`Table game fetch returned ${res.status} for ID: ${gameId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.game) {
+          // Transform cloud game to match local format
+          const cloudGame = data.game;
+          return {
+            id: cloudGame._id || cloudGame.id || gameId,
+            cloudId: cloudGame._id || cloudGame.id,
+            localId: cloudGame.localId,
+            name: cloudGame.name || cloudGame.gameTypeName || 'Table Game',
+            gameData: cloudGame.gameData || {},
+            gameFinished: cloudGame.gameFinished || false,
+            createdAt: cloudGame.createdAt,
+            is_local: false,
+            is_cloud: true
+          };
         }
-      } catch (error) {
-        console.debug('Error fetching cloud table game:', error.message);
+      } else {
+        // Log non-ok responses for debugging
+        console.debug(`Table game fetch returned ${res.status} for ID: ${gameId}`);
       }
+    } catch (error) {
+      console.debug('Error fetching cloud table game:', error.message);
     }
   }
   

@@ -8,6 +8,44 @@ const identityService = require('../utils/identityService');
 
 const router = express.Router();
 
+// GET /api/table-games/public/:id - Get table game by ID (public, no auth required)
+// PUBLIC ENDPOINT - No authentication required
+router.get('/public/:id', async (req, res, next) => {
+  try {
+    const gameId = req.params.id;
+
+    // Validate ID format to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(gameId)) {
+      return res.status(400).json({ error: 'Invalid game ID format' });
+    }
+
+    const tableGame = await TableGame.findOne({ _id: { $eq: gameId } });
+
+    if (!tableGame) {
+      return res.status(404).json({ error: 'Table game not found' });
+    }
+
+    // Return limited public information
+    res.json({
+      game: {
+        _id: tableGame._id,
+        id: tableGame._id,
+        localId: tableGame.localId,
+        name: tableGame.name,
+        gameTypeName: tableGame.gameTypeName,
+        gameData: tableGame.gameData,
+        gameFinished: tableGame.gameFinished,
+        playerCount: tableGame.playerCount,
+        totalRounds: tableGame.totalRounds,
+        createdAt: tableGame.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('[GET /api/table-games/public/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/table-games - Create table game for authenticated user
 router.post('/', auth, async (req, res, next) => {
   try {
