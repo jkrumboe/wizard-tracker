@@ -9,6 +9,7 @@ const MAX_RELOAD_ATTEMPTS = 3;
 const RELOAD_ATTEMPTS_KEY = 'sw_reload_attempts';
 const SNOOZE_KEY = 'sw_update_snoozed_until';
 const SNOOZE_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+const DISMISSED_KEY = 'sw_update_dismissed_version'; // Track dismissed version for session
 
 // Semantic version comparison utilities
 const parseVersion = (version) => {
@@ -57,6 +58,13 @@ const UpdateNotification = () => {
     const snoozedUntil = localStorage.getItem(SNOOZE_KEY);
     if (!snoozedUntil) return false;
     return Date.now() < Number.parseInt(snoozedUntil, 10);
+  };
+
+  // Check if update was dismissed for this version (session-based)
+  const isUpdateDismissed = (version) => {
+    const dismissedVersion = sessionStorage.getItem(DISMISSED_KEY);
+    if (!dismissedVersion) return false;
+    return dismissedVersion === version;
   };
 
   // Check if we can safely reload (not in cooldown, not too many attempts)
@@ -293,10 +301,13 @@ const UpdateNotification = () => {
           setNewVersion(data.version);
         }
         
-        // Show notification when downloading starts
+        // Show notification when downloading starts (unless dismissed or snoozed)
         if (data.status === 'downloading' || data.status === 'ready') {
           setUpdateReady(true);
-          setShowNotification(true);
+          // Only show if not snoozed and not dismissed for this version
+          if (!isUpdateSnoozed() && !isUpdateDismissed(data.version)) {
+            setShowNotification(true);
+          }
         }
       }
     };
@@ -338,7 +349,12 @@ const UpdateNotification = () => {
         if (versionChanged) {
           const newSWVersion = await getServiceWorkerVersion();
           setNewVersion(newSWVersion);
-          setShowNotification(true);
+          // Only show if not dismissed for this version
+          if (!isUpdateDismissed(newSWVersion)) {
+            setShowNotification(true);
+          } else {
+            console.debug('❌ Update dismissed by user for this version, skipping notification');
+          }
         } else {
           console.debug('❌ No version change detected, hiding notification');
           sessionStorage.removeItem('sw_update_ready');
@@ -370,7 +386,10 @@ const UpdateNotification = () => {
           if (versionChanged) {
             const newSWVersion = await getServiceWorkerVersion();
             setNewVersion(newSWVersion);
-            setShowNotification(true);
+            // Only show if not dismissed for this version
+            if (!isUpdateDismissed(newSWVersion)) {
+              setShowNotification(true);
+            }
           }
         }
       };
@@ -406,6 +425,10 @@ const UpdateNotification = () => {
   };
 
   const handleDismiss = () => {
+    // Save dismissed version to prevent re-showing until next session or new version
+    if (newVersion) {
+      sessionStorage.setItem(DISMISSED_KEY, newVersion);
+    }
     setShowNotification(false);
     // Still keep the flag so user can update later via Settings
   };
