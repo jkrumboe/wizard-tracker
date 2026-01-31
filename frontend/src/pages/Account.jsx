@@ -1364,6 +1364,21 @@ const Account = () => {
     return types;
   }, [savedGames, savedTableGames, cloudGames, user]);
 
+  // Build a map of game ID -> ELO data from cloud games
+  const gameEloMap = useMemo(() => {
+    const map = new Map();
+    cloudGames.forEach(game => {
+      if (game.id && (game.eloChange !== undefined || game.eloRating !== undefined)) {
+        map.set(game.id.toString(), {
+          change: game.eloChange,
+          rating: game.eloRating,
+          placement: game.eloPlacement
+        });
+      }
+    });
+    return map;
+  }, [cloudGames]);
+
   // Auto-select first available game type if 'all' or invalid selection
   React.useEffect(() => {
     if (availableGameTypes.length > 0 && (statsGameType === 'all' || !availableGameTypes.find(t => t.value === statsGameType))) {
@@ -1721,6 +1736,10 @@ const Account = () => {
                 const isUploaded = LocalGameStorage.isGameUploaded(game.id);
                 const badgeClass = status.toLowerCase().replace(' ', '-');
 
+                // Get ELO data for synced games
+                const cloudGameId = syncStatus?.cloudGameId || game.cloudGameId;
+                const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
+
                 // Determine which actions to show
                 const showSync = needsUpload && !isImportedGame;
                 const showShare = isGameSynced && !isImportedGame;
@@ -1787,9 +1806,16 @@ const Account = () => {
                             Wizard
                             {game.isPaused ? ' | Paused' : ''}
                           </div>
-                          <span className={`mode-badge ${badgeClass}`}>
-                            {status}
-                          </span>
+                          <div className="game-badges">
+                            {eloData && eloData.change !== undefined && (
+                              <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
+                                {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
+                              </span>
+                            )}
+                            <span className={`mode-badge ${badgeClass}`}>
+                              {status}
+                            </span>
+                          </div>
                         </div>
                         <div className="game-players">
                           <UsersIcon size={12} />{" "}
@@ -1838,6 +1864,10 @@ const Account = () => {
               {savedTableGames.map((game) => {
                 const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
                 const showSync = !isUploaded && game.gameFinished;
+                
+                // Get ELO data for synced games
+                const cloudGameId = game.cloudGameId;
+                const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
                 
                 return (
                   <SwipeableGameCard
@@ -1889,16 +1919,23 @@ const Account = () => {
                           <div className="game-name">
                             {game.name}
                           </div>
-                          {isUploaded && (
-                            <span className="mode-badge synced" title="Synced to Cloud">
-                              Synced
-                            </span>
-                          )}
-                          {!isUploaded && (
-                            <span className="mode-badge table">
-                              Local
-                            </span>
-                          )}               
+                          <div className="game-badges">
+                            {eloData && eloData.change !== undefined && (
+                              <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
+                                {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
+                              </span>
+                            )}
+                            {isUploaded && (
+                              <span className="mode-badge synced" title="Synced to Cloud">
+                                Synced
+                              </span>
+                            )}
+                            {!isUploaded && (
+                              <span className="mode-badge table">
+                                Local
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="game-players">
                           <UsersIcon size={12} />{" "}

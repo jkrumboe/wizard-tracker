@@ -282,14 +282,38 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     // Use PlayerIdentity system to find all identities linked to this user
     const PlayerIdentity = require('../models/PlayerIdentity');
     
-    // Find identities directly owned by this user
-    const identities = await PlayerIdentity.find({ userId: user._id }).select('_id displayName').lean();
+    // Find identities directly owned by this user (include eloByGameType for ELO history)
+    const identities = await PlayerIdentity.find({ userId: user._id }).select('_id displayName eloByGameType').lean();
     const identityIds = identities.map(id => id._id);
     
     // ALSO find guest identities that were merged into any of these identities
     const mergedGuestIdentities = await PlayerIdentity.find({
       mergedInto: { $in: identityIds }
-    }).select('_id displayName').lean();
+    }).select('_id displayName eloByGameType').lean();
+    
+    // Build a map of gameId -> eloChange from all identities' ELO history
+    const gameEloMap = new Map();
+    [...identities, ...mergedGuestIdentities].forEach(identity => {
+      if (identity.eloByGameType) {
+        // eloByGameType is stored as an object in lean() results
+        for (const [gameType, eloData] of Object.entries(identity.eloByGameType)) {
+          if (eloData.history && Array.isArray(eloData.history)) {
+            eloData.history.forEach(entry => {
+              if (entry.gameId) {
+                const gameIdStr = entry.gameId.toString();
+                // Store the ELO change info for this game
+                gameEloMap.set(gameIdStr, {
+                  change: entry.change,
+                  rating: entry.rating,
+                  placement: entry.placement,
+                  gameType: gameType
+                });
+              }
+            });
+          }
+        }
+      }
+    });
     
     // Combine all identity IDs (owned + merged guests)
     const allIdentityIds = [...identityIds, ...mergedGuestIdentities.map(id => id._id)];
@@ -364,12 +388,19 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       
       if (isWinner) totalWins++;
       
+      // Get ELO change for this game (if available)
+      const gameIdStr = game._id.toString();
+      const eloInfo = gameEloMap.get(gameIdStr);
+      
       allGames.push({
         id: game._id,
         gameType: 'wizard',
         created_at: game.createdAt,
         winner_ids: winnerIds,
         winner_id: winnerIds[0], // For backward compatibility
+        eloChange: eloInfo?.change,
+        eloRating: eloInfo?.rating,
+        eloPlacement: eloInfo?.placement,
         gameData: {
           players: gameData.players,
           total_rounds: gameData.total_rounds,
@@ -451,6 +482,10 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       
       if (isWinner) totalWins++;
       
+      // Get ELO change for this game (if available)
+      const gameIdStr = game._id.toString();
+      const eloInfo = gameEloMap.get(gameIdStr);
+      
       allGames.push({
         id: game._id,
         gameType: 'table',
@@ -460,6 +495,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
         winner_ids: winnerIds,
         winner_id: winnerIds[0],
         lowIsBetter: game.lowIsBetter,
+        eloChange: eloInfo?.change,
+        eloRating: eloInfo?.rating,
+        eloPlacement: eloInfo?.placement,
         gameData: {
           players: gameData.players,
           winner_ids: winnerIds

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
-import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap } from 'lucide-react';
+import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap, Target } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { useUserElo } from '@/shared/hooks/useElo';
 import '@/styles/pages/account.css';
