@@ -1,10 +1,27 @@
 const express = require('express');
+const { query, param, body, validationResult } = require('express-validator');
 const PlayerIdentity = require('../models/PlayerIdentity');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { eloPublicLimiter, eloAdminLimiter } = require('../middleware/rateLimiter');
 const identityService = require('../utils/identityService');
 const eloService = require('../utils/eloService');
 const router = express.Router();
+
+// Validation helper
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      error: 'Validation failed', 
+      validationErrors: errors.array() 
+    });
+  }
+  next();
+};
+
+// Allowed game types for validation
+const ALLOWED_GAME_TYPES = ['wizard', 'flip-7', 'dutch', 'table-flip-7', 'table-dutch', 'table-wizard'];
 
 /**
  * Identity Management Routes
@@ -459,13 +476,16 @@ router.get('/link/guest-identities', auth, async (req, res, next) => {
     if (includeLinked !== 'true') {
       filter.$or = [
         { userId: null, mergedInto: null },
-        { userId: { $in: guestUserIds }, mergedInto: null }
+        { userId: { $in: guestUserIds }, mergedInto: null },
+        { type: 'guest', mergedInto: null } // Also include guest-type identities
       ];
     } else {
       // When including linked, show either unlinked OR merged identities
+      // Also include guest-type identities that may be linked to users but not merged
       filter.$or = [
         { userId: null, mergedInto: null },
         { userId: { $in: guestUserIds }, mergedInto: null },
+        { type: 'guest', mergedInto: null }, // Guest-type identities not yet merged
         { mergedInto: { $ne: null } }
       ];
     }
@@ -765,7 +785,30 @@ router.post('/admin/unlink-guest', auth, requireAdmin, async (req, res, next) =>
  * Get ELO leaderboard for a specific game type (public)
  * Query params: gameType (required), page, limit, minGames
  */
-router.get('/elo/rankings', async (req, res, next) => {
+router.get('/elo/rankings', 
+  eloPublicLimiter,
+  [
+    query('gameType')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+      .withMessage('gameType must be a string between 1-50 characters'),
+    query('page')
+      .optional()
+      .isInt({ min: 1, max: 1000 })
+      .withMessage('page must be an integer between 1-1000'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('limit must be an integer between 1-100'),
+    query('minGames')
+      .optional()
+      .isInt({ min: 0, max: 1000 })
+      .withMessage('minGames must be an integer between 0-1000')
+  ],
+  validate,
+  async (req, res, next) => {
   try {
     const { 
       gameType = 'wizard',
@@ -792,7 +835,25 @@ router.get('/elo/rankings', async (req, res, next) => {
  * Get ELO history for a specific identity and game type
  * Query params: gameType, limit
  */
-router.get('/elo/history/:id', async (req, res, next) => {
+router.get('/elo/history/:id',
+  eloPublicLimiter,
+  [
+    param('id')
+      .isMongoId()
+      .withMessage('Invalid identity ID format'),
+    query('gameType')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+      .withMessage('gameType must be a string between 1-50 characters'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 50 })
+      .withMessage('limit must be an integer between 1-50')
+  ],
+  validate,
+  async (req, res, next) => {
   try {
     const { gameType = 'wizard', limit = 20 } = req.query;
     
@@ -818,7 +879,15 @@ router.get('/elo/history/:id', async (req, res, next) => {
  * GET /identities/elo/all/:id
  * Get all ELO ratings for an identity across all game types
  */
-router.get('/elo/all/:id', async (req, res, next) => {
+router.get('/elo/all/:id',
+  eloPublicLimiter,
+  [
+    param('id')
+      .isMongoId()
+      .withMessage('Invalid identity ID format')
+  ],
+  validate,
+  async (req, res, next) => {
   try {
     const result = await eloService.getAllEloForIdentity(req.params.id);
     
@@ -837,7 +906,18 @@ router.get('/elo/all/:id', async (req, res, next) => {
  * Get current user's ELO rating and history for a specific game type
  * Query params: gameType (default: 'wizard')
  */
-router.get('/elo/me', auth, async (req, res, next) => {
+router.get('/elo/me', 
+  auth, 
+  [
+    query('gameType')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+      .withMessage('gameType must be a string between 1-50 characters')
+  ],
+  validate,
+  async (req, res, next) => {
   try {
     const { gameType = 'wizard' } = req.query;
     
@@ -912,7 +992,24 @@ router.get('/elo/me/all', auth, async (req, res, next) => {
  * Admin: Recalculate all ELO ratings from scratch
  * Body: { dryRun: boolean, gameType?: string }
  */
-router.post('/elo/recalculate', auth, requireAdmin, async (req, res, next) => {
+router.post('/elo/recalculate', 
+  auth, 
+  requireAdmin,
+  eloAdminLimiter,
+  [
+    body('dryRun')
+      .optional()
+      .isBoolean()
+      .withMessage('dryRun must be a boolean'),
+    body('gameType')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+      .withMessage('gameType must be a string between 1-50 characters')
+  ],
+  validate,
+  async (req, res, next) => {
   try {
     const { dryRun = true, gameType = null } = req.body;
     
@@ -933,7 +1030,7 @@ router.post('/elo/recalculate', auth, requireAdmin, async (req, res, next) => {
  * GET /identities/elo/config
  * Get ELO system configuration (public)
  */
-router.get('/elo/config', (req, res) => {
+router.get('/elo/config', eloPublicLimiter, (req, res) => {
   res.json({
     defaultRating: eloService.CONFIG.DEFAULT_RATING,
     minRating: eloService.CONFIG.MIN_RATING,

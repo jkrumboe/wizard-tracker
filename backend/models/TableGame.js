@@ -278,8 +278,19 @@ tableGameSchema.post('save', async function(doc) {
       console.log(`ELO updated for ${updates.length} players after ${gameType} game ${doc._id}`);
     }
   } catch (error) {
-    // Log but don't fail - ELO updates are non-critical
-    console.error('Failed to update ELO ratings for table game:', error.message);
+    // Enhanced error logging with game context
+    const gameType = doc.gameTypeName || doc.gameType || 'table';
+    console.error(`[ELO ERROR] Failed to update ELO ratings for ${gameType} game ${doc._id}:`, {
+      error: error.message,
+      stack: error.stack,
+      gameId: doc._id,
+      gameType,
+      players: doc.gameData?.players?.map(p => ({ name: p.name, identityId: p.identityId })) || [],
+      timestamp: new Date().toISOString()
+    });
+    
+    // In production, you might want to track failed ELO updates for manual review
+    // For now, we log extensively but don't fail the save operation
   }
 });
 

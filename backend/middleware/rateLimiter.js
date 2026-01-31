@@ -82,10 +82,28 @@ const friendsLimiter = createLimiter({
   skipSuccessfulRequests: false, // Count all requests
 });
 
+// Rate limiter for public ELO endpoints (leaderboards, rankings)
+// These are public but should be protected from abuse
+const eloPublicLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // 300 requests per 15 min (enough for normal browsing)
+  message: 'Too many ELO ranking requests, please try again later.',
+});
+
+// Rate limiter for ELO admin operations (recalculation)
+// Very strict as recalculation is heavy
+const eloAdminLimiter = createLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Only 5 recalculations per hour
+  message: 'ELO recalculation limit reached. Please try again later.',
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
   apiLimiter,
   adminLimiter,
-  friendsLimiter
+  friendsLimiter,
+  eloPublicLimiter,
+  eloAdminLimiter
 };

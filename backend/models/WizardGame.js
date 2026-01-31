@@ -142,8 +142,18 @@ wizardGameSchema.post('save', async function(doc) {
       console.log(`ELO updated for ${updates.length} players after wizard game ${doc._id}`);
     }
   } catch (error) {
-    // Log but don't fail - ELO updates are non-critical
-    console.error('Failed to update ELO ratings:', error.message);
+    // Enhanced error logging with game context
+    console.error(`[ELO ERROR] Failed to update ELO ratings for wizard game ${doc._id}:`, {
+      error: error.message,
+      stack: error.stack,
+      gameId: doc._id,
+      players: doc.gameData?.players?.map(p => ({ name: p.name, identityId: p.identityId })) || [],
+      timestamp: new Date().toISOString()
+    });
+    
+    // In production, you might want to track failed ELO updates for manual review
+    // For now, we log extensively but don't fail the save operation
+    // Future: Could emit an event or write to a failed-elo-updates collection
   }
 });
 

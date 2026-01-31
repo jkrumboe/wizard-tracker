@@ -128,8 +128,24 @@ playerIdentitySchema.index({ userId: 1, isDeleted: 1 });
 playerIdentitySchema.index({ 'aliases.normalizedName': 1 });
 playerIdentitySchema.index({ type: 1, isDeleted: 1 });
 
-// ELO ranking indexes - for each game type lookup
-// Note: Map fields require wildcard or specific key indexes
+// ELO ranking indexes - for leaderboard queries
+// These indexes optimize the common ELO queries for rankings and filtering
+// Index for wizard game type ELO (most common game type)
+playerIdentitySchema.index(
+  { 'eloByGameType.wizard.rating': -1, 'eloByGameType.wizard.gamesPlayed': -1 },
+  { sparse: true, partialFilterExpression: { 'eloByGameType.wizard': { $exists: true }, isDeleted: false } }
+);
+
+// Index for table game types
+playerIdentitySchema.index(
+  { 'eloByGameType.flip-7.rating': -1, 'eloByGameType.flip-7.gamesPlayed': -1 },
+  { sparse: true, partialFilterExpression: { 'eloByGameType.flip-7': { $exists: true }, isDeleted: false } }
+);
+
+playerIdentitySchema.index(
+  { 'eloByGameType.dutch.rating': -1, 'eloByGameType.dutch.gamesPlayed': -1 },
+  { sparse: true, partialFilterExpression: { 'eloByGameType.dutch': { $exists: true }, isDeleted: false } }
+);
 
 // Unique index to prevent duplicate user identities with same userId
 // Each user can only have one primary identity linked to their account

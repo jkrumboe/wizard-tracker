@@ -260,12 +260,17 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
 
 /**
  * Update player ELO ratings after a game
+ * Uses MongoDB transactions when available to ensure atomic updates across all players
+ * Falls back to non-transactional updates if transactions aren't supported
  * 
  * @param {Object} game - WizardGame or TableGame document
  * @param {string} gameType - Game type (e.g., 'wizard', 'flip-7', 'dutch')
+ * @param {Object} options - Optional settings
+ * @param {number} options.maxRetries - Max retry attempts on failure (default: 3)
  * @returns {Array} Array of updated identities
  */
-async function updateRatingsForGame(game, gameType) {
+async function updateRatingsForGame(game, gameType, options = {}) {
+  const { maxRetries = 3 } = options;
   const PlayerIdentity = mongoose.model('PlayerIdentity');
   const gameData = game.gameData;
   
@@ -284,94 +289,172 @@ async function updateRatingsForGame(game, gameType) {
     return [];
   }
   
-  const identities = await PlayerIdentity.find({
-    _id: { $in: identityIds },
-    isDeleted: false
-  });
+  // Check if transactions are supported (requires replica set)
+  // Try transactional update first, fall back to non-transactional if unsupported
+  let useTransactions = true;
   
-  const identityMap = new Map(
-    identities.map(i => [i._id.toString(), i])
-  );
-  
-  // Calculate ELO changes for this game type
-  const changes = calculateGameEloChanges(gameData, identityMap, normalizedGameType);
-  
-  // Apply changes to identities
-  const updatedIdentities = [];
-  
-  for (const change of changes) {
-    const identity = identityMap.get(change.identityId.toString());
-    if (!identity) continue;
+  // Retry logic for transient failures
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let session = null;
     
-    // Initialize eloByGameType map if needed
-    if (!identity.eloByGameType) {
-      identity.eloByGameType = new Map();
+    try {
+      if (useTransactions) {
+        session = await mongoose.startSession();
+        session.startTransaction({
+          readConcern: { level: 'snapshot' },
+          writeConcern: { w: 'majority' }
+        });
+      }
+      
+      const identities = await PlayerIdentity.find({
+        _id: { $in: identityIds },
+        isDeleted: false
+      });
+      
+      const identityMap = new Map(
+        identities.map(i => [i._id.toString(), i])
+      );
+      
+      // Calculate ELO changes for this game type
+      const changes = calculateGameEloChanges(gameData, identityMap, normalizedGameType);
+      
+      // Apply changes to identities within transaction
+      const updatedIdentities = [];
+      
+      for (const change of changes) {
+        const identity = identityMap.get(change.identityId.toString());
+        if (!identity) continue;
+        
+        // Initialize eloByGameType map if needed
+        if (!identity.eloByGameType) {
+          identity.eloByGameType = new Map();
+        }
+        
+        // Get or create ELO entry for this game type
+        let gameTypeElo = identity.eloByGameType.get(normalizedGameType);
+        if (!gameTypeElo) {
+          gameTypeElo = {
+            rating: CONFIG.DEFAULT_RATING,
+            peak: CONFIG.DEFAULT_RATING,
+            floor: CONFIG.DEFAULT_RATING,
+            gamesPlayed: 0,
+            streak: 0,
+            lastUpdated: null,
+            history: []
+          };
+        }
+        
+        // Update ELO fields
+        gameTypeElo.rating = change.newRating;
+        gameTypeElo.gamesPlayed = (gameTypeElo.gamesPlayed || 0) + 1;
+        gameTypeElo.lastUpdated = new Date();
+        
+        // Update peak/floor
+        if (change.newRating > (gameTypeElo.peak || CONFIG.DEFAULT_RATING)) {
+          gameTypeElo.peak = change.newRating;
+        }
+        if (change.newRating < (gameTypeElo.floor || CONFIG.DEFAULT_RATING)) {
+          gameTypeElo.floor = change.newRating;
+        }
+        
+        // Update streak
+        if (change.won) {
+          gameTypeElo.streak = Math.max(1, (gameTypeElo.streak || 0) + 1);
+        } else {
+          gameTypeElo.streak = Math.min(-1, (gameTypeElo.streak || 0) - 1);
+        }
+        
+        // Add to history (keep last 50 entries)
+        if (!gameTypeElo.history) {
+          gameTypeElo.history = [];
+        }
+        gameTypeElo.history.unshift({
+          rating: change.newRating,
+          change: change.change,
+          gameId: game._id,
+          opponents: change.opponents,
+          placement: change.placement,
+          date: new Date()
+        });
+        
+        if (gameTypeElo.history.length > 50) {
+          gameTypeElo.history = gameTypeElo.history.slice(0, 50);
+        }
+        
+        // Save back to map
+        identity.eloByGameType.set(normalizedGameType, gameTypeElo);
+        identity.markModified('eloByGameType');
+        
+        // Save with or without session
+        if (session) {
+          await identity.save({ session });
+        } else {
+          await identity.save();
+        }
+        
+        updatedIdentities.push({
+          identity,
+          change,
+          gameType: normalizedGameType
+        });
+      }
+      
+      // Commit transaction if using one
+      if (session) {
+        await session.commitTransaction();
+        session.endSession();
+      }
+      
+      return updatedIdentities;
+      
+    } catch (error) {
+      // Clean up session if it exists
+      if (session) {
+        try {
+          await session.abortTransaction();
+          session.endSession();
+        } catch (cleanupError) {
+          // Ignore cleanup errors
+        }
+      }
+      
+      lastError = error;
+      
+      // Check if transactions aren't supported (standalone MongoDB)
+      const isTransactionNotSupported = 
+        error.message?.includes('Transaction numbers are only allowed') ||
+        error.message?.includes('not supported') ||
+        error.codeName === 'IllegalOperation' ||
+        error.code === 20; // IllegalOperation
+      
+      if (isTransactionNotSupported && useTransactions) {
+        console.warn('MongoDB transactions not supported (standalone mode), falling back to non-transactional updates');
+        useTransactions = false;
+        // Retry immediately without transactions
+        continue;
+      }
+      
+      // Check if it's a transient error worth retrying
+      const isTransient = error.hasErrorLabel?.('TransientTransactionError') ||
+        error.code === 112 || // WriteConflict
+        error.code === 251;   // TransactionCoordinatorSteppingDown
+      
+      if (isTransient && attempt < maxRetries) {
+        console.warn(`ELO update attempt ${attempt} failed with transient error, retrying...`, error.message);
+        // Exponential backoff: 100ms, 200ms, 400ms
+        await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt - 1)));
+        continue;
+      }
+      
+      // Non-transient error or max retries reached
+      console.error(`ELO update failed for game ${game._id} after ${attempt} attempt(s):`, error.message);
+      throw error;
     }
-    
-    // Get or create ELO entry for this game type
-    let gameTypeElo = identity.eloByGameType.get(normalizedGameType);
-    if (!gameTypeElo) {
-      gameTypeElo = {
-        rating: CONFIG.DEFAULT_RATING,
-        peak: CONFIG.DEFAULT_RATING,
-        floor: CONFIG.DEFAULT_RATING,
-        gamesPlayed: 0,
-        streak: 0,
-        lastUpdated: null,
-        history: []
-      };
-    }
-    
-    // Update ELO fields
-    gameTypeElo.rating = change.newRating;
-    gameTypeElo.gamesPlayed = (gameTypeElo.gamesPlayed || 0) + 1;
-    gameTypeElo.lastUpdated = new Date();
-    
-    // Update peak/floor
-    if (change.newRating > (gameTypeElo.peak || CONFIG.DEFAULT_RATING)) {
-      gameTypeElo.peak = change.newRating;
-    }
-    if (change.newRating < (gameTypeElo.floor || CONFIG.DEFAULT_RATING)) {
-      gameTypeElo.floor = change.newRating;
-    }
-    
-    // Update streak
-    if (change.won) {
-      gameTypeElo.streak = Math.max(1, (gameTypeElo.streak || 0) + 1);
-    } else {
-      gameTypeElo.streak = Math.min(-1, (gameTypeElo.streak || 0) - 1);
-    }
-    
-    // Add to history (keep last 50 entries)
-    if (!gameTypeElo.history) {
-      gameTypeElo.history = [];
-    }
-    gameTypeElo.history.unshift({
-      rating: change.newRating,
-      change: change.change,
-      gameId: game._id,
-      opponents: change.opponents,
-      placement: change.placement,
-      date: new Date()
-    });
-    
-    if (gameTypeElo.history.length > 50) {
-      gameTypeElo.history = gameTypeElo.history.slice(0, 50);
-    }
-    
-    // Save back to map
-    identity.eloByGameType.set(normalizedGameType, gameTypeElo);
-    identity.markModified('eloByGameType');
-    await identity.save();
-    
-    updatedIdentities.push({
-      identity,
-      change,
-      gameType: normalizedGameType
-    });
   }
   
-  return updatedIdentities;
+  // Should not reach here, but just in case
+  throw lastError || new Error('ELO update failed after max retries');
 }
 
 /**
