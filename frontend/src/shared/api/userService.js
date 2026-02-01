@@ -218,24 +218,18 @@ class UserService {
   }
 
   async getFriends(userId) {
-    console.debug('[getFriends] Called with userId:', userId, 'skipBackend:', this.skipBackend);
-    
     // Skip backend call if in development mode without configured backend
     if (this.skipBackend) {
-      console.debug('[getFriends] Skipping backend call (skipBackend=true)');
       return [];
     }
 
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        console.debug('[getFriends] No auth token found');
         throw new Error('Not authenticated');
       }
 
       const endpoint = API_ENDPOINTS.users.friends(userId);
-      console.debug('[getFriends] Fetching from:', endpoint);
-      
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
@@ -244,23 +238,18 @@ class UserService {
         },
       });
 
-      console.debug('[getFriends] Response status:', response.status);
-
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Failed to get friends' }));
-        console.debug('[getFriends] Error response:', error);
         throw new Error(error.message || error.error || 'Failed to get friends');
       }
 
       const result = await response.json();
-      console.debug('[getFriends] Got friends:', result.friends?.length || 0);
       return result.friends || [];
     } catch (error) {
       if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        console.debug('[getFriends] Network error (Failed to fetch)');
         return [];
       }
-      console.error('[getFriends] Error:', error.message);
+      console.error('Error getting friends:', error);
       return [];
     }
   }
