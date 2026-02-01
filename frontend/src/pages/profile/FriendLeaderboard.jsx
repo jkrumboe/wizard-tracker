@@ -9,7 +9,7 @@ import "@/styles/pages/friend-leaderboard.css"
 
 const FriendLeaderboard = () => {
   const navigate = useNavigate()
-  const { user, isLoggedIn } = useUser()
+  const { user } = useUser()
   
   // Friends selection state
   const [friends, setFriends] = useState([])
@@ -46,23 +46,27 @@ const FriendLeaderboard = () => {
   }, [leaderboardData])
 
   const loadFriends = useCallback(async () => {
+    console.debug('[FriendLeaderboard] loadFriends called, user?.id:', user?.id)
     setLoadingFriends(true)
     try {
       let friendsList = []
       
-      if (isLoggedIn && user?.id) {
+      if (user?.id) {
         // Fetch from server if logged in
         try {
           friendsList = await userService.getFriends(user.id)
+          console.debug('[FriendLeaderboard] Fetched friends:', friendsList?.length, friendsList)
         } catch (err) {
           console.warn('Failed to fetch friends from server:', err)
           friendsList = []
         }
       } else {
         // Not logged in - don't show any friends
+        console.debug('[FriendLeaderboard] No user.id, returning empty')
         friendsList = []
       }
       
+      console.debug('[FriendLeaderboard] Setting friends state to:', friendsList?.length)
       setFriends(friendsList || [])
     } catch (err) {
       console.error('Error loading friends:', err)
@@ -70,7 +74,7 @@ const FriendLeaderboard = () => {
     } finally {
       setLoadingFriends(false)
     }
-  }, [isLoggedIn, user?.id])
+  }, [user?.id])
 
   useEffect(() => {
     loadFriends()
