@@ -115,7 +115,6 @@ const StatsOverview = ({ games, user, onGameTypeClick }) => {
                   ));
                 })()}
               </div>
-              <p className="results-description">Last {gameType.recentResults?.length || 0} games</p>
             </div>
           </div>
         );

@@ -1505,7 +1505,6 @@ const Account = () => {
                         <span key={idx} className="result-letter empty"></span>
                       ))}
                     </div>
-                    <p className="results-description">Last <span className="skeleton" style={{ width: '16px', height: '12px', borderRadius: '3px', display: 'inline-block', verticalAlign: 'middle' }}></span> games</p>
                   </div>
                 </div>
               </div>

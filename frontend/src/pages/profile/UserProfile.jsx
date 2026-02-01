@@ -222,7 +222,6 @@ const UserProfile = () => {
                       <span key={idx} className="result-letter empty"></span>
                     ))}
                   </div>
-                  <p className="results-description">Last <span className="skeleton" style={{ width: '8px', height: '14px', borderRadius: '3px', display: 'inline-block', verticalAlign: 'middle', marginBottom: '2px' }}></span> games</p>
                 </div>
               </div>
             </div>

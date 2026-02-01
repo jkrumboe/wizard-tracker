@@ -653,7 +653,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
       {/* INSIGHTS SECTION */}
       <div>
         <div className="performance-insights-header">
-          <h2 style={{ margin: '0', fontSize: '1.25rem', fontWeight: '600', marginBottom: 'var(--spacing-sm)' }}>Performance Insights</h2>
+          <h2 style={{ margin: '0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h2>
           
           {/* Insight Type Selector */}
           {isWizardGame && (
@@ -687,7 +687,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
 
             {/* Score Chart with Avg Line and Best/Worst Highlighted */}
             <div style={{ marginBottom: 'var(--spacing-xs)' }}>
-              <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Score Progression</h4>
+              {/* <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Score Progression</h4> */}
               
               <ResponsiveContainer width="100%" height={200}>
                 <ComposedChart data={chartData} margin={{ top: 5, right: 0, left: -20}}>
@@ -758,7 +758,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
 
             {/* Bid Accuracy Chart */}
             <div style={{ marginBottom: 'var(--spacing-xs)' }}>
-              <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Bid Accuracy Progression</h4>
+              {/* <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Bid Accuracy Progression</h4> */}
               <ResponsiveContainer width="100%" height={200}>
                 <ComposedChart data={chartData.filter(d => d.bidAccuracy !== null)} margin={{ top: 5, right: 0, left: -10}}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -952,7 +952,7 @@ const EloRatingSection = ({ gameType = 'wizard' }) => {
                 <StatCard title="Floor" icon={<TrendingDown size={16} />} value={floorRating} color="red" />
               </div>
 
-              <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Rating Progression</h4>
+              {/* <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Rating Progression</h4> */}
               <ResponsiveContainer width="100%" height={200}>
                 <ComposedChart data={eloHistoryData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
