@@ -19,7 +19,7 @@ A full-stack application for tracking and managing Wizard and card game scores, 
 2. **Generate a secure JWT secret**: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
 3. **Never commit** `.env` files with real credentials
 4. **Update MongoDB credentials** from the default `admin/admin123`
-5. See [SECURITY.md](SECURITY.md) for complete security guidelines -->
+5. See [SECURITY.md](docs/SECURITY.md) for complete security guidelines -->
 
 ## Features
 
@@ -33,22 +33,22 @@ A full-stack application for tracking and managing Wizard and card game scores, 
 
 ### Core Documentation
 
-- **[Setup Guide](SETUP.md)** - Installation and deployment instructions
-- **[NPM Scripts Reference](SCRIPTS.md)** - Complete guide to all available npm commands
-- **[Development Guide](DEVELOPMENT.md)** - Development workflow, testing, and best practices
-- **[Architecture Overview](ARCHITECTURE.md)** - System design, data flow, and technical architecture
-- **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to the project
+- **[Setup Guide](docs/SETUP.md)** - Installation and deployment instructions
+- **[NPM Scripts Reference](docs/SCRIPTS.md)** - Complete guide to all available npm commands
+- **[Development Guide](docs/DEVELOPMENT.md)** - Development workflow, testing, and best practices
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - System design, data flow, and technical architecture
+- **[Contributing Guidelines](docs/CONTRIBUTING.md)** - How to contribute to the project
 - **[API Documentation](backend/API_EXAMPLES.md)** - Backend API endpoints and examples
 
 ### Additional Resources
 
 - [Frontend Setup Guide](frontend/README.md)
 - [Backend Setup Guide](backend/README.md)
-- [Logging Guide](LOGGING.md) - Log formats, analysis, and monitoring
+- [Logging Guide](docs/LOGGING.md) - Log formats, analysis, and monitoring
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for more information on how to get started.
+We welcome contributions! Please see our [Contributing Guidelines](docs/CONTRIBUTING.md) for more information on how to get started.
 
 ## License
 

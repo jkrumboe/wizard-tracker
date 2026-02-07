@@ -277,9 +277,9 @@ ${colors.reset}`);
   
   console.log('📚 Documentation:');
   console.log('  • README.md        - Project overview');
-  console.log('  • SETUP.md         - Detailed setup guide');
-  console.log('  • DEVELOPMENT.md   - Development guidelines');
-  console.log('  • ARCHITECTURE.md  - Technical architecture');
+  console.log('  • docs/SETUP.md         - Detailed setup guide');
+  console.log('  • docs/DEVELOPMENT.md   - Development guidelines');
+  console.log('  • docs/ARCHITECTURE.md  - Technical architecture');
   
   console.log('\n💡 Need help? Check the documentation or open an issue:');
   log('   https://github.com/jkrumboe/wizard-tracker/issues\n', colors.cyan);

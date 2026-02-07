@@ -1027,11 +1027,13 @@ npm start
 
 ## Additional Resources
 
-- [README.md](README.md) - Project overview
+- [README.md](../README.md) - Project overview
 - [SETUP.md](SETUP.md) - Detailed setup instructions
 - [DEVELOPMENT.md](DEVELOPMENT.md) - Development guidelines
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+
+> Note: All docs are in the `docs/` folder. Links above are relative within that folder.
 
 ---
 
@@ -1047,5 +1049,6 @@ If you encounter issues:
 
 **Need immediate help?**
 - 📖 Check [SETUP.md](SETUP.md) for detailed instructions
+
 - 💬 Open a [GitHub Discussion](https://github.com/jkrumboe/wizard-tracker/discussions)
 - 🐛 Report bugs via [GitHub Issues](https://github.com/jkrumboe/wizard-tracker/issues/new?template=bug_report.md)

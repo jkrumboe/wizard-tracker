@@ -616,5 +616,5 @@ Each service has health checks:
 
 - [Development Guide](DEVELOPMENT.md)
 - [Setup Guide](SETUP.md)
-- [API Documentation](backend/API_EXAMPLES.md)
+- [API Documentation](../backend/API_EXAMPLES.md)
 - [Contributing Guidelines](CONTRIBUTING.md)

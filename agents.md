@@ -43,6 +43,7 @@ wizard-tracker/
 │       │   ├── sync/        # Offline sync logic
 │       │   └── utils/       # Utility functions
 │       └── styles/          # CSS stylesheets
+├── docs/                    # Project documentation (md files)
 ├── scripts/                 # Root-level utility scripts
 └── game_descriptions/       # Game rule documentation
 ```
@@ -230,13 +231,13 @@ export function ComponentName({ prop1, prop2 }) {
 
 | Document | Purpose |
 |----------|---------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System design and data flow |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Development workflow |
-| [SETUP.md](SETUP.md) | Installation instructions |
-| [TESTING.md](TESTING.md) | Test infrastructure |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [SECURITY.md](SECURITY.md) | Security policies |
-| [SCRIPTS.md](SCRIPTS.md) | NPM scripts reference |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design and data flow |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development workflow |
+| [SETUP.md](docs/SETUP.md) | Installation instructions |
+| [TESTING.md](docs/TESTING.md) | Test infrastructure |
+| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Contribution guidelines |
+| [SECURITY.md](docs/SECURITY.md) | Security policies |
+| [SCRIPTS.md](docs/SCRIPTS.md) | NPM scripts reference |
 | [backend/API_EXAMPLES.md](backend/API_EXAMPLES.md) | API documentation |
 
 ## Environment Variables
@@ -255,4 +256,4 @@ export function ComponentName({ prop1, prop2 }) {
 
 - **Repository**: https://github.com/jkrumboe/wizard-tracker
 - **Issues**: Use GitHub Issues for bug reports and features
-- **Security**: See [SECURITY.md](SECURITY.md) for vulnerability reporting
+- **Security**: See [SECURITY.md](docs/SECURITY.md) for vulnerability reporting

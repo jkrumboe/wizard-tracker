@@ -56,7 +56,7 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 
 ### Code Quality
 
-- [ ] My code follows the style guidelines of this project (see DEVELOPMENT.md)
+- [ ] My code follows the style guidelines of this project (see docs/DEVELOPMENT.md)
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] My code is modular and follows existing patterns in the codebase

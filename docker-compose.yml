@@ -2,7 +2,7 @@ services:
   # ⚠️ SECURITY WARNING ⚠️
   # Default credentials are used below for development ONLY
   # Change JWT_SECRET and MongoDB credentials before deploying to production
-  # See .env.example and SECURITY.md for proper configuration
+  # See .env.example and docs/SECURITY.md for proper configuration
   
   mongodb:
     image: mongo:7

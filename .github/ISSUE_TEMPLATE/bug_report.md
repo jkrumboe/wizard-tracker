@@ -76,4 +76,4 @@ If you have suggestions on how to fix the bug, please describe them here.
 - [ ] I have provided all the requested information
 - [ ] I have checked the browser console for errors
 - [ ] I can reproduce this bug consistently
-- [ ] I am using a supported version (see SECURITY.md)
+- [ ] I am using a supported version (see docs/SECURITY.md)

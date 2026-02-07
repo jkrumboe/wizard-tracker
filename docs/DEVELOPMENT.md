@@ -438,8 +438,8 @@ npm install
 - [Architecture Overview](ARCHITECTURE.md)
 - [Setup Guide](SETUP.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
-- [API Documentation](backend/API_EXAMPLES.md)
-- [Frontend Setup](frontend/README.md)
+- [API Documentation](../backend/API_EXAMPLES.md)
+- [Frontend Setup](../frontend/README.md)
 
 ## Getting Help
 
