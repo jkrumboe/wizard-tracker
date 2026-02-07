@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
-import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap, Target } from 'lucide-react';
+import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap, Target, ExternalLink } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { useUserElo } from '@/shared/hooks/useElo';
 import '@/styles/pages/account.css';
@@ -394,7 +395,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
         score: playerScore,
         date: gameDate.toLocaleDateString(),
         winRate: ((wins / totalGames) * 100).toFixed(1),
-        bidAccuracy: gameBidAccuracy !== null ? parseFloat(gameBidAccuracy.toFixed(1)) : null
+        bidAccuracy: gameBidAccuracy !== null ? parseFloat(gameBidAccuracy.toFixed(1)) : null,
+        gameId: game._id || game.id || game.gameId,
+        isTableGame
       });
       
       winLossData.push({
@@ -537,8 +540,138 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
   );
 };
 
+/**
+ * Custom tooltip for performance charts with a "View Game" button
+ */
+const GameTooltip = ({ active, payload, label, navigate, formatter }) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const data = payload[0]?.payload;
+  const gameId = data?.gameId;
+  const isTableGame = data?.isTableGame;
+
+  const handleViewGame = (e) => {
+    e.stopPropagation();
+    if (!gameId) return;
+    const route = isTableGame ? `/table-game/${gameId}` : `/game/${gameId}`;
+    navigate(route);
+  };
+
+  return (
+    <div style={{
+      background: 'var(--card-bg)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      color: 'var(--text)',
+      padding: '8px 12px',
+      fontSize: '0.85rem'
+    }}>
+      {/* Deduplicate entries (Area + Line both emit for same dataKey) */}
+      {payload.filter((entry, idx, arr) => arr.findIndex(e => e.dataKey === entry.dataKey) === idx).map((entry, idx) => {
+        const [val, name] = formatter ? formatter(entry.value, entry.name) : [entry.value, entry.name];
+        return (
+          <p key={idx} style={{ margin: '2px 0', color: entry.color || 'var(--text)' }}>
+            {name}: {val}
+          </p>
+        );
+      })}
+      {data?.date && <p style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.75rem' }}>{data.date}</p>}
+      {gameId && (
+        <button
+          onClick={handleViewGame}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginTop: '6px',
+            padding: '4px 10px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--primary)',
+            background: 'transparent',
+            border: '1px solid var(--primary)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light, rgba(79,70,229,0.1))'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        >
+          View Game <ExternalLink size={12} />
+        </button>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Custom tooltip for ELO chart with a "View Game" button
+ */
+const EloTooltip = ({ active, payload, label, navigate, gameType: gt }) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const data = payload[0]?.payload;
+  const gameId = data?.gameId;
+
+  const handleViewGame = (e) => {
+    e.stopPropagation();
+    if (!gameId) return;
+    // ELO is currently only for wizard games
+    const isTableGame = gt && gt !== 'wizard';
+    const route = isTableGame ? `/table-game/${gameId}` : `/game/${gameId}`;
+    navigate(route);
+  };
+
+  return (
+    <div style={{
+      background: 'var(--card-bg)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      color: 'var(--text)',
+      padding: '8px 12px',
+      fontSize: '0.85rem'
+    }}>
+      {payload.filter((entry, idx, arr) => arr.findIndex(e => e.dataKey === entry.dataKey) === idx).map((entry, idx) => {
+        let val = entry.value;
+        let name = entry.name;
+        if (name === 'rating') { name = 'Rating'; }
+        if (name === 'change') { name = 'Change'; val = val > 0 ? `+${val}` : val; }
+        return (
+          <p key={idx} style={{ margin: '2px 0', color: entry.color || 'var(--text)' }}>
+            {name}: {val}
+          </p>
+        );
+      })}
+      {data?.date && <p style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.75rem' }}>{data.date}</p>}
+      {gameId && (
+        <button
+          onClick={handleViewGame}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginTop: '6px',
+            padding: '4px 10px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--primary)',
+            background: 'transparent',
+            border: '1px solid var(--primary)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            transition: 'background 0.15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light, rgba(79,70,229,0.1))'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        >
+          View Game <ExternalLink size={12} />
+        </button>
+      )}
+    </div>
+  );
+};
+
 // Separate component to use useState (since stats is computed in useMemo)
 const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
+  const navigate = useNavigate();
   const [insightType, setInsightType] = useState('score');
   
   // Prepare chart data with best/worst markers
@@ -703,16 +836,14 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
                     tick={{ fill: 'var(--text)' }}
                   />
                   <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--card-bg)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-lg)',
-                      color: 'var(--text)'
-                    }}
-                    formatter={(value, name) => {
-                      if (name === 'score') return [value, 'Score'];
-                      return [value, name];
-                    }}
+                    content={<GameTooltip 
+                      navigate={navigate} 
+                      formatter={(value, name) => {
+                        if (name === 'score') return [value, 'Score'];
+                        return [value, name];
+                      }}
+                    />}
+                    wrapperStyle={{ pointerEvents: 'auto' }}
                   />
                   <ReferenceLine y={parseFloat(stats.averageScore)} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
                   <Area 
@@ -775,13 +906,14 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
                     tickFormatter={(value) => `${value}%`}
                   />
                   <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--card-bg)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-lg)',
-                      color: 'var(--text)'
-                    }}
-                    formatter={(value) => [`${value}%`, 'Bid Accuracy']}
+                    content={<GameTooltip 
+                      navigate={navigate} 
+                      formatter={(value, name) => {
+                        if (name === 'bidAccuracy') return [`${value}%`, 'Bid Accuracy'];
+                        return [value, name];
+                      }}
+                    />}
+                    wrapperStyle={{ pointerEvents: 'auto' }}
                   />
                   <ReferenceLine y={parseFloat(stats.bidAccuracy)} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
                   <Area 
@@ -863,6 +995,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
 
 // ELO Rating Section Component
 const EloRatingSection = ({ gameType = 'wizard' }) => {
+  const navigate = useNavigate();
   // Normalize game type for API
   const normalizedGameType = gameType?.toLowerCase().trim().replace(/\s+/g, '-') || 'wizard';
   const { elo, loading: eloLoading } = useUserElo(normalizedGameType);
@@ -889,7 +1022,8 @@ const EloRatingSection = ({ gameType = 'wizard' }) => {
         game: idx + 1,
         rating: runningRating,
         change: entry.change,
-        date: entry.date ? new Date(entry.date).toLocaleDateString() : ''
+        date: entry.date ? new Date(entry.date).toLocaleDateString() : '',
+        gameId: entry.gameId || null
       };
     });
 
@@ -967,17 +1101,8 @@ const EloRatingSection = ({ gameType = 'wizard' }) => {
                     domain={['dataMin - 50', 'dataMax + 50']}
                   />
                   <Tooltip 
-                    contentStyle={{ 
-                      background: 'var(--card-bg)', 
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-lg)',
-                      color: 'var(--text)'
-                    }}
-                    formatter={(value, name) => {
-                      if (name === 'rating') return [value, 'Rating'];
-                      if (name === 'change') return [value > 0 ? `+${value}` : value, 'Change'];
-                      return [value, name];
-                    }}
+                    content={<EloTooltip navigate={navigate} gameType={normalizedGameType} />}
+                    wrapperStyle={{ pointerEvents: 'auto' }}
                   />
                   <ReferenceLine y={avgRating} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
                   <Area 
