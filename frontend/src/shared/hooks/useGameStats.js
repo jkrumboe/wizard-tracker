@@ -152,9 +152,12 @@ export const useGameStats = (games, user) => {
                                game.winner_id || game.gameData?.winner_id || game.gameState?.winner_id;
             const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
             
-            // Check if user's player ID (like "player_0") is in winner_ids
+            // Check if user's player ID or originalId (pre-migration ID) is in winner_ids
             if (winnerIds && winnerIds.length > 0) {
-              userWon = winnerIds.includes(userPlayer.id);
+              userWon = winnerIds.includes(userPlayer.id) ||
+                       winnerIds.some(id => String(id) === String(userPlayer.id)) ||
+                       (userPlayer.originalId && winnerIds.includes(userPlayer.originalId)) ||
+                       (userPlayer.originalId && winnerIds.some(id => String(id) === String(userPlayer.originalId)));
             }
           }
         }
@@ -251,17 +254,16 @@ export const useGameStats = (games, user) => {
                    userIdentifiers.includes(playerUserId);
           });
           
-          const winnerIds = game.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
-                           (game.winner_id ? [game.winner_id] : null) ||
-                           (game.gameState?.winner_id ? [game.gameState.winner_id] : null);
+          const winnerIdRaw = game.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
+                           game.winner_id || game.gameData?.winner_id || game.gameState?.winner_id;
+          const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
           
-          userWon = userPlayer && winnerIds && winnerIds.length > 0 ? 
-            (winnerIds.includes(userPlayer.id) || 
-             winnerIds.includes(userPlayer.userId) || 
-             winnerIds.includes(user.id) ||
-             winnerIds.includes(user._id) ||
-             winnerIds.includes(user.$id)) :
-            (winnerIds && winnerIds.some(winnerId => userIdentifiers.includes(winnerId)));
+          if (userPlayer && winnerIds && winnerIds.length > 0) {
+            userWon = winnerIds.includes(userPlayer.id) ||
+                     winnerIds.some(id => String(id) === String(userPlayer.id)) ||
+                     (userPlayer.originalId && winnerIds.includes(userPlayer.originalId)) ||
+                     (userPlayer.originalId && winnerIds.some(id => String(id) === String(userPlayer.originalId)));
+          }
         }
       }
       
