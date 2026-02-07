@@ -110,8 +110,6 @@ const playerIdentitySchema = new mongoose.Schema({
   },
   
   // Metadata
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   
   // Soft delete support
@@ -252,60 +250,88 @@ playerIdentitySchema.statics.claimByName = async function(name, userId) {
 /**
  * Merge multiple identities into one
  * Preserves name history from all merged identities
+ * Uses a transaction when available for atomicity
  */
 playerIdentitySchema.statics.mergeIdentities = async function(targetId, sourceIds, mergedBy) {
-  const target = await this.findById(targetId);
-  if (!target) {
-    throw new Error('Target identity not found');
+  let session = null;
+  try {
+    session = await mongoose.startSession();
+    session.startTransaction();
+  } catch {
+    // Transactions not supported (no replica set) — proceed without
+    session = null;
   }
-  
-  const sources = await this.find({
-    _id: { $in: sourceIds },
-    isDeleted: false
-  });
-  
-  for (const source of sources) {
-    // Add source name as alias if different
-    if (source.normalizedName !== target.normalizedName) {
-      target.aliases.push({
-        name: source.displayName,
-        normalizedName: source.normalizedName,
-        addedAt: new Date(),
-        addedBy: mergedBy
-      });
+
+  try {
+    const findOpts = session ? { session } : {};
+    const target = await this.findById(targetId, null, findOpts);
+    if (!target) {
+      throw new Error('Target identity not found');
     }
     
-    // Merge aliases
-    for (const alias of source.aliases) {
-      if (!target.aliases.some(a => a.normalizedName === alias.normalizedName)) {
+    const sources = await this.find({
+      _id: { $in: sourceIds },
+      isDeleted: false
+    }, null, findOpts);
+    
+    for (const source of sources) {
+      // Add source name as alias if different
+      if (source.normalizedName !== target.normalizedName) {
         target.aliases.push({
-          ...alias.toObject(),
+          name: source.displayName,
+          normalizedName: source.normalizedName,
           addedAt: new Date(),
           addedBy: mergedBy
         });
       }
+      
+      // Merge aliases
+      for (const alias of source.aliases) {
+        if (!target.aliases.some(a => a.normalizedName === alias.normalizedName)) {
+          target.aliases.push({
+            ...alias.toObject(),
+            addedAt: new Date(),
+            addedBy: mergedBy
+          });
+        }
+      }
+      
+      // Merge name history
+      for (const history of source.nameHistory) {
+        target.nameHistory.push(history);
+      }
+      
+      // Merge stats
+      target.stats.totalGames += source.stats.totalGames;
+      target.stats.totalWins += source.stats.totalWins;
+      if (source.stats.lastGameAt > target.stats.lastGameAt) {
+        target.stats.lastGameAt = source.stats.lastGameAt;
+      }
+      
+      // Track merge lineage
+      source.mergedInto = target._id;
+      source.isDeleted = true;
+      source.deletedAt = new Date();
+      await source.save(findOpts);
     }
     
-    // Merge name history
-    for (const history of source.nameHistory) {
-      target.nameHistory.push(history);
+    await target.save(findOpts);
+    
+    if (session) {
+      await session.commitTransaction();
     }
     
-    // Merge stats
-    target.stats.totalGames += source.stats.totalGames;
-    target.stats.totalWins += source.stats.totalWins;
-    if (source.stats.lastGameAt > target.stats.lastGameAt) {
-      target.stats.lastGameAt = source.stats.lastGameAt;
+    return target;
+  } catch (error) {
+    if (session) {
+      await session.abortTransaction();
     }
-    
-    // Soft delete source
-    source.isDeleted = true;
-    source.deletedAt = new Date();
-    await source.save();
+    throw error;
+  } finally {
+    if (session) {
+      session.endSession();
+    }
   }
-  
-  await target.save();
-  return target;
 };
 
 /**

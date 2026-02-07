@@ -28,22 +28,25 @@ const wizardGameSchema = new mongoose.Schema({
       message: 'Game data must be in v3.0 format'
     }
   },
-  // Migration metadata
+  // Migration metadata (excluded from queries by default)
   migratedFrom: {
     type: String,
     enum: ['1.0', '2.0', '3.0', null],
     default: null,
+    select: false,
     description: 'Original version if migrated, null if created as v3.0'
   },
   migratedAt: {
     type: Date,
     default: null,
+    select: false,
     description: 'When the game was migrated'
   },
   originalGameId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Game',
     default: null,
+    select: false,
     description: 'Reference to original game in legacy collection'
   },
   // Sharing features
@@ -111,8 +114,13 @@ wizardGameSchema.pre('save', async function(next) {
     
     next();
   } catch (error) {
-    // Log but don't fail - identity resolution is optional
-    console.error('Failed to resolve player identities:', error.message);
+    // Log with context but don't fail - identity resolution is non-critical
+    console.error('[WizardGame pre-save] Failed to resolve player identities:', {
+      error: error.message,
+      gameLocalId: this.localId,
+      players: this.gameData?.players?.map(p => p.name) || [],
+      isNew: this.isNew
+    });
     next();
   }
 });

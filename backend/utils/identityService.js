@@ -1041,19 +1041,20 @@ async function propagateIdentityChanges(identityId, newDisplayName = null) {
   
   if (newDisplayName) {
     // Update player names in all games (for display purposes)
+    const objectId = new mongoose.Types.ObjectId(identityId);
     const TableGame = mongoose.model('TableGame');
     const tableResult = await TableGame.updateMany(
-      { 'gameData.players.identityId': { $eq: mongoose.Types.ObjectId(identityId) } },
+      { 'gameData.players.identityId': { $eq: objectId } },
       { $set: { 'gameData.players.$[elem].name': newDisplayName } },
-      { arrayFilters: [{ 'elem.identityId': { $eq: mongoose.Types.ObjectId(identityId) } }] }
+      { arrayFilters: [{ 'elem.identityId': { $eq: objectId } }] }
     );
     result.tableGames = tableResult.modifiedCount || 0;
     
     const WizardGame = mongoose.model('WizardGame');
     const wizardResult = await WizardGame.updateMany(
-      { 'gameData.players.identityId': { $eq: mongoose.Types.ObjectId(identityId) } },
+      { 'gameData.players.identityId': { $eq: objectId } },
       { $set: { 'gameData.players.$[elem].name': newDisplayName } },
-      { arrayFilters: [{ 'elem.identityId': { $eq: mongoose.Types.ObjectId(identityId) } }] }
+      { arrayFilters: [{ 'elem.identityId': { $eq: objectId } }] }
     );
     result.wizardGames = wizardResult.modifiedCount || 0;
   }

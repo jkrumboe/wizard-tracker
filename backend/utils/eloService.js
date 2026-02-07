@@ -312,6 +312,23 @@ async function updateRatingsForGame(game, gameType, options = {}) {
         isDeleted: false
       });
       
+      // Idempotency guard: check if ELO for this game was already applied
+      // by looking for the gameId in any player's history
+      const gameIdStr = game._id.toString();
+      const alreadyApplied = identities.some(identity => {
+        const gameTypeElo = identity.eloByGameType?.get(normalizedGameType);
+        return gameTypeElo?.history?.some(h => h.gameId?.toString() === gameIdStr);
+      });
+      
+      if (alreadyApplied) {
+        if (session) {
+          await session.abortTransaction();
+          session.endSession();
+        }
+        console.log(`[ELO] Skipping game ${game._id} - ratings already applied`);
+        return [];
+      }
+      
       const identityMap = new Map(
         identities.map(i => [i._id.toString(), i])
       );

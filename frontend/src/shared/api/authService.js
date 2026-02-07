@@ -112,7 +112,8 @@ class AuthService {
         username: data.user.username,
         role: data.user.role || 'user',
         profilePicture: data.user.profilePicture || null,
-        createdAt: data.user.createdAt
+        createdAt: data.user.createdAt,
+        identities: data.user.identities || []
       };
 
       // Persist user data to session cache
@@ -302,7 +303,8 @@ class AuthService {
         username: data.user.username,
         role: data.user.role || 'user',
         profilePicture: data.user.profilePicture || null,
-        createdAt: data.user.createdAt
+        createdAt: data.user.createdAt,
+        identities: data.user.identities || []
       };
       
       // Persist to session cache

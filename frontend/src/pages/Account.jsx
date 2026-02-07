@@ -1297,7 +1297,7 @@ const Account = () => {
     if (!user) return null;
     return {
       ...user,
-      identities: profileData?.identities || [user.username]
+      identities: profileData?.identities || user.identities?.map(i => i.displayName) || [user.username]
     };
   }, [user, profileData]);
 

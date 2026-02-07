@@ -187,8 +187,13 @@ tableGameSchema.pre('save', async function(next) {
     
     next();
   } catch (error) {
-    // Log but don't fail - identity resolution is optional
-    console.error('Failed to resolve player identities for TableGame:', error.message);
+    // Log with context but don't fail - identity resolution is non-critical
+    console.error('[TableGame pre-save] Failed to resolve player identities:', {
+      error: error.message,
+      gameLocalId: this.localId,
+      players: (this.gameData?.gameData || this.gameData)?.players?.map(p => p.name) || [],
+      isNew: this.isNew
+    });
     next();
   }
 });

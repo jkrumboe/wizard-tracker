@@ -20,12 +20,9 @@ const friendRequestSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster lookups
-friendRequestSchema.index({ sender: 1, receiver: 1 });
+// Prevent duplicate requests (compound unique index also serves for lookups)
+friendRequestSchema.index({ sender: 1, receiver: 1 }, { unique: true });
 friendRequestSchema.index({ receiver: 1, status: 1 });
 friendRequestSchema.index({ sender: 1, status: 1 });
-
-// Prevent duplicate requests
-friendRequestSchema.index({ sender: 1, receiver: 1 }, { unique: true });
 
 module.exports = mongoose.model('FriendRequest', friendRequestSchema);

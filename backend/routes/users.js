@@ -10,7 +10,6 @@ const { authLimiter, friendsLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const cache = require('../utils/redis');
-const { linkGamesToNewUser } = require('../utils/gameUserLinkage');
 const identityService = require('../utils/identityService');
 const router = express.Router();
 
@@ -61,43 +60,24 @@ router.post('/register', authLimiter, async (req, res, next) => {
     );
 
     // ========== Claim/Create Player Identity & Link Previous Games ==========
-    // This runs in the background and doesn't block the registration response
-    // If it fails, registration still succeeds
-    setImmediate(async () => {
-      try {
-        // 1. Claim or create player identity for the new user
-        console.log('\n🎭 Claiming/creating identity for new user: %s', username);
-        const identityResult = await identityService.claimIdentitiesOnRegistration(user);
-        
-        if (identityResult.claimed.length > 0) {
-          console.log('✅ Claimed %d existing identities for %s', identityResult.claimed.length, username);
-        }
-        if (identityResult.created) {
-          console.log('✅ Created new identity for %s', username);
-        }
-        if (identityResult.errors.length > 0) {
-          console.warn('⚠️  Identity claim completed with errors:', identityResult.errors);
-        }
-
-        // 2. Also run legacy game linkage for backward compatibility
-        console.log('\n🎮 Attempting to link previous games for new user: %s', username);
-        const linkageResults = await linkGamesToNewUser(username, user._id);
-        
-        if (linkageResults.success) {
-          const totalLinked = linkageResults.gamesLinked + 
-                            linkageResults.wizardGamesLinked + 
-                            linkageResults.tableGamesLinked;
-          console.log('✅ Successfully linked %d previous games to %s', totalLinked, username);
-        } else if (linkageResults.errors.length > 0) {
-          console.warn('⚠️  Game linkage completed with errors for %s:', username, 
-            linkageResults.errors);
-        }
-      } catch (linkError) {
-        // Log the error but don't fail the registration
-        console.error('❌ Failed to process identities/games for %s:', username, linkError.message);
-        console.error('   Registration succeeded, but identity/game processing failed');
+    // Run identity claiming inline - failures are logged but don't block registration
+    try {
+      console.log('\n🎭 Claiming/creating identity for new user: %s', username);
+      const identityResult = await identityService.claimIdentitiesOnRegistration(user);
+      
+      if (identityResult.claimed.length > 0) {
+        console.log('✅ Claimed %d existing identities for %s', identityResult.claimed.length, username);
       }
-    });
+      if (identityResult.created) {
+        console.log('✅ Created new identity for %s', username);
+      }
+      if (identityResult.errors.length > 0) {
+        console.warn('⚠️  Identity claim completed with errors:', identityResult.errors);
+      }
+    } catch (identityError) {
+      console.error('❌ Failed to process identities for %s:', username, identityError.message);
+      console.error('   Registration succeeded, but identity processing failed');
+    }
 
     res.status(201).json({
       message: 'User created successfully',
@@ -140,12 +120,22 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Update last login timestamp
+    user.lastLogin = new Date();
+    await user.save();
+
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    // Fetch identities for the user
+    const identities = await PlayerIdentity.find({
+      userId: user._id,
+      isDeleted: false
+    }).lean();
 
     res.json({
       message: 'Login successful',
@@ -155,7 +145,15 @@ router.post('/login', authLimiter, async (req, res, next) => {
         username: user.username,
         role: user.role || 'user',
         createdAt: user.createdAt,
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        identities: identities.map(id => ({
+          _id: id._id,
+          displayName: id.displayName,
+          aliases: id.aliases || [],
+          nameHistory: id.nameHistory || [],
+          eloByGameType: id.eloByGameType || {},
+          linkedIdentities: id.linkedIdentities || []
+        }))
       }
     });
   } catch (error) {
@@ -164,36 +162,33 @@ router.post('/login', authLimiter, async (req, res, next) => {
 });
 
 // POST /users/me/link-games - Manually link games to current user (protected route)
-// Useful if automatic linkage failed during registration or for retroactive linking
+// Re-runs identity claiming for the current user
 router.post('/me/link-games', auth, async (req, res, next) => {
   try {
     const userId = req.user._id;
     const username = req.user.username;
 
-    console.log('🔗 Manual game linkage requested for user: %s', username);
+    console.log('🔗 Manual identity claiming requested for user: %s', username);
 
-    // Run the game linkage
-    const linkageResults = await linkGamesToNewUser(username, userId);
+    const identityResult = await identityService.claimIdentitiesOnRegistration(req.user);
 
-    const totalLinked = linkageResults.gamesLinked + 
-                       linkageResults.wizardGamesLinked + 
-                       linkageResults.tableGamesLinked;
+    const totalClaimed = identityResult.claimed.length;
 
     res.json({
-      success: linkageResults.success,
-      message: totalLinked > 0 
-        ? `Successfully linked ${totalLinked} game(s) to your account`
-        : 'No games found to link',
+      success: true,
+      message: totalClaimed > 0 
+        ? `Successfully claimed ${totalClaimed} identity(ies) for your account`
+        : identityResult.created 
+          ? 'Created new identity for your account'
+          : 'No unclaimed identities found to link',
       details: {
-        gamesLinked: linkageResults.gamesLinked,
-        wizardGamesLinked: linkageResults.wizardGamesLinked,
-        tableGamesLinked: linkageResults.tableGamesLinked,
-        totalLinked: totalLinked,
-        errors: linkageResults.errors.length > 0 ? linkageResults.errors : undefined
+        identitiesClaimed: totalClaimed,
+        identityCreated: !!identityResult.created,
+        errors: identityResult.errors.length > 0 ? identityResult.errors : undefined
       }
     });
   } catch (error) {
-    console.error('Error in manual game linkage:', error);
+    console.error('Error in manual identity claiming:', error);
     next(error);
   }
 });
@@ -202,13 +197,27 @@ router.post('/me/link-games', auth, async (req, res, next) => {
 router.get('/me', auth, async (req, res, next) => {
   try {
     // User is already attached to req by auth middleware
+    // Also fetch the user's player identities for consistent identity data
+    const identities = await PlayerIdentity.find({
+      userId: req.user._id,
+      isDeleted: false
+    }).lean();
+
     res.json({
       user: {
         id: req.user._id,
         username: req.user.username,
         role: req.user.role || 'user',
         createdAt: req.user.createdAt,
-        profilePicture: req.user.profilePicture || null
+        profilePicture: req.user.profilePicture || null,
+        identities: identities.map(id => ({
+          _id: id._id,
+          displayName: id.displayName,
+          aliases: id.aliases || [],
+          nameHistory: id.nameHistory || [],
+          eloByGameType: id.eloByGameType || {},
+          linkedIdentities: id.linkedIdentities || []
+        }))
       }
     });
   } catch (error) {
@@ -741,50 +750,8 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
       console.log(`✅ Deleted alias "${trimmedName}" as user reverted to this username`);
     }
 
-    // When changing to a NEW username (not reverting):
-    // Delete all old aliases for this user to keep only the most recent previous username
-    // This frees up old names and prevents alias accumulation
-    if (oldUsername !== trimmedName && (!conflictingAlias || conflictingAlias.userId._id.toString() !== req.user._id.toString())) {
-      try {
-        // Get all existing aliases for this user
-        const existingAliases = await PlayerAlias.find({ userId: userDoc._id });
-        
-        // Delete all existing aliases (we'll create a new one for the current old username)
-        if (existingAliases.length > 0) {
-          const deletedCount = await PlayerAlias.deleteMany({ userId: userDoc._id });
-          console.log(`✅ Deleted ${deletedCount.deletedCount} old alias(es) for user ${userDoc.username} (freeing up old names)`);
-        }
-      } catch (cleanupErr) {
-        console.error('Failed to clean up old aliases:', cleanupErr);
-        // Don't fail the request if cleanup fails
-      }
-    }
-
-    // Create/update player alias for the old username so games are consolidated
+    // Update PlayerIdentity with new display name (also records name history)
     if (oldUsername !== trimmedName) {
-      try {
-        // Check if alias already exists for this old username
-        const existingAlias = await PlayerAlias.findOne({
-          userId: userDoc._id,
-          aliasName: oldUsername
-        });
-
-        if (!existingAlias) {
-          // Create new alias for old username (user is creator of their own alias)
-          await PlayerAlias.create({
-            userId: userDoc._id,
-            aliasName: oldUsername,
-            createdBy: userDoc._id, // User creates their own alias
-            notes: `Username changed from "${oldUsername}" to "${trimmedName}" on ${new Date().toISOString()}`
-          });
-          console.log(`✅ Created alias "${oldUsername}" → "${trimmedName}"`);
-        }
-      } catch (aliasErr) {
-        console.error('Failed to create player alias:', aliasErr);
-        // Don't fail the request if alias creation fails
-      }
-
-      // Update PlayerIdentity with new display name
       try {
         const identityResult = await identityService.handleUsernameChange(
           userDoc,
@@ -1446,7 +1413,7 @@ router.get('/admin/preview-link-games', auth, async (req, res, next) => {
   }
 });
 
-// POST /users/admin/link-all-games - Retroactively link games for all users (admin only)
+// POST /users/admin/link-all-games - Retroactively claim identities for all users (admin only)
 router.post('/admin/link-all-games', auth, async (req, res, next) => {
   try {
     // Check if user has admin role
@@ -1454,17 +1421,17 @@ router.post('/admin/link-all-games', auth, async (req, res, next) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    console.log('🔗 Admin triggered game linkage for all users');
+    console.log('🔗 Admin triggered identity claiming for all users');
 
-    // Get all users
-    const users = await User.find().select('_id username');
+    // Get all registered users (not guests)
+    const users = await User.find({ role: { $in: ['user', 'admin'] } }).select('_id username');
     
     const results = {
       totalUsers: users.length,
       processed: 0,
       successful: 0,
       failed: 0,
-      totalGamesLinked: 0,
+      totalIdentitiesClaimed: 0,
       details: []
     };
 
@@ -1474,20 +1441,19 @@ router.post('/admin/link-all-games', auth, async (req, res, next) => {
         results.processed++;
         console.log('Processing user %d/%d: %s', results.processed, users.length, user.username);
         
-        const linkageResults = await linkGamesToNewUser(user.username, user._id);
-        const gamesLinked = linkageResults.gamesLinked + 
-                          linkageResults.wizardGamesLinked + 
-                          linkageResults.tableGamesLinked;
+        const identityResult = await identityService.claimIdentitiesOnRegistration(user);
+        const claimed = identityResult.claimed.length;
         
-        if (gamesLinked > 0 || linkageResults.errors.length === 0) {
+        if (claimed > 0 || identityResult.created || identityResult.errors.length === 0) {
           results.successful++;
-          results.totalGamesLinked += gamesLinked;
+          results.totalIdentitiesClaimed += claimed;
           
-          if (gamesLinked > 0) {
+          if (claimed > 0 || identityResult.created) {
             results.details.push({
               userId: user._id.toString(),
               username: user.username,
-              gamesLinked: gamesLinked,
+              identitiesClaimed: claimed,
+              identityCreated: !!identityResult.created,
               success: true
             });
           }
@@ -1497,7 +1463,7 @@ router.post('/admin/link-all-games', auth, async (req, res, next) => {
             userId: user._id.toString(),
             username: user.username,
             success: false,
-            errors: linkageResults.errors
+            errors: identityResult.errors
           });
         }
       } catch (error) {
@@ -1512,22 +1478,22 @@ router.post('/admin/link-all-games', auth, async (req, res, next) => {
       }
     }
 
-    console.log(`✅ Completed linking games for ${results.totalUsers} users`);
+    console.log(`✅ Completed identity claiming for ${results.totalUsers} users`);
     console.log(`   Successful: ${results.successful}, Failed: ${results.failed}`);
-    console.log(`   Total games linked: ${results.totalGamesLinked}`);
+    console.log(`   Total identities claimed: ${results.totalIdentitiesClaimed}`);
 
     res.json({
       success: true,
-      message: `Processed ${results.totalUsers} users, linked ${results.totalGamesLinked} games`,
+      message: `Processed ${results.totalUsers} users, claimed ${results.totalIdentitiesClaimed} identities`,
       results
     });
   } catch (error) {
-    console.error('❌ Error in admin game linkage:', error);
+    console.error('❌ Error in admin identity claiming:', error);
     next(error);
   }
 });
 
-// POST /users/admin/link-user-games/:userId - Link games for a specific user (admin only)
+// POST /users/admin/link-user-games/:userId - Claim identities for a specific user (admin only)
 router.post('/admin/link-user-games/:userId', auth, async (req, res, next) => {
   try {
     // Check if user has admin role
@@ -1543,31 +1509,28 @@ router.post('/admin/link-user-games/:userId', auth, async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('🔗 Admin triggered game linkage for user: %s', user.username);
+    console.log('🔗 Admin triggered identity claiming for user: %s', user.username);
 
-    // Run the game linkage
-    const linkageResults = await linkGamesToNewUser(user.username, userId);
+    const identityResult = await identityService.claimIdentitiesOnRegistration(user);
 
-    const totalLinked = linkageResults.gamesLinked + 
-                       linkageResults.wizardGamesLinked + 
-                       linkageResults.tableGamesLinked;
+    const totalClaimed = identityResult.claimed.length;
 
     res.json({
-      success: linkageResults.success,
-      message: totalLinked > 0 
-        ? `Successfully linked ${totalLinked} game(s) for user ${user.username}`
-        : `No games found to link for user ${user.username}`,
+      success: true,
+      message: totalClaimed > 0 
+        ? `Successfully claimed ${totalClaimed} identity(ies) for user ${user.username}`
+        : identityResult.created
+          ? `Created new identity for user ${user.username}`
+          : `No unclaimed identities found for user ${user.username}`,
       details: {
         username: user.username,
-        gamesLinked: linkageResults.gamesLinked,
-        wizardGamesLinked: linkageResults.wizardGamesLinked,
-        tableGamesLinked: linkageResults.tableGamesLinked,
-        totalLinked: totalLinked,
-        errors: linkageResults.errors.length > 0 ? linkageResults.errors : undefined
+        identitiesClaimed: totalClaimed,
+        identityCreated: !!identityResult.created,
+        errors: identityResult.errors.length > 0 ? identityResult.errors : undefined
       }
     });
   } catch (error) {
-    console.error('Error in admin user game linkage:', error);
+    console.error('Error in admin user identity claiming:', error);
     next(error);
   }
 });
@@ -1656,34 +1619,28 @@ router.put('/:userId/username', auth, async (req, res, next) => {
     user.username = trimmedUsername;
     await user.save();
 
-    // Update username in all Game documents where user is a player
-    const Game = require('../models/Game');
-    await Game.updateMany(
-      { 'players.playerId': userId },
-      { $set: { 'players.$[elem].playerName': trimmedUsername } },
-      { arrayFilters: [{ 'elem.playerId': userId }] }
-    );
-
-    // Update username in all TableGame documents
-    const TableGame = require('../models/TableGame');
-    await TableGame.updateMany(
-      { 'players.playerId': userId },
-      { $set: { 'players.$[elem].playerName': trimmedUsername } },
-      { arrayFilters: [{ 'elem.playerId': userId }] }
-    );
-    await TableGame.updateMany(
-      { 'rounds.scores.playerId': userId },
-      { $set: { 'rounds.$[].scores.$[elem].playerName': trimmedUsername } },
-      { arrayFilters: [{ 'elem.playerId': userId }] }
-    );
-
-    // Update username in all WizardGame documents
-    const WizardGame = require('../models/WizardGame');
-    await WizardGame.updateMany(
-      { 'gameData.players.user_id': userId },
-      { $set: { 'gameData.players.$[elem].name': trimmedUsername } },
-      { arrayFilters: [{ 'elem.user_id': userId }] }
-    );
+    // Update identity and propagate name changes to all game documents
+    let identityUpdateResult = { updated: false, errors: [] };
+    let propagateResult = { tableGames: 0, wizardGames: 0 };
+    try {
+      identityUpdateResult = await identityService.handleUsernameChange(
+        user,
+        oldUsername,
+        trimmedUsername
+      );
+      
+      if (identityUpdateResult.updated && identityUpdateResult.identity) {
+        // Propagate the name change to all game documents via identityId
+        propagateResult = await identityService.propagateIdentityChanges(
+          identityUpdateResult.identity._id,
+          trimmedUsername
+        );
+        console.log('✅ Propagated name change to %d wizard games, %d table games',
+          propagateResult.wizardGames, propagateResult.tableGames);
+      }
+    } catch (identityError) {
+      console.error('⚠️  Error updating identity for admin username change:', identityError);
+    }
 
     // Update notes on all player aliases linked to this user
     const userAliases = await PlayerAlias.find({ userId });
@@ -1725,9 +1682,9 @@ router.put('/:userId/username', auth, async (req, res, next) => {
       },
       updatedCollections: [
         'User',
-        'Game (players)',
-        'WizardGame (players)',
-        'TableGame (players and scores)',
+        'PlayerIdentity',
+        `WizardGame (${propagateResult.wizardGames} updated)`,
+        `TableGame (${propagateResult.tableGames} updated)`,
         'UserGameTemplate',
         'TemplateSuggestion',
         'PlayerAlias (notes updated)'
@@ -1886,18 +1843,26 @@ router.post('/admin/player-aliases', auth, async (req, res, next) => {
     console.log('✅ Created player alias: "%s" -> User: %s (by admin: %s)', 
       trimmedAliasName, targetUser.username, req.user.username);
 
-    // Optionally link games immediately
-    let linkageResults = null;
-    if (linkGamesNow) {
-      try {
-        linkageResults = await linkGamesToNewUser(trimmedAliasName, userId);
-        console.log('📊 Linked %d games for alias "%s"', 
-          (linkageResults.gamesLinked || 0) + (linkageResults.wizardGamesLinked || 0) + (linkageResults.tableGamesLinked || 0),
-          trimmedAliasName);
-      } catch (linkError) {
-        console.error('⚠️  Error linking games for alias:', linkError);
-        // Don't fail the alias creation if linkage fails
+    // Also add the alias to the user's PlayerIdentity
+    try {
+      const identity = await PlayerIdentity.findOne({ userId: userId, isDeleted: false });
+      if (identity) {
+        const normalizedAlias = trimmedAliasName.toLowerCase().trim();
+        const alreadyHasAlias = identity.aliases.some(a => a.normalizedName === normalizedAlias);
+        if (!alreadyHasAlias) {
+          identity.aliases.push({
+            name: trimmedAliasName,
+            normalizedName: normalizedAlias,
+            addedAt: new Date(),
+            addedBy: req.user._id
+          });
+          await identity.save();
+          console.log('📝 Added alias "%s" to identity for %s', trimmedAliasName, targetUser.username);
+        }
       }
+    } catch (identityError) {
+      console.error('⚠️  Error adding alias to identity:', identityError);
+      // Don't fail the alias creation if identity update fails
     }
 
     // Return the created alias with populated user info
@@ -1922,15 +1887,7 @@ router.post('/admin/player-aliases', auth, async (req, res, next) => {
         },
         notes: populatedAlias.notes || '',
         createdAt: populatedAlias.createdAt
-      },
-      linkageResults: linkageResults ? {
-        gamesLinked: linkageResults.gamesLinked || 0,
-        wizardGamesLinked: linkageResults.wizardGamesLinked || 0,
-        tableGamesLinked: linkageResults.tableGamesLinked || 0,
-        totalLinked: (linkageResults.gamesLinked || 0) + 
-                     (linkageResults.wizardGamesLinked || 0) + 
-                     (linkageResults.tableGamesLinked || 0)
-      } : null
+      }
     });
   } catch (error) {
     console.error('Error creating player alias:', error);

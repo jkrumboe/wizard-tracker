@@ -186,7 +186,7 @@ const calculatedStats = useMemo(() => {
   let losses = 0;
   
   // Get current username and all identities
-  const searchNames = profileData?.identities || [user.username];
+  const searchNames = profileData?.identities || user?.identities?.map(i => i.displayName) || [user.username];
   const searchNamesLower = searchNames.map(name => name?.toLowerCase()).filter(Boolean);
   const currentUserId = user.id || user.$id;
 
