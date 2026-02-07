@@ -294,7 +294,7 @@ const GameLinkageManagement = () => {
           <div className="section-header success-header">
             <h2>
               <CheckCircleIcon size={20} />
-              Linkage Complete
+              Identity Claiming Complete
             </h2>
           </div>
 
@@ -312,8 +312,8 @@ const GameLinkageManagement = () => {
               <div className="stat-label">Successful</div>
             </div>
             <div className="stat-box highlight">
-              <div className="stat-value">{results.totalGamesLinked}</div>
-              <div className="stat-label">Games Linked</div>
+              <div className="stat-value">{results.totalIdentitiesClaimed || 0}</div>
+              <div className="stat-label">Identities Claimed</div>
             </div>
             {results.failed > 0 && (
               <div className="stat-box error">
@@ -329,12 +329,12 @@ const GameLinkageManagement = () => {
               <div className="details-list">
                 {results.details.map((detail, idx) => (
                   <div key={idx} className={`detail-item ${detail.success ? 'success' : 'error'}`}>
-                    {renderStatusIcon(detail.success, detail.gamesLinked > 0)}
+                    {renderStatusIcon(detail.success, (detail.identitiesClaimed || 0) > 0 || detail.identityCreated)}
                     <div className="detail-content">
                       <div className="detail-username">{detail.username}</div>
                       {detail.success ? (
                         <div className="detail-games">
-                          {detail.gamesLinked} game{detail.gamesLinked !== 1 ? 's' : ''} linked
+                          {detail.identitiesClaimed || 0} identity(ies) claimed{detail.identityCreated ? ', new identity created' : ''}
                         </div>
                       ) : (
                         <div className="detail-error">
@@ -348,11 +348,11 @@ const GameLinkageManagement = () => {
             </div>
           )}
 
-          {results.totalGamesLinked === 0 && (
+          {(results.totalIdentitiesClaimed || 0) === 0 && (
             <div className="empty-state">
               <CheckCircleIcon size={48} className="empty-icon" />
-              <h4>No New Games to Link</h4>
-              <p>All games were already linked to their respective users.</p>
+              <h4>No New Identities to Claim</h4>
+              <p>All identities were already claimed by their respective users.</p>
             </div>
           )}
         </div>
