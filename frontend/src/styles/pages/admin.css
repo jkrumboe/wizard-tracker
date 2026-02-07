@@ -1822,10 +1822,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.user-item:last-child {
-  border-bottom: none;
-}
-
 .user-item-header {
   display: flex;
   justify-content: space-between;
