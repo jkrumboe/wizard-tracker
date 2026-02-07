@@ -218,13 +218,19 @@ playerIdentitySchema.statics.findByUserId = async function(userId) {
 };
 
 /**
- * Claim unclaimed identities matching a name
- * Called during user registration
+ * Find unclaimed guest identities matching a name or alias.
+ * Called during user registration to discover identities that should
+ * be merged into the new user's primary identity.
+ *
+ * NOTE: This method intentionally does NOT set userId/type on the found
+ * identities. The caller (claimIdentitiesOnRegistration) handles the
+ * actual merge to avoid violating the unique userId partial index,
+ * which only allows one non-deleted identity per user.
  */
 playerIdentitySchema.statics.claimByName = async function(name, userId) {
   const normalized = name.toLowerCase().trim();
   
-  // Find all guest identities matching this name
+  // Find all unclaimed guest identities matching this name or aliases
   const identities = await this.find({
     isDeleted: false,
     userId: null,
@@ -235,16 +241,7 @@ playerIdentitySchema.statics.claimByName = async function(name, userId) {
     ]
   });
   
-  const claimedIds = [];
-  
-  for (const identity of identities) {
-    identity.userId = userId;
-    identity.type = 'user';
-    await identity.save();
-    claimedIds.push(identity._id);
-  }
-  
-  return claimedIds;
+  return identities.map(i => i._id);
 };
 
 /**

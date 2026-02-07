@@ -161,8 +161,15 @@ async function claimIdentitiesOnRegistration(user) {
                 linkedBy: userId,
                 originalDisplayName: guestIdentity.displayName
               });
+              // Mark guest identity as merged and soft-delete it so it won't
+              // be picked up again by future claimByName queries or appear
+              // in guest identity listings (consistent with mergeIdentities).
               guestIdentity.mergedInto = userIdentity._id;
+              guestIdentity.isDeleted = true;
+              guestIdentity.deletedAt = new Date();
               await guestIdentity.save();
+              // TODO: Transfer ELO data (eloByGameType) from guest to primary
+              // identity. Currently ELO history from merged guests is lost.
             }
             
             console.log(`[IdentityService] Linked claimed identity ${claimedId} games to user ${userId}`);
