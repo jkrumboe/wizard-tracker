@@ -91,11 +91,11 @@ const eloPublicLimiter = createLimiter({
 });
 
 // Rate limiter for ELO admin operations (recalculation)
-// Very strict as recalculation is heavy
+// Moderate limit - recalculation is heavy but admins may need to retry
 const eloAdminLimiter = createLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Only 5 recalculations per hour
-  message: 'ELO recalculation limit reached. Please try again later.',
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 recalculations per 15 minutes
+  message: 'ELO recalculation limit reached. Please wait a few minutes and try again.',
 });
 
 module.exports = {

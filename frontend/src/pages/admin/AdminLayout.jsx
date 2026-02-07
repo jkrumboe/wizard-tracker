@@ -71,6 +71,14 @@ const AdminLayout = () => {
               <span>Player Linking</span>
             </Link>
           </li>
+          <li>
+            <Link 
+              to="/admin/elo" 
+              className={location.pathname === '/admin/elo' ? 'active' : ''}
+            >
+              <span>ELO Management</span>
+            </Link>
+          </li>
         </ul>
       </nav>
 
@@ -115,6 +123,10 @@ const AdminLayout = () => {
               <Link to="/admin/player-linking" className="admin-card">
                 <h3>Player Linking</h3>
                 <p>Manually link old player names to registered users</p>
+              </Link>
+              <Link to="/admin/elo" className="admin-card">
+                <h3>ELO Management</h3>
+                <p>Recalculate ELO ratings from historical game data</p>
               </Link>
             </div>
           </div>

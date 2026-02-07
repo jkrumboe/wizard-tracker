@@ -62,6 +62,7 @@ export const API_ENDPOINTS = {
     history: (id) => `${API_BASE_URL}/api/identities/elo/history/${id}`,
     me: `${API_BASE_URL}/api/identities/elo/me`,
     config: `${API_BASE_URL}/api/identities/elo/config`,
+    recalculate: `${API_BASE_URL}/api/identities/elo/recalculate`,
   },
   users: {
     updateName: (id) => `${API_BASE_URL}/api/users/${id}/name`,

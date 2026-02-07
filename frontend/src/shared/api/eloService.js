@@ -136,6 +136,42 @@ class EloService {
       throw error;
     }
   }
+
+  /**
+   * Recalculate all ELO ratings (admin only)
+   * @param {string} token - Auth token
+   * @param {Object} options - Options
+   * @param {boolean} options.dryRun - If true, only preview changes without applying (default: true)
+   * @param {string} options.gameType - Specific game type to recalculate, or null for all
+   * @returns {Promise<Object>} Recalculation results
+   */
+  async recalculateAll(token, { dryRun = true, gameType = null } = {}) {
+    try {
+      const body = { dryRun };
+      if (gameType) {
+        body.gameType = gameType;
+      }
+
+      const response = await fetch(API_ENDPOINTS.elo.recalculate, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to recalculate ELO: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error recalculating ELO:', error);
+      throw error;
+    }
+  }
 }
 
 export const eloService = new EloService();
