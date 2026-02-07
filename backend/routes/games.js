@@ -235,7 +235,7 @@ router.get('/leaderboard', async (req, res, next) => {
     
     // Calculate player statistics grouped by USER ID (using identity system)
     const playerStats = {};
-    const gameTypeSet = new Set(['all', 'Wizard']); // Start with 'all' and 'Wizard'
+    const gameTypeSet = new Set(['Wizard']); // Start with 'Wizard'
     const gameTypeSettings = { 'Wizard': { lowIsBetter: false } }; // Track lowIsBetter per game type
     
     // First, collect all available game types from table games
@@ -276,7 +276,7 @@ router.get('/leaderboard', async (req, res, next) => {
         }
 
         // Filter by game type if specified
-        if (gameType && gameType !== 'all' && gameType !== gameMode) {
+        if (gameType && gameType !== gameMode) {
           return;
         }
 
@@ -399,7 +399,7 @@ router.get('/leaderboard', async (req, res, next) => {
         }
 
         // Filter by game type if specified
-        if (gameType && gameType !== 'all' && gameType !== gameMode) {
+        if (gameType && gameType !== gameMode) {
           return;
         }
 
@@ -479,23 +479,11 @@ router.get('/leaderboard', async (req, res, next) => {
       // Get ELO for this player for the selected game type
       const userElo = userEloByGameType[player.userId];
       let elo = 1000; // Default ELO
-      if (userElo) {
-        if (gameType && gameType !== 'all') {
-          const normalizedType = normalizeGameType(gameType);
-          const eloData = userElo[normalizedType] || userElo.get?.(normalizedType);
-          if (eloData) {
-            elo = eloData.rating || 1000;
-          }
-        } else {
-          // For 'all', use the highest ELO across all game types
-          let maxElo = 1000;
-          const eloEntries = userElo instanceof Map ? [...userElo.entries()] : Object.entries(userElo);
-          for (const [, eloData] of eloEntries) {
-            if (eloData && eloData.rating > maxElo) {
-              maxElo = eloData.rating;
-            }
-          }
-          elo = maxElo;
+      if (userElo && gameType) {
+        const normalizedType = normalizeGameType(gameType);
+        const eloData = userElo[normalizedType] || userElo.get?.(normalizedType);
+        if (eloData) {
+          elo = eloData.rating || 1000;
         }
       }
 
@@ -508,7 +496,7 @@ router.get('/leaderboard', async (req, res, next) => {
     });
 
     // Determine if lower scores are better for the selected game type
-    const selectedGameLowIsBetter = gameType && gameType !== 'all' 
+    const selectedGameLowIsBetter = gameType
       ? gameTypeSettings[gameType]?.lowIsBetter || false 
       : false;
 
@@ -1134,7 +1122,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
       const gameMode = 'Wizard';
-      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+      if (gameType && gameType !== gameMode) return;
       
       // Get participants from this game that are in our target list
       const participantsInGame = [];
@@ -1236,7 +1224,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
       const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+      if (gameType && gameType !== gameMode) return;
       
       // Get participants from this game that are in our target list
       const participantsInGame = [];

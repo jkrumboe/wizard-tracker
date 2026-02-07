@@ -7,7 +7,7 @@ import "@/styles/pages/leaderboard.css"
 const Leaderboard = () => {
   const navigate = useNavigate()
   const [players, setPlayers] = useState([])
-  const [gameTypes, setGameTypes] = useState(['all'])
+  const [gameTypes, setGameTypes] = useState(['Wizard'])
   const [gameTypeSettings, setGameTypeSettings] = useState({}) // Track lowIsBetter per game type
   const [selectedGameType, setSelectedGameType] = useState('Wizard') // Default to Wizard
   const [loading, setLoading] = useState(true)
@@ -57,7 +57,7 @@ const Leaderboard = () => {
       const data = await getLeaderboard(selectedGameType)
       console.log('Leaderboard data received:', data.leaderboard) // Log first 3 players for debugging
       setPlayers(data.leaderboard || [])
-      setGameTypes(data.gameTypes || ['all'])
+      setGameTypes(data.gameTypes || ['Wizard'])
       setGameTypeSettings(data.gameTypeSettings || {})
       // Note: totalGames is now display-only (state kept for UI compatibility)
       setLastRefresh(new Date())
@@ -118,7 +118,7 @@ const Leaderboard = () => {
   )
 
   // Determine if lower scores are better for the selected game type
-  const lowIsBetter = selectedGameType && selectedGameType !== 'all' 
+  const lowIsBetter = selectedGameType
     ? gameTypeSettings[selectedGameType]?.lowIsBetter || false 
     : false;
 
@@ -336,7 +336,7 @@ const Leaderboard = () => {
         >
           {gameTypes.map(type => (
             <option key={type} value={type}>
-              {type === 'all' ? 'All Games' : type}
+              {type}
             </option>
           ))}
         </select>
