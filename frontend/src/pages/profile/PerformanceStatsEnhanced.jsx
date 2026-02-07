@@ -871,8 +871,8 @@ const EloRatingSection = ({ gameType = 'wizard' }) => {
   const currentRating = elo?.currentRating || elo?.rating || 1000;
   const peakRating = elo?.peak || currentRating;
   const floorRating = elo?.floor || currentRating;
-  const eloGamesPlayed = elo?.gamesPlayed || 0;
-  const streak = elo?.streak || 0;
+  const _eloGamesPlayed = elo?.gamesPlayed || 0;
+  const _streak = elo?.streak || 0;
   const hasElo = elo?.hasIdentity !== false;
 
   // Prepare ELO history for chart with best/worst markers

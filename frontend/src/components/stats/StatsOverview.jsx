@@ -18,7 +18,7 @@ const normalizeGameType = (gameType) => {
  */
 const StatsOverview = ({ games, user, onGameTypeClick }) => {
   const overviewStats = useGameStats(games, user);
-  const { eloByGameType, loading: eloLoading } = useAllUserElo();
+  const { eloByGameType, loading: _eloLoading } = useAllUserElo();
 
   if (!user) {
     return (
