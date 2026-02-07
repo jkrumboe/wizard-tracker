@@ -811,8 +811,8 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
 // GET /users/all - Get all users (protected route)
 router.get('/all', auth, async (req, res, next) => {
   try {
-    // Get all users but exclude password and limit data
-    const users = await User.find()
+    // Get all real users but exclude password, guest/linked players, and limit data
+    const users = await User.find({ role: { $ne: 'guest' } })
       .select('_id username createdAt profilePicture role')
       .sort({ username: 1 })
       .lean(); // Use lean() for better performance
