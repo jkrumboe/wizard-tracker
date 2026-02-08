@@ -75,4 +75,5 @@ export const API_ENDPOINTS = {
 };
 
 // Check if backend should be skipped in development
-export const SKIP_BACKEND = import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL;
+// VITE_USE_BACKEND=true overrides the skip when using Vite's dev proxy with empty VITE_API_BASE_URL
+export const SKIP_BACKEND = import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL && !import.meta.env.VITE_USE_BACKEND;

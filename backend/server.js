@@ -73,11 +73,10 @@ async function initializeServer() {
 
   // Routes with rate limiting
   app.use('/api/users', apiLimiter, userRoutes);
-  app.use('/api/games', apiLimiter, gameRoutes);
+  app.use('/api/games', apiLimiter, gameRoutes, gameSyncRoutes); // Game routes and sync endpoints (sync endpoints are rate limited via gameRoutes mount)
   app.use('/api/wizard-games', apiLimiter, wizardGameRoutes); // New wizard games collection
   app.use('/api/table-games', apiLimiter, tableGameRoutes);
   app.use('/api/game-templates', apiLimiter, gameTemplateRoutes);
-  app.use('/api/games', apiLimiter, gameSyncRoutes); // Game sync endpoints
   app.use('/api/identities', apiLimiter, identityRoutes); // Player identity management
 
   // Health check route

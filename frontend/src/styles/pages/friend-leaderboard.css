@@ -206,6 +206,13 @@
   margin-top: var(--spacing-md);
 }
 
+/* Game Type Filter */
+.friend-leaderboard-container .game-type-selector {
+
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+}
+
 .friend-leaderboard-container .back-btn {
   display: flex;
   align-items: center;
@@ -233,21 +240,25 @@
 }
 
 /* Leaderboard Table */
+.friend-leaderboard-container .leaderboard-table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .friend-leaderboard-container .leaderboard-table {
   background: var(--card-bg);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border);
+  min-width: 480px;
 }
 
 .friend-leaderboard-container .leaderboard-header,
 .friend-leaderboard-container .leaderboard-row {
   display: grid;
-  grid-template-columns: 50px 2fr 70px 70px 80px 90px;
+  grid-template-columns: 35px 2fr 55px 55px 60px 70px 55px;
   /* padding: 14px 16px; */
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .friend-leaderboard-container .leaderboard-header {
@@ -338,10 +349,11 @@
 .friend-leaderboard-container .wins-col,
 .friend-leaderboard-container .losses-col,
 .friend-leaderboard-container .winrate-col,
-.friend-leaderboard-container .score-col {
+.friend-leaderboard-container .score-col,
+.friend-leaderboard-container .elo-col {
   text-align: center;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .friend-leaderboard-container .losses-col {
@@ -350,6 +362,11 @@
 
 .friend-leaderboard-container .wins-col {
   color: var(--success, #4caf50);
+}
+
+.friend-leaderboard-container .elo-col {
+  color: var(--primary, #6c9bff);
+  font-weight: 600;
 }
 
 .no-games-message {
@@ -369,7 +386,7 @@
   border-radius: 12px;
   padding: var(--spacing-sm);
   border: 1px solid var(--border);
-  margin: var(--spacing-lg) 0;
+  margin: var(--spacing-md) 0;
 }
 
 .head-to-head-section h2 {
@@ -554,20 +571,45 @@
 .recent-game-card-top {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-sm);
   width: 100%;
   border-bottom: 2px solid var(--border);
+}
+
+.game-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.game-link-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb, 74, 144, 226), 0.1);
 }
 
 .friend-leaderboard-container .game-type-badge {
   color: var(--primary);
   border-radius: 12px;
-  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .friend-leaderboard-container .game-date {
   color: var(--text-secondary);
-  font-size: 0.85rem;
 }
 
 .h2h-game-players {
@@ -585,6 +627,9 @@
   background: var(--card-bg);
   border-radius: 6px;
   border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .friend-leaderboard-container .game-player.winner {
@@ -592,6 +637,24 @@
   color: var(--success, #4caf50);
   font-weight: 600;
   border: 1px solid var(--success, #4caf50);
+}
+
+.friend-leaderboard-container .elo-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface, rgba(255, 255, 255, 0.05));
+}
+
+.friend-leaderboard-container .elo-badge.positive {
+  color: var(--success, #4caf50);
+  background: rgba(76, 175, 80, 0.15);
+}
+
+.friend-leaderboard-container .elo-badge.negative {
+  color: var(--error, #e74c3c);
+  background: rgba(231, 76, 60, 0.15);
 }
 
 /* Loading & Error States */
@@ -654,7 +717,7 @@
   
   .friend-leaderboard-container .leaderboard-header,
   .friend-leaderboard-container .leaderboard-row {
-    grid-template-columns: 40px 1.5fr 55px 55px 60px 70px;
+    grid-template-columns: 35px 1.5fr 55px 55px 60px 70px 55px;
     font-size: 0.85rem;
   }
   
@@ -682,7 +745,7 @@
   
   .friend-leaderboard-container .leaderboard-header,
   .friend-leaderboard-container .leaderboard-row {
-    grid-template-columns: 35px 1fr 45px 45px 50px 55px;
+    grid-template-columns: 35px 1fr 45px 45px 50px 55px 50px;
     gap: 4px;
   }
   

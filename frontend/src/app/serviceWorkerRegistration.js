@@ -124,6 +124,14 @@ export function register() {
   const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
   if (isDev) {
     console.debug('Skipping service worker registration in development');
+    // Unregister any old service workers from previous production/Docker builds
+    // to prevent them from intercepting API requests and bypassing the Vite dev proxy
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      if (registrations.length > 0) {
+        console.warn(`🧹 Unregistering ${registrations.length} stale service worker(s) from previous build`);
+        registrations.forEach(reg => reg.unregister());
+      }
+    });
     return;
   }
   

@@ -77,3 +77,4 @@ export const BombIcon = (props) => <Icon name="Bomb" {...props} />;
 export const ListIcon = (props) => <Icon name="List" {...props} />;
 export const ShieldIcon = (props) => <Icon name="Shield" {...props} />;
 export const RotateCcwIcon = (props) => <Icon name="RotateCcw" {...props} />;
+export const ExternalLinkIcon = (props) => <Icon name="ExternalLink" {...props} />;

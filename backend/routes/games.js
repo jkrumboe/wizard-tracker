@@ -1068,6 +1068,35 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     // Also add the original names in case they ARE the canonical names
     normalizedPlayerNames.forEach(name => targetCanonicalNames.add(name));
     
+    // Build canonical name -> ELO data map from matching identities
+    // Also build gameId -> { canonicalName -> eloChange } for per-game ELO changes
+    const canonicalToElo = Object.create(null);
+    const gameIdEloChanges = Object.create(null); // gameId -> { canonical -> change }
+    matchingIdentities.forEach(identity => {
+      const canonicalName = identity.userId?.username?.toLowerCase() || identity.displayName.toLowerCase();
+      const eloMap = identity.eloByGameType || {};
+      const eloEntries = Object.entries(eloMap);
+      if (eloEntries.length > 0) {
+        canonicalToElo[canonicalName] = {};
+        eloEntries.forEach(([gameTypeName, eloData]) => {
+          canonicalToElo[canonicalName][gameTypeName] = {
+            rating: eloData.rating || 1000,
+            peak: eloData.peak || 1000,
+            gamesPlayed: eloData.gamesPlayed || 0,
+            streak: eloData.streak || 0
+          };
+          // Index ELO history by gameId for per-game change lookup
+          (eloData.history || []).forEach(h => {
+            if (h.gameId) {
+              const gid = h.gameId.toString();
+              if (!gameIdEloChanges[gid]) gameIdEloChanges[gid] = Object.create(null);
+              gameIdEloChanges[gid][canonicalName] = h.change;
+            }
+          });
+        });
+      }
+    });
+    
     // Fetch games
     const TableGame = require('../models/TableGame');
     const WizardGame = require('../models/WizardGame');
@@ -1086,6 +1115,20 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       'lowIsBetter': 1,
       'createdAt': 1
     }).lean();
+    
+    // Collect all available game types (before filtering)
+    const gameTypeSet = new Set(['Wizard']);
+    const gameTypeSettings = { 'Wizard': { lowIsBetter: false } };
+    tableGames.forEach(game => {
+      const gm = game.gameTypeName || game.gameData?.gameName || 'Table Game';
+      if (gm && gm !== 'Table Game') {
+        gameTypeSet.add(gm);
+        const lib = game.lowIsBetter || game.gameData?.lowIsBetter || game.gameData?.gameData?.lowIsBetter || false;
+        if (!gameTypeSettings[gm]) {
+          gameTypeSettings[gm] = { lowIsBetter: lib };
+        }
+      }
+    });
     
     // Initialize statistics using Object.create(null) to prevent prototype pollution
     const playerStats = Object.create(null);
@@ -1122,7 +1165,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
       const gameMode = 'Wizard';
-      if (gameType && gameType !== gameMode) return;
+      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
       
       // Get participants from this game that are in our target list
       const participantsInGame = [];
@@ -1203,6 +1246,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       });
       
       // Add to shared games
+      const gameIdStr = game._id.toString();
       sharedGames.push({
         id: game._id,
         type: 'Wizard',
@@ -1211,7 +1255,8 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           name: p.originalName,
           canonical: p.canonical,
           score: finalScores[p.id] || 0,
-          won: winnerIds.includes(p.id)
+          won: winnerIds.includes(p.id),
+          eloChange: gameIdEloChanges[gameIdStr]?.[p.canonical] || null
         }))
       });
     });
@@ -1224,7 +1269,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
       const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-      if (gameType && gameType !== gameMode) return;
+      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
       
       // Get participants from this game that are in our target list
       const participantsInGame = [];
@@ -1343,6 +1388,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       });
       
       // Add to shared games
+      const tableGameIdStr = game._id.toString();
       sharedGames.push({
         id: game._id,
         type: gameMode,
@@ -1351,21 +1397,55 @@ router.post('/friend-leaderboard', async (req, res, next) => {
           name: p.originalName,
           canonical: p.canonical,
           score: finalScores[p.id] || 0,
-          won: isWinnerByIdOrName(p)
+          won: isWinnerByIdOrName(p),
+          eloChange: gameIdEloChanges[tableGameIdStr]?.[p.canonical] || null
         }))
       });
     });
     
+    // Helper function to normalize game type for ELO lookup
+    const normalizeGameType = (type) => {
+      if (!type) return 'wizard';
+      return type.toLowerCase().replace(/\s+/g, '-');
+    };
+    
     // Calculate derived stats and build response
     const leaderboard = Object.values(playerStats)
       .filter(stats => stats.gamesWithFriends > 0)
-      .map(stats => ({
-        ...stats,
-        avgScore: stats.totalGames > 0 ? parseFloat((stats.totalScore / stats.totalGames).toFixed(1)) : 0,
-        winRate: stats.totalGames > 0 ? parseFloat(((stats.wins / stats.totalGames) * 100).toFixed(1)) : 0
-      }))
+      .map(stats => {
+        const eloData = canonicalToElo[stats.name] || {};
+        
+        // Resolve ELO to a single number based on selected game type
+        let elo = null;
+        if (gameType && gameType !== 'all') {
+          const normalizedType = normalizeGameType(gameType);
+          const typeElo = eloData[normalizedType];
+          if (typeElo) {
+            elo = Math.round(typeElo.rating || 1000);
+          }
+        } else {
+          // For "all", pick the game type with the most games played
+          const eloEntries = Object.entries(eloData);
+          if (eloEntries.length > 0) {
+            const best = eloEntries.reduce((best, [, data]) =>
+              data.gamesPlayed > (best?.gamesPlayed || 0) ? data : best
+            , null);
+            elo = best ? Math.round(best.rating) : null;
+          }
+        }
+        
+        return {
+          ...stats,
+          avgScore: stats.totalGames > 0 ? parseFloat((stats.totalScore / stats.totalGames).toFixed(1)) : 0,
+          winRate: stats.totalGames > 0 ? parseFloat(((stats.wins / stats.totalGames) * 100).toFixed(1)) : 0,
+          elo
+        };
+      })
       .sort((a, b) => {
-        // Sort by wins first, then win rate, then avg score
+        // Sort by ELO first (if available), then wins, then win rate, then avg score
+        const aElo = a.elo || 0;
+        const bElo = b.elo || 0;
+        if (bElo !== aElo) return bElo - aElo;
         if (b.wins !== a.wins) return b.wins - a.wins;
         if (b.winRate !== a.winRate) return b.winRate - a.winRate;
         return b.avgScore - a.avgScore;
@@ -1378,7 +1458,9 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       leaderboard,
       headToHead,
       recentGames: sharedGames,
-      totalSharedGames: sharedGames.length
+      totalSharedGames: sharedGames.length,
+      gameTypes: Array.from(gameTypeSet).sort(),
+      gameTypeSettings
     });
     
   } catch (error) {

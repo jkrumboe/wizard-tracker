@@ -4,7 +4,7 @@ import { getFriendLeaderboard } from '@/shared/api/gameService'
 import { userService } from '@/shared/api'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
-import { ArrowLeftIcon } from '@/components/ui/Icon'
+import { ArrowLeftIcon, ExternalLinkIcon } from '@/components/ui/Icon'
 import "@/styles/pages/friend-leaderboard.css"
 
 const FriendLeaderboard = () => {
@@ -27,6 +27,12 @@ const FriendLeaderboard = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   
+  // Game type state
+  const [selectedGameType, setSelectedGameType] = useState(() => {
+    return sessionStorage.getItem('friendLeaderboard_gameType') || 'all'
+  })
+  const [gameTypes, setGameTypes] = useState([])
+  
   // UI state - start on compare page if we have saved data
   const [showPlayerSelect, setShowPlayerSelect] = useState(() => {
     const savedData = sessionStorage.getItem('friendLeaderboard_data')
@@ -44,6 +50,11 @@ const FriendLeaderboard = () => {
       sessionStorage.setItem('friendLeaderboard_data', JSON.stringify(leaderboardData))
     }
   }, [leaderboardData])
+  
+  // Persist game type to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('friendLeaderboard_gameType', selectedGameType)
+  }, [selectedGameType])
 
   const loadFriends = useCallback(async () => {
     setLoadingFriends(true)
@@ -107,7 +118,10 @@ const FriendLeaderboard = () => {
     }
   }
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (gameTypeOverride) => {
+    // Ignore event objects passed by onClick handlers
+    const effectiveGameType = (typeof gameTypeOverride === 'string') ? gameTypeOverride : undefined
+    
     if (selectedPlayers.length < 1) {
       setError('Please select at least 1 friend')
       return
@@ -123,8 +137,10 @@ const FriendLeaderboard = () => {
       if (user?.username && !playerNames.includes(user.username)) {
         playerNames.unshift(user.username)
       }
-      const data = await getFriendLeaderboard(playerNames)
+      const gt = effectiveGameType !== undefined ? effectiveGameType : selectedGameType
+      const data = await getFriendLeaderboard(playerNames, gt)
       setLeaderboardData(data)
+      if (data.gameTypes) setGameTypes(data.gameTypes)
     } catch (err) {
       console.error('Error fetching friend leaderboard:', err)
       setError(err.message)
@@ -133,11 +149,26 @@ const FriendLeaderboard = () => {
     }
   }
 
+  const handleGameTypeChange = (e) => {
+    const newType = e.target.value
+    setSelectedGameType(newType)
+    fetchLeaderboard(newType)
+  }
+
+  const navigateToGame = (game) => {
+    if (!game?.id) return
+    const route = game.type === 'Wizard' ? `/game/${game.id}` : `/table-game/${game.id}`
+    navigate(route)
+  }
+
   const resetSelection = () => {
     setShowPlayerSelect(true)
     setLeaderboardData(null)
     setError(null)
+    setSelectedGameType('all')
+    setGameTypes([])
     sessionStorage.removeItem('friendLeaderboard_data')
+    sessionStorage.removeItem('friendLeaderboard_gameType')
   }
 
   const handlePlayerClick = (playerName) => {
@@ -244,6 +275,23 @@ const FriendLeaderboard = () => {
             <ArrowLeftIcon size={24} /> <span>Change Players</span>
           </button>
           
+          {/* Game type selector */}
+          {gameTypes.length > 0 && (
+            <div className="game-type-filter">
+              <select
+                value={selectedGameType}
+                onChange={handleGameTypeChange}
+                className="game-type-selector"
+                disabled={loading}
+              >
+                <option value="all">All Game Types</option>
+                {gameTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
           {loading ? (
             <div className="loading-container">
               <div className="spinner"></div>
@@ -260,41 +308,47 @@ const FriendLeaderboard = () => {
           ) : leaderboardData ? (
             <>
               {/* Main leaderboard */}
-              <div className="leaderboard-table">
-                <div className="leaderboard-header">
-                  <div className="rank-col"/>
-                  <div className="player-col">Player</div>
-                  <div className="wins-col">Wins</div>
-                  <div className="losses-col">Losses</div>
-                  <div className="winrate-col">Win%</div>
-                  <div className="score-col">Ø Score</div>
-                </div>
-                
-                <div className="leaderboard-body">
-                  {leaderboardData.leaderboard.length === 0 ? (
-                    <div className="no-games-message">
-                      <p>No games found between these players.</p>
-                      <p>Play some games together to see your stats!</p>
-                    </div>
-                  ) : (
-                    leaderboardData.leaderboard.map((player, index) => (
-                      <div key={player.name} className="leaderboard-row">
-                        <div className={`rank-col ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}`}>
-                          {index + 1}
-                        </div>
-                        <div 
-                          className="player-col clickable"
-                          onClick={() => handlePlayerClick(player.displayName)}
-                        >
-                          {player.displayName}
-                        </div>
-                        <div className="wins-col">{player.wins}</div>
-                        <div className="losses-col">{player.losses}</div>
-                        <div className="winrate-col">{player.winRate}%</div>
-                        <div className="score-col">{player.avgScore}</div>
+              <div className="leaderboard-table-wrapper">
+                <div className="leaderboard-table">
+                  <div className="leaderboard-header">
+                    <div className="rank-col"/>
+                    <div className="player-col">Player</div>
+                    <div className="wins-col">Wins</div>
+                    <div className="losses-col">Losses</div>
+                    <div className="winrate-col">Win%</div>
+                    <div className="score-col">Ø Score</div>
+                    <div className="elo-col">ELO</div>
+                  </div>
+                  
+                  <div className="leaderboard-body">
+                    {leaderboardData.leaderboard.length === 0 ? (
+                      <div className="no-games-message">
+                        <p>No games found between these players.</p>
+                        <p>Play some games together to see your stats!</p>
                       </div>
-                    ))
-                  )}
+                    ) : (
+                      leaderboardData.leaderboard.map((player, index) => (
+                        <div key={player.name} className="leaderboard-row">
+                          <div className={`rank-col ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}`}>
+                            {index + 1}
+                          </div>
+                          <div 
+                            className="player-col clickable"
+                            onClick={() => handlePlayerClick(player.displayName)}
+                          >
+                            {player.displayName}
+                          </div>
+                          <div className="wins-col">{player.wins}</div>
+                          <div className="losses-col">{player.losses}</div>
+                          <div className="winrate-col">{player.winRate}%</div>
+                          <div className="score-col">{player.avgScore}</div>
+                          <div className="elo-col">
+                            {player.elo || '-'}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -351,8 +405,17 @@ const FriendLeaderboard = () => {
                       <div key={index} className="recent-game-card">
                         <div className="recent-game-card-top">
                           <div className="game-type-badge">{game.type}</div>
-                          <div className="game-date">
-                            {new Date(game.date).toLocaleDateString()}
+                          <div className="game-card-right">
+                            <div className="game-date">
+                              {new Date(game.date).toLocaleDateString()}
+                            </div>
+                            <button
+                              className="game-link-btn"
+                              onClick={() => navigateToGame(game)}
+                              title="View game details"
+                            >
+                              <ExternalLinkIcon size={14} />
+                            </button>
                           </div>
                         </div>
                         <div className="h2h-game-players">
@@ -361,8 +424,15 @@ const FriendLeaderboard = () => {
                               key={i} 
                               className={`game-player ${p.won ? 'winner' : ''}`}
                             >
-                              {p.name}: {p.score}
-                              {p.won && ' 🏆'}
+                              <span className="game-player-info">
+                                {p.name}: {p.score}
+                                {p.won && ' 🏆'}
+                              </span>
+                              {p.eloChange != null && (
+                                <span className={`elo-badge ${p.eloChange > 0 ? 'positive' : p.eloChange < 0 ? 'negative' : ''}`}>
+                                  {p.eloChange > 0 ? '+' : ''}{p.eloChange}
+                                </span>
+                              )}
                             </span>
                           ))}
                         </div>
