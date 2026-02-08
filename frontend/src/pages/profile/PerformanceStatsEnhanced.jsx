@@ -543,7 +543,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
 /**
  * Custom tooltip for performance charts with a "View Game" button
  */
-const GameTooltip = ({ active, payload, label, navigate, formatter }) => {
+const GameTooltip = ({ active, payload, _label, navigate, formatter }) => {
   if (!active || !payload || payload.length === 0) return null;
   const data = payload[0]?.payload;
   const gameId = data?.gameId;
@@ -606,7 +606,7 @@ const GameTooltip = ({ active, payload, label, navigate, formatter }) => {
 /**
  * Custom tooltip for ELO chart with a "View Game" button
  */
-const EloTooltip = ({ active, payload, label, navigate, gameType: gt }) => {
+const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
   if (!active || !payload || payload.length === 0) return null;
   const data = payload[0]?.payload;
   const gameId = data?.gameId;
