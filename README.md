@@ -1,6 +1,6 @@
 # KeepWiz
 
-![Version](https://img.shields.io/badge/version-1.15.4-blue)
+![Version](https://img.shields.io/badge/version-1.15.5-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen)
 ![Security](https://img.shields.io/badge/security-see%20SECURITY.md-red)
