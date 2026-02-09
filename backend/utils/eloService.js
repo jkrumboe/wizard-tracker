@@ -9,8 +9,10 @@
  * - Multi-player support (3-6 players)
  * - Game-type-specific ratings (Wizard, Flip 7, Dutch, etc.)
  * - Dynamic K-factor based on games played
- * - Score margin consideration for bonus/penalty
- * - Win streak bonuses
+ * - Placement-based scoring (not binary win/loss)
+ * - Score margin bonus for winners, capped penalty for losers
+ * - Player count scaling (normalized to 4-player baseline)
+ * - Provisional player dampening
  */
 
 const mongoose = require('mongoose');
@@ -35,16 +37,23 @@ const CONFIG = {
     ESTABLISHED: 100
   },
   
-  // Score margin bonus (percentage of base change)
+  // Score margin bonus (percentage of base change) — applied to winners
   MARGIN_BONUS: {
     BLOWOUT: 0.25,            // Win by 50+ points: +25% bonus
     DECISIVE: 0.15,           // Win by 30-49 points: +15% bonus
     CLOSE: 0.05               // Win by 10-29 points: +5% bonus
   },
   
-  // Streak bonus (caps at 5 games)
-  STREAK_BONUS_PER_GAME: 2,   // +2 rating per consecutive win
-  MAX_STREAK_BONUS: 10,       // Cap at +10 for 5+ streak
+  // Loss margin penalty cap (losers never get more than -10% regardless of margin)
+  MARGIN_LOSS_MAX: 0.10,
+  
+  // Player count scaling: normalize to a 4-player baseline
+  // 6 players = 1.5x, 3 players = 0.75x
+  PLAYER_COUNT_BASELINE: 4,
+  
+  // Provisional player dampening
+  // Reduces rating impact when established players face provisional (<10 games) players
+  PROVISIONAL_DAMPENING: 0.5,
   
   // Minimum games to appear on leaderboard
   MIN_GAMES_FOR_RANKING: 5,
@@ -117,24 +126,68 @@ function getExpectedScore(playerRating, opponentRating) {
 }
 
 /**
- * Calculate score margin bonus/penalty
+ * Calculate score margin multiplier
+ * Winners get full bonus, losers get capped penalty (max MARGIN_LOSS_MAX)
  */
 function getMarginMultiplier(playerScore, opponentScore, won) {
   const margin = Math.abs(playerScore - opponentScore);
   
-  if (margin >= 50) return won ? 1 + CONFIG.MARGIN_BONUS.BLOWOUT : 1 - CONFIG.MARGIN_BONUS.BLOWOUT;
-  if (margin >= 30) return won ? 1 + CONFIG.MARGIN_BONUS.DECISIVE : 1 - CONFIG.MARGIN_BONUS.DECISIVE;
-  if (margin >= 10) return won ? 1 + CONFIG.MARGIN_BONUS.CLOSE : 1 - CONFIG.MARGIN_BONUS.CLOSE;
-  return 1; // Close game, no bonus
+  let bonus = 0;
+  if (margin >= 50) bonus = CONFIG.MARGIN_BONUS.BLOWOUT;
+  else if (margin >= 30) bonus = CONFIG.MARGIN_BONUS.DECISIVE;
+  else if (margin >= 10) bonus = CONFIG.MARGIN_BONUS.CLOSE;
+  
+  if (won) {
+    return 1 + bonus;
+  } else {
+    // Cap loss penalty at MARGIN_LOSS_MAX (e.g. -10% max instead of -25%)
+    return 1 - Math.min(bonus, CONFIG.MARGIN_LOSS_MAX);
+  }
 }
 
 /**
- * Calculate streak bonus
+ * Calculate placement-based actual score for a pairwise comparison.
+ * Instead of binary 1/0, gives fractional scores based on placement gap.
+ * 
+ * Examples (6-player game):
+ *   2nd vs 1st: 0.4  (close finish, small penalty)
+ *   6th vs 1st: 0.0  (last vs first, full penalty)
+ *   1st vs 6th: 1.0  (first vs last, full credit)
+ *   3rd vs 5th: 0.7  (moderate gap, moderate credit)
  */
-function getStreakBonus(currentStreak, won) {
-  if (!won) return 0;
-  const streakLength = Math.abs(currentStreak) + (currentStreak >= 0 ? 1 : 0);
-  return Math.min(streakLength * CONFIG.STREAK_BONUS_PER_GAME, CONFIG.MAX_STREAK_BONUS);
+function getPlacementScore(playerPlacement, opponentPlacement, numPlayers) {
+  if (playerPlacement === opponentPlacement) return 0.5;
+  const maxGap = numPlayers - 1;
+  if (playerPlacement < opponentPlacement) {
+    // Player ranked higher (better) — score between 0.5 and 1.0
+    const gap = opponentPlacement - playerPlacement;
+    return 0.5 + (gap / maxGap) * 0.5;
+  } else {
+    // Player ranked lower (worse) — score between 0.0 and 0.5
+    const gap = playerPlacement - opponentPlacement;
+    return 0.5 - (gap / maxGap) * 0.5;
+  }
+}
+
+/**
+ * Calculate provisional dampening factor.
+ * Reduces rating impact when an established player faces a provisional (new) player.
+ * This prevents new players with volatile K-factors from heavily disrupting established ratings.
+ * 
+ * @param {number} playerGames - Games played by the player being calculated
+ * @param {number} opponentGames - Games played by the opponent
+ * @returns {number} Dampening factor (0.0-1.0, where 1.0 = no dampening)
+ */
+function getProvisionalDampening(playerGames, opponentGames) {
+  const playerIsNew = playerGames < CONFIG.GAMES_THRESHOLD.NEW;
+  const opponentIsNew = opponentGames < CONFIG.GAMES_THRESHOLD.NEW;
+  
+  // If established player vs provisional opponent, reduce impact on established player
+  if (!playerIsNew && opponentIsNew) {
+    return CONFIG.PROVISIONAL_DAMPENING;
+  }
+  
+  return 1.0;
 }
 
 /**
@@ -192,7 +245,6 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
     const playerElo = getEloForGameType(identity, normalizedGameType);
     const currentRating = playerElo.rating || CONFIG.DEFAULT_RATING;
     const gamesPlayed = playerElo.gamesPlayed || 0;
-    const currentStreak = playerElo.streak || 0;
     const kFactor = getKFactor(gamesPlayed);
     
     // Calculate expected and actual scores against all opponents
@@ -206,32 +258,38 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
       const opponentIdentity = playerIdentities.get(opponent.identityId.toString());
       const opponentElo = getEloForGameType(opponentIdentity, normalizedGameType);
       const opponentRating = opponentElo?.rating || CONFIG.DEFAULT_RATING;
+      const opponentGamesPlayed = opponentElo?.gamesPlayed || 0;
       
-      // Expected score against this opponent
-      expectedTotal += getExpectedScore(currentRating, opponentRating);
+      // Provisional dampening: reduce impact when established players face new players
+      const provisionalFactor = getProvisionalDampening(gamesPlayed, opponentGamesPlayed);
       
-      // Actual score: 1 for win, 0.5 for tie, 0 for loss
+      // Expected score against this opponent (dampened for provisional matchups)
+      expectedTotal += getExpectedScore(currentRating, opponentRating) * provisionalFactor;
+      
+      // Placement-based actual score (not binary win/loss)
+      // Gives fractional credit based on placement gap
+      actualTotal += getPlacementScore(player.placement, opponent.placement, numPlayers) * provisionalFactor;
+      
+      // Score margin multiplier (full bonus for winners, capped penalty for losers)
       if (player.score > opponent.score) {
-        actualTotal += 1;
         marginMultiplier *= getMarginMultiplier(player.score, opponent.score, true);
-      } else if (player.score === opponent.score) {
-        actualTotal += 0.5;
-      } else {
+      } else if (player.score < opponent.score) {
         marginMultiplier *= getMarginMultiplier(player.score, opponent.score, false);
       }
     }
     
-    // Normalize multiplier
+    // Normalize margin multiplier across all opponents
     marginMultiplier = Math.pow(marginMultiplier, 1 / (numPlayers - 1));
     
     // Calculate base rating change
     const won = player.placement === 1;
     let ratingChange = kFactor * (actualTotal - expectedTotal) * marginMultiplier;
     
-    // Apply streak bonus for wins
-    if (won) {
-      ratingChange += getStreakBonus(currentStreak, true);
-    }
+    // Player count scaling: normalize to 4-player baseline using square root
+    // Provides diminishing returns so large games don't produce runaway values
+    // 3p=0.87x, 4p=1.0x, 5p=1.12x, 6p=1.22x, 8p=1.41x
+    const playerCountFactor = Math.sqrt(numPlayers / CONFIG.PLAYER_COUNT_BASELINE);
+    ratingChange *= playerCountFactor;
     
     // Round to integer
     ratingChange = Math.round(ratingChange);
@@ -789,6 +847,8 @@ module.exports = {
   normalizeGameType,
   getKFactor,
   getEloForGameType,
+  getPlacementScore,
+  getProvisionalDampening,
   calculateGameEloChanges,
   updateRatingsForGame,
   recalculateAllElo,

@@ -8,8 +8,10 @@ The ELO system provides competitive rankings for players based on their game per
 
 - **Multi-player support**: Handles 3-6 player games using pairwise comparisons
 - **Dynamic K-factor**: Rating volatility decreases as players complete more games
-- **Score margin bonuses**: Decisive wins earn extra rating points
-- **Win streak bonuses**: Consecutive wins provide small additional gains
+- **Placement-based scoring**: Fractional scores based on placement gap, not binary win/loss
+- **Score margin bonuses**: Decisive wins earn extra rating points (capped penalty for losers)
+- **Player count scaling**: Normalized to 4-player baseline (6 players = 1.5x, 3 players = 0.75x)
+- **Provisional dampening**: Reduced impact when established players face new players
 
 ## Configuration
 
@@ -24,6 +26,9 @@ Default ELO parameters (configurable in `backend/utils/eloService.js`):
 | K-factor (developing) | 32 | 10-30 games |
 | K-factor (established) | 24 | 30-100 games |
 | K-factor (veteran) | 16 | 100+ games |
+| Loss Margin Cap | 10% | Max loss penalty regardless of score margin |
+| Player Count Baseline | 4 | Rating changes scale by √(numPlayers/4) |
+| Provisional Dampening | 50% | Reduced impact vs players with < 10 games |
 
 ## Development Setup with Production Data
 
@@ -137,22 +142,45 @@ Response:
 Each player's rating is compared against every other player in the game:
 
 1. **Expected Score** vs opponent: `E = 1 / (1 + 10^((Rb - Ra) / 400))`
-2. **Actual Score**: 1 for win, 0.5 for tie, 0 for loss
-3. **Rating Change**: `ΔR = K × (Actual - Expected) × Multipliers`
+2. **Actual Score**: Placement-based (fractional, not binary) — e.g. 2nd vs 1st in a 6-player game = 0.4 instead of 0
+3. **Rating Change**: `ΔR = K × (Actual - Expected) × MarginMultiplier × PlayerCountFactor`
+
+### Placement-Based Scoring
+
+Instead of binary win/loss (1 or 0) per opponent, scores are calculated from placement gap:
+
+- **Player ranked higher** than opponent: `0.5 + (gap / maxGap) × 0.5` (range 0.5 to 1.0)
+- **Player ranked lower** than opponent: `0.5 - (gap / maxGap) × 0.5` (range 0.0 to 0.5)
+- **Tied placement**: 0.5
+
+Examples in a 6-player game:
+| Matchup | Old (Binary) | New (Placement) |
+|---------|-------------|------------------|
+| 2nd vs 1st | 0.0 | 0.4 |
+| 6th vs 1st | 0.0 | 0.0 |
+| 1st vs 6th | 1.0 | 1.0 |
+| 3rd vs 5th | 1.0 | 0.7 |
 
 ### Multipliers
 
-- **Score Margin**: +25% for 50+ point wins, +15% for 30-49, +5% for 10-29
-- **Win Streak**: +2 rating per consecutive win (max +10)
+- **Score Margin (winners)**: +25% for 50+ point wins, +15% for 30-49, +5% for 10-29
+- **Score Margin (losers)**: Capped at -10% maximum, regardless of margin
+- **Player Count**: Rating change × √(numPlayers / 4). Diminishing returns for larger games:
+  - 3 players = 0.87x, 4 players = 1.0x, 5 players = 1.12x, 6 players = 1.22x, 8 players = 1.41x
+
+### Provisional Dampening
+
+When an established player (10+ games) faces a provisional player (< 10 games), the impact on the established player's rating is reduced by 50%. This prevents new players with volatile K-factors from disrupting established ratings.
 
 ### Example
 
-A 1200-rated player beats a 1000-rated player by 40 points:
+A 1200-rated established player beats a 1000-rated player by 40 points in a 5-player game:
 - Expected: 0.76 (76% chance to win)
-- Actual: 1.0 (won)
+- Actual: ~0.88 (placement-based, 1st vs 3rd in 5 players)
 - Margin bonus: 1.15 (decisive win)
+- Player count factor: √(5/4) ≈ 1.12
 - K-factor: 24 (established player)
-- Change: `24 × (1.0 - 0.76) × 1.15 ≈ +7 rating`
+- Change: `24 × (0.88 - 0.76) × 1.15 × 1.12 ≈ +4 rating`
 
 ## Production Deployment
 

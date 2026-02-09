@@ -35,6 +35,18 @@ describe('ELO Service', () => {
     it('should require 5 games for ranking', () => {
       expect(eloService.CONFIG.MIN_GAMES_FOR_RANKING).toBe(5);
     });
+
+    it('should have player count baseline of 4', () => {
+      expect(eloService.CONFIG.PLAYER_COUNT_BASELINE).toBe(4);
+    });
+
+    it('should have loss margin cap of 0.10', () => {
+      expect(eloService.CONFIG.MARGIN_LOSS_MAX).toBe(0.10);
+    });
+
+    it('should have provisional dampening of 0.5', () => {
+      expect(eloService.CONFIG.PROVISIONAL_DAMPENING).toBe(0.5);
+    });
   });
 
   describe('normalizeGameType', () => {
@@ -121,6 +133,53 @@ describe('ELO Service', () => {
       const elo = eloService.getEloForGameType(identity, 'Flip 7');
       
       expect(elo.rating).toBe(1100);
+    });
+  });
+
+  describe('getPlacementScore', () => {
+    it('should return 0.5 for tied placements', () => {
+      expect(eloService.getPlacementScore(1, 1, 4)).toBe(0.5);
+      expect(eloService.getPlacementScore(3, 3, 6)).toBe(0.5);
+    });
+
+    it('should return 1.0 for 1st vs last in any game size', () => {
+      expect(eloService.getPlacementScore(1, 2, 2)).toBe(1.0);
+      expect(eloService.getPlacementScore(1, 4, 4)).toBe(1.0);
+      expect(eloService.getPlacementScore(1, 6, 6)).toBe(1.0);
+    });
+
+    it('should return 0.0 for last vs 1st in any game size', () => {
+      expect(eloService.getPlacementScore(2, 1, 2)).toBe(0.0);
+      expect(eloService.getPlacementScore(4, 1, 4)).toBe(0.0);
+      expect(eloService.getPlacementScore(6, 1, 6)).toBe(0.0);
+    });
+
+    it('should give fractional scores based on placement gap', () => {
+      // 6-player game: 2nd vs 1st should be close to 0.5 (not 0)
+      const secondVsFirst = eloService.getPlacementScore(2, 1, 6);
+      expect(secondVsFirst).toBeCloseTo(0.4, 1);
+      
+      // 6-player game: 2nd vs 6th should be close to 1.0
+      const secondVsLast = eloService.getPlacementScore(2, 6, 6);
+      expect(secondVsLast).toBeCloseTo(0.9, 1);
+    });
+  });
+
+  describe('getProvisionalDampening', () => {
+    it('should return 1.0 when both players are new', () => {
+      expect(eloService.getProvisionalDampening(5, 3)).toBe(1.0);
+    });
+
+    it('should return 1.0 when both players are established', () => {
+      expect(eloService.getProvisionalDampening(50, 30)).toBe(1.0);
+    });
+
+    it('should dampen when established player faces new player', () => {
+      expect(eloService.getProvisionalDampening(50, 3)).toBe(0.5);
+    });
+
+    it('should not dampen when new player faces established player', () => {
+      expect(eloService.getProvisionalDampening(3, 50)).toBe(1.0);
     });
   });
 
@@ -369,10 +428,10 @@ describe('ELO Service', () => {
       const result = eloService.calculateGameEloChanges(gameData, identityMap, 'wizard');
       
       // Sum of all rating changes should be close to zero
-      // Note: Due to streak bonuses and margin multipliers, there may be some imbalance
-      // For new players with high K-factor (40), allow up to 15 points total imbalance
+      // Note: Due to asymmetric margin multipliers (winners get more bonus
+      // than losers get penalty) and rounding, there will be some imbalance
       const totalChange = result.reduce((sum, r) => sum + r.change, 0);
-      expect(Math.abs(totalChange)).toBeLessThanOrEqual(15);
+      expect(Math.abs(totalChange)).toBeLessThanOrEqual(20);
     });
 
     it('should give larger gains when beating higher-rated opponents', () => {
@@ -404,7 +463,8 @@ describe('ELO Service', () => {
       const underdog = result.find(r => r.playerName === 'Underdog');
       
       // Underdog beating a much higher-rated player should gain significantly
-      expect(underdog.change).toBeGreaterThan(25); // More than standard expected
+      // (reduced by player count scaling for 2-player games: 2/4 = 0.5x)
+      expect(underdog.change).toBeGreaterThan(10); // More than standard expected
     });
   });
 });
