@@ -665,7 +665,8 @@ export function GameStateProvider({ children }) {
         duration_seconds: duration,
         game_mode: gameState.mode || "Local",
         total_rounds: effectiveRounds, // Use actual completed rounds, not maxRounds
-        is_local: true
+        is_local: true,
+        gameFinished: true
       };
 
       // Check if it's a local game or should be saved to the database
