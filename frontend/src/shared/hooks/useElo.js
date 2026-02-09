@@ -54,10 +54,13 @@ export const useUserElo = (gameType = 'wizard', identityId = null) => {
 };
 
 /**
- * Hook to fetch user's ELO ratings for ALL game types
+ * Hook to fetch user's ELO ratings for ALL game types.
+ * When identityId is provided, fetches that identity's ELO (public endpoint).
+ * Otherwise fetches the logged-in user's ELO via the /me/all endpoint.
+ * @param {string|null} identityId - Optional identity ID to fetch ELO for a specific player
  * @returns {Object} - { eloByGameType, gameTypes, loading, error, refetch }
  */
-export const useAllUserElo = () => {
+export const useAllUserElo = (identityId = null) => {
   const [data, setData] = useState({ eloByGameType: {}, gameTypes: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -67,15 +70,24 @@ export const useAllUserElo = () => {
     setError(null);
     
     try {
-      const token = await authService.getStoredToken();
+      let result;
       
-      if (!token) {
-        setData({ eloByGameType: {}, gameTypes: [] });
-        setLoading(false);
-        return;
+      if (identityId) {
+        // Fetch ELO for a specific identity (public endpoint)
+        result = await eloService.getAllEloForIdentity(identityId);
+      } else {
+        // Fetch logged-in user's own ELO
+        const token = await authService.getStoredToken();
+        
+        if (!token) {
+          setData({ eloByGameType: {}, gameTypes: [] });
+          setLoading(false);
+          return;
+        }
+        
+        result = await eloService.getMyAllElo(token);
       }
       
-      const result = await eloService.getMyAllElo(token);
       setData({
         eloByGameType: result.eloByGameType || {},
         gameTypes: result.gameTypes || [],
@@ -87,7 +99,7 @@ export const useAllUserElo = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [identityId]);
 
   useEffect(() => {
     fetchAllElo();

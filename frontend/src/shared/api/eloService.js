@@ -91,6 +91,26 @@ class EloService {
   }
 
   /**
+   * Get all ELO ratings for a specific identity across all game types (public endpoint)
+   * @param {string} identityId - Identity ID
+   * @returns {Promise<Object>} ELO data for all game types
+   */
+  async getAllEloForIdentity(identityId) {
+    try {
+      const response = await fetch(API_ENDPOINTS.elo.allById(identityId));
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ELO for identity: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching ELO for identity:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get ELO history for a specific identity and game type
    * @param {string} identityId - Identity ID
    * @param {Object} options - Query options

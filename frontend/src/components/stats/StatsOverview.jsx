@@ -16,9 +16,9 @@ const normalizeGameType = (gameType) => {
  * Unified stats overview component used by both Account and UserProfile pages
  * Ensures consistent data calculation and display
  */
-const StatsOverview = ({ games, user, onGameTypeClick }) => {
+const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
   const overviewStats = useGameStats(games, user);
-  const { eloByGameType, loading: _eloLoading } = useAllUserElo();
+  const { eloByGameType, loading: _eloLoading } = useAllUserElo(identityId || null);
 
   if (!user) {
     return (

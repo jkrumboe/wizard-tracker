@@ -60,6 +60,7 @@ export const API_ENDPOINTS = {
   elo: {
     rankings: `${API_BASE_URL}/api/identities/elo/rankings`,
     history: (id) => `${API_BASE_URL}/api/identities/elo/history/${id}`,
+    allById: (id) => `${API_BASE_URL}/api/identities/elo/all/${id}`,
     me: `${API_BASE_URL}/api/identities/elo/me`,
     config: `${API_BASE_URL}/api/identities/elo/config`,
     recalculate: `${API_BASE_URL}/api/identities/elo/recalculate`,

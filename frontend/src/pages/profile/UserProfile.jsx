@@ -346,6 +346,7 @@ const UserProfile = () => {
               games={profileUser?.games} 
               user={profileUser} 
               onGameTypeClick={handleGameTypeClick}
+              identityId={profileUser?.primaryIdentityId}
             />
           </div>
         )}
