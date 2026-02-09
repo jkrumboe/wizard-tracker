@@ -31,7 +31,10 @@ const createLimiter = (options) => {
     legacyHeaders: false,
     skip: (req) => {
       // Skip rate limiting for health checks
-      return req.path === '/api/health';
+      if (req.path === '/api/health') return true;
+      // Also apply any custom skip logic from options
+      if (options.skip && options.skip(req)) return true;
+      return false;
     },
     store
   });
@@ -64,6 +67,11 @@ const apiLimiter = createLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // Limit each IP to 1000 API requests per windowMs
   message: 'Too many API requests, please try again later.',
+  skip: (req) => {
+    // Skip for routes that have their own dedicated rate limiters
+    return req.path.startsWith('/elo/recalculate') || 
+           req.path.startsWith('/admin/');
+  },
 });
 
 // Rate limiter for admin endpoints (stricter)
