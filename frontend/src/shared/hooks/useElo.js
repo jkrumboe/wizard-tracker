@@ -3,11 +3,14 @@ import eloService from '@/shared/api/eloService';
 import authService from '@/shared/api/authService';
 
 /**
- * Hook to fetch and manage user's ELO rating for a specific game type
+ * Hook to fetch and manage a user's ELO rating for a specific game type.
+ * When identityId is provided, fetches that identity's ELO (public endpoint).
+ * Otherwise fetches the logged-in user's ELO via the /me endpoint.
  * @param {string} gameType - Game type to fetch ELO for (default: 'wizard')
+ * @param {string|null} identityId - Optional identity ID to fetch ELO for a specific user
  * @returns {Object} - { elo, loading, error, refetch }
  */
-export const useUserElo = (gameType = 'wizard') => {
+export const useUserElo = (gameType = 'wizard', identityId = null) => {
   const [elo, setElo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,16 +20,23 @@ export const useUserElo = (gameType = 'wizard') => {
     setError(null);
     
     try {
-      const token = await authService.getStoredToken();
-      
-      if (!token) {
-        setElo(null);
-        setLoading(false);
-        return;
+      // If an identityId is provided, use the public ELO history endpoint
+      if (identityId) {
+        const data = await eloService.getEloHistory(identityId, { gameType, limit: 20 });
+        setElo(data);
+      } else {
+        // Otherwise fetch the logged-in user's own ELO
+        const token = await authService.getStoredToken();
+        
+        if (!token) {
+          setElo(null);
+          setLoading(false);
+          return;
+        }
+        
+        const data = await eloService.getMyElo(token, gameType);
+        setElo(data);
       }
-      
-      const data = await eloService.getMyElo(token, gameType);
-      setElo(data);
     } catch (err) {
       console.error('Failed to fetch user ELO:', err);
       setError(err.message);
@@ -34,7 +44,7 @@ export const useUserElo = (gameType = 'wizard') => {
     } finally {
       setLoading(false);
     }
-  }, [gameType]);
+  }, [gameType, identityId]);
 
   useEffect(() => {
     fetchElo();

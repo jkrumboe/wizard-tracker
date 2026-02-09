@@ -533,6 +533,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       totalGames: limitedGames.length,
       totalWins: totalWins,
       identities: [...identities.map(i => i.displayName), ...mergedGuestIdentities.map(i => i.displayName)], // Include all identity display names (owned + merged guests)
+      primaryIdentityId: identities.length > 0 ? identities[0]._id : null, // Primary identity ID for ELO lookups
       games: limitedGames
     });
   } catch (error) {

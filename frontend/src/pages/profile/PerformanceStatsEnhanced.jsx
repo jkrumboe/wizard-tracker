@@ -9,7 +9,7 @@ import "@/styles/pages/performancestats.css";
 
 const COLORS = ['#1DBF73', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
-const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, gameType = 'wizard' }) => {
+const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, gameType = 'wizard', identityId = null }) => {
   // Calculate comprehensive statistics from games
   const stats = useMemo(() => {
     if (!games || games.length === 0) {
@@ -536,7 +536,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
   if (!stats) return null;
 
   return (
-    <PerformanceStatsContent stats={stats} isWizardGame={isWizardGame} gameType={gameType} />
+    <PerformanceStatsContent stats={stats} isWizardGame={isWizardGame} gameType={gameType} identityId={identityId} />
   );
 };
 
@@ -670,7 +670,7 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
 };
 
 // Separate component to use useState (since stats is computed in useMemo)
-const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
+const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = null }) => {
   const navigate = useNavigate();
   const [insightType, setInsightType] = useState('score');
   
@@ -942,7 +942,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
         )}
 
         {/* ELO Rating Section */}
-        <EloRatingSection gameType={gameType} />
+        <EloRatingSection gameType={gameType} identityId={identityId} />
       </div>      
 
       {/* ACHIEVEMENTS SECTION */}
@@ -994,11 +994,11 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType }) => {
 };
 
 // ELO Rating Section Component
-const EloRatingSection = ({ gameType = 'wizard' }) => {
+const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
   const navigate = useNavigate();
   // Normalize game type for API
   const normalizedGameType = gameType?.toLowerCase().trim().replace(/\s+/g, '-') || 'wizard';
-  const { elo, loading: eloLoading } = useUserElo(normalizedGameType);
+  const { elo, loading: eloLoading } = useUserElo(normalizedGameType, identityId);
 
   // Get ELO display values
   const currentRating = elo?.currentRating || elo?.rating || 1000;

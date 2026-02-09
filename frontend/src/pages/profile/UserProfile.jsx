@@ -383,6 +383,7 @@ const UserProfile = () => {
                     currentPlayer={currentPlayer} 
                     isWizardGame={statsGameType === 'wizard'}
                     gameType={statsGameType}
+                    identityId={profileUser?.primaryIdentityId}
                   />
                 ) : (
                   <div className="settings-section">
