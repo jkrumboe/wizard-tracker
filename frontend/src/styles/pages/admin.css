@@ -1652,35 +1652,35 @@
 
 /* ==================== Enhanced Game Linkage Styles ==================== */
 
-.info-card {
+.admin-container .info-card {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 12px;
   margin-bottom: 1.5rem;
 }
 
-.info-card-header {
+.admin-container .info-card-header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid rgba(59, 130, 246, 0.2);
 }
 
-.info-card-header h3 {
+.admin-container .info-card-header h3 {
   margin: 0;
   color: var(--text);
   font-size: 1.1rem;
 }
 
-.info-card-content {
+.admin-container .info-card-content {
   padding: 1.5rem;
 }
 
-.info-columns {
+.admin-container .info-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
 }
 
-.info-column h4 {
+.admin-container.info-column h4 {
   color: var(--primary);
   margin: 0 0 0.75rem 0;
   font-size: 0.95rem;
