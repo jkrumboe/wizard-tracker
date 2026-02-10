@@ -43,6 +43,12 @@ const migrations = [
     version: '1.0.0',
     description: 'Update player IDs in games to use consistent User._id values',
     run: normalizePlayerIds
+  },
+  {
+    name: '004_link_orphaned_identities',
+    version: '1.0.0',
+    description: 'Create guest User records for any PlayerIdentity records without a userId',
+    run: linkOrphanedIdentities
   }
 ];
 
@@ -394,6 +400,60 @@ async function normalizeGameIds(game, identityCache) {
   }
 
   return result;
+}
+
+/**
+ * Migration 004: Link orphaned identities
+ * Creates guest User records for any PlayerIdentity that still lacks a userId.
+ * This handles identities created by findOrCreateByName before the fix,
+ * ensuring every identity has a linked User for profile pages and ELO.
+ */
+async function linkOrphanedIdentities() {
+  const stats = {
+    identitiesProcessed: 0,
+    guestUsersCreated: 0,
+    identitiesLinked: 0
+  };
+
+  const orphanedIdentities = await PlayerIdentity.find({
+    userId: null,
+    isDeleted: false
+  });
+
+  console.log(`  Found ${orphanedIdentities.length} orphaned identities`);
+
+  for (const identity of orphanedIdentities) {
+    stats.identitiesProcessed++;
+
+    let user = await User.findOne({
+      username: { $regex: new RegExp(`^${escapeRegex(identity.normalizedName)}$`, 'i') }
+    });
+
+    if (!user) {
+      let username = identity.displayName;
+      if (username.length < 3) {
+        username = `Player_${username}`;
+      }
+
+      user = await User.create({
+        username,
+        role: 'guest',
+        passwordHash: null,
+        guestMetadata: {
+          originalGuestId: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          identityId: identity._id
+        }
+      });
+      stats.guestUsersCreated++;
+    }
+
+    identity.userId = user._id;
+    identity.type = user.role === 'guest' ? 'guest' : 'user';
+    await identity.save();
+    stats.identitiesLinked++;
+  }
+
+  return stats;
 }
 
 // ====================

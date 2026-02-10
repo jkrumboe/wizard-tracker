@@ -206,6 +206,8 @@ playerIdentitySchema.statics.findByName = async function(name) {
 /**
  * Find or create identity for a player name
  * Used during game creation/import
+ * Also creates a guest User record if needed, ensuring consistency
+ * with the identity system (every identity has a linked User)
  */
 playerIdentitySchema.statics.findOrCreateByName = async function(name, options = {}) {
   const { createdBy = null, type = 'guest' } = options;
@@ -213,10 +215,39 @@ playerIdentitySchema.statics.findOrCreateByName = async function(name, options =
   let identity = await this.findByName(name);
   
   if (!identity) {
+    const User = mongoose.model('User');
+    const trimmedName = name.trim();
+    const normalizedName = trimmedName.toLowerCase();
+    
+    // Check if a user with this name already exists
+    let user = await User.findOne({
+      username: { $regex: new RegExp(`^${normalizedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+    });
+    
+    // Create guest user if none exists
+    if (!user) {
+      // Pad short usernames to meet minimum length requirement (3 chars)
+      let username = trimmedName;
+      if (username.length < 3) {
+        username = `Player_${username}`;
+      }
+      
+      user = await User.create({
+        username,
+        role: 'guest',
+        passwordHash: null,
+        guestMetadata: {
+          originalGuestId: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          createdByUserId: createdBy || null
+        }
+      });
+    }
+    
     identity = await this.create({
-      displayName: name.trim(),
-      normalizedName: name.toLowerCase().trim(),
-      type,
+      displayName: trimmedName,
+      normalizedName,
+      type: user.role === 'guest' ? 'guest' : 'user',
+      userId: user._id,
       createdBy
     });
   }
