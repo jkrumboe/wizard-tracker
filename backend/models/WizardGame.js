@@ -142,6 +142,28 @@ wizardGameSchema.post('save', async function(doc) {
   try {
     // Lazy-load to avoid circular dependencies
     const eloService = require('../utils/eloService');
+    const PlayerIdentity = mongoose.model('PlayerIdentity');
+    
+    // Ensure all players have identityIds (retry if pre-save hook failed)
+    let needsSave = false;
+    if (doc.gameData?.players) {
+      for (const player of doc.gameData.players) {
+        if (!player.identityId && player.name) {
+          try {
+            const identity = await PlayerIdentity.findOrCreateByName(player.name, { type: 'guest' });
+            player.identityId = identity._id;
+            needsSave = true;
+          } catch (identityErr) {
+            console.warn(`[WizardGame post-save] Failed to resolve identity for "${player.name}":`, identityErr.message);
+          }
+        }
+      }
+      if (needsSave) {
+        doc.markModified('gameData.players');
+        await doc.save();
+        return; // save will re-trigger this hook with identities resolved
+      }
+    }
     
     // Update ELO ratings for all players in this game (game type: wizard)
     const updates = await eloService.updateRatingsForGame(doc, 'wizard');
@@ -158,10 +180,6 @@ wizardGameSchema.post('save', async function(doc) {
       players: doc.gameData?.players?.map(p => ({ name: p.name, identityId: p.identityId })) || [],
       timestamp: new Date().toISOString()
     });
-    
-    // In production, you might want to track failed ELO updates for manual review
-    // For now, we log extensively but don't fail the save operation
-    // Future: Could emit an event or write to a failed-elo-updates collection
   }
 });
 

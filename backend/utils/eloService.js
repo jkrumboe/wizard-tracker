@@ -513,6 +513,7 @@ async function updateRatingsForGame(game, gameType, options = {}) {
     .map(p => p.identityId);
   
   if (identityIds.length === 0) {
+    console.warn(`[ELO] No player identities found for game ${game._id} (${gameData.players?.length || 0} players) — skipping ELO update`);
     return [];
   }
   
@@ -762,10 +763,10 @@ async function recalculateAllElo(options = {}) {
   // Collect all games to process
   const allGames = [];
   
-  // Get Wizard games
+  // Get Wizard games (non-lean so we can update identities if needed)
   const wizardGames = await WizardGame.find({
     'gameData.gameFinished': true
-  }).lean();
+  });
   
   for (const game of wizardGames) {
     allGames.push({
@@ -775,14 +776,14 @@ async function recalculateAllElo(options = {}) {
     });
   }
   
-  // Get Table games
+  // Get Table games (non-lean so we can update identities if needed)
   if (TableGame) {
     const tableGames = await TableGame.find({
       $or: [
         { gameFinished: true },
         { 'gameData.gameFinished': true }
       ]
-    }).lean();
+    });
     
     for (const game of tableGames) {
       // Table game type is stored in gameTypeName or gameData.gameType or game.gameType
@@ -798,6 +799,42 @@ async function recalculateAllElo(options = {}) {
   // Sort all games chronologically
   allGames.sort((a, b) => a.date - b.date);
   
+  // Phase: Resolve missing identities on games before processing
+  if (!dryRun) {
+    let identitiesResolved = 0;
+    for (const { game } of allGames) {
+      if (!game.gameData?.players) continue;
+      let needsSave = false;
+      for (const player of game.gameData.players) {
+        if (!player.identityId && player.name) {
+          try {
+            const identity = await PlayerIdentity.findOrCreateByName(player.name, { type: 'guest' });
+            player.identityId = identity._id;
+            needsSave = true;
+            identitiesResolved++;
+          } catch (err) {
+            console.warn(`[ELO recalc] Failed to resolve identity for "${player.name}":`, err.message);
+          }
+        }
+      }
+      if (needsSave) {
+        try {
+          // Use updateOne to avoid triggering post-save hooks during recalculation
+          const GameModel = game.constructor;
+          await GameModel.updateOne(
+            { _id: game._id },
+            { $set: { 'gameData.players': game.gameData.players } }
+          );
+        } catch (err) {
+          console.warn(`[ELO recalc] Failed to save game ${game._id} after identity resolution:`, err.message);
+        }
+      }
+    }
+    if (identitiesResolved > 0) {
+      console.log(`✓ Resolved ${identitiesResolved} missing player identities across games`);
+    }
+  }
+  
   // Filter by game type if specified
   const gamesToProcess = gameType 
     ? allGames.filter(g => g.gameType === normalizeGameType(gameType))
@@ -810,9 +847,12 @@ async function recalculateAllElo(options = {}) {
   const errors = [];
   const gameTypeCounts = {};
   
-  for (const { game, gameType: gt } of gamesToProcess) {
+  for (const { game: gameDoc, gameType: gt } of gamesToProcess) {
     try {
       gameTypeCounts[gt] = (gameTypeCounts[gt] || 0) + 1;
+      
+      // Convert Mongoose document to plain object for processing
+      const game = gameDoc.toObject ? gameDoc.toObject() : gameDoc;
       
       // Remap identity IDs for merged/linked players so they share one ELO
       const remappedGameData = remapGameIdentities(game.gameData, mergeMap);
@@ -850,7 +890,7 @@ async function recalculateAllElo(options = {}) {
         console.log(`   Progress: ${processed}/${gamesToProcess.length} (${((processed / gamesToProcess.length) * 100).toFixed(1)}%)`);
       }
     } catch (error) {
-      errors.push({ gameId: game._id, gameType: gt, error: error.message });
+      errors.push({ gameId: gameDoc._id, gameType: gt, error: error.message });
     }
   }
   
