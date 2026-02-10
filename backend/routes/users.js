@@ -273,16 +273,48 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     // Try to find registered user - by ID first, then by username
     let user;
     if (mongoose.Types.ObjectId.isValid(usernameOrId)) {
-      user = await User.findById(usernameOrId).select('_id username createdAt profilePicture');
+      user = await User.findById(usernameOrId).select('_id username createdAt profilePicture role');
     }
     if (!user) {
-      user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture');
+      user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture role');
     }
     
-    // If user not found directly, try to resolve through player identity system
+    // If we found a GUEST user, try to resolve to a real registered user account
+    // This handles the case where "Robin" is a guest but should redirect to "RobinRummels"
+    if (user && user.role === 'guest') {
+      console.log(`[Profile] Found guest user "${user.username}", checking for linked real account...`);
+      
+      // Find player identity for this guest user
+      const guestIdentity = await PlayerIdentity.findOne({
+        userId: user._id,
+        isDeleted: false
+      }).lean();
+      
+      if (guestIdentity) {
+        // Check if this guest identity is merged into another identity
+        if (guestIdentity.mergedInto) {
+          console.log(`[Profile] Guest identity merged into ${guestIdentity.mergedInto}, resolving...`);
+          const targetIdentity = await PlayerIdentity.findById(guestIdentity.mergedInto)
+            .select('userId displayName').lean();
+          
+          if (targetIdentity && targetIdentity.userId) {
+            // Check if target has a non-guest user
+            const targetUser = await User.findById(targetIdentity.userId)
+              .select('_id username createdAt profilePicture role');
+            
+            if (targetUser && targetUser.role !== 'guest') {
+              console.log(`[Profile] Redirecting guest "${user.username}" to real user "${targetUser.username}"`);
+              user = targetUser; // Use the real user account instead
+            }
+          }
+        }
+      }
+    }
+    
+    // If user not found directly or still a guest, try to resolve through player identity system
     // This handles cases where a guest player name is provided (e.g., "Robin" -> "RobinRummels")
-    if (!user) {
-      console.log(`[Profile] User not found by username/ID, checking player identity for: ${usernameOrId}`);
+    if (!user || user.role === 'guest') {
+      console.log(`[Profile] ${user ? 'Guest user remains,' : 'User not found,'} checking player identity for: ${usernameOrId}`);
       
       // Search for player identity (guest or merged) by display name
       const normalizedName = usernameOrId.toLowerCase().trim();
@@ -303,7 +335,12 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       // If the identity has a linked userId, fetch that user
       if (identity && identity.userId) {
         console.log(`[Profile] Found linked user ID ${identity.userId} for player name "${usernameOrId}"`);
-        user = await User.findById(identity.userId).select('_id username createdAt profilePicture');
+        const linkedUser = await User.findById(identity.userId).select('_id username createdAt profilePicture role');
+        
+        // Only use this user if it's not a guest or if we don't have any user yet
+        if (linkedUser && (linkedUser.role !== 'guest' || !user)) {
+          user = linkedUser;
+        }
       }
     }
     
@@ -311,7 +348,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log(`[Profile] Fetching games for user "${user.username}" (ID: ${user._id}) using identity system`);
+    console.log(`[Profile] Fetching games for user "${user.username}" (ID: ${user._id}, role: ${user.role}) using identity system`);
 
     // Use PlayerIdentity system to find all identities linked to this user
     
