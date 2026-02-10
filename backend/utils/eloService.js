@@ -619,7 +619,7 @@ async function updateRatingsForGame(game, gameType, options = {}) {
           gameId: game._id,
           opponents: change.opponents,
           placement: change.placement,
-          date: new Date()
+          date: game.gameData?.created_at ? new Date(game.gameData.created_at) : (game.createdAt || new Date())
         });
         
         if (gameTypeElo.history.length > 50) {

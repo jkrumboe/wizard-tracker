@@ -49,6 +49,18 @@ const migrations = [
     version: '1.0.0',
     description: 'Create guest User records for any PlayerIdentity records without a userId',
     run: linkOrphanedIdentities
+  },
+  {
+    name: '005_recalculate_elo',
+    version: '1.0.0',
+    description: 'Recalculate ELO ratings for all games to include newly linked guest identities',
+    run: recalculateEloMigration
+  },
+  {
+    name: '006_fix_elo_history_dates',
+    version: '1.0.0',
+    description: 'Re-run ELO recalculation to fix history dates (use game date instead of recalculation date)',
+    run: recalculateEloMigration
   }
 ];
 
@@ -403,18 +415,21 @@ async function normalizeGameIds(game, identityCache) {
 }
 
 /**
- * Migration 004: Link orphaned identities
+ * Migration 004: Link orphaned identities and recalculate ELO
  * Creates guest User records for any PlayerIdentity that still lacks a userId.
- * This handles identities created by findOrCreateByName before the fix,
- * ensuring every identity has a linked User for profile pages and ELO.
+ * Then recalculates ELO for all games so newly linked players get proper ratings.
  */
 async function linkOrphanedIdentities() {
   const stats = {
     identitiesProcessed: 0,
     guestUsersCreated: 0,
-    identitiesLinked: 0
+    identitiesLinked: 0,
+    eloRecalculated: false,
+    eloGamesProcessed: 0,
+    eloPlayerUpdates: 0
   };
 
+  // Phase 1: Link orphaned identities to guest User records
   const orphanedIdentities = await PlayerIdentity.find({
     userId: null,
     isDeleted: false
@@ -453,7 +468,52 @@ async function linkOrphanedIdentities() {
     stats.identitiesLinked++;
   }
 
+  // Phase 2: Recalculate ELO for all games
+  // This ensures newly linked identities get proper ELO ratings,
+  // since the idempotency guard in updateRatingsForGame would have
+  // skipped games where some players already had ELO history.
+  if (stats.identitiesLinked > 0) {
+    console.log(`  Recalculating ELO for all games after linking ${stats.identitiesLinked} identities...`);
+    try {
+      const eloService = require('../utils/eloService');
+      const result = await eloService.recalculateAllElo({ dryRun: false });
+      stats.eloRecalculated = true;
+      stats.eloGamesProcessed = result.gamesProcessed;
+      stats.eloPlayerUpdates = result.playerUpdates;
+      console.log(`  ELO recalculation complete: ${result.gamesProcessed} games, ${result.playerUpdates} player updates`);
+    } catch (error) {
+      console.error(`  ELO recalculation failed: ${error.message}`);
+      // Don't fail the migration for ELO errors
+      stats.eloRecalculated = false;
+    }
+  } else {
+    console.log(`  No orphaned identities found, skipping ELO recalculation`);
+  }
+
   return stats;
+}
+
+/**
+ * Migration 005: Recalculate ELO ratings
+ * Migration 006: Re-run with fixed dates (game date instead of recalculation date)
+ * Resets and recalculates ELO for all finished games chronologically.
+ * Ensures all players (including previously orphaned guest identities)
+ * have accurate ELO ratings with correct game dates in history.
+ */
+async function recalculateEloMigration() {
+  const eloService = require('../utils/eloService');
+  
+  console.log(`  Starting full ELO recalculation...`);
+  const result = await eloService.recalculateAllElo({ dryRun: false });
+  
+  console.log(`  ELO recalculation complete: ${result.gamesProcessed} games, ${result.playerUpdates} player updates`);
+  
+  return {
+    gamesProcessed: result.gamesProcessed,
+    playerUpdates: result.playerUpdates,
+    gameTypeStats: result.gameTypeStats,
+    errors: result.errors?.length || 0
+  };
 }
 
 // ====================

@@ -640,6 +640,11 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
           </p>
         );
       })}
+      {data?.placement && (
+        <p style={{ margin: '2px 0', fontWeight: 600 }}>
+          Placement: {data.placement === 1 ? '1st' : data.placement === 2 ? '2nd' : data.placement === 3 ? '3rd' : `${data.placement}th`}
+        </p>
+      )}
       {data?.date && <p style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.75rem' }}>{data.date}</p>}
       {gameId && (
         <button
@@ -1022,6 +1027,7 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
         game: idx + 1,
         rating: runningRating,
         change: entry.change,
+        placement: entry.placement || null,
         date: entry.date ? new Date(entry.date).toLocaleDateString() : '',
         gameId: entry.gameId || null
       };
