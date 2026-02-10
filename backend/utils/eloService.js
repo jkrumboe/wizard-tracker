@@ -66,6 +66,23 @@ const CONFIG = {
 };
 
 /**
+ * Determine if a game's data indicates it is finished.
+ * Checks gameFinished flag first, then falls back to heuristics:
+ * having winner_id/winner_ids AND final_scores or points data.
+ */
+function isGameFinished(gameData) {
+  if (!gameData) return false;
+  if (gameData.gameFinished === true) return true;
+  
+  // Heuristic: game has winners and scoring data → treat as finished
+  const hasWinner = !!(gameData.winner_id || (gameData.winner_ids && gameData.winner_ids.length > 0));
+  const hasFinalScores = gameData.final_scores && Object.keys(gameData.final_scores).length > 0;
+  const hasPoints = (gameData.players || []).some(p => Array.isArray(p.points) && p.points.length > 0);
+  
+  return hasWinner && (hasFinalScores || hasPoints);
+}
+
+/**
  * Normalize game type string for consistent storage
  * @param {string} gameType - Raw game type
  * @returns {string} Normalized game type key
@@ -200,7 +217,7 @@ function getProvisionalDampening(playerGames, opponentGames) {
  * @returns {Array} Array of { identityId, oldRating, newRating, change, placement }
  */
 function calculateGameEloChanges(gameData, playerIdentities, gameType) {
-  if (!gameData.gameFinished) {
+  if (!isGameFinished(gameData)) {
     return [];
   }
   
@@ -501,7 +518,7 @@ async function updateRatingsForGame(game, gameType, options = {}) {
   const PlayerIdentity = mongoose.model('PlayerIdentity');
   const gameData = game.gameData;
   
-  if (!gameData?.gameFinished) {
+  if (!isGameFinished(gameData)) {
     return [];
   }
   
@@ -764,8 +781,13 @@ async function recalculateAllElo(options = {}) {
   const allGames = [];
   
   // Get Wizard games (non-lean so we can update identities if needed)
+  // Include games that are finished OR have completion indicators (winner + scores)
   const wizardGames = await WizardGame.find({
-    'gameData.gameFinished': true
+    $or: [
+      { 'gameData.gameFinished': true },
+      { 'gameData.winner_id': { $exists: true, $ne: null } },
+      { 'gameData.winner_ids.0': { $exists: true } }
+    ]
   });
   
   for (const game of wizardGames) {
@@ -799,12 +821,21 @@ async function recalculateAllElo(options = {}) {
   // Sort all games chronologically
   allGames.sort((a, b) => a.date - b.date);
   
-  // Phase: Resolve missing identities on games before processing
+  // Phase: Normalize gameFinished and resolve missing identities on games
   if (!dryRun) {
+    let gamesNormalized = 0;
     let identitiesResolved = 0;
     for (const { game } of allGames) {
       if (!game.gameData?.players) continue;
       let needsSave = false;
+      
+      // Normalize gameFinished: set to true if missing but game is clearly finished
+      if (!game.gameData.gameFinished && isGameFinished(game.gameData)) {
+        game.gameData.gameFinished = true;
+        needsSave = true;
+        gamesNormalized++;
+      }
+      
       for (const player of game.gameData.players) {
         if (!player.identityId && player.name) {
           try {
@@ -823,12 +854,18 @@ async function recalculateAllElo(options = {}) {
           const GameModel = game.constructor;
           await GameModel.updateOne(
             { _id: game._id },
-            { $set: { 'gameData.players': game.gameData.players } }
+            { $set: { 
+              'gameData.players': game.gameData.players,
+              'gameData.gameFinished': game.gameData.gameFinished
+            } }
           );
         } catch (err) {
-          console.warn(`[ELO recalc] Failed to save game ${game._id} after identity resolution:`, err.message);
+          console.warn(`[ELO recalc] Failed to save game ${game._id} after normalization:`, err.message);
         }
       }
+    }
+    if (gamesNormalized > 0) {
+      console.log(`✓ Normalized gameFinished on ${gamesNormalized} games`);
     }
     if (identitiesResolved > 0) {
       console.log(`✓ Resolved ${identitiesResolved} missing player identities across games`);

@@ -223,7 +223,14 @@ router.get('/leaderboard', async (req, res, next) => {
     console.log(`[Leaderboard] Loaded ${allIdentities.length} player identities`);
     
     // Get wizard games from WizardGame collection - only fetch needed fields
-    const wizardGames = await WizardGame.find({}, {
+    // Only include finished games (gameFinished:true OR has winner + scores)
+    const wizardGames = await WizardGame.find({
+      $or: [
+        { 'gameData.gameFinished': true },
+        { 'gameData.winner_id': { $exists: true, $ne: null } },
+        { 'gameData.winner_ids.0': { $exists: true } }
+      ]
+    }, {
       'gameData.players': 1,
       'gameData.winner_id': 1,
       'gameData.winner_ids': 1,

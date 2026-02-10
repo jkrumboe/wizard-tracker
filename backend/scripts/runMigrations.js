@@ -61,6 +61,12 @@ const migrations = [
     version: '1.0.0',
     description: 'Re-run ELO recalculation to fix history dates (use game date instead of recalculation date)',
     run: recalculateEloMigration
+  },
+  {
+    name: '007_normalize_and_recalculate_elo',
+    version: '1.0.0',
+    description: 'Normalize gameFinished flag on wizard games and recalculate ELO for all game types',
+    run: recalculateEloMigration
   }
 ];
 

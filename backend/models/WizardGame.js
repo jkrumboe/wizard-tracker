@@ -129,8 +129,13 @@ wizardGameSchema.pre('save', async function(next) {
  * Post-save hook to update ELO ratings when a game finishes
  */
 wizardGameSchema.post('save', async function(doc) {
-  // Only update ELO for finished games
-  if (!doc.gameData?.gameFinished) {
+  // Only update ELO for finished games (check flag + heuristic: has winner and scores)
+  const gameData = doc.gameData;
+  const hasGameFinished = gameData?.gameFinished === true;
+  const hasWinner = !!(gameData?.winner_id || (gameData?.winner_ids && gameData.winner_ids.length > 0));
+  const hasFinalScores = gameData?.final_scores && Object.keys(gameData.final_scores).length > 0;
+  
+  if (!hasGameFinished && !(hasWinner && hasFinalScores)) {
     return;
   }
   
