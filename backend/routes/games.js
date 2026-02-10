@@ -177,39 +177,46 @@ router.get('/leaderboard', async (req, res, next) => {
     const User = require('../models/User');
     const PlayerIdentity = require('../models/PlayerIdentity');
     
-    const allUsers = await User.find({ role: { $ne: 'guest' } }).select('_id username').lean();
+    // Fetch all users (including guests with accounts) for ID-based matching
+    const allUsers = await User.find({}).select('_id username role').lean();
     const userIdMap = {}; // Maps userId string -> user object
     allUsers.forEach(user => {
       userIdMap[user._id.toString()] = user;
     });
     console.log(`[Leaderboard] Loaded ${allUsers.length} users`);
     
-    // Load all identities to map identityId -> userId and get ELO data
+    // Load all identities to map identityId -> playerKey and get ELO data
+    // playerKey is the userId if linked, or the identityId itself for unlinked guests
     const allIdentities = await PlayerIdentity.find({ isDeleted: false })
       .select('_id userId displayName eloByGameType')
       .lean();
-    const identityToUserIdMap = {}; // Maps identityId string -> userId string
-    const userDisplayNames = {}; // Maps userId string -> display name
+    const identityToPlayerKeyMap = {}; // Maps identityId string -> playerKey string
+    const playerKeyIsGuest = {}; // Tracks which playerKeys are unlinked guests
+    const userDisplayNames = {}; // Maps playerKey string -> display name
     
-    const userEloByGameType = {}; // Maps userId string -> { gameType: elo data }
+    const userEloByGameType = {}; // Maps playerKey string -> { gameType: elo data }
     
     allIdentities.forEach(identity => {
       const identityIdStr = identity._id.toString();
       const userIdStr = identity.userId?.toString();
       
-      if (userIdStr) {
-        identityToUserIdMap[identityIdStr] = userIdStr;
-        
-        // Use registered username if available, otherwise use identity displayName
-        if (!userDisplayNames[userIdStr]) {
-          const user = userIdMap[userIdStr];
-          userDisplayNames[userIdStr] = user ? user.username : identity.displayName;
-        }
-        
-        // Store ELO data for this user
-        if (identity.eloByGameType) {
-          userEloByGameType[userIdStr] = identity.eloByGameType;
-        }
+      // Use userId as playerKey if linked, otherwise use identityId
+      const playerKey = userIdStr || identityIdStr;
+      identityToPlayerKeyMap[identityIdStr] = playerKey;
+      
+      if (!userIdStr) {
+        playerKeyIsGuest[playerKey] = true;
+      }
+      
+      // Use registered username if available, otherwise use identity displayName
+      if (!userDisplayNames[playerKey]) {
+        const user = userIdStr ? userIdMap[userIdStr] : null;
+        userDisplayNames[playerKey] = user ? user.username : identity.displayName;
+      }
+      
+      // Store ELO data for this player
+      if (identity.eloByGameType) {
+        userEloByGameType[playerKey] = identity.eloByGameType;
       }
     });
     
@@ -280,22 +287,23 @@ router.get('/leaderboard', async (req, res, next) => {
           return;
         }
 
-        // Map identityId to userId using identity system
+        // Map identityId to playerKey using identity system
         const identityIdStr = identityId.toString();
-        const userId = identityToUserIdMap[identityIdStr];
+        const playerKey = identityToPlayerKeyMap[identityIdStr];
         
-        if (!userId) {
-          console.warn(`[Leaderboard] No userId found for identity ${identityIdStr}`);
+        if (!playerKey) {
+          console.warn(`[Leaderboard] No playerKey found for identity ${identityIdStr}`);
           return;
         }
         
-        const displayName = userDisplayNames[userId] || playerName;
+        const displayName = userDisplayNames[playerKey] || playerName;
+        const isGuest = playerKeyIsGuest[playerKey] || false;
         
-        if (!playerStats[userId]) {
-          playerStats[userId] = {
-            id: userId,
+        if (!playerStats[playerKey]) {
+          playerStats[playerKey] = {
+            id: playerKey,
             name: displayName,
-            userId: userId,
+            userId: isGuest ? null : playerKey,
             totalGames: 0,
             wins: 0,
             totalScore: 0,
@@ -304,7 +312,7 @@ router.get('/leaderboard', async (req, res, next) => {
           };
         }
 
-        const stats = playerStats[userId];
+        const stats = playerStats[playerKey];
         
         stats.totalGames++;
         
@@ -334,7 +342,7 @@ router.get('/leaderboard', async (req, res, next) => {
           stats.gameTypes[gameMode].totalScore += finalScores[playerId];
         }
 
-        if (new Date(game.createdAt) > new Date(stats.lastPlayed)) {
+        if (game.createdAt && new Date(game.createdAt) > new Date(stats.lastPlayed)) {
           stats.lastPlayed = game.createdAt;
         }
       });
@@ -403,22 +411,23 @@ router.get('/leaderboard', async (req, res, next) => {
           return;
         }
 
-        // Map identityId to userId using identity system
+        // Map identityId to playerKey using identity system
         const identityIdStr = identityId.toString();
-        const userId = identityToUserIdMap[identityIdStr];
+        const playerKey = identityToPlayerKeyMap[identityIdStr];
         
-        if (!userId) {
-          console.warn(`[Leaderboard] No userId found for identity ${identityIdStr}`);
+        if (!playerKey) {
+          console.warn(`[Leaderboard] No playerKey found for identity ${identityIdStr}`);
           return;
         }
         
-        const displayName = userDisplayNames[userId] || playerName;
+        const displayName = userDisplayNames[playerKey] || playerName;
+        const isGuest = playerKeyIsGuest[playerKey] || false;
         
-        if (!playerStats[userId]) {
-          playerStats[userId] = {
-            id: userId,
+        if (!playerStats[playerKey]) {
+          playerStats[playerKey] = {
+            id: playerKey,
             name: displayName,
-            userId: userId,
+            userId: isGuest ? null : playerKey,
             totalGames: 0,
             wins: 0,
             totalScore: 0,
@@ -427,7 +436,7 @@ router.get('/leaderboard', async (req, res, next) => {
           };
         }
 
-        const stats = playerStats[userId];
+        const stats = playerStats[playerKey];
         
         stats.totalGames++;
         
@@ -455,7 +464,7 @@ router.get('/leaderboard', async (req, res, next) => {
           stats.gameTypes[gameMode].totalScore += finalScores[playerId];
         }
 
-        if (new Date(game.createdAt) > new Date(stats.lastPlayed)) {
+        if (game.createdAt && new Date(game.createdAt) > new Date(stats.lastPlayed)) {
           stats.lastPlayed = game.createdAt;
         }
       });
@@ -477,7 +486,8 @@ router.get('/leaderboard', async (req, res, next) => {
         : 0;
 
       // Get ELO for this player for the selected game type
-      const userElo = userEloByGameType[player.userId];
+      // Use player.id (the playerKey) since guests don't have userId
+      const userElo = userEloByGameType[player.id];
       let elo = 1000; // Default ELO
       if (userElo && gameType) {
         const normalizedType = normalizeGameType(gameType);
