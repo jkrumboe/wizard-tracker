@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const { eloPublicLimiter } = require('../middleware/rateLimiter');
 const identityService = require('../utils/identityService');
 const eloService = require('../utils/eloService');
+const cache = require('../utils/redis');
 const router = express.Router();
 
 // Validation helper
@@ -384,6 +385,11 @@ router.post('/admin/:id/recalculate', auth, requireAdmin, async (req, res, next)
     
     await identity.recalculateStats();
     
+    // Invalidate leaderboard cache after stats recalculation
+    if (cache.isConnected) {
+      await cache.delPattern('leaderboard:*');
+    }
+    
     res.json({
       message: 'Statistics recalculated successfully',
       stats: identity.stats
@@ -411,6 +417,11 @@ router.post('/admin/recalculate-all', auth, requireAdmin, async (req, res, next)
         errors++;
         console.error(`Failed to recalculate stats for ${identity._id}:`, e);
       }
+    }
+    
+    // Invalidate leaderboard cache after stats recalculation
+    if (cache.isConnected) {
+      await cache.delPattern('leaderboard:*');
     }
     
     res.json({
@@ -535,13 +546,17 @@ router.get('/link/guest-identities', auth, async (req, res, next) => {
     const guestIdSet = new Set(guestUserIds.map(id => id.toString()));
     
     // Calculate game counts dynamically for all identities
+    // Count both current identityId AND previousIdentityId (games transferred during linking)
     const WizardGame = require('../models/WizardGame');
     const identityIds = identities.map(id => id._id);
     
     const gameCounts = await WizardGame.aggregate([
       {
         $match: {
-          'gameData.players.identityId': { $in: identityIds },
+          $or: [
+            { 'gameData.players.identityId': { $in: identityIds } },
+            { 'gameData.players.previousIdentityId': { $in: identityIds } }
+          ],
           isDeleted: { $ne: true }
         }
       },
@@ -550,12 +565,21 @@ router.get('/link/guest-identities', auth, async (req, res, next) => {
       },
       {
         $match: {
-          'gameData.players.identityId': { $in: identityIds }
+          $or: [
+            { 'gameData.players.identityId': { $in: identityIds } },
+            { 'gameData.players.previousIdentityId': { $in: identityIds } }
+          ]
         }
       },
       {
         $group: {
-          _id: '$gameData.players.identityId',
+          _id: {
+            $cond: {
+              if: { $in: ['$gameData.players.identityId', identityIds] },
+              then: '$gameData.players.identityId',
+              else: '$gameData.players.previousIdentityId'
+            }
+          },
           gameCount: { $sum: 1 }
         }
       }
@@ -1015,6 +1039,12 @@ router.post('/elo/recalculate',
     // This is a heavy operation, run it in the background
     // For now, run synchronously with timeout
     const result = await eloService.recalculateAllElo({ dryRun, gameType });
+    
+    // Invalidate leaderboard cache so fresh ELO data is served
+    if (!dryRun && cache.isConnected) {
+      await cache.delPattern('leaderboard:*');
+      console.log('✅ Leaderboard cache invalidated after ELO recalculation');
+    }
     
     res.json({
       message: dryRun ? 'Dry run complete' : 'ELO ratings recalculated',

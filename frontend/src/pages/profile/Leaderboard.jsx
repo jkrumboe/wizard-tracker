@@ -228,6 +228,7 @@ const Leaderboard = () => {
             type="text"
             placeholder="Search players..."
             className="search-input"
+            value=""
             disabled
           />
           <select 

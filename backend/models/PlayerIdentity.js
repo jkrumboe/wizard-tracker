@@ -172,11 +172,13 @@ playerIdentitySchema.pre('save', function(next) {
 /**
  * Find identity by name (case-insensitive)
  * Searches displayName, normalizedName, and aliases
+ * If the found identity has been merged, follows the mergedInto chain
+ * to return the canonical (primary) identity instead.
  */
 playerIdentitySchema.statics.findByName = async function(name) {
   const normalized = name.toLowerCase().trim();
   
-  return this.findOne({
+  let identity = await this.findOne({
     isDeleted: false,
     $or: [
       { normalizedName: normalized },
@@ -184,6 +186,21 @@ playerIdentitySchema.statics.findByName = async function(name) {
       { 'nameHistory.normalizedName': normalized }
     ]
   });
+  
+  // Follow mergedInto chain to return the canonical identity
+  if (identity && identity.mergedInto) {
+    const visited = new Set();
+    let current = identity;
+    while (current.mergedInto && !visited.has(current._id.toString())) {
+      visited.add(current._id.toString());
+      const target = await this.findById(current.mergedInto);
+      if (!target) break;
+      current = target;
+    }
+    identity = current;
+  }
+  
+  return identity;
 };
 
 /**

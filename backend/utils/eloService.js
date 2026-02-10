@@ -317,6 +317,154 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
 }
 
 /**
+ * Build a map that resolves any identity ID to its primary (canonical) identity ID.
+ * Handles two cases:
+ * 1. Explicitly merged identities (mergedInto is set)
+ * 2. Multiple unmerged identities for the same userId (picks the 'user' type one as primary)
+ * 
+ * @returns {Map<string, string>} Maps identityId string → primary identityId string
+ */
+async function buildIdentityMergeMap() {
+  const PlayerIdentity = mongoose.model('PlayerIdentity');
+  
+  // Load ALL identities (including deleted/merged ones) to build the full map
+  const allIdentities = await PlayerIdentity.find({}, {
+    _id: 1, userId: 1, mergedInto: 1, type: 1, isDeleted: 1, displayName: 1
+  }).lean();
+  
+  const mergeMap = new Map(); // identityId → primaryIdentityId
+  
+  // Step 1: Handle explicit mergedInto chains
+  const mergedIntoMap = new Map();
+  for (const identity of allIdentities) {
+    const idStr = identity._id.toString();
+    if (identity.mergedInto) {
+      mergedIntoMap.set(idStr, identity.mergedInto.toString());
+    }
+  }
+  
+  // Resolve chains (A → B → C becomes A → C, B → C)
+  function resolveChain(id) {
+    const visited = new Set();
+    let current = id;
+    while (mergedIntoMap.has(current) && !visited.has(current)) {
+      visited.add(current);
+      current = mergedIntoMap.get(current);
+    }
+    return current;
+  }
+  
+  for (const identity of allIdentities) {
+    const idStr = identity._id.toString();
+    if (identity.mergedInto) {
+      mergeMap.set(idStr, resolveChain(idStr));
+    }
+  }
+  
+  // Step 2: For identities sharing the same userId, consolidate to the primary (type='user') identity
+  const userIdentities = new Map(); // userId → [identities]
+  for (const identity of allIdentities) {
+    if (identity.userId && !identity.isDeleted) {
+      const userIdStr = identity.userId.toString();
+      if (!userIdentities.has(userIdStr)) {
+        userIdentities.set(userIdStr, []);
+      }
+      userIdentities.get(userIdStr).push(identity);
+    }
+  }
+  
+  for (const [, identities] of userIdentities) {
+    if (identities.length <= 1) continue;
+    
+    // Pick the 'user' type identity as primary, fallback to the first one
+    const primary = identities.find(i => i.type === 'user') || identities[0];
+    const primaryIdStr = primary._id.toString();
+    
+    for (const identity of identities) {
+      const idStr = identity._id.toString();
+      if (idStr !== primaryIdStr) {
+        // Only set if not already mapped by mergedInto
+        if (!mergeMap.has(idStr)) {
+          mergeMap.set(idStr, primaryIdStr);
+        }
+      }
+    }
+  }
+  
+  // Step 3: Map unlinked guests that share the same displayName as a user identity
+  // This handles cases like SönkeSoffmann: guest identity not linked but same name as user identity
+  const nameToUserIdentity = new Map(); // normalized name → primary identity id
+  for (const identity of allIdentities) {
+    if (identity.displayName && identity.userId && !identity.isDeleted && identity.type === 'user') {
+      const normalizedName = identity.displayName.trim().toLowerCase();
+      const primaryId = mergeMap.get(identity._id.toString()) || identity._id.toString();
+      nameToUserIdentity.set(normalizedName, primaryId);
+    }
+  }
+  
+  for (const identity of allIdentities) {
+    const idStr = identity._id.toString();
+    // Skip if already mapped
+    if (mergeMap.has(idStr)) continue;
+    // Only target unlinked guest identities (no userId, no mergedInto)
+    if (identity.type !== 'guest' || identity.userId || identity.mergedInto) continue;
+    if (!identity.displayName) continue;
+    
+    const normalizedName = identity.displayName.trim().toLowerCase();
+    if (nameToUserIdentity.has(normalizedName)) {
+      mergeMap.set(idStr, nameToUserIdentity.get(normalizedName));
+    }
+  }
+  
+  return mergeMap;
+}
+
+/**
+ * Remap game data player identityIds using a merge map.
+ * Returns a shallow copy of gameData with remapped identityIds.
+ * 
+ * @param {Object} gameData - The game's gameData object
+ * @param {Map<string, string>} mergeMap - Identity merge map
+ * @returns {Object} gameData with remapped identityIds
+ */
+function remapGameIdentities(gameData, mergeMap) {
+  if (!gameData?.players || mergeMap.size === 0) return gameData;
+  
+  const remappedPlayers = gameData.players.map(player => {
+    if (!player.identityId) return player;
+    
+    const idStr = player.identityId.toString();
+    const resolvedId = mergeMap.get(idStr);
+    
+    if (resolvedId && resolvedId !== idStr) {
+      return {
+        ...player,
+        identityId: resolvedId, // Use the primary identity
+        originalIdentityId: player.identityId // Preserve original for reference
+      };
+    }
+    return player;
+  });
+  
+  // Deduplicate: if two players now map to the same identity, that's a problem
+  // This shouldn't happen in practice (same person shouldn't be in the same game twice)
+  // but log a warning if it does
+  const seen = new Set();
+  const deduped = [];
+  for (const player of remappedPlayers) {
+    const key = player.identityId?.toString();
+    if (key && seen.has(key)) {
+      console.warn(`[ELO] Duplicate identity ${key} in game after merge resolution — skipping duplicate`);
+      continue;
+    }
+    if (key) seen.add(key);
+    deduped.push(player);
+  }
+  
+  return { ...gameData, players: deduped };
+}
+
+/**
  * Update player ELO ratings after a game
  * Uses MongoDB transactions when available to ensure atomic updates across all players
  * Falls back to non-transactional updates if transactions aren't supported
@@ -559,6 +707,12 @@ async function recalculateAllElo(options = {}) {
   
   console.log('🎯 Starting ELO recalculation...');
   
+  // Build identity merge map to consolidate linked/merged identities
+  const mergeMap = await buildIdentityMergeMap();
+  if (mergeMap.size > 0) {
+    console.log(`✓ Built identity merge map: ${mergeMap.size} identities will be consolidated`);
+  }
+  
   // Reset all ELO ratings if not dry run
   if (!dryRun) {
     if (gameType) {
@@ -639,12 +793,16 @@ async function recalculateAllElo(options = {}) {
     try {
       gameTypeCounts[gt] = (gameTypeCounts[gt] || 0) + 1;
       
+      // Remap identity IDs for merged/linked players so they share one ELO
+      const remappedGameData = remapGameIdentities(game.gameData, mergeMap);
+      const remappedGame = { ...game, gameData: remappedGameData };
+      
       if (!dryRun) {
-        const updates = await updateRatingsForGame(game, gt);
+        const updates = await updateRatingsForGame(remappedGame, gt);
         playersUpdated += updates.length;
       } else {
         // Dry run: just calculate
-        const identityIds = (game.gameData?.players || [])
+        const identityIds = (remappedGameData.players || [])
           .filter(p => p.identityId)
           .map(p => p.identityId);
         
@@ -657,7 +815,7 @@ async function recalculateAllElo(options = {}) {
           identities.map(i => [i._id.toString(), i])
         );
         
-        const changes = calculateGameEloChanges(game.gameData, identityMap, gt);
+        const changes = calculateGameEloChanges(remappedGameData, identityMap, gt);
         playersUpdated += changes.length;
       }
       
@@ -850,6 +1008,8 @@ module.exports = {
   getPlacementScore,
   getProvisionalDampening,
   calculateGameEloChanges,
+  buildIdentityMergeMap,
+  remapGameIdentities,
   updateRatingsForGame,
   recalculateAllElo,
   getEloRankings,
