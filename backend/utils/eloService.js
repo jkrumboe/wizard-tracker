@@ -213,20 +213,34 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
     return [];
   }
   
-  // Sort players by score (highest first) to determine placement
+  // Sort players by score to determine placement
+  // For table games, scores are in player.points arrays; for wizard games, in final_scores map
+  // Respect lowIsBetter: if true, lowest score wins (e.g., Dutch)
+  const lowIsBetter = gameData.lowIsBetter === true;
   const rankedPlayers = players
-    .map(p => ({
-      id: p.id,
-      name: p.name,
-      identityId: p.identityId,
-      score: finalScores[p.id] || 0
-    }))
-    .sort((a, b) => b.score - a.score);
+    .map(p => {
+      let score = 0;
+      if (finalScores && p.id && finalScores[p.id] != null) {
+        // Wizard game format: final_scores[playerId]
+        score = finalScores[p.id];
+      } else if (Array.isArray(p.points) && p.points.length > 0) {
+        // Table game format: sum of points array
+        score = p.points.reduce((sum, val) => sum + (Number(val) || 0), 0);
+      }
+      return {
+        id: p.id,
+        name: p.name,
+        identityId: p.identityId,
+        score
+      };
+    })
+    .sort((a, b) => lowIsBetter ? a.score - b.score : b.score - a.score);
   
   // Assign placements (handle ties)
+  // Players are already sorted best-to-worst, so just check if score differs from previous
   let currentPlacement = 1;
   rankedPlayers.forEach((player, index) => {
-    if (index > 0 && player.score < rankedPlayers[index - 1].score) {
+    if (index > 0 && player.score !== rankedPlayers[index - 1].score) {
       currentPlacement = index + 1;
     }
     player.placement = currentPlacement;
@@ -271,9 +285,16 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
       actualTotal += getPlacementScore(player.placement, opponent.placement, numPlayers) * provisionalFactor;
       
       // Score margin multiplier (full bonus for winners, capped penalty for losers)
-      if (player.score > opponent.score) {
+      // For lowIsBetter games, having a lower score means beating the opponent
+      const playerBeatOpponent = lowIsBetter 
+        ? player.score < opponent.score 
+        : player.score > opponent.score;
+      const opponentBeatPlayer = lowIsBetter
+        ? player.score > opponent.score
+        : player.score < opponent.score;
+      if (playerBeatOpponent) {
         marginMultiplier *= getMarginMultiplier(player.score, opponent.score, true);
-      } else if (player.score < opponent.score) {
+      } else if (opponentBeatPlayer) {
         marginMultiplier *= getMarginMultiplier(player.score, opponent.score, false);
       }
     }
