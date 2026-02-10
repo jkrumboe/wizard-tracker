@@ -252,6 +252,7 @@ const GameDetails = () => {
         id: normalizedId,
         score,
         name: playerData?.name || `Player ${playerIndex + 1}`,
+        identityId: playerData?.identityId, // Include identity for proper user linking
       };
     })
     .sort((a, b) => b.score - a.score)

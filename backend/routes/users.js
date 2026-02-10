@@ -261,7 +261,7 @@ router.get('/lookup/:username', async (req, res, next) => {
 });
 
 // GET /users/:usernameOrId/profile - Get public profile for a user by username or ID
-// Also works for player names without registered accounts
+// Also works for player names without registered accounts (resolves guest identities to linked users)
 router.get('/:usernameOrId/profile', async (req, res, next) => {
   try {
     const { usernameOrId } = req.params;
@@ -269,9 +269,6 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     if (!usernameOrId) {
       return res.status(400).json({ error: 'Username or user ID is required' });
     }
-
-    const mongoose = require('mongoose');
-    const User = require('../models/User');
     
     // Try to find registered user - by ID first, then by username
     let user;
@@ -282,6 +279,34 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture');
     }
     
+    // If user not found directly, try to resolve through player identity system
+    // This handles cases where a guest player name is provided (e.g., "Robin" -> "RobinRummels")
+    if (!user) {
+      console.log(`[Profile] User not found by username/ID, checking player identity for: ${usernameOrId}`);
+      
+      // Search for player identity (guest or merged) by display name
+      const normalizedName = usernameOrId.toLowerCase().trim();
+      let identity = await PlayerIdentity.findOne({
+        normalizedName: normalizedName,
+        isDeleted: false
+      }).lean();
+      
+      // If identity is merged, follow the chain to the target identity
+      if (identity && identity.mergedInto) {
+        console.log(`[Profile] Identity merged into another, following chain...`);
+        const targetIdentity = await PlayerIdentity.findById(identity.mergedInto).lean();
+        if (targetIdentity) {
+          identity = targetIdentity;
+        }
+      }
+      
+      // If the identity has a linked userId, fetch that user
+      if (identity && identity.userId) {
+        console.log(`[Profile] Found linked user ID ${identity.userId} for player name "${usernameOrId}"`);
+        user = await User.findById(identity.userId).select('_id username createdAt profilePicture');
+      }
+    }
+    
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -289,7 +314,6 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     console.log(`[Profile] Fetching games for user "${user.username}" (ID: ${user._id}) using identity system`);
 
     // Use PlayerIdentity system to find all identities linked to this user
-    const PlayerIdentity = require('../models/PlayerIdentity');
     
     // Find identities directly owned by this user (include eloByGameType for ELO history)
     const identities = await PlayerIdentity.find({ userId: user._id }).select('_id displayName eloByGameType').lean();

@@ -188,7 +188,7 @@ router.get('/leaderboard', async (req, res, next) => {
     // Load all identities to map identityId -> playerKey and get ELO data
     // playerKey is the userId if linked, or the identityId itself for unlinked guests
     const allIdentities = await PlayerIdentity.find({ isDeleted: false })
-      .select('_id userId displayName eloByGameType')
+      .select('_id userId displayName eloByGameType mergedInto')
       .lean();
     const identityToPlayerKeyMap = {}; // Maps identityId string -> playerKey string
     const playerKeyIsGuest = {}; // Tracks which playerKeys are unlinked guests
@@ -196,12 +196,49 @@ router.get('/leaderboard', async (req, res, next) => {
     
     const userEloByGameType = {}; // Maps playerKey string -> { gameType: elo data }
     
+    // First pass: build identity map without handling merges
+    const identityMap = new Map();
+    allIdentities.forEach(identity => {
+      identityMap.set(identity._id.toString(), identity);
+    });
+    
+    // Helper function to resolve identity chain (follow mergedInto)
+    const resolveIdentity = (identityIdStr, visited = new Set()) => {
+      // Prevent infinite loops from circular references
+      if (visited.has(identityIdStr)) {
+        console.warn(`[Leaderboard] Circular reference detected in identity chain: ${identityIdStr}`);
+        return null;
+      }
+      visited.add(identityIdStr);
+      
+      const identity = identityMap.get(identityIdStr);
+      if (!identity) return null;
+      
+      // If merged, follow the chain to the target
+      if (identity.mergedInto) {
+        const targetIdStr = identity.mergedInto.toString();
+        const resolved = resolveIdentity(targetIdStr, visited);
+        return resolved || identity; // Fallback to current identity if chain breaks
+      }
+      
+      return identity;
+    };
+    
+    // Second pass: map all identities to their final playerKey
     allIdentities.forEach(identity => {
       const identityIdStr = identity._id.toString();
-      const userIdStr = identity.userId?.toString();
       
-      // Use userId as playerKey if linked, otherwise use identityId
-      const playerKey = userIdStr || identityIdStr;
+      // Resolve to final identity (following merge chain)
+      const finalIdentity = resolveIdentity(identityIdStr);
+      if (!finalIdentity) {
+        console.warn(`[Leaderboard] Could not resolve identity: ${identityIdStr}`);
+        return;
+      }
+      
+      const userIdStr = finalIdentity.userId?.toString();
+      
+      // Use userId as playerKey if linked, otherwise use final identity's ID
+      const playerKey = userIdStr || finalIdentity._id.toString();
       identityToPlayerKeyMap[identityIdStr] = playerKey;
       
       if (!userIdStr) {
@@ -211,12 +248,20 @@ router.get('/leaderboard', async (req, res, next) => {
       // Use registered username if available, otherwise use identity displayName
       if (!userDisplayNames[playerKey]) {
         const user = userIdStr ? userIdMap[userIdStr] : null;
-        userDisplayNames[playerKey] = user ? user.username : identity.displayName;
+        userDisplayNames[playerKey] = user ? user.username : finalIdentity.displayName;
       }
       
-      // Store ELO data for this player
+      // Store ELO data - collect from all identities that map to this playerKey
+      // This handles the case where merged identities might have their own ELO history
       if (identity.eloByGameType) {
-        userEloByGameType[playerKey] = identity.eloByGameType;
+        // If we don't have ELO for this playerKey yet, use current identity's ELO
+        if (!userEloByGameType[playerKey]) {
+          userEloByGameType[playerKey] = identity.eloByGameType;
+        }
+        // If the final identity has ELO, prefer that  
+        if (finalIdentity !== identity && finalIdentity.eloByGameType) {
+          userEloByGameType[playerKey] = finalIdentity.eloByGameType;
+        }
       }
     });
     

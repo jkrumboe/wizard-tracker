@@ -29,19 +29,21 @@ const Leaderboard = () => {
     });
 
     try {
-      // Navigate using userId (identity system)
-      if (!player.userId) {
-        alert('Cannot view profile for guest players');
+      // Navigate using userId if available, otherwise use player name
+      // The backend will resolve guest player names to linked user accounts
+      const identifier = player.userId || player.name;
+      if (!identifier) {
+        alert('Cannot view profile for this player');
         return;
       }
-      console.log('✅ Navigating to user profile:', `/user/${player.userId}`);
+      console.log('✅ Navigating to user profile:', `/user/${identifier}`);
       console.log('📊 Player stats:', {
         wins: player.wins,
         totalGames: player.totalGames,
         winRate: player.winRate,
         avgScore: player.avgScore
       });
-      navigate(`/user/${player.userId}`)
+      navigate(`/user/${identifier}`)
     } catch (error) {
       console.error('💥 Error navigating to player:', error)
       alert(`Error loading player profile: ${error.message}`)
