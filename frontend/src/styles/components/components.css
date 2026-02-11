@@ -113,7 +113,7 @@
 
   .game-card {
     display: flex;
-    width: 98%;
+    width: 100%;
     flex-direction: column;
     background-color: var(--card-bg);
     border-radius: var(--radius-md);

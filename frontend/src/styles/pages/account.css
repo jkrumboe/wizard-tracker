@@ -362,100 +362,159 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Swipeable Card Styles */
-.swipeable-card-container {
+/* Card Actions Container — card + "⋮" menu button */
+.card-actions-container {
   position: relative;
-  /* overflow-x: hidden; */
-  /* Force container to wrap content height */
-  display: inline-block;
+  display: flex;
+  align-items: stretch;
   width: 100%;
+  gap: 6px;
 }
 
-.swipeable-card-content {
-  display: block;
-  background-color: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: pan-y;
-  position: relative;
-  z-index: 1;
-  width: 100%;
+.card-actions-content {
+  flex: 1;
+  min-width: 0;
 }
 
-/* When card is swiped, prevent clicks on underlying content */
-.swipeable-card-content.is-swiped {
-  pointer-events: none;
-}
-
-/* But allow swipe action buttons to be clicked */
-.swipeable-card-content.is-swiped + .swipe-actions {
-  pointer-events: auto;
-}
-
-.swipeable-card-content .game-card {
+.card-actions-content .game-card {
   margin-bottom: 0;
   height: 100%;
 }
 
-.swipe-actions {
+/* "⋮" trigger button */
+.card-actions-menu-wrapper {
+  position: relative;
+  flex-shrink: 0;
   display: flex;
   align-items: stretch;
-  gap: var(--spacing-xs);
-  padding: 0 var(--spacing-xs);
-  z-index: 0;
 }
 
-.swipe-action-button {
-  flex: 1;
+.card-actions-menu-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  width: 30px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 40px;
-  max-width: 56px;
-  color: var(--text);
-  font-weight: 600;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   padding: 0;
 }
 
-.swipe-action-button:disabled {
-  opacity: 0.5;
+.card-actions-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.card-actions-menu-btn.active {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Dropdown action bar — rendered via portal, floats above everything */
+.card-actions-dropdown {
+  position: fixed;
+  z-index: 9999;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 0 4px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Each menu item */
+.card-actions-dropdown-item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--spacing-sm);
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.card-actions-dropdown-item:last-child {
+  border-right: none;
+}
+
+.card-actions-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card-actions-dropdown-item.disabled,
+.card-actions-dropdown-item:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.swipe-action-button.view-action {
-  background-color: var(--secondary);
-  color: var(--text);
+.card-actions-dropdown-item.disabled:hover,
+.card-actions-dropdown-item:disabled:hover {
+  background: transparent;
 }
 
-.swipe-action-button.edit-action {
-  background-color: #FFC107;
-  color: #000;
+.card-actions-dropdown-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
 }
 
-.swipe-action-button.sync-action {
-  background-color: var(--primary);
-  color: var(--text);
+.card-actions-dropdown-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.swipe-action-button.sync-system-action {
-  background-color: #9333ea;
-  color: var(--text);
+/* Action color accents (icon color) */
+.card-actions-dropdown-item.action-view .card-actions-dropdown-icon {
+  color: var(--secondary);
 }
-
-.swipe-action-button.share-action {
-  background-color: var(--primary);
-  color: var(--text);
+.card-actions-dropdown-item.action-edit .card-actions-dropdown-icon {
+  color: #FFC107;
 }
-
-.swipe-action-button.delete-action {
-  background-color: var(--danger-color);
-  color: var(--text);
+.card-actions-dropdown-item.action-sync .card-actions-dropdown-icon {
+  color: var(--primary);
+}
+.card-actions-dropdown-item.action-sync-system .card-actions-dropdown-icon {
+  color: #9333ea;
+}
+.card-actions-dropdown-item.action-share .card-actions-dropdown-icon {
+  color: var(--primary);
+}
+.card-actions-dropdown-item.action-delete {
+  color: var(--danger-color);
+}
+.card-actions-dropdown-item.action-delete .card-actions-dropdown-icon {
+  color: var(--danger-color);
 }
 
 /* Authentication required message */

@@ -1,10 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon, RotateCcwIcon } from '@/components/ui/Icon';
+import { EllipsisVertical } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 /**
- * SwipeableGameCard component that wraps game cards with swipe-to-reveal actions
+ * SwipeableGameCard — wraps a card with a "⋮" context-menu button.
+ * Tapping the button opens a dropdown popover listing the available actions.
+ * No swiping required — everything is immediately visible and tappable.
  */
 const SwipeableGameCard = ({
   children,
@@ -29,282 +33,207 @@ const SwipeableGameCard = ({
   disableSyncToSystem = false,
   disableShare = false,
 }) => {
-  const [translateX, setTranslateX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const startX = useRef(0);
-  const currentX = useRef(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState({});
+  const containerRef = useRef(null);
+  const menuRef = useRef(null);
+  const btnRef = useRef(null);
   const navigate = useNavigate();
-  const cardRef = useRef(null);
 
-  const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe
-  const ACTION_BUTTON_WIDTH = 45; // Width of each action button in pixels
-  
-  // Calculate dynamic max swipe based on number of visible actions
-  const visibleActionsCount = [
-    !!detailsPath, // View button
-    showViewDetails, // View details button
-    showEdit,
-    showSync,
-    showSyncToSystem,
-    showShare,
-    showDelete // Delete button (optional)
-  ].filter(Boolean).length;
-  
-  const MAX_SWIPE = visibleActionsCount * ACTION_BUTTON_WIDTH;
+  // Position the dropdown relative to the container using fixed positioning
+  const updateDropdownPosition = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dropdownHeight = menuRef.current?.offsetHeight || 40;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const showAbove = spaceBelow < dropdownHeight + 8;
 
-  // Handle touch/mouse start
-  const handleStart = (clientX) => {
-    setIsDragging(true);
-    startX.current = clientX;
-    currentX.current = translateX;
-  };
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      ...(showAbove
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }),
+    });
+  }, []);
 
-  // Handle touch/mouse move
-  const handleMove = (clientX) => {
-    if (!isDragging) return;
+  // Build the list of visible actions
+  const actions = [];
 
-    const diff = startX.current - clientX;
-    const newTranslateX = currentX.current + diff;
+  if (detailsPath) {
+    actions.push({
+      key: 'view',
+      label: 'View Details',
+      icon: <EyeIcon size={16} />,
+      className: 'action-view',
+      handler: () => navigate(detailsPath),
+    });
+  }
+  if (showViewDetails && onViewDetails) {
+    actions.push({
+      key: 'viewDetails',
+      label: 'View Details',
+      icon: <EyeIcon size={16} />,
+      className: 'action-view',
+      handler: onViewDetails,
+    });
+  }
+  if (showEdit && onEdit) {
+    actions.push({
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditIcon size={16} />,
+      className: 'action-edit',
+      handler: onEdit,
+    });
+  }
+  if (showSync) {
+    actions.push({
+      key: 'sync',
+      label: isUploading ? 'Uploading…' : (syncTitle || 'Upload to Cloud'),
+      icon: isUploading
+        ? <span className="share-spinner small" aria-label="Uploading…" />
+        : <CloudIcon size={16} />,
+      className: 'action-sync',
+      handler: onSync,
+      disabled: disableSync || isUploading,
+    });
+  }
+  if (showSyncToSystem) {
+    actions.push({
+      key: 'syncSystem',
+      label: syncToSystemTitle || 'Sync to System',
+      icon: <RotateCcwIcon size={16} />,
+      className: 'action-sync-system',
+      handler: onSyncToSystem,
+      disabled: disableSyncToSystem,
+    });
+  }
+  if (showShare) {
+    actions.push({
+      key: 'share',
+      label: isSharing ? 'Sharing…' : 'Share',
+      icon: isSharing
+        ? <span className="share-spinner small" aria-label="Sharing…" />
+        : <ShareIcon size={16} />,
+      className: 'action-share',
+      handler: onShare,
+      disabled: disableShare || isSharing,
+    });
+  }
+  if (showDelete && onDelete) {
+    actions.push({
+      key: 'delete',
+      label: 'Delete',
+      icon: <TrashIcon size={16} />,
+      className: 'action-delete',
+      handler: onDelete,
+    });
+  }
 
-    // Clamp between 0 (closed) and MAX_SWIPE (fully open)
-    setTranslateX(Math.max(0, Math.min(newTranslateX, MAX_SWIPE)));
-  };
-
-  // Handle touch/mouse end
-  const handleEnd = () => {
-    setIsDragging(false);
-
-    // If swiped past threshold, snap to open position
-    // If less than threshold, snap to closed position
-    // Use a smaller threshold for better UX
-    if (translateX > SWIPE_THRESHOLD / 2) {
-      setTranslateX(MAX_SWIPE);
-      setIsOpen(true);
-    } else {
-      setTranslateX(0);
-      setIsOpen(false);
-    }
-  };
-
-  // Touch event handlers
-  const handleTouchStart = (e) => {
-    // Don't start drag if touching a button or interactive element
-    const isInteractive = e.target.closest('button') || 
-                          e.target.closest('a') || 
-                          e.target.closest('input') || 
-                          e.target.closest('select');
-    if (isInteractive) return;
-    
-    handleStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e) => {
-    handleMove(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    handleEnd();
-  };
-
-  // Add mouse move and up listeners when dragging
+  // Calculate position when menu opens and on scroll/resize
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      handleMove(e.clientX);
+    if (!menuOpen) return;
+    updateDropdownPosition();
+    const onScrollOrResize = () => setMenuOpen(false);
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
     };
+  }, [menuOpen, updateDropdownPosition]);
 
-    const handleMouseUp = () => {
-      handleEnd();
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, translateX]);
-
-  // Close swipe when clicking outside
+  // Close menu on outside click
   useEffect(() => {
+    if (!menuOpen) return;
     const handleClickOutside = (e) => {
-      // Don't close if we're currently dragging or if clicking inside the card
-      if (isDragging) return;
-      if (cardRef.current && !cardRef.current.contains(e.target) && isOpen) {
-        setTranslateX(0);
-        setIsOpen(false);
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setMenuOpen(false);
       }
     };
-
-    // Add a small delay to prevent immediate closure after swipe
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }, 100);
-    
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     return () => {
-      clearTimeout(timeoutId);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isOpen, isDragging]);
+  }, [menuOpen]);
 
-  // Handle action button clicks
-  const handleActionClick = (e, handler) => {
+  // Close menu on Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [menuOpen]);
+
+  const handleToggle = (e) => {
     e.stopPropagation();
-    if (handler) {
-      handler();
-    }
-    // Close the swipe after action
-    setTimeout(() => {
-      setTranslateX(0);
-      setIsOpen(false);
-    }, 300);
+    setMenuOpen((prev) => !prev);
   };
 
-  const handleMouseDown = (e) => {
-    // Don't start drag if clicking on a button or interactive element
-    const isInteractive = e.target.closest('button') || 
-                          e.target.closest('a') || 
-                          e.target.closest('input') || 
-                          e.target.closest('select');
-    if (isInteractive) return;
-    
-    handleStart(e.clientX);
+  const handleAction = (e, action) => {
+    e.stopPropagation();
+    if (action.disabled) return;
+    if (action.handler) action.handler();
+    setMenuOpen(false);
   };
 
   return (
-    <div 
-      ref={cardRef}
-      className="swipeable-card-container"
-    >
-      {/* Action buttons revealed on swipe */}
-      <div className="swipe-actions" style={{
-        position: 'absolute',
-        right: 0,
-        top: 0,
-        bottom: 0,
-        display: 'flex',
-        alignItems: 'stretch',
-        width: `${MAX_SWIPE}px`,
-        transform: `translateX(${MAX_SWIPE - translateX}px)`,
-        transition: isDragging ? 'none' : 'transform 0.3s ease',
-      }}>
-        {/* View button - always show first */}
-        {detailsPath && (
-          <button
-            className="swipe-action-button view-action"
-            onClick={(e) => handleActionClick(e, () => navigate(detailsPath))}
-            title="View game details"
-            aria-label="View game details"
-          >
-            <EyeIcon size={24} />
-          </button>
-        )}
-
-        {/* View Details button */}
-        {showViewDetails && onViewDetails && (
-          <button
-            className="swipe-action-button view-action"
-            onClick={(e) => handleActionClick(e, onViewDetails)}
-            title="View template details"
-            aria-label="View template details"
-          >
-            <EyeIcon size={24} />
-          </button>
-        )}
-
-        {/* Edit button */}
-        {showEdit && onEdit && (
-          <button
-            className="swipe-action-button edit-action"
-            onClick={(e) => handleActionClick(e, onEdit)}
-            title="Edit template"
-            aria-label="Edit template"
-          >
-            <EditIcon size={24} />
-          </button>
-        )}
-
-        {/* Sync/Upload button */}
-        {showSync && (
-          <button
-            className={`swipe-action-button sync-action ${isUploading ? 'uploading' : ''}`}
-            onClick={(e) => handleActionClick(e, onSync)}
-            disabled={disableSync || isUploading}
-            title={syncTitle}
-            aria-label={isUploading ? "Uploading..." : "Upload to cloud"}
-          >
-            {isUploading ? (
-              <span className="share-spinner" aria-label="Uploading..." />
-            ) : (
-              <CloudIcon size={24} />
-            )}
-          </button>
-        )}
-
-        {/* Sync to System button */}
-        {showSyncToSystem && (
-          <button
-            className="swipe-action-button sync-system-action"
-            onClick={(e) => handleActionClick(e, onSyncToSystem)}
-            disabled={disableSyncToSystem}
-            title={syncToSystemTitle}
-            aria-label="Sync to system template"
-          >
-            <RotateCcwIcon size={24} />
-          </button>
-        )}
-
-        {/* Share button */}
-        {showShare && (
-          <button
-            className={`swipe-action-button share-action ${isSharing ? 'sharing' : ''}`}
-            onClick={(e) => handleActionClick(e, onShare)}
-            disabled={disableShare || isSharing}
-            title={isSharing ? 'Creating share link...' : 'Share game'}
-            aria-label={isSharing ? "Sharing..." : "Share game"}
-          >
-            {isSharing ? (
-              <span className="share-spinner" aria-label="Sharing..." />
-            ) : (
-              <ShareIcon size={24} />
-            )}
-          </button>
-        )}
-
-        {/* Delete button */}
-        {showDelete && onDelete && (
-          <button
-            className="swipe-action-button delete-action"
-            onClick={(e) => handleActionClick(e, onDelete)}
-            title="Delete game"
-            aria-label="Delete game"
-          >
-            <TrashIcon size={24} />
-          </button>
-        )}
-      </div>
-
-      {/* Main card content */}
-      <div
-        className={`swipeable-card-content ${translateX > 0 ? 'is-swiped' : ''}`}
-        style={{
-          transform: `translateX(-${translateX}px)`,
-          transition: isDragging ? 'none' : 'transform 0.3s ease',
-          cursor: 'default',
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-      >
+    <div ref={containerRef} className="card-actions-container">
+      {/* Card content */}
+      <div className="card-actions-content">
         {children}
       </div>
+
+      {/* Context menu trigger */}
+      {actions.length > 0 && (
+        <div className="card-actions-menu-wrapper">
+          <button
+            ref={btnRef}
+            className={`card-actions-menu-btn ${menuOpen ? 'active' : ''}`}
+            onClick={handleToggle}
+            aria-label="More actions"
+            aria-expanded={menuOpen}
+            aria-haspopup="true"
+          >
+            <EllipsisVertical size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Dropdown — rendered via portal so it floats above everything */}
+      {menuOpen && actions.length > 0 && createPortal(
+        <div
+          ref={menuRef}
+          className="card-actions-dropdown"
+          role="menu"
+          style={dropdownStyle}
+        >
+          {actions.map((action) => (
+            <button
+              key={action.key}
+              className={`card-actions-dropdown-item ${action.className} ${action.disabled ? 'disabled' : ''}`}
+              onClick={(e) => handleAction(e, action)}
+              disabled={action.disabled}
+              role="menuitem"
+            >
+              <span className="card-actions-dropdown-icon">{action.icon}</span>
+              <span className="card-actions-dropdown-label">{action.label}</span>
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
@@ -313,6 +242,7 @@ SwipeableGameCard.propTypes = {
   children: PropTypes.node.isRequired,
   onDelete: PropTypes.func,
   onSync: PropTypes.func,
+  onSyncToSystem: PropTypes.func,
   onShare: PropTypes.func,
   onEdit: PropTypes.func,
   onViewDetails: PropTypes.func,
@@ -320,12 +250,15 @@ SwipeableGameCard.propTypes = {
   isUploading: PropTypes.bool,
   isSharing: PropTypes.bool,
   showSync: PropTypes.bool,
+  showSyncToSystem: PropTypes.bool,
   showShare: PropTypes.bool,
   showEdit: PropTypes.bool,
   showViewDetails: PropTypes.bool,
   showDelete: PropTypes.bool,
   syncTitle: PropTypes.string,
+  syncToSystemTitle: PropTypes.string,
   disableSync: PropTypes.bool,
+  disableSyncToSystem: PropTypes.bool,
   disableShare: PropTypes.bool,
 };
 

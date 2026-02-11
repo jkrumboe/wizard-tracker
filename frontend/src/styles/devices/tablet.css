@@ -179,7 +179,7 @@
 
     .game-card {
         flex: 1;
-        width: 99%;
+        width: 100%;
         padding: var(--spacing-xs) var(--spacing-sm);
         border-radius: var(--radius-lg);
         /* box-shadow: var(--shadow); */
@@ -203,7 +203,7 @@
         font-size: 0.9rem;
     }
 
-    .swipeable-card-container .game-history {
+    .card-actions-container .game-history {
         flex-direction: row;
         align-items: stretch;
         flex-wrap: wrap;
