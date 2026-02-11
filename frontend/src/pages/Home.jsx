@@ -301,7 +301,7 @@ const Home = () => {
     <div className="home-container">
       <header className="home-header">
         <h1>KeepWiz</h1>
-        <p>Track your Wizard card game stats and performance</p>
+        <p>Track your game stats and performances</p>
       </header>
 
       <div className="friends-section">
