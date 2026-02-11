@@ -194,7 +194,11 @@ async function createFromMongo(prisma, mongoIdentity) {
       normalizedName: mongoIdentity.normalizedName || mongoIdentity.displayName.toLowerCase().trim(),
       userId: mongoIdentity.userId?.toString() || null,
       type: mongoIdentity.type || 'guest',
-      eloData: mongoIdentity.eloByGameType ? Object.fromEntries(mongoIdentity.eloByGameType) : {},
+      eloData: mongoIdentity.eloByGameType
+        ? (mongoIdentity.eloByGameType instanceof Map
+            ? Object.fromEntries(mongoIdentity.eloByGameType)
+            : mongoIdentity.eloByGameType)
+        : {},
       totalGames: mongoIdentity.stats?.totalGames || 0,
       totalWins: mongoIdentity.stats?.totalWins || 0,
       lastGameAt: mongoIdentity.stats?.lastGameAt || null,

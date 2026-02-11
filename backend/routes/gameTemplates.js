@@ -3,6 +3,15 @@ const SystemGameTemplate = require('../models/SystemGameTemplate');
 const UserGameTemplate = require('../models/UserGameTemplate');
 const TemplateSuggestion = require('../models/TemplateSuggestion');
 const auth = require('../middleware/auth');
+const {
+  mirrorUserTemplateCreate,
+  mirrorUserTemplateUpdate,
+  mirrorUserTemplateDelete,
+  mirrorSystemTemplateCreate,
+  mirrorSystemTemplateUpdate,
+  mirrorSuggestionCreate,
+  mirrorSuggestionStatusUpdate
+} = require('../utils/templateDualWrite');
 
 const router = express.Router();
 
@@ -98,6 +107,9 @@ router.post('/', auth, async (req, res, next) => {
 
     await template.save();
 
+    // Mirror to PostgreSQL
+    mirrorUserTemplateCreate(template).catch(() => {});
+
     res.status(201).json({
       message: 'Template created successfully',
       template,
@@ -130,6 +142,15 @@ router.put('/:id', auth, async (req, res, next) => {
 
     await template.save();
 
+    // Mirror to PostgreSQL
+    mirrorUserTemplateUpdate(template, {
+      name: template.name,
+      targetNumber: template.targetNumber,
+      lowIsBetter: template.lowIsBetter,
+      description: template.description,
+      descriptionMarkdown: template.descriptionMarkdown
+    }).catch(() => {});
+
     res.json({
       message: 'Template updated successfully',
       template
@@ -153,6 +174,9 @@ router.delete('/:id', auth, async (req, res, next) => {
     if (!template) {
       return res.status(404).json({ error: 'Template not found or not authorized' });
     }
+
+    // Mirror to PostgreSQL
+    mirrorUserTemplateDelete(template).catch(() => {});
 
     res.json({ message: 'Template deleted successfully' });
   } catch (error) {
@@ -207,6 +231,9 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
 
     await suggestion.save();
 
+    // Mirror to PostgreSQL
+    mirrorSuggestionCreate(suggestion).catch(() => {});
+
     res.status(201).json({
       message: 'Template suggestion submitted successfully',
       suggestion
@@ -260,6 +287,9 @@ router.post('/system/:id/suggest-change', auth, async (req, res, next) => {
     });
 
     await suggestion.save();
+
+    // Mirror to PostgreSQL
+    mirrorSuggestionCreate(suggestion).catch(() => {});
 
     res.status(201).json({
       message: 'Change request submitted successfully',
@@ -349,6 +379,20 @@ router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
     suggestion.reviewedAt = new Date();
     await suggestion.save();
 
+    // Mirror to PostgreSQL
+    if (suggestion.suggestionType === 'change') {
+      mirrorSystemTemplateUpdate(systemTemplate, {
+        name: systemTemplate.name,
+        targetNumber: systemTemplate.targetNumber,
+        lowIsBetter: systemTemplate.lowIsBetter,
+        description: systemTemplate.description,
+        descriptionMarkdown: systemTemplate.descriptionMarkdown
+      }).catch(() => {});
+    } else {
+      mirrorSystemTemplateCreate(systemTemplate).catch(() => {});
+    }
+    mirrorSuggestionStatusUpdate(suggestion._id, 'approved').catch(() => {});
+
     res.json({
       message: suggestion.suggestionType === 'change' 
         ? 'Template changes approved and system template updated'
@@ -380,6 +424,9 @@ router.delete('/admin/suggestions/:id', auth, async (req, res, next) => {
     suggestion.reviewedAt = new Date();
     suggestion.reviewNote = reviewNote || '';
     await suggestion.save();
+
+    // Mirror to PostgreSQL
+    mirrorSuggestionStatusUpdate(suggestion._id, 'rejected', reviewNote).catch(() => {});
 
     res.json({ message: 'Template suggestion rejected' });
   } catch (error) {

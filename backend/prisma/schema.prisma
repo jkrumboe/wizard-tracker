@@ -48,7 +48,9 @@ model User {
   createdTemplates     UserGameTemplate[]
   suggestedTemplates   TemplateSuggestion[]
   createdIdentities    PlayerIdentity[]  @relation("IdentityCreator")
-  playerAliases        PlayerAlias[]
+  playerAliases        PlayerAlias[]     @relation("AliasOwner")
+  createdAliases       PlayerAlias[]     @relation("AliasCreator")
+  createdSystemTemplates SystemGameTemplate[]
 
   @@index([username])
   @@index([role])
@@ -108,8 +110,11 @@ model PlayerIdentity {
   @@index([normalizedName, isDeleted])
   @@index([userId, isDeleted])
   @@index([type, isDeleted])
-  // Ensure each user can only have one type='user' identity (primary identity)
-  @@unique([userId, type], map: "unique_user_primary_identity")
+  @@index([displayName])
+  // Note: MongoDB has a partial unique index on userId WHERE isDeleted=false.
+  // Prisma doesn't support partial unique indexes natively.
+  // The @@unique([userId, type]) approximation is removed in favor of a raw SQL
+  // partial unique index added in migration SQL. See migration for details.
 }
 
 // ============================================
@@ -138,19 +143,22 @@ model FriendRequest {
 }
 
 // ============================================
-// Legacy Alias System (for migration reference)
+// Legacy Alias System
 // ============================================
 
 model PlayerAlias {
   id          String   @id @default(cuid())
   aliasName   String   @unique
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  createdById String?
+  userId      String
+  user        User     @relation("AliasOwner", fields: [userId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User     @relation("AliasCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  notes       String?  @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+  @@index([createdById])
 }
 
 // ============================================
@@ -221,26 +229,49 @@ model TableGame {
   updatedAt           DateTime @updatedAt
 
   @@index([userId, createdAt(sort: Desc)])
+  @@index([gameTypeName, createdAt(sort: Desc)])
+  @@index([gameFinished, userId])
+  @@index([identitiesMigrated])
 }
 
 // ============================================
 // Event Sourcing & Sync
 // ============================================
 
+enum GameEventAction {
+  GAME_START
+  GAME_PAUSE
+  GAME_RESUME
+  GAME_END
+  ROUND_START
+  ROUND_COMPLETE
+  SCORE_UPDATE
+  BATCH_SCORE_UPDATE
+  PLAYER_ADD
+  PLAYER_REMOVE
+  PLAYER_UPDATE
+  BID_PLACED
+  BID_UPDATE
+  TRICK_RECORDED
+  TRICK_UPDATE
+  STATE_RESTORE
+  STATE_MERGE
+}
+
 model GameEvent {
-  id            String   @id @default(cuid())
-  eventId       String   @unique // Original event ID from client
+  id            String          @id @default(cuid())
+  eventId       String          @unique // Original event ID from client
   gameId        String
-  actionType    String
+  actionType    GameEventAction
   payload       Json
   timestamp     BigInt
   localVersion  Int
   userId        String
   clientId      String?
   serverVersion Int
-  acknowledged  Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  acknowledged  Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@index([gameId, serverVersion])
   @@index([gameId, timestamp])
@@ -256,7 +287,7 @@ model GameSnapshot {
   userId        String
   eventCount    Int      @default(0)
   checksum      String?
-  expiresAt     DateTime? // For TTL
+  expiresAt     DateTime? // For TTL — requires application-level cleanup job
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -268,50 +299,87 @@ model GameSnapshot {
 // Game Templates
 // ============================================
 
+enum SuggestionStatus {
+  pending
+  approved
+  rejected
+}
+
+enum SuggestionType {
+  new_template
+  change
+}
+
 model SystemGameTemplate {
-  id           String   @id @default(cuid())
-  name         String
-  targetNumber Int?
-  lowIsBetter  Boolean  @default(false)
-  description  String?
-  usageCount   Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  name                String   @unique
+  targetNumber        Int?
+  lowIsBetter         Boolean  @default(false)
+  description         String?
+  descriptionMarkdown String?  // Rich markdown description
+  usageCount          Int      @default(0)
+  isActive            Boolean  @default(true)
+  createdById         String?
+  createdBy           User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  userTemplates       UserGameTemplate[]
+  suggestions         TemplateSuggestion[] @relation("SuggestionSystemTemplate")
 
   @@index([name])
+  @@index([isActive])
 }
 
 model UserGameTemplate {
-  id           String   @id @default(cuid())
-  userId       String?
-  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  localId      String?  @unique
-  name         String
-  targetNumber Int?
-  lowIsBetter  Boolean  @default(false)
-  description  String?
-  usageCount   Int      @default(0)
-  isPublic     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                      String              @id @default(cuid())
+  userId                  String
+  user                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  localId                 String?             @unique
+  name                    String
+  targetNumber            Int?
+  lowIsBetter             Boolean             @default(false)
+  description             String?
+  descriptionMarkdown     String?             // Rich markdown description
+  usageCount              Int                 @default(0)
+  isPublic                Boolean             @default(false)
+  approvedAsSystemTemplate Boolean            @default(false)
+  systemTemplateId        String?
+  systemTemplate          SystemGameTemplate? @relation(fields: [systemTemplateId], references: [id], onDelete: SetNull)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  // Relations
+  suggestions             TemplateSuggestion[] @relation("SuggestionUserTemplate")
 
   @@index([userId])
+  @@index([userId, name])
 }
 
 model TemplateSuggestion {
-  id            String   @id @default(cuid())
-  name          String
-  targetNumber  Int?
-  lowIsBetter   Boolean  @default(false)
-  description   String?
-  suggestedById String?
-  suggestedBy   User?    @relation(fields: [suggestedById], references: [id], onDelete: SetNull)
-  suggestionNote String?
-  approved      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String           @id @default(cuid())
+  name                String
+  targetNumber        Int?
+  lowIsBetter         Boolean          @default(false)
+  description         String?
+  descriptionMarkdown String?          // Rich markdown description
+  suggestedById       String
+  suggestedBy         User             @relation(fields: [suggestedById], references: [id], onDelete: Cascade)
+  suggestionNote      String?          @default("")
+  suggestionType      SuggestionType   @default(new_template)
+  status              SuggestionStatus @default(pending)
+  reviewedAt          DateTime?
+  reviewNote          String?          @default("")
+  userTemplateId      String?
+  userTemplate        UserGameTemplate? @relation("SuggestionUserTemplate", fields: [userTemplateId], references: [id], onDelete: SetNull)
+  systemTemplateId    String?
+  systemTemplate      SystemGameTemplate? @relation("SuggestionSystemTemplate", fields: [systemTemplateId], references: [id], onDelete: SetNull)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
-  @@index([approved])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([suggestedById, status])
 }
 
 // ============================================
