@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import userService from '@/shared/api/userService';
 import gameTemplateService from '@/shared/api/gameTemplateService';
+import { MenuIcon, XIcon } from '@/components/ui/Icon';
 import '@/styles/pages/admin.css';
 
 const AdminLayout = () => {
   const location = useLocation();
   const isRootPath = location.pathname === '/admin' || location.pathname === '/admin/';
   const [stats, setStats] = useState({ users: 0, pendingSuggestions: 0 });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (isRootPath) {
@@ -33,13 +35,24 @@ const AdminLayout = () => {
 
   return (
     <div className="admin-layout">
-      <nav className="admin-nav">
+      {/* Mobile Menu Button */}
+      <button 
+        className="mobile-menu-toggle"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label="Toggle menu"
+      >
+        {mobileMenuOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
+      </button>
+
+      {/* Navigation Sidebar */}
+      <nav className={`admin-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <h2>Admin Panel</h2>
         <ul>
           <li>
             <Link 
               to="/admin/template-suggestions" 
               className={location.pathname === '/admin/template-suggestions' ? 'active' : ''}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span>Template Suggestions</span>
               {stats.pendingSuggestions > 0 && (
@@ -51,6 +64,7 @@ const AdminLayout = () => {
             <Link 
               to="/admin/users" 
               className={location.pathname === '/admin/users' ? 'active' : ''}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span>User Management</span>
             </Link>
@@ -59,6 +73,7 @@ const AdminLayout = () => {
             <Link 
               to="/admin/game-linkage" 
               className={location.pathname === '/admin/game-linkage' ? 'active' : ''}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span>Game Linkage</span>
             </Link>
@@ -67,6 +82,7 @@ const AdminLayout = () => {
             <Link 
               to="/admin/player-linking" 
               className={location.pathname === '/admin/player-linking' ? 'active' : ''}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span>Player Linking</span>
             </Link>
@@ -75,12 +91,21 @@ const AdminLayout = () => {
             <Link 
               to="/admin/elo" 
               className={location.pathname === '/admin/elo' ? 'active' : ''}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span>ELO Management</span>
             </Link>
           </li>
         </ul>
       </nav>
+
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="mobile-menu-overlay" 
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       <main className="admin-main">
         {isRootPath ? (

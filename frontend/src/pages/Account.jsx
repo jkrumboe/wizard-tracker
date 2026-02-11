@@ -9,13 +9,14 @@ import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
-import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
 import { SwipeableGameCard } from '@/components/common';
 import authService from '@/shared/api/authService';
+import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
 import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
@@ -70,6 +71,20 @@ const Account = () => {
   const [needsMigration, setNeedsMigration] = useState(false);
   const { theme, toggleTheme, useSystemTheme, setUseSystemTheme } = useTheme();
   const { user, clearUserData } = useUser();
+
+  // Password change state
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [passwordChangeData, setPasswordChangeData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+
+  // Account deletion state
+  const [showAccountDeleteModal, setShowAccountDeleteModal] = useState(false);
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
+  const [accountDeletionLoading, setAccountDeletionLoading] = useState(false);
 
   // Convert saved games object to array and apply filters
   const filteredGames = useMemo(() => {
@@ -538,6 +553,76 @@ const Account = () => {
       // Even if logout fails on server, clear local data and redirect
       clearUserData();
       globalThis.location.href = '/login';
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (passwordChangeData.newPassword !== passwordChangeData.confirmPassword) {
+      setMessage({ text: 'New passwords do not match', type: 'error' });
+      return;
+    }
+
+    if (passwordChangeData.newPassword.length < 6) {
+      setMessage({ text: 'Password must be at least 6 characters long', type: 'error' });
+      return;
+    }
+
+    setPasswordChangeLoading(true);
+    try {
+      await userService.changeOwnPassword(
+        passwordChangeData.currentPassword,
+        passwordChangeData.newPassword
+      );
+      
+      setMessage({ text: 'Password changed successfully', type: 'success' });
+      setShowPasswordChangeModal(false);
+      setPasswordChangeData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      setMessage({ 
+        text: error.message || 'Failed to change password', 
+        type: 'error' 
+      });
+    } finally {
+      setPasswordChangeLoading(false);
+    }
+  };
+
+  const handleAccountDeletion = async (e) => {
+    e.preventDefault();
+    
+    if (!deleteAccountPassword) {
+      setMessage({ text: 'Password is required to delete account', type: 'error' });
+      return;
+    }
+
+    setAccountDeletionLoading(true);
+    try {
+      await userService.deleteOwnAccount(deleteAccountPassword);
+      
+      // Clear all local data
+      clearUserData();
+      await LocalGameStorage.clearAll();
+      await LocalTableGameStorage.clearAllGames();
+      
+      // Show success message briefly before redirect
+      setMessage({ text: 'Account deleted successfully', type: 'success' });
+      
+      // Redirect to home after a brief delay
+      setTimeout(() => {
+        globalThis.location.href = '/';
+      }, 1500);
+    } catch (error) {
+      setMessage({ 
+        text: error.message || 'Failed to delete account', 
+        type: 'error' 
+      });
+      setAccountDeletionLoading(false);
     }
   };
 
@@ -1966,6 +2051,33 @@ const Account = () => {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="tab-content">
+            {/* Account Settings */}
+            {user && (
+              <div className="settings-section account-settings-section">
+                <h3 className="settings-section-title">Account Settings</h3>
+                <div className="settings-option">
+                  <button 
+                    className="settings-button" 
+                    onClick={() => setShowPasswordChangeModal(true)}
+                  >
+                    <KeyIcon size={18} />
+                    Change Password
+                  </button>
+                </div>
+                {user.role !== 'admin' && (
+                  <div className="settings-option">
+                    <button 
+                      className="settings-button danger-button" 
+                      onClick={() => setShowAccountDeleteModal(true)}
+                    >
+                      <TrashIcon size={18} />
+                      Delete Account
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Theme Settings */}
             <div className="settings-section">
               <h3 className="settings-section-title">Theme Settings</h3>
@@ -2135,6 +2247,140 @@ const Account = () => {
           imageUrl={sanitizeImageUrl(avatarUrl, defaultAvatar)}
           altText="Profile Picture"
         />
+
+        {/* Password Change Modal */}
+        {showPasswordChangeModal && (
+          <div className="modal-overlay" onClick={() => setShowPasswordChangeModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>Change Password</h2>
+              <form onSubmit={handlePasswordChange}>
+                <div className="form-group">
+                  <label htmlFor="currentPassword">Current Password</label>
+                  <input
+                    type="password"
+                    id="currentPassword"
+                    value={passwordChangeData.currentPassword}
+                    onChange={(e) => setPasswordChangeData({
+                      ...passwordChangeData,
+                      currentPassword: e.target.value
+                    })}
+                    required
+                    disabled={passwordChangeLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="newPassword">New Password</label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    value={passwordChangeData.newPassword}
+                    onChange={(e) => setPasswordChangeData({
+                      ...passwordChangeData,
+                      newPassword: e.target.value
+                    })}
+                    required
+                    minLength={6}
+                    disabled={passwordChangeLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm New Password</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={passwordChangeData.confirmPassword}
+                    onChange={(e) => setPasswordChangeData({
+                      ...passwordChangeData,
+                      confirmPassword: e.target.value
+                    })}
+                    required
+                    minLength={6}
+                    disabled={passwordChangeLoading}
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowPasswordChangeModal(false)}
+                    disabled={passwordChangeLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={passwordChangeLoading}
+                  >
+                    {passwordChangeLoading ? 'Changing...' : 'Change Password'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Account Deletion Modal */}
+        {showAccountDeleteModal && (
+          <div className="modal-overlay" onClick={() => setShowAccountDeleteModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2 style={{ color: 'var(--danger-color)' }}>Delete Account</h2>
+              <p style={{ marginBottom: 'var(--spacing-md)' }}>
+                This action is permanent and cannot be undone. Your account will be anonymized and you will be logged out.
+              </p>
+              <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                <strong>What will be removed:</strong>
+                <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
+                  <li>Your username and profile information</li>
+                  <li>All friend connections</li>
+                  <li>All player identities linked to your account</li>
+                </ul>
+              </div>
+              <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                <strong>What will be preserved:</strong>
+                <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
+                  <li>Your games and statistics (anonymized)</li>
+                  <li>Your game templates (anonymized)</li>
+                  <li>Game history for other players</li>
+                </ul>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                  Note: Games and templates will remain associated with an anonymized username to preserve game history for other players.
+                </p>
+              </div>
+              <form onSubmit={handleAccountDeletion}>
+                <div className="form-group">
+                  <label htmlFor="deletePassword">Enter your password to confirm</label>
+                  <input
+                    type="password"
+                    id="deletePassword"
+                    value={deleteAccountPassword}
+                    onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                    required
+                    disabled={accountDeletionLoading}
+                    placeholder="Password"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowAccountDeleteModal(false)}
+                    disabled={accountDeletionLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-danger"
+                    disabled={accountDeletionLoading}
+                  >
+                    {accountDeletionLoading ? 'Deleting...' : 'Delete My Account'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Debug Panel for Mobile (Admin Only) */}
         {showDebugPanel && user && user.role === 'admin' && (

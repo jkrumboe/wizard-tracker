@@ -68,6 +68,125 @@ class UserService {
     }
   }
 
+  async resetUserPassword(userId, newPassword) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/${userId}/reset-password`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to reset password' }));
+        throw new Error(error.error || 'Failed to reset password');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+  }
+
+  async deleteUser(userId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/${userId}`;
+      
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete user' }));
+        throw new Error(error.error || 'Failed to delete user');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
+  async changeOwnPassword(currentPassword, newPassword) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/me/change-password`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to change password' }));
+        throw new Error(error.error || 'Failed to change password');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
+    }
+  }
+
+  async deleteOwnAccount(password) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/me`;
+      
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete account' }));
+        throw new Error(error.error || 'Failed to delete account');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+    }
+  }
+
   async updateUserName(userId, name) {
     // Skip backend call if in development mode without configured backend
     if (this.skipBackend) {

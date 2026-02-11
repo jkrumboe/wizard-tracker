@@ -291,18 +291,28 @@
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  gap: 20px;
+  gap: 1.5rem;
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .loading-container h2,
 .error-container h2 {
   color: var(--text-primary);
   margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
 }
 
 .error-container p {
   color: var(--text-secondary);
   text-align: center;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 500px;
 }
 
 .retry-button {

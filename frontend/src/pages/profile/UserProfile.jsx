@@ -10,6 +10,7 @@ import { ArrowLeftIcon, TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal'
 import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
+import '@/styles/components/error-container.css'
 
 const UserProfile = () => {
   const navigate = useNavigate()
@@ -59,11 +60,22 @@ const UserProfile = () => {
         const data = await getUserPublicProfile(userId)
         console.log('✅ [UserProfile] Profile data received:', {
           username: data.username,
+          isDeleted: data.user?.isDeleted,
+          hasMessage: !!data.message,
           gamesCount: data.games?.length || 0,
           hasGames: !!data.games,
           totalWins: data.totalWins,
           totalGames: data.totalGames
         });
+        
+        // Check if user is deleted
+        if (data.user?.isDeleted || data.isDeleted) {
+          const username = data.user?.username || data.username || userId;
+          setError(`This account has been deleted - ${username}`);
+          setLoading(false);
+          return;
+        }
+        
         setProfileUser(data)
         
         // Load avatar if available
@@ -232,11 +244,19 @@ const UserProfile = () => {
   }
 
   if (error) {
+    // Check if it's a deleted account error
+    const isDeletedAccount = error.includes('account has been deleted') || error.startsWith('Account Deleted:');
+    
     return (
       <div className="settings-container">
         <div className="error-container">
-          <h2>Error Loading Profile</h2>
+          <h2>{isDeletedAccount ? 'Account Deleted' : 'Error Loading Profile'}</h2>
           <p>{error}</p>
+          {isDeletedAccount && (
+            <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.8 }}>
+              The user's games and content have been preserved but the account is no longer active.
+            </p>
+          )}
           <button onClick={() => navigate(-1)} className="back-button">
             Go Back
           </button>

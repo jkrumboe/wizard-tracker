@@ -225,6 +225,183 @@ router.get('/me', auth, async (req, res, next) => {
   }
 });
 
+// POST /users/me/change-password - Change own password (protected route)
+router.post('/me/change-password', auth, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, req.user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash the new password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    req.user.passwordHash = passwordHash;
+    await req.user.save();
+
+    console.log('🔑 Password changed for user: %s', req.user.username);
+
+    res.json({
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    next(error);
+  }
+});
+
+// DELETE /users/me - Delete own account (protected route)
+router.delete('/me', auth, async (req, res, next) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password confirmation is required' });
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, req.user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Password is incorrect' });
+    }
+
+    const userId = req.user._id;
+    const username = req.user.username;
+    const deletionStats = {
+      username,
+      friendsRemoved: 0,
+      friendRequestsDeleted: 0,
+      identitiesUnlinked: 0,
+      gamesKept: 0,
+      tableGamesKept: 0,
+      templatesKept: 0,
+      aliasesKept: 0
+    };
+
+    console.log('🗑️  Starting account anonymization for user: %s', username);
+
+    // 1. Handle player identities (unlink them, converting to guest)
+    const identityService = require('../utils/identityService');
+    try {
+      const identityResult = await identityService.handleAccountDeletion(req.user, { deleteIdentities: false });
+      deletionStats.identitiesUnlinked = identityResult.processed;
+      console.log('   ✓ Unlinked %d player identities', identityResult.processed);
+    } catch (err) {
+      console.error('   ✗ Error unlinking identities:', err.message);
+    }
+
+    // 2. Remove user from all friends lists (mutual unfriend)
+    try {
+      const friendsWithThisUser = await User.find({ friends: userId });
+      for (const friend of friendsWithThisUser) {
+        friend.friends = friend.friends.filter(id => id.toString() !== userId.toString());
+        await friend.save();
+        deletionStats.friendsRemoved++;
+      }
+      console.log('   ✓ Removed from %d friends lists', deletionStats.friendsRemoved);
+    } catch (err) {
+      console.error('   ✗ Error removing from friends lists:', err.message);
+    }
+
+    // 3. Delete all friend requests (sent and received)
+    try {
+      const friendRequestResult = await FriendRequest.deleteMany({
+        $or: [{ sender: userId }, { receiver: userId }]
+      });
+      deletionStats.friendRequestsDeleted = friendRequestResult.deletedCount || 0;
+      console.log('   ✓ Deleted %d friend requests', deletionStats.friendRequestsDeleted);
+    } catch (err) {
+      console.error('   ✗ Error deleting friend requests:', err.message);
+    }
+
+    // 4. Keep user's games (associated with anonymized account)
+    const Game = require('../models/Game');
+    try {
+      const gameCount = await Game.countDocuments({ userId });
+      deletionStats.gamesKept = gameCount;
+      console.log('   ✓ Kept %d games (associated with anonymized account)', gameCount);
+    } catch (err) {
+      console.error('   ✗ Error counting games:', err.message);
+    }
+
+    // 5. Keep user's table games
+    const TableGame = require('../models/TableGame');
+    try {
+      const tableGameCount = await TableGame.countDocuments({ userId });
+      deletionStats.tableGamesKept = tableGameCount;
+      console.log('   ✓ Kept %d table games (associated with anonymized account)', tableGameCount);
+    } catch (err) {
+      console.error('   ✗ Error counting table games:', err.message);
+    }
+
+    // 6. Keep user's game templates
+    const UserGameTemplate = require('../models/UserGameTemplate');
+    try {
+      const templateCount = await UserGameTemplate.countDocuments({ userId });
+      deletionStats.templatesKept = templateCount;
+      console.log('   ✓ Kept %d game templates (associated with anonymized account)', templateCount);
+    } catch (err) {
+      console.error('   ✗ Error counting templates:', err.message);
+    }
+
+    // 7. Keep player aliases (associated with anonymized account)
+    const PlayerAlias = require('../models/PlayerAlias');
+    try {
+      const aliasCount = await PlayerAlias.countDocuments({ userId });
+      deletionStats.aliasesKept = aliasCount;
+      console.log('   ✓ Kept %d player aliases (associated with anonymized account)', aliasCount);
+    } catch (err) {
+      console.error('   ✗ Error counting aliases:', err.message);
+    }
+
+    // 8. Clear user cache
+    if (cache.isConnected) {
+      try {
+        await cache.del(`user:${userId}`);
+        // Clear leaderboard cache as user is being anonymized
+        const keys = await cache.client.keys('leaderboard:*');
+        if (keys.length > 0) {
+          await cache.client.del(keys);
+        }
+      } catch (err) {
+        console.error('   ✗ Error clearing cache:', err.message);
+      }
+    }
+
+    // 9. Mark account as deleted and anonymize username
+    req.user.isDeleted = true;
+    req.user.deletedAt = new Date();
+    req.user.originalUsername = req.user.username; // Save original username for lookups
+    req.user.username = `[DEL-${userId.toString().substring(0, 8)}]`; // 13 chars, under 20 limit
+    req.user.passwordHash = null; // Remove password hash
+    req.user.profilePicture = null;
+    await req.user.save();
+    console.log('   ✓ Account marked as deleted and anonymized');
+
+    console.log('✅ Account anonymization complete for: %s', username);
+
+    res.json({
+      message: 'Your account has been deleted successfully',
+      deletionStats
+    });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    next(error);
+  }
+});
+
 // GET /users/lookup/:username - Look up user by username (public endpoint for game player lookup)
 router.get('/lookup/:username', async (req, res, next) => {
   try {
@@ -235,9 +412,11 @@ router.get('/lookup/:username', async (req, res, next) => {
     }
 
     // Case-insensitive username lookup with regex safely escaped
+    // Exclude deleted users from lookups
     const safeUsername = _.escapeRegExp(username);
     const user = await User.findOne({ 
-      username: { $regex: new RegExp(`^${safeUsername}$`, 'i') } 
+      username: { $regex: new RegExp(`^${safeUsername}$`, 'i') },
+      $or: [{ isDeleted: { $exists: false } }, { isDeleted: false }]
     }).select('_id username createdAt');
 
     if (!user) {
@@ -273,10 +452,34 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
     // Try to find registered user - by ID first, then by username
     let user;
     if (mongoose.Types.ObjectId.isValid(usernameOrId)) {
-      user = await User.findById(usernameOrId).select('_id username createdAt profilePicture role');
+      user = await User.findById(usernameOrId).select('_id username originalUsername createdAt profilePicture role isDeleted deletedAt');
     }
     if (!user) {
-      user = await User.findOne({ username: usernameOrId }).select('_id username createdAt profilePicture role');
+      user = await User.findOne({ username: usernameOrId }).select('_id username originalUsername createdAt profilePicture role isDeleted deletedAt');
+    }
+    
+    // If still not found, check if this was the original username of a deleted user
+    if (!user) {
+      user = await User.findOne({ 
+        originalUsername: usernameOrId,
+        isDeleted: true 
+      }).select('_id username originalUsername createdAt profilePicture role isDeleted deletedAt');
+    }
+    
+    // If user is deleted, return deleted status
+    if (user && user.isDeleted) {
+      return res.json({
+        found: true,
+        user: {
+          id: user._id.toString(),
+          username: user.originalUsername || user.username, // Show original username
+          createdAt: user.createdAt,
+          profilePicture: null,
+          isDeleted: true,
+          deletedAt: user.deletedAt
+        },
+        message: 'This account has been deleted'
+      });
     }
     
     // If we found a GUEST user, try to resolve to a real registered user account
@@ -873,8 +1076,11 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
 // GET /users/all - Get all users (protected route)
 router.get('/all', auth, async (req, res, next) => {
   try {
-    // Get all real users but exclude password, guest/linked players, and limit data
-    const users = await User.find({ role: { $ne: 'guest' } })
+    // Get all real users but exclude password, guest/linked players, deleted users, and limit data
+    const users = await User.find({ 
+      role: { $ne: 'guest' },
+      $or: [{ isDeleted: { $exists: false } }, { isDeleted: false }]
+    })
       .select('_id username createdAt profilePicture role')
       .sort({ username: 1 })
       .lean(); // Use lean() for better performance
@@ -1606,7 +1812,7 @@ router.get('/admin/all', auth, async (req, res, next) => {
     }
 
     const users = await User.find()
-      .select('_id username email role createdAt lastLogin profilePicture')
+      .select('_id username email role createdAt lastLogin profilePicture isDeleted deletedAt')
       .sort({ username: 1 });
 
     res.json({
@@ -1618,7 +1824,9 @@ router.get('/admin/all', auth, async (req, res, next) => {
         role: user.role || 'user',
         createdAt: user.createdAt,
         lastLogin: user.lastLogin || null,
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        isDeleted: user.isDeleted || false,
+        deletedAt: user.deletedAt || null
       }))
     });
   } catch (error) {
@@ -1801,6 +2009,199 @@ router.put('/:userId/role', auth, async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error updating user role:', error);
+    next(error);
+  }
+});
+
+// POST /users/:userId/reset-password - Reset user password (admin only)
+router.post('/:userId/reset-password', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    // Validate userId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
+    const user = await User.findOne({ _id: { $eq: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Hash the new password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    user.passwordHash = passwordHash;
+    await user.save();
+
+    console.log('🔑 Password reset for user: %s (by admin: %s)', user.username, req.user.username);
+
+    res.json({
+      message: 'Password reset successfully',
+      username: user.username
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    next(error);
+  }
+});
+
+// DELETE /users/:userId - Delete user account (admin only)
+router.delete('/:userId', auth, async (req, res, next) => {
+  try {
+    // Check if user has admin role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { userId } = req.params;
+
+    // Validate userId is a valid ObjectId to prevent injection
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
+    // Prevent admin from deleting themselves
+    if (userId === req.user._id.toString()) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+
+    const user = await User.findOne({ _id: { $eq: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const username = user.username;
+    const deletionStats = {
+      username,
+      friendsRemoved: 0,
+      friendRequestsDeleted: 0,
+      identitiesUnlinked: 0,
+      gamesKept: 0,
+      tableGamesKept: 0,
+      templatesKept: 0,
+      aliasesKept: 0
+    };
+
+    console.log('🗑️  Starting account anonymization for user: %s', username);
+
+    // 1. Handle player identities (unlink them, converting to guest)
+    const identityService = require('../utils/identityService');
+    try {
+      const identityResult = await identityService.handleAccountDeletion(user, { deleteIdentities: false });
+      deletionStats.identitiesUnlinked = identityResult.processed;
+      console.log('   ✓ Unlinked %d player identities', identityResult.processed);
+    } catch (err) {
+      console.error('   ✗ Error unlinking identities:', err.message);
+    }
+
+    // 2. Remove user from all friends lists (mutual unfriend)
+    try {
+      const friendsWithThisUser = await User.find({ friends: userId });
+      for (const friend of friendsWithThisUser) {
+        friend.friends = friend.friends.filter(id => id.toString() !== userId);
+        await friend.save();
+        deletionStats.friendsRemoved++;
+      }
+      console.log('   ✓ Removed from %d friends lists', deletionStats.friendsRemoved);
+    } catch (err) {
+      console.error('   ✗ Error removing from friends lists:', err.message);
+    }
+
+    // 3. Delete all friend requests (sent and received)
+    try {
+      const friendRequestResult = await FriendRequest.deleteMany({
+        $or: [{ sender: userId }, { receiver: userId }]
+      });
+      deletionStats.friendRequestsDeleted = friendRequestResult.deletedCount || 0;
+      console.log('   ✓ Deleted %d friend requests', deletionStats.friendRequestsDeleted);
+    } catch (err) {
+      console.error('   ✗ Error deleting friend requests:', err.message);
+    }
+
+    // 4. Keep user's games (associated with anonymized account)
+    const Game = require('../models/Game');
+    try {
+      const gameCount = await Game.countDocuments({ userId });
+      deletionStats.gamesKept = gameCount;
+      console.log('   ✓ Kept %d games (associated with anonymized account)', gameCount);
+    } catch (err) {
+      console.error('   ✗ Error counting games:', err.message);
+    }
+
+    // 5. Keep user's table games
+    const TableGame = require('../models/TableGame');
+    try {
+      const tableGameCount = await TableGame.countDocuments({ userId });
+      deletionStats.tableGamesKept = tableGameCount;
+      console.log('   ✓ Kept %d table games (associated with anonymized account)', tableGameCount);
+    } catch (err) {
+      console.error('   ✗ Error counting table games:', err.message);
+    }
+
+    // 6. Keep user's game templates
+    const UserGameTemplate = require('../models/UserGameTemplate');
+    try {
+      const templateCount = await UserGameTemplate.countDocuments({ userId });
+      deletionStats.templatesKept = templateCount;
+      console.log('   ✓ Kept %d game templates (associated with anonymized account)', templateCount);
+    } catch (err) {
+      console.error('   ✗ Error counting templates:', err.message);
+    }
+
+    // 7. Keep player aliases (associated with anonymized account)
+    const PlayerAlias = require('../models/PlayerAlias');
+    try {
+      const aliasCount = await PlayerAlias.countDocuments({ userId });
+      deletionStats.aliasesKept = aliasCount;
+      console.log('   ✓ Kept %d player aliases (associated with anonymized account)', aliasCount);
+    } catch (err) {
+      console.error('   ✗ Error counting aliases:', err.message);
+    }
+
+    // 8. Clear user cache
+    if (cache.isConnected) {
+      try {
+        await cache.del(`user:${userId}`);
+        // Clear leaderboard cache as user is being anonymized
+        const keys = await cache.client.keys('leaderboard:*');
+        if (keys.length > 0) {
+          await cache.client.del(keys);
+        }
+      } catch (err) {
+        console.error('   ✗ Error clearing cache:', err.message);
+      }
+    }
+
+    // 9. Mark account as deleted and anonymize username
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.originalUsername = user.username; // Save original username for lookups
+    user.username = `[DEL-${userId.toString().substring(0, 8)}]`; // 13 chars, under 20 limit
+    user.passwordHash = null; // Remove password hash
+    user.profilePicture = null;
+    await user.save();
+    console.log('   ✓ Account marked as deleted and anonymized');
+
+    console.log('✅ Account anonymization complete for: %s', username);
+
+    res.json({
+      message: 'User account deleted successfully',
+      deletionStats
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
     next(error);
   }
 });

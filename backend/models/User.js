@@ -12,8 +12,8 @@ const userSchema = new mongoose.Schema({
   passwordHash: {
     type: String,
     required: function() {
-      // Password not required for guest users
-      return this.role !== 'guest';
+      // Password not required for guest users or deleted accounts
+      return this.role !== 'guest' && !this.isDeleted;
     }
   },
   role: {
@@ -43,6 +43,18 @@ const userSchema = new mongoose.Schema({
     // Base64 encoded image data
     maxlength: [10485760, 'Profile picture cannot exceed 10MB'] // ~7.5MB after base64 encoding
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  },
+  originalUsername: {
+    type: String,
+    default: null
+  },
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -56,6 +68,9 @@ userSchema.index({ username: 1 });
 
 // Text index for username search
 userSchema.index({ username: 'text' });
+
+// Index for originalUsername lookups (for deleted users)
+userSchema.index({ originalUsername: 1 });
 
 // Index for friends array queries
 userSchema.index({ friends: 1 });

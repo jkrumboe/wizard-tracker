@@ -38,6 +38,8 @@ export const PlusIcon = (props) => <Icon name="Plus" {...props} />;
 export const MinusIcon = (props) => <Icon name="Minus" {...props} />;
 export const EditIcon = (props) => <Icon name="Edit" {...props} />;
 export const TrashIcon = (props) => <Icon name="Trash2" {...props} />;
+export const Trash2Icon = (props) => <Icon name="Trash2" {...props} />;
+export const KeyIcon = (props) => <Icon name="Key" {...props} />;
 export const SearchIcon = (props) => <Icon name="Search" {...props} />;
 export const MenuIcon = (props) => <Icon name="Menu" {...props} />;
 export const XIcon = (props) => <Icon name="X" {...props} />;

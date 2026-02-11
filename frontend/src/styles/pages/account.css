@@ -479,6 +479,14 @@
   flex: 1;
 }
 
+.settings-container:has(.error-container) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
 .settings-header {
   display: flex;
   align-items: center;
@@ -530,6 +538,10 @@
 
 .settings-section h3 {
     margin-bottom: var(--spacing-xs);
+}
+/* Account Settings */
+.account-settings-section .settings-option:nth-child(2) {
+  margin-bottom: var(--spacing-sm);
 }
 
 /* Theme Settings */
