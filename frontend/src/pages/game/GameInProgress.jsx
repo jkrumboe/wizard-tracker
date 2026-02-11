@@ -491,6 +491,7 @@ const GameInProgress = () => {
   const compareIds = (id1, id2) => String(id1) === String(id2);
 
   const totalCalls = currentRound?.players.reduce((sum, player) => sum + (player.call || 0), 0) || 0;
+  const allCallsPlaced = currentRound?.players.every(player => player.call !== null) || false;
   
   // Check if all made values are entered and total correctly
   const allMadeEntered = currentRound?.players.every(player => player.made !== null) || false;
@@ -740,7 +741,7 @@ const GameInProgress = () => {
                             min={0}
                             max={maxPossibleTricks}
                             title={`${player.name}'s Tricks Made (Max: ${maxPossibleTricks})`}
-                            disabled={player.call === null}
+                            disabled={!allCallsPlaced}
                             inputMode="numeric"
                             pattern="[0-9]*"
                           />
