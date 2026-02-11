@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlayIcon, TrashIcon, CalendarIcon, UsersIcon, XIcon } from '@/components/ui/Icon';
 import { LocalTableGameStorage } from '@/shared/api';
 
@@ -9,6 +10,7 @@ const LoadTableGameDialog = ({
   onDeleteGame,
   filterByGameName = null // Optional filter by game name/type
 }) => {
+  const { t } = useTranslation();
   const [savedGames, setSavedGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState(null);
@@ -66,7 +68,7 @@ const LoadTableGameDialog = ({
   };
 
   const handleDeleteGame = async (gameId, gameName) => {
-    if (globalThis.confirm(`Are you sure you want to delete "${gameName}"? This action cannot be undone.`)) {
+    if (globalThis.confirm(t('loadTableGame.deleteConfirm', { name: gameName }))) {
       try {
         LocalTableGameStorage.deleteTableGame(gameId);
         // Refresh the list with the current filter
@@ -106,7 +108,7 @@ const LoadTableGameDialog = ({
     <div className="modal-overlay">
       <div className="modal-container">
         <div className="modal-header">
-          <h2>{filterByGameName || 'Table'} Games</h2>
+          <h2>{filterByGameName ? t('loadTableGame.gamesTitle', { name: filterByGameName }) : t('loadTableGame.gamesTitle', { name: 'Table' })}</h2>
           <button className="close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={20} />
           </button>
@@ -114,11 +116,11 @@ const LoadTableGameDialog = ({
 
         <div className="modal-content">
           {loading ? (
-            <div className="loading-indicator">Loading saved games...</div>
+            <div className="loading-indicator">{t('loadTableGame.loadingSavedGames')}</div>
           ) : savedGames.length === 0 ? (
             <div className="empty-saved-games">
-              <p>No saved table games found.</p>
-              <p>Save a table game to see it here.</p>
+              <p>{t('loadTableGame.noSavedGames')}</p>
+              <p>{t('loadTableGame.saveHint')}</p>
             </div>
           ) : (
             <div className="saved-games-list" style={{ marginBottom: "8px", background: "none" }}>
@@ -155,9 +157,9 @@ const LoadTableGameDialog = ({
                       }}
                       className="icon-btn"
                       disabled={loading}
-                      title={game.gameFinished ? "View Game" : "Resume Game"}
+                      title={game.gameFinished ? t('loadTableGame.viewGame') : t('loadTableGame.resumeGame')}
                     >
-                      {game.gameFinished ? "View" : "Resume"}
+                      {game.gameFinished ? t('loadTableGame.viewGame') : t('loadTableGame.resumeGame')}
                     </button>
                     {onDeleteGame && (
                       <button
@@ -167,7 +169,7 @@ const LoadTableGameDialog = ({
                         }}
                         className="icon-btn danger"
                         disabled={loading}
-                        title="Delete Game"
+                        title={t('loadTableGame.deleteGameTitle')}
                       >
                         <TrashIcon size={18} />
                       </button>

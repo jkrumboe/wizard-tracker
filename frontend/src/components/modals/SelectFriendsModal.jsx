@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon, UsersIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { localFriendsService, userService } from '@/shared/api';
@@ -7,6 +8,7 @@ import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
 
 const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers = [] }) => {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [friends, setFriends] = useState([]);
   const [selectedFriends, setSelectedFriends] = useState([]);
@@ -101,7 +103,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
           <div className="modal-header">
             <h2>
               <UsersIcon size={20} />
-              Select Friends
+              {t('selectFriends.title')}
             </h2>
             <button className="close-btn" onClick={handleClose}>
               <XIcon size={20} />
@@ -109,11 +111,11 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
           </div>
           <div className="modal-content" style={{ textAlign: 'center', padding: '40px 20px' }}>
             <UsersIcon size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
-            <p>Please log in to select friends as players.</p>
+            <p>{t('selectFriends.loginRequired')}</p>
           </div>
           <div className="modal-actions">
             <button type="button" onClick={handleClose} className="cancel-button">
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
@@ -127,7 +129,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
         <div className="modal-header">
           <h2>
             <UsersIcon size={20} />
-            Select Friends
+            {t('selectFriends.title')}
           </h2>
           <button className="close-btn" onClick={handleClose}>
             <XIcon size={20} />
@@ -136,10 +138,10 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
 
         <div className="modal-content">
           {loading ? (
-            <div className="loading-message">Loading friends...</div>
+            <div className="loading-message">{t('selectFriends.loadingFriends')}</div>
           ) : friends.length === 0 ? (
             <div className="empty-message">
-              No friends available. Add friends first from the home page.
+              {t('selectFriends.noFriendsAvailable')}
             </div>
           ) : (
             <>
@@ -151,7 +153,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
                   onClick={handleSelectAll}
                   disabled={selectedFriends.length === friends.length}
                 >
-                  Select All
+                  {t('selectFriends.selectAll')}
                 </button>
                 <button 
                   type="button" 
@@ -159,7 +161,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
                   onClick={handleDeselectAll}
                   disabled={selectedFriends.length === 0}
                 >
-                  Deselect All
+                  {t('selectFriends.deselectAll')}
                 </button>
               </div>
 
@@ -203,7 +205,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
 
         <div className="modal-actions">
           <button type="button" onClick={handleClose} className="cancel-button">
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
             type="button" 
@@ -211,7 +213,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
             className="confirm-button"
             disabled={selectedFriends.length === 0}
           >
-            Add {selectedFriends.length > 0 ? `(${selectedFriends.length})` : ''}
+            {t('selectFriends.addCount', { count: selectedFriends.length })}
           </button>
         </div>
       </div>

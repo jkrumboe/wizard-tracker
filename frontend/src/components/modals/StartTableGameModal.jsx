@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { XIcon, UsersIcon, PlayIcon, PlusIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { GripVertical, Dices as DiceIcon } from 'lucide-react';
@@ -32,6 +33,7 @@ const MAX_PLAYERS = 10;
 
 // Sortable Player Item Component
 const SortablePlayerItem = ({ player, index, onNameChange, onNameBlur, onRemove, canRemove, isLookingUp }) => {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -82,11 +84,11 @@ const SortablePlayerItem = ({ player, index, onNameChange, onNameBlur, onRemove,
         onChange={(e) => onNameChange(player.id, e.target.value)}
         onBlur={(e) => onNameBlur?.(player.id, e.target.value)}
         onFocus={(e) => e.target.select()}
-        placeholder={`Player ${index + 1}`}
+        placeholder={t('startTableGame.playerPlaceholder', { n: index + 1 })}
       />
 
       {isLookingUp && (
-        <span className="lookup-spinner" title="Looking up user...">
+        <span className="lookup-spinner" title={t('startTableGame.lookingUpUser')}>
           ⏳
         </span>
       )}
@@ -98,7 +100,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onNameBlur, onRemove,
             e.stopPropagation();
             onRemove(player.id);
           }}
-          title="Remove Player"
+          title={t('startTableGame.removePlayer')}
         >
           <XIcon size={16} />
         </button>
@@ -122,6 +124,7 @@ SortablePlayerItem.propTypes = {
 };
 
 const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateSettings }) => {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [players, setPlayers] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -342,14 +345,14 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
   const handleStart = () => {
     // Validate at least 2 players
     if (players.length < 2) {
-      alert('At least 2 players are needed to start a game');
+      alert(t('startTableGame.minPlayersError'));
       return;
     }
 
     // Validate all players have names
     const allPlayersNamed = players.every(p => p.name && p.name.trim().length > 0);
     if (!allPlayersNamed) {
-      alert('Please provide names for all players');
+      alert(t('startTableGame.allPlayersNamedError'));
       return;
     }
 
@@ -368,7 +371,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container start-table-game-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Start {templateName}</h2>
+          <h2>{t('startTableGame.startTitle', { name: templateName })}</h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
           </button>
@@ -377,7 +380,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
         <div className="modal-content">
           {/* Player Assignment */}
           <div className="players-section">
-            <h3>Players ({players.length}/{MAX_PLAYERS})</h3>
+            <h3>{t('startTableGame.playersCount', { count: players.length, max: MAX_PLAYERS })}</h3>
             
             {loading ? (
               <div className="loading-message">Loading friends...</div>
@@ -416,7 +419,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                     className="randomizer-btn"
                     onClick={handleRandomizePlayers}
                     disabled={players.length < 2}
-                    title="Randomize player order"
+                    title={t('startTableGame.randomizeOrder')}
                   >
                     <DiceIcon size={20} />
                   </button>
@@ -424,7 +427,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                     className="add-player-btn"
                     onClick={addPlayer}
                     disabled={players.length >= MAX_PLAYERS}
-                    title="Add Player"
+                    title={t('startTableGame.addPlayer')}
                   >
                     <PlusIcon size={20} />
                   </button>
@@ -432,7 +435,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
                     className="add-friends-btn"
                     onClick={() => setShowSelectFriendsModal(true)}
                     disabled={players.length >= MAX_PLAYERS || getAvailableFriends().length === 0}
-                    title="Add Friends"
+                    title={t('startTableGame.addFriends')}
                   >
                     <UsersIcon size={20} />
                   </button>
@@ -448,14 +451,14 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
               <div className="settings-details">
                 {templateSettings.targetNumber && (
                   <div className="setting-item">
-                    <span>Target: </span>
+                    <span>{t('startTableGame.target')}: </span>
                     <p>{templateSettings.targetNumber}</p>
                   </div>
                 )}
                 {templateSettings.lowIsBetter !== undefined && (
                   <div className="setting-item">
-                    <span>Goal: </span>
-                    <p>{templateSettings.lowIsBetter ? 'Low Score' : 'High Score'}</p>
+                    <span>{t('startTableGame.goal')}: </span>
+                    <p>{templateSettings.lowIsBetter ? t('startTableGame.lowScore') : t('startTableGame.highScore')}</p>
                   </div>
                 )}
               </div>
@@ -467,7 +470,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
         {/* Action Buttons */}
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="cancel-button">
-              Cancel
+              {t('common.cancel')}
             </button>
             <button 
               type="button" 
@@ -476,7 +479,7 @@ const StartTableGameModal = ({ isOpen, onClose, onStart, templateName, templateS
               disabled={players.length < 2 || !players.every(p => p.name && p.name.trim().length > 0)}
             >
               <PlayIcon size={18} />
-              Start
+              {t('startTableGame.start')}
             </button>
           </div>
       </div>

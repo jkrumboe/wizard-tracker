@@ -1,6 +1,7 @@
 import React from "react"
 import ReactDOM from "react-dom/client"
 import App from "./App"
+import "@/shared/i18n/i18n" // Initialize i18n before rendering
 import "@/styles/base/index.css"
 import "@/styles/components/components.css"
 import "@/styles/components/players.css" // Support for 2-6 players

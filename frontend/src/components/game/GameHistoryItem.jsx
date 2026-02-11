@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getPlayerById } from "@/shared/api/playerService";
 import { TrophyIcon, UsersIcon } from "@/components/ui/Icon";
+import { useTranslation } from 'react-i18next';
 
 const GameHistoryItem = ({ game }) => {
   const [playerDetails, setPlayerDetails] = useState({});
+  const { t } = useTranslation();
   
   useEffect(() => {
     const fetchPlayerDetails = async () => {
@@ -161,13 +163,13 @@ const GameHistoryItem = ({ game }) => {
 
   // Get winner name(s) for display
   const getWinnerDisplay = () => {
-    if (isTableGame) return game.winner_name || "Not determined";
-    if (winner_ids.length === 0) return "Not determined";
-    if (winner_ids.length === 1) return playerDetails[winner_ids[0]]?.name || "Not determined";
+    if (isTableGame) return game.winner_name || t('common.notDetermined');
+    if (winner_ids.length === 0) return t('common.notDetermined');
+    if (winner_ids.length === 1) return playerDetails[winner_ids[0]]?.name || t('common.notDetermined');
     
     // Multiple winners (draw)
     const winnerNames = winner_ids.map(id => playerDetails[id]?.name).filter(Boolean);
-    if (winnerNames.length === 0) return "Not determined";
+    if (winnerNames.length === 0) return t('common.notDetermined');
     if (winnerNames.length === 2) return `${winnerNames[0]} & ${winnerNames[1]}`;
     return `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
   };
@@ -177,7 +179,7 @@ const GameHistoryItem = ({ game }) => {
       {/* <div className="game-rounds"></div> */}
         <div className="game-info">
           <div className="game-name">
-            {isTableGame ? game.name : (game.game_name || "Wizard")}
+            {isTableGame ? game.name : (game.game_name || t('common.wizard'))}
             
           </div>
           <div className="game-winner">
@@ -187,36 +189,36 @@ const GameHistoryItem = ({ game }) => {
         <div className="game-players">
             <UsersIcon size={12} />{" "}
             {isTableGame
-              ? Array.isArray(game.players) ? game.players.join(", ") : "No players"
+              ? Array.isArray(game.players) ? game.players.join(", ") : t('common.noPlayers')
               : game.gameData && game.gameData.players
-                ? game.gameData.players.map(player => player.name || "Unknown Player").join(", ")
+                ? game.gameData.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
                 : game.isCloud && game.players && Array.isArray(game.players)
-                  ? game.players.map(player => typeof player === 'object' ? player.name : player).filter(Boolean).join(", ") || "No players"
+                  ? game.players.map(player => typeof player === 'object' ? player.name : player).filter(Boolean).join(", ") || t('common.noPlayers')
                   : isV3Format && game.players
-                    ? game.players.map(player => player.name || "Unknown Player").join(", ")
+                    ? game.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
                     : game.gameState && game.gameState.players 
-                      ? game.gameState.players.map(player => player.name || "Unknown Player").join(", ")
+                      ? game.gameState.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
                       : game.is_local && game.players
                         ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
                           ? game.players.join(", ") 
-                          : game.players.map(player => player.name || "Unknown Player").join(", ")
+                          : game.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
                         : Array.isArray(player_ids)
                           ? player_ids
                               .map(
                                 (playerId) =>
-                                  playerDetails[playerId]?.name || "Unknown Player"
+                                  playerDetails[playerId]?.name || t('common.unknownPlayer')
                               )
                               .join(", ")
-                          : "No players"}
+                          : t('common.noPlayers')}
         </div>
         <div className="actions-game-history">
           <div className="bottom-actions-game-history">
-            <div className="game-rounds">Rounds: {total_rounds}</div>
+            <div className="game-rounds">{t('gameHistory.roundsCount', { count: total_rounds })}</div>
             <div className="game-date"> {formattedDate}
             </div>
           </div>
           <Link to={isTableGame ? `/table-game/${id}` : `/game/${id}`} className="game-details">
-            View Details
+            {t('gameHistory.viewDetails')}
           </Link>
         </div>
     </div>

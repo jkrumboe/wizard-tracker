@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom"
 import { sanitizeImageUrl } from "@/shared/utils/urlSanitizer"
 import defaultAvatar from "@/assets/default-avatar.png"
+import { useTranslation } from 'react-i18next';
 
 const PlayerCard = ({ player, onClick, showStats = true }) => {
+  const { t } = useTranslation()
   if (!player) return null
 
   const { id, name, avatar, elo, total_games, wins, tags } = player
@@ -24,15 +26,15 @@ const PlayerCard = ({ player, onClick, showStats = true }) => {
           {showStats && (
             <div className="player-stats">
               <div className="stat">
-                <span className="stat-label">ELO</span>
+                <span className="stat-label">{t('common.elo')}</span>
                 <span className="stat-value">{elo}</span>
               </div>
               <div className="stat">
-                <span className="stat-label">Win Rate</span>
+                <span className="stat-label">{t('common.winRate')}</span>
                 <span className="stat-value">{winRate}%</span>
               </div>
               <div className="stat">
-                <span className="stat-label">Games</span>
+                <span className="stat-label">{t('common.games')}</span>
                 <span className="stat-value">{total_games}</span>
               </div>
             </div>

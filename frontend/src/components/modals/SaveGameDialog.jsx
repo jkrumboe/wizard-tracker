@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon, SaveIcon, PauseIcon, PlayIcon } from '@/components/ui/Icon';
 
 const SaveGameDialog = ({ 
@@ -11,8 +12,9 @@ const SaveGameDialog = ({
   showPauseOption = true,
   showLeaveOption = true,
   initialOption = 'save',
-  title = "Save Game"
+  title
 }) => {
+  const { t } = useTranslation();
   const [gameName, setGameName] = useState(gameState?.gameName || '');
   const [saveOption, setSaveOption] = useState(initialOption); // 'save', 'pause', 'leave'
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,7 @@ const SaveGameDialog = ({
 
   const getDefaultGameName = () => {
     const playerNames = gameState.players.map(p => p.name).join(', ');
-    const roundInfo = `Round ${gameState.currentRound}/${gameState.maxRounds}`;
+    const roundInfo = `${t('common.round')} ${gameState.currentRound}/${gameState.maxRounds}`;
     return `${playerNames} - ${roundInfo}`;
   };
 
@@ -63,7 +65,7 @@ const SaveGameDialog = ({
     <div className="dialog-overlay">
       <div className="dialog-modal">
         <div className="dialog-header">
-          <h2>{title}</h2>
+          <h2>{title || t('saveGame.title')}</h2>
           <button onClick={onClose} className="dialog-close-btn" disabled={loading}>
             <XIcon size={16} />
           </button>
@@ -71,7 +73,7 @@ const SaveGameDialog = ({
 
         <form onSubmit={handleSubmit} className="dialog-content">
           <div className="form-group">
-            <label htmlFor="gameName">Game Name (Optional)</label>
+            <label htmlFor="gameName">{t('saveGame.gameNameLabel')}</label>
             <input
               type="text"
               id="gameName"
@@ -97,10 +99,10 @@ const SaveGameDialog = ({
               <label htmlFor="save" className="radio-option-content">
                 <div className="radio-option-title">
                   <SaveIcon size={16} style={{ marginRight: '8px', display: 'inline' }} />
-                  Save & Continue
+                  {t('saveGame.saveAndContinue')}
                 </div>
                 <div className="radio-option-description">
-                  Save your progress and keep playing
+                  {t('saveGame.saveAndContinueDesc')}
                 </div>
               </label>
             </div>
@@ -119,10 +121,10 @@ const SaveGameDialog = ({
                 <label htmlFor="pause" className="radio-option-content">
                   <div className="radio-option-title">
                     <PauseIcon size={16} style={{ marginRight: '8px', display: 'inline' }} />
-                    Pause Game
+                    {t('saveGame.pauseGame')}
                   </div>
                   <div className="radio-option-description">
-                    Save and pause the game for later
+                    {t('saveGame.pauseGameDesc')}
                   </div>
                 </label>
               </div>
@@ -142,10 +144,10 @@ const SaveGameDialog = ({
                 <label htmlFor="leave" className="radio-option-content">
                   <div className="radio-option-title">
                     <XIcon size={16} style={{ marginRight: '8px', display: 'inline' }} />
-                    Save & Leave
+                    {t('saveGame.saveAndLeave')}
                   </div>
                   <div className="radio-option-description">
-                    Save your progress and exit the game
+                    {t('saveGame.saveAndLeaveDesc')}
                   </div>
                 </label>
               </div>
@@ -159,17 +161,17 @@ const SaveGameDialog = ({
               className="dialog-btn secondary"
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="dialog-btn primary"
               disabled={loading}
             >
-              {loading ? 'Saving...' : 
-               saveOption === 'save' ? 'Save Game' :
-               saveOption === 'pause' ? 'Pause Game' :
-               'Save & Leave'}
+              {loading ? t('saveGame.saving') : 
+               saveOption === 'save' ? t('saveGame.saveGameBtn') :
+               saveOption === 'pause' ? t('saveGame.pauseGameBtn') :
+               t('saveGame.saveAndLeave')}
             </button>
           </div>
         </form>

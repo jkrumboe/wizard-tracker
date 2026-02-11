@@ -7,10 +7,12 @@ import avatarService from '@/shared/api/avatarService';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import ImageCropperModal from '@/components/modals/ImageCropperModal';
 import defaultAvatar from "@/assets/default-avatar.png";
+import { useTranslation } from 'react-i18next';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
   const { user, setUser } = useUser();
+  const { t } = useTranslation();
   
   const [editedName, setEditedName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -95,7 +97,7 @@ const ProfileEdit = () => {
     // Check if there are unsaved changes
     if (hasChanges) {
       const confirmLeave = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+        t('profile.unsavedChangesConfirm')
       );
       if (!confirmLeave) {
         return;
@@ -123,14 +125,14 @@ const ProfileEdit = () => {
       
       // Validate username doesn't contain spaces
       if (cleanedName && /\s/.test(cleanedName)) {
-        addMessage('Username cannot contain spaces', 'error');
+        addMessage(t('profile.usernameNoSpaces'), 'error');
         setSaving(false);
         return;
       }
       
       // Validate username length and characters
       if (cleanedName && (cleanedName.length < 3 || cleanedName.length > 20)) {
-        addMessage('Username must be between 3 and 20 characters', 'error');
+        addMessage(t('profile.usernameLength'), 'error');
         setSaving(false);
         return;
       }
@@ -148,10 +150,10 @@ const ProfileEdit = () => {
           // Dispatch custom event to update navbar avatar
           globalThis.dispatchEvent(new CustomEvent('avatarUpdated'));
           
-          addMessage('Avatar updated successfully!', 'success');
+          addMessage(t('profile.avatarUpdated'), 'success');
         } catch (avatarError) {
           console.error("Avatar upload failed:", avatarError);
-          addMessage(`Failed to upload avatar: ${avatarError.message}`, 'error');
+          addMessage(t('profile.avatarUploadFailed', { error: avatarError.message }), 'error');
           return; // Don't continue if avatar upload fails
         } finally {
           setUploadingAvatar(false);
@@ -176,10 +178,10 @@ const ProfileEdit = () => {
             };
           }
           
-          addMessage('Username updated successfully!', 'success');
+          addMessage(t('profile.usernameUpdated'), 'success');
         } catch (error) {
           console.error('Username update failed:', error);
-          addMessage(`Failed to update username: ${error.message}`, 'error');
+          addMessage(t('profile.usernameUpdateFailed', { error: error.message }), 'error');
           return;
         }
         
@@ -201,7 +203,7 @@ const ProfileEdit = () => {
       
     } catch (err) {
       console.error("Error updating profile:", err);
-      addMessage("Failed to update profile", 'error');
+      addMessage(t('profile.profileUpdateFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -287,13 +289,13 @@ const ProfileEdit = () => {
       const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'heif', 'heic'];
       
       if (!rasterImageTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-        addMessage(`Invalid file type: ${file.type || 'unknown'}. Only PNG, JPEG, GIF, BMP, and WEBP images are allowed.`, 'error');
+        addMessage(t('profile.invalidFileType', { type: file.type || t('common.unknown') }), 'error');
         return;
       }
       
       // Validate file size (max 10MB - we'll compress it)
       if (file.size > 10 * 1024 * 1024) {
-        addMessage(`File size (${(file.size / 1024 / 1024).toFixed(1)}MB) exceeds 10MB limit`, 'error');
+        addMessage(t('profile.fileSizeExceeds', { size: `${(file.size / 1024 / 1024).toFixed(1)}MB` }), 'error');
         return;
       }
       
@@ -312,7 +314,7 @@ const ProfileEdit = () => {
       const isValid = await validationPromise;
       
       if (!isValid) {
-        addMessage('Could not verify image format. Please try a different image file.', 'error');
+        addMessage(t('profile.cannotVerifyImage'), 'error');
         return;
       }
       
@@ -321,7 +323,7 @@ const ProfileEdit = () => {
       setShowCropper(true);
       
     } catch (err) {
-      addMessage(`Failed to process image: ${err.message || 'Unknown error'}`, 'error');
+      addMessage(t('profile.imageProcessFailed', { error: err.message || t('common.error') }), 'error');
     }
   };
 
@@ -349,7 +351,7 @@ const ProfileEdit = () => {
   if (!user) {
     return (
       <div className="profile-container">
-        <div className="error">Please log in to edit your profile</div>
+        <div className="error">{t('profile.pleaseLoginToEdit')}</div>
       </div>
     );
   }
@@ -384,7 +386,7 @@ const ProfileEdit = () => {
         <button 
           onClick={handleCancel} 
           className='close-button-edit'
-          aria-label="Cancel editing"
+          aria-label={t('profile.cancelEditing')}
         >
           <XIcon size={20} />
         </button>
@@ -401,7 +403,7 @@ const ProfileEdit = () => {
                 previewAvatarUrl && previewAvatarUrl.startsWith('blob:') ? previewAvatarUrl : avatarUrl,
                 defaultAvatar
               )} 
-              alt="Avatar Preview" 
+              alt={t('profile.avatarPreview')} 
               className="avatar-preview" 
             />
           </div>
@@ -418,7 +420,7 @@ const ProfileEdit = () => {
               borderColor: croppedAvatarBlob ? 'var(--primary)' : 'var(--border)',
               color: croppedAvatarBlob ? 'white' : 'var(--text)'
             }}>
-              <span>{croppedAvatarBlob ? 'New Picture' : 'Change Picture'}</span>
+              <span>{croppedAvatarBlob ? t('profile.newPicture') : t('profile.changePicture')}</span>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -436,7 +438,7 @@ const ProfileEdit = () => {
                         const timeSinceOpen = Date.now() - filePickerOpenTime.current;
                         
                         if (!hasFiles && timeSinceOpen > 1000 && timeSinceOpen < 60000) {
-                          addMessage('This image is stored in a restricted location (WhatsApp, iCloud, etc). On iPhone: long-press the image → "Save to Photos" first, then try again from your Camera Roll.', 'error');
+                          addMessage(t('profile.restrictedLocation'), 'error');
                         }
                       }
                     }, 500);
@@ -462,15 +464,15 @@ const ProfileEdit = () => {
                   backgroundColor: 'var(--card-bg-alt)',
                   color: 'var(--text)'
                 }}
-                aria-label="Remove new picture"
+                aria-label={t('profile.removeNewPicture')}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             )}
           </div>
           {uploadingAvatar && (
             <div className="uploading-indicator" style={{ textAlign: 'center' }}>
-              Uploading avatar...
+              {t('profile.uploadingAvatar')}
             </div>
           )}
         </div>
@@ -486,7 +488,7 @@ const ProfileEdit = () => {
             fontWeight: '500',
             color: 'var(--text)'
           }}>
-            Username
+            {t('profile.usernameLabel')}
           </label>
           <input
             id="username-input"
@@ -498,14 +500,14 @@ const ProfileEdit = () => {
               const nameWithoutSpaces = e.target.value.replace(/\s/g, '');
               setEditedName(nameWithoutSpaces);
             }}
-            placeholder={user?.name || user?.username || "Enter username"}
+            placeholder={user?.name || user?.username || t('profile.enterUsername')}
             maxLength={20}
           />
           <small style={{ 
             color: 'var(--text-muted)', 
             fontSize: '0.8rem'
           }}>
-            3-20 characters
+            {t('profile.usernameChars')}
           </small>
         </div>
             
@@ -519,7 +521,7 @@ const ProfileEdit = () => {
               cursor: saving || uploadingAvatar || !hasChanges ? 'not-allowed' : 'pointer'
             }}
           >
-            {uploadingAvatar ? 'Uploading Avatar...' : saving ? 'Saving...' : 'Save Changes'}
+            {uploadingAvatar ? t('profile.uploadingAvatarBtn') : saving ? t('profile.savingBtn') : t('profile.saveChanges')}
           </button>
         </div>
       </div>

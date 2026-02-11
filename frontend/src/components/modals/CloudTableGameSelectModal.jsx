@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
 const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
+  const { t } = useTranslation();
   const [cloudGames, setCloudGames] = useState([]);
   const [selectedGames, setSelectedGames] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
       <div className="modal-container cloud-game-select-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         <div className="modal-header">
           <h2>
-            Cloud Table Games
+            {t('cloudGames.cloudTableGamesTitle')}
           </h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
@@ -83,20 +85,20 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 animation: 'spin 1s linear infinite',
                 margin: '0 auto var(--spacing-md)'
               }}></div>
-              <p>Loading cloud table games...</p>
+              <p>{t('cloudGames.loadingTableGames')}</p>
             </div>
           )}
 
           {error && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-              <p style={{ color: 'var(--error-color)', marginBottom: 'var(--spacing-md)' }}>Error: {error}</p>
-              <button className="modal-button primary" onClick={loadCloudTableGames}>Retry</button>
+              <p style={{ color: 'var(--error-color)', marginBottom: 'var(--spacing-md)' }}>{t('common.error')}: {error}</p>
+              <button className="modal-button primary" onClick={loadCloudTableGames}>{t('cloudGames.retry')}</button>
             </div>
           )}
 
           {!loading && !error && cloudGames.length === 0 && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-              <p>No cloud table games found</p>
+              <p>{t('cloudGames.noTableGamesFound')}</p>
             </div>
           )}
 
@@ -113,17 +115,17 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                   className="modal-button secondary"
                   style={{ width: 'auto', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.9rem' }}
                 >
-                  Select All New
+                  {t('cloudGames.selectAllNew')}
                 </button>
                 <button 
                   onClick={deselectAll} 
                   className="modal-button secondary"
                   style={{ width: 'auto', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: '0.9rem' }}
                 >
-                  Deselect All
+                  {t('cloudGames.deselectAll')}
                 </button>
                 <span style={{ marginLeft: 'auto', fontWeight: '500', color: 'var(--primary)' }}>
-                  {selectedGames.size} selected
+                  {t('cloudGames.selected', { count: selectedGames.size })}
                 </span>
               </div>
 
@@ -154,12 +156,12 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                       
                       {game.gameTypeName && (
                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                          Game Type: {game.gameTypeName}
+                          {t('cloudGames.gameType', { type: game.gameTypeName })}
                         </div>
                       )}
                       
                       <div className="player-score" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        Players: {game.players.map(p => p.name).join(', ')}
+                        {t('common.players')}: {game.players.map(p => p.name).join(', ')}
                       </div>
                       
                       {game.gameFinished && (
@@ -171,11 +173,11 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                           background: 'var(--success-color)',
                           color: 'white',
                           width: 'fit-content'
-                        }}>FINISHED</span>
+                        }}>{t('cloudGames.finished')}</span>
                       )}
                       
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                        {new Date(game.created_at).toLocaleDateString()} - {game.playerCount} players, {game.totalRounds} rounds
+                        {new Date(game.created_at).toLocaleDateString()} - {game.playerCount} {t('common.players')}, {game.totalRounds} {t('common.rounds')}
                       </div>
                     </div>
                   </div>
@@ -190,7 +192,7 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
             className="modal-button secondary" 
             onClick={onClose}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
             className="modal-button primary" 
@@ -201,7 +203,7 @@ const CloudTableGameSelectModal = ({ isOpen, onClose, onDownload }) => {
               cursor: selectedGames.size === 0 ? 'not-allowed' : 'pointer'
             }}
           >
-            Download Selected ({selectedGames.size})
+            {t('cloudGames.downloadSelected', { count: selectedGames.size })}
           </button>
         </div>
       </div>

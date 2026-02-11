@@ -5,3 +5,4 @@ export { default as AdminProtectedRoute } from './AdminProtectedRoute.jsx';
 export { default as PerformanceMetric } from './PerformanceMetric.jsx';
 export { default as SwipeableGameCard } from './SwipeableGameCard.jsx';
 export { default as UpdateNotification } from './UpdateNotification.jsx';
+export { LanguageSwitcher } from './LanguageSwitcher.jsx';

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { XIcon, PlusIcon } from '@/components/ui/Icon';
 import { GripVertical } from 'lucide-react';
@@ -103,6 +104,7 @@ const TableGameSettingsModal = ({
   onUpdateSettings,
   gameFinished 
 }) => {
+  const { t } = useTranslation();
   const [localPlayers, setLocalPlayers] = useState([]);
   const [localRows, setLocalRows] = useState(10);
   const [localTargetNumber, setLocalTargetNumber] = useState(null);
@@ -210,7 +212,7 @@ const TableGameSettingsModal = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content game-settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Game Settings</h2>
+          <h2>{t('tableGameSettings.title')}</h2>
           <button className="modal-close-btn" onClick={onClose}>
             <XIcon size={24} />
           </button>
@@ -219,7 +221,7 @@ const TableGameSettingsModal = ({
         <div className="modal-body">
           {/* Player Order - Moved to Top */}
           <div className="settings-section">
-            <h3>Players</h3>
+            <h3>{t('tableGameSettings.players')}</h3>
             <DndContext 
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -251,16 +253,16 @@ const TableGameSettingsModal = ({
               disabled={gameFinished}
             >
               <PlusIcon size={16} />
-              Add Player
+              {t('tableGameSettings.addPlayer')}
             </button>
           </div>
 
           {/* Game Settings - Styled like StartTableGameModal */}
           <div className="settings-section game-settings-info">
-            <h3>Game Settings</h3>
+            <h3>{t('tableGameSettings.title')}</h3>
             <div className="settings-details">
               <div className="add-section">
-                <label htmlFor="target-number-input">Target Number (optional):</label>
+                <label htmlFor="target-number-input">{t('tableGameSettings.targetNumberLabel')}:</label>
                 <input
                   id="target-number-input"
                   type="number"
@@ -272,7 +274,7 @@ const TableGameSettingsModal = ({
                 />
               </div>
               <div className="add-section">
-                <label>Scoring Preference:</label>
+                <label>{t('tableGameSettings.scoringPreference')}:</label>
                  <div className="scoring-prefernce-type" style={{ display: 'flex'}}>
                   <label htmlFor="high-score-radio" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
@@ -283,7 +285,7 @@ const TableGameSettingsModal = ({
                       onChange={() => setLocalLowIsBetter(false)}
                       disabled={gameFinished}
                     />
-                    <span>High Score</span>
+                    <span>{t('tableGameSettings.highScore')}</span>
                   </label>
                  <label htmlFor="low-score-radio" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                     <input
@@ -294,7 +296,7 @@ const TableGameSettingsModal = ({
                       onChange={() => setLocalLowIsBetter(true)}
                       disabled={gameFinished}
                     />
-                    <span>Low Score</span>
+                    <span>{t('tableGameSettings.lowScore')}</span>
                   </label>
                 </div>
               </div>
@@ -304,14 +306,14 @@ const TableGameSettingsModal = ({
 
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
             className="btn-primary" 
             onClick={handleSave}
             disabled={gameFinished}
           >
-            Save Changes
+            {t('tableGameSettings.saveChanges')}
           </button>
         </div>
       </div>
@@ -321,13 +323,13 @@ const TableGameSettingsModal = ({
         isOpen={showDeleteConfirm}
         onClose={cancelDeletePlayer}
         onConfirm={confirmDeletePlayer}
-        title="Delete Player"
+        title={t('tableGame.deletePlayerTitle')}
         message={
           playerToDelete === null
-            ? 'Are you sure you want to delete this player?'
-            : `Are you sure you want to delete "${localPlayers[playerToDelete]?.name}"? All their scores will be permanently lost.`
+            ? t('tableGame.deletePlayerDefault')
+            : t('tableGame.deletePlayerMessage', { name: localPlayers[playerToDelete]?.name })
         }
-        confirmText="Delete Player"
+        confirmText={t('tableGame.deletePlayerConfirm')}
       />
     </div>
   );

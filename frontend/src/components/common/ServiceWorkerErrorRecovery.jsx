@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ServiceWorkerErrorRecovery Component
@@ -9,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 export default function ServiceWorkerErrorRecovery() {
   const [showRecovery, setShowRecovery] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Check if we need to show recovery UI
@@ -136,7 +138,7 @@ export default function ServiceWorkerErrorRecovery() {
           marginBottom: '12px',
           color: '#f9fafb'
         }}>
-          App Update Required
+          {t('serviceWorker.appUpdateRequired')}
         </h2>
         
         <p style={{
@@ -144,10 +146,10 @@ export default function ServiceWorkerErrorRecovery() {
           marginBottom: '24px',
           lineHeight: '1.6'
         }}>
-          We've released important improvements to the app. Please click below to complete the update process.
+          {t('serviceWorker.updateDescription')}
           {' '}
           <span style={{ fontSize: '14px', display: 'block', marginTop: '8px', color: '#9ca3af' }}>
-            This will clear old app data and refresh the page.
+            {t('serviceWorker.updateHint')}
           </span>
         </p>
         
@@ -173,7 +175,7 @@ export default function ServiceWorkerErrorRecovery() {
             e.target.style.backgroundColor = '#3b82f6';
           }}
         >
-          {isRecovering ? 'Updating...' : 'Update Now'}
+          {isRecovering ? t('serviceWorker.updating') : t('serviceWorker.updateNow')}
         </button>
         
         {isRecovering && (
@@ -182,7 +184,7 @@ export default function ServiceWorkerErrorRecovery() {
             color: '#9ca3af',
             fontSize: '14px'
           }}>
-            Please wait, do not close this page...
+            {t('serviceWorker.pleaseWait')}
           </div>
         )}
       </div>

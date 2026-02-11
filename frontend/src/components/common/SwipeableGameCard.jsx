@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon, RotateCcwIcon } from '@/components/ui/Icon';
 import { EllipsisVertical } from 'lucide-react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 /**
  * SwipeableGameCard — wraps a card with a "⋮" context-menu button.
@@ -39,6 +40,7 @@ const SwipeableGameCard = ({
   const menuRef = useRef(null);
   const btnRef = useRef(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Position the dropdown relative to the container using fixed positioning
   const updateDropdownPosition = useCallback(() => {
@@ -64,7 +66,7 @@ const SwipeableGameCard = ({
   if (detailsPath) {
     actions.push({
       key: 'view',
-      label: 'View Details',
+      label: t('common.viewDetails'),
       icon: <EyeIcon size={16} />,
       className: 'action-view',
       handler: () => navigate(detailsPath),
@@ -73,7 +75,7 @@ const SwipeableGameCard = ({
   if (showViewDetails && onViewDetails) {
     actions.push({
       key: 'viewDetails',
-      label: 'View Details',
+      label: t('common.viewDetails'),
       icon: <EyeIcon size={16} />,
       className: 'action-view',
       handler: onViewDetails,
@@ -82,7 +84,7 @@ const SwipeableGameCard = ({
   if (showEdit && onEdit) {
     actions.push({
       key: 'edit',
-      label: 'Edit',
+      label: t('common.edit'),
       icon: <EditIcon size={16} />,
       className: 'action-edit',
       handler: onEdit,
@@ -91,7 +93,7 @@ const SwipeableGameCard = ({
   if (showSync) {
     actions.push({
       key: 'sync',
-      label: isUploading ? 'Uploading…' : (syncTitle || 'Upload to Cloud'),
+      label: isUploading ? t('common.uploading') : (syncTitle || t('common.uploadToCloud')),
       icon: isUploading
         ? <span className="share-spinner small" aria-label="Uploading…" />
         : <CloudIcon size={16} />,
@@ -103,7 +105,7 @@ const SwipeableGameCard = ({
   if (showSyncToSystem) {
     actions.push({
       key: 'syncSystem',
-      label: syncToSystemTitle || 'Sync to System',
+      label: syncToSystemTitle || t('common.syncToSystem'),
       icon: <RotateCcwIcon size={16} />,
       className: 'action-sync-system',
       handler: onSyncToSystem,
@@ -113,7 +115,7 @@ const SwipeableGameCard = ({
   if (showShare) {
     actions.push({
       key: 'share',
-      label: isSharing ? 'Sharing…' : 'Share',
+      label: isSharing ? t('common.sharing') : t('common.share'),
       icon: isSharing
         ? <span className="share-spinner small" aria-label="Sharing…" />
         : <ShareIcon size={16} />,
@@ -125,7 +127,7 @@ const SwipeableGameCard = ({
   if (showDelete && onDelete) {
     actions.push({
       key: 'delete',
-      label: 'Delete',
+      label: t('common.delete'),
       icon: <TrashIcon size={16} />,
       className: 'action-delete',
       handler: onDelete,
@@ -202,7 +204,7 @@ const SwipeableGameCard = ({
             ref={btnRef}
             className={`card-actions-menu-btn ${menuOpen ? 'active' : ''}`}
             onClick={handleToggle}
-            aria-label="More actions"
+            aria-label={t('common.moreActions')}
             aria-expanded={menuOpen}
             aria-haspopup="true"
           >

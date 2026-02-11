@@ -1,9 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/GameTemplateDetailsModal.css';
 
 const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
+  const { t } = useTranslation();
   if (!isOpen || !template) return null;
 
   return (
@@ -19,17 +21,17 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
         <div className="game-details-content">
           {/* Game Settings */}
           <div className="details-section">
-            <h3>Game Settings</h3>
+            <h3>{t('templateDetails.gameSettings')}</h3>
             <div className="details-grid">
               {template.targetNumber && (
                 <div className="detail-item">
-                  <label>Target Number:</label>
+                  <label>{t('templateDetails.targetNumber')}:</label>
                   <span>{template.targetNumber}</span>
                 </div>
               )}
               <div className="detail-item">
-                <label>Scoring Target:</label>
-                <span>{template.lowIsBetter ? 'Low Scores' : 'High Scores'}</span>
+                <label>{t('templateDetails.scoringTarget')}:</label>
+                <span>{template.lowIsBetter ? t('templateDetails.lowScores') : t('templateDetails.highScores')}</span>
               </div>
             </div>
           </div>
@@ -37,7 +39,7 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
           {/* Short Description */}
           {template.description && (
             <div className="details-section">
-              <h3>Description</h3>
+              <h3>{t('templateDetails.description')}</h3>
               <p className="template-description">{template.description}</p>
             </div>
           )}
@@ -55,14 +57,14 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
 
           {!template.description && !template.descriptionMarkdown && (
             <div className="details-section">
-              <p className="no-details">No additional details available for this game.</p>
+              <p className="no-details">{t('templateDetails.noDetails')}</p>
             </div>
           )}
         </div>
 
         <div className="modal-actions">
           <button className="modal-btn" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

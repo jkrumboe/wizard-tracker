@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import userService from '@/shared/api/userService';
 import { Trash2Icon, KeyIcon, XIcon } from '@/components/ui/Icon';
+import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 const UserManagement = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,45 +114,45 @@ const UserManagement = () => {
 
   const handleSaveRole = async (userId) => {
     if (!newRole) {
-      alert('Role cannot be empty');
+      alert(t('adminUsers.roleCannotBeEmpty'));
       return;
     }
 
-    if (!confirm(`Change user role to "${newRole}"?`)) {
+    if (!confirm(t('adminUsers.confirmRoleChange', { role: newRole }))) {
       return;
     }
 
     try {
       await userService.updateUserRole(userId, newRole);
-      alert('User role updated successfully!');
+      alert(t('adminUsers.roleUpdated'));
       setEditingRole(null);
       setNewRole('');
       loadUsers();
     } catch (err) {
       console.error('Error updating role:', err);
-      alert('Failed to update role: ' + err.message);
+      alert(t('adminUsers.roleUpdateFailed', { error: err.message }));
     }
   };
 
   const handleSaveUsername = async (userId) => {
     if (!newUsername.trim()) {
-      alert('Username cannot be empty');
+      alert(t('adminUsers.usernameCannotBeEmpty'));
       return;
     }
 
-    if (!confirm('This will update the username across all games, scores, and records in the database. Continue?')) {
+    if (!confirm(t('adminUsers.confirmUsernameChange'))) {
       return;
     }
 
     try {
       await userService.updateUsername(userId, newUsername.trim());
-      alert('Username updated successfully!');
+      alert(t('adminUsers.usernameUpdated'));
       setEditingUser(null);
       setNewUsername('');
       loadUsers();
     } catch (err) {
       console.error('Error updating username:', err);
-      alert('Failed to update username: ' + err.message);
+      alert(t('adminUsers.usernameUpdateFailed', { error: err.message }));
     }
   };
 
@@ -170,22 +172,22 @@ const UserManagement = () => {
 
   const handleResetPassword = async () => {
     if (!newPassword || newPassword.length < 6) {
-      alert('Password must be at least 6 characters long');
+      alert(t('adminUsers.passwordMinLength'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert('Passwords do not match');
+      alert(t('adminUsers.passwordsMismatch'));
       return;
     }
 
     try {
       await userService.resetUserPassword(passwordResetUser._id || passwordResetUser.id, newPassword);
-      alert(`Password reset successfully for ${passwordResetUser.username}!`);
+      alert(t('adminUsers.passwordReset', { username: passwordResetUser.username }));
       handleClosePasswordModal();
     } catch (err) {
       console.error('Error resetting password:', err);
-      alert('Failed to reset password: ' + err.message);
+      alert(t('adminUsers.passwordResetFailed', { error: err.message }));
     }
   };
 
@@ -204,17 +206,17 @@ const UserManagement = () => {
 
     try {
       const result = await userService.deleteUser(deleteUser._id || deleteUser.id);
-      alert(`User "${deleteUser.username}" anonymized successfully!\n\nRemoved:\n- ${result.deletionStats.friendsRemoved} friend connections\n- ${result.deletionStats.friendRequestsDeleted} friend requests\n- ${result.deletionStats.identitiesUnlinked} identities unlinked\n\nPreserved (now anonymized):\n- ${result.deletionStats.gamesKept} games\n- ${result.deletionStats.tableGamesKept} table games\n- ${result.deletionStats.templatesKept} templates\n- ${result.deletionStats.aliasesKept} aliases`);
+      alert(t('adminUsers.userAnonymized', { username: deleteUser.username }));
       handleCloseDeleteModal();
       loadUsers();
     } catch (err) {
       console.error('Error deleting user:', err);
-      alert('Failed to delete user: ' + err.message);
+      alert(t('adminUsers.deleteUserFailed', { error: err.message }));
     }
   };
 
   if (loading) {
-    return <div className="admin-container"><div className="loading">Loading users...</div></div>;
+    return <div className="admin-container"><div className="loading">{t('adminUsers.loadingUsers')}</div></div>;
   }
 
   if (error) {
@@ -230,37 +232,37 @@ const UserManagement = () => {
 
       <div className="admin-filters">
         <div className="search-box">
-          <label htmlFor="user-search" className="sr-only">Search by username</label>
+          <label htmlFor="user-search" className="sr-only">{t('adminUsers.searchPlaceholder')}</label>
           <input
             id="user-search"
             type="text"
-            placeholder="Search by username..."
+            placeholder={t('adminUsers.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
         </div>
         <div className="filter-group">
-          <label htmlFor="role-filter">Role:</label>
+          <label htmlFor="role-filter">{t('adminUsers.roleFilter')}</label>
           <select
             id="role-filter"
             value={roleFilter} 
             onChange={(e) => setRoleFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="all">All Roles</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="all">{t('adminUsers.allRoles')}</option>
+            <option value="user">{t('adminUsers.user')}</option>
+            <option value="admin">{t('adminUsers.adminRole')}</option>
           </select>
         </div>
         <div className="results-count">
-          Showing {filteredUsers.length} of {users.length} users
+          {t('adminUsers.showingUsers', { filtered: filteredUsers.length, total: users.length })}
         </div>
       </div>
 
       {filteredUsers.length === 0 ? (
         <div className="no-users">
-          <p>No users found{(searchTerm || roleFilter !== 'all') && ' matching your filters'}</p>
+          <p>{t('adminUsers.noUsersFound')}{(searchTerm || roleFilter !== 'all') && (' ' + t('adminUsers.matchingFilters'))}</p>
         </div>
       ) : (
         <div className="users-list">
@@ -278,7 +280,7 @@ const UserManagement = () => {
                 <div className="user-details">
                   <div className="detail-item">
                     <span className="username">{user.username}</span>
-                    {user.isDeleted && <span className="deleted-badge">DELETED</span>}
+                    {user.isDeleted && <span className="deleted-badge">{t('adminUsers.deleted')}</span>}
                   </div>
 
                   <div className="detail-item">
@@ -303,7 +305,7 @@ const UserManagement = () => {
         <div className="modal-overlay" onClick={handleCloseActionsModal}>
           <div className="modal-content actions-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Manage User: {actionUser.username}</h3>
+              <h3>{t('adminUsers.manageUser', { username: actionUser.username })}</h3>
               <button className="close-btn" onClick={handleCloseActionsModal}>
                 <XIcon size={20} />
               </button>
@@ -311,7 +313,7 @@ const UserManagement = () => {
             <div className="modal-body">
               {editingUser === (actionUser._id || actionUser.id) ? (
                 <div className="form-group">
-                  <label htmlFor="edit-username">Username</label>
+                  <label htmlFor="edit-username">{t('adminUsers.username')}</label>
                   <input
                     id="edit-username"
                     type="text"
@@ -323,7 +325,7 @@ const UserManagement = () => {
                 </div>
               ) : editingRole === (actionUser._id || actionUser.id) ? (
                 <div className="form-group">
-                  <label htmlFor="edit-role">Role</label>
+                  <label htmlFor="edit-role">{t('adminUsers.role')}</label>
                   <select
                     id="edit-role"
                     value={newRole}
@@ -331,34 +333,34 @@ const UserManagement = () => {
                     className="form-input"
                     autoFocus
                   >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <option value="user">{t('adminUsers.user')}</option>
+                    <option value="admin">{t('adminUsers.adminRole')}</option>
                   </select>
                 </div>
               ) : (
                 <div className="user-info-modal">
                   {actionUser.isDeleted && (
                     <div className="deleted-warning">
-                      <p>⚠️ This account has been deleted and anonymized.</p>
-                      <p>Deleted: {new Date(actionUser.deletedAt).toLocaleDateString()}</p>
+                      <p>{t('adminUsers.accountDeletedWarning')}</p>
+                      <p>{t('adminUsers.deletedDate', { date: new Date(actionUser.deletedAt).toLocaleDateString() })}</p>
                     </div>
                   )}
                   <div className="info-item-modal">
-                    <span className="info-label-modal">Username:</span>
+                    <span className="info-label-modal">{t('adminUsers.usernameLabel')}</span>
                     <span className="info-value-modal">{actionUser.username}</span>
                   </div>
                   <div className="info-item-modal">
-                    <span className="info-label-modal">Registered:</span>
+                    <span className="info-label-modal">{t('adminUsers.registeredLabel')}</span>
                     <span className="info-value-modal">{new Date(actionUser.createdAt).toLocaleDateString()}</span>
                   </div>
                   {actionUser.lastLogin && (
                     <div className="info-item-modal">
-                      <span className="info-label-modal">Last Login:</span>
+                      <span className="info-label-modal">{t('adminUsers.lastLoginLabel')}</span>
                       <span className="info-value-modal">{new Date(actionUser.lastLogin).toLocaleDateString()}</span>
                     </div>
                   )}
                   <div className="info-item-modal">
-                    <span className="info-label-modal">Role:</span>
+                    <span className="info-label-modal">{t('adminUsers.roleLabel')}</span>
                     <span className={`role-badge role-${actionUser.role || 'user'}`}>
                       {(actionUser.role || 'user').toUpperCase()}
                     </span>
@@ -370,40 +372,40 @@ const UserManagement = () => {
               {editingUser === (actionUser._id || actionUser.id) ? (
                 <>
                   <button className="btn-cancel" onClick={() => { handleCancelEdit(); handleCloseActionsModal(); }}>
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button className="btn-save" onClick={() => { handleSaveUsername(actionUser._id || actionUser.id); handleCloseActionsModal(); }}>
-                    Save Username
+                    {t('adminUsers.saveUsername')}
                   </button>
                 </>
               ) : editingRole === (actionUser._id || actionUser.id) ? (
                 <>
                   <button className="btn-cancel" onClick={() => { handleCancelRoleEdit(); handleCloseActionsModal(); }}>
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button className="btn-save" onClick={() => { handleSaveRole(actionUser._id || actionUser.id); handleCloseActionsModal(); }}>
-                    Save Role
+                    {t('adminUsers.saveRole')}
                   </button>
                 </>
               ) : actionUser.isDeleted ? (
                 <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)' }}>
-                  <p>This account has been deleted. No actions available.</p>
+                  <p>{t('adminUsers.accountDeletedNoActions')}</p>
                 </div>
               ) : (
                 <>
                   <button className="btn-edit" onClick={() => { handleStartEdit(actionUser); }}>
-                    Edit Username
+                    {t('adminUsers.editUsername')}
                   </button>
                   <button className="btn-role" onClick={() => { handleStartRoleEdit(actionUser); }}>
-                    Change Role
+                    {t('adminUsers.changeRole')}
                   </button>
                   <button className="btn-password" onClick={() => { handleOpenPasswordModal(actionUser); handleCloseActionsModal(); }}>
                     <KeyIcon size={16} />
-                    Reset Password
+                    {t('adminUsers.resetPassword')}
                   </button>
                   <button className="btn-delete-user" onClick={() => { handleOpenDeleteModal(actionUser); handleCloseActionsModal(); }}>
                     <Trash2Icon size={16} />
-                    Delete User
+                    {t('adminUsers.deleteUser')}
                   </button>
                 </>
               )}
@@ -417,46 +419,46 @@ const UserManagement = () => {
         <div className="modal-overlay" onClick={handleClosePasswordModal}>
           <div className="modal-content password-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Reset Password for {passwordResetUser?.username}</h3>
+              <h3>{t('adminUsers.resetPasswordTitle', { username: passwordResetUser?.username })}</h3>
               <button className="close-btn" onClick={handleClosePasswordModal}>
                 <XIcon size={20} />
               </button>
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="new-password">New Password</label>
+                <label htmlFor="new-password">{t('adminUsers.newPassword')}</label>
                 <input
                   id="new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (min 6 characters)"
+                  placeholder={t('adminUsers.newPasswordPlaceholder')}
                   className="form-input"
                   autoFocus
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="confirm-password">Confirm Password</label>
+                <label htmlFor="confirm-password">{t('adminUsers.confirmPassword')}</label>
                 <input
                   id="confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
+                  placeholder={t('adminUsers.confirmPasswordPlaceholder')}
                   className="form-input"
                 />
               </div>
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={handleClosePasswordModal}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button 
                 className="btn-save" 
                 onClick={handleResetPassword}
                 disabled={!newPassword || !confirmPassword}
               >
-                Reset Password
+                {t('adminUsers.resetPassword')}
               </button>
             </div>
           </div>
@@ -468,45 +470,45 @@ const UserManagement = () => {
         <div className="modal-overlay" onClick={handleCloseDeleteModal}>
           <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Delete User Account</h3>
+              <h3>{t('adminUsers.deleteUserAccount')}</h3>
               <button className="close-btn" onClick={handleCloseDeleteModal}>
                 <XIcon size={20} />
               </button>
             </div>
             <div className="modal-body">
               <p className="warning-text">
-                Are you sure you want to delete <strong>{deleteUser?.username}</strong>?
+                {t('adminUsers.deleteConfirm', { username: deleteUser?.username })}
               </p>
               <p className="info-text">
-                This will anonymize the account and remove:
+                {t('adminUsers.anonymizeWarning')}
               </p>
               <ul className="delete-info-list">
-                <li>User profile and login credentials</li>
-                <li>All friend connections and friend requests</li>
-                <li>Player identities will be unlinked (preserved for history)</li>
+                <li>{t('adminUsers.removeProfile')}</li>
+                <li>{t('adminUsers.removeFriendConnections')}</li>
+                <li>{t('adminUsers.unlinkIdentities')}</li>
               </ul>
               <p className="info-text" style={{ marginTop: '1rem' }}>
-                The following will be preserved (anonymized username):
+                {t('adminUsers.preserveWarning')}
               </p>
               <ul className="delete-info-list">
-                <li>All games and table games</li>
-                <li>All game templates</li>
-                <li>Game history for other players</li>
+                <li>{t('adminUsers.preserveGames')}</li>
+                <li>{t('adminUsers.preserveTemplates')}</li>
+                <li>{t('adminUsers.preserveHistory')}</li>
               </ul>
               <p className="danger-text">
-                ⚠️ This action cannot be undone!
+                {t('adminUsers.cannotBeUndone')}
               </p>
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={handleCloseDeleteModal}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button 
                 className="btn-delete-confirm" 
                 onClick={handleConfirmDelete}
               >
                 <Trash2Icon size={16} />
-                Delete User
+                {t('adminUsers.deleteUser')}
               </button>
             </div>
           </div>

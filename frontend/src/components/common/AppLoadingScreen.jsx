@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import '@/styles/utils/splash.css';
 
 const AppLoadingScreen = ({
   isLoading,
   children,
-  appName = "Wizard Tracker",
-  appSubtitle = "Track your Wizard Games",
+  appName: appNameProp,
+  appSubtitle: appSubtitleProp,
   minLoadingTime = 1200,
   showOnAppOpen = true,
   appOpenThreshold = 30 * 60 * 1000, // 30 minutes
@@ -16,6 +17,9 @@ const AppLoadingScreen = ({
   const [showContent, setShowContent] = useState(!isLoading);
   const [internalLoading, setInternalLoading] = useState(isLoading);
   const [animationPhase, setAnimationPhase] = useState('enter');
+  const { t } = useTranslation();
+  const appName = appNameProp ?? t('appLoading.appName');
+  const appSubtitle = appSubtitleProp ?? t('appLoading.subtitle');
 
   // Main loading control effect
   useEffect(() => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon, UsersIcon, PlusIcon, TrashIcon, SearchIcon, CheckMarkIcon, ClockIcon } from '@/components/ui/Icon';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { localFriendsService } from '@/shared/api';
@@ -8,6 +9,7 @@ import '@/styles/components/modal.css';
 import '@/styles/components/friends-modal.css';
 
 const FriendsModal = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'add', 'received', 'sent'
   const [friends, setFriends] = useState([]);
@@ -417,7 +419,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
-            <h2>Friends</h2>
+            <h2>{t('friends.title')}</h2>
             <button className="close-btn" onClick={onClose}>
               <XIcon size={20} />
             </button>
@@ -436,7 +438,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
       <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>
-            Friends
+            {t('friends.title')}
           </h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
@@ -453,7 +455,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
               // setSuccessMessage('');
             }}
           >
-            My Friends
+            {t('friends.yourFriends')}
             {friends.length > 0 && <span className="tab-badge">{friends.length}</span>}
           </button>
           <button
@@ -466,7 +468,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
             }}
           >
             {/* <ClockIcon size={16} /> */}
-            Requests
+            {t('friends.friendRequests')}
             {receivedRequests.length > 0 && (
               <span className="tab-badge highlight">{receivedRequests.length}</span>
             )}
@@ -501,11 +503,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
             <SearchIcon size={18} />
             <input
               type="text"
-              placeholder={
-                activeTab === 'friends' ? 'Search friends...' : 
-                activeTab === 'received' ? 'Search requests...' :
-                'Search users...'
-              }
+              placeholder={t('friends.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -516,7 +514,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
               {filteredFriends.length === 0 ? (
                 <div className="empty-message">
                   {friends.length === 0 
-                    ? 'No friends yet. Add some friends to get started!'
+                    ? t('friends.noFriendsYet')
                     : 'No friends match your search'
                   }
                 </div>
@@ -545,7 +543,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                     <button
                       className="remove-friend-btn"
                       onClick={() => handleRemoveFriend(friend.id)}
-                      title="Remove friend"
+                      title={t('friends.remove')}
                     >
                       <TrashIcon size={18} />
                     </button>
@@ -589,7 +587,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                         className="accept-btn"
                         onClick={() => handleAcceptRequest(request)}
                         disabled={processingRequestId === request.id}
-                        title="Accept request"
+                        title={t('friends.accept')}
                       >
                         {processingRequestId === request.id ? (
                           <div className="spinner-small"></div>
@@ -601,7 +599,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                         className="reject-btn"
                         onClick={() => handleRejectRequest(request)}
                         disabled={processingRequestId === request.id}
-                        title="Reject request"
+                        title={t('friends.decline')}
                       >
                         <XIcon size={18} />
                       </button>
@@ -672,7 +670,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                           ? handleCancelRequest(pendingRequest.id)
                           : handleSendFriendRequest(userItem)
                         }
-                        title={hasPendingRequest ? "Cancel friend request" : "Send friend request"}
+                        title={hasPendingRequest ? t('friends.pending') : t('friends.sendRequest')}
                         disabled={addingFriendId === userItem.id || addedFriendIds.has(userItem.id) || processingRequestId === pendingRequest?.id}
                       >
                         {processingRequestId === pendingRequest?.id ? (
@@ -706,7 +704,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
                   Cancel
                 </button>
                 <button className="confirm-btn danger" onClick={confirmRemoveFriend}>
-                  Remove
+                  {t('friends.remove')}
                 </button>
               </div>
             </div>

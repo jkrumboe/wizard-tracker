@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
 import { UsersIcon } from '@/components/ui/Icon'
 import "@/styles/pages/leaderboard.css"
 
 const Leaderboard = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [players, setPlayers] = useState([])
   const [gameTypes, setGameTypes] = useState(['Wizard'])
@@ -33,7 +35,7 @@ const Leaderboard = () => {
       // The backend will resolve guest player names to linked user accounts
       const identifier = player.userId || player.name;
       if (!identifier) {
-        alert('Cannot view profile for this player');
+        alert(t('leaderboard.cannotViewProfile'));
         return;
       }
       console.log('✅ Navigating to user profile:', `/user/${identifier}`);
@@ -46,7 +48,7 @@ const Leaderboard = () => {
       navigate(`/user/${identifier}`)
     } catch (error) {
       console.error('💥 Error navigating to player:', error)
-      alert(`Error loading player profile: ${error.message}`)
+      alert(t('leaderboard.errorLoadingProfile', { error: error.message }))
     }
   }
 
@@ -205,7 +207,7 @@ const Leaderboard = () => {
   if (loading) {
     return (
       <div className="leaderboard-container">
-        <h1 style={{marginBottom: '0'}}>Leaderboard</h1>
+        <h1 style={{marginBottom: '0'}}>{t('leaderboard.title')}</h1>
         
         <div style={{ 
           fontSize: '0.85rem', 
@@ -213,7 +215,7 @@ const Leaderboard = () => {
           textAlign: 'center',
           marginBottom: '0.5rem' 
         }}>
-          Loading...
+          {t('common.loading')}
         </div>
         
         <Link 
@@ -222,13 +224,13 @@ const Leaderboard = () => {
           style={{ pointerEvents: 'none', opacity: 0.7 }}
         >
           <UsersIcon size={18} />
-          Compare with Friends
+          {t('leaderboard.compareWithFriends')}
         </Link>
 
         <div className="filter-container">
           <input
             type="text"
-            placeholder="Search players..."
+            placeholder={t('leaderboard.searchPlaceholder')}
             className="search-input"
             value=""
             disabled
@@ -245,10 +247,10 @@ const Leaderboard = () => {
         <div className="leaderboard-table">
           <div className="leaderboard-header">
             <div className="rank-col"/>
-            <div className="player-col">Player</div>
-            <div className="wins-col">Wins</div>
-            <div className="winrate-col">Win%</div>
-            <div className="score-col">ELO</div>
+            <div className="player-col">{t('leaderboard.playerHeader')}</div>
+            <div className="wins-col">{t('leaderboard.winsHeader')}</div>
+            <div className="winrate-col">{t('leaderboard.winPercentHeader')}</div>
+            <div className="score-col">{t('leaderboard.eloHeader')}</div>
           </div>
 
           <div className="leaderboard-body">
@@ -275,9 +277,9 @@ const Leaderboard = () => {
         </div>
 
         <div className="pagination-controls">
-          <button disabled>Previous</button>
+          <button disabled>{t('common.previous')}</button>
           <span>- of -</span>
-          <button disabled>Next</button>
+          <button disabled>{t('common.next')}</button>
         </div>
       </div>
     )
@@ -286,10 +288,10 @@ const Leaderboard = () => {
   if (error) {
     return (
       <div className="error-container">
-        <h2>Error Loading Leaderboard</h2>
+        <h2>{t('leaderboard.errorLoading')}</h2>
         <p>{error}</p>
         <button onClick={fetchLeaderboard} className="retry-button">
-          Retry
+          {t('common.retry')}
         </button>
       </div>
     )
@@ -297,7 +299,7 @@ const Leaderboard = () => {
 
   return (
     <div className="leaderboard-container">
-      <h1 style={{marginBottom: '0'}}>Leaderboard</h1>
+      <h1 style={{marginBottom: '0'}}>{t('leaderboard.title')}</h1>
       
       {lastRefresh && (
         <div style={{ 
@@ -306,7 +308,7 @@ const Leaderboard = () => {
           textAlign: 'center',
           marginBottom: '0.5rem' 
         }}>
-          Last updated: {lastRefresh.toLocaleTimeString()}
+          {t('leaderboard.lastUpdated', { date: lastRefresh.toLocaleTimeString() })}
         </div>
       )}
       
@@ -315,7 +317,7 @@ const Leaderboard = () => {
         className="friend-leaderboard-link"
       >
         <UsersIcon size={18} />
-        Compare with Friends
+        {t('leaderboard.compareWithFriends')}
       </Link>
       
       {/* <div className="leaderboard-stats">
@@ -326,7 +328,7 @@ const Leaderboard = () => {
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search players..."
+          placeholder={t('leaderboard.searchPlaceholder')}
           value={filter}
           onChange={handleFilterChange}
           className="search-input"
@@ -347,7 +349,7 @@ const Leaderboard = () => {
 
       {sortedPlayers.length === 0 ? (
         <div className="no-results">
-          <p>No players found{filter ? ' matching your search' : ''}.</p>
+          <p>{filter ? t('leaderboard.noPlayersMatchSearch') : t('leaderboard.noPlayersFound')}</p>
         </div>
       ) : (
         <>
@@ -358,19 +360,19 @@ const Leaderboard = () => {
                 className={`player-col ${sortBy === 'name' ? 'sorted' : ''}`}
                 onClick={() => handleSort('name')}
               >
-                Player {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                {t('leaderboard.playerHeader')} {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
               <div
                 className={`wins-col ${sortBy === 'wins' ? 'sorted' : ''}`}
                 onClick={() => handleSort('wins')}
               >
-                Wins {sortBy === 'wins' && (sortOrder === 'asc' ? '↑' : '↓')}
+                {t('leaderboard.winsHeader')} {sortBy === 'wins' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
               <div
                 className={`winrate-col ${sortBy === 'winRate' ? 'sorted' : ''}`}
                 onClick={() => handleSort('winRate')}
               >
-                Win% {sortBy === 'winRate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                {t('leaderboard.winPercentHeader')} {sortBy === 'winRate' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
               {/* <div 
                 className={`games-col ${sortBy === 'totalGames' ? 'sorted' : ''}`}
@@ -382,7 +384,7 @@ const Leaderboard = () => {
                 className={`score-col ${sortBy === 'elo' ? 'sorted' : ''}`}
                 onClick={() => handleSort('elo')}
               >
-                ELO {sortBy === 'elo' && (sortOrder === 'asc' ? '↑' : '↓')}
+                {t('leaderboard.eloHeader')} {sortBy === 'elo' && (sortOrder === 'asc' ? '↑' : '↓')}
               </div>
             </div>
 
@@ -403,7 +405,7 @@ const Leaderboard = () => {
                         cursor: 'pointer',
                         opacity: 1
                       }}
-                      title="View player profile"
+                      title={t('leaderboard.viewPlayerProfile')}
                     >
                       {player.name}
                     </div>
@@ -428,13 +430,13 @@ const Leaderboard = () => {
 
           <div className="pagination-controls">
             <button onClick={handlePreviousPage} disabled={currentPage === 1}>
-              Previous
+              {t('common.previous')}
             </button>
             <span>
-              {currentPage} of {totalPages || 1}
+              {t('leaderboard.pageOf', { current: currentPage, total: totalPages || 1 })}
             </span>
             <button onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
-              Next
+              {t('common.next')}
             </button>
           </div>
         </>

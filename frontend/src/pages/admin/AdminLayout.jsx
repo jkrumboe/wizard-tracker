@@ -3,9 +3,11 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import userService from '@/shared/api/userService';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { MenuIcon, XIcon } from '@/components/ui/Icon';
+import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 const AdminLayout = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const isRootPath = location.pathname === '/admin' || location.pathname === '/admin/';
   const [stats, setStats] = useState({ users: 0, pendingSuggestions: 0 });
@@ -39,14 +41,14 @@ const AdminLayout = () => {
       <button 
         className="mobile-menu-toggle"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        aria-label="Toggle menu"
+        aria-label={t('admin.toggleMenu')}
       >
         {mobileMenuOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
       </button>
 
       {/* Navigation Sidebar */}
       <nav className={`admin-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-        <h2>Admin Panel</h2>
+        <h2>{t('admin.adminPanel')}</h2>
         <ul>
           <li>
             <Link 
@@ -54,7 +56,7 @@ const AdminLayout = () => {
               className={location.pathname === '/admin/template-suggestions' ? 'active' : ''}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <span>Template Suggestions</span>
+              <span>{t('admin.templateSuggestions')}</span>
               {stats.pendingSuggestions > 0 && (
                 <span className="nav-badge">{stats.pendingSuggestions}</span>
               )}
@@ -66,7 +68,7 @@ const AdminLayout = () => {
               className={location.pathname === '/admin/users' ? 'active' : ''}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <span>User Management</span>
+              <span>{t('admin.userManagement')}</span>
             </Link>
           </li>
           <li>
@@ -75,7 +77,7 @@ const AdminLayout = () => {
               className={location.pathname === '/admin/game-linkage' ? 'active' : ''}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <span>Game Linkage</span>
+              <span>{t('admin.gameLinkage')}</span>
             </Link>
           </li>
           <li>
@@ -84,7 +86,7 @@ const AdminLayout = () => {
               className={location.pathname === '/admin/player-linking' ? 'active' : ''}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <span>Player Linking</span>
+              <span>{t('admin.playerLinking')}</span>
             </Link>
           </li>
           <li>
@@ -93,7 +95,7 @@ const AdminLayout = () => {
               className={location.pathname === '/admin/elo' ? 'active' : ''}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <span>ELO Management</span>
+              <span>{t('admin.eloManagement')}</span>
             </Link>
           </li>
         </ul>
@@ -130,28 +132,28 @@ const AdminLayout = () => {
 
             <div className="admin-cards">
               <Link to="/admin/template-suggestions" className="admin-card">
-                <h3>Template Suggestions</h3>
-                <p>Review and approve user-submitted game templates</p>
+                <h3>{t('admin.templateSuggestions')}</h3>
+                <p>{t('admin.templateSuggestionsDesc')}</p>
                 {stats.pendingSuggestions > 0 && (
-                  <div className="card-badge">{stats.pendingSuggestions} pending</div>
+                  <div className="card-badge">{t('admin.pendingCount', { count: stats.pendingSuggestions })}</div>
                 )}
               </Link>
               <Link to="/admin/users" className="admin-card">
-                <h3>User Management</h3>
-                <p>Manage usernames and user information</p>
-                <div className="card-badge">{stats.users} users</div>
+                <h3>{t('admin.userManagement')}</h3>
+                <p>{t('admin.userManagementDesc')}</p>
+                <div className="card-badge">{t('admin.usersCount', { count: stats.users })}</div>
               </Link>
               <Link to="/admin/game-linkage" className="admin-card">
-                <h3>Game Linkage</h3>
-                <p>Link games to user accounts retroactively</p>
+                <h3>{t('admin.gameLinkage')}</h3>
+                <p>{t('admin.gameLinkageDesc')}</p>
               </Link>
               <Link to="/admin/player-linking" className="admin-card">
-                <h3>Player Linking</h3>
-                <p>Manually link old player names to registered users</p>
+                <h3>{t('admin.playerLinking')}</h3>
+                <p>{t('admin.playerLinkingDesc')}</p>
               </Link>
               <Link to="/admin/elo" className="admin-card">
-                <h3>ELO Management</h3>
-                <p>Recalculate ELO ratings from historical game data</p>
+                <h3>{t('admin.eloManagement')}</h3>
+                <p>{t('admin.eloManagementDesc')}</p>
               </Link>
             </div>
           </div>

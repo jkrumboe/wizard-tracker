@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Cropper from 'react-easy-crop';
 import { XIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
@@ -8,6 +9,7 @@ import '@/styles/components/modal.css';
  * Uses react-easy-crop for a standard, intuitive cropping experience
  */
 const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
+  const { t } = useTranslation();
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -187,8 +189,8 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container image-cropper-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Crop Profile Picture</h2>
-          <button onClick={onClose} className="modal-close-btn" aria-label="Close modal">
+          <h2>{t('imageCropper.title')}</h2>
+          <button onClick={onClose} className="modal-close-btn" aria-label={t('common.close')}>
             <XIcon size={24} />
           </button>
         </div>
@@ -205,7 +207,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
               gap: '16px'
             }}>
               <div style={{ fontSize: '48px' }}>⚠️</div>
-              <div style={{ fontWeight: 'bold' }}>Image Load Failed</div>
+              <div style={{ fontWeight: 'bold' }}>{t('imageCropper.imageLoadFailed')}</div>
               <div style={{ fontSize: '14px', opacity: 0.8 }}>{loadError}</div>
               <button 
                 onClick={onClose} 
@@ -219,7 +221,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
                   cursor: 'pointer'
                 }}
               >
-                Try Again
+                {t('imageCropper.tryAgain')}
               </button>
             </div>
           )}
@@ -240,8 +242,8 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite'
               }} />
-              <div>Processing image...</div>
-              <div style={{ fontSize: '12px', opacity: 0.6 }}>This may take a moment for large images</div>
+              <div>{t('imageCropper.processingImage')}</div>
+              <div style={{ fontSize: '12px', opacity: 0.6 }}>{t('imageCropper.processingHint')}</div>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           )}
@@ -268,7 +270,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
               </div>
 
                 <p className="crop-instructions">
-                  Drag the image to adjust position. Use the slider to zoom.
+                  {t('imageCropper.cropInstructions')}
                 </p>
             </>
           )}
@@ -276,10 +278,10 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
 
         <div className="modal-footer">
           <button onClick={onClose} className="btn-secondary">
-            Cancel
+            {t('common.cancel')}
           </button>
           <button onClick={handleApply} className="btn-primary">
-            Apply
+            {t('imageCropper.apply')}
           </button>
         </div>
       </div>

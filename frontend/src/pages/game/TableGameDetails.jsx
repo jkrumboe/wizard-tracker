@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
+import { useTranslation } from 'react-i18next'
 import { getTableGameById } from "@/shared/api/tableGameService"
 import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing'
 import StatsChart from "@/components/game/StatsChart"
@@ -65,6 +66,7 @@ const GameDetailsSkeleton = () => (
 const TableGameDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -129,7 +131,7 @@ const TableGameDetails = () => {
       <div className="game-details-container">
         <div className="error-state">{error}</div>
         <button onClick={() => navigate(-1)} className="back-link">
-          Go Back
+          {t('common.goBack')}
         </button>
       </div>
     )
@@ -138,9 +140,9 @@ const TableGameDetails = () => {
   if (!game) {
     return (
       <div className="game-details-container">
-        <div className="error-state">Game not found</div>
+        <div className="error-state">{t('tableGame.gameNotFound')}</div>
         <button onClick={() => navigate(-1)} className="back-link">
-          Go Back
+          {t('common.goBack')}
         </button>
       </div>
     )
@@ -231,7 +233,7 @@ const TableGameDetails = () => {
         <div className="badge-controls-container">
           <button className="settings-button share-button" onClick={handleShareGame}>
             <ShareIcon size={16} />
-            Share
+            {t('common.share')}
           </button>
         </div>
       </div>
@@ -242,19 +244,19 @@ const TableGameDetails = () => {
           className={`account-tab ${activeTab === 'standings' ? 'active' : ''}`}
           onClick={() => setActiveTab('standings')}
         >
-          Standings
+          {t('tableGame.standingsSubTab')}
         </button>
         <button 
           className={`account-tab ${activeTab === 'chart' ? 'active' : ''}`}
           onClick={() => setActiveTab('chart')}
         >
-          Chart
+          {t('tableGame.chartsSubTab')}
         </button>
         <button 
           className={`account-tab ${activeTab === 'table' ? 'active' : ''}`}
           onClick={() => setActiveTab('table')}
         >
-          Table
+          {t('tableGame.tableSubTab')}
         </button>
       </div>
 
@@ -363,7 +365,7 @@ const TableGameDetails = () => {
                       )
                     })}
                     <tr className="total-row">
-                      <td className="total-label sticky-cell">Total</td>
+                      <td className="total-label sticky-cell">{t('common.total')}</td>
                       {players.map((player, idx) => (
                         <td key={idx} className="total-score">
                           {getTotal(player)}

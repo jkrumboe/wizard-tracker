@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon, UsersIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
 const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
+  const { t } = useTranslation();
   const [cloudGames, setCloudGames] = useState([]);
   const [selectedGames, setSelectedGames] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
       <div className="modal-container cloud-game-select-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
         <div className="modal-header">
           <h2>
-            Cloud Games
+            {t('cloudGames.title')}
           </h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
@@ -146,20 +148,20 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 animation: 'spin 1s linear infinite',
                 margin: '0 auto var(--spacing-md)'
               }}></div>
-              <p>Loading cloud games...</p>
+              <p>{t('cloudGames.loading')}</p>
             </div>
           )}
 
           {error && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-              <p style={{ color: 'var(--error-color)', marginBottom: 'var(--spacing-md)' }}>Error: {error}</p>
-              <button className="modal-button primary" onClick={loadCloudGames}>Retry</button>
+              <p style={{ color: 'var(--error-color)', marginBottom: 'var(--spacing-md)' }}>{t('common.error')}: {error}</p>
+              <button className="modal-button primary" onClick={loadCloudGames}>{t('cloudGames.retry')}</button>
             </div>
           )}
 
           {!loading && !error && cloudGames.length === 0 && (
             <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-              <p>No cloud games found</p>
+              <p>{t('cloudGames.noGamesFound')}</p>
             </div>
           )}
 
@@ -183,18 +185,18 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                     className="modal-button secondary"
                     style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.9rem' }}
                   >
-                    Select All New
+                    {t('cloudGames.selectAllNew')}
                   </button>
                   <button 
                     onClick={deselectAll} 
                     className="modal-button secondary"
                     style={{ width: '100%', padding: 'var(--spacing-sm) var(--spacing-md)', fontSize: '0.9rem' }}
                   >
-                    Deselect All
+                    {t('cloudGames.deselectAll')}
                   </button>
                 </div>
                 <span style={{ margin: '0 auto', fontWeight: '500', color: 'var(--primary)' }}>
-                  {selectedGames.size} selected
+                  {t('cloudGames.selected', { count: selectedGames.size })}
                 </span>
               </div>
                 
@@ -242,12 +244,12 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                       
                       {game.gameType === 'Wizard' && game.gameFinished && (
                         <div className="player-score">
-                          Winner: {getWinnerName(game)} ({getWinnerScore(game)} pts)
+                          {t('cloudGames.winner', { name: getWinnerName(game), score: getWinnerScore(game) })}
                         </div>
                       )}
                       
                       <div className="player-score">
-                        Rounds: {game.totalRounds || game.total_rounds || 0} | Date: {new Date(game.created_at).toLocaleDateString()}
+                        {t('common.rounds')}: {game.totalRounds || game.total_rounds || 0} | Date: {new Date(game.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -275,7 +277,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
                 cursor: selectedGames.size === 0 ? 'not-allowed' : 'pointer'
                 }}
             >
-                Download 
+                {t('cloudGames.download')} 
             </button>
           </div>
       </div>

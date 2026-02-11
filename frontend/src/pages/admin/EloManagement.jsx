@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import eloService from '@/shared/api/eloService';
 import { PlayIcon, EyeIcon, CheckCircleIcon, AlertTriangleIcon, RefreshCwIcon, TrophyIcon, CalculatorIcon, ActivityIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 const EloManagement = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -50,8 +52,8 @@ const EloManagement = () => {
   };
 
   const handleRecalculate = async () => {
-    const gameTypeText = selectedGameType || 'all game types';
-    if (!window.confirm(`This will recalculate ELO ratings for ${gameTypeText}. This operation cannot be undone. Continue?`)) {
+    const gameTypeText = selectedGameType || t('adminElo.allGameTypes');
+    if (!window.confirm(t('adminElo.recalculateConfirm', { gameType: gameTypeText }))) {
       return;
     }
 
@@ -83,33 +85,33 @@ const EloManagement = () => {
   return (
     <div className="admin-container">
       <div className="admin-header">
-        <h1>ELO Management</h1>
-        <p>Recalculate ELO ratings for all players from historical game data.</p>
+        <h1>{t('adminElo.title')}</h1>
+        <p>{t('adminElo.description')}</p>
       </div>
 
       {/* Info Section */}
       <div className="admin-section info-card">
         <div className="info-card-header">
-          <h3>📊 How ELO Recalculation Works</h3>
+          <h3>{t('adminElo.howItWorks')}</h3>
         </div>
         <div className="info-card-content">
           <div className="info-columns">
             <div className="info-column">
-              <h4>Process</h4>
+              <h4>{t('adminElo.process')}</h4>
               <ul>
-                <li><strong>Resets all ratings</strong> to {config?.defaultRating || 1200}</li>
-                <li><strong>Processes games</strong> in chronological order</li>
-                <li><strong>Calculates changes</strong> based on actual results</li>
-                <li><strong>Updates stats</strong> (games played, wins, streaks)</li>
+                <li>{t('adminElo.resetRatings', { rating: config?.defaultRating || 1200 })}</li>
+                <li>{t('adminElo.chronologicalOrder')}</li>
+                <li>{t('adminElo.calculatesChanges')}</li>
+                <li>{t('adminElo.updatesStats')}</li>
               </ul>
             </div>
             <div className="info-column">
-              <h4>When to Use</h4>
+              <h4>{t('adminElo.whenToUse')}</h4>
               <ul>
-                <li>After fixing game data issues</li>
-                <li>After linking players to identities</li>
-                <li>After importing historical games</li>
-                <li>To verify rating accuracy</li>
+                <li>{t('adminElo.useCase1')}</li>
+                <li>{t('adminElo.useCase2')}</li>
+                <li>{t('adminElo.useCase3')}</li>
+                <li>{t('adminElo.useCase4')}</li>
               </ul>
             </div>
           </div>
@@ -120,19 +122,19 @@ const EloManagement = () => {
       {config && (
         <div className="admin-section">
           <div className="section-header">
-            <h2><TrophyIcon size={20} /> Current ELO Settings</h2>
+            <h2><TrophyIcon size={20} /> {t('adminElo.currentSettings')}</h2>
           </div>
           <div className="stats-grid">
             <div className="stat-box">
-              <div className="stat-label">Default Rating</div>
+              <div className="stat-label">{t('adminElo.defaultRating')}</div>
               <div className="stat-value">{config.defaultRating}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-label">Min Rating</div>
+              <div className="stat-label">{t('adminElo.minRating')}</div>
               <div className="stat-value">{config.minRating}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-label">Min Games for Ranking</div>
+              <div className="stat-label">{t('adminElo.minGamesForRanking')}</div>
               <div className="stat-value">{config.minGamesForRanking}</div>
             </div>
           </div>
@@ -142,23 +144,23 @@ const EloManagement = () => {
       {/* Actions Section */}
       <div className="admin-section">
         <div className="section-header">
-          <h2><CalculatorIcon size={20} /> Recalculate Ratings</h2>
-          <p>Preview changes before applying to see how many players and games will be affected.</p>
+          <h2><CalculatorIcon size={20} /> {t('adminElo.recalculateTitle')}</h2>
+          <p>{t('adminElo.recalculateDesc')}</p>
         </div>
 
         {/* Game Type Selector */}
         <div className="filter-group" style={{ marginBottom: '1rem' }}>
-          <label htmlFor="game-type-select">Game Type:</label>
+          <label htmlFor="game-type-select">{t('adminElo.gameTypeFilter')}</label>
           <select
             id="game-type-select"
             value={selectedGameType}
             onChange={(e) => setSelectedGameType(e.target.value)}
             className="filter-select"
           >
-            <option value="">All Game Types</option>
-            <option value="wizard">Wizard</option>
-            <option value="flip-7">Flip 7</option>
-            <option value="dutch">Dutch</option>
+            <option value="">{t('adminElo.allGameTypes')}</option>
+            <option value="wizard">{t('adminElo.wizard')}</option>
+            <option value="flip-7">{t('adminElo.flip7')}</option>
+            <option value="dutch">{t('adminElo.dutch')}</option>
           </select>
         </div>
 
@@ -171,12 +173,12 @@ const EloManagement = () => {
             {previewLoading ? (
               <>
                 <RefreshCwIcon size={18} className="spinning" />
-                Analyzing...
+                {t('adminElo.analyzing')}
               </>
             ) : (
               <>
                 <EyeIcon size={18} />
-                Preview Changes
+                {t('adminElo.previewChanges')}
               </>
             )}
           </button>
@@ -188,12 +190,12 @@ const EloManagement = () => {
             {loading ? (
               <>
                 <RefreshCwIcon size={18} className="spinning" />
-                Recalculating...
+                {t('adminElo.recalculating')}
               </>
             ) : (
               <>
                 <PlayIcon size={18} />
-                Recalculate Now
+                {t('adminElo.recalculateNow')}
               </>
             )}
           </button>
@@ -211,22 +213,22 @@ const EloManagement = () => {
       {previewData && (
         <div className="admin-section results-section">
           <div className="section-header">
-            <h2><EyeIcon size={20} /> Preview Results (Dry Run)</h2>
-            <span className="badge badge-info">No changes applied</span>
+            <h2><EyeIcon size={20} /> {t('adminElo.previewResults')}</h2>
+            <span className="badge badge-info">{t('adminElo.noChangesApplied')}</span>
           </div>
           
           <div className="stats-grid">
             <div className="stat-box">
-              <div className="stat-label">Games Processed</div>
+              <div className="stat-label">{t('adminElo.gamesProcessed')}</div>
               <div className="stat-value">{formatNumber(previewData.gamesProcessed)}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-label">Players Updated</div>
+              <div className="stat-label">{t('adminElo.playersUpdated')}</div>
               <div className="stat-value">{formatNumber(previewData.playersUpdated)}</div>
             </div>
             {previewData.gameType && (
               <div className="stat-box">
-                <div className="stat-label">Game Type</div>
+              <div className="stat-label">{t('adminElo.gameType')}</div>
                 <div className="stat-value">{previewData.gameType}</div>
               </div>
             )}
@@ -234,12 +236,12 @@ const EloManagement = () => {
 
           {previewData.breakdown && (
             <div className="breakdown-section" style={{ marginTop: '1rem' }}>
-              <h4>Breakdown by Game Type</h4>
+              <h4>{t('adminElo.breakdownByType')}</h4>
               <div className="breakdown-grid">
                 {Object.entries(previewData.breakdown).map(([type, count]) => (
                   <div key={type} className="breakdown-item">
                     <span className="breakdown-type">{type}</span>
-                    <span className="breakdown-count">{formatNumber(count)} games</span>
+                    <span className="breakdown-count">{t('adminElo.gamesCount', { count: formatNumber(count) })}</span>
                   </div>
                 ))}
               </div>
@@ -252,22 +254,22 @@ const EloManagement = () => {
       {results && (
         <div className="admin-section results-section success-section">
           <div className="section-header">
-            <h2><CheckCircleIcon size={20} /> Recalculation Complete</h2>
-            <span className="badge badge-success">Applied</span>
+            <h2><CheckCircleIcon size={20} /> {t('adminElo.recalculationComplete')}</h2>
+            <span className="badge badge-success">{t('adminElo.applied')}</span>
           </div>
           
           <div className="stats-grid">
             <div className="stat-box success">
-              <div className="stat-label">Games Processed</div>
+              <div className="stat-label">{t('adminElo.gamesProcessed')}</div>
               <div className="stat-value">{formatNumber(results.gamesProcessed)}</div>
             </div>
             <div className="stat-box success">
-              <div className="stat-label">Players Updated</div>
+              <div className="stat-label">{t('adminElo.playersUpdated')}</div>
               <div className="stat-value">{formatNumber(results.playersUpdated)}</div>
             </div>
             {results.gameType && (
               <div className="stat-box">
-                <div className="stat-label">Game Type</div>
+              <div className="stat-label">{t('adminElo.gameType')}</div>
                 <div className="stat-value">{results.gameType}</div>
               </div>
             )}
@@ -276,7 +278,7 @@ const EloManagement = () => {
           <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px' }}>
             <ActivityIcon size={18} style={{ color: '#22c55e' }} />
             <span style={{ marginLeft: '0.5rem' }}>
-              ELO ratings have been successfully recalculated. Players can now see their updated rankings on the leaderboard.
+              {t('adminElo.successMessage')}
             </span>
           </div>
         </div>

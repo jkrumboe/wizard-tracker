@@ -13,11 +13,13 @@ import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils
 // import { getPlayerById, updatePlayer, updatePlayerTags, getTagsByPlayerId, getTags } from '@/shared/api/playerService'
 import avatarService from '@/shared/api/avatarService'
 import defaultAvatar from "@/assets/default-avatar.png";
+import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
   const { id: paramId } = useParams()
   const navigate = useNavigate()
   const { user } = useUser()
+  const { t } = useTranslation()
   // Support viewing other profiles by userId
   const isOwnProfile = !paramId || paramId === user?.id
   
@@ -80,7 +82,7 @@ useEffect(() => {
       const targetUserId = paramId || user?.id;
       
       if (!targetUserId) {
-        setError("No user specified");
+        setError(t('profile.noUserSpecified'));
         setAllGames([]);
         return;
       }
@@ -129,7 +131,7 @@ useEffect(() => {
       
     } catch (error) {
       console.error("Error fetching profile data:", error);
-      setError("Failed to load profile data");
+      setError(t('profile.failedToLoadProfile'));
     }
   };
 
@@ -269,10 +271,10 @@ const totalLosses = calculatedStats.losses;
 const hasGames = totalWins > 0 || totalLosses > 0;
 
 const data = hasGames ? [
-  { name: 'Wins', value: totalWins },
-  { name: 'Losses', value: totalLosses }
+  { name: t('common.wins'), value: totalWins },
+  { name: t('common.losses'), value: totalLosses }
 ] : [
-  { name: 'No Games Yet', value: 1 }
+  { name: t('profile.noGamesYet'), value: 1 }
 ];
 
 const COLORS = [
@@ -285,13 +287,13 @@ const COLORS = [
 // Don't fail if tags or other minor data is missing
 if (error || (!currentPlayer && isOwnProfile)) {
   return (
-      <div className="error">{error || 'Profile not available'}</div>
+      <div className="error">{error || t('profile.profileNotAvailable')}</div>
   )
 }
 
 // Don't render anything if currentPlayer is not available yet
 if (!currentPlayer) {
-  return <div>Loading...</div>;
+  return <div>{t('common.loading')}</div>;
 }
 
 return (
@@ -314,7 +316,7 @@ return (
             </button>
         </div>
 
-        <img src={sanitizeImageUrl(currentPlayer?.avatar || defaultAvatar, defaultAvatar)} alt={currentPlayer?.name || "Default Avatar"} className="profile-avatar" />
+        <img src={sanitizeImageUrl(currentPlayer?.avatar || defaultAvatar, defaultAvatar)} alt={currentPlayer?.name || t('common.defaultAvatar')} className="profile-avatar" />
 
         {canEdit && (
           <button
@@ -328,7 +330,7 @@ return (
     
       <div className="player-info">
         <div className="player-name-tags">
-            <h1>{currentPlayer?.display_name || currentPlayer?.name || "Unknown Player"}</h1>
+            <h1>{currentPlayer?.display_name || currentPlayer?.name || t('common.unknownPlayer')}</h1>
             {/* Only show tags container if we have tags */}
             {Array.isArray(tags) && tags.length > 0 &&
             <div className="tags-container">
@@ -352,7 +354,7 @@ return (
 
         {activeTab === 'performance' && (
           <div className="stats-graph">
-            <h2>Performance</h2>
+            <h2>{t('profile.performance')}</h2>
             <ResponsiveContainer width="100%" height={100}>
               <PieChart>
                 <Pie
@@ -372,17 +374,17 @@ return (
                 <>
                   <div className="legend-item">
                     <span className="legend-color" style={{ backgroundColor: COLORS[0] }}></span>
-                    <span>Wins ({totalWins})</span>
+                    <span>{t('profile.winsLabel')} ({totalWins})</span>
                   </div>
                   <div className="legend-item">
                     <span className="legend-color" style={{ backgroundColor: COLORS[1] }}></span>
-                    <span>Losses ({totalLosses})</span>
+                    <span>{t('profile.lossesLabel')} ({totalLosses})</span>
                   </div>
                 </>
               ) : (
                 <div className="legend-item">
                   {/* <span className="legend-color" style={{ backgroundColor: COLORS[2] }}></span> */}
-                  <span>No Games Yet - Start playing to see your stats!</span>
+                  <span>{t('profile.noGamesYetChart')}</span>
                 </div>
               )}
             </div>
@@ -399,7 +401,7 @@ return (
                   marginTop: '0.5rem'
                 }}
               >
-                View Complete Stats History
+                {t('profile.viewCompleteStatsHistory')}
               </Link>
             )}
           </div>
@@ -408,7 +410,7 @@ return (
         {activeTab === 'recentGames' && (
           <div className="recent-games">
             <div className="section-header">
-              <h2>Recent Games</h2>
+              <h2>{t('profile.recentGames')}</h2>
               <button 
                 className="filter-button"
                 onClick={() => setShowFilterModal(true)}
@@ -447,9 +449,9 @@ return (
                   <GameHistoryItem key={game.id} game={game} />
                 ))
               ) : allGames.length > 0 ? (
-                <div className="empty-message">No games match your filters</div>
+                <div className="empty-message">{t('profile.noGamesMatchFilters')}</div>
               ) : (
-                <div className="empty-message">No games found</div>
+                <div className="empty-message">{t('profile.noGamesFound')}</div>
               )}
             </div>
           </div>

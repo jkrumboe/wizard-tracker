@@ -10,6 +10,7 @@ import { useUser } from "../../shared/hooks/useUser";
 import StatsChart from "../../components/game/StatsChart";
 import { AdvancedStats } from "../../components/game";
 import { generateSecureId } from "../../shared/utils/secureRandom";
+import { useTranslation } from "react-i18next";
 import "../../styles/components/TableGame.css";
 import "../../styles/pages/gameInProgress.css";
 import "../../styles/components/statsChart.css";
@@ -21,6 +22,7 @@ const TableGame = () => {
   const { user } = useUser(); // Get the logged-in user
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [rows, setRows] = useState(() => {
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
@@ -181,7 +183,7 @@ const TableGame = () => {
             setShowTemplateSelector(false);
             setIsCloudGame(false);
             setActiveTab('game');
-            setCurrentGameName(savedGame.name || gameData.gameName || 'Table Game');
+            setCurrentGameName(savedGame.name || gameData.gameName || t('tableGame.defaultGameName'));
             setCurrentGameId(savedGame.id || savedGame.cloudId || id);
             
             // Reset round to 1 for new games, or restore for existing games with data
@@ -212,7 +214,7 @@ const TableGame = () => {
             console.debug(`Loaded local game: "${savedGame.name || gameData.gameName}" (ID: ${id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}`);
           } else {
             console.error(`Game with ID ${id} not found in storage or cloud`);
-            setLoadError('Game not found');
+            setLoadError(t('tableGame.gameNotFound'));
           }
           } catch (error) {
             console.error('Error loading game:', error);
@@ -326,7 +328,7 @@ const TableGame = () => {
             gameName: currentGameName
           };
           
-          const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+          const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
           
           // If no game ID, create a new save
           if (!currentGameId) {
@@ -389,7 +391,7 @@ const TableGame = () => {
             gameName: currentName
           };
 
-          const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
+          const name = currentName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
           
           // If no game ID, create a new save
           if (!currentId) {
@@ -444,7 +446,7 @@ const TableGame = () => {
             gameName: currentName
           };
 
-          const name = currentName || `Table Game - ${new Date().toLocaleDateString()}`;
+          const name = currentName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
           
           // If no game ID, create a new save
           if (!currentId) {
@@ -680,7 +682,7 @@ const TableGame = () => {
         winner_name: winner?.name || null
       };
 
-      const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
       let savedGameId = currentGameId;
       
       if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
@@ -731,7 +733,7 @@ const TableGame = () => {
       navigate(`/table-game/${savedGameId}`, { replace: true });
     } catch (error) {
       console.error("Error saving finished game:", error);
-      alert("Failed to save game. Please try again.");
+      alert(t('tableGame.saveFailed'));
     }
   };
 
@@ -749,7 +751,7 @@ const TableGame = () => {
         gameName: currentGameName
       };
 
-      const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
       
       if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
         LocalTableGameStorage.updateTableGame(currentGameId, {
@@ -768,7 +770,7 @@ const TableGame = () => {
       }
     } catch (error) {
       console.error("Error saving game for editing:", error);
-      alert("Failed to save game. Please try again.");
+      alert(t('tableGame.saveFailed'));
     }
   };
 
@@ -890,7 +892,7 @@ const TableGame = () => {
         gameName: currentGameName
       };
 
-      const name = currentGameName || `Table Game - ${new Date().toLocaleDateString()}`;
+      const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
       
       // If we have a game ID, update the existing game
       if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
@@ -908,11 +910,11 @@ const TableGame = () => {
         const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
         setCurrentGameId(newGameId);
         console.debug(`Saved new game: "${name}" (ID: ${newGameId})`);
-        alert(`Game "${name}" saved successfully!`);
+        alert(t('tableGame.gameSavedSuccess', { name }));
       }
     } catch (error) {
       console.error("Error saving table game:", error);
-      alert("Failed to save game. Please try again.");
+      alert(t('tableGame.saveFailed'));
     }
   };
 
@@ -923,7 +925,7 @@ const TableGame = () => {
         <div className="game-error-state">
           <div className="error">{loadError}</div>
           <button className="back-btn" onClick={() => navigate('/table-game')}>
-            Back to Games
+            {t('tableGame.backToGames')}
           </button>
         </div>
       </div>
@@ -945,20 +947,20 @@ const TableGame = () => {
             <button 
               className="back-btn"
               onClick={handleBackToTemplates}
-              title="Back to Game Selection"
+              title={t('tableGame.backToGameSelection')}
             >
               <ArrowLeftCircleIcon size={28} />
             </button>
             <span className="game-info-header">
-              {currentGameName || "Table Game"}
+              {currentGameName || t('tableGame.defaultGameName')}
               <div className="total-calls">
-                {isCloudGame ? `Rounds ${currentRound}` : `Round ${currentRound}`}
+                {isCloudGame ? t('tableGame.roundsLabel', { n: currentRound }) : t('tableGame.roundLabel', { n: currentRound })}
               </div>
             </span>
             <button 
               className="settings-btn"
               onClick={() => setShowGameSettingsModal(true)}
-              title="Game Settings"
+              title={t('tableGame.gameSettings')}
             >
               <SettingsIcon size={24} />
             </button>
@@ -967,7 +969,7 @@ const TableGame = () => {
           {/* Finish Game Button */}
           {targetNumber && hasReachedTarget() && !gameFinished && (
             <button className="finish-btn" onClick={handleFinishGame}>
-              Finish Game
+              {t('tableGame.finishGame')}
             </button>
           )}
 
@@ -978,9 +980,9 @@ const TableGame = () => {
                 <table className="score-table">
                   <thead>
                     <tr>
-                      <th className="player-header">Player</th>
-                      <th className="input-header">Points</th>
-                      <th className="score-header">Total</th>
+                      <th className="player-header">{t('tableGame.playerHeader')}</th>
+                      <th className="input-header">{t('tableGame.pointsHeader')}</th>
+                      <th className="score-header">{t('tableGame.totalHeader')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -996,7 +998,7 @@ const TableGame = () => {
                                 value={player.name}
                                 onChange={(e) => handleNameChange(idx, e.target.value)}
                                 className="player-name-input"
-                                placeholder={`Player ${idx + 1}`}
+                                placeholder={`${t('common.player')} ${idx + 1}`}
                                 type="text"
                                 disabled={gameFinished}
                               />
@@ -1028,8 +1030,8 @@ const TableGame = () => {
 
               {currentRound === 1 && !gameFinished && (
               <div className="explanation">
-                <p>Always enter the points for each player for the current round.</p>
-                <p>Use the navigation buttons below to move between rounds.</p>
+                <p>{t('tableGame.roundExplanation1')}</p>
+                <p>{t('tableGame.roundExplanation2')}</p>
               </div>)}
             </div>
           )}
@@ -1043,19 +1045,19 @@ const TableGame = () => {
                     className={`stats-subtab-btn ${statsSubTab === 'standings' ? 'active' : ''}`}
                     onClick={() => setStatsSubTab('standings')}
                   >
-                    Standings
+                    {t('tableGame.standingsSubTab')}
                   </button>
                   <button 
                     className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
                     onClick={() => setStatsSubTab('chart')}
                   >
-                    Charts
+                    {t('tableGame.chartsSubTab')}
                   </button>
                   <button 
                     className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
                     onClick={() => setStatsSubTab('table')}
                   >
-                    Table
+                    {t('tableGame.tableSubTab')}
                   </button>
                 </div>
                 
@@ -1125,7 +1127,7 @@ const TableGame = () => {
                       <table className="scorecard-table">
                         <thead>
                           <tr>
-                            <th className="round-header sticky-cell">Round</th>
+                            <th className="round-header sticky-cell">{t('tableGame.roundHeader')}</th>
                             {players.map((player, idx) => (
                               <th key={idx} className="player-header">
                                 <div className="player-header-name">{player.name}</div>
@@ -1167,7 +1169,7 @@ const TableGame = () => {
                             );
                           })}
                           <tr className="total-row">
-                            <td className="total-label sticky-cell">Total</td>
+                            <td className="total-label sticky-cell">{t('common.total')}</td>
                             {players.map((player, idx) => (
                               <td key={idx} className="total-score">
                                 {getTotal(player)}
@@ -1192,7 +1194,7 @@ const TableGame = () => {
                 <button
                   className="game-control-btn"
                   onClick={() => setActiveTab(activeTab === 'game' ? 'stats' : 'game')}
-                  title={`Switch to ${activeTab === 'game' ? 'Stats' : 'Game'}`}
+                  title={activeTab === 'game' ? t('tableGame.switchToStats') : t('tableGame.switchToGame')}
                 >
                   {activeTab === 'game' ? <BarChartIcon size={27} /> : <GamepadIcon size={27} />}
                 </button>
@@ -1228,13 +1230,13 @@ const TableGame = () => {
             isOpen={showDeletePlayerConfirm}
             onClose={cancelDeletePlayer}
             onConfirm={confirmDeletePlayer}
-            title="Delete Player"
+            title={t('tableGame.deletePlayerTitle')}
             message={
               playerToDelete !== null
-                ? `Are you sure you want to delete "${players[playerToDelete]?.name}"? All their scores will be permanently lost.`
-                : 'Are you sure you want to delete this player?'
+                ? t('tableGame.deletePlayerMessage', { name: players[playerToDelete]?.name })
+                : t('tableGame.deletePlayerDefault')
             }
-            confirmText="Delete Player"
+            confirmText={t('tableGame.deletePlayerConfirm')}
           />
 
           {/* Game Settings Modal */}

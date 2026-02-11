@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { getFriendLeaderboard } from '@/shared/api/gameService'
 import { userService } from '@/shared/api'
@@ -8,6 +9,7 @@ import { ArrowLeftIcon, ExternalLinkIcon } from '@/components/ui/Icon'
 import "@/styles/pages/friend-leaderboard.css"
 
 const FriendLeaderboard = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useUser()
   
@@ -123,7 +125,7 @@ const FriendLeaderboard = () => {
     const effectiveGameType = (typeof gameTypeOverride === 'string') ? gameTypeOverride : undefined
     
     if (selectedPlayers.length < 1) {
-      setError('Please select at least 1 friend')
+      setError(t('leaderboard.selectAtLeastOne'))
       return
     }
     
@@ -179,20 +181,20 @@ const FriendLeaderboard = () => {
     return (
       <div className="loading-container">
         <div className="spinner"></div>
-        <h2>Loading Friends...</h2>
+        <h2>{t('leaderboard.loadingFriends')}</h2>
       </div>
     )
   }
 
   return (
     <div className="friend-leaderboard-container">
-      <h1>Friend Leaderboard</h1>
-      <p className="subtitle">Compare stats between you and your friends</p>
+      <h1>{t('leaderboard.friendTitle')}</h1>
+      <p className="subtitle">{t('leaderboard.friendSubtitle')}</p>
       
       {showPlayerSelect ? (
         <div className="player-selection-section">
           <div className="selection-header">
-            <h2>Select Friends ({selectedPlayers.length}/10)</h2>
+            <h2>{t('leaderboard.selectFriendsCount', { count: selectedPlayers.length })}</h2>
           </div>
           
           {/* Selected players */}
@@ -226,8 +228,8 @@ const FriendLeaderboard = () => {
           <div className="friends-list">
             {friends.length === 0 ? (
               <div className="empty-friends">
-                <p>No friends added yet.</p>
-                <p>Add friends to compare your game statistics!</p>
+                <p>{t('leaderboard.noFriendsYet')}</p>
+                <p>{t('leaderboard.addFriendsToCompare')}</p>
               </div>
             ) : (
               friends.map(friend => {
@@ -266,13 +268,13 @@ const FriendLeaderboard = () => {
             onClick={fetchLeaderboard}
             disabled={selectedPlayers.length < 1}
           >
-            Compare
+            {t('leaderboard.compare')}
           </button>
         </div>
       ) : (
         <div className="leaderboard-results">
           <button className="back-btn" onClick={resetSelection}>
-            <ArrowLeftIcon size={24} /> <span>Change Players</span>
+            <ArrowLeftIcon size={24} /> <span>{t('leaderboard.changePlayers')}</span>
           </button>
           
           {/* Game type selector */}
@@ -284,7 +286,7 @@ const FriendLeaderboard = () => {
                 className="game-type-selector"
                 disabled={loading}
               >
-                <option value="all">All Game Types</option>
+                <option value="all">{t('leaderboard.allGameTypes')}</option>
                 {gameTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
@@ -295,14 +297,14 @@ const FriendLeaderboard = () => {
           {loading ? (
             <div className="loading-container">
               <div className="spinner"></div>
-              <h2>Calculating stats...</h2>
+              <h2>{t('leaderboard.calculatingStats')}</h2>
             </div>
           ) : error ? (
             <div className="error-container">
-              <h2>Error</h2>
+              <h2>{t('common.error')}</h2>
               <p>{error}</p>
               <button onClick={fetchLeaderboard} className="retry-button">
-                Retry
+                {t('common.retry')}
               </button>
             </div>
           ) : leaderboardData ? (
@@ -312,19 +314,19 @@ const FriendLeaderboard = () => {
                 <div className="leaderboard-table">
                   <div className="leaderboard-header">
                     <div className="rank-col"/>
-                    <div className="player-col">Player</div>
-                    <div className="wins-col">Wins</div>
-                    <div className="losses-col">Losses</div>
-                    <div className="winrate-col">Win%</div>
-                    <div className="score-col">Ø Score</div>
-                    <div className="elo-col">ELO</div>
+                    <div className="player-col">{t('leaderboard.playerHeader')}</div>
+                    <div className="wins-col">{t('leaderboard.winsHeader')}</div>
+                    <div className="losses-col">{t('leaderboard.lossesHeader')}</div>
+                    <div className="winrate-col">{t('leaderboard.winPercentHeader')}</div>
+                    <div className="score-col">{t('leaderboard.avgScoreHeader')}</div>
+                    <div className="elo-col">{t('leaderboard.eloHeader')}</div>
                   </div>
                   
                   <div className="leaderboard-body">
                     {leaderboardData.leaderboard.length === 0 ? (
                       <div className="no-games-message">
-                        <p>No games found between these players.</p>
-                        <p>Play some games together to see your stats!</p>
+                        <p>{t('leaderboard.noGamesBetweenPlayers')}</p>
+                        <p>{t('leaderboard.playGamesTogether')}</p>
                       </div>
                     ) : (
                       leaderboardData.leaderboard.map((player, index) => (
@@ -355,7 +357,7 @@ const FriendLeaderboard = () => {
               {/* Head-to-Head Matrix */}
               {leaderboardData.leaderboard.length > 1 && (
                 <div className="head-to-head-section">
-                  <h2>Head-to-Head</h2>
+                  <h2>{t('leaderboard.headToHead')}</h2>
                   <div className="h2h-matrix">
                     <table>
                       <thead>
@@ -399,7 +401,7 @@ const FriendLeaderboard = () => {
               {/* Recent Games */}
               {leaderboardData.recentGames?.length > 0 && (
                 <div className="recent-games-section">
-                  <h2>Shared Games ({leaderboardData.totalSharedGames} total)</h2>
+                  <h2>{t('leaderboard.sharedGames', { count: leaderboardData.totalSharedGames })}</h2>
                   <div className="recent-games-list">
                     {leaderboardData.recentGames.map((game, index) => (
                       <div key={index} className="recent-game-card">
@@ -412,7 +414,7 @@ const FriendLeaderboard = () => {
                             <button
                               className="game-link-btn"
                               onClick={() => navigateToGame(game)}
-                              title="View game details"
+                              title={t('leaderboard.viewGameDetails')}
                             >
                               <ExternalLinkIcon size={14} />
                             </button>

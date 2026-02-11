@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TrendingUp } from 'lucide-react';
 import { useGameStats } from '@/shared/hooks/useGameStats';
 import { useAllUserElo } from '@/shared/hooks/useElo';
@@ -17,6 +18,7 @@ const normalizeGameType = (gameType) => {
  * Ensures consistent data calculation and display
  */
 const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
+  const { t } = useTranslation();
   const overviewStats = useGameStats(games, user);
   const { eloByGameType, loading: _eloLoading } = useAllUserElo(identityId || null);
 
@@ -24,7 +26,7 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
     return (
       <div className="settings-section">
         <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-          Please login to view game statistics
+          {t('account.loginToViewStats', { loginLink: '' }) || 'Please login to view game statistics'}
         </p>
       </div>
     );
@@ -34,7 +36,7 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
     return (
       <div className="settings-section">
         <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-          No games played yet. Start a new game to see your stats!
+          {t('profile.noGamesYet')}
         </p>
       </div>
     );
@@ -79,13 +81,13 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
               </div>
               <div className="game-type-stats">
                 <div className="stat-item">
-                  <span className="stat-label">Win%:</span>
+                  <span className="stat-label">{t('account.winRateLabel')}</span>
                   <span className="stat-value win-rate">
                     {Math.round((gameType.wins / gameType.matches) * 100)}
                   </span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">Matches:</span>
+                  <span className="stat-label">{t('account.matchesLabel')}</span>
                   <span className="stat-value">{gameType.matches}</span>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getSharedGameData, importSharedGame } from '@/shared/api/sharedGameService';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
 import { useUser } from '@/shared/hooks';
@@ -11,6 +12,7 @@ import '@/styles/pages/shared-game.css';
 const SharedGamePage = () => {
   const { shareId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +29,7 @@ const SharedGamePage = () => {
         setError(null);
 
         if (!shareId) {
-          throw new Error('Invalid share link - no game ID found');
+          throw new Error(t('sharedGame.invalidShareLink'));
         }
 
         console.debug('Loading shared game with ID:', shareId);
@@ -36,7 +38,7 @@ const SharedGamePage = () => {
         const gameData = await getSharedGameData(shareId);
         
         if (!gameData) {
-          throw new Error('Shared game not found - it may have been deleted');
+          throw new Error(t('sharedGame.gameNotFound'));
         }
 
         // Extract players from the correct location
@@ -46,7 +48,7 @@ const SharedGamePage = () => {
         const winnerIdRaw = gameData.winner_ids || gameData.winner_id;
         const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
         const winnerNames = winnerIds.map(id => players.find(p => p.id === id)?.name).filter(Boolean);
-        const winnerDisplay = winnerNames.length === 0 ? 'Unknown' :
+        const winnerDisplay = winnerNames.length === 0 ? t('common.unknown') :
                             winnerNames.length === 1 ? winnerNames[0] :
                             winnerNames.length === 2 ? `${winnerNames[0]} & ${winnerNames[1]}` :
                             `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
@@ -56,7 +58,7 @@ const SharedGamePage = () => {
         const mockSharedInfo = {
           shareId: shareId,
           originalGameId: shareId, // Use the direct game ID
-          title: `Wizard Game - ${winnerDisplay} wins!`,
+          title: t('sharedGame.gameTitle', { winner: winnerDisplay }),
           playerNames: players.map(p => p.name).join(', ') || '',
           winnerName: winnerDisplay,
           finalScore: finalScore,
@@ -89,7 +91,7 @@ const SharedGamePage = () => {
   const handleImportGame = async () => {
     // Check one more time before proceeding
     if (alreadyImported) {
-      setError('This game has already been imported to your collection.');
+      setError(t('sharedGame.alreadyImportedError'));
       return;
     }
     
@@ -117,7 +119,7 @@ const SharedGamePage = () => {
       
       if (isAlreadyImported) {
         setAlreadyImported(true);
-        setError('This game has already been imported to your collection.');
+        setError(t('sharedGame.alreadyImportedError'));
         setImporting(false);
         return;
       }
@@ -126,7 +128,7 @@ const SharedGamePage = () => {
       const gameData = sharedGameInfo.gameData;
       
       if (!gameData) {
-        throw new Error('Game data not found');
+        throw new Error(t('sharedGame.gameDataNotFound'));
       }
 
       // Import the game into local storage, passing shareId for proper syncing
@@ -146,8 +148,8 @@ const SharedGamePage = () => {
         navigate('/account', { 
           state: { 
             message: selectedPlayerId 
-              ? 'Shared game imported and linked to your profile!' 
-              : 'Shared game imported successfully!',
+              ? t('sharedGame.importedAndLinked') 
+              : t('sharedGame.importedSuccessfully'),
             importedGameId: newGameId
           }
         });
@@ -155,7 +157,7 @@ const SharedGamePage = () => {
 
     } catch (error) {
       console.error('Failed to import shared game:', error);
-      setError(`Import failed: ${error.message}`);
+      setError(t('sharedGame.importFailed', { error: error.message }));
     } finally {
       setImporting(false);
     }
@@ -170,13 +172,13 @@ const SharedGamePage = () => {
       <div className="shared-game-page">
         <div className="shared-game-container">
           <div className="shared-game-error">
-            <h2>Unable to Load Shared Game</h2>
+            <h2>{t('sharedGame.unableToLoad')}</h2>
             <p>{error}</p>
             <button 
               className="btn-primary"
               onClick={() => navigate('/')}
             >
-              Go to Home
+              {t('sharedGame.goToHome')}
             </button>
           </div>
         </div>
@@ -190,9 +192,9 @@ const SharedGamePage = () => {
         <div className="shared-game-container">
           <div className="shared-game-success">
             {/* <TrophyIcon size={48} /> */}
-            <h1>Game Imported Successfully!</h1>
-            <p>The shared game has been added to your collection.</p>
-            <p>Redirecting to your games...</p>
+            <h1>{t('sharedGame.importSuccess')}</h1>
+            <p>{t('sharedGame.addedToCollection')}</p>
+            <p>{t('sharedGame.redirecting')}</p>
           </div>
         </div>
       </div>
@@ -215,7 +217,7 @@ const SharedGamePage = () => {
               <div className="shared-game-details">
                 <div className="detail-item">
                   <TrophyIcon size={20} style={{ color: 'var(--warning-color)' }} />
-                  <span>{sharedGameInfo.winnerName} with</span>
+                  <span>{t('sharedGame.winnerWith', { winner: sharedGameInfo.winnerName })}</span>
                   <span className="score">{sharedGameInfo.finalScore} points</span>
                 </div>
                 
@@ -228,7 +230,7 @@ const SharedGamePage = () => {
                 </div>
                 
                 <div className="detail-item">
-                  <span>Rounds: {sharedGameInfo.totalRounds}</span>
+                  <span>{t('sharedGame.rounds', { count: sharedGameInfo.totalRounds })}</span>
                 </div>
                 
                 {/* <div className="detail-item">
@@ -249,13 +251,13 @@ const SharedGamePage = () => {
                 {alreadyImported ? (
                   <>
                     <div className="already-imported-message">
-                      <p>You already have this game in your collection!</p>
+                      <p>{t('sharedGame.alreadyHaveGame')}</p>
                     </div>
                     <button 
                       className="btn-secondary"
                       onClick={() => navigate('/account')}
                     >
-                      View My Games
+                      {t('sharedGame.viewMyGames')}
                     </button>
                   </>
                 ) : (
@@ -264,7 +266,7 @@ const SharedGamePage = () => {
                     onClick={handleImportGame}
                     disabled={importing || alreadyImported}
                   >
-                    {importing ? 'Importing...' : 'Import Game'}
+                    {importing ? t('sharedGame.importing') : t('sharedGame.importGame')}
                   </button>
                 )}
                 
@@ -272,7 +274,7 @@ const SharedGamePage = () => {
                   className="btn-secondary"
                   onClick={() => navigate('/')}
                 >
-                  Go to Home
+                  {t('sharedGame.goToHome')}
                 </button>
               </div>
             </div>

@@ -8,12 +8,14 @@ import { WifiOff, Cloud, CloudOff, RefreshCw, AlertCircle, CheckCircle, Loader }
 import { getSyncManager } from '../../shared/sync/syncManager';
 import { db } from '../../shared/db/database';
 import { SyncStatus } from '../../shared/schemas/syncMetadata';
+import { useTranslation } from 'react-i18next';
 
 export function SyncStatusIndicator({ gameId, showDetails = false, className = '' }) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [syncStatus, setSyncStatus] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Update online status
@@ -141,32 +143,32 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
 
   const getStatusText = () => {
     if (!isOnline) {
-      return 'Offline';
+      return t('sync.offline');
     }
 
     if (isSyncing) {
-      return 'Syncing...';
+      return t('sync.syncing');
     }
 
     if (!syncStatus) {
-      return 'Unknown';
+      return t('sync.unknown');
     }
 
     switch (syncStatus.syncStatus) {
       case SyncStatus.SYNCED:
-        return 'Synced';
+        return t('sync.synced');
       case SyncStatus.PENDING:
-        return `${syncStatus.pendingEventsCount} pending`;
+        return t('sync.pending', { count: syncStatus.pendingEventsCount });
       case SyncStatus.SYNCING:
-        return 'Syncing...';
+        return t('sync.syncing');
       case SyncStatus.CONFLICT:
-        return 'Conflict';
+        return t('sync.conflict');
       case SyncStatus.ERROR:
-        return 'Sync error';
+        return t('sync.syncError');
       case SyncStatus.OFFLINE:
-        return 'Offline';
+        return t('sync.offline');
       default:
-        return 'Unknown';
+        return t('sync.unknown');
     }
   };
 
@@ -198,25 +200,25 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
     const details = [];
 
     if (!isOnline) {
-      details.push('Device is offline');
+      details.push(t('sync.deviceOffline'));
     }
 
     if (syncStatus.pendingEventsCount > 0) {
-      details.push(`${syncStatus.pendingEventsCount} change${syncStatus.pendingEventsCount !== 1 ? 's' : ''} waiting to sync`);
+      details.push(t('sync.changesWaiting', { count: syncStatus.pendingEventsCount }));
     }
 
     if (syncStatus.lastError) {
-      details.push(`Error: ${syncStatus.lastError}`);
+      details.push(t('sync.errorDetail', { error: syncStatus.lastError }));
     }
 
     if (syncStatus.hasConflict) {
-      details.push('Conflict requires manual resolution');
+      details.push(t('sync.conflictDetail'));
     }
 
     const lastSync = syncStatus.lastServerAck
       ? new Date(syncStatus.lastServerAck).toLocaleString()
-      : 'Never';
-    details.push(`Last synced: ${lastSync}`);
+      : t('sync.never');
+    details.push(t('sync.lastSynced', { time: lastSync }));
 
     return details;
   };
@@ -257,7 +259,7 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
                 disabled={isSyncing}
                 className="mt-2 w-full text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 disabled:opacity-50 transition-colors"
               >
-                Sync Now
+                {t('sync.syncNow')}
               </button>
             )}
           </div>
@@ -286,12 +288,12 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
             {isSyncing ? (
               <>
                 <Loader className="w-3 h-3 animate-spin" />
-                Syncing...
+                {t('sync.syncing')}
               </>
             ) : (
               <>
                 <RefreshCw className="w-3 h-3" />
-                Sync Now
+                {t('sync.syncNow')}
               </>
             )}
           </button>
@@ -309,7 +311,7 @@ export function SyncStatusIndicator({ gameId, showDetails = false, className = '
       {syncStatus?.storageUsed > 0 && (
         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="text-xs text-gray-500">
-            Storage used: {(syncStatus.storageUsed / 1024).toFixed(2)} KB
+            {t('sync.storageUsed', { size: (syncStatus.storageUsed / 1024).toFixed(2) })}
           </div>
         </div>
       )}

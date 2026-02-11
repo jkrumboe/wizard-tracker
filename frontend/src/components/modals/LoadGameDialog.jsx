@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlayIcon, TrashIcon, CalendarIcon, UsersIcon, XIcon } from '@/components/ui/Icon';
 
 const LoadGameDialog = ({ 
@@ -8,6 +9,7 @@ const LoadGameDialog = ({
   onDeleteGame,
   getSavedGames 
 }) => {
+  const { t } = useTranslation();
   const [savedGames, setSavedGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState(null);
@@ -37,26 +39,26 @@ const LoadGameDialog = ({
       if (result.success) {
         onClose();
       } else {
-        alert(`Error loading game: ${result.error}`);
+        alert(t('loadGameDialog.loadError', { error: result.error }));
       }
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      alert(t('loadGameDialog.genericError', { message: error.message }));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteGame = async (gameId, gameName) => {
-    if (globalThis.confirm(`Are you sure you want to delete "${gameName}"?`)) {
+    if (globalThis.confirm(t('loadGameDialog.deleteConfirm', { name: gameName }))) {
       try {
         const result = await onDeleteGame(gameId);
         if (result.success) {
           setSavedGames(savedGames.filter(game => game.id !== gameId));
         } else {
-          alert(`Error deleting game: ${result.error}`);
+          alert(t('loadGameDialog.deleteError', { error: result.error }));
         }
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(t('loadGameDialog.genericError', { message: error.message }));
       }
     }
   };
@@ -72,7 +74,7 @@ const LoadGameDialog = ({
     <div className="dialog-overlay">
       <div className="dialog-modal">
         <div className="dialog-header">
-          <h2>Load Saved Game</h2>
+          <h2>{t('loadGameDialog.title')}</h2>
           <button onClick={onClose} className="dialog-close-btn" disabled={loading}>
             <XIcon size={16} />
           </button>
@@ -82,12 +84,12 @@ const LoadGameDialog = ({
           <div className="saved-games-list">
             {loading ? (
               <div className="loading-container">
-                <p>Loading saved games...</p>
+                <p>{t('loadGameDialog.loadingSavedGames')}</p>
               </div>
             ) : savedGames.length === 0 ? (
               <div className="empty-saved-games">
-                <p>No saved games found</p>
-                <p>Start a new game and save it to see it here</p>
+                <p>{t('loadGameDialog.noSavedGames')}</p>
+                <p>{t('loadGameDialog.noSavedGamesHint')}</p>
               </div>
             ) : (
               savedGames.map((game) => (
@@ -98,14 +100,14 @@ const LoadGameDialog = ({
                 >
                   <div className="saved-game-info">
                     <div className="saved-game-name">
-                      {game.name || `Game with ${Array.isArray(game.players) ? game.players.join(', ') : 'Unknown Players'}`}
+                      {game.name || t('loadGameDialog.gameWithPlayers', { players: Array.isArray(game.players) ? game.players.join(', ') : 'Unknown Players' })}
                     </div>
                     <div className="saved-game-details">
                       <UsersIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
-                      {game.playerCount || (game.players ? game.players.length : 0)} players • Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds}
+                      {t('loadGameDialog.playerCount', { count: game.playerCount || (game.players ? game.players.length : 0) })} • {t('loadGameDialog.roundProgress', { current: (game.roundsCompleted || 0) + 1, total: game.totalRounds })}
                       <br />
                       <CalendarIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
-                      Last played: {formatDate(game.lastPlayed)}
+                      {t('loadGameDialog.lastPlayed', { date: formatDate(game.lastPlayed) })}
                     </div>
                   </div>
                   <div className="saved-game-actions">
@@ -116,7 +118,7 @@ const LoadGameDialog = ({
                       }}
                       className="icon-btn"
                       disabled={loading}
-                      title="Load Game"
+                      title={t('loadGameDialog.loadGame')}
                     >
                       <PlayIcon size={26} />
                     </button>
@@ -128,7 +130,7 @@ const LoadGameDialog = ({
                         }}
                         className="icon-btn danger"
                         disabled={loading}
-                        title="Delete Game"
+                        title={t('loadGameDialog.deleteGame')}
                       >
                         <TrashIcon size={16} />
                       </button>
@@ -148,7 +150,7 @@ const LoadGameDialog = ({
                 style={{ width: '100%' }}
               >
                 <PlayIcon size={16} style={{ marginRight: '8px' }} />
-                Load Selected Game
+                {t('loadGameDialog.loadSelectedGame')}
               </button>
             </div>
           )}
@@ -160,7 +162,7 @@ const LoadGameDialog = ({
             className="dialog-btn secondary"
             disabled={loading}
           >
-            Close
+            {t('loadGameDialog.close')}
           </button>
         </div>
       </div>

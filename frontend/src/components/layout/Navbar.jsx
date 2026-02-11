@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
+import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/hooks/useUser'
 // import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
@@ -12,33 +13,33 @@ import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
 // Modal for Games tab, styled like other modals
-const GamesMenu = ({ show, onClose, user }) => {
+const GamesMenu = ({ show, onClose, user, t }) => {
   if (!show) return null;
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Games</h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close Games Menu">
+          <h2>{t('nav.games')}</h2>
+          <button className="close-btn" onClick={onClose} aria-label={t('nav.closeGamesMenu')}>
             <XIcon size={20} />
           </button>
         </div>
         <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
           <Link to="/new-game" className="modal-button" onClick={onClose}>
-            Wizard
+            {t('nav.wizard')}
           </Link>
           <Link to="/table" className="modal-button" onClick={onClose}>
-            Table
+            {t('nav.table')}
           </Link>
           <Link to="/leaderboard" className="modal-button" onClick={onClose}>
-            Leaderboard
+            {t('nav.leaderboard')}
           </Link>
           <Link to="/friend-leaderboard" className="modal-button" onClick={onClose}>
-            Compare with Friends
+            {t('nav.compareWithFriends')}
           </Link>
           {user && user.role === 'admin' && (
             <Link to="/admin" className="modal-button" onClick={onClose}>
-              Admin Panel
+              {t('nav.adminPanel')}
             </Link>
           )}
         </div>
@@ -50,6 +51,7 @@ import "@/styles/components/components.css"
 
 const Navbar = () => {
   const { user } = useUser()
+  const { t } = useTranslation()
   // const { isOnline } = useOnlineStatus()
   const location = useLocation()
   // Add state for Games menu
@@ -78,7 +80,7 @@ const Navbar = () => {
   return (
     <>
       <nav className="bottom-navbar">
-        <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} user={user} />
+        <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} user={user} t={t} />
         <div
           className={`bottom-nav-item games-tab ${showGamesMenu ? "active" : ""}`}
           onClick={() => setShowGamesMenu(v => !v)}
@@ -87,19 +89,19 @@ const Navbar = () => {
           <div className="nav-icon">
             <GamepadIcon size={20} />
           </div>
-          <span>Games</span>
+          <span>{t('nav.games')}</span>
         </div>
         <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
           <div className="nav-icon">
             <HomeIcon size={20} />
           </div>
-          <span>Home</span>
+          <span>{t('nav.home')}</span>
         </Link>
         <Link to="/account" className={`bottom-nav-item ${isActive("/account")}`}>
           <div className="nav-icon">
             <UserIcon size={20} />
           </div>
-          <span>Account</span>
+          <span>{t('nav.account')}</span>
         </Link>
       </nav>
     </>

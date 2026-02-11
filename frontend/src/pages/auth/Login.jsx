@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/shared/hooks/useUser';
 import authService from '@/shared/api/authService';
 import "@/styles/pages/login.css"
@@ -14,6 +15,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { refreshAuthStatus } = useUser();
 
   const handleLogin = async () => {
@@ -29,7 +31,7 @@ const Login = () => {
       const from = location.state?.from || '/';
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.message || 'Failed to sign in. Please try again.');
+      setError(error.message || t('auth.loginFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +50,7 @@ const Login = () => {
       const from = location.state?.from || '/';
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.message || 'Failed to create account. Please try again.');
+      setError(error.message || t('auth.registerFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -64,17 +66,17 @@ const Login = () => {
         }}
       >
         <div className="login-header">
-          <h2 className="login-title">{isRegistering ? "Create Account" : "Welcome"}</h2>
+          <h2 className="login-title">{isRegistering ? t('auth.createAccountTitle') : t('auth.welcomeTitle')}</h2>
         </div>
         
         <div className="input-group">
           <label htmlFor="username" className="input-label">
-            Username
+            {t('auth.usernameLabel')}
           </label>
           <input
             id="username"
             type="text"
-            placeholder="Enter your username"
+            placeholder={t('auth.usernamePlaceholder')}
             autoComplete="username"
             value={username}
             onChange={(e) => {
@@ -87,19 +89,19 @@ const Login = () => {
             required
           />
           {isRegistering && (
-            <small className="input-hint">3-20 characters</small>
+            <small className="input-hint">{t('auth.usernameHint')}</small>
           )}
         </div>
         
         <div className="input-group">
           <label htmlFor="password" className="input-label">
-            Password
+            {t('auth.passwordLabel')}
           </label>
           <div className="password-input-wrapper">
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder={t('auth.passwordPlaceholder')}
               autoComplete={isRegistering ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -111,7 +113,7 @@ const Login = () => {
               className="password-toggle"
               onClick={() => setShowPassword(!showPassword)}
               disabled={isLoading}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
             >
               {showPassword ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -127,7 +129,7 @@ const Login = () => {
             </button>
           </div>
           {isRegistering && (
-            <small className="input-hint">Minimum 8 characters recommended</small>
+            <small className="input-hint">{t('auth.passwordHint')}</small>
           )}
         </div>
         
@@ -146,10 +148,10 @@ const Login = () => {
           {isLoading ? (
             <>
               <span className="loading-spinner"></span>
-              {isRegistering ? "Creating Account..." : "Signing In..."}
+              {isRegistering ? t('auth.creatingAccount') : t('auth.signingIn')}
             </>
           ) : (
-            isRegistering ? "Sign Up" : "Sign In"
+            isRegistering ? t('auth.signUp') : t('auth.signIn')
           )}
         </button>
         
@@ -166,14 +168,14 @@ const Login = () => {
           }}
           disabled={isLoading}
         >
-          {isRegistering ? "Already have an account? Sign In" : "No account yet? Sign Up"}
+          {isRegistering ? t('auth.switchToSignIn') : t('auth.switchToSignUp')}
         </button>
       </form>
 
       <p className="login-subtitle">
             {isRegistering 
-              ? "Sign up to start tracking your game scores" 
-              : "Sign in to continue to your account"}
+              ? t('auth.signUpSubtitle') 
+              : t('auth.signInSubtitle')}
           </p>
     </div>
   );

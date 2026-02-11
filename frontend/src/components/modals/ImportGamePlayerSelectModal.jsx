@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon, UserIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
@@ -9,6 +10,7 @@ const ImportGamePlayerSelectModal = ({
   players = [],
   currentUser = null
 }) => {
+  const { t } = useTranslation();
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
 
   if (!isOpen) return null;
@@ -27,21 +29,21 @@ const ImportGamePlayerSelectModal = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Select Your Player</h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
+          <h2>{t('importGame.title')}</h2>
+          <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>
         
         <div className="modal-content">
           <p className="modal-description">
-            Were you one of the players in this game? Select your player to link this game to your profile.
+            {t('importGame.description')}
           </p>
 
           {currentUser && (
             <div className="current-user-info">
               <UserIcon size={16} />
-              <span>Logged in as: <strong>{currentUser.username || currentUser.name}</strong></span>
+              <span>{t('importGame.loggedInAs')} <strong>{currentUser.username || currentUser.name}</strong></span>
             </div>
           )}
 
@@ -61,7 +63,7 @@ const ImportGamePlayerSelectModal = ({
                 <div className="player-info">
                   <span className="player-name">{player.name}</span>
                   {player.final_score !== undefined && (
-                    <span className="player-score">{player.final_score} points</span>
+                    <span className="player-score">{player.final_score} {t('common.points')}</span>
                   )}
                 </div>
               </label>
@@ -73,14 +75,14 @@ const ImportGamePlayerSelectModal = ({
               className="btn-secondary"
               onClick={handleSkip}
             >
-              Skip - Not My Game
+              {t('importGame.skipNotMyGame')}
             </button>
             <button 
               className="btn-primary"
               onClick={handleConfirm}
               disabled={!selectedPlayerId}
             >
-              Import Game
+              {t('importGame.importGame')}
             </button>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { useUser } from "@/shared/hooks/useUser"
 import { secureArrayShuffle } from "@/shared/utils/secureRandom"
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { SelectFriendsModal } from '@/components/modals';
+import { useTranslation } from 'react-i18next';
 import { GripVertical } from 'lucide-react';
 import { XIcon, DiceIcon, UsersIcon } from '@/components/ui/Icon';
 import {
@@ -32,6 +33,7 @@ import {
 
 // Sortable Player Item Component
 const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -84,7 +86,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
         inputMode="text" 
         onChange={(e) => onNameChange(player.id, e)}
         onFocus={(e) => e.target.select()}
-        placeholder={`Player ${index + 1}`}
+        placeholder={t('game.playerPlaceholder', { n: index + 1 })}
       />
       
       {/* {player.isVerified && (
@@ -99,7 +101,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
           e.stopPropagation();
           onRemove(player.id);
         }}
-        title="Remove Player"
+        title={t('game.removePlayer')}
       >
         <XIcon size={16} />
       </button>
@@ -108,7 +110,8 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove }) => {
 };
 
 const NewGame = () => {
-  
+  const { t } = useTranslation();
+
   const navigate = useNavigate()
   const { user } = useUser()
   // const { players, loading } = usePlayers()
@@ -393,13 +396,13 @@ const NewGame = () => {
           className={`tab-button ${activeTab === 'new-game' ? 'active' : ''}`}
           onClick={() => setActiveTab('new-game')}
         >
-          New Game
+          {t('game.newGameTab')}
         </button>
         <button 
           className={`tab-button ${activeTab === 'paused-games' ? 'active' : ''}`}
           onClick={() => setActiveTab('paused-games')}
         >
-          Paused Games
+          {t('game.pausedGamesTab')}
         </button>
       </div>
 
@@ -440,8 +443,8 @@ const NewGame = () => {
                 <button 
                   className="randomizer-btn" 
                   onClick={handleRandomizePlayers}
-                  title="Randomize player order"
-                  aria-label="Randomize player order"
+                  title={t('game.randomizeOrder')}
+                  aria-label={t('game.randomizeOrder')}
                   disabled={gameState.players.length < 3}
                 >
                   <DiceIcon size={25} />
@@ -452,7 +455,7 @@ const NewGame = () => {
                 <button 
                   className="add-friends-btn" 
                   onClick={() => setShowSelectFriendsModal(true)}
-                  title="Add friends to game"
+                  title={t('game.addFriendsToGame')}
                 >
                   <UsersIcon size={25} />
                 </button>
@@ -464,7 +467,7 @@ const NewGame = () => {
                     <div className="game-settings-input">
                       
                       <div id="rounds">
-                        <label htmlFor="rounds-input">Rounds:</label>
+                        <label htmlFor="rounds-input">{t('game.roundsLabel')}</label>
                         <input
                           id="rounds-input"
                           type="tel"
@@ -477,7 +480,7 @@ const NewGame = () => {
                         />
                       </div>
                       <div id="cards">
-                          <label htmlFor="cards-input">Cards:</label>
+                          <label htmlFor="cards-input">{t('game.cardsLabel')}</label>
                           <input
                             id="cards-input"
                             type="tel"
@@ -491,7 +494,7 @@ const NewGame = () => {
                       </div>
                     </div>
                     <div className="rounds-hint">
-                          Recommended: {recommendedRounds} rounds
+                          {t('game.recommendedRounds', { n: recommendedRounds })}
                     </div>
                   </div>
                 </div>
@@ -504,15 +507,15 @@ const NewGame = () => {
                 disabled={gameState.players.length < 3 || gameState.players.length > 8} 
                 onClick={handleStartGame}
               >
-                Start Game
+                {t('game.startGame')}
               </button>
               
               {gameState.players.length < 3 && (
-                <div className="error-message">At least 3 players are needed to start a game</div>
+                <div className="error-message">{t('game.minPlayersError')}</div>
               )}
               
               {gameState.players.length > 8 && (
-                <div className="error-message">Maximum of 8 players are supported</div>
+                <div className="error-message">{t('game.maxPlayersError')}</div>
               )}
             </div>
           </div>          
@@ -524,8 +527,8 @@ const NewGame = () => {
           <div className="paused-games-section">            
             {pausedGames.length === 0 ? (
               <div className="empty-paused-games">
-                <p>No paused games found</p>
-                <p>When you pause a game, it will appear here</p>
+                <p>{t('game.noPausedGames')}</p>
+                <p>{t('game.pausedGamesHint')}</p>
               </div>
             ) : (
               <div className="paused-games-list">
@@ -542,7 +545,7 @@ const NewGame = () => {
                     <div className="settings-card-content">
                       <div className="settings-card-header">
                         <div className="game-info">
-                          <div>Round {(game.roundsCompleted || 0) + 1}/{game.totalRounds || 0}</div>
+                          <div>{t('game.roundOfTotal', { current: (game.roundsCompleted || 0) + 1, total: game.totalRounds || 0 })}</div>
                         </div>
                         <div className="game-players">
                           <UsersIcon size={12} />{" "}
@@ -565,13 +568,13 @@ const NewGame = () => {
                           className="resume-btn" 
                           onClick={() => handleLoadGame(game.id)}
                         >
-                          Resume
+                          {t('common.resume')}
                         </button>
                         <button 
                           className="delete-btn" 
                           onClick={() => handleDeleteGame(game.id)}
                         >
-                          Delete
+                          {t('common.delete')}
                         </button>
                       </div>
                     </div>

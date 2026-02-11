@@ -11,11 +11,13 @@ import ProfilePictureModal from '@/components/modals/ProfilePictureModal'
 import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
 import '@/styles/components/error-container.css'
+import { useTranslation } from 'react-i18next';
 
 const UserProfile = () => {
   const navigate = useNavigate()
   const { id: userId } = useParams()
   const { user: currentUser } = useUser()
+  const { t } = useTranslation()
   
   const [profileUser, setProfileUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -43,7 +45,7 @@ const UserProfile = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!userId) {
-        setError('No user ID provided')
+        setError(t('profile.noUserIdProvided'))
         setLoading(false)
         return
       }
@@ -71,7 +73,7 @@ const UserProfile = () => {
         // Check if user is deleted
         if (data.user?.isDeleted || data.isDeleted) {
           const username = data.user?.username || data.username || userId;
-          setError(`This account has been deleted - ${username}`);
+          setError(t('profile.accountDeletedMessage', { username }));
           setLoading(false);
           return;
         }
@@ -84,7 +86,7 @@ const UserProfile = () => {
         }
       } catch (err) {
         console.error('❌ [UserProfile] Error fetching user profile:', err)
-        setError(err.message || 'Failed to load user profile')
+        setError(err.message || t('profile.failedToLoadProfile'))
       } finally {
         setLoading(false)
       }
@@ -207,8 +209,8 @@ const UserProfile = () => {
         </div>
 
         <div className="account-tabs">
-          <button className="account-tab active">Overview</button>
-          <button className="account-tab">Stats</button>
+          <button className="account-tab active">{t('profile.overviewTab')}</button>
+          <button className="account-tab">{t('profile.statsTab')}</button>
         </div>
 
         <div className="account-content">
@@ -219,11 +221,11 @@ const UserProfile = () => {
                   <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
                   <div className="game-type-stats">
                     <div className="stat-item">
-                      <span className="stat-label">Win%:</span>
+                      <span className="stat-label">{t('account.winRateLabel')}</span>
                       <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
                     </div>
                     <div className="stat-item">
-                      <span className="stat-label">Matches:</span>
+                      <span className="stat-label">{t('account.matchesLabel')}</span>
                       <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
                     </div>
                   </div>
@@ -250,15 +252,15 @@ const UserProfile = () => {
     return (
       <div className="settings-container">
         <div className="error-container">
-          <h2>{isDeletedAccount ? 'Account Deleted' : 'Error Loading Profile'}</h2>
+          <h2>{isDeletedAccount ? t('profile.accountDeleted') : t('profile.errorLoadingProfile')}</h2>
           <p>{error}</p>
           {isDeletedAccount && (
             <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.8 }}>
-              The user's games and content have been preserved but the account is no longer active.
+              {t('profile.accountDeletedInfo')}
             </p>
           )}
           <button onClick={() => navigate(-1)} className="back-button">
-            Go Back
+            {t('common.goBack')}
           </button>
         </div>
       </div>
@@ -269,9 +271,9 @@ const UserProfile = () => {
     return (
       <div className="settings-container">
         <div className="error-container">
-          <h2>User Not Found</h2>
+          <h2>{t('profile.userNotFound')}</h2>
           <button onClick={() => navigate(-1)} className="back-button">
-            Go Back
+            {t('common.goBack')}
           </button>
         </div>
       </div>
@@ -312,21 +314,21 @@ const UserProfile = () => {
                 <p style={{ margin: 0, fontWeight: 'bold' }}>{profileUser.username}</p>
                 {profileUser.createdAt && profileUser.isRegisteredUser !== false ? (
                   <p style={{ fontSize: '14px', color: 'var(--text-secondary)'}}>
-                    Member since {new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
+                    {t('profile.memberSince', { date: new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
                       year: 'numeric', 
                       month: 'short', 
                       day: 'numeric' 
-                    })}
+                    }) })}
                   </p>
                 ) : (
                   <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                    Guest Player
+                    {t('profile.guestPlayer')}
                   </p>
                 )}
               </div>
               <img
                 src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
-                alt={`${profileUser.username}'s avatar`}
+                alt={t('profile.avatarAlt', { name: profileUser.username })}
                 onClick={() => setShowProfilePictureModal(true)}
                 style={{
                   width: '64px',
@@ -334,7 +336,7 @@ const UserProfile = () => {
                   borderRadius: '25%',
                   cursor: 'pointer',
                 }}
-                title="Click to view full size"
+                title={t('account.clickToViewFullSize')}
                 onError={(e) => {
                   e.target.src = defaultAvatar
                 }}
@@ -349,13 +351,13 @@ const UserProfile = () => {
           className={`account-tab ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          Overview
+          {t('profile.overviewTab')}
         </button>
         <button 
           className={`account-tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
         >
-          Stats
+          {t('profile.statsTab')}
         </button>
       </div>
 
@@ -376,7 +378,7 @@ const UserProfile = () => {
             {!profileUser?.games || profileUser.games.length === 0 ? (
               <div className="settings-section">
                 <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  No games available for statistics. Play some games to see your performance!
+                  {t('profile.noGamesForStats')}
                 </p>
               </div>
             ) : (
@@ -409,7 +411,7 @@ const UserProfile = () => {
                 ) : (
                   <div className="settings-section">
                     <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                      No games available for {statsGameType}. Play some games to see your performance!
+                      {t('profile.noGamesForType', { type: statsGameType })}
                     </p>
                   </div>
                 )}
@@ -423,7 +425,7 @@ const UserProfile = () => {
         isOpen={showProfilePictureModal}
         onClose={() => setShowProfilePictureModal(false)}
         imageUrl={sanitizeImageUrl(avatarUrl, defaultAvatar)}
-        altText={`${profileUser?.username}'s Profile Picture`}
+        altText={t('profile.profilePicture', { name: profileUser?.username })}
       />
     </div>
   )

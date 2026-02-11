@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 
@@ -14,7 +15,7 @@ import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
-import { SwipeableGameCard } from '@/components/common';
+import { SwipeableGameCard, LanguageSwitcher } from '@/components/common';
 import authService from '@/shared/api/authService';
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
@@ -29,6 +30,7 @@ import '@/styles/pages/account.css';
 
 const Account = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview'); // overview, stats, games
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
   const [savedGames, setSavedGames] = useState({});
@@ -111,7 +113,7 @@ const Account = () => {
       
       if (!validation.isValid) {
         setMessage({ 
-          text: `Invalid shared link: ${validation.error}`, 
+          text: t('accountMessages.invalidShareLink', { error: validation.error }), 
           type: 'error' 
         });
         globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -122,13 +124,13 @@ const Account = () => {
         const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
         if (success) {
           loadSavedGames();
-          setMessage({ text: 'Games imported successfully from shared link!', type: 'success' });
+          setMessage({ text: t('accountMessages.gamesImportedSuccess'), type: 'success' });
         } else {
-          setMessage({ text: 'Failed to import games from shared link.', type: 'error' });
+          setMessage({ text: t('accountMessages.gamesImportFailed'), type: 'error' });
         }
       } catch (error) {
         console.error('Error importing games from URL:', error);
-        setMessage({ text: 'Failed to process shared link data.', type: 'error' });
+        setMessage({ text: t('accountMessages.processShareFailed'), type: 'error' });
       }
       
       globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -138,7 +140,7 @@ const Account = () => {
       
       if (!validation.isValid) {
         setMessage({ 
-          text: `Invalid shared link: ${validation.error}`, 
+          text: t('accountMessages.invalidShareLink', { error: validation.error }), 
           type: 'error' 
         });
         globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -198,13 +200,13 @@ const Account = () => {
         const success = LocalGameStorage.importGames(JSON.stringify(fullGameData));
         if (success) {
           loadSavedGames();
-          setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
+          setMessage({ text: t('accountMessages.gameImportedSuccess'), type: 'success' });
         } else {
-          setMessage({ text: 'Failed to import game from shared link.', type: 'error' });
+          setMessage({ text: t('accountMessages.importGameFailed'), type: 'error' });
         }
       } catch (error) {
         console.error('Error importing game from URL:', error);
-        setMessage({ text: 'Failed to process shared link data.', type: 'error' });
+        setMessage({ text: t('accountMessages.processShareFailed'), type: 'error' });
       }
       
       globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -214,7 +216,7 @@ const Account = () => {
       // First validate the share key format
       if (!ShareValidator.isValidShareKey(shareKeyParam)) {
         setMessage({ 
-          text: 'Invalid share link format.', 
+          text: t('accountMessages.invalidShareLinkFormat'), 
           type: 'error' 
         });
         globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -227,7 +229,7 @@ const Account = () => {
         
         if (!jsonData) {
           setMessage({ 
-            text: 'This share link was created on a different device. Please use the download/import file method for cross-device sharing.', 
+            text: t('accountMessages.shareLinkDifferentDevice'), 
             type: 'error' 
           });
           globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -238,7 +240,7 @@ const Account = () => {
         if (expirationTime && Date.now() > parseInt(expirationTime)) {
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
-          setMessage({ text: 'Shared game link has expired.', type: 'error' });
+          setMessage({ text: t('accountMessages.shareLinkExpired'), type: 'error' });
           globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           return;
         }
@@ -250,7 +252,7 @@ const Account = () => {
           console.warn('Parse error for share key data:', parseError);
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
-          setMessage({ text: 'Invalid shared link data format.', type: 'error' });
+          setMessage({ text: t('accountMessages.invalidShareDataFormat'), type: 'error' });
           globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
           return;
         }
@@ -261,7 +263,7 @@ const Account = () => {
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
           setMessage({ 
-            text: `Invalid shared link: ${validation.error}`, 
+            text: t('accountMessages.invalidShareLink', { error: validation.error }), 
             type: 'error' 
           });
           globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -272,17 +274,17 @@ const Account = () => {
         
         if (success) {
           loadSavedGames();
-          setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
+          setMessage({ text: t('accountMessages.gameImportedSuccess'), type: 'success' });
           
           // Clean up the temporary storage
           localStorage.removeItem(shareKeyParam);
           localStorage.removeItem(shareKeyParam + '_expires');
         } else {
-          setMessage({ text: 'Failed to import game from shared link.', type: 'error' });
+          setMessage({ text: t('accountMessages.importGameFailed'), type: 'error' });
         }
       } catch (error) {
         console.error('Error importing game from share key:', error);
-        setMessage({ text: 'Failed to process shared link data.', type: 'error' });
+        setMessage({ text: t('accountMessages.processShareFailed'), type: 'error' });
       }
       
       globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
@@ -429,10 +431,10 @@ const Account = () => {
     
     // Check for import success/error flags from URL handler
     if (localStorage.getItem('import_success')) {
-      setMessage({ text: 'Game imported successfully from shared link!', type: 'success' });
+      setMessage({ text: t('accountMessages.gameImportedSuccess'), type: 'success' });
       localStorage.removeItem('import_success');
     } else if (localStorage.getItem('import_error')) {
-      setMessage({ text: 'Failed to import game from shared link.', type: 'error' });
+      setMessage({ text: t('accountMessages.importGameFailed'), type: 'error' });
       localStorage.removeItem('import_error');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -507,7 +509,7 @@ const Account = () => {
       localStorage.clear();
       setSavedGames({});
       setSavedTableGames([]);
-      setMessage({ text: 'All local storage data has been cleared.', type: 'success' });
+      setMessage({ text: t('accountMessages.allDataCleared'), type: 'success' });
     } else if (gameToDelete) {
       // Delete specific game
       if (gameToDelete.isTableGame) {
@@ -516,7 +518,7 @@ const Account = () => {
         LocalGameStorage.deleteGame(gameToDelete.id);
       }
       loadSavedGames();
-      setMessage({ text: 'Game deleted successfully.', type: 'success' });
+      setMessage({ text: t('accountMessages.gameDeleted'), type: 'success' });
     }
     setShowConfirmDialog(false);
     setGameToDelete(null);
@@ -560,12 +562,12 @@ const Account = () => {
     e.preventDefault();
     
     if (passwordChangeData.newPassword !== passwordChangeData.confirmPassword) {
-      setMessage({ text: 'New passwords do not match', type: 'error' });
+      setMessage({ text: t('accountMessages.passwordsMismatch'), type: 'error' });
       return;
     }
 
     if (passwordChangeData.newPassword.length < 6) {
-      setMessage({ text: 'Password must be at least 6 characters long', type: 'error' });
+      setMessage({ text: t('accountMessages.passwordTooShort'), type: 'error' });
       return;
     }
 
@@ -576,7 +578,7 @@ const Account = () => {
         passwordChangeData.newPassword
       );
       
-      setMessage({ text: 'Password changed successfully', type: 'success' });
+      setMessage({ text: t('accountMessages.passwordChanged'), type: 'success' });
       setShowPasswordChangeModal(false);
       setPasswordChangeData({
         currentPassword: '',
@@ -585,7 +587,7 @@ const Account = () => {
       });
     } catch (error) {
       setMessage({ 
-        text: error.message || 'Failed to change password', 
+        text: error.message || t('accountMessages.passwordChangeFailed'), 
         type: 'error' 
       });
     } finally {
@@ -597,7 +599,7 @@ const Account = () => {
     e.preventDefault();
     
     if (!deleteAccountPassword) {
-      setMessage({ text: 'Password is required to delete account', type: 'error' });
+      setMessage({ text: t('accountMessages.passwordRequired'), type: 'error' });
       return;
     }
 
@@ -611,7 +613,7 @@ const Account = () => {
       await LocalTableGameStorage.clearAllGames();
       
       // Show success message briefly before redirect
-      setMessage({ text: 'Account deleted successfully', type: 'success' });
+      setMessage({ text: t('accountMessages.accountDeleted'), type: 'success' });
       
       // Redirect to home after a brief delay
       setTimeout(() => {
@@ -634,27 +636,27 @@ const Account = () => {
     localStorage.setItem('autoUpdate', newValue.toString());
     setMessage({ 
       text: newValue 
-        ? 'Automatic updates enabled. Updates will install automatically.' 
-        : 'Automatic updates disabled. You will be prompted before updating.', 
+        ? t('accountMessages.autoUpdateOn') 
+        : t('accountMessages.autoUpdateOff'), 
       type: 'success' 
     });
   };
 
   const handleCheckForUpdates = async () => {
     if (!('serviceWorker' in navigator)) {
-      setMessage({ text: 'Service Worker not supported in this browser', type: 'error' });
+      setMessage({ text: t('accountMessages.swNotSupported'), type: 'error' });
       return;
     }
 
     setCheckingForUpdates(true);
-    setMessage({ text: 'Checking for updates...', type: 'info' });
+    setMessage({ text: t('accountMessages.checkingForUpdates'), type: 'info' });
 
     try {
       const registration = await navigator.serviceWorker.getRegistration();
       
       if (!registration) {
         setCheckingForUpdates(false);
-        setMessage({ text: 'No service worker registered', type: 'error' });
+        setMessage({ text: t('accountMessages.noSwRegistered'), type: 'error' });
         return;
       }
 
@@ -662,7 +664,7 @@ const Account = () => {
       if (registration.waiting) {
         setCheckingForUpdates(false);
         setMessage({ 
-          text: '✅ Update available! Applying update now...', 
+          text: t('accountMessages.updateAvailableApplying'), 
           type: 'success' 
         });
         
@@ -731,7 +733,7 @@ const Account = () => {
       
       if (result === 'waiting') {
         setMessage({ 
-          text: '✅ Update available! Applying update now...', 
+          text: t('accountMessages.updateAvailableApplying'), 
           type: 'success' 
         });
         
@@ -745,7 +747,7 @@ const Account = () => {
         navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange, { once: true });
       } else {
         setMessage({ 
-          text: '✅ You are running the latest version!', 
+          text: t('accountMessages.latestVersion'), 
           type: 'success' 
         });
       }
@@ -753,7 +755,7 @@ const Account = () => {
       console.error('Error checking for updates:', error);
       setCheckingForUpdates(false);
       setMessage({ 
-        text: 'Failed to check for updates. Please try again later.', 
+        text: t('accountMessages.updateCheckFailed'), 
         type: 'error' 
       });
     }
@@ -799,17 +801,17 @@ const Account = () => {
 
   const handleForceUpdate = async () => {
     if (!('serviceWorker' in navigator)) {
-      setMessage({ text: 'Service Worker not supported in this browser', type: 'error' });
+      setMessage({ text: t('accountMessages.swNotSupported'), type: 'error' });
       return;
     }
 
     // Confirm action
-    if (!confirm('This will clear all caches and reload the app. Any unsaved changes may be lost. Continue?')) {
+    if (!confirm(t('accountMessages.forceUpdateConfirm'))) {
       return;
     }
 
     setForcingUpdate(true);
-    setMessage({ text: 'Clearing caches and forcing update...', type: 'info' });
+    setMessage({ text: t('accountMessages.clearingCaches'), type: 'info' });
 
     try {
       // Clear all localStorage update tracking
@@ -829,7 +831,7 @@ const Account = () => {
       await Promise.all(registrations.map(registration => registration.unregister()));
       console.debug(`🧹 Unregistered ${registrations.length} service workers`);
       
-      setMessage({ text: '✅ Caches cleared! Reloading...', type: 'success' });
+      setMessage({ text: t('accountMessages.cachesCleared'), type: 'success' });
       
       // Hard reload after a short delay
       setTimeout(() => {
@@ -839,7 +841,7 @@ const Account = () => {
       console.error('Error forcing update:', error);
       setForcingUpdate(false);
       setMessage({ 
-        text: 'Failed to clear caches. Please try again.', 
+        text: t('accountMessages.clearCachesFailed'), 
         type: 'error' 
       });
     }
@@ -1072,13 +1074,13 @@ const Account = () => {
     }
     
     if (gameData.isPaused) {
-      setMessage({ text: 'Cannot share paused games. Please finish the game first.', type: 'error' });
+      setMessage({ text: t('accountMessages.cannotSharePaused'), type: 'error' });
       return;
     }
 
     // Check if this is an imported shared game - prevent re-sharing to avoid confusion
     if (gameData.isImported || gameData.isShared || gameData.originalGameId) {
-      setMessage({ text: 'Cannot share imported games. This game was already shared by someone else.', type: 'error' });
+      setMessage({ text: t('accountMessages.cannotShareImported'), type: 'error' });
       return;
     }
 
@@ -1092,7 +1094,7 @@ const Account = () => {
         const syncSuccess = await ensureGameSynced(gameId, gameData, setMessage);
         
         if (!syncSuccess) {
-          setMessage({ text: 'Failed to sync game to backend before sharing.', type: 'error' });
+          setMessage({ text: t('accountMessages.syncBeforeShareFailed'), type: 'error' });
           return;
         }
         
@@ -1108,14 +1110,14 @@ const Account = () => {
         syncStatus = gameSyncStatuses[gameId];
         isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
       } catch (error) {
-        setMessage({ text: `Failed to sync game before sharing: ${error.message}`, type: 'error' });
+        setMessage({ text: t('accountMessages.syncBeforeShareError', { error: error.message }), type: 'error' });
         console.error('[SyncDebug] Failed to sync before sharing:', error);
         return;
       }
     }
 
     if (!isGameOnline) {
-      setMessage({ text: 'Game must be uploaded to backend before sharing.', type: 'error' });
+      setMessage({ text: t('accountMessages.gameMustBeUploaded'), type: 'error' });
       console.warn('[SyncDebug] Tried to share but game is not online:', syncStatus);
       return;
     }
@@ -1136,16 +1138,16 @@ const Account = () => {
         const shareId = shareResult.url.split('/').pop();
         await createSharedGameRecord(gameData, shareId);
         if (shareResult.method === 'native') {
-          setMessage({ text: 'Game shared successfully!', type: 'success' });
+          setMessage({ text: t('accountMessages.gameSharedSuccess'), type: 'success' });
         } else {
-          setMessage({ text: 'Share link copied to clipboard!', type: 'success' });
+          setMessage({ text: t('accountMessages.shareLinkCopied'), type: 'success' });
         }
       } else {
-        setMessage({ text: 'Failed to share game. Please try again.', type: 'error' });
+        setMessage({ text: t('accountMessages.shareGameFailed'), type: 'error' });
       }
     } catch (error) {
       console.error('Failed to share game:', error);
-      setMessage({ text: `Share failed: ${error.message}`, type: 'error' });
+      setMessage({ text: t('accountMessages.shareFailed', { error: error.message }), type: 'error' });
     } finally {
       // Delay spinner removal for 1.5s to allow UI to update smoothly
       setTimeout(() => {
@@ -1181,13 +1183,13 @@ const Account = () => {
     const totalUploadable = uploadableGames.length + uploadableTableGames.length;
     
     if (totalUploadable === 0) {
-      setMessage({ text: 'No games available for upload.', type: 'error' });
+      setMessage({ text: t('accountMessages.noGamesForUpload'), type: 'error' });
       return;
     }
 
     setCloudSyncStatus({ 
       uploading: true, 
-      progress: 'Starting upload...', 
+      progress: t('account.startingUpload'), 
       uploadedCount: 0, 
       totalCount: totalUploadable 
     });
@@ -1203,7 +1205,7 @@ const Account = () => {
         
         setCloudSyncStatus(prev => ({
           ...prev,
-          progress: `Uploading wizard game ${i + 1} of ${uploadableGames.length}...`,
+          progress: t('account.uploadingWizardGame', { current: i + 1, total: uploadableGames.length }),
           uploadedCount: successful
         }));
 
@@ -1231,7 +1233,7 @@ const Account = () => {
         
         setCloudSyncStatus(prev => ({
           ...prev,
-          progress: `Uploading table game ${i + 1} of ${uploadableTableGames.length}...`,
+          progress: t('account.uploadingTableGame', { current: i + 1, total: uploadableTableGames.length }),
           uploadedCount: successful
         }));
 
@@ -1256,18 +1258,18 @@ const Account = () => {
 
       if (successful > 0 && failed === 0) {
         setMessage({ 
-          text: `✅ All ${successful} games uploaded successfully!`, 
+          text: t('accountMessages.allGamesUploaded', { count: successful }), 
           type: 'success' 
         });
       } else if (successful > 0 && failed > 0) {
         setMessage({ 
-          text: `⚠️ ${successful} uploaded, ${failed} failed. Tap 'Debug Log' to see details.\n${errors[0] || ''}`, 
+          text: t('accountMessages.someGamesUploadFailed', { successful, failed, error: errors[0] || '' }), 
           type: 'warning' 
         });
         addDebugLog('Upload summary', { successful, failed, errors });
       } else {
         setMessage({ 
-          text: `❌ Upload failed. Tap 'Debug Log' to see details.\n${errors[0] || ''}`, 
+          text: t('accountMessages.allUploadsFailed', { error: errors[0] || '' }), 
           type: 'error' 
         });
         addDebugLog('All uploads failed', { errors });
@@ -1279,7 +1281,7 @@ const Account = () => {
         uploadedCount: 0, 
         totalCount: 0 
       });
-      setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+      setMessage({ text: t('accountMessages.uploadFailed', { error: error.message }), type: 'error' });
     }
   };
 
@@ -1300,7 +1302,7 @@ const Account = () => {
     
     setCloudSyncStatus({ 
       uploading: true, 
-      progress: 'Downloading selected games...', 
+      progress: t('account.downloadingSelectedGames'), 
       uploadedCount: 0, 
       totalCount: totalCount
     });
@@ -1337,17 +1339,17 @@ const Account = () => {
 
       if (totalDownloaded > 0) {
         setMessage({ 
-          text: `✅ Downloaded ${totalDownloaded} games from cloud! (${totalSkipped} already existed locally)`, 
+          text: t('accountMessages.downloadedGames', { count: totalDownloaded, skipped: totalSkipped }), 
           type: 'success' 
         });
       } else if (totalSkipped > 0) {
         setMessage({ 
-          text: `All ${totalSkipped} selected games already exist locally`, 
+          text: t('accountMessages.allGamesExistLocally', { count: totalSkipped }), 
           type: 'info' 
         });
       } else {
         setMessage({ 
-          text: 'No games were downloaded', 
+          text: t('accountMessages.noGamesDownloaded'), 
           type: 'info' 
         });
       }
@@ -1358,7 +1360,7 @@ const Account = () => {
         uploadedCount: 0, 
         totalCount: 0 
       });
-      setMessage({ text: `Download failed: ${error.message}`, type: 'error' });
+      setMessage({ text: t('accountMessages.downloadFailed', { error: error.message }), type: 'error' });
       console.error('Download error:', error);
     }
   };
@@ -1501,15 +1503,15 @@ const Account = () => {
                       borderRadius: '25%',
                       cursor: 'pointer',
                     }}
-                    title="Click to view full size"
+                    title={t('account.clickToViewFullSize')}
                   />
                 <div>
-                  <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || 'Guest'}</p>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || t('common.guest')}</p>
                   <Link 
                     to={user ? "/account/edit" : "/login"}
                     style={{ fontSize: '14px', color: 'var(--primary)' }}
                   >
-                    {user ? 'Edit Profile' : 'Login'}
+                    {user ? t('account.editProfile') : t('account.login')}
                   </Link>
                 </div>
               </div>
@@ -1527,8 +1529,8 @@ const Account = () => {
                     border: 'none',
                     boxShadow: 'none'
                   }}
-                  title="Sign Out"
-                  aria-label="Sign Out"
+                  title={t('account.signOut')}
+                  aria-label={t('account.signOut')}
                 >
                   <LogOutIcon size={24} />
                 </button>
@@ -1543,25 +1545,25 @@ const Account = () => {
             className={`account-tab ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
-            Overview
+            {t('account.overviewTab')}
           </button>
           <button 
             className={`account-tab ${activeTab === 'stats' ? 'active' : ''}`}
             onClick={() => setActiveTab('stats')}
           >
-            Stats
+            {t('account.statsTab')}
           </button>
           <button 
             className={`account-tab ${activeTab === 'games' ? 'active' : ''}`}
             onClick={() => setActiveTab('games')}
           >
-            Games
+            {t('account.gamesTab')}
           </button>
           <button 
             className={`account-tab ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
-            Settings
+            {t('account.settingsTab')}
           </button>
         </div>
 
@@ -1575,11 +1577,11 @@ const Account = () => {
                     <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
                     <div className="game-type-stats">
                       <div className="stat-item">
-                        <span className="stat-label">Win%:</span>
+                        <span className="stat-label">{t('account.winRateLabel')}</span>
                         <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
                       </div>
                       <div className="stat-item">
-                        <span className="stat-label">Matches:</span>
+                        <span className="stat-label">{t('account.matchesLabel')}</span>
                         <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
                       </div>
                     </div>
@@ -1608,7 +1610,7 @@ const Account = () => {
             {!user ? (
               <div className="settings-section">
                 <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  Please <Link to="/login">login</Link> to view detailed statistics
+                  <Link to="/login">{t('account.login')}</Link> {t('account.loginToViewStats')}
                 </p>
               </div>
             ) : allGamesForStats.length > 0 || (Object.keys(savedGames).length > 0 || savedTableGames.length > 0) ? (
@@ -1643,7 +1645,7 @@ const Account = () => {
                 ) : (
                   <div className="settings-section">
                     <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                      No games available for {statsGameType === 'all' ? 'any game type' : statsGameType}. Play some games to see your performance!
+                      {t('account.noGamesForType', { type: statsGameType === 'all' ? t('common.all') : statsGameType })}
                     </p>
                   </div>
                 )}
@@ -1651,7 +1653,7 @@ const Account = () => {
             ) : (
               <div className="settings-section">
                 <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  No games available for statistics. Play some games to see your performance!
+                  {t('account.noGamesForStats')}
                 </p>
               </div>
             )}
@@ -1676,7 +1678,7 @@ const Account = () => {
                 ></div>
               </div>
               <div className="progress-stats">
-                {cloudSyncStatus.uploadedCount} / {cloudSyncStatus.totalCount} games
+                {t('account.uploadProgress', { uploaded: cloudSyncStatus.uploadedCount, total: cloudSyncStatus.totalCount })}
               </div>
             </div>
           )}
@@ -1713,7 +1715,7 @@ const Account = () => {
                   ) : (
                     <CloudIcon size={18} />
                   )}
-                  {cloudSyncStatus.uploading ? 'Uploading...' : 'Upload All'}
+                  {cloudSyncStatus.uploading ? t('account.uploading') : t('account.uploadAll')}
                 </button>
                 <button 
                   className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
@@ -1725,7 +1727,7 @@ const Account = () => {
                   ) : (
                     <CloudIcon size={18} />
                   )}
-                  {cloudSyncStatus.uploading ? 'Downloading...' : 'Download'}
+                  {cloudSyncStatus.uploading ? t('account.downloading') : t('account.download')}
                 </button>
                 {user && user.role === 'admin' && (
                   <button 
@@ -1733,7 +1735,7 @@ const Account = () => {
                     onClick={() => setShowDebugPanel(!showDebugPanel)}
                     style={{ border: '1px solid var(--primary)' }}
                   >
-                    {showDebugPanel ? '✓' : '🐛'} Debug Log
+                    {showDebugPanel ? '✓' : '🐛'} {t('account.debugLog')}
                   </button>
                 )}
               </div>
@@ -1744,12 +1746,12 @@ const Account = () => {
                 onClick={() => navigate('/login')}
               >
                 <CloudIcon size={18} />
-                Sign In to Upload Games
+                {t('auth.signInToUpload')}
               </button>
             )}
             <button className="settings-button danger-button" onClick={handleDeleteAllData}>
               <TrashIcon size={18} />
-              Clear all Data
+              {t('account.clearAllData')}
             </button>
           </div>
         </div>
@@ -1769,13 +1771,13 @@ const Account = () => {
             justifyContent: 'center',
             gap: 'var(--spacing-sm)'
           }}>
-            <span>Sign in to share games with others</span>
+            <span>{t('auth.signInToShareGames')}</span>
           </div>
         )}
 
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header" >
-            <h2>Wizard Games ({filteredGames.length}) </h2>
+            <h2>{t('account.wizardGamesTitle', { count: filteredGames.length })} </h2>
             
             {/* <button 
               className="filter-button"
@@ -1843,7 +1845,7 @@ const Account = () => {
                       setUploadingGames(prev => new Set([...prev, game.id]));
                       try {
                         const result = await uploadSingleGameToCloud(game.id, game);
-                        setMessage({ text: result.isDuplicate ? `Game was already uploaded - marked as synced!` : `Game uploaded to cloud successfully!`, type: 'success' });
+                        setMessage({ text: result.isDuplicate ? t('accountMessages.gameAlreadyUploadedMarked') : t('accountMessages.gameUploadedSuccess'), type: 'success' });
                         await loadSavedGames();
                       } catch (error) {
                         setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
@@ -1857,7 +1859,7 @@ const Account = () => {
                     } : undefined}
                     onShare={showShare ? () => {
                       if (!user) {
-                        setMessage({ text: 'Please sign in to share games', type: 'error' });
+                        setMessage({ text: t('accountMessages.signInToShare'), type: 'error' });
                         return;
                       }
                       handleShareGame(game.id, game);
@@ -1868,17 +1870,17 @@ const Account = () => {
                     showSync={showSync}
                     showShare={showShare}
                     syncTitle={
-                      uploadingGames.has(game.id) ? 'Uploading game...' :
-                      isUploaded ? 'Already uploaded' :
-                      game.isPaused ? 'Cannot upload paused games' :
-                      !user ? 'Click to sign in and upload to cloud' :
-                      'Upload to cloud'
+                      uploadingGames.has(game.id) ? t('account.syncTitleUploading') :
+                      isUploaded ? t('account.syncTitleAlreadyUploaded') :
+                      game.isPaused ? t('account.syncTitleCannotUploadPaused') :
+                      !user ? t('account.syncTitleSignInToUpload') :
+                      t('account.syncTitleUploadToCloud')
                     }
                     shareTitle={
-                      !user ? 'Sign in to share game' :
-                      game.isPaused ? 'Cannot share paused games' :
-                      sharingGames.has(game.id) ? 'Sharing...' :
-                      'Share game'
+                      !user ? t('account.shareTitleSignIn') :
+                      game.isPaused ? t('account.shareTitleCannotSharePaused') :
+                      sharingGames.has(game.id) ? t('account.shareTitleSharing') :
+                      t('account.shareTitleShareGame')
                     }
                     disableSync={game.isPaused || uploadingGames.has(game.id) || isUploaded}
                     disableShare={!user || game.isPaused || sharingGames.has(game.id)}
@@ -1887,8 +1889,8 @@ const Account = () => {
                       <div className="settings-card-header">
                         <div className="game-info">
                           <div className="game-name">
-                            Wizard
-                            {game.isPaused ? ' | Paused' : ''}
+                            {t('common.wizard')}
+                            {game.isPaused ? ' | ' + t('common.paused') : ''}
                           </div>
                           <div className="game-badges">
                             {eloData && eloData.change !== undefined && (
@@ -1906,12 +1908,12 @@ const Account = () => {
                           {game.players && game.players.length > 0
                             ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
                                 ? game.players.join(", ")
-                                : game.players.map(p => p.name || "Unknown Player").join(", "))
-                            : "No players"}
+                                : game.players.map(p => p.name || t('common.unknownPlayer')).join(", "))
+                            : t('common.noPlayers')}
                         </div>
                         <div className="actions-game-history">
                           <div className="bottom-actions-game-history">
-                            <div className="game-rounds">Rounds: {(() => {
+                            <div className="game-rounds">{t('common.rounds')}: {(() => {
                               const rounds = game.gameFinished 
                                 ? (game.total_rounds || game.totalRounds || game.roundsCompleted || "N/A") 
                                 : (game._internalState?.currentRound || game.roundsCompleted !== undefined ? (game._internalState?.currentRound || game.roundsCompleted + 1) : "N/A");
@@ -1932,16 +1934,16 @@ const Account = () => {
               })}
             </div>
           ) : Object.keys(savedGames).length > 0 ? (
-            <p className="no-games">No games match your filters.</p>
+            <p className="no-games">{t('account.noGamesMatchFilters')}</p>
           ) : (
-            <p className="no-games">No saved games found.</p>
+            <p className="no-games">{t('account.noSavedGames')}</p>
           )}
         </div>
 
         {/* Table Games Section */}
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
           <div className="section-header">
-            <h2>Table Games ({savedTableGames.length})</h2>
+            <h2>{t('account.tableGamesTitle', { count: savedTableGames.length })}</h2>
           </div>
           {savedTableGames.length > 0 ? (
             <div className="game-history">
@@ -1971,8 +1973,8 @@ const Account = () => {
                         const result = await uploadSingleTableGameToCloud(game.id, fullGame);
                         setMessage({ 
                           text: result.isDuplicate 
-                            ? 'Table game was already uploaded - marked as synced!' 
-                            : 'Table game uploaded to cloud successfully!', 
+                            ? t('accountMessages.tableGameAlreadyUploadedMarked') 
+                            : t('accountMessages.tableGameUploadedSuccess'), 
                           type: 'success' 
                         });
                         await loadSavedGames();
@@ -1990,10 +1992,10 @@ const Account = () => {
                     isUploading={uploadingGames.has(game.id)}
                     showSync={showSync}
                     syncTitle={
-                      uploadingGames.has(game.id) ? 'Uploading table game...' :
-                      !game.gameFinished ? 'Cannot upload unfinished table games' :
-                      !user ? 'Click to sign in and upload to cloud' :
-                      'Upload to cloud'
+                      uploadingGames.has(game.id) ? t('account.syncTitleUploadingTableGame') :
+                      !game.gameFinished ? t('account.syncTitleCannotUploadUnfinished') :
+                      !user ? t('account.syncTitleSignInToUpload') :
+                      t('account.syncTitleUploadToCloud')
                     }
                     disableSync={uploadingGames.has(game.id)}
                   >
@@ -2010,13 +2012,13 @@ const Account = () => {
                               </span>
                             )}
                             {isUploaded && (
-                              <span className="mode-badge synced" title="Synced to Cloud">
-                                Synced
+                              <span className="mode-badge synced" title={t('account.syncedToCloud')}>
+                                {t('common.synced')}
                               </span>
                             )}
                             {!isUploaded && (
                               <span className="mode-badge table">
-                                Local
+                                {t('common.local')}
                               </span>
                             )}
                           </div>
@@ -2027,7 +2029,7 @@ const Account = () => {
                         </div>
                         <div className="actions-game-history">
                           <div className="bottom-actions-game-history">
-                            <div>Rounds: {game.totalRounds}</div>
+                            <div>{t('common.rounds')}: {game.totalRounds}</div>
                             <div className="game-date">
                               {formatDate(game.lastPlayed)}
                             </div>
@@ -2040,7 +2042,7 @@ const Account = () => {
               })}
             </div>
           ) : (
-            <p className="no-games">No table games found.</p>
+            <p className="no-games">{t('account.noTableGames')}</p>
           )}
         </div>
 
@@ -2054,14 +2056,14 @@ const Account = () => {
             {/* Account Settings */}
             {user && (
               <div className="settings-section account-settings-section">
-                <h3 className="settings-section-title">Account Settings</h3>
+                <h3 className="settings-section-title">{t('account.accountSettings')}</h3>
                 <div className="settings-option">
                   <button 
                     className="settings-button" 
                     onClick={() => setShowPasswordChangeModal(true)}
                   >
                     <KeyIcon size={18} />
-                    Change Password
+                    {t('account.changePassword')}
                   </button>
                 </div>
                 {user.role !== 'admin' && (
@@ -2071,7 +2073,7 @@ const Account = () => {
                       onClick={() => setShowAccountDeleteModal(true)}
                     >
                       <TrashIcon size={18} />
-                      Delete Account
+                      {t('account.deleteAccount')}
                     </button>
                   </div>
                 )}
@@ -2080,14 +2082,14 @@ const Account = () => {
 
             {/* Theme Settings */}
             <div className="settings-section">
-              <h3 className="settings-section-title">Theme Settings</h3>
+              <h3 className="settings-section-title">{t('account.themeSettings')}</h3>
               <div className="settings-option">
                 <button 
                   className="settings-button"
                   onClick={toggleTheme}
                   disabled={useSystemTheme}
                 >
-                  {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+                  {theme === 'dark' ? t('account.themeDark') : t('account.themeLight')}
                 </button>
               </div>
               <div className="settings-option">
@@ -2103,21 +2105,29 @@ const Account = () => {
                     }}
                   />
                   <div>
-                    <p style={{margin: 0}}>Automatically match your device's theme</p>
+                    <p style={{margin: 0}}>{t('account.systemThemeLabel')}</p>
                   </div>
                 </label>
               </div>
             </div>
 
+            {/* Language Settings */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">{t('account.languageSettings')}</h3>
+              <div className="settings-option">
+                <LanguageSwitcher />
+              </div>
+            </div>
+
             {/* Update Settings */}
             <div className="settings-section">
-              <h3 className="settings-section-title">Update Settings</h3>
+              <h3 className="settings-section-title">{t('account.updateSettings')}</h3>
               <div className="settings-option">
                 <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center'}}>
                   <input
                     type="checkbox"
                     checked={autoUpdate}
-                    onChange={(e) => handleAutoUpdateChange(e.target.checked)}
+                    onChange={handleAutoUpdateChange}
                     style={{
                       width: '15px', 
                       height: '15px',
@@ -2127,8 +2137,8 @@ const Account = () => {
                   <div>
                     <p>
                       {autoUpdate 
-                        ? 'Updates will install automatically' 
-                        : 'You will be prompted before installing updates'}
+                        ? t('account.autoUpdateEnabled') 
+                        : t('account.autoUpdateDisabled')}
                     </p>
                   </div>
                 </label>
@@ -2137,18 +2147,18 @@ const Account = () => {
 
             {/* Data Management */}
             <div className="settings-section">
-              <h3 className="settings-section-title">Data Management</h3>
+              <h3 className="settings-section-title">{t('account.dataManagement')}</h3>
               <div className="settings-card info-card">
                 <div className="info-grid">
                   <div className="info-item">
-                    <span className="info-label">Storage Format:</span>
+                    <span className="info-label">{t('account.storageFormat')}</span>
                     <span className="info-value">
-                      {migrationStatus && migrationStatus.version === '3.0' ? 'v3.0' : 'Legacy'}
+                      {migrationStatus && migrationStatus.version === '3.0' ? t('account.storageFormatV3') : t('account.storageFormatLegacy')}
                     </span>
                   </div>
                   {migrationStatus && migrationStatus.lastMigration && (
                     <div className="info-item">
-                      <span className="info-label">Last Migration:</span>
+                      <span className="info-label">{t('account.lastMigration')}</span>
                       <span className="info-value">
                         {formatDate(migrationStatus.lastMigration)}
                       </span>
@@ -2157,7 +2167,7 @@ const Account = () => {
                   {needsMigration && (
                     <div className="info-item" style={{gridColumn: '1 / -1'}}>
                       <span style={{color: 'var(--warning)', fontSize: '0.9rem'}}>
-                        ⚠️ Some games are in old format and need migration
+                        ⚠️ {t('account.needsMigrationWarning')}
                       </span>
                     </div>
                   )}
@@ -2167,30 +2177,30 @@ const Account = () => {
                 className="settings-button-update"
                 onClick={handleMigrateGames}
                 disabled={migrating || (!needsMigration && migrationStatus?.version === '3.0')}
-                title="Migrate local games to v3.0 format"
+                title={t('account.migrateTitle')}
                 style={{marginTop: 'var(--spacing-md)', width: '100%'}}
               >
                 <RefreshIcon size={18} />
-                {migrating ? 'Migrating...' : needsMigration ? 'Migrate Games to v3.0' : 'All Games Up to Date'}
+                {migrating ? t('account.migrating') : needsMigration ? t('account.migrateGamesToV3') : t('account.allGamesUpToDate')}
               </button>
               {migrationStatus && migrationStatus.stats && (
                 <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: 'var(--spacing-sm)'}}>
-                  Last migration: {migrationStatus.stats.migrated} migrated, {migrationStatus.stats.alreadyV3} already v3.0
+                  {t('account.lastMigrationStats', { migrated: migrationStatus.stats.migrated, alreadyV3: migrationStatus.stats.alreadyV3 })}
                 </div>
               )}
             </div>
 
             {/* App Information */}
             <div className="settings-section">
-              <h3 className="settings-section-title">App Information</h3>
+              <h3 className="settings-section-title">{t('account.appInformation')}</h3>
               <div className="settings-card info-card">
                 <div className="info-grid">
                   <div className="info-item">
-                    <span className="info-label">Version:</span>
+                    <span className="info-label">{t('account.versionLabel')}</span>
                     <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
                   </div>
                   <div className="info-item">
-                    <span className="info-label">Build Date:</span>
+                    <span className="info-label">{t('account.buildDateLabel')}</span>
                     <span className="info-value">
                       {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
                     </span>
@@ -2202,18 +2212,18 @@ const Account = () => {
                   className={`settings-button-update`}
                   onClick={handleCheckForUpdates}
                   disabled={checkingForUpdates || forcingUpdate}
-                  title="Check for app updates"
+                  title={t('account.checkForUpdatesTitle')}
                 >
-                  <RefreshIcon size={18} />Check for Updates
+                  <RefreshIcon size={18} />{t('account.checkForUpdates')}
                 </button>
                 <button 
                   className={`settings-button-update`}
                   onClick={handleForceUpdate}
                   disabled={forcingUpdate || checkingForUpdates}
-                  title="Force clear cache and reload (use if stuck in update loop)"
+                  title={t('account.forceUpdateTitle')}
                   style={{backgroundColor: 'var(--primary)'}}
                 >
-                  <TrashIcon size={18} />Force Update
+                  <TrashIcon size={18} />{t('account.forceUpdate')}
                 </button>
               </div>
             </div>
@@ -2252,10 +2262,10 @@ const Account = () => {
         {showPasswordChangeModal && (
           <div className="modal-overlay" onClick={() => setShowPasswordChangeModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2>Change Password</h2>
+              <h2>{t('passwordModal.title')}</h2>
               <form onSubmit={handlePasswordChange}>
                 <div className="form-group">
-                  <label htmlFor="currentPassword">Current Password</label>
+                  <label htmlFor="currentPassword">{t('passwordModal.currentPassword')}</label>
                   <input
                     type="password"
                     id="currentPassword"
@@ -2269,7 +2279,7 @@ const Account = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="newPassword">New Password</label>
+                  <label htmlFor="newPassword">{t('passwordModal.newPassword')}</label>
                   <input
                     type="password"
                     id="newPassword"
@@ -2284,7 +2294,7 @@ const Account = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirm New Password</label>
+                  <label htmlFor="confirmPassword">{t('passwordModal.confirmNewPassword')}</label>
                   <input
                     type="password"
                     id="confirmPassword"
@@ -2305,14 +2315,14 @@ const Account = () => {
                     onClick={() => setShowPasswordChangeModal(false)}
                     disabled={passwordChangeLoading}
                   >
-                    Cancel
+                    {t('passwordModal.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="btn-primary"
                     disabled={passwordChangeLoading}
                   >
-                    {passwordChangeLoading ? 'Changing...' : 'Change Password'}
+                    {passwordChangeLoading ? t('passwordModal.changing') : t('passwordModal.changePassword')}
                   </button>
                 </div>
               </form>
@@ -2324,32 +2334,32 @@ const Account = () => {
         {showAccountDeleteModal && (
           <div className="modal-overlay" onClick={() => setShowAccountDeleteModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ color: 'var(--danger-color)' }}>Delete Account</h2>
+              <h2 style={{ color: 'var(--danger-color)' }}>{t('deleteAccountModal.title')}</h2>
               <p style={{ marginBottom: 'var(--spacing-md)' }}>
-                This action is permanent and cannot be undone. Your account will be anonymized and you will be logged out.
+                {t('deleteAccountModal.permanentWarning')}
               </p>
               <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <strong>What will be removed:</strong>
+                <strong>{t('deleteAccountModal.willBeRemovedTitle')}</strong>
                 <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
-                  <li>Your username and profile information</li>
-                  <li>All friend connections</li>
-                  <li>All player identities linked to your account</li>
+                  <li>{t('deleteAccountModal.removedUsername')}</li>
+                  <li>{t('deleteAccountModal.removedFriends')}</li>
+                  <li>{t('deleteAccountModal.removedIdentities')}</li>
                 </ul>
               </div>
               <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <strong>What will be preserved:</strong>
+                <strong>{t('deleteAccountModal.willBePreservedTitle')}</strong>
                 <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
-                  <li>Your games and statistics (anonymized)</li>
-                  <li>Your game templates (anonymized)</li>
-                  <li>Game history for other players</li>
+                  <li>{t('deleteAccountModal.preservedGames')}</li>
+                  <li>{t('deleteAccountModal.preservedTemplates')}</li>
+                  <li>{t('deleteAccountModal.preservedHistory')}</li>
                 </ul>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                  Note: Games and templates will remain associated with an anonymized username to preserve game history for other players.
+                  {t('deleteAccountModal.preservedNote')}
                 </p>
               </div>
               <form onSubmit={handleAccountDeletion}>
                 <div className="form-group">
-                  <label htmlFor="deletePassword">Enter your password to confirm</label>
+                  <label htmlFor="deletePassword">{t('deleteAccountModal.confirmLabel')}</label>
                   <input
                     type="password"
                     id="deletePassword"
@@ -2357,7 +2367,7 @@ const Account = () => {
                     onChange={(e) => setDeleteAccountPassword(e.target.value)}
                     required
                     disabled={accountDeletionLoading}
-                    placeholder="Password"
+                    placeholder={t('deleteAccountModal.passwordPlaceholder')}
                   />
                 </div>
                 <div className="modal-actions">
@@ -2367,14 +2377,14 @@ const Account = () => {
                     onClick={() => setShowAccountDeleteModal(false)}
                     disabled={accountDeletionLoading}
                   >
-                    Cancel
+                    {t('deleteAccountModal.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="btn-danger"
                     disabled={accountDeletionLoading}
                   >
-                    {accountDeletionLoading ? 'Deleting...' : 'Delete My Account'}
+                    {accountDeletionLoading ? t('deleteAccountModal.deleting') : t('deleteAccountModal.deleteMyAccount')}
                   </button>
                 </div>
               </form>
@@ -2399,7 +2409,7 @@ const Account = () => {
             boxShadow: '0 -4px 20px rgba(0,0,0,0.3)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>🐛 Debug Log</h3>
+              <h3 style={{ margin: 0, fontSize: '1rem' }}>🐛 {t('account.debugLog')}</h3>
               <button 
                 onClick={() => setDebugLogs([])}
                 style={{ 
@@ -2412,7 +2422,7 @@ const Account = () => {
                   cursor: 'pointer'
                 }}
               >
-                Clear
+                {t('account.clearDebugLogs')}
               </button>
             </div>
             <div style={{ 
@@ -2422,7 +2432,7 @@ const Account = () => {
               overflow: 'auto'
             }}>
               {debugLogs.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)' }}>No logs yet. Try uploading a game.</p>
+                <p style={{ color: 'var(--text-secondary)' }}>{t('account.noDebugLogs')}</p>
               ) : (
                 debugLogs.map((log, idx) => (
                   <div key={idx} style={{ 

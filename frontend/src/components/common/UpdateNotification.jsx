@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { XIcon } from '@/components/ui/Icon';
+import { useTranslation } from 'react-i18next';
 
 const RELOAD_COOLDOWN_MS = 10000; // 10 seconds between reloads
 const LAST_RELOAD_KEY = 'last_sw_reload';
@@ -52,6 +53,7 @@ const UpdateNotification = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const updateHandledRef = useRef(false);
   const controllerChangeHandledRef = useRef(false);
+  const { t } = useTranslation();
 
   // Check if update was snoozed
   const isUpdateSnoozed = () => {
@@ -236,15 +238,14 @@ const UpdateNotification = () => {
             sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
             
             // Show success message with update type
-            const getTypeLabel = (updateType) => {
-              if (updateType === 'major') return '🎉 Major update';
-              if (updateType === 'minor') return '✨ New features';
-              return '🔧 Bug fixes';
+            const getToastMessage = (updateType, version) => {
+              if (updateType === 'major') return t('updateNotification.toastMajorUpdate', { version });
+              if (updateType === 'minor') return t('updateNotification.toastMinorUpdate', { version });
+              return t('updateNotification.toastPatchUpdate', { version });
             };
-            const typeLabel = getTypeLabel(type);
             const event = new CustomEvent('show-toast', {
               detail: { 
-                message: `${typeLabel}: v${newSWVersion}`, 
+                message: getToastMessage(type, newSWVersion), 
                 type: 'success',
                 duration: 5000
               }
@@ -417,7 +418,7 @@ const UpdateNotification = () => {
 
   const handleUpdate = async () => {
     if (!canReload()) {
-      alert('Please wait a moment before trying again. If the issue persists, try using the "Force Update" option in Settings.');
+      alert(t('updateNotification.reloadCooldown'));
       return;
     }
     
@@ -445,26 +446,26 @@ const UpdateNotification = () => {
     switch (updateType) {
       case 'major':
         return { 
-          label: '🎉 Major Update', 
-          description: 'New major version with significant changes.',
+          label: t('updateNotification.majorUpdateLabel'), 
+          description: t('updateNotification.majorUpdateDescription'),
           color: 'var(--primary)'
         };
       case 'minor':
         return { 
-          label: '✨ New Features', 
-          description: 'New features and improvements are available.',
+          label: t('updateNotification.minorUpdateLabel'), 
+          description: t('updateNotification.minorUpdateDescription'),
           color: 'var(--success, #22c55e)'
         };
       case 'patch':
         return { 
-          label: '🔧 Bug Fixes', 
-          description: 'Bug fixes and performance improvements.',
+          label: t('updateNotification.patchUpdateLabel'), 
+          description: t('updateNotification.patchUpdateDescription'),
           color: 'var(--text-light)'
         };
       default:
         return { 
-          label: 'Update Available', 
-          description: 'A new version is ready.',
+          label: t('updateNotification.unknownUpdateLabel'), 
+          description: t('updateNotification.unknownUpdateDescription'),
           color: 'var(--primary)'
         };
     }
@@ -544,7 +545,7 @@ const UpdateNotification = () => {
           )}
           
           <p style={{ margin: '0 0 var(--spacing-md) 0', fontSize: '0.875rem', color: 'var(--text-light)' }}>
-            {isUpdating ? 'Applying update...' : updateInfo.description}
+            {isUpdating ? t('updateNotification.applyingUpdate') : updateInfo.description}
           </p>
           
           <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -566,7 +567,7 @@ const UpdateNotification = () => {
                 transition: 'opacity 0.2s, transform 0.1s',
               }}
             >
-              {isUpdating ? 'Updating...' : 'Update Now'}
+              {isUpdating ? t('updateNotification.updating') : t('updateNotification.updateNow')}
             </button>
             <div
               style={{
@@ -589,9 +590,9 @@ const UpdateNotification = () => {
                   fontSize: '0.875rem',
                   opacity: isUpdating ? 0.5 : 1,
                 }}
-                title="Remind me in 4 hours"
+                title={t('updateNotification.snoozeTitle')}
               >
-                Snooze
+                {t('updateNotification.snooze')}
               </button>
               <button
                 onClick={handleDismiss}
@@ -607,7 +608,7 @@ const UpdateNotification = () => {
                   opacity: isUpdating ? 0.5 : 1,
                 }}
               >
-                Later
+                {t('updateNotification.later')}
               </button>
             </div>
           </div>
@@ -616,7 +617,7 @@ const UpdateNotification = () => {
           onClick={handleDismiss}
           disabled={isUpdating}
           className='close-btn'
-          aria-label="Dismiss"
+          aria-label={t('updateNotification.dismiss')}
         >
           <XIcon size={20} />
         </button>

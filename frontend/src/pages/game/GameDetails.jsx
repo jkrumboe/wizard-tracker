@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
+import { useTranslation } from 'react-i18next'
 
 // Services
 import { getGameById } from "@/shared/api/gameService"
@@ -79,6 +80,7 @@ const GameDetails = () => {
   
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [game, setGame] = useState(null)
   const [playerDetails, setPlayerDetails] = useState({})
   const [loading, setLoading] = useState(true)
@@ -183,7 +185,7 @@ const GameDetails = () => {
         setLoading(false)
       } catch (err) {
         console.error("Error fetching game details:", err)
-        setError("Failed to load game details: " + err.message)
+        setError(t('gameDetails.loadGameFailed', { error: err.message }))
         setLoading(false)
       }
     }
@@ -216,7 +218,7 @@ const GameDetails = () => {
   }
 
   if (error || !game) {
-    return <div className="error">{error || "Game not found"}</div>
+    return <div className="error">{error || t('gameDetails.gameNotFound')}</div>
   }
 
   // Sort players by score (highest first) and calculate ranks with tie handling
@@ -251,7 +253,7 @@ const GameDetails = () => {
       return {
         id: normalizedId,
         score,
-        name: playerData?.name || `Player ${playerIndex + 1}`,
+        name: playerData?.name || `${t('common.player')} ${playerIndex + 1}`,
         identityId: playerData?.identityId, // Include identity for proper user linking
       };
     })
@@ -369,7 +371,7 @@ const GameDetails = () => {
       }
       
       // Ensure we have a valid player name
-      const playerName = playerData?.name || `Player ${Object.keys(game.final_scores || game.gameState?.final_scores || {}).indexOf(stringId) + 1}`;
+      const playerName = playerData?.name || `${t('common.player')} ${Object.keys(game.final_scores || game.gameState?.final_scores || {}).indexOf(stringId) + 1}`;
       
       return {
         id: stringId, // Use string ID consistently for StatsChart
@@ -438,9 +440,9 @@ const GameDetails = () => {
     if (!synced) return;
     const result = await shareGameUtil(game);
     if (result.success) {
-      setMessage({ text: result.method === 'native' ? 'Game shared successfully!' : 'Share link copied to clipboard!', type: 'success' });
+      setMessage({ text: result.method === 'native' ? t('gameDetails.gameSharedSuccess') : t('gameDetails.shareLinkCopied'), type: 'success' });
     } else {
-      setMessage({ text: 'Failed to share game. Please try again.', type: 'error' });
+      setMessage({ text: t('gameDetails.shareFailed'), type: 'error' });
     }
   };
 
@@ -461,13 +463,13 @@ const GameDetails = () => {
           <button 
             onClick={() => navigate(-1)} 
             className="back-link"
-            aria-label="Go back"
+            aria-label={t('common.goBack')}
           >
             <ArrowLeftIcon className="back-icon" />
           </button>
           
           <div className="game-title-section">
-            <div className="game-name">Wizard</div>
+            <div className="game-name">{t('gameDetails.gameName')}</div>
             <div className="game-date">{formattedDate}</div>
           </div>
           
@@ -476,7 +478,7 @@ const GameDetails = () => {
             {/* {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>} */}
             <button className="settings-button share-button" onClick={handleShareGame}>
               <ShareIcon size={16} />
-              Share
+              {t('gameDetails.share')}
             </button>
           </div>
         </div>
@@ -488,19 +490,19 @@ const GameDetails = () => {
               className={`account-tab ${activeTab === 'stats' ? 'active' : ''}`}
               onClick={() => setActiveTab('stats')}
             >
-              Standings
+              {t('gameDetails.standingsTab')}
             </button>
             <button 
               className={`account-tab ${activeTab === 'chart' ? 'active' : ''}`}
               onClick={() => setActiveTab('chart')}
             >
-              Chart
+              {t('gameDetails.chartTab')}
             </button>
             <button 
               className={`account-tab ${activeTab === 'rounds' ? 'active' : ''}`}
               onClick={() => setActiveTab('rounds')}
             >
-              Rounds
+              {t('gameDetails.roundsTab')}
             </button>
           </div>
         )}
@@ -509,7 +511,7 @@ const GameDetails = () => {
           {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">
               <div className="results-header">
-                <h2>Final Results</h2>
+                <h2>{t('gameDetails.finalResults')}</h2>
               </div>
 
               <div className="results-table">
@@ -532,7 +534,7 @@ const GameDetails = () => {
                         </div>
                         <div className="score-col">{player.score}</div>
                         <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
-                          Adv. Stats
+                          {t('gameDetails.advStats')}
                         </button>
                     </div>
                     {compareIds(selectedPlayerId, player.id) && (() => {
@@ -547,7 +549,7 @@ const GameDetails = () => {
                           <div className="advanced-stats">
                             <div className="stats-section">
                               <div className="stats-section-title">Error</div>
-                              <p>Could not load player statistics. Please try again.</p>
+                              <p>{t('gameDetails.statsError')}</p>
                             </div>
                           </div>
                         );
@@ -574,15 +576,15 @@ const GameDetails = () => {
                   (() => {
                     const chartData = prepareChartData();
                     if (!chartData.playersData || chartData.playersData.length === 0) {
-                      return <div className="no-chart-data">Error: Missing player data for chart visualization</div>;
+                      return <div className="no-chart-data">{t('gameDetails.noChartDataPlayers')}</div>;
                     }
                     if (!chartData.roundData || chartData.roundData.length === 0) {
-                      return <div className="no-chart-data">Error: Missing round data for chart visualization</div>;
+                      return <div className="no-chart-data">{t('gameDetails.noChartDataRounds')}</div>;
                     }
                     return <StatsChart playersData={chartData.playersData} roundData={chartData.roundData} />;
                   })()
                 ) : (
-                  <div className="no-chart-data">No round data available for chart visualization</div>
+                  <div className="no-chart-data">{t('gameDetails.noRoundData')}</div>
                 )}
               </div>
             </div>
@@ -646,7 +648,7 @@ const GameDetails = () => {
                       </tr>
                     ))}
                     <tr className="total-row">
-                      <td className="total-label sticky-cell">Total</td>
+                      <td className="total-label sticky-cell">{t('common.total')}</td>
                       {sortedPlayers.map(player => (
                         <td key={player.id} className="total-score">
                           {player.score}

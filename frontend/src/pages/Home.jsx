@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import GameHistoryItem from '@/components/game/GameHistoryItem'
 import LoadGameDialog from '@/components/modals/LoadGameDialog'
 import GameFilterModal from '@/components/modals/GameFilterModal'
@@ -18,6 +19,7 @@ import "@/styles/pages/home.css"
 const Home = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const { user } = useUser()
   const { isOnline } = useOnlineStatus()
   const { loadSavedGame, getSavedGames } = useGameStateContext()
@@ -300,27 +302,27 @@ const Home = () => {
   return (
     <div className="home-container">
       <header className="home-header">
-        <h1>KeepWiz</h1>
-        <p>Track your game stats and performances</p>
+        <h1>{t('home.title')}</h1>
+        <p>{t('home.subtitle')}</p>
       </header>
 
       <div className="friends-section">
         <button 
           className="friends-button"
           onClick={() => setShowFriendsModal(true)}
-          aria-label="Manage friends"
+          aria-label={t('home.manageFriends')}
         >
           <UsersIcon size={20} />
-          <span>Friends</span>
+          <span>{t('home.friends')}</span>
         </button>
       </div>
 
       <section className="recent-games">
         <div className="section-header">
-          <h2>Games</h2>
+          <h2>{t('home.gamesTitle')}</h2>
           {!isOnline && user && (
-            <span className="offline-indicator" title="Showing local games while offline">
-              Offline
+            <span className="offline-indicator" title={t('home.offlineIndicatorTitle')}>
+              {t('common.offline')}
             </span>
           )}
         </div>
@@ -339,13 +341,13 @@ const Home = () => {
             ))}
           </div>
         ) : loading ? (
-          <div className="loading-message">Loading games...</div>
+          <div className="loading-message">{t('home.loadingGames')}</div>
         ) : (
           <>
             {allGames.length > 0 ? (
-              <div className="empty-message">No games match your filters</div>
+              <div className="empty-message">{t('home.noGamesMatchFilters')}</div>
             ) : (
-              <div className="empty-message">No games found</div>
+              <div className="empty-message">{t('home.noGamesFound')}</div>
             )}
           </>
         )}

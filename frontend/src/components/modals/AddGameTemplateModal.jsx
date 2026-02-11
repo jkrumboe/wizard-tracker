@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/AddGameTemplateModal.css';
@@ -22,6 +23,7 @@ const AddGameTemplateModal = ({
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'rules'
   const [showPreview, setShowPreview] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isOpen) {
@@ -57,7 +59,7 @@ const AddGameTemplateModal = ({
     const trimmedName = gameName.trim();
     
     if (!trimmedName) {
-      setError('Please enter a game name');
+      setError(t('templateModal.enterGameNameError'));
       return;
     }
 
@@ -65,7 +67,7 @@ const AddGameTemplateModal = ({
     const target = targetNumber.trim() ? Number.parseInt(targetNumber, 10) : null;
     
     if (targetNumber.trim() && (Number.isNaN(target) || target <= 0)) {
-      setError('Target number must be a positive number');
+      setError(t('templateModal.targetPositiveError'));
       return;
     }
 
@@ -82,14 +84,14 @@ const AddGameTemplateModal = ({
     const trimmedName = gameName.trim();
     
     if (!trimmedName) {
-      setError('Please enter a game name');
+      setError(t('templateModal.enterGameNameError'));
       return;
     }
 
     const target = targetNumber.trim() ? Number.parseInt(targetNumber, 10) : null;
     
     if (targetNumber.trim() && (Number.isNaN(target) || target <= 0)) {
-      setError('Target number must be a positive number');
+      setError(t('templateModal.targetPositiveError'));
       return;
     }
 
@@ -117,7 +119,7 @@ const AddGameTemplateModal = ({
     <div className="add-game-modal-overlay" onClick={onClose}>
       <div className="add-game-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{editMode ? 'Edit Game Type' : 'Create New Game'}</h2>
+          <h2>{editMode ? t('templateModal.editGameType') : t('templateModal.createNewGame')}</h2>
           <button className="close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={20} />
           </button>
@@ -130,13 +132,13 @@ const AddGameTemplateModal = ({
               className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => setActiveTab('settings')}
             >
-              Game Settings
+              {t('templateModal.gameSettingsTab')}
             </button>
             <button
               className={`tab-btn ${activeTab === 'rules' ? 'active' : ''}`}
               onClick={() => setActiveTab('rules')}
             >
-              Game Rules
+              {t('templateModal.gameRulesTab')}
             </button>
           </div>
 
@@ -145,7 +147,7 @@ const AddGameTemplateModal = ({
             <>
               <div className="add-section">
             <label htmlFor="game-name-input" className="game-name-label">
-              Enter a name for the new game:
+              {t('templateModal.gameNameLabel')}
             </label>
             <input
               id="game-name-input"
@@ -156,7 +158,7 @@ const AddGameTemplateModal = ({
                 setError('');
               }}
               onKeyDown={handleKeyDown}
-              placeholder="e.g., Wizard, Poker Night, Friday Games..."
+              placeholder={t('templateModal.gameNamePlaceholder')}
               className="game-name-input"
               autoFocus
             />
@@ -164,7 +166,7 @@ const AddGameTemplateModal = ({
 
           <div className="add-section">
           <label htmlFor="target-number-input" className="game-name-label">
-            Target Number (optional):
+            {t('templateModal.targetNumberLabel')}
           </label>
           <input
             id="target-number-input"
@@ -176,14 +178,14 @@ const AddGameTemplateModal = ({
               setError('');
             }}
             onKeyDown={handleKeyDown}
-            placeholder="e.g., 100, 500..."
+            placeholder={t('templateModal.targetNumberPlaceholder')}
             className="game-name-input"
           />
           </div>
           
           <div className="add-section">
             <label className="game-name-label">
-              Scoring Preference:
+              {t('templateModal.scoringPreference')}
             </label>
             <div className="scoring-prefernce-type" style={{ display: 'flex'}}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -192,7 +194,7 @@ const AddGameTemplateModal = ({
                   checked={!lowIsBetter}
                   onChange={() => setLowIsBetter(false)}
                 />
-                High Score
+                {t('templateModal.highScore')}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
                 <input
@@ -200,7 +202,7 @@ const AddGameTemplateModal = ({
                   checked={lowIsBetter}
                   onChange={() => setLowIsBetter(true)}
                 />
-                Low Score
+                {t('templateModal.lowScore')}
               </label>
             </div>
           </div>
@@ -226,7 +228,7 @@ const AddGameTemplateModal = ({
             <div className="add-section rules-section">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <label htmlFor="description-markdown-input" className="game-name-label" style={{ marginBottom: 0 }}>
-                  Game Rules & Instructions:
+                  {t('templateModal.rulesLabel')}
                 </label>
                 <button
                   type="button"
@@ -236,7 +238,7 @@ const AddGameTemplateModal = ({
                     setShowPreview(!showPreview);
                   }}
                 >
-                  {showPreview ? 'Edit' : 'Preview'}
+                  {showPreview ? t('templateModal.editBtn') : t('templateModal.preview')}
                 </button>
               </div>
               {!showPreview ? (
@@ -250,7 +252,7 @@ const AddGameTemplateModal = ({
                     rows="20"
                   />
                   <p className="markdown-hint">
-                    Tip: Use **bold**, *italic*, ## headers, - bullet lists
+                    {t('templateModal.markdownHint')}
                   </p>
                 </>
               ) : (
@@ -262,7 +264,7 @@ const AddGameTemplateModal = ({
                     />
                   ) : (
                     <p className="markdown-hint" style={{ padding: '2rem', textAlign: 'center' }}>
-                      No rules written yet. Click "Edit" to add game rules.
+                      {t('templateModal.noRulesYet')}
                     </p>
                   )}
                 </div>
@@ -277,27 +279,27 @@ const AddGameTemplateModal = ({
         <div className="add-game-modal-actions">
           {!editMode && (
           <button className="modal-btn cancel-btn" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
           )}
           {editMode && isSystemTemplate && onMakeLocalChanges && (
             <button className="modal-btn local-changes-btn" onClick={onMakeLocalChanges}>
-              Make Local Changes
+              {t('templateModal.makeLocalChanges')}
             </button>
           )}
           {editMode && isSystemTemplate && onSuggestChange && (
             <button className="modal-btn suggest-btn" onClick={handleSuggestChange}>
-              Request Changes
+              {t('templateModal.requestChanges')}
             </button>
           )}
           {editMode && !isSystemTemplate && onSuggest && (
             <button className="modal-btn suggest-btn" onClick={onSuggest}>
-              Suggest Game Type
+              {t('templateModal.suggestGameType')}
             </button>
           )}
           {!isSystemTemplate && (
             <button className="modal-btn save-btn" onClick={handleSave}>
-              {editMode ? 'Save Changes' : 'Create Game'}
+              {editMode ? t('templateModal.saveChanges') : t('templateModal.createGame')}
             </button>
           )}
         </div>

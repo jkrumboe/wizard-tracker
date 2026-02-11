@@ -21,6 +21,7 @@ import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
+import { useTranslation } from 'react-i18next';
 
 // Sortable Player Item Component
 const SortablePlayerItem = ({ player, index }) => {
@@ -65,6 +66,7 @@ const SortablePlayerItem = ({ player, index }) => {
 };
 
 const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => {
+  const { t } = useTranslation();
   const [dealerIndex, setDealerIndex] = useState(0);
   const [maxRounds, setMaxRounds] = useState(1);
   const [playerOrder, setPlayerOrder] = useState([]);
@@ -153,7 +155,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content game-settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Game Settings</h2>
+          <h2>{t('settings.gameSettings')}</h2>
           <button className="close-btn" onClick={onClose} aria-label="Close">
             <XIcon size={24} />
           </button>
@@ -243,10 +245,10 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
 
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button className="btn btn-primary" onClick={handleSave}>
-            Save Changes
+            {t('common.confirm')}
           </button>
         </div>
       </div>

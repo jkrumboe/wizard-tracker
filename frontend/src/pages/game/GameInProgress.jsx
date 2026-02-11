@@ -3,6 +3,7 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
+import { useTranslation } from 'react-i18next'
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import SaveGameDialog from "@/components/modals/SaveGameDialog"
 import LoadGameDialog from "@/components/modals/LoadGameDialog"
@@ -21,6 +22,7 @@ import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircle
 
 const GameInProgress = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { 
     gameState, 
     updateCall, 
@@ -141,7 +143,7 @@ const GameInProgress = () => {
   const handlePauseGame = async (gameName) => {
     try {
       // Explicitly set a default name if none is provided
-      const gameNameToUse = gameName || `Paused Game - Round ${gameState.currentRound}/${gameState.maxRounds}`;
+      const gameNameToUse = gameName || t('gameInProgress.pausedGameName', { current: gameState.currentRound, max: gameState.maxRounds });
       const result = await pauseGame(gameNameToUse);
       
       if (result && result.success) {
@@ -156,7 +158,7 @@ const GameInProgress = () => {
         // First reset the game state to prevent issues
         resetGame();
         // Then navigate home with a success message
-        navigate("/", { state: { message: "Game paused successfully!" } });
+        navigate("/", { state: { message: t('game.gamePausedSuccess') } });
       }
       return result;
     } catch (error) {
@@ -174,7 +176,7 @@ const GameInProgress = () => {
         sessionStorage.removeItem('gameInProgressVisited');
         setShowSaveDialog(false)
         resetGame()
-        navigate("/", { state: { message: "Game left successfully!" } })
+        navigate("/", { state: { message: t('game.gameLeftSuccess') } })
       }
       return success
     } catch (error) {
@@ -255,7 +257,7 @@ const GameInProgress = () => {
       const currentPauseGame = pauseGameRef.current;
       
       if (!isFirstVisit && !isViteReload && currentGameState && currentGameState.gameStarted) {
-        const gameName = `Auto-Paused - Round ${currentGameState.currentRound}/${currentGameState.maxRounds}`;
+        const gameName = t('gameInProgress.autoPausedGameName', { current: currentGameState.currentRound, max: currentGameState.maxRounds });
         try {
           currentPauseGame(gameName);
           // Clear backup since game is being auto-paused
@@ -290,7 +292,7 @@ const GameInProgress = () => {
 
   // Add defensive check for game state
   if (!gameState) {
-    return <div>Loading game state...</div>;
+    return <div>{t('gameInProgress.loadingGameState')}</div>;
   }
 
 
@@ -306,10 +308,10 @@ const GameInProgress = () => {
           if (parsedBackup.gameStarted && parsedBackup.players?.length > 0) {
             return (
               <div style={{ padding: '20px', textAlign: 'center' }}>
-                <h3>Game Session Lost</h3>
-                <p>Your game state was lost due to a connection issue.</p>
-                <p>We detected a backup from: Round {parsedBackup.currentRound} of {parsedBackup.maxRounds}</p>
-                <p>Players: {parsedBackup.players.map(p => p.name).join(', ')}</p>
+                <h3>{t('gameInProgress.gameSessionLost')}</h3>
+                <p>{t('gameInProgress.gameStateLostMessage')}</p>
+                <p>{t('gameInProgress.backupDetected', { current: parsedBackup.currentRound, total: parsedBackup.maxRounds })}</p>
+                <p>{t('gameInProgress.playersLabel', { names: parsedBackup.players.map(p => p.name).join(', ') })}</p>
                 <div style={{ marginTop: '20px' }}>
                   <button 
                     onClick={() => {
@@ -318,7 +320,7 @@ const GameInProgress = () => {
                         // Note: recoverGameState function should be defined in the component
                         console.error('recoverGameState function not available');
                         sessionStorage.removeItem('gameStateBackup');
-                        alert('Game recovery is not available. Please refresh the page.');
+                        alert(t('gameInProgress.gameRecoveryNotAvailable'));
                         setIsRecovering(false);
                       }, 100);
                     }}
@@ -333,7 +335,7 @@ const GameInProgress = () => {
                       cursor: isRecovering ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    {isRecovering ? 'Restoring...' : 'Restore Game'}
+                    {isRecovering ? t('gameInProgress.restoring') : t('gameInProgress.restoreGame')}
                   </button>
                   <button 
                     onClick={() => navigate('/')}
@@ -345,11 +347,11 @@ const GameInProgress = () => {
                     onClick={() => globalThis.location.reload()}
                     style={{ padding: '10px 20px' }}
                   >
-                    Try Refresh
+                    {t('gameInProgress.tryRefresh')}
                   </button>
                 </div>
                 <p style={{ fontSize: '0.9em', color: '#666', marginTop: '15px' }}>
-                  Tip: If this keeps happening, try logging out and back in.
+                  {t('gameInProgress.recoveryTip')}
                 </p>
               </div>
             );
@@ -361,8 +363,8 @@ const GameInProgress = () => {
       
       return (
         <div style={{ padding: '20px', textAlign: 'center' }}>
-          <h3>Loading game...</h3>
-          <p>Please wait while we restore your game state.</p>
+          <h3>{t('gameInProgress.loadingGame')}</h3>
+          <p>{t('gameInProgress.restoreGameStateMessage')}</p>
           <div style={{ marginTop: '20px' }}>
             <button 
               onClick={() => navigate('/')}
@@ -615,16 +617,16 @@ const GameInProgress = () => {
           <ArrowLeftCircleIcon size={28} />
         </button>
         <span className="game-info-header">
-          Round {parseInt(gameState.currentRound, 10)} of {gameState.maxRounds? parseInt(gameState.maxRounds, 10): parseInt(gameState.maxRounds, 10)}
+          {t('gameInProgress.roundOfMax', { current: parseInt(gameState.currentRound, 10), max: gameState.maxRounds ? parseInt(gameState.maxRounds, 10) : parseInt(gameState.maxRounds, 10) })}
           <div className="total-calls">
             <div>
-              Calls: {totalCalls}
+              {t('gameInProgress.callsLabel', { count: totalCalls })}
             </div>
           {lastPlayerCantCall() !== null && (
             <>
               |  
               <div className={`illegal-calls ${(currentRound?.round - totalCalls) < 0 ? 'free' : ''}`}>
-                {(currentRound?.round - totalCalls) < 0 ? 'free' : lastPlayerCantCall()}
+                {(currentRound?.round - totalCalls) < 0 ? t('gameInProgress.free') : lastPlayerCantCall()}
               </div>
             </>
           )}
@@ -633,7 +635,7 @@ const GameInProgress = () => {
         <button 
           className="settings-btn"
           onClick={() => setShowGameSettingsModal(true)}
-          title="Game Settings"
+          title={t('gameInProgress.gameSettings')}
         >
           <SettingsIcon size={24} />
         </button>
@@ -652,7 +654,7 @@ const GameInProgress = () => {
 
       {isLastRound && isRoundComplete && (
         <button className="finish-btn" onClick={handleFinishGame}>
-          Finish Game
+          {t('gameInProgress.finishGame')}
         </button>
       )}
 
@@ -662,10 +664,10 @@ const GameInProgress = () => {
             <table className="score-table">
               <thead>
                 <tr>
-                  <th className="player-header">Player</th>
-                  <th className="input-header">Calls</th>
-                  <th className="input-header">Made</th>
-                  <th className="score-header">Score</th>
+                  <th className="player-header">{t('gameInProgress.playerHeader')}</th>
+                  <th className="input-header">{t('gameInProgress.callsHeader')}</th>
+                  <th className="input-header">{t('gameInProgress.madeHeader')}</th>
+                  <th className="score-header">{t('gameInProgress.scoreHeader')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -674,8 +676,8 @@ const GameInProgress = () => {
                   <td className="player-cell">
                     <div className="player-name-container">
                       <span className="player-name">{player.name}</span>
-                      {player.id === dealer?.id && <span className="role-badge dealer-badge">Dealer</span>}
-                      {player.id === caller?.id && <span className="role-badge caller-badge">Caller</span>}
+                      {player.id === dealer?.id && <span className="role-badge dealer-badge">{t('gameInProgress.dealerBadge')}</span>}
+                      {player.id === caller?.id && <span className="role-badge caller-badge">{t('gameInProgress.callerBadge')}</span>}
                     </div>
                   </td>
                   <td>
@@ -707,7 +709,7 @@ const GameInProgress = () => {
                           }}
                           min={0}
                           max={increaseCallMax ? currentRound.round + 1 : currentRound.round}
-                          title={`${player.name}'s Call (Max: ${increaseCallMax ? currentRound.round + 1 : currentRound.round})`}
+                          title={t('gameInProgress.callTitle', { name: player.name, max: increaseCallMax ? currentRound.round + 1 : currentRound.round })}
                           inputMode="numeric"
                           pattern="[0-9]*"
                         />
@@ -740,7 +742,7 @@ const GameInProgress = () => {
                             }}
                             min={0}
                             max={maxPossibleTricks}
-                            title={`${player.name}'s Tricks Made (Max: ${maxPossibleTricks})`}
+                            title={t('gameInProgress.madeTitle', { name: player.name, max: maxPossibleTricks })}
                             disabled={!allCallsPlaced}
                             inputMode="numeric"
                             pattern="[0-9]*"
@@ -783,19 +785,19 @@ const GameInProgress = () => {
                 className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
                 onClick={() => setStatsSubTab('chart')}
               >
-                Charts
+                {t('gameInProgress.chartsSubTab')}
               </button>
               <button 
                 className={`stats-subtab-btn ${statsSubTab === 'details' ? 'active' : ''}`}
                 onClick={() => setStatsSubTab('details')}
               >
-                Player Details
+                {t('gameInProgress.playerDetailsSubTab')}
               </button>
               <button 
                 className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
                 onClick={() => setStatsSubTab('table')}
               >
-                Table
+                {t('gameInProgress.tableSubTab')}
               </button>
             </div>
             
@@ -842,7 +844,7 @@ const GameInProgress = () => {
                           </div>
                           <div className="score-col">{playerStats.totalPoints || 0}</div>
                           <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
-                            {selectedPlayerId === playerStats.id ? 'Hide Stats' : 'Adv. Stats'}
+                            {selectedPlayerId === playerStats.id ? t('gameInProgress.hideStats') : t('gameInProgress.advStats')}
                           </button>
                         </div>
                         <AdvancedStats 
@@ -941,7 +943,7 @@ const GameInProgress = () => {
             }}
           >
             <span className="trick-reducer-text">
-              Bomb<BombIcon size={18} />
+              {t('gameInProgress.bombLabel')}<BombIcon size={18} />
             </span>
           </button>
           <button 
@@ -962,7 +964,7 @@ const GameInProgress = () => {
             }}
           >
             <span className="trick-reducer-text">
-              Cloud<CloudIcon size={18} />
+              {t('gameInProgress.cloudLabel')}<CloudIcon size={18} />
             </span>
           </button>
         </div>

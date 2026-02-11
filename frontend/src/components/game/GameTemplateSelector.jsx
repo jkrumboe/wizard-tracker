@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EditIcon, TrashIcon, PlusIcon, ListIcon, EyeIcon } from '@/components/ui/Icon';
 import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
 import gameTemplateService from '@/shared/api/gameTemplateService';
@@ -11,6 +12,7 @@ import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/GameTemplateSelector.css';
 
 const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [templates, setTemplates] = useState([]);
   const [systemTemplates, setSystemTemplates] = useState([]);
@@ -212,7 +214,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     const gamesForTemplate = allSavedGames.filter(game => game.name === templateName);
     
     if (gamesForTemplate.length === 0) {
-      alert(`No saved games found for "${templateName}"`);
+      alert(t('gameTemplates.noSavedGamesForTemplate', { name: templateName }));
       return;
     }
     
@@ -261,20 +263,20 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       // alert('Synced to cloud successfully!');
     } catch (error) {
       console.error('Error syncing to cloud:', error);
-      alert('Sync failed. Please try again.');
+      alert(t('gameTemplates.syncFailed'));
     }
   };
 
   const handleSuggestToAdmin = async (templateId) => {
-    const note = prompt('Add an optional note for the admin (why this should be a system template):');
+    const note = prompt(t('gameTemplates.suggestNote'));
     if (note === null) return; // User cancelled
 
     try {
       await LocalTableGameTemplate.suggestToAdmin(templateId, note);
-      alert('Suggestion submitted successfully!');
+      alert(t('gameTemplates.suggestionSubmitted'));
     } catch (error) {
       console.error('Error suggesting to admin:', error);
-      alert('Failed to submit suggestion. Please try again.');
+      alert(t('gameTemplates.suggestionFailed'));
     }
   };
 
@@ -296,12 +298,12 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     if (editingSystemTemplate) {
       try {
         await gameTemplateService.suggestSystemTemplateChanges(editingSystemTemplate._id, updatedData);
-        alert('Change request submitted successfully!');
+        alert(t('gameTemplates.changeRequestSubmitted'));
         setShowEditModal(false);
         setEditingSystemTemplate(null);
       } catch (error) {
         console.error('Error submitting change request:', error);
-        alert('Failed to submit change request. Please try again.');
+        alert(t('gameTemplates.changeRequestFailed'));
       }
     }
   };
@@ -314,9 +316,9 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
 
   const getTemplateBadge = (template) => {
     if (template.isSynced || template.cloudId) {
-      return <span className="template-badge cloud-badge" title="Synced to cloud">Cloud</span>;
+      return <span className="template-badge cloud-badge" title={t('gameTemplates.cloudBadgeTitle')}>{t('gameTemplates.cloudBadge')}</span>;
     }
-    return <span className="template-badge local-badge" title="Local only">Local</span>;
+    return <span className="template-badge local-badge" title={t('gameTemplates.localBadgeTitle')}>{t('gameTemplates.localBadge')}</span>;
   };
 
   return (
@@ -328,7 +330,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       {/* System Templates Section */}
       {systemTemplates.length > 0 && (
         <div className="template-section">
-          <h3 className="template-section-title">Templates</h3>
+          <h3 className="template-section-title">{t('gameTemplates.templatesSection')}</h3>
           <div className="template-list">
             {systemTemplates.map((template) => {
               const isCreator = user && template.createdBy && template.createdBy === user.id;
@@ -351,11 +353,11 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                         <div className="template-meta">
                           {savedCount > 0 && (
                             <span className="template-usage">
-                              {savedCount} {savedCount === 1 ? 'game' : 'games'}
+                              {t('gameTemplates.gameCount', { count: savedCount })}
                             </span>
                           )}
                         </div>
-                        <span className="template-badge system-badge" title="Official system template">System</span>
+                        <span className="template-badge system-badge" title={t('gameTemplates.systemBadgeTitle')}>{t('gameTemplates.systemBadge')}</span>
                       </div>
                       {template.description && (
                         <div className="template-description">{template.description}</div>
@@ -369,14 +371,14 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                           setSelectedTemplate(template);
                           setShowStartModal(true);
                         }}
-                        title="Start New Game"
+                        title={t('gameTemplates.startNewGame')}
                       >
-                        New Game
+                        {t('gameTemplates.newGame')}
                       </button>
                       <button
                         className="template-action-btn continue-btn"
                         onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
-                        title="View Saved Games"
+                        title={t('gameTemplates.viewSavedGames')}
                         disabled={savedCount === 0}
                       >
                         <ListIcon size={18} />
@@ -392,7 +394,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
 
       {/* User Templates Section */}
       <div className="template-section">
-        <h3 className="template-section-title">My Templates</h3>
+        <h3 className="template-section-title">{t('gameTemplates.myTemplatesSection')}</h3>
         <div className="template-list">
         {getUniqueLocalTemplates().length > 0 ? (
           getUniqueLocalTemplates().map((template) => {
@@ -409,8 +411,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                 showEdit={true}
                 showSync={hasCloudSync}
                 showSyncToSystem={isVariant}
-                syncTitle="Sync to Cloud"
-                syncToSystemTitle="Sync to System"
+                syncTitle={t('gameTemplates.syncToCloud')}
+                syncToSystemTitle={t('gameTemplates.syncToSystem')}
               >
                 <div className="template-item">
                   <div className="template-info">
@@ -421,13 +423,13 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                           const savedCount = getSavedGamesCount(template.name);
                           return savedCount > 0 ? (
                             <span className="template-usage">
-                              {savedCount} {savedCount === 1 ? 'game' : 'games'}
+                              {t('gameTemplates.gameCount', { count: savedCount })}
                             </span>
                           ) : null;
                         })()}
                       </div>
                       {isVariant && (
-                        <span className="template-badge altered-badge" title="Local variant of system template">Altered</span>
+                        <span className="template-badge altered-badge" title={t('gameTemplates.alteredBadgeTitle')}>{t('gameTemplates.alteredBadge')}</span>
                       )}
                       {getTemplateBadge(template)}
                     </div>
@@ -436,14 +438,14 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                     <button
                       className="template-action-btn play-btn"
                       onClick={(e) => handleStartWithFriends(template, e)}
-                      title="Start with Friends, New Game"
+                      title={t('gameTemplates.startWithFriends')}
                     >
-                      New Game
+                      {t('gameTemplates.newGame')}
                     </button>
                     <button
                       className="template-action-btn continue-btn"
                       onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
-                      title="View Saved Games"
+                      title={t('gameTemplates.viewSavedGames')}
                       disabled={getSavedGamesCount(template.name) === 0}
                     >
                       <ListIcon size={18} />
@@ -455,8 +457,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
           })
         ) : (
           <div className="no-templates">
-            <p>No saved games yet.</p>
-            <p>Create your first game below!</p>
+            <p>{t('gameTemplates.noSavedGamesYet')}</p>
+            <p>{t('gameTemplates.createFirstGame')}</p>
           </div>
         )}
         </div>
@@ -464,7 +466,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       <div className="template-selector-actions">
         <button className="create-new-btn" onClick={() => setShowAddModal(true)}>
           <PlusIcon size={20} />
-          Add New Game Type
+          {t('gameTemplates.addNewGameType')}
         </button>
       </div>
 
@@ -523,21 +525,21 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       {showDeleteConfirm && (
         <div className="delete-modal-overlay" onClick={cancelDelete}>
           <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Delete Game</h3>
-            <p>Are you sure you want to delete this game?</p>
-            <p className="delete-warning">This action cannot be undone.</p>
+            <h3>{t('gameTemplates.deleteGameTitle')}</h3>
+            <p>{t('gameTemplates.deleteGameConfirm')}</p>
+            <p className="delete-warning">{t('gameTemplates.deleteGameWarning')}</p>
             <div className="delete-modal-actions">
               <button
                 className="delete-modal-btn cancel"
                 onClick={cancelDelete}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="delete-modal-btn confirm"
                 onClick={() => confirmDelete(showDeleteConfirm)}
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>

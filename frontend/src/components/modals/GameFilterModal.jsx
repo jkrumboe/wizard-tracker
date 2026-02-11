@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon, FilterIcon, PlusIcon } from '@/components/ui/Icon';
 import PlayerNameInput from '@/components/ui/PlayerNameInput';
 import '@/styles/components/modal.css';
 import '@/styles/components/GameFilterModal.css';
 
 const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} }) => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     playerNames: [],
     dateFrom: '',
@@ -85,21 +87,21 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
       <div className="modal-container game-filter-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>
-            Filter Games
+            {t('gameFilter.title')}
           </h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close Filter">
+          <button className="close-btn" onClick={onClose} aria-label={t('gameFilter.closeFilter')}>
             <XIcon size={20} />
           </button>
         </div>
 
         <div className="modal-content">
           <div className="filter-section">
-            <h3 className="filter-section-title">Players</h3>
+            <h3 className="filter-section-title">{t('gameFilter.playersSection')}</h3>
                 <div className="player-input-container">
                     <PlayerNameInput
                     id="playerName"
                     className="filter-input"
-                    placeholder="Enter player name..."
+                    placeholder={t('gameFilter.playerNamePlaceholder')}
                     value={playerInput}
                     onChange={(e) => setPlayerInput(e.target.value)}
                     onKeyDown={handlePlayerInputKeyDown}
@@ -122,7 +124,7 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
                         type="button"
                         className="remove-player-btn"
                         onClick={() => handleRemovePlayer(player)}
-                        aria-label={`Remove ${player}`}
+                        aria-label={t('gameFilter.removePlayer', { name: player })}
                       >
                         <XIcon size={14} />
                       </button>
@@ -133,10 +135,10 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
           </div>
 
           <div className="filter-section">
-            <h3 className="filter-section-title">Date Range</h3>
+            <h3 className="filter-section-title">{t('gameFilter.dateRangeSection')}</h3>
             <div className="filter-group-row">
               <div className="filter-group">
-                <label htmlFor="dateFrom">From</label>
+                <label htmlFor="dateFrom">{t('gameFilter.from')}</label>
                 <input
                   id="dateFrom"
                   type="date"
@@ -146,7 +148,7 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
                 />
               </div>
               <div className="filter-group">
-                <label htmlFor="dateTo">To</label>
+                <label htmlFor="dateTo">{t('gameFilter.to')}</label>
                 <input
                   id="dateTo"
                   type="date"
@@ -159,30 +161,30 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
           </div>
 
           <div className="filter-section">
-            <h3 className="filter-section-title">Sort</h3>
+            <h3 className="filter-section-title">{t('gameFilter.sortSection')}</h3>
             <div className="filter-group-row">
               <div className="filter-group">
-                <label htmlFor="sortBy">Sort by</label>
+                <label htmlFor="sortBy">{t('gameFilter.sortBy')}</label>
                 <select
                   id="sortBy"
                   className="filter-select"
                   value={filters.sortBy}
                   onChange={(e) => handleInputChange('sortBy', e.target.value)}
                 >
-                  <option value="date">Date</option>
-                  <option value="players">Players</option>
+                  <option value="date">{t('gameFilter.sortByDate')}</option>
+                  <option value="players">{t('gameFilter.sortByPlayers')}</option>
                 </select>
               </div>
               <div className="filter-group">
-                <label htmlFor="sortOrder">Order</label>
+                <label htmlFor="sortOrder">{t('gameFilter.order')}</label>
                 <select
                   id="sortOrder"
                   className="filter-select"
                   value={filters.sortOrder}
                   onChange={(e) => handleInputChange('sortOrder', e.target.value)}
                 >
-                  <option value="desc">Newest First</option>
-                  <option value="asc">Oldest First</option>
+                  <option value="desc">{t('gameFilter.newestFirst')}</option>
+                  <option value="asc">{t('gameFilter.oldestFirst')}</option>
                 </select>
               </div>
             </div>
@@ -191,10 +193,10 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
 
         <div className="modal-footer">
           <button className="modal-button secondary" onClick={handleClear}>
-            Clear All
+            {t('gameFilter.clearAll')}
           </button>
           <button className="modal-button primary" onClick={handleApply}>
-            Apply Filters
+            {t('gameFilter.applyFilters')}
           </button>
         </div>
       </div>

@@ -5,10 +5,12 @@ import { useUser } from '@/shared/hooks/useUser'
 import { userService } from '@/shared/api/userService'
 import { ArrowLeftCircleIcon } from '@/components/ui/Icon'
 import "@/styles/components/TableGame.css";
+import { useTranslation } from 'react-i18next';
 
 const Stats = () => {
   const navigate = useNavigate()
   const { user } = useUser()
+  const { t } = useTranslation()
   const [allGames, setAllGames] = useState([])
   const [profileIdentities, setProfileIdentities] = useState([])
   const [error, setError] = useState(null)
@@ -90,7 +92,7 @@ const Stats = () => {
         setAllGames(transformedGames);
       } catch (err) {
         console.error('Error fetching stats data:', err)
-        setError('Failed to load statistics')
+        setError(t('profile.failedToLoadStats'))
       }
     }
     
@@ -107,7 +109,7 @@ const Stats = () => {
 
   if (!currentPlayer) {
     return (
-        <div className="error">Please log in to view statistics</div>
+        <div className="error">{t('profile.pleaseLoginForStats')}</div>
     )
   }
 
@@ -117,10 +119,10 @@ const Stats = () => {
           <button
             className="back-to-templates-btn"
             onClick={() => navigate('/profile')}
-            title="Back to Profile"
+            title={t('profile.backToProfile')}
           >
             <ArrowLeftCircleIcon size={20} />
-            Back
+            {t('common.goBack')}
           </button>
         </div>
 

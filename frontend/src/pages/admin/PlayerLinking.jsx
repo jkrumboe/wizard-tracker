@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import userService from '@/shared/api/userService';
 import { UserIcon, Link2Icon, Trash2Icon, SearchIcon, XIcon, CheckCircleIcon, AlertCircleIcon, UsersIcon, GamepadIcon, RefreshCwIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 const PlayerLinking = () => {
+  const { t } = useTranslation();
   // Data state
   const [guestIdentities, setGuestIdentities] = useState([]);
   const [linkedIdentities, setLinkedIdentities] = useState([]);
@@ -101,11 +103,11 @@ const PlayerLinking = () => {
 
   const handleLink = async () => {
     if (!selectedIdentity || !selectedUser) {
-      setError('Please select both an identity and a user');
+      setError(t('adminPlayerLinking.selectBothRequired'));
       return;
     }
 
-    const confirmMsg = `Link "${selectedIdentity.displayName}" to user "${selectedUser.username}"?\n\nThis will update all games where this player appeared to show as ${selectedUser.username}.`;
+    const confirmMsg = t('adminPlayerLinking.linkConfirm', { identity: selectedIdentity.displayName, username: selectedUser.username });
     if (!confirm(confirmMsg)) {
       return;
     }
@@ -121,22 +123,21 @@ const PlayerLinking = () => {
       );
 
       setSuccess(
-        `Successfully linked "${selectedIdentity.displayName}" to ${selectedUser.username}! ` +
-        `${result.gamesUpdated || 0} game(s) updated.`
+        t('adminPlayerLinking.linkSuccess', { identity: selectedIdentity.displayName, username: selectedUser.username })
       );
 
       clearSelection();
       await loadData();
     } catch (err) {
       console.error('Error linking identity:', err);
-      setError(err.message || 'Failed to link identity');
+      setError(t('adminPlayerLinking.linkFailed', { error: err.message }));
     } finally {
       setIsLinking(false);
     }
   };
 
   const handleUnlink = async (identity) => {
-    const confirmMsg = `Unlink "${identity.displayName}" from ${identity.linkedToUser?.username || 'user'}?\n\nThis will restore the original guest identity in games.`;
+    const confirmMsg = t('adminPlayerLinking.unlinkConfirm', { identity: identity.displayName, username: identity.linkedToUser?.username || '' });
     if (!confirm(confirmMsg)) {
       return;
     }
@@ -150,14 +151,13 @@ const PlayerLinking = () => {
       const result = await userService.unlinkGuestIdentity(identity._id, identity.linkedToUser?._id);
 
       setSuccess(
-        `Successfully unlinked "${identity.displayName}". ` +
-        `${result.gamesUpdated || 0} game(s) restored.`
+        t('adminPlayerLinking.unlinkSuccess', { identity: identity.displayName })
       );
 
       await loadData();
     } catch (err) {
       console.error('Error unlinking identity:', err);
-      setError(err.message || 'Failed to unlink identity');
+      setError(t('adminPlayerLinking.unlinkFailed', { error: err.message }));
     } finally {
       setIsUnlinking(false);
     }
@@ -179,15 +179,15 @@ const PlayerLinking = () => {
   );
 
   if (loading) {
-    return <div className="admin-container">Loading...</div>;
+    return <div className="admin-container">{t('adminPlayerLinking.loading')}</div>;
   }
 
   return (
     <div className="admin-container">
       <div className="admin-header">
-        <h1>Player Identity Linking</h1>
-        <p>Link guest player identities to registered user accounts</p>
-        <button onClick={loadData} className="btn-icon" title="Refresh data">
+        <h1>{t('adminPlayerLinking.title')}</h1>
+        <p>{t('adminPlayerLinking.description')}</p>
+        <button onClick={loadData} className="btn-icon" title={t('adminPlayerLinking.refreshData')}>
           <RefreshCwIcon size={16} />
         </button>
       </div>
@@ -195,24 +195,24 @@ const PlayerLinking = () => {
       {/* How It Works Info Card */}
       <div className="admin-section info-card">
         <div className="info-card-header">
-          <h3>🔗 How Player Identity Linking Works</h3>
+          <h3>{t('adminPlayerLinking.howItWorks')}</h3>
         </div>
         <div className="info-card-content">
           <div className="info-columns">
             <div className="info-column">
-              <h4>When to Use</h4>
+              <h4>{t('adminPlayerLinking.whenToUse')}</h4>
               <ul>
-                <li>A user played games as a guest before registering</li>
-                <li>Multiple guest entries exist for the same person</li>
-                <li>Games aren't showing in a user's H2H statistics</li>
+                <li>{t('adminPlayerLinking.useCase1')}</li>
+                <li>{t('adminPlayerLinking.useCase2')}</li>
+                <li>{t('adminPlayerLinking.useCase3')}</li>
               </ul>
             </div>
             <div className="info-column">
-              <h4>What Happens</h4>
+              <h4>{t('adminPlayerLinking.whatHappens')}</h4>
               <ul>
-                <li><strong>Games updated:</strong> All games with the guest identity now show the linked user</li>
-                <li><strong>Statistics unified:</strong> H2H stats combine all linked identities</li>
-                <li><strong>Reversible:</strong> Original guest ID is saved for potential unlink</li>
+                <li><strong>{t('adminPlayerLinking.result1')}</strong> {t('adminPlayerLinking.result1Desc')}</li>
+                <li><strong>{t('adminPlayerLinking.result2')}</strong> {t('adminPlayerLinking.result2Desc')}</li>
+                <li><strong>{t('adminPlayerLinking.result3')}</strong> {t('adminPlayerLinking.result3Desc')}</li>
               </ul>
             </div>
           </div>
@@ -240,14 +240,14 @@ const PlayerLinking = () => {
           onClick={() => setTab('unlinked')}
         >
           <UsersIcon size={16} />
-          Unlinked Identities ({guestIdentities.length})
+          {t('adminPlayerLinking.unlinkedTab', { count: guestIdentities.length })}
         </button>
         <button
           className={`tab-btn ${tab === 'linked' ? 'active' : ''}`}
           onClick={() => setTab('linked')}
         >
           <Link2Icon size={16} />
-          Linked Identities ({linkedIdentities.length})
+          {t('adminPlayerLinking.linkedTab', { count: linkedIdentities.length })}
         </button>
       </div>
 
@@ -255,9 +255,9 @@ const PlayerLinking = () => {
       {tab === 'unlinked' && (
         <div className="admin-section">
           <div className="section-header">
-            <h2>Unlinked Guest Identities</h2>
+            <h2>{t('adminPlayerLinking.unlinkedTitle')}</h2>
             <p>
-              Select a guest identity to link it to a registered user account.
+              {t('adminPlayerLinking.unlinkedDesc')}
             </p>
           </div>
 
@@ -266,7 +266,7 @@ const PlayerLinking = () => {
             <SearchIcon size={16} />
             <input
               type="text"
-              placeholder="Search guest identities..."
+              placeholder={t('adminPlayerLinking.searchGuest')}
               value={identitySearch}
               onChange={(e) => setIdentitySearch(e.target.value)}
               className="search-input"
@@ -282,10 +282,10 @@ const PlayerLinking = () => {
           <div className="linking-layout">
             {/* Identity List */}
             <div className="identity-list-panel">
-              <h3>Guest Identities ({filteredGuestIdentities.length})</h3>
+              <h3>{t('adminPlayerLinking.guestIdentities', { count: filteredGuestIdentities.length })}</h3>
               {filteredGuestIdentities.length === 0 ? (
                 <div className="no-data">
-                  <p>{identitySearch ? 'No matching identities found' : 'No unlinked guest identities'}</p>
+                  <p>{identitySearch ? t('adminPlayerLinking.noMatchingIdentities') : t('adminPlayerLinking.noUnlinkedIdentities')}</p>
                 </div>
               ) : (
                 <div className="identity-list">
@@ -299,12 +299,12 @@ const PlayerLinking = () => {
                         <span className="identity-name">{identity.displayName}</span>
                         <span className="identity-meta">
                           <GamepadIcon size={12} />
-                          {identity.gameCount || 0} game(s)
+                          {t('adminPlayerLinking.gamesCount', { count: identity.gameCount || 0 })}
                         </span>
                       </div>
                       {identity.lastSeen && (
                         <span className="identity-date">
-                          Last seen: {new Date(identity.lastSeen).toLocaleDateString()}
+                          {t('adminPlayerLinking.lastSeen', { date: new Date(identity.lastSeen).toLocaleDateString() })}
                         </span>
                       )}
                     </button>
@@ -315,24 +315,24 @@ const PlayerLinking = () => {
 
             {/* Linking Form */}
             <div className="linking-form-panel">
-              <h3>Link to User</h3>
+              <h3>{t('adminPlayerLinking.linkToUser')}</h3>
               
               {selectedIdentity ? (
                 <div className="linking-form">
                   <div className="selected-identity">
-                    <strong>Selected Identity:</strong>
+                    <strong>{t('adminPlayerLinking.selectedIdentity')}</strong>
                     <span className="identity-badge">
                       <UserIcon size={14} />
                       {selectedIdentity.displayName}
                     </span>
-                    <button onClick={clearSelection} className="btn-clear" title="Clear selection">
+                    <button onClick={clearSelection} className="btn-clear" title={t('adminPlayerLinking.clearSelection')}>
                       <XIcon size={14} />
                     </button>
                   </div>
 
                   {/* User Selection */}
                   <div className="form-group">
-                    <label htmlFor="user-search">Select User to Link</label>
+                    <label htmlFor="user-search">{t('adminPlayerLinking.selectUserToLink')}</label>
                     <div className="search-container" ref={userDropdownRef}>
                       <div className="search-input-group">
                         <input
@@ -347,7 +347,7 @@ const PlayerLinking = () => {
                             }
                           }}
                           onFocus={() => setShowUserDropdown(true)}
-                          placeholder="Search for a user..."
+                          placeholder={t('adminPlayerLinking.searchUser')}
                           className="form-input"
                           autoComplete="off"
                         />
@@ -384,7 +384,7 @@ const PlayerLinking = () => {
                             </div>
                           ) : (
                             <div className="search-dropdown-empty">
-                              No users found
+                              {t('adminPlayerLinking.noUsersFound')}
                             </div>
                           )}
                         </div>
@@ -413,13 +413,13 @@ const PlayerLinking = () => {
                     className="btn-primary btn-full"
                   >
                     <Link2Icon size={16} />
-                    {isLinking ? 'Linking...' : 'Link Identity'}
+                    {isLinking ? t('adminPlayerLinking.linking') : t('adminPlayerLinking.linkIdentity')}
                   </button>
                 </div>
               ) : (
                 <div className="no-selection">
                   <UsersIcon size={32} />
-                  <p>Select a guest identity from the list to link it to a user account</p>
+                  <p>{t('adminPlayerLinking.selectIdentityHint')}</p>
                 </div>
               )}
             </div>
@@ -431,9 +431,9 @@ const PlayerLinking = () => {
       {tab === 'linked' && (
         <div className="admin-section">
           <div className="section-header">
-            <h2>Linked Identities</h2>
+            <h2>{t('adminPlayerLinking.linkedTitle')}</h2>
             <p>
-              Guest identities that have been linked to user accounts. You can unlink them if needed.
+              {t('adminPlayerLinking.linkedDesc')}
             </p>
           </div>
 
@@ -442,7 +442,7 @@ const PlayerLinking = () => {
             <SearchIcon size={16} />
             <input
               type="text"
-              placeholder="Search by identity or username..."
+              placeholder={t('adminPlayerLinking.searchLinked')}
               value={linkedFilter}
               onChange={(e) => setLinkedFilter(e.target.value)}
               className="search-input"
@@ -456,7 +456,7 @@ const PlayerLinking = () => {
 
           {filteredLinkedIdentities.length === 0 ? (
             <div className="no-data">
-              <p>{linkedFilter ? 'No matching linked identities found' : 'No linked identities yet'}</p>
+              <p>{linkedFilter ? t('adminPlayerLinking.noMatchingLinked') : t('adminPlayerLinking.noLinkedYet')}</p>
             </div>
           ) : (
             <div className="aliases-list">
@@ -469,7 +469,7 @@ const PlayerLinking = () => {
                         <Link2Icon size={16} />
                         <span className="user-name">
                           <UserIcon size={14} />
-                          {identity.linkedToUser?.username || 'Unknown User'}
+                          {identity.linkedToUser?.username || t('adminPlayerLinking.unknownUser')}
                         </span>
                       </div>
                     </div>
@@ -477,12 +477,12 @@ const PlayerLinking = () => {
                     <div className="alias-meta">
                       <span>
                         <GamepadIcon size={12} />
-                        {identity.gameCount || 0} game(s)
+                        {t('adminPlayerLinking.gamesCount', { count: identity.gameCount || 0 })}
                       </span>
                       {identity.linkedAt && (
                         <>
                           <span>•</span>
-                          <span>Linked: {new Date(identity.linkedAt).toLocaleDateString()}</span>
+                          <span>{t('adminPlayerLinking.linkedDate', { date: new Date(identity.linkedAt).toLocaleDateString() })}</span>
                         </>
                       )}
                     </div>
@@ -493,10 +493,10 @@ const PlayerLinking = () => {
                       className="btn-delete"
                       onClick={() => handleUnlink(identity)}
                       disabled={isUnlinking}
-                      title="Unlink identity"
+                      title={t('adminPlayerLinking.unlinkIdentity')}
                     >
                       <Trash2Icon size={16} />
-                      Unlink
+                      {t('adminPlayerLinking.unlink')}
                     </button>
                   </div>
                 </div>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
+import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 // Simple diff display component
 const DiffView = ({ label, oldValue, newValue }) => {
+  const { t } = useTranslation();
   const hasChanged = oldValue !== newValue;
   
   if (!hasChanged && !oldValue) return null;
@@ -16,11 +18,11 @@ const DiffView = ({ label, oldValue, newValue }) => {
         <div className="diff-changes">
           {oldValue !== undefined && (
             <div className="diff-old">
-              <span className="diff-label">- Old:</span> {oldValue?.toString() || '(empty)'}
+              <span className="diff-label">{t('adminTemplates.oldLabel')}</span> {oldValue?.toString() || t('adminTemplates.empty')}
             </div>
           )}
           <div className="diff-new">
-            <span className="diff-label">+ New:</span> {newValue?.toString() || '(empty)'}
+            <span className="diff-label">{t('adminTemplates.newLabel')}</span> {newValue?.toString() || t('adminTemplates.empty')}
           </div>
         </div>
       ) : (
@@ -31,6 +33,7 @@ const DiffView = ({ label, oldValue, newValue }) => {
 };
 
 const TemplateSuggestions = () => {
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,34 +57,34 @@ const TemplateSuggestions = () => {
   };
 
   const handleApprove = async (id) => {
-    if (!confirm('Are you sure you want to approve this template suggestion?')) return;
+    if (!confirm(t('adminTemplates.approveConfirm'))) return;
     
     try {
       await gameTemplateService.approveSuggestion(id);
-      alert('Template approved and added to system templates!');
+      alert(t('adminTemplates.approvedSuccess'));
       loadSuggestions();
     } catch (err) {
       console.error('Error approving suggestion:', err);
-      alert('Failed to approve suggestion: ' + err.message);
+      alert(t('adminTemplates.approveFailed', { error: err.message }));
     }
   };
 
   const handleReject = async (id) => {
-    const note = prompt('Reason for rejection (optional):');
+    const note = prompt(t('adminTemplates.rejectReason'));
     if (note === null) return; // User cancelled
     
     try {
       await gameTemplateService.rejectSuggestion(id);
-      alert('Template suggestion rejected');
+      alert(t('adminTemplates.rejectedSuccess'));
       loadSuggestions();
     } catch (err) {
       console.error('Error rejecting suggestion:', err);
-      alert('Failed to reject suggestion: ' + err.message);
+      alert(t('adminTemplates.rejectFailed', { error: err.message }));
     }
   };
 
   if (loading) {
-    return <div className="admin-container"><div className="loading">Loading suggestions...</div></div>;
+    return <div className="admin-container"><div className="loading">{t('adminTemplates.loadingSuggestions')}</div></div>;
   }
 
   if (error) {
@@ -97,7 +100,7 @@ const TemplateSuggestions = () => {
 
       {suggestions.length === 0 ? (
         <div className="no-suggestions">
-          <p>No pending suggestions</p>
+          <p>{t('adminTemplates.noSuggestions')}</p>
         </div>
       ) : (
         <div className="suggestions-list">
@@ -107,7 +110,7 @@ const TemplateSuggestions = () => {
                 <h2>{suggestion.name}</h2>
                 <div className="suggestion-meta">
                   <span className={`badge badge-${suggestion.suggestionType || 'new'}`}>
-                    {suggestion.suggestionType === 'change' ? 'Change Request' : 'New Template'}
+                    {suggestion.suggestionType === 'change' ? t('adminTemplates.changeRequest') : t('adminTemplates.newTemplate')}
                   </span>
                   <span className="badge">
                     {new Date(suggestion.createdAt).toLocaleDateString()}
@@ -118,8 +121,8 @@ const TemplateSuggestions = () => {
               <div className="suggestion-content">
                 <div className="suggestion-details">
                   <div className="detail-item" id='submitter'>
-                    <label>Submitted by:</label>
-                    <span>{suggestion.userId?.username || 'Unknown'}</span>
+                    <label>{t('adminTemplates.submittedBy')}</label>
+                    <span>{suggestion.userId?.username || t('common.unknown')}</span>
                   </div>
 
                   {/* Show diff view for change requests */}
@@ -131,25 +134,25 @@ const TemplateSuggestions = () => {
                       </div> */}
                       
                       <div className="detail-item full-width">
-                        <label>Changes Requested:</label>
+                        <label>{t('adminTemplates.changesRequested')}</label>
                         <div className="diff-container">
                           <DiffView 
-                            label="Template Name" 
+                            label={t('adminTemplates.templateName')} 
                             oldValue={suggestion.systemTemplateId.name}
                             newValue={suggestion.name}
                           />
                           <DiffView 
-                            label="Target Number" 
+                            label={t('adminTemplates.targetNumber')} 
                             oldValue={suggestion.systemTemplateId.targetNumber}
                             newValue={suggestion.targetNumber}
                           />
                           <DiffView 
-                            label="Scoring" 
-                            oldValue={suggestion.systemTemplateId.lowIsBetter ? 'Low Score' : 'High Score'}
-                            newValue={suggestion.lowIsBetter ? 'Low Score' : 'High Score'}
+                            label={t('adminTemplates.scoring')} 
+                            oldValue={suggestion.systemTemplateId.lowIsBetter ? t('adminTemplates.lowScore') : t('adminTemplates.highScore')}
+                            newValue={suggestion.lowIsBetter ? t('adminTemplates.lowScore') : t('adminTemplates.highScore')}
                           />
                           <DiffView 
-                            label="Description" 
+                            label={t('adminTemplates.description')} 
                             oldValue={suggestion.systemTemplateId.description}
                             newValue={suggestion.description}
                           />
@@ -159,12 +162,12 @@ const TemplateSuggestions = () => {
                       {/* Show markdown diff */}
                       {(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) && (
                         <div className="detail-item full-width">
-                          <label>Game Rules Changes:</label>
+                          <label>{t('adminTemplates.gameRulesChanges')}</label>
                           {suggestion.systemTemplateId.descriptionMarkdown !== suggestion.descriptionMarkdown ? (
                             <div className="markdown-diff">
                               {suggestion.systemTemplateId.descriptionMarkdown && (
                                 <div className="markdown-old">
-                                  <h4>Previous Rules:</h4>
+                                  <h4>{t('adminTemplates.previousRules')}</h4>
                                   <div 
                                     className="markdown-preview-admin"
                                     dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.systemTemplateId.descriptionMarkdown) }}
@@ -173,7 +176,7 @@ const TemplateSuggestions = () => {
                               )}
                               {suggestion.descriptionMarkdown && (
                                 <div className="markdown-new">
-                                  <h4>New Rules:</h4>
+                                  <h4>{t('adminTemplates.newRules')}</h4>
                                   <div 
                                     className="markdown-preview-admin"
                                     dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown) }}
@@ -195,26 +198,26 @@ const TemplateSuggestions = () => {
                     <>
                       {suggestion.targetNumber && (
                         <div className="detail-item">
-                          <label>Target Number:</label>
+                          <label>{t('adminTemplates.targetNumberLabel')}</label>
                           <span>{suggestion.targetNumber}</span>
                         </div>
                       )}
 
                       <div className="detail-item">
-                        <label>Scoring:</label>
-                        <span>{suggestion.lowIsBetter ? 'Low Score' : 'High Score'}</span>
+                        <label>{t('adminTemplates.scoringLabel')}</label>
+                        <span>{suggestion.lowIsBetter ? t('adminTemplates.lowScore') : t('adminTemplates.highScore')}</span>
                       </div>
 
                       {suggestion.description && (
                         <div className="detail-item full-width">
-                          <label>Description:</label>
+                          <label>{t('adminTemplates.descriptionLabel')}</label>
                           <p>{suggestion.description}</p>
                         </div>
                       )}
 
                       {suggestion.descriptionMarkdown && (
                         <div className="detail-item full-width">
-                          <label>Game Rules:</label>
+                          <label>{t('adminTemplates.gameRulesLabel')}</label>
                           <div 
                             className="markdown-preview-admin"
                             dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown) }}
@@ -226,7 +229,7 @@ const TemplateSuggestions = () => {
 
                   {suggestion.suggestionNote && (
                     <div className="detail-item full-width">
-                      <label>User's Note:</label>
+                      <label>{t('adminTemplates.usersNote')}</label>
                       <p className="suggestion-note">{suggestion.suggestionNote}</p>
                     </div>
                   )}
@@ -238,13 +241,13 @@ const TemplateSuggestions = () => {
                   className="btn-reject" 
                   onClick={() => handleReject(suggestion._id)}
                 >
-                  Reject
+                  {t('adminTemplates.reject')}
                 </button>
                 <button 
                   className="btn-approve" 
                   onClick={() => handleApprove(suggestion._id)}
                 >
-                  Approve & Add to System
+                  {t('adminTemplates.approveAndAdd')}
                 </button>
               </div>
             </div>

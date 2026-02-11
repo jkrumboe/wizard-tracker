@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { XIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 
@@ -12,14 +13,15 @@ const DeleteConfirmationModal = ({
   message,
   confirmText
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   // Determine what to display based on props
-  const displayTitle = title || (deleteAll ? 'Clear All Data' : 'Delete Game');
+  const displayTitle = title || (deleteAll ? t('account.clearAllData') : t('settings.deleteGame'));
   const displayMessage = message || (deleteAll
-    ? 'Are you sure you want to delete all local storage data?'
-    : 'Are you sure you want to delete this game?');
-  const displayConfirmText = confirmText || (deleteAll ? 'Clear All Data' : 'Delete');
+    ? t('accountMessages.clearDataConfirm')
+    : t('accountMessages.deleteGameConfirm'));
+  const displayConfirmText = confirmText || (deleteAll ? t('account.clearAllData') : t('common.delete'));
 
   return (
     <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
@@ -37,7 +39,7 @@ const DeleteConfirmationModal = ({
         </div>
         <div className="modal-actions">
             <button className="modal-button secondary" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button className="modal-button danger" onClick={onConfirm}>
               {displayConfirmText}

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import userService from '@/shared/api/userService';
 import { PlayIcon, EyeIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, RefreshCwIcon, UsersIcon, GamepadIcon, LinkIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 const GameLinkageManagement = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -37,7 +39,7 @@ const GameLinkageManagement = () => {
   };
 
   const handleLinkAllGames = async () => {
-    if (!window.confirm('This will link all identified games to their respective user accounts. Continue?')) {
+    if (!window.confirm(t('adminGameLinkage.linkConfirm'))) {
       return;
     }
 
@@ -70,31 +72,31 @@ const GameLinkageManagement = () => {
   return (
     <div className="admin-container">
       <div className="admin-header">
-        <h1>Game Linkage Management</h1>
-        <p>Retroactively link games to user accounts based on player names.</p>
+        <h1>{t('adminGameLinkage.title')}</h1>
+        <p>{t('adminGameLinkage.description')}</p>
       </div>
 
       {/* How It Works Section */}
       <div className="admin-section info-card">
         <div className="info-card-header">
-          <h3>🔗 How Game Linking Works</h3>
+          <h3>{t('adminGameLinkage.howItWorks')}</h3>
         </div>
         <div className="info-card-content">
           <div className="info-columns">
             <div className="info-column">
-              <h4>Matching Process</h4>
+              <h4>{t('adminGameLinkage.matchingProcess')}</h4>
               <ul>
-                <li><strong>Case-insensitive:</strong> "John" matches "john", "JOHN", etc.</li>
-                <li><strong>Identities included:</strong> Player identities are also checked</li>
-                <li><strong>All game types:</strong> Regular games, Wizard games, and Table games</li>
+                <li><strong>{t('adminGameLinkage.caseInsensitive')}</strong> {t('adminGameLinkage.caseInsensitiveDesc')}</li>
+                <li><strong>{t('adminGameLinkage.identitiesIncluded')}</strong> {t('adminGameLinkage.identitiesIncludedDesc')}</li>
+                <li><strong>{t('adminGameLinkage.allGameTypes')}</strong> {t('adminGameLinkage.allGameTypesDesc')}</li>
               </ul>
             </div>
             <div className="info-column">
-              <h4>What Gets Updated</h4>
+              <h4>{t('adminGameLinkage.whatGetsUpdated')}</h4>
               <ul>
-                <li>Only the <code>userId</code> field is modified</li>
-                <li>Game data, scores, and player names remain unchanged</li>
-                <li>Already-linked games are automatically skipped</li>
+                <li>{t('adminGameLinkage.onlyUserId')}</li>
+                <li>{t('adminGameLinkage.dataUnchanged')}</li>
+                <li>{t('adminGameLinkage.alreadyLinkedSkipped')}</li>
               </ul>
             </div>
           </div>
@@ -104,8 +106,8 @@ const GameLinkageManagement = () => {
       {/* Actions Section */}
       <div className="admin-section">
         <div className="section-header">
-          <h2>Link All User Games</h2>
-          <p>Scan all registered users and link games where their username (or identity) appears as a player.</p>
+          <h2>{t('adminGameLinkage.linkAllTitle')}</h2>
+          <p>{t('adminGameLinkage.linkAllDesc')}</p>
         </div>
 
         <div className="action-buttons-row">
@@ -117,12 +119,12 @@ const GameLinkageManagement = () => {
             {previewLoading ? (
               <>
                 <RefreshCwIcon size={18} className="spinning" />
-                Analyzing...
+                {t('adminGameLinkage.analyzing')}
               </>
             ) : (
               <>
                 <EyeIcon size={18} />
-                Preview Changes
+                {t('adminGameLinkage.previewChanges')}
               </>
             )}
           </button>
@@ -134,12 +136,12 @@ const GameLinkageManagement = () => {
             {loading ? (
               <>
                 <RefreshCwIcon size={18} className="spinning" />
-                Linking...
+                {t('adminGameLinkage.linkingProgress')}
               </>
             ) : (
               <>
                 <PlayIcon size={18} />
-                Link All Games Now
+                {t('adminGameLinkage.linkAllNow')}
               </>
             )}
           </button>
@@ -159,38 +161,38 @@ const GameLinkageManagement = () => {
           <div className="section-header">
             <h2>
               <EyeIcon size={20} />
-              Preview: What Will Be Linked
+              {t('adminGameLinkage.previewTitle')}
             </h2>
-            <p>This is a dry-run preview. No changes have been made yet.</p>
+            <p>{t('adminGameLinkage.dryRunNote')}</p>
           </div>
 
           <div className="stats-grid">
             <div className="stat-box">
               <UsersIcon size={24} className="stat-icon" />
               <div className="stat-value">{previewData.totalUsers}</div>
-              <div className="stat-label">Total Users</div>
+              <div className="stat-label">{t('adminGameLinkage.totalUsers')}</div>
             </div>
             <div className="stat-box highlight">
               <UsersIcon size={24} className="stat-icon" />
               <div className="stat-value">{previewData.usersWithGames}</div>
-              <div className="stat-label">Users with Linkable Games</div>
+              <div className="stat-label">{t('adminGameLinkage.usersWithLinkable')}</div>
             </div>
             <div className="stat-box success">
               <GamepadIcon size={24} className="stat-icon" />
               <div className="stat-value">{previewData.totalGamesToLink}</div>
-              <div className="stat-label">Games to Link</div>
+              <div className="stat-label">{t('adminGameLinkage.gamesToLink')}</div>
             </div>
           </div>
 
           {previewData.userDetails && previewData.userDetails.length > 0 && (
             <div className="details-section">
               <div className="details-header">
-                <h4>Users with Games to Link ({previewData.userDetails.length})</h4>
+                <h4>{t('adminGameLinkage.usersWithGames', { count: previewData.userDetails.length })}</h4>
                 <button 
                   className="btn btn-sm btn-ghost"
                   onClick={() => setShowAllDetails(!showAllDetails)}
                 >
-                  {showAllDetails ? 'Collapse All' : 'Expand All'}
+                  {showAllDetails ? t('adminGameLinkage.collapseAll') : t('adminGameLinkage.expandAll')}
                 </button>
               </div>
               <div className="user-list">
@@ -204,11 +206,11 @@ const GameLinkageManagement = () => {
                         <LinkIcon size={16} className="link-icon" />
                         <span className="username">{user.username}</span>
                         <span className="game-count badge">
-                          {user.gamesToLink} game{user.gamesToLink !== 1 ? 's' : ''}
+                          {t('adminGameLinkage.gamesCount', { count: user.gamesToLink })}
                         </span>
                         {user.identities && user.identities.length > 1 && (
                           <span className="aliases-badge">
-                            {user.identities.length} identit{user.identities.length !== 1 ? 'ies' : 'y'}
+                            {t('adminGameLinkage.identitiesCount', { count: user.identities.length })}
                           </span>
                         )}
                       </div>
@@ -223,26 +225,26 @@ const GameLinkageManagement = () => {
                         <div className="breakdown-grid">
                           {user.gameBreakdown.games > 0 && (
                             <div className="breakdown-item">
-                              <span className="breakdown-label">Regular Games:</span>
+                              <span className="breakdown-label">{t('adminGameLinkage.regularGames')}</span>
                               <span className="breakdown-value">{user.gameBreakdown.games}</span>
                             </div>
                           )}
                           {user.gameBreakdown.wizardGames > 0 && (
                             <div className="breakdown-item">
-                              <span className="breakdown-label">Wizard Games:</span>
+                              <span className="breakdown-label">{t('adminGameLinkage.wizardGames')}</span>
                               <span className="breakdown-value">{user.gameBreakdown.wizardGames}</span>
                             </div>
                           )}
                           {user.gameBreakdown.tableGames > 0 && (
                             <div className="breakdown-item">
-                              <span className="breakdown-label">Table Games:</span>
+                              <span className="breakdown-label">{t('adminGameLinkage.tableGames')}</span>
                               <span className="breakdown-value">{user.gameBreakdown.tableGames}</span>
                             </div>
                           )}
                         </div>
                         {user.identities && user.identities.length > 0 && (
                           <div className="aliases-list">
-                            <span className="aliases-label">Identities:</span>
+                            <span className="aliases-label">{t('adminGameLinkage.identitiesLabel')}</span>
                             {user.identities.map((identity, i) => (
                               <span key={i} className="alias-tag">{identity.displayName || identity.name}</span>
                             ))}
@@ -259,8 +261,8 @@ const GameLinkageManagement = () => {
           {previewData.totalGamesToLink === 0 && (
             <div className="empty-state">
               <CheckCircleIcon size={48} className="empty-icon success" />
-              <h4>All Games Already Linked</h4>
-              <p>No unlinked games were found for any users. Everything is up to date!</p>
+              <h4>{t('adminGameLinkage.allLinked')}</h4>
+              <p>{t('adminGameLinkage.allLinkedDesc')}</p>
             </div>
           )}
 
@@ -274,12 +276,12 @@ const GameLinkageManagement = () => {
                 {loading ? (
                   <>
                     <RefreshCwIcon size={18} className="spinning" />
-                    Linking...
+                    {t('adminGameLinkage.linkingProgress')}
                   </>
                 ) : (
                   <>
                     <PlayIcon size={18} />
-                    Apply Changes: Link {previewData.totalGamesToLink} Games
+                    {t('adminGameLinkage.applyChanges', { count: previewData.totalGamesToLink })}
                   </>
                 )}
               </button>
@@ -294,38 +296,38 @@ const GameLinkageManagement = () => {
           <div className="section-header success-header">
             <h2>
               <CheckCircleIcon size={20} />
-              Identity Claiming Complete
+              {t('adminGameLinkage.claimingComplete')}
             </h2>
           </div>
 
           <div className="stats-grid">
             <div className="stat-box">
               <div className="stat-value">{results.totalUsers}</div>
-              <div className="stat-label">Total Users</div>
+              <div className="stat-label">{t('adminGameLinkage.totalUsers')}</div>
             </div>
             <div className="stat-box">
               <div className="stat-value">{results.processed}</div>
-              <div className="stat-label">Processed</div>
+              <div className="stat-label">{t('adminGameLinkage.processed')}</div>
             </div>
             <div className="stat-box success">
               <div className="stat-value">{results.successful}</div>
-              <div className="stat-label">Successful</div>
+              <div className="stat-label">{t('adminGameLinkage.successful')}</div>
             </div>
             <div className="stat-box highlight">
               <div className="stat-value">{results.totalIdentitiesClaimed || 0}</div>
-              <div className="stat-label">Identities Claimed</div>
+              <div className="stat-label">{t('adminGameLinkage.identitiesClaimed')}</div>
             </div>
             {results.failed > 0 && (
               <div className="stat-box error">
                 <div className="stat-value">{results.failed}</div>
-                <div className="stat-label">Failed</div>
+                <div className="stat-label">{t('adminGameLinkage.failed')}</div>
               </div>
             )}
           </div>
 
           {results.details && results.details.length > 0 && (
             <div className="details-section">
-              <h4>Changes Made</h4>
+              <h4>{t('adminGameLinkage.changesMade')}</h4>
               <div className="details-list">
                 {results.details.map((detail, idx) => (
                   <div key={idx} className={`detail-item ${detail.success ? 'success' : 'error'}`}>
@@ -334,7 +336,7 @@ const GameLinkageManagement = () => {
                       <div className="detail-username">{detail.username}</div>
                       {detail.success ? (
                         <div className="detail-games">
-                          {detail.identitiesClaimed || 0} identity(ies) claimed{detail.identityCreated ? ', new identity created' : ''}
+                          {t('adminGameLinkage.identitiesClaimedCount', { count: detail.identitiesClaimed || 0 })}{detail.identityCreated ? ', ' + t('adminGameLinkage.newIdentityCreated') : ''}
                         </div>
                       ) : (
                         <div className="detail-error">
@@ -351,8 +353,8 @@ const GameLinkageManagement = () => {
           {(results.totalIdentitiesClaimed || 0) === 0 && (
             <div className="empty-state">
               <CheckCircleIcon size={48} className="empty-icon" />
-              <h4>No New Identities to Claim</h4>
-              <p>All identities were already claimed by their respective users.</p>
+              <h4>{t('adminGameLinkage.noNewIdentities')}</h4>
+              <p>{t('adminGameLinkage.noNewIdentitiesDesc')}</p>
             </div>
           )}
         </div>
@@ -360,25 +362,24 @@ const GameLinkageManagement = () => {
 
       {/* When to Use Section */}
       <div className="admin-section info-section">
-        <h3>When to use this feature:</h3>
+        <h3>{t('adminGameLinkage.whenToUse')}</h3>
         <div className="use-cases">
           <div className="use-case">
-            <strong>🚀 After initial deployment:</strong>
-            <span>Link games for existing users who registered before this feature</span>
+            <strong>{t('adminGameLinkage.useCase1')}</strong>
+            <span>{t('adminGameLinkage.useCase1Desc')}</span>
           </div>
           <div className="use-case">
-            <strong>📦 Data migration:</strong>
-            <span>After importing users or games from another system</span>
+            <strong>{t('adminGameLinkage.useCase2')}</strong>
+            <span>{t('adminGameLinkage.useCase2Desc')}</span>
           </div>
           <div className="use-case">
-            <strong>🔧 Troubleshooting:</strong>
-            <span>If automatic linking failed during registration</span>
+            <strong>{t('adminGameLinkage.useCase3')}</strong>
+            <span>{t('adminGameLinkage.useCase3Desc')}</span>
           </div>
         </div>
 
         <div className="info-box">
-          <strong>ℹ️ Safe Operation:</strong> This is idempotent - you can run it multiple times safely. 
-          Games already linked to users will be skipped.
+          <strong>{t('adminGameLinkage.safeOperation')}</strong> {t('adminGameLinkage.safeOperationDesc')}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
 import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap, Target, ExternalLink } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
@@ -10,6 +11,7 @@ import "@/styles/pages/performancestats.css";
 const COLORS = ['#1DBF73', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
 const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, gameType = 'wizard', identityId = null }) => {
+  const { t } = useTranslation();
   // Calculate comprehensive statistics from games
   const stats = useMemo(() => {
     if (!games || games.length === 0) {
@@ -473,21 +475,21 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
     // Calculate achievements
     const achievements = [];
     // Games played milestones
-    if (totalGames >= 1) achievements.push({ icon: <Gamepad2 size={32} color="var(--primary)" />, name: 'First Game', description: 'Played your first game' });
-    if (totalGames >= 5) achievements.push({ icon: <Dices size={32} color="var(--primary)" />, name: 'Getting Started', description: '5 games played' });
-    if (totalGames >= 10) achievements.push({ icon: <Spade size={32} color="var(--primary)" />, name: 'Regular Player', description: '10 games played' });
-    if (totalGames >= 25) achievements.push({ icon: <Gem size={32} color="var(--primary)" />, name: 'Dedicated', description: '25 games played' });
-    if (totalGames >= 50) achievements.push({ icon: <Medal size={32} color="var(--primary)" />, name: 'Committed', description: '50 games played' });
+    if (totalGames >= 1) achievements.push({ icon: <Gamepad2 size={32} color="var(--primary)" />, name: t('achievements.firstGame'), description: t('achievements.firstGameDesc') });
+    if (totalGames >= 5) achievements.push({ icon: <Dices size={32} color="var(--primary)" />, name: t('achievements.gettingStarted'), description: t('achievements.gettingStartedDesc') });
+    if (totalGames >= 10) achievements.push({ icon: <Spade size={32} color="var(--primary)" />, name: t('achievements.regularPlayer'), description: t('achievements.regularPlayerDesc') });
+    if (totalGames >= 25) achievements.push({ icon: <Gem size={32} color="var(--primary)" />, name: t('achievements.dedicated'), description: t('achievements.dedicatedDesc') });
+    if (totalGames >= 50) achievements.push({ icon: <Medal size={32} color="var(--primary)" />, name: t('achievements.committed'), description: t('achievements.committedDesc') });
     // Win milestones
-    if (wins >= 10) achievements.push({ icon: <Trophy size={32} color="#cea51f" />, name: 'Veteran', description: '10+ wins' });
-    if (wins >= 50) achievements.push({ icon: <Crown size={32} color="#cea51f" />, name: 'Champion', description: '50+ wins' });
-    if (wins >= 100) achievements.push({ icon: <Star size={32} color="#cea51f" />, name: 'Legend', description: '100+ wins' });
-    if (longestWinStreak >= 5) achievements.push({ icon: <Flame size={32} color="#EF4444" />, name: 'Hot Streak', description: `${longestWinStreak} win streak` });
-    if (winRate >= 70) achievements.push({ icon: <Gem size={32} color="#cea51f" />, name: 'Elite', description: `${winRate.toFixed(0)}% win rate` });
-    if (perfectBidsCount >= 1) achievements.push({ icon: <Target size={32} color="#cea51f" />, name: 'Perfect Predictor', description: `${perfectBidsCount} perfect games` });
-    if (bestBidAccuracyGame?.bidAccuracy >= 80) achievements.push({ icon: <Brain size={32} color="var(--secondary)" />, name: 'Mind Reader', description: '+80% accuracy in a game' });
-    if (comebackWins >= 5) achievements.push({ icon: <Undo2 size={32} color="#cea51f" />, name: 'Comeback King', description: `${comebackWins} close wins` });
-    if (dominantWins >= 5) achievements.push({ icon: <Zap size={32} color="#EF4444" />, name: 'Dominator', description: `${dominantWins} dominant wins` });
+    if (wins >= 10) achievements.push({ icon: <Trophy size={32} color="#cea51f" />, name: t('achievements.veteran'), description: t('achievements.veteranDesc') });
+    if (wins >= 50) achievements.push({ icon: <Crown size={32} color="#cea51f" />, name: t('achievements.champion'), description: t('achievements.championDesc') });
+    if (wins >= 100) achievements.push({ icon: <Star size={32} color="#cea51f" />, name: t('achievements.legend'), description: t('achievements.legendDesc') });
+    if (longestWinStreak >= 5) achievements.push({ icon: <Flame size={32} color="#EF4444" />, name: t('achievements.hotStreak'), description: t('achievements.hotStreakDesc', { count: longestWinStreak }) });
+    if (winRate >= 70) achievements.push({ icon: <Gem size={32} color="#cea51f" />, name: t('achievements.elite'), description: t('achievements.eliteDesc', { rate: winRate.toFixed(0) }) });
+    if (perfectBidsCount >= 1) achievements.push({ icon: <Target size={32} color="#cea51f" />, name: t('achievements.perfectPredictor'), description: t('achievements.perfectPredictorDesc', { count: perfectBidsCount }) });
+    if (bestBidAccuracyGame?.bidAccuracy >= 80) achievements.push({ icon: <Brain size={32} color="var(--secondary)" />, name: t('achievements.mindReader'), description: t('achievements.mindReaderDesc') });
+    if (comebackWins >= 5) achievements.push({ icon: <Undo2 size={32} color="#cea51f" />, name: t('achievements.comebackKing'), description: t('achievements.comebackKingDesc', { count: comebackWins }) });
+    if (dominantWins >= 5) achievements.push({ icon: <Zap size={32} color="#EF4444" />, name: t('achievements.dominator'), description: t('achievements.dominatorDesc', { count: dominantWins }) });
 
     return {
       totalGames,
@@ -520,14 +522,14 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       comebackWins,
       dominantWins
     };
-  }, [games, currentPlayer]);
+  }, [games, currentPlayer, t]);
 
   if (!games || games.length === 0) {
     return (
       <div className="performance-stats-container">
         {/* <h2>Performance Statistics</h2> */}
         <div className="empty-message" style={{ textAlign: 'center', color: 'var(--text)', marginTop: 'var(--spacing-xl)' }}>
-          No games played yet. Start playing to see your performance statistics!
+          {t('profile.noGamesPlayed')}
         </div>
       </div>
     );
@@ -544,6 +546,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
  * Custom tooltip for performance charts with a "View Game" button
  */
 const GameTooltip = ({ active, payload, _label, navigate, formatter }) => {
+  const { t } = useTranslation();
   if (!active || !payload || payload.length === 0) return null;
   const data = payload[0]?.payload;
   const gameId = data?.gameId;
@@ -596,7 +599,7 @@ const GameTooltip = ({ active, payload, _label, navigate, formatter }) => {
           onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light, rgba(79,70,229,0.1))'}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
-          View Game <ExternalLink size={12} />
+          {t('profile.viewGame')} <ExternalLink size={12} />
         </button>
       )}
     </div>
@@ -607,6 +610,7 @@ const GameTooltip = ({ active, payload, _label, navigate, formatter }) => {
  * Custom tooltip for ELO chart with a "View Game" button
  */
 const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
+  const { t } = useTranslation();
   if (!active || !payload || payload.length === 0) return null;
   const data = payload[0]?.payload;
   const gameId = data?.gameId;
@@ -632,8 +636,8 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
       {payload.filter((entry, idx, arr) => arr.findIndex(e => e.dataKey === entry.dataKey) === idx).map((entry, idx) => {
         let val = entry.value;
         let name = entry.name;
-        if (name === 'rating') { name = 'Rating'; }
-        if (name === 'change') { name = 'Change'; val = val > 0 ? `+${val}` : val; }
+        if (name === 'rating') { name = t('profile.rating'); }
+        if (name === 'change') { name = t('profile.change'); val = val > 0 ? `+${val}` : val; }
         return (
           <p key={idx} style={{ margin: '2px 0', color: entry.color || 'var(--text)' }}>
             {name}: {val}
@@ -642,7 +646,7 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
       })}
       {data?.placement && (
         <p style={{ margin: '2px 0', fontWeight: 600 }}>
-          Placement: {data.placement === 1 ? '1st' : data.placement === 2 ? '2nd' : data.placement === 3 ? '3rd' : `${data.placement}th`}
+          {t('profile.placement')}: {data.placement === 1 ? '1st' : data.placement === 2 ? '2nd' : data.placement === 3 ? '3rd' : `${data.placement}th`}
         </p>
       )}
       {data?.date && <p style={{ margin: '2px 0', opacity: 0.7, fontSize: '0.75rem' }}>{data.date}</p>}
@@ -667,7 +671,7 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
           onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-light, rgba(79,70,229,0.1))'}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
-          View Game <ExternalLink size={12} />
+          {t('profile.viewGame')} <ExternalLink size={12} />
         </button>
       )}
     </div>
@@ -677,6 +681,7 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
 // Separate component to use useState (since stats is computed in useMemo)
 const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = null }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [insightType, setInsightType] = useState('score');
   
   // Prepare chart data with best/worst markers
@@ -735,10 +740,10 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
           gap: 'var(--spacing-sm)',
           marginBottom: 'var(--spacing-sm)'
         }}>
-          <StatCard title="Total Games" value={stats.totalGames} />
-          <StatCard title="Win Rate" value={`${stats.winRate}%`} />
-          <StatCard title="Wins" value={stats.wins} />
-          <StatCard title="Losses" value={stats.losses} />
+          <StatCard title={t('common.totalGames')} value={stats.totalGames} />
+          <StatCard title={t('common.winRate')} value={`${stats.winRate}%`} />
+          <StatCard title={t('common.wins')} value={stats.wins} />
+          <StatCard title={t('common.losses')} value={stats.losses} />
           {/* <StatCard title="Avg Score" value={stats.averageScore} /> */}
           {/* <StatCard title="Top Score" value={stats.isLowIsBetter ? stats.lowestScore : stats.highestScore} /> */}
         </div>
@@ -762,9 +767,9 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
               border: `1px solid ${stats.currentStreak.type === 'win' ? '#1DBF73' : '#FF5C5C'}`,
             }}>
               <div style={{ fontWeight: '600', fontSize: '1.1rem' }}>
-                {stats.currentStreak.count} {stats.currentStreak.type === 'win' ? 'Win' : 'Loss'} Streak
+                {t(stats.currentStreak.type === 'win' ? 'profile.winStreak' : 'profile.lossStreak', { count: stats.currentStreak.count })}
               </div>
-              <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>Currently Active</div>
+              <div style={{ fontSize: '0.875rem', opacity: 0.8 }}>{t('profile.currentlyActive')}</div>
             </div>
           )}
 
@@ -779,10 +784,10 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
               background: 'var(--card-bg)',
               border: '1px solid var(--border)',
           }}>
-            <div style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--primary)'}}>Streaks</div>
+            <div style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--primary)'}}>{t('profile.streaks')}</div>
             <div style={{ display: 'flex', gap: 'var(--spacing-md)'}}>
-              <div><strong>Best:</strong> {stats.longestWinStreak} wins</div>
-              <div><strong>Worst:</strong> {stats.longestLossStreak} losses</div>
+              <div><strong>{t('profile.best')}:</strong> {stats.longestWinStreak} {t('common.wins')}</div>
+              <div><strong>{t('profile.worst')}:</strong> {stats.longestLossStreak} {t('common.losses')}</div>
             </div>
           </div>
         </div>
@@ -791,7 +796,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
       {/* INSIGHTS SECTION */}
       <div>
         <div className="performance-insights-header">
-          <h2 style={{ margin: '0', fontSize: '1.25rem', fontWeight: '600' }}>Performance Insights</h2>
+          <h2 style={{ margin: '0', fontSize: '1.25rem', fontWeight: '600' }}>{t('profile.performanceInsights')}</h2>
           
           {/* Insight Type Selector */}
           {isWizardGame && (
@@ -801,8 +806,8 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
               className="game-type-selector"
               style={{ width: 'auto', minWidth: '140px' }}
             >
-              <option value="score">Scores</option>
-              <option value="bidAccuracy">Bid Accuracy</option>
+              <option value="score">{t('profile.scoresOption')}</option>
+              <option value="bidAccuracy">{t('profile.bidAccuracy')}</option>
             </select>
           )}
         </div>
@@ -818,9 +823,9 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
               gap: 'var(--spacing-md)',
               marginBottom: 'var(--spacing-sm)'
             }}>
-              <StatCard title="Average Score" icon={<CircleSlash2 size={16} />} value={stats.averageScore} />
-              <StatCard title="Best Score" icon={<Trophy size={16} />} value={stats.bestGame?.score || 0} color="green" />
-              <StatCard title="Worst Score" icon={<TrendingDown size={16} />} value={stats.worstGame?.score || 0} color="red" />
+              <StatCard title={t('profile.averageScore')} icon={<CircleSlash2 size={16} />} value={stats.averageScore} />
+              <StatCard title={t('profile.bestScore')} icon={<Trophy size={16} />} value={stats.bestGame?.score || 0} color="green" />
+              <StatCard title={t('profile.worstScore')} icon={<TrendingDown size={16} />} value={stats.worstGame?.score || 0} color="red" />
             </div>
 
             {/* Score Chart with Avg Line and Best/Worst Highlighted */}
@@ -844,7 +849,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
                     content={<GameTooltip 
                       navigate={navigate} 
                       formatter={(value, name) => {
-                        if (name === 'score') return [value, 'Score'];
+                        if (name === 'score') return [value, t('common.score')];
                         return [value, name];
                       }}
                     />}
@@ -868,8 +873,8 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
                 </ComposedChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center'  }}>
-                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>Best</span>
-                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>Worst</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>{t('profile.best')}</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>{t('profile.worst')}</span>
                 <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#F59E0B', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
               </div>
             </div>
@@ -887,9 +892,9 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
               gap: 'var(--spacing-md)',
               marginBottom: 'var(--spacing-sm)'
             }}>
-              <StatCard title="Average Accuracy" icon={<CircleSlash2 size={16} />} value={`${stats.bidAccuracy}%`} />
-              <StatCard title="Best Accuracy" icon={<Target size={16} />} value={stats.bestBidAccuracyGame?.bidAccuracy !== undefined ? `${stats.bestBidAccuracyGame.bidAccuracy}%` : 'N/A'} color="green" />
-              <StatCard title="Worst Accuracy" icon={<TrendingDown size={16} />} value={stats.worstBidAccuracyGame?.bidAccuracy !== undefined ? `${stats.worstBidAccuracyGame.bidAccuracy}%` : 'N/A'} color="red" />
+              <StatCard title={t('profile.averageAccuracy')} icon={<CircleSlash2 size={16} />} value={`${stats.bidAccuracy}%`} />
+              <StatCard title={t('profile.bestAccuracy')} icon={<Target size={16} />} value={stats.bestBidAccuracyGame?.bidAccuracy !== undefined ? `${stats.bestBidAccuracyGame.bidAccuracy}%` : t('common.na')} color="green" />
+              <StatCard title={t('profile.worstAccuracy')} icon={<TrendingDown size={16} />} value={stats.worstBidAccuracyGame?.bidAccuracy !== undefined ? `${stats.worstBidAccuracyGame.bidAccuracy}%` : t('common.na')} color="red" />
             </div>
 
             {/* Bid Accuracy Chart */}
@@ -914,7 +919,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
                     content={<GameTooltip 
                       navigate={navigate} 
                       formatter={(value, name) => {
-                        if (name === 'bidAccuracy') return [`${value}%`, 'Bid Accuracy'];
+                        if (name === 'bidAccuracy') return [`${value}%`, t('profile.bidAccuracy')];
                         return [value, name];
                       }}
                     />}
@@ -938,8 +943,8 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
                 </ComposedChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center' }}>
-                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>Best</span>
-                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>Worst</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>{t('profile.best')}</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>{t('profile.worst')}</span>
                 <span><span style={{ display: 'inline-block', width: 20, height: 2, background: '#F59E0B', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
               </div>
             </div>
@@ -952,7 +957,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
 
       {/* ACHIEVEMENTS SECTION */}
       <div>
-        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Achievements</h2>
+        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>{t('profile.achievements')}</h2>
         {stats.achievements.length > 0 ? (
           <div style={{
             display: 'grid',
@@ -989,7 +994,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
             border: '1px solid var(--border)',
             opacity: 0.7 
           }}>
-            Keep playing to unlock achievements! 🎯
+            {t('profile.keepPlayingAchievements')}
           </div>
         )}
       </div>
@@ -1001,6 +1006,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
 // ELO Rating Section Component
 const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   // Normalize game type for API
   const normalizedGameType = gameType?.toLowerCase().trim().replace(/\s+/g, '-') || 'wizard';
   const { elo, loading: eloLoading } = useUserElo(normalizedGameType, identityId);
@@ -1070,8 +1076,8 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
   return (
     <div className="elo-rating-card">
       <div className="elo-header">
-        <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>ELO Rating</h4>
-        {eloLoading && <span className="elo-loading">Loading...</span>}
+        <h4 style={{ margin: '0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>{t('profile.eloRating')}</h4>
+        {eloLoading && <span className="elo-loading">{t('common.loading')}</span>}
       </div>
       
       {hasElo ? (
@@ -1087,9 +1093,9 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
                 gap: 'var(--spacing-md)',
                 marginBottom: 'var(--spacing-sm)'
               }}>
-                <StatCard title="ELO" icon={<TrendingUp size={16} />} value={currentRating} />
-                <StatCard title="Peak" icon={<Trophy size={16} />} value={peakRating} color="green" />
-                <StatCard title="Floor" icon={<TrendingDown size={16} />} value={floorRating} color="red" />
+                <StatCard title={t('profile.eloRating')} icon={<TrendingUp size={16} />} value={currentRating} />
+                <StatCard title={t('profile.peak')} icon={<Trophy size={16} />} value={peakRating} color="green" />
+                <StatCard title={t('profile.floor')} icon={<TrendingDown size={16} />} value={floorRating} color="red" />
               </div>
 
               {/* <h4 style={{ margin: '0 0 var(--spacing-xs) 0', fontSize: '1rem', fontWeight: '500', color: 'var(--primary)' }}>Rating Progression</h4> */}
@@ -1128,8 +1134,8 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
                 </ComposedChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center' }}>
-                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>Best</span>
-                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>Worst</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>{t('profile.best')}</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>{t('profile.worst')}</span>
                 <span><span style={{ display: 'inline-block', width: 20, height: 2, background: 'var(--text)', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
               </div>
             </div>
@@ -1137,7 +1143,7 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
         </div>
       ) : (
         <div className="elo-no-data">
-          <p>Play ranked games to get your ELO rating!</p>
+          <p>{t('profile.playRankedGames')}</p>
         </div>
       )}
     </div>

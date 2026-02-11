@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import '@/styles/components/modal.css';
 import { XIcon} from "@/components/ui/Icon"
 
@@ -9,6 +10,8 @@ const CreateGameModal = ({
   gameSettings, 
   onSettingsChange
 }) => {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
   
   const handleSubmit = (e) => {
@@ -20,7 +23,7 @@ const CreateGameModal = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container create-game-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Create New Game</h2>
+          <h2>{t('createGame.title')}</h2>
           <button className="close-btn" onClick={onClose}>
             <XIcon size={20} />
           </button>
@@ -34,8 +37,8 @@ const CreateGameModal = ({
                 value={gameSettings.gameMode}
                 onChange={(e) => onSettingsChange({ ...gameSettings, gameMode: e.target.value })}
               >
-                <option value="classic">Classic</option>
-                <option value="ranked">Ranked</option>
+                <option value="classic">{t('createGame.classic')}</option>
+                <option value="ranked">{t('createGame.ranked')}</option>
                 {/* <option value="quick">Quick Game</option>
                 <option value="tournament">Tournament</option> */}
               </select>
@@ -47,10 +50,10 @@ const CreateGameModal = ({
                 value={gameSettings.maxPlayers}
                 onChange={(e) => onSettingsChange({ ...gameSettings, maxPlayers: parseInt(e.target.value) })}
               >
-                <option value={3}>3 Players</option>
-                <option value={4}>4 Players</option>
-                <option value={5}>5 Players</option>
-                <option value={6}>6 Players</option>
+                <option value={3}>{t('createGame.playersCount', { count: 3 })}</option>
+                <option value={4}>{t('createGame.playersCount', { count: 4 })}</option>
+                <option value={5}>{t('createGame.playersCount', { count: 5 })}</option>
+                <option value={6}>{t('createGame.playersCount', { count: 6 })}</option>
               </select>
             </div>
 
@@ -61,19 +64,19 @@ const CreateGameModal = ({
                   checked={gameSettings.isPrivate}
                   onChange={(e) => onSettingsChange({ ...gameSettings, isPrivate: e.target.checked })}
                 />
-                Private Game
+                {t('createGame.privateGame')}
               </label>
             </div>
 
             {gameSettings.isPrivate && (
               <div className="form-group">
-                <label htmlFor="password">Password</label>
+                <label htmlFor="password">{t('createGame.passwordLabel')}</label>
                 <input
                   type="password"
                   id="password"
                   value={gameSettings.password}
                   onChange={(e) => onSettingsChange({ ...gameSettings, password: e.target.value })}
-                  placeholder="Enter Password For Private Game"
+                  placeholder={t('createGame.passwordPlaceholder')}
                   required
                 />
               </div>
@@ -81,10 +84,10 @@ const CreateGameModal = ({
 
             <div className="modal-actions">
               <button type="button" onClick={onClose} className="cancel-button">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button type="submit" className="create-button">
-                Create Game
+                {t('createGame.createGame')}
               </button>
             </div>
           </form>
