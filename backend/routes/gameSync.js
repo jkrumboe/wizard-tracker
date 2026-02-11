@@ -3,6 +3,7 @@ const router = express.Router();
 const Game = require('../models/Game');
 const GameEvent = require('../models/GameEvent');
 const GameSnapshot = require('../models/GameSnapshot');
+const { mirrorGameEventCreate, mirrorGameSnapshotCreate, mirrorGameUpdate } = require('../utils/gameDualWrite');
 
 /**
  * POST /api/games/:id/events
@@ -100,6 +101,9 @@ router.post('/:id/events', async (req, res) => {
 
         await newEvent.save();
 
+        // Mirror event to PostgreSQL (non-blocking)
+        mirrorGameEventCreate(newEvent).catch(() => {});
+
         appliedEvents.push({
           id: event.id,
           serverVersion: newServerVersion,
@@ -117,6 +121,9 @@ router.post('/:id/events', async (req, res) => {
     
     game.gameData = updatedGameState;
     await game.save();
+
+    // Mirror updated game state to PostgreSQL (non-blocking)
+    mirrorGameUpdate(game, { gameData: updatedGameState }).catch(() => {});
 
     // Create snapshot every N events (e.g., every 50 events)
     const eventCount = await GameEvent.countDocuments({ gameId });
@@ -194,6 +201,9 @@ router.post('/:id/snapshots', async (req, res) => {
     // Update game
     game.gameData = snapshot;
     await game.save();
+
+    // Mirror game state update to PostgreSQL (non-blocking)
+    mirrorGameUpdate(game, { gameData: snapshot }).catch(() => {});
 
     // Create snapshot record
     await createSnapshot(gameId, newServerVersion, snapshot, game.userId);
@@ -417,6 +427,9 @@ async function createSnapshot(gameId, serverVersion, gameState, userId) {
     });
 
     await snapshot.save();
+
+    // Mirror snapshot to PostgreSQL (non-blocking)
+    mirrorGameSnapshotCreate(snapshot).catch(() => {});
     
     return snapshot;
   } catch (error) {

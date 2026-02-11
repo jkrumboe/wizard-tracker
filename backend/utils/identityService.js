@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const PlayerIdentity = require('../models/PlayerIdentity');
+const identityDualWrite = require('./identityDualWrite');
 
 /**
  * Identity Service
@@ -62,6 +63,9 @@ async function claimIdentitiesOnRegistration(user) {
     if (claimedIdentity) {
       result.claimed.push(claimedIdentity._id);
       console.log(`[IdentityService] Claimed identity "${username}" for user ${userId}`);
+      
+      // Mirror claim to PostgreSQL
+      await identityDualWrite.mirrorIdentityClaim(claimedIdentity, userId);
     } else {
       // No guest identity found - try to create a new one atomically
       // Use findOneAndUpdate with upsert to prevent duplicate creation
@@ -95,6 +99,9 @@ async function claimIdentitiesOnRegistration(user) {
         if (newIdentity.displayName === username) {
           result.created = newIdentity;
           console.log(`[IdentityService] Created new identity "${username}" for user ${userId}`);
+          
+          // Mirror creation to PostgreSQL
+          await identityDualWrite.mirrorIdentityCreate(newIdentity);
         } else {
           // User already has an identity (race condition caught)
           console.log(`[IdentityService] User ${userId} already has identity "${newIdentity.displayName}"`);
@@ -397,6 +404,15 @@ async function adminMergeIdentities(targetId, sourceIds, adminId) {
   
   const result = await PlayerIdentity.mergeIdentities(targetId, sourceIds, adminId);
   
+  // Mirror merge to PostgreSQL
+  const target = await PlayerIdentity.findById(targetId);
+  for (const sourceId of sourceIds) {
+    const source = await PlayerIdentity.findById(sourceId);
+    if (source && target) {
+      await identityDualWrite.mirrorIdentityMerge(sourceId, targetId, source, target);
+    }
+  }
+  
   // Update all games that reference the source identities
   const WizardGame = mongoose.model('WizardGame');
   
@@ -486,6 +502,12 @@ async function resolvePlayerIdentities(players, createdBy) {
       createdBy,
       type: 'guest'
     });
+    
+    // Mirror new guest identity to PostgreSQL (non-blocking)
+    if (identity.createdAt && (Date.now() - identity.createdAt.getTime() < 5000)) {
+      // Likely a new identity (created within last 5 seconds)
+      await identityDualWrite.mirrorIdentityCreate(identity);
+    }
     
     resolvedPlayers.push({
       ...player,

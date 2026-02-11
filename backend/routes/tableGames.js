@@ -5,6 +5,7 @@ const PlayerIdentity = require('../models/PlayerIdentity');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
+const { mirrorTableGameCreate, mirrorTableGameDelete } = require('../utils/gameDualWrite');
 
 const router = express.Router();
 
@@ -201,6 +202,9 @@ router.post('/', auth, async (req, res, next) => {
     });
 
     await tableGame.save();
+
+    // Mirror to PostgreSQL (non-blocking)
+    mirrorTableGameCreate(tableGame).catch(() => {});
     
     // Invalidate leaderboard cache when new table game is created
     if (cache.isConnected) {
@@ -366,6 +370,9 @@ router.delete('/:id', auth, async (req, res, next) => {
     if (!tableGame) {
       return res.status(404).json({ error: 'Table game not found' });
     }
+
+    // Mirror deletion to PostgreSQL (non-blocking)
+    mirrorTableGameDelete(tableGame.localId).catch(() => {});
 
     res.json({ message: 'Table game deleted successfully' });
   } catch (error) {

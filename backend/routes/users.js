@@ -11,6 +11,10 @@ const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
+const { dualWrite, dualReadWithFallback, FAILURE_STRATEGY } = require('../utils/dualWrite');
+const { getPrisma, usePostgres } = require('../database');
+const UserRepository = require('../repositories/UserRepository');
+const FriendRequestRepo = require('../repositories/FriendRequestRepository');
 const router = express.Router();
 
 // POST /users/register - Create new user (with strict rate limiting)
@@ -44,13 +48,51 @@ router.post('/register', authLimiter, async (req, res, next) => {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create user
-    const user = new User({
-      username,
-      passwordHash
-    });
+    // ========== DUAL-WRITE: Create user in both databases ==========
+    const dualWriteResult = await dualWrite(
+      {
+        // MongoDB write operation
+        mongoWrite: async () => {
+          const user = new User({
+            username,
+            passwordHash
+          });
+          await user.save();
+          return user;
+        },
+        
+        // PostgreSQL write operation
+        postgresWrite: async (mongoUser) => {
+          const prisma = getPrisma();
+          return await UserRepository.create(prisma, {
+            username,
+            passwordHash,
+            role: 'user'
+          });
+        },
+        
+        // Rollback MongoDB if dual-write fails
+        mongoRollback: async () => {
+          const user = await User.findOne({ username });
+          if (user) {
+            await user.deleteOne();
+          }
+        },
+        
+        // Rollback PostgreSQL if needed
+        postgresRollback: async () => {
+          const prisma = getPrisma();
+          const existingUser = await UserRepository.findByCaseInsensitiveUsername(prisma, username);
+          if (existingUser) {
+            await UserRepository.deleteById(prisma, existingUser.id);
+          }
+        }
+      },
+      FAILURE_STRATEGY.PRIORITIZE_MONGO, // Prioritize MongoDB during migration
+      'User Registration'
+    );
 
-    await user.save();
+    const user = dualWriteResult.mongo;
 
     // Generate JWT token
     const token = jwt.sign(
@@ -108,8 +150,39 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(400).json({ error: "Invalid username format" });
     }
 
-    // Find user
-    const user = await User.findOne({ username });
+    // ========== DUAL-READ: Find user from both databases ==========
+    const userResult = await dualReadWithFallback(
+      // MongoDB read
+      async () => await User.findOne({ username }),
+      // PostgreSQL read
+      async () => {
+        const prisma = getPrisma();
+        const pgUser = await UserRepository.findByUsername(prisma, username);
+        if (!pgUser) return null;
+        
+        // Convert to MongoDB-like structure for compatibility
+        return {
+          _id: pgUser.id,
+          id: pgUser.id,
+          username: pgUser.username,
+          passwordHash: pgUser.passwordHash,
+          role: pgUser.role,
+          lastLogin: pgUser.lastLogin,
+          profilePicture: pgUser.profilePicture,
+          createdAt: pgUser.createdAt,
+          updatedAt: pgUser.updatedAt,
+          save: async function() {
+            // Dummy save function for compatibility
+            const prisma = getPrisma();
+            await UserRepository.update(prisma, this._id, {
+              lastLogin: this.lastLogin
+            });
+          }
+        };
+      }
+    );
+
+    const user = userResult;
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -120,9 +193,41 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Update last login timestamp
-    user.lastLogin = new Date();
-    await user.save();
+    // ========== DUAL-WRITE: Update last login timestamp ==========
+    const lastLoginDate = new Date();
+    
+    await dualWrite(
+      {
+        mongoWrite: async () => {
+          // If user is from MongoDB, update directly
+          if (user.save && typeof user.save === 'function' && user instanceof User === false) {
+            // Coming from PostgreSQL fallback, need to update MongoDB
+            const mongoUser = await User.findOne({ username });
+            if (mongoUser) {
+              mongoUser.lastLogin = lastLoginDate;
+              await mongoUser.save();
+            }
+          } else {
+            user.lastLogin = lastLoginDate;
+            await user.save();
+          }
+          return user;
+        },
+        
+        postgresWrite: async () => {
+          const prisma = getPrisma();
+          return await UserRepository.update(prisma, user._id.toString(), {
+            lastLogin: lastLoginDate
+          });
+        },
+        
+        mongoRollback: async () => {
+          // No rollback needed for lastLogin update
+        }
+      },
+      FAILURE_STRATEGY.PRIORITIZE_MONGO,
+      'User Login - LastLogin Update'
+    );
 
     // Generate JWT token
     const token = jwt.sign(
@@ -1069,6 +1174,26 @@ router.delete('/:userId/friends/:friendId', auth, async (req, res, next) => {
       await friend.save();
     }
 
+    // Mirror unfriend to PostgreSQL using transaction
+    if (usePostgres()) {
+      try {
+        const prisma = getPrisma();
+        await prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: userId },
+            data: { friends: { disconnect: { id: friendId } } }
+          });
+          await tx.user.update({
+            where: { id: friendId },
+            data: { friends: { disconnect: { id: userId } } }
+          });
+        });
+        console.log('[Friends DualWrite] ✅ Mirrored mutual unfriend');
+      } catch (pgError) {
+        console.warn('[Friends DualWrite] ⚠️  Failed to mirror unfriend:', pgError.message);
+      }
+    }
+
     res.json({
       message: 'Friend removed successfully'
     });
@@ -1135,6 +1260,17 @@ router.post('/:userId/friend-requests', auth, async (req, res, next) => {
     });
 
     await friendRequest.save();
+
+    // Mirror to PostgreSQL
+    if (usePostgres()) {
+      try {
+        const prisma = getPrisma();
+        await FriendRequestRepo.create(prisma, userId, receiverId);
+        console.log('[FriendRequest DualWrite] ✅ Mirrored friend request create');
+      } catch (pgError) {
+        console.warn('[FriendRequest DualWrite] ⚠️  Failed to mirror friend request create:', pgError.message);
+      }
+    }
 
     // Populate sender info for response
     await friendRequest.populate('sender', '_id username profilePicture createdAt');
@@ -1286,6 +1422,45 @@ router.post('/:userId/friend-requests/:requestId/accept', auth, async (req, res,
       await receiver.save();
     }
 
+    // Mirror accept to PostgreSQL using a transaction
+    if (usePostgres()) {
+      try {
+        const prisma = getPrisma();
+        const senderId = friendRequest.sender._id.toString();
+        const receiverId = friendRequest.receiver._id.toString();
+
+        await prisma.$transaction(async (tx) => {
+          // Find and update the friend request in PG
+          const pgRequest = await tx.friendRequest.findFirst({
+            where: {
+              senderId,
+              receiverId,
+              status: 'pending'
+            }
+          });
+          if (pgRequest) {
+            await tx.friendRequest.update({
+              where: { id: pgRequest.id },
+              data: { status: 'accepted' }
+            });
+          }
+
+          // Add mutual friendship
+          await tx.user.update({
+            where: { id: senderId },
+            data: { friends: { connect: { id: receiverId } } }
+          });
+          await tx.user.update({
+            where: { id: receiverId },
+            data: { friends: { connect: { id: senderId } } }
+          });
+        });
+        console.log('[FriendRequest DualWrite] ✅ Mirrored friend request accept (transactional)');
+      } catch (pgError) {
+        console.warn('[FriendRequest DualWrite] ⚠️  Failed to mirror friend request accept:', pgError.message);
+      }
+    }
+
     res.json({
       message: 'Friend request accepted',
       friend: {
@@ -1331,6 +1506,29 @@ router.post('/:userId/friend-requests/:requestId/reject', auth, async (req, res,
     friendRequest.status = 'rejected';
     await friendRequest.save();
 
+    // Mirror reject to PostgreSQL
+    if (usePostgres()) {
+      try {
+        const prisma = getPrisma();
+        const pgRequest = await prisma.friendRequest.findFirst({
+          where: {
+            senderId: friendRequest.sender.toString(),
+            receiverId: userId,
+            status: 'pending'
+          }
+        });
+        if (pgRequest) {
+          await prisma.friendRequest.update({
+            where: { id: pgRequest.id },
+            data: { status: 'rejected' }
+          });
+          console.log('[FriendRequest DualWrite] ✅ Mirrored friend request reject');
+        }
+      } catch (pgError) {
+        console.warn('[FriendRequest DualWrite] ⚠️  Failed to mirror friend request reject:', pgError.message);
+      }
+    }
+
     res.json({
       message: 'Friend request rejected'
     });
@@ -1367,7 +1565,31 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
     }
 
     // Delete the request
+    const senderId = friendRequest.sender.toString();
+    const receiverId = friendRequest.receiver.toString();
     await FriendRequest.findByIdAndDelete(requestId);
+
+    // Mirror cancel to PostgreSQL
+    if (usePostgres()) {
+      try {
+        const prisma = getPrisma();
+        const pgRequest = await prisma.friendRequest.findFirst({
+          where: {
+            senderId,
+            receiverId,
+            status: 'pending'
+          }
+        });
+        if (pgRequest) {
+          await prisma.friendRequest.delete({
+            where: { id: pgRequest.id }
+          });
+          console.log('[FriendRequest DualWrite] ✅ Mirrored friend request cancel');
+        }
+      } catch (pgError) {
+        console.warn('[FriendRequest DualWrite] ⚠️  Failed to mirror friend request cancel:', pgError.message);
+      }
+    }
 
     res.json({
       message: 'Friend request cancelled'

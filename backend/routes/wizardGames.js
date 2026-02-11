@@ -6,6 +6,7 @@ const Game = require('../models/Game');
 const WizardGame = require('../models/WizardGame');
 const { migrateWizardGame, validateMigratedGame } = require('../utils/wizardGameMigration');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
+const { mirrorWizardGameCreate } = require('../utils/gameDualWrite');
 
 /**
  * GET /api/wizard-games/public/:id
@@ -170,6 +171,9 @@ router.post('/migrate', auth, async (req, res) => {
         });
         
         await wizardGame.save();
+
+        // Mirror to PostgreSQL (non-blocking)
+        mirrorWizardGameCreate(wizardGame).catch(() => {});
         
         results.successful++;
         results.details.push({
@@ -311,6 +315,9 @@ router.post('/', auth, async (req, res) => {
     });
     
     await wizardGame.save();
+
+    // Mirror to PostgreSQL (non-blocking)
+    mirrorWizardGameCreate(wizardGame).catch(() => {});
     
     res.status(201).json({
       message: 'Wizard game created successfully',

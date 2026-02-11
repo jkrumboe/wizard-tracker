@@ -1,7 +1,7 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const cache = require('./utils/redis');
+const { connectDatabases, disconnectDatabases, healthCheck, getActiveDatabase } = require('./database');
 require('dotenv').config();
 
 const app = express();
@@ -34,12 +34,32 @@ async function initializeServer() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-  // Connect to MongoDB
+  // Connect to databases (MongoDB + PostgreSQL)
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000 // 5 second timeout for tests
-    });
-    console.log('✅ MongoDB connected');
+    const dbResults = await connectDatabases();
+    
+    // Log connection status
+    console.log(`Active database: ${getActiveDatabase().toUpperCase()}`);
+    
+    // In test mode, warn if databases are unavailable but don't throw
+    if (process.env.NODE_ENV === 'test') {
+      if (!dbResults.mongodb.connected) {
+        console.warn('⚠️  MongoDB unavailable - some tests may be skipped');
+      }
+      if (!dbResults.postgres.connected) {
+        console.warn('⚠️  PostgreSQL unavailable - some tests may be skipped');
+      }
+    } else {
+      // In production/development, require MongoDB at minimum
+      // PostgreSQL is optional until USE_POSTGRES=true
+      if (!dbResults.mongodb.connected) {
+        throw new Error('MongoDB connection required');
+      }
+      
+      if (process.env.USE_POSTGRES === 'true' && !dbResults.postgres.connected) {
+        throw new Error('PostgreSQL connection required when USE_POSTGRES=true');
+      }
+    }
     
     // Run database migrations only in non-test environments
     if (process.env.NODE_ENV !== 'test') {
@@ -47,12 +67,11 @@ async function initializeServer() {
       await runMigrations();
     }
   } catch (err) {
-    console.error('MongoDB connection error:', err.message);
+    console.error('Database connection error:', err.message);
     if (process.env.NODE_ENV === 'test') {
-      console.warn('⚠️ Tests will be skipped due to missing MongoDB connection');
-      // Don't throw in test mode - let tests handle it
+      console.warn('⚠️  Tests will be skipped due to database connection issues');
     } else {
-      throw err; // Re-throw in non-test environments
+      throw err;
     }
   }
 
@@ -60,14 +79,14 @@ async function initializeServer() {
   process.on('SIGTERM', async () => {
     console.log('SIGTERM received, closing connections...');
     await cache.disconnect();
-    await mongoose.connection.close();
+    await disconnectDatabases();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     console.log('SIGINT received, closing connections...');
     await cache.disconnect();
-    await mongoose.connection.close();
+    await disconnectDatabases();
     process.exit(0);
   });
 
@@ -80,8 +99,27 @@ async function initializeServer() {
   app.use('/api/identities', apiLimiter, identityRoutes); // Player identity management
 
   // Health check route
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Server is running' });
+  app.get('/api/health', async (req, res) => {
+    try {
+      const dbHealth = await healthCheck();
+      const activeDb = getActiveDatabase();
+      
+      res.json({ 
+        status: 'OK', 
+        message: 'Server is running',
+        database: {
+          active: activeDb,
+          mongodb: dbHealth.mongodb,
+          postgres: dbHealth.postgres
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        status: 'ERROR', 
+        message: 'Health check failed',
+        error: error.message 
+      });
+    }
   });
 
   // Error handling middleware

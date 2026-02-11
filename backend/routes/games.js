@@ -3,6 +3,7 @@ const Game = require('../models/Game');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
+const { mirrorGameCreate, mirrorGameShare } = require('../utils/gameDualWrite');
 
 const router = express.Router();
 
@@ -128,6 +129,9 @@ router.post('/', auth, async (req, res, next) => {
     });
 
     await game.save();
+
+    // Mirror to PostgreSQL (non-blocking)
+    mirrorGameCreate(game).catch(() => {});
 
     // Invalidate leaderboard cache when new game is created
     if (cache.isConnected) {
@@ -838,6 +842,9 @@ router.put('/:id/share', auth, async (req, res) => {
     game.isShared = true;
     game.sharedAt = new Date();
     await game.save();
+
+    // Mirror share to PostgreSQL (non-blocking)
+    mirrorGameShare(game).catch(() => {});
 
     res.json({
       message: 'Game shared successfully',

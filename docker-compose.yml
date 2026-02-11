@@ -10,6 +10,8 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: wizard-tracker
+    ports:
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks: [wizard]
@@ -25,6 +27,8 @@ services:
     container_name: wizard-redis
     restart: unless-stopped
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks: [wizard]
@@ -32,6 +36,26 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: wizard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wizard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wizard123}
+      POSTGRES_DB: ${POSTGRES_DB:-wizard_tracker}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [wizard]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wizard -d wizard_tracker"]
+      interval: 10s
+      timeout: 5s
       retries: 5
       start_period: 10s
 
@@ -43,14 +67,18 @@ services:
     restart: unless-stopped
     environment:
       MONGO_URI: mongodb://mongodb:27017/wizard-tracker
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wizard}:${POSTGRES_PASSWORD:-wizard123}@postgres:5432/${POSTGRES_DB:-wizard_tracker}?schema=public
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-5000}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      USE_POSTGRES: ${USE_POSTGRES:-false}
     ports:
       - "5000:5000"
     depends_on:
       mongodb:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -99,8 +127,24 @@ services:
         condition: service_healthy
     networks: [wizard]
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wizard-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-justinkrumbhmer@yahoo.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "15432:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [wizard]
+
 volumes:
   mongodb_data:
+  postgres_data:
   redis_data:
 
 networks:

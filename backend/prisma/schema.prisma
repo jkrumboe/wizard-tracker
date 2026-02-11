@@ -1,0 +1,320 @@
+// Prisma Schema for KeepWiz (Wizard Tracker)
+// PostgreSQL database configuration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Core User Management
+// ============================================
+
+enum UserRole {
+  user
+  admin
+  guest
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  passwordHash  String?  // Null for guest users
+  role          UserRole @default(user)
+  lastLogin     DateTime?
+  profilePicture String? // Base64 encoded image data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Guest metadata
+  guestCreatedBy    String?
+  guestCreatedByUser User?   @relation("GuestCreatedBy", fields: [guestCreatedBy], references: [id], onDelete: SetNull)
+  createdGuestUsers User[]  @relation("GuestCreatedBy")
+  originalGuestId   String?
+
+  // Relationships
+  friends               User[]            @relation("UserFriends")
+  friendOf              User[]            @relation("UserFriends")
+  sentFriendRequests    FriendRequest[]   @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[]  @relation("FriendRequestReceiver")
+  playerIdentities      PlayerIdentity[]  
+  games                 Game[]
+  wizardGames          WizardGame[]
+  tableGames           TableGame[]
+  createdTemplates     UserGameTemplate[]
+  suggestedTemplates   TemplateSuggestion[]
+  createdIdentities    PlayerIdentity[]  @relation("IdentityCreator")
+  playerAliases        PlayerAlias[]
+
+  @@index([username])
+  @@index([role])
+}
+
+// ============================================
+// Player Identity System
+// ============================================
+
+enum IdentityType {
+  user
+  guest
+  imported
+}
+
+model PlayerIdentity {
+  id              String       @id @default(cuid())
+  displayName     String
+  normalizedName  String       // Lowercase for case-insensitive lookups
+  userId          String?
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type            IdentityType @default(guest)
+  
+  // ELO data stored as JSONB for flexibility
+  eloData         Json         @default("{}")
+  
+  // Statistics cache
+  totalGames      Int          @default(0)
+  totalWins       Int          @default(0)
+  lastGameAt      DateTime?
+  
+  // Name history
+  nameHistory     Json         @default("[]")
+  
+  // Aliases
+  aliases         Json         @default("[]")
+  
+  // Linked identities (for merged identities)
+  linkedIdentities Json        @default("[]")
+  
+  // If merged into another identity
+  mergedIntoId    String?
+  mergedInto      PlayerIdentity? @relation("IdentityMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedIdentities PlayerIdentity[] @relation("IdentityMerge")
+  
+  // Metadata
+  createdById     String?
+  createdBy       User?        @relation("IdentityCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  
+  // Soft delete
+  isDeleted       Boolean      @default(false)
+  deletedAt       DateTime?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([normalizedName, isDeleted])
+  @@index([userId, isDeleted])
+  @@index([type, isDeleted])
+  // Ensure each user can only have one type='user' identity (primary identity)
+  @@unique([userId, type], map: "unique_user_primary_identity")
+}
+
+// ============================================
+// Friend System
+// ============================================
+
+enum FriendRequestStatus {
+  pending
+  accepted
+  rejected
+}
+
+model FriendRequest {
+  id         String              @id @default(cuid())
+  senderId   String
+  sender     User                @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User                @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     FriendRequestStatus @default(pending)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId, status])
+}
+
+// ============================================
+// Legacy Alias System (for migration reference)
+// ============================================
+
+model PlayerAlias {
+  id          String   @id @default(cuid())
+  aliasName   String   @unique
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// Game Data
+// ============================================
+
+model Game {
+  id         String   @id @default(cuid())
+  userId     String   // Can be ObjectId string or temp ID for unauth
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  localId    String   @unique
+  gameData   Json     @default("{}")
+  shareId    String?  @unique
+  isShared   Boolean  @default(false)
+  sharedAt   DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([shareId])
+}
+
+model WizardGame {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  localId         String   @unique
+  gameData        Json     // Must be v3.0 format
+  
+  // Migration metadata
+  migratedFrom    String?  // '1.0', '2.0', '3.0', or null
+  migratedAt      DateTime?
+  originalGameId  String?  // Reference to legacy Game
+  
+  // Sharing
+  shareId         String?  @unique
+  isShared        Boolean  @default(false)
+  sharedAt        DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([shareId])
+  @@index([migratedFrom, migratedAt])
+}
+
+model TableGame {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  localId             String   @unique
+  name                String
+  gameTypeName        String?
+  gameData            Json     @default("{}")
+  gameType            String   @default("table")
+  gameFinished        Boolean  @default(false)
+  playerCount         Int      @default(0)
+  totalRounds         Int      @default(0)
+  targetNumber        Int?
+  lowIsBetter         Boolean  @default(false)
+  
+  // Migration tracking
+  identitiesMigrated  Boolean  @default(false)
+  migratedAt          DateTime?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+// ============================================
+// Event Sourcing & Sync
+// ============================================
+
+model GameEvent {
+  id            String   @id @default(cuid())
+  eventId       String   @unique // Original event ID from client
+  gameId        String
+  actionType    String
+  payload       Json
+  timestamp     BigInt
+  localVersion  Int
+  userId        String
+  clientId      String?
+  serverVersion Int
+  acknowledged  Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([gameId, serverVersion])
+  @@index([gameId, timestamp])
+  @@index([clientId])
+  @@unique([gameId, eventId])
+}
+
+model GameSnapshot {
+  id            String   @id @default(cuid())
+  gameId        String
+  serverVersion Int
+  gameState     Json
+  userId        String
+  eventCount    Int      @default(0)
+  checksum      String?
+  expiresAt     DateTime? // For TTL
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([gameId, serverVersion(sort: Desc)])
+  @@unique([gameId, serverVersion])
+}
+
+// ============================================
+// Game Templates
+// ============================================
+
+model SystemGameTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  targetNumber Int?
+  lowIsBetter  Boolean  @default(false)
+  description  String?
+  usageCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([name])
+}
+
+model UserGameTemplate {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  localId      String?  @unique
+  name         String
+  targetNumber Int?
+  lowIsBetter  Boolean  @default(false)
+  description  String?
+  usageCount   Int      @default(0)
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model TemplateSuggestion {
+  id            String   @id @default(cuid())
+  name          String
+  targetNumber  Int?
+  lowIsBetter   Boolean  @default(false)
+  description   String?
+  suggestedById String?
+  suggestedBy   User?    @relation(fields: [suggestedById], references: [id], onDelete: SetNull)
+  suggestionNote String?
+  approved      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([approved])
+}
+
+// ============================================
+// Migration Tracking (Prisma handles this automatically)
+// ============================================
+// The _prisma_migrations table is auto-managed by Prisma

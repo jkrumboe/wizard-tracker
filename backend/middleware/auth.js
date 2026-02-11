@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const cache = require('../utils/redis');
+const { dualReadWithFallback } = require('../utils/dualWrite');
+const { getPrisma } = require('../database');
+const UserRepository = require('../repositories/UserRepository');
 
 const auth = async (req, res, next) => {
   try {
@@ -29,8 +32,44 @@ const auth = async (req, res, next) => {
       }
     }
     
-    // Get user from database if not in cache
-    user = await User.findById(decoded.userId).select('-passwordHash').lean();
+    // ========== DUAL-READ: Try PostgreSQL first, fallback to MongoDB ==========
+    user = await dualReadWithFallback(
+      // MongoDB read
+      async () => {
+        const mongoUser = await User.findById(decoded.userId).select('-passwordHash').lean();
+        if (!mongoUser) return null;
+        
+        // Normalize MongoDB user for consistency
+        return {
+          id: mongoUser._id.toString(),
+          _id: mongoUser._id, // Keep for backwards compatibility
+          username: mongoUser.username,
+          role: mongoUser.role || 'user',
+          lastLogin: mongoUser.lastLogin,
+          profilePicture: mongoUser.profilePicture,
+          createdAt: mongoUser.createdAt,
+          updatedAt: mongoUser.updatedAt
+        };
+      },
+      // PostgreSQL read
+      async () => {
+        const prisma = getPrisma();
+        const pgUser = await UserRepository.findById(prisma, decoded.userId);
+        if (!pgUser) return null;
+        
+        // Normalize PostgreSQL user for consistency
+        return {
+          id: pgUser.id,
+          _id: pgUser.id, // For backwards compatibility
+          username: pgUser.username,
+          role: pgUser.role,
+          lastLogin: pgUser.lastLogin,
+          profilePicture: pgUser.profilePicture,
+          createdAt: pgUser.createdAt,
+          updatedAt: pgUser.updatedAt
+        };
+      }
+    );
     
     if (!user) {
       return res.status(401).json({ error: 'User not found' });

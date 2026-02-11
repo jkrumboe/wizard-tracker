@@ -73,3 +73,15 @@ jspm_packages/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+# Prisma
+# Keep migrations in git, ignore generated client
+# node_modules already ignores node_modules/.prisma
+prisma/migrations/*.sql
+prisma/migrations/*/migration.sql.gz
+
+# Database files (if using SQLite for testing)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
