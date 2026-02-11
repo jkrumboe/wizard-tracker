@@ -321,9 +321,9 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
 
   return (
     <div className="game-template-selector">
-      <div className="template-selector-header">
+      {/* <div className="template-selector-header">
         <h2>Select a Gametype</h2>
-      </div>
+      </div> */}
 
       {/* System Templates Section */}
       {systemTemplates.length > 0 && (
