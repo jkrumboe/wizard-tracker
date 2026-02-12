@@ -156,6 +156,12 @@ const TableGameDetails = () => {
   const rows = gameData.rows || 10
   const createdAt = game.createdAt || game.created_at
 
+  // Count rounds that have actual data
+  const filledRounds = players.length > 0
+    ? (players[0].points || []).filter((p) => p !== "" && p !== undefined && p !== null).length
+    : 0
+  const hasMultipleRounds = filledRounds > 1
+
   // Format date
   const formattedDate = createdAt 
     ? new Date(createdAt).toLocaleDateString('en-GB', {
@@ -238,33 +244,35 @@ const TableGameDetails = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="account-tabs">
-        <button 
-          className={`account-tab ${activeTab === 'standings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('standings')}
-        >
-          {t('tableGame.standingsSubTab')}
-        </button>
-        <button 
-          className={`account-tab ${activeTab === 'chart' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chart')}
-        >
-          {t('tableGame.chartsSubTab')}
-        </button>
-        <button 
-          className={`account-tab ${activeTab === 'table' ? 'active' : ''}`}
-          onClick={() => setActiveTab('table')}
-        >
-          {t('tableGame.tableSubTab')}
-        </button>
-      </div>
+      {/* Tabs - only show when there are multiple rounds */}
+      {hasMultipleRounds && (
+        <div className="account-tabs">
+          <button 
+            className={`account-tab ${activeTab === 'standings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('standings')}
+          >
+            {t('tableGame.standingsSubTab')}
+          </button>
+          <button 
+            className={`account-tab ${activeTab === 'chart' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chart')}
+          >
+            {t('tableGame.chartsSubTab')}
+          </button>
+          <button 
+            className={`account-tab ${activeTab === 'table' ? 'active' : ''}`}
+            onClick={() => setActiveTab('table')}
+          >
+            {t('tableGame.tableSubTab')}
+          </button>
+        </div>
+      )}
 
       <div className="game-summary">
         {/* Standings View */}
         {(activeTab === 'standings' || isLandscape) && (
           <div className="results-section">
-            {!isLandscape && <h2 className="results-header">Final Results</h2>}
+            {/* {!isLandscape && <h2 className="results-header">Final Results</h2>} */}
             <div className="results-table">
               {rankedPlayers.map((player) => (
                 <div key={player.id || player.name} className="results-row">
@@ -292,9 +300,9 @@ const TableGameDetails = () => {
         )}
 
         {/* Chart View */}
-        {(activeTab === 'chart' || isLandscape) && (
+        {hasMultipleRounds && (activeTab === 'chart' || isLandscape) && (
           <div className="results-section">
-            {!isLandscape && <h2 className="results-header">Score Progression</h2>}
+            {/* {!isLandscape && <h2 className="results-header">Score Progression</h2>} */}
             <div className="chart-view-container">
               {players[0]?.points?.length > 0 ? (
                 <StatsChart 
@@ -309,9 +317,9 @@ const TableGameDetails = () => {
         )}
 
         {/* Table View */}
-        {(activeTab === 'table' || isLandscape) && (
+        {hasMultipleRounds && (activeTab === 'table' || isLandscape) && (
           <div className="results-section">
-            {!isLandscape && <h2 className="results-header">Score Table</h2>}
+            {/* {!isLandscape && <h2 className="results-header">Score Table</h2>} */}
             <div className="rounds-section">
               <div className={`wizard-scorecard ${players.length > 3 ? 'many-players' : ''}`} data-player-count={players.length}>
                 <table className="scorecard-table">

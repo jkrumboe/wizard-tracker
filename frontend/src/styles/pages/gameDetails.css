@@ -192,9 +192,9 @@
 }
 
 .player-header .player-link {
-  max-width: 100px;
+  /* max-width: 100px; */
   align-self: center;
-  margin: 0 auto;
+  margin: 0 2px;
 }
 
 .player-link:hover {

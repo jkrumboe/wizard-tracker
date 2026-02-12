@@ -171,7 +171,7 @@ const StatsChart = ({ playersData, roundData }) => {
     const originalIndices = selectedPlayersWithIndex.map(item => item.index);
 
     const datasets = [{
-      label: 'Bid Accuracy (%)',
+      // label: 'Bid Accuracy (%)',
       data: bidAccuracyData,
       backgroundColor: originalIndices.map(index => getColorForIndex(index)),
       borderColor: originalIndices.map(index => getBorderColorForIndex(index)),
@@ -406,13 +406,7 @@ const StatsChart = ({ playersData, roundData }) => {
         return {
           ...baseOptions,
           plugins: {
-            ...baseOptions.plugins,
-            title: {
-              display: true,
-              text: 'Points Progression',
-              color: textColor,
-              font: { size: 18, weight: 'bold' }
-            }
+            ...baseOptions.plugins
           },
           scales: {
             ...baseOptions.scales,
@@ -437,27 +431,16 @@ const StatsChart = ({ playersData, roundData }) => {
         return {
           ...baseOptions,
           plugins: {
-            ...baseOptions.plugins,
-            title: {
-              display: true,
-              text: 'Bid Accuracy',
-              color: textColor,
-              font: { size: 18, weight: 'bold' }
-            }
+            ...baseOptions.plugins
           },
           scales: {
             ...baseOptions.scales,
             y: {
               ...baseOptions.scales.y,
               max: 100,
-              title: {
-                display: true,
-                text: 'Accuracy (%)',
-                color: textColor,
-                font: {
-                  weight: 'bold',
-                  size: 14
-                }
+              ticks: {
+                ...baseOptions.scales.y.ticks,
+                callback: (value) => `${value}%`
               }
             },
             x: {
@@ -475,12 +458,6 @@ const StatsChart = ({ playersData, roundData }) => {
           ...baseOptions,
           plugins: {
             ...baseOptions.plugins,
-            title: {
-              display: true,
-              text: 'Bid Distribution',
-              color: textColor,
-              font: { size: 18, weight: 'bold' }
-            },
             legend: {
               ...baseOptions.plugins.legend,
               labels: {
@@ -493,14 +470,9 @@ const StatsChart = ({ playersData, roundData }) => {
             ...baseOptions.scales,
             y: {
               ...baseOptions.scales.y,
-              title: {
-                display: true,
-                text: 'Number of Bids',
-                color: textColor,
-                font: {
-                  weight: 'bold',
-                  size: 14
-                }
+              ticks: {
+                ...baseOptions.scales.y.ticks,
+                stepSize: 1
               },
               grid: {
                 ...baseOptions.scales.y.grid,
@@ -579,7 +551,7 @@ const StatsChart = ({ playersData, roundData }) => {
 
         <div className="chart-controls">
         <div className="chart-type-selector">
-            <label>Chart Type:</label>
+            {/* <label>Chart Type:</label> */}
             <select 
             value={chartType} 
             onChange={(e) => setChartType(e.target.value)}
@@ -593,22 +565,12 @@ const StatsChart = ({ playersData, roundData }) => {
 
         <div className="player-toggles">
             <div className="player-toggle-header">
-                <label>
+                {/* <label>
                     {focusMode ? 
                         <span className="focus-indicator">Focused on Player</span> : 
                         'Click a player to focus on their data'}
-                </label>
-                {focusMode && (
-                    <button 
-                        className="show-all-btn"
-                        onClick={() => {
-                            setSelectedPlayers(playersData.map(player => player.id));
-                            setFocusMode(false);
-                        }}
-                    >
-                        Show All Players
-                    </button>
-                )}
+                </label> */}
+                
             </div>
             <div className="player-toggle-buttons">
             {playersData.map((player, index) => (
@@ -627,6 +589,17 @@ const StatsChart = ({ playersData, roundData }) => {
                 </button>
             ))}
             </div>
+            {focusMode && (
+                    <button 
+                        className="show-all-btn"
+                        onClick={() => {
+                            setSelectedPlayers(playersData.map(player => player.id));
+                            setFocusMode(false);
+                        }}
+                    >
+                        Show All Players
+                    </button>
+                )}
         </div>
         </div>
     </div>

@@ -510,9 +510,9 @@ const GameDetails = () => {
         <div className="game-summary">
           {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">
-              <div className="results-header">
+              {/* <div className="results-header">
                 <h2>{t('gameDetails.finalResults')}</h2>
-              </div>
+              </div> */}
 
               <div className="results-table">
                   {sortedPlayers.map((player) => (

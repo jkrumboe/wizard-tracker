@@ -46,6 +46,7 @@
 }
 
 .show-all-btn {
+  margin-top: var(--spacing-sm);
   background-color: var(--bg-color);
   border: 1px solid var(--border);
   color: var(--text);

@@ -550,6 +550,7 @@
   .player-link {
     display: flex;
     align-items: center;
+    text-align: center;
     gap: 0.5rem;
     text-decoration: none;
     color: var(--text);
