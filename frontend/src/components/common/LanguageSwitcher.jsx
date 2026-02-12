@@ -6,7 +6,7 @@ import { supportedLanguages } from '@/shared/i18n/i18n';
  * The active language gets a highlighted style.
  */
 export function LanguageSwitcher() {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
 
   const handleChange = (code) => {
     i18n.changeLanguage(code);

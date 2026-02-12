@@ -271,7 +271,7 @@ const GameInProgress = () => {
         console.debug('Unmount reasons: isFirstVisit:', isFirstVisit, 'isViteReload:', isViteReload, 'gameStarted:', currentGameState?.gameStarted);
       }
     };
-  }, [gameState]); // Include gameState dependency for backup functionality
+  }, [gameState, t]); // Include gameState dependency for backup functionality
 
   // Separate useEffect to handle game state recovery
   useEffect(() => {

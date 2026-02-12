@@ -99,7 +99,7 @@ const Stats = () => {
     if (currentPlayer && user.username) {
       fetchData()
     }
-  }, [currentPlayer, user])
+  }, [currentPlayer, user, t])
 
   if (error) {
     return (

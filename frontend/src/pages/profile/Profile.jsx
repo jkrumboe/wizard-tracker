@@ -136,7 +136,7 @@ useEffect(() => {
   };
 
   if (user) fetchData();
-}, [user, paramId]); // Add paramId to dependencies
+}, [user, paramId, t]); // Add paramId to dependencies
 
 // Load avatar URL when user is available
 useEffect(() => {

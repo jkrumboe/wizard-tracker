@@ -191,7 +191,7 @@ const GameDetails = () => {
     }
 
     fetchGameData()
-  }, [id])
+  }, [id, t])
 
   const togglePlayerStats = (playerId) => {
     setSelectedPlayerId((prev) => {

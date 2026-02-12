@@ -16,7 +16,6 @@ const UserManagement = () => {
   const [newRole, setNewRole] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [selectedUser, setSelectedUser] = useState(null);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [actionUser, setActionUser] = useState(null);
   
@@ -95,10 +94,6 @@ const UserManagement = () => {
   const handleCancelRoleEdit = () => {
     setEditingRole(null);
     setNewRole('');
-  };
-
-  const toggleUserExpansion = (userId) => {
-    setSelectedUser(selectedUser === userId ? null : userId);
   };
 
   const handleOpenActionsModal = (user, e) => {
@@ -205,7 +200,7 @@ const UserManagement = () => {
     if (!deleteUser) return;
 
     try {
-      const result = await userService.deleteUser(deleteUser._id || deleteUser.id);
+      await userService.deleteUser(deleteUser._id || deleteUser.id);
       alert(t('adminUsers.userAnonymized', { username: deleteUser.username }));
       handleCloseDeleteModal();
       loadUsers();

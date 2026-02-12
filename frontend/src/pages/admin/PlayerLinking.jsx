@@ -117,7 +117,7 @@ const PlayerLinking = () => {
       setError('');
       setSuccess('');
 
-      const result = await userService.linkGuestIdentity(
+      await userService.linkGuestIdentity(
         selectedIdentity._id,
         selectedUser._id || selectedUser.id
       );
@@ -148,7 +148,7 @@ const PlayerLinking = () => {
       setSuccess('');
 
       // Pass both guestIdentityId and userId to the API
-      const result = await userService.unlinkGuestIdentity(identity._id, identity.linkedToUser?._id);
+      await userService.unlinkGuestIdentity(identity._id, identity.linkedToUser?._id);
 
       setSuccess(
         t('adminPlayerLinking.unlinkSuccess', { identity: identity.displayName })

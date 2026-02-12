@@ -240,7 +240,7 @@ const TableGame = () => {
     };
     
     loadGame();
-  }, [id, showTemplateSelector, currentGameId, navigate]);
+  }, [id, showTemplateSelector, currentGameId, navigate, t]);
 
   // Listen for orientation changes
   useEffect(() => {
@@ -353,7 +353,7 @@ const TableGame = () => {
     }, 5000); // Save every 5 seconds
     
     return () => clearInterval(autoSaveInterval);
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished, t]);
 
   // Auto-save game when navigating away or closing tab
   useEffect(() => {
@@ -414,7 +414,7 @@ const TableGame = () => {
         }
       }
     };
-  }, []); // Empty dependency array - only set up once
+  }, [t]); // Empty dependency array - only set up once
 
   // Auto-save on browser close/refresh
   useEffect(() => {
@@ -475,7 +475,7 @@ const TableGame = () => {
     return () => {
       globalThis.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, []); // Empty dependency array - set up once
+  }, [t]); // Empty dependency array - set up once
 
   const handleNameChange = (idx, value) => {
     const updated = [...players];

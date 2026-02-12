@@ -93,7 +93,7 @@ const UserProfile = () => {
     }
 
     fetchUserProfile()
-  }, [userId, isOwnProfile, localGamesData, currentUser])
+  }, [userId, isOwnProfile, localGamesData, currentUser, t])
 
   // Handler for game type card clicks
   const handleGameTypeClick = useCallback((gameTypeName) => {

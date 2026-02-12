@@ -86,7 +86,7 @@ const SharedGamePage = () => {
     };
 
     loadSharedGame();
-  }, [shareId]);
+  }, [shareId, t]);
 
   const handleImportGame = async () => {
     // Check one more time before proceeding
