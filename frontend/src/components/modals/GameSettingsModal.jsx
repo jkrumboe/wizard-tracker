@@ -164,7 +164,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
         <div className="modal-body">
           {/* Max Rounds Setting */}
           <div className="setting-section">
-            <h3>Max Rounds</h3>
+            <h3>{t('settings.maxRounds')}</h3>
             <div className="setting-control">
               <button 
                 className="round-control-btn"
@@ -190,13 +190,13 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
               </button>
             </div>
             <p className="setting-hint">
-              Currently on round {gameState.currentRound}. Max rounds: {maxRounds}
+              {t('settings.currentRoundHint', { current: gameState.currentRound, max: maxRounds })}
             </p>
           </div>
 
           {/* Dealer Selection */}
           <div className="setting-section">
-            <h3>Dealer</h3>
+            <h3>{t('settings.dealer')}</h3>
             <div className="dealer-selection">
               {gameState.players.map((player, index) => (
                 <label key={player.id} className="dealer-option">
@@ -207,9 +207,9 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
                     onChange={() => handleDealerChange(index)}
                   />
                   <span>{player.name}</span>
-                  {dealerIndex === index && <span className="badge">Dealer</span>}
+                  {dealerIndex === index && <span className="badge">{t('settings.dealer')}</span>}
                   {(dealerIndex + 1) % gameState.players.length === index && (
-                    <span className="badge caller-badge">Caller</span>
+                    <span className="badge caller-badge">{t('settings.caller')}</span>
                   )}
                 </label>
               ))}
@@ -218,7 +218,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
 
           {/* Player Order */}
           <div className="setting-section">
-            <h3>Player Order</h3>
+            <h3>{t('settings.playerOrder')}</h3>
             <DndContext 
               sensors={sensors}
               collisionDetection={closestCenter}

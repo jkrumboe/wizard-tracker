@@ -2123,7 +2123,7 @@ const Account = () => {
             <div className="settings-section">
               <h3 className="settings-section-title">{t('account.updateSettings')}</h3>
               <div className="settings-option">
-                <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center'}}>
+                <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center', justifyContent: 'center'}}>
                   <input
                     type="checkbox"
                     checked={autoUpdate}
@@ -2184,7 +2184,7 @@ const Account = () => {
                 {migrating ? t('account.migrating') : needsMigration ? t('account.migrateGamesToV3') : t('account.allGamesUpToDate')}
               </button>
               {migrationStatus && migrationStatus.stats && (
-                <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: 'var(--spacing-sm)'}}>
+                <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: 'var(--spacing-sm)', textAlign: 'center'}}>
                   {t('account.lastMigrationStats', { migrated: migrationStatus.stats.migrated, alreadyV3: migrationStatus.stats.alreadyV3 })}
                 </div>
               )}

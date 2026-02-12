@@ -682,6 +682,7 @@
 /* Language Switcher */
 .language-switcher {
   display: flex;
+  justify-content: center;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
 }

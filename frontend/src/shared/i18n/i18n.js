@@ -40,6 +40,6 @@ export default i18n;
  * Add new languages here when adding translations.
  */
 export const supportedLanguages = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'en', name: 'English', flag: 'EN' },
+  { code: 'de', name: 'Deutsch', flag: 'DE' },
 ];
