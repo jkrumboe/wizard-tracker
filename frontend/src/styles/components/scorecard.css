@@ -118,6 +118,20 @@
   padding: 0 !important;
 }
 
+.table-game-container .player-round-cell {
+  background-color: var(--card-bg-alt);
+  border-bottom: 1px solid var(--card-bg);
+  border-right: 1px solid var(--card-bg);
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-game-container .player-round-cell:last-child {
+  border-right: none;
+}
+
 /* .player-round-cell:hover {
   background-color: var(--input-bg);
 } */

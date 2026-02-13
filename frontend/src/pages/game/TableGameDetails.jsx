@@ -215,7 +215,7 @@ const TableGameDetails = () => {
   }
 
   return (
-    <div className="game-details-container">
+    <div className="game-details-container table-game-container">
       {message.text && (
         <div className={`settings-message ${message.type}`}>
           {message.text}
