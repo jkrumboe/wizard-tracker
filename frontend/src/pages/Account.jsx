@@ -1888,7 +1888,6 @@ const Account = () => {
                       onClick={() => { if (theme !== 'dark') toggleTheme(); }}
                     >
                       <div className="settings-row-left">
-                        <span className="settings-theme-icon">🌙</span>
                         <span>{t('account.themeDark')}</span>
                       </div>
                       {theme === 'dark' && (
@@ -1900,7 +1899,6 @@ const Account = () => {
                       onClick={() => { if (theme !== 'light') toggleTheme(); }}
                     >
                       <div className="settings-row-left">
-                        <span className="settings-theme-icon">☀️</span>
                         <span>{t('account.themeLight')}</span>
                       </div>
                       {theme === 'light' && (
@@ -1909,6 +1907,12 @@ const Account = () => {
                     </button>
                   </>
                 )}
+              </div>
+            </div>
+
+            {/* Language */}
+            <div className="settings-group">
+              <div className="settings-group-content">
                 {supportedLanguages.map((lang) => (
                   <button
                     key={lang.code}

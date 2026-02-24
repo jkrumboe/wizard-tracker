@@ -1089,14 +1089,6 @@ html:not([data-theme="dark"]) .settings-tab button {
   transition: background 0.15s;
 }
 
-.settings-row-clickable:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.settings-row-clickable:active {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .settings-row-clickable:disabled {
   opacity: 0.45;
   cursor: not-allowed;
