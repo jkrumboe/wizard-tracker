@@ -1840,10 +1840,6 @@ const Account = () => {
                 {t('auth.signInToUpload')}
               </button>
             )}
-            <button className="settings-button danger-button" onClick={handleDeleteAllData}>
-              <TrashIcon size={18} />
-              {t('account.clearAllData')}
-            </button>
           </div>
         </div>
 
@@ -1863,42 +1859,40 @@ const Account = () => {
           </div>
         )}
 
-        {/* Game Type Selector */}
-        {gamesListGameTypes.length > 1 && (
-          <div className="settings-section" style={{ padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: 'var(--spacing-sm)' }}>
-            <select 
-              className="game-type-selector"
-              value={gamesListType}
-              onChange={(e) => setGamesListType(e.target.value)}
-            >
-              {gamesListGameTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Search & Date Filters */}
+        {/* Search & Filters */}
         <div className="games-filter-bar">
-          <div className="games-search-wrapper">
-            <SearchIcon size={16} className="games-search-icon" />
-            <input
-              type="text"
-              className="games-search-input"
-              placeholder={t('account.searchGames', 'Search games...')}
-              value={gamesSearchQuery}
-              onChange={(e) => setGamesSearchQuery(e.target.value)}
-            />
-            {gamesSearchQuery && (
-              <button
-                className="games-search-clear"
-                onClick={() => setGamesSearchQuery('')}
-                aria-label="Clear search"
+          <div className="games-search-row">
+            <div className="games-search-wrapper">
+              <SearchIcon size={16} className="games-search-icon" />
+              <input
+                type="text"
+                className="games-search-input"
+                placeholder={t('account.searchGames', 'Search games...')}
+                value={gamesSearchQuery}
+                onChange={(e) => setGamesSearchQuery(e.target.value)}
+              />
+              {gamesSearchQuery && (
+                <button
+                  className="games-search-clear"
+                  onClick={() => setGamesSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <XIcon size={14} />
+                </button>
+              )}
+            </div>
+            {gamesListGameTypes.length > 1 && (
+              <select 
+                className="games-type-select"
+                value={gamesListType}
+                onChange={(e) => setGamesListType(e.target.value)}
               >
-                <XIcon size={14} />
-              </button>
+                {gamesListGameTypes.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
           <div className="games-date-filters">
@@ -2317,6 +2311,17 @@ const Account = () => {
                   style={{backgroundColor: 'var(--primary)'}}
                 >
                   <TrashIcon size={18} />{t('account.forceUpdate')}
+                </button>
+              </div>
+            </div>
+
+            {/* Data Management */}
+            <div className="settings-section">
+              <h3 className="settings-section-title">{t('account.dataManagement', 'Data Management')}</h3>
+              <div className="settings-actions">
+                <button className="settings-button danger-button" onClick={handleDeleteAllData}>
+                  <TrashIcon size={18} />
+                  {t('account.clearAllData')}
                 </button>
               </div>
             </div>

@@ -730,9 +730,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
     <div className="performance-stats-container" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
       
       {/* OVERVIEW SECTION */}
-      <div>
-        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>Overview</h2>
-        
+      <div>        
         {/* Overall Stats Grid */}
         <div style={{ 
           display: 'grid', 
@@ -795,9 +793,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
 
       {/* INSIGHTS SECTION */}
       <div>
-        <div className="performance-insights-header">
-          <h2 style={{ margin: '0', fontSize: '1.25rem', fontWeight: '600' }}>{t('profile.performanceInsights')}</h2>
-          
+        <div className="performance-insights-header">          
           {/* Insight Type Selector */}
           {isWizardGame && (
             <select

@@ -38,7 +38,13 @@
 
 .tab-content {
   animation: fadeIn 0.3s ease;
+  height: 100%;
   padding-bottom: var(--spacing-sm);
+}
+
+.tab-content:has(.game-history),
+.tab-content:has(.table-game-card) {
+  padding: 0;
 }
 
 @keyframes fadeIn {
@@ -327,17 +333,22 @@
 
 .game-type-selector {
   width: 100%;
-  padding: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-xs) var(--spacing-lg);
   margin: 0;
-  margin-top: var(--spacing-sm);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
+  border: none;
+  background: var(--primary);
   text-align: center;
   text-align-last: center;
-  font-size: 1rem;
+  color: var(--text-white);
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 8px center;
 }
 
 .game-type-selector option {
@@ -352,10 +363,44 @@
   margin-bottom: var(--spacing-sm);
 }
 
+.games-search-row {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
 .games-search-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.games-type-select {
+  flex-shrink: 0;
+  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-xs) var(--spacing-lg);
+  margin: var(--spacing-sm) 0;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--primary);
+  color: var(--text-white);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  text-align-last: center;
+  min-width: 90px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 8px center;
+}
+
+.games-type-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
 }
 
 .games-search-icon {
@@ -468,7 +513,7 @@
 }
 
 .games-list-count {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--text-light);
   font-weight: 500;
 }
@@ -695,6 +740,10 @@
   margin-bottom: var(--spacing-sm);
 }
 
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
 .settings-section:has(.game-history),
 .settings-section:has(.table-game-card),
 .settings-section:has(.cloud-sync-actions) {
@@ -713,7 +762,7 @@
 }
 
 .settings-section:has(.table-game-card) {
-  max-height: 40dvh;
+  max-height: 53dvh;
 }
 
 .settings-section h2 {
@@ -1393,8 +1442,9 @@
 
 /* Cloud Sync Styles */
 .cloud-sync-button {
-  background-color: var(--primary) !important;
+  background-color: var(--input-bg) !important;
   color: var(--text-white) !important;
+  border: 2px solid var(--primary) !important;
 }
 
 .cloud-sync-button:disabled {
