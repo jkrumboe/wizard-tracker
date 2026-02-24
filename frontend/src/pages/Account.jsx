@@ -10,7 +10,7 @@ import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
-import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon } from '@/components/ui/Icon';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
@@ -33,6 +33,10 @@ const Account = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview'); // overview, stats, games
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
+  const [gamesListType, setGamesListType] = useState('all'); // all, wizard, or specific table game type
+  const [gamesSearchQuery, setGamesSearchQuery] = useState('');
+  const [gamesDateFrom, setGamesDateFrom] = useState('');
+  const [gamesDateTo, setGamesDateTo] = useState('');
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
   const [cloudGames, setCloudGames] = useState([]); // Games from API (includes identity consolidation)
@@ -1466,6 +1470,93 @@ const Account = () => {
     return map;
   }, [cloudGames]);
 
+  // Game type options for the Games tab selector (includes "All" option)
+  const gamesListGameTypes = useMemo(() => {
+    const types = [{ value: 'all', label: t('common.all', 'All') }];
+    
+    if (Object.keys(savedGames).length > 0) {
+      types.push({ value: 'wizard', label: 'Wizard' });
+    }
+    
+    const tableGameTypes = new Set();
+    savedTableGames.forEach(game => {
+      const gameType = game.gameTypeName || game.name;
+      if (gameType) tableGameTypes.add(gameType);
+    });
+    
+    tableGameTypes.forEach(type => {
+      types.push({ value: type, label: type });
+    });
+    
+    return types;
+  }, [savedGames, savedTableGames, t]);
+
+  // Merge and filter games for the Games tab based on type, search, and date range
+  const displayedGames = useMemo(() => {
+    // Build a unified list: wizard games + table games, each tagged with their source type
+    let allGames = [];
+
+    if (gamesListType === 'all' || gamesListType === 'wizard') {
+      filteredGames.forEach(game => {
+        allGames.push({ ...game, _gameCategory: 'wizard' });
+      });
+    }
+
+    if (gamesListType === 'all') {
+      savedTableGames.forEach(game => {
+        allGames.push({ ...game, _gameCategory: 'table' });
+      });
+    } else if (gamesListType !== 'wizard') {
+      // Specific table game type selected
+      savedTableGames
+        .filter(g => (g.gameTypeName || g.name) === gamesListType)
+        .forEach(game => {
+          allGames.push({ ...game, _gameCategory: 'table' });
+        });
+    }
+
+    // Apply search filter
+    if (gamesSearchQuery.trim()) {
+      const q = gamesSearchQuery.trim().toLowerCase();
+      allGames = allGames.filter(game => {
+        const name = (game._gameCategory === 'wizard' ? 'wizard' : (game.name || '')).toLowerCase();
+        const players = game.players
+          ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
+              ? game.players.join(' ')
+              : game.players.map(p => p.name || '').join(' '))
+          : '';
+        return name.includes(q) || players.toLowerCase().includes(q);
+      });
+    }
+
+    // Apply date range filter
+    if (gamesDateFrom) {
+      const from = new Date(gamesDateFrom);
+      from.setHours(0, 0, 0, 0);
+      allGames = allGames.filter(game => {
+        const d = new Date(game.created_at || game.lastPlayed || game.savedAt);
+        return d >= from;
+      });
+    }
+    if (gamesDateTo) {
+      const to = new Date(gamesDateTo);
+      to.setHours(23, 59, 59, 999);
+      allGames = allGames.filter(game => {
+        const d = new Date(game.created_at || game.lastPlayed || game.savedAt);
+        return d <= to;
+      });
+    }
+
+    // Sort by date descending (newest first)
+    allGames.sort((a, b) => {
+      const dateA = new Date(a.created_at || a.lastPlayed || a.savedAt || 0);
+      const dateB = new Date(b.created_at || b.lastPlayed || b.savedAt || 0);
+      return dateB - dateA;
+    });
+
+    return allGames;
+  }, [filteredGames, savedTableGames, gamesListType, gamesSearchQuery, gamesDateFrom, gamesDateTo]);
+
   // Auto-select first available game type if 'all' or invalid selection
   React.useEffect(() => {
     if (availableGameTypes.length > 0 && (statsGameType === 'all' || !availableGameTypes.find(t => t.value === statsGameType))) {
@@ -1758,9 +1849,6 @@ const Account = () => {
 
         {!user && (
           <div style={{
-            // padding: 'var(--spacing-sm) var(--spacing-md)',
-            // background: 'rgba(79, 70, 229, 0.1)',
-            // border: '1px solid rgba(79, 70, 229, 0.3)',
             borderRadius: 'var(--radius-md)',
             marginBottom: 'var(--spacing-sm)',
             fontSize: '1rem',
@@ -1775,274 +1863,279 @@ const Account = () => {
           </div>
         )}
 
-        <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
-          <div className="section-header" >
-            <h2>{t('account.wizardGamesTitle', { count: filteredGames.length })} </h2>
-            
-            {/* <button 
-              className="filter-button"
-              onClick={() => setShowFilterModal(true)}
-              aria-label="Filter games"
-              style={{
-                background: 'var(--primary)',
-                color: 'var(--text-white)',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                padding: 'var(--spacing-xs) var(--spacing-sm)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--spacing-xs)',
-                position: 'relative'
-              }}
+        {/* Game Type Selector */}
+        {gamesListGameTypes.length > 1 && (
+          <div className="settings-section" style={{ padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: 'var(--spacing-sm)' }}>
+            <select 
+              className="game-type-selector"
+              value={gamesListType}
+              onChange={(e) => setGamesListType(e.target.value)}
             >
-              <FilterIcon size={20} />
-              {hasActiveFilters(filters) && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  width: '12px',
-                  height: '12px',
-                  background: 'var(--danger-color, red)',
-                  borderRadius: '50%',
-                  border: '2px solid var(--card-bg)'
-                }} />
-              )}
-            </button> */}
+              {gamesListGameTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
           </div>
-          {filteredGames.length > 0 ? (
-            <div className="game-history">
-              {filteredGames.map((game) => {
-                const syncStatus = gameSyncStatuses[game.id];
-                const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
-                const isGameSynced = status === 'Synced';
-                const needsUpload = status === 'Local';
-                const isImportedGame = game.isImported || game.isShared || game.originalGameId;
-                const isUploaded = LocalGameStorage.isGameUploaded(game.id);
-                const badgeClass = status.toLowerCase().replace(' ', '-');
+        )}
 
-                // Get ELO data for synced games
-                const cloudGameId = syncStatus?.cloudGameId || game.cloudGameId;
-                const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
-
-                // Determine which actions to show
-                const showSync = needsUpload && !isImportedGame;
-                const showShare = isGameSynced && !isImportedGame;
-
-                return (
-                  <SwipeableGameCard
-                    key={game.id}
-                    onDelete={() => handleDeleteGame(game.id)}
-                    onSync={showSync ? async () => {
-                      if (uploadingGames.has(game.id) || isUploaded) return;
-                      
-                      if (!user) {
-                        navigate('/login');
-                        return;
-                      }
-                      
-                      setUploadingGames(prev => new Set([...prev, game.id]));
-                      try {
-                        const result = await uploadSingleGameToCloud(game.id, game);
-                        setMessage({ text: result.isDuplicate ? t('accountMessages.gameAlreadyUploadedMarked') : t('accountMessages.gameUploadedSuccess'), type: 'success' });
-                        await loadSavedGames();
-                      } catch (error) {
-                        setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                      } finally {
-                        setUploadingGames(prev => {
-                          const newSet = new Set(prev);
-                          newSet.delete(game.id);
-                          return newSet;
-                        });
-                      }
-                    } : undefined}
-                    onShare={showShare ? () => {
-                      if (!user) {
-                        setMessage({ text: t('accountMessages.signInToShare'), type: 'error' });
-                        return;
-                      }
-                      handleShareGame(game.id, game);
-                    } : undefined}
-                    detailsPath={`/game/${game.id}`}
-                    isUploading={uploadingGames.has(game.id)}
-                    isSharing={sharingGames.has(game.id)}
-                    showSync={showSync}
-                    showShare={showShare}
-                    syncTitle={
-                      uploadingGames.has(game.id) ? t('account.syncTitleUploading') :
-                      isUploaded ? t('account.syncTitleAlreadyUploaded') :
-                      game.isPaused ? t('account.syncTitleCannotUploadPaused') :
-                      !user ? t('account.syncTitleSignInToUpload') :
-                      t('account.syncTitleUploadToCloud')
-                    }
-                    shareTitle={
-                      !user ? t('account.shareTitleSignIn') :
-                      game.isPaused ? t('account.shareTitleCannotSharePaused') :
-                      sharingGames.has(game.id) ? t('account.shareTitleSharing') :
-                      t('account.shareTitleShareGame')
-                    }
-                    disableSync={game.isPaused || uploadingGames.has(game.id) || isUploaded}
-                    disableShare={!user || game.isPaused || sharingGames.has(game.id)}
-                  >
-                    <div className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
-                      <div className="settings-card-header">
-                        <div className="game-info">
-                          <div className="game-name">
-                            {t('common.wizard')}
-                            {game.isPaused ? ' | ' + t('common.paused') : ''}
-                          </div>
-                          <div className="game-badges">
-                            {eloData && eloData.change !== undefined && (
-                              <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
-                                {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
-                              </span>
-                            )}
-                            <span className={`mode-badge ${badgeClass}`}>
-                              {status}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="game-players">
-                          <UsersIcon size={12} />{" "}
-                          {game.players && game.players.length > 0
-                            ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
-                                ? game.players.join(", ")
-                                : game.players.map(p => p.name || t('common.unknownPlayer')).join(", "))
-                            : t('common.noPlayers')}
-                        </div>
-                        <div className="actions-game-history">
-                          <div className="bottom-actions-game-history">
-                            <div className="game-rounds">{t('common.rounds')}: {(() => {
-                              const rounds = game.gameFinished 
-                                ? (game.total_rounds || game.totalRounds || game.roundsCompleted || "N/A") 
-                                : (game._internalState?.currentRound || game.roundsCompleted !== undefined ? (game._internalState?.currentRound || game.roundsCompleted + 1) : "N/A");
-                              return rounds;
-                            })()}</div>
-                            <div className="game-date">
-                              {(() => {
-                                const dateToUse = game.created_at || game.lastPlayed;
-                                return formatDate(dateToUse);
-                              })()}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </SwipeableGameCard>
-                );
-              })}
+        {/* Search & Date Filters */}
+        <div className="games-filter-bar">
+          <div className="games-search-wrapper">
+            <SearchIcon size={16} className="games-search-icon" />
+            <input
+              type="text"
+              className="games-search-input"
+              placeholder={t('account.searchGames', 'Search games...')}
+              value={gamesSearchQuery}
+              onChange={(e) => setGamesSearchQuery(e.target.value)}
+            />
+            {gamesSearchQuery && (
+              <button
+                className="games-search-clear"
+                onClick={() => setGamesSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <XIcon size={14} />
+              </button>
+            )}
+          </div>
+          <div className="games-date-filters">
+            <div className="games-date-field">
+              <label htmlFor="games-date-from">{t('account.dateFrom', 'From')}</label>
+              <input
+                id="games-date-from"
+                type="date"
+                className="games-date-input"
+                value={gamesDateFrom}
+                onChange={(e) => setGamesDateFrom(e.target.value)}
+              />
             </div>
-          ) : Object.keys(savedGames).length > 0 ? (
-            <p className="no-games">{t('account.noGamesMatchFilters')}</p>
-          ) : (
-            <p className="no-games">{t('account.noSavedGames')}</p>
-          )}
+            <div className="games-date-field">
+              <label htmlFor="games-date-to">{t('account.dateTo', 'To')}</label>
+              <input
+                id="games-date-to"
+                type="date"
+                className="games-date-input"
+                value={gamesDateTo}
+                onChange={(e) => setGamesDateTo(e.target.value)}
+              />
+            </div>
+            {(gamesDateFrom || gamesDateTo) && (
+              <button
+                className="games-date-clear"
+                onClick={() => { setGamesDateFrom(''); setGamesDateTo(''); }}
+                aria-label="Clear date filters"
+              >
+                <XIcon size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Table Games Section */}
+        {/* Games Count */}
+        <div className="games-list-header">
+          <span className="games-list-count">
+            {t('account.gamesCount', { count: displayedGames.length, defaultValue: '{{count}} Games' })}
+          </span>
+        </div>
+
+        {/* Unified Games List */}
         <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
-          <div className="section-header">
-            <h2>{t('account.tableGamesTitle', { count: savedTableGames.length })}</h2>
-          </div>
-          {savedTableGames.length > 0 ? (
+          {displayedGames.length > 0 ? (
             <div className="game-history">
-              {savedTableGames.map((game) => {
-                const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
-                const showSync = !isUploaded && game.gameFinished;
-                
-                // Get ELO data for synced games
-                const cloudGameId = game.cloudGameId;
-                const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
-                
-                return (
-                  <SwipeableGameCard
-                    key={game.id}
-                    onDelete={() => handleDeleteGame(game.id, true)}
-                    onSync={showSync ? async () => {
-                      if (uploadingGames.has(game.id)) return;
-                      
-                      if (!user) {
-                        navigate('/login');
-                        return;
+              {displayedGames.map((game) => {
+                if (game._gameCategory === 'wizard') {
+                  // Wizard game card
+                  const syncStatus = gameSyncStatuses[game.id];
+                  const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
+                  const isGameSynced = status === 'Synced';
+                  const needsUpload = status === 'Local';
+                  const isImportedGame = game.isImported || game.isShared || game.originalGameId;
+                  const isUploaded = LocalGameStorage.isGameUploaded(game.id);
+                  const badgeClass = status.toLowerCase().replace(' ', '-');
+                  const cloudGameId = syncStatus?.cloudGameId || game.cloudGameId;
+                  const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
+                  const showSync = needsUpload && !isImportedGame;
+                  const showShare = isGameSynced && !isImportedGame;
+
+                  return (
+                    <SwipeableGameCard
+                      key={game.id}
+                      onDelete={() => handleDeleteGame(game.id)}
+                      onSync={showSync ? async () => {
+                        if (uploadingGames.has(game.id) || isUploaded) return;
+                        if (!user) { navigate('/login'); return; }
+                        setUploadingGames(prev => new Set([...prev, game.id]));
+                        try {
+                          const result = await uploadSingleGameToCloud(game.id, game);
+                          setMessage({ text: result.isDuplicate ? t('accountMessages.gameAlreadyUploadedMarked') : t('accountMessages.gameUploadedSuccess'), type: 'success' });
+                          await loadSavedGames();
+                        } catch (error) {
+                          setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                        } finally {
+                          setUploadingGames(prev => { const newSet = new Set(prev); newSet.delete(game.id); return newSet; });
+                        }
+                      } : undefined}
+                      onShare={showShare ? () => {
+                        if (!user) { setMessage({ text: t('accountMessages.signInToShare'), type: 'error' }); return; }
+                        handleShareGame(game.id, game);
+                      } : undefined}
+                      detailsPath={`/game/${game.id}`}
+                      isUploading={uploadingGames.has(game.id)}
+                      isSharing={sharingGames.has(game.id)}
+                      showSync={showSync}
+                      showShare={showShare}
+                      syncTitle={
+                        uploadingGames.has(game.id) ? t('account.syncTitleUploading') :
+                        isUploaded ? t('account.syncTitleAlreadyUploaded') :
+                        game.isPaused ? t('account.syncTitleCannotUploadPaused') :
+                        !user ? t('account.syncTitleSignInToUpload') :
+                        t('account.syncTitleUploadToCloud')
                       }
-                      
-                      setUploadingGames(prev => new Set([...prev, game.id]));
-                      try {
-                        const fullGame = LocalTableGameStorage.getAllSavedTableGames()[game.id];
-                        const result = await uploadSingleTableGameToCloud(game.id, fullGame);
-                        setMessage({ 
-                          text: result.isDuplicate 
-                            ? t('accountMessages.tableGameAlreadyUploadedMarked') 
-                            : t('accountMessages.tableGameUploadedSuccess'), 
-                          type: 'success' 
-                        });
-                        await loadSavedGames();
-                      } catch (error) {
-                        setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                      } finally {
-                        setUploadingGames(prev => {
-                          const newSet = new Set(prev);
-                          newSet.delete(game.id);
-                          return newSet;
-                        });
+                      shareTitle={
+                        !user ? t('account.shareTitleSignIn') :
+                        game.isPaused ? t('account.shareTitleCannotSharePaused') :
+                        sharingGames.has(game.id) ? t('account.shareTitleSharing') :
+                        t('account.shareTitleShareGame')
                       }
-                    } : undefined}
-                    detailsPath={`/table/${game.id}`}
-                    isUploading={uploadingGames.has(game.id)}
-                    showSync={showSync}
-                    syncTitle={
-                      uploadingGames.has(game.id) ? t('account.syncTitleUploadingTableGame') :
-                      !game.gameFinished ? t('account.syncTitleCannotUploadUnfinished') :
-                      !user ? t('account.syncTitleSignInToUpload') :
-                      t('account.syncTitleUploadToCloud')
-                    }
-                    disableSync={uploadingGames.has(game.id)}
-                  >
-                    <div className="game-card table-game-card">
-                      <div className="settings-card-header">
-                        <div className="game-info">
-                          <div className="game-name">
-                            {game.name}
+                      disableSync={game.isPaused || uploadingGames.has(game.id) || isUploaded}
+                      disableShare={!user || game.isPaused || sharingGames.has(game.id)}
+                    >
+                      <div className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
+                        <div className="settings-card-header">
+                          <div className="game-info">
+                            <div className="game-name">
+                              {t('common.wizard')}
+                              {game.isPaused ? ' | ' + t('common.paused') : ''}
+                            </div>
+                            <div className="game-badges">
+                              {eloData && eloData.change !== undefined && (
+                                <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
+                                  {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
+                                </span>
+                              )}
+                              <span className={`mode-badge ${badgeClass}`}>
+                                {status}
+                              </span>
+                            </div>
                           </div>
-                          <div className="game-badges">
-                            {eloData && eloData.change !== undefined && (
-                              <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
-                                {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
-                              </span>
-                            )}
-                            {isUploaded && (
-                              <span className="mode-badge synced" title={t('account.syncedToCloud')}>
-                                {t('common.synced')}
-                              </span>
-                            )}
-                            {!isUploaded && (
-                              <span className="mode-badge table">
-                                {t('common.local')}
-                              </span>
-                            )}
+                          <div className="game-players">
+                            <UsersIcon size={12} />{" "}
+                            {game.players && game.players.length > 0
+                              ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
+                                  ? game.players.join(", ")
+                                  : game.players.map(p => p.name || t('common.unknownPlayer')).join(", "))
+                              : t('common.noPlayers')}
                           </div>
-                        </div>
-                        <div className="game-players">
-                          <UsersIcon size={12} />{" "}
-                          {game.players.join(", ")}
-                        </div>
-                        <div className="actions-game-history">
-                          <div className="bottom-actions-game-history">
-                            <div>{t('common.rounds')}: {game.totalRounds}</div>
-                            <div className="game-date">
-                              {formatDate(game.lastPlayed)}
+                          <div className="actions-game-history">
+                            <div className="bottom-actions-game-history">
+                              <div className="game-rounds">{t('common.rounds')}: {(() => {
+                                const rounds = game.gameFinished 
+                                  ? (game.total_rounds || game.totalRounds || game.roundsCompleted || "N/A") 
+                                  : (game._internalState?.currentRound || game.roundsCompleted !== undefined ? (game._internalState?.currentRound || game.roundsCompleted + 1) : "N/A");
+                                return rounds;
+                              })()}</div>
+                              <div className="game-date">
+                                {(() => {
+                                  const dateToUse = game.created_at || game.lastPlayed;
+                                  return formatDate(dateToUse);
+                                })()}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </SwipeableGameCard>
-                );
+                    </SwipeableGameCard>
+                  );
+                } else {
+                  // Table game card
+                  const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
+                  const showSync = !isUploaded && game.gameFinished;
+                  const cloudGameId = game.cloudGameId;
+                  const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
+
+                  return (
+                    <SwipeableGameCard
+                      key={game.id}
+                      onDelete={() => handleDeleteGame(game.id, true)}
+                      onSync={showSync ? async () => {
+                        if (uploadingGames.has(game.id)) return;
+                        if (!user) { navigate('/login'); return; }
+                        setUploadingGames(prev => new Set([...prev, game.id]));
+                        try {
+                          const fullGame = LocalTableGameStorage.getAllSavedTableGames()[game.id];
+                          const result = await uploadSingleTableGameToCloud(game.id, fullGame);
+                          setMessage({ 
+                            text: result.isDuplicate 
+                              ? t('accountMessages.tableGameAlreadyUploadedMarked') 
+                              : t('accountMessages.tableGameUploadedSuccess'), 
+                            type: 'success' 
+                          });
+                          await loadSavedGames();
+                        } catch (error) {
+                          setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
+                        } finally {
+                          setUploadingGames(prev => { const newSet = new Set(prev); newSet.delete(game.id); return newSet; });
+                        }
+                      } : undefined}
+                      detailsPath={`/table/${game.id}`}
+                      isUploading={uploadingGames.has(game.id)}
+                      showSync={showSync}
+                      syncTitle={
+                        uploadingGames.has(game.id) ? t('account.syncTitleUploadingTableGame') :
+                        !game.gameFinished ? t('account.syncTitleCannotUploadUnfinished') :
+                        !user ? t('account.syncTitleSignInToUpload') :
+                        t('account.syncTitleUploadToCloud')
+                      }
+                      disableSync={uploadingGames.has(game.id)}
+                    >
+                      <div className="game-card table-game-card">
+                        <div className="settings-card-header">
+                          <div className="game-info">
+                            <div className="game-name">
+                              {game.name}
+                            </div>
+                            <div className="game-badges">
+                              {eloData && eloData.change !== undefined && (
+                                <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
+                                  {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
+                                </span>
+                              )}
+                              {isUploaded && (
+                                <span className="mode-badge synced" title={t('account.syncedToCloud')}>
+                                  {t('common.synced')}
+                                </span>
+                              )}
+                              {!isUploaded && (
+                                <span className="mode-badge table">
+                                  {t('common.local')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="game-players">
+                            <UsersIcon size={12} />{" "}
+                            {game.players.join(", ")}
+                          </div>
+                          <div className="actions-game-history">
+                            <div className="bottom-actions-game-history">
+                              <div>{t('common.rounds')}: {game.totalRounds}</div>
+                              <div className="game-date">
+                                {formatDate(game.lastPlayed)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </SwipeableGameCard>
+                  );
+                }
               })}
             </div>
           ) : (
-            <p className="no-games">{t('account.noTableGames')}</p>
+            <p className="no-games">{t('account.noGamesMatchFilters')}</p>
           )}
         </div>
 
