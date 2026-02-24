@@ -1050,13 +1050,6 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
     return data;
   }, [elo?.history]);
 
-  // Calculate average rating from history
-  const avgRating = useMemo(() => {
-    if (eloHistoryData.length === 0) return 1000;
-    const sum = eloHistoryData.reduce((acc, d) => acc + d.rating, 0);
-    return Math.round(sum / eloHistoryData.length);
-  }, [eloHistoryData]);
-
   // Custom dot renderer for highlighting best/worst
   const renderEloDot = (props) => {
     const { cx, cy, payload } = props;
@@ -1112,7 +1105,6 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
                     content={<EloTooltip navigate={navigate} gameType={normalizedGameType} />}
                     wrapperStyle={{ pointerEvents: 'auto' }}
                   />
-                  <ReferenceLine y={avgRating} stroke="var(--text)" strokeDasharray="5 5" strokeWidth={2} />
                   <Area 
                     type="monotone" 
                     dataKey="rating" 
@@ -1132,7 +1124,6 @@ const EloRatingSection = ({ gameType = 'wizard', identityId = null }) => {
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', fontSize: '0.75rem', marginBottom: 'var(--spacing-xs)', justifyContent: 'center' }}>
                 <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1DBF73', marginRight: 4 }}></span>{t('profile.best')}</span>
                 <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#EF4444', marginRight: 4 }}></span>{t('profile.worst')}</span>
-                <span><span style={{ display: 'inline-block', width: 20, height: 2, background: 'var(--text)', marginRight: 4, verticalAlign: 'middle' }}></span>Average</span>
               </div>
             </div>
           )}
