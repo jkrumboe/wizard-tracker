@@ -484,7 +484,6 @@ html:not([data-theme="dark"]) .games-type-select {
   background: var(--card-bg);
   color: var(--text-light);
   font-size: 0.9rem;
-  width: 100%;
   color-scheme: dark;
 }
 
