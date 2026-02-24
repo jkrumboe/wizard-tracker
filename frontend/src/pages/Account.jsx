@@ -2141,37 +2141,8 @@ const Account = () => {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="tab-content settings-tab">
-            {/* Account Settings */}
-            {user && (
-              <div className="settings-group">
-                <div className="settings-group-content">
-                  <button 
-                    className="settings-row settings-row-clickable" 
-                    onClick={() => setShowPasswordChangeModal(true)}
-                  >
-                    <div className="settings-row-left">
-                      <KeyIcon size={18} className="settings-row-icon" />
-                      <span>{t('account.changePassword')}</span>
-                    </div>
-                    <ChevronRightIcon size={18} className="settings-row-chevron" />
-                  </button>
-                  {user.role !== 'admin' && (
-                    <button 
-                      className="settings-row settings-row-clickable settings-row-danger"
-                      onClick={() => setShowAccountDeleteModal(true)}
-                    >
-                      <div className="settings-row-left">
-                        <TrashIcon size={18} className="settings-row-icon" />
-                        <span>{t('account.deleteAccount')}</span>
-                      </div>
-                      <ChevronRightIcon size={18} className="settings-row-chevron" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
 
-            {/* Appearance */}
+            {/* Appearance & Language */}
             <div className="settings-group">
               <div className="settings-group-content">
                 <div className="settings-row">
@@ -2215,12 +2186,6 @@ const Account = () => {
                     </button>
                   </>
                 )}
-              </div>
-            </div>
-
-            {/* Language */}
-            <div className="settings-group">
-              <div className="settings-group-content">
                 {supportedLanguages.map((lang) => (
                   <button
                     key={lang.code}
@@ -2254,6 +2219,62 @@ const Account = () => {
                     />
                     <span className="settings-switch-slider"></span>
                   </label>
+                </div>
+                <button 
+                  className="settings-row settings-row-clickable"
+                  onClick={handleCheckForUpdates}
+                  disabled={checkingForUpdates || forcingUpdate}
+                  title={t('account.checkForUpdatesTitle')}
+                >
+                  <div className="settings-row-left">
+                    <RefreshIcon size={18} className="settings-row-icon" />
+                    <span>{t('account.checkForUpdates')}</span>
+                  </div>
+                </button>
+                <button 
+                  className="settings-row settings-row-clickable"
+                  onClick={handleForceUpdate}
+                  disabled={forcingUpdate || checkingForUpdates}
+                  title={t('account.forceUpdateTitle')}
+                >
+                  <div className="settings-row-left">
+                    <RefreshIcon size={18} className="settings-row-icon" />
+                    <span>{t('account.forceUpdate')}</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Account */}
+            {user && (
+              <div className="settings-group">
+                <div className="settings-group-content">
+                  <button 
+                    className="settings-row settings-row-clickable" 
+                    onClick={() => setShowPasswordChangeModal(true)}
+                  >
+                    <div className="settings-row-left">
+                      <KeyIcon size={18} className="settings-row-icon" />
+                      <span>{t('account.changePassword')}</span>
+                    </div>
+                    <ChevronRightIcon size={18} className="settings-row-chevron" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* App Information */}
+            <div className="settings-group">
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.versionLabel')}</span>
+                  <span className="settings-row-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.buildDateLabel')}</span>
+                  <span className="settings-row-value">
+                    {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
+                  </span>
                 </div>
               </div>
             </div>
@@ -2299,46 +2320,6 @@ const Account = () => {
               </div>
             </div>
 
-            {/* App Information */}
-            <div className="settings-group">
-              <div className="settings-group-content">
-                <div className="settings-row">
-                  <span className="settings-row-label">{t('account.versionLabel')}</span>
-                  <span className="settings-row-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
-                </div>
-                <div className="settings-row">
-                  <span className="settings-row-label">{t('account.buildDateLabel')}</span>
-                  <span className="settings-row-value">
-                    {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
-                  </span>
-                </div>
-                <div className="settings-row-actions">
-                  <button 
-                    className="settings-row settings-row-clickable"
-                    onClick={handleCheckForUpdates}
-                    disabled={checkingForUpdates || forcingUpdate}
-                    title={t('account.checkForUpdatesTitle')}
-                  >
-                    <div className="settings-row-left">
-                      <RefreshIcon size={18} className="settings-row-icon" />
-                      <span>{t('account.checkForUpdates')}</span>
-                    </div>
-                  </button>
-                  <button 
-                    className="settings-row settings-row-clickable"
-                    onClick={handleForceUpdate}
-                    disabled={forcingUpdate || checkingForUpdates}
-                    title={t('account.forceUpdateTitle')}
-                  >
-                    <div className="settings-row-left">
-                      <RefreshIcon size={18} className="settings-row-icon" />
-                      <span>{t('account.forceUpdate')}</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-
             {/* Danger Zone */}
             <div className="settings-group settings-group-danger">
               <div className="settings-group-content">
@@ -2352,6 +2333,18 @@ const Account = () => {
                   </div>
                   <ChevronRightIcon size={18} className="settings-row-chevron" />
                 </button>
+                {user && user.role !== 'admin' && (
+                  <button 
+                    className="settings-row settings-row-clickable settings-row-danger"
+                    onClick={() => setShowAccountDeleteModal(true)}
+                  >
+                    <div className="settings-row-left">
+                      <TrashIcon size={18} className="settings-row-icon" />
+                      <span>{t('account.deleteAccount')}</span>
+                    </div>
+                    <ChevronRightIcon size={18} className="settings-row-chevron" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
