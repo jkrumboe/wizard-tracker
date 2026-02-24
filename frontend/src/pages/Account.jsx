@@ -10,12 +10,13 @@ import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
-import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
+import { supportedLanguages } from '@/shared/i18n/i18n';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
 import GameFilterModal from '@/components/modals/GameFilterModal';
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
-import { SwipeableGameCard, LanguageSwitcher } from '@/components/common';
+import { SwipeableGameCard } from '@/components/common';
 import authService from '@/shared/api/authService';
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
@@ -30,7 +31,7 @@ import '@/styles/pages/account.css';
 
 const Account = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview'); // overview, stats, games
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
   const [gamesListType, setGamesListType] = useState('all'); // all, wizard, or specific table game type
@@ -2139,189 +2140,217 @@ const Account = () => {
 
         {/* Settings Tab */}
         {activeTab === 'settings' && (
-          <div className="tab-content">
+          <div className="tab-content settings-tab">
             {/* Account Settings */}
             {user && (
-              <div className="settings-section account-settings-section">
-                <h3 className="settings-section-title">{t('account.accountSettings')}</h3>
-                <div className="settings-option">
+              <div className="settings-group">
+                <div className="settings-group-content">
                   <button 
-                    className="settings-button" 
+                    className="settings-row settings-row-clickable" 
                     onClick={() => setShowPasswordChangeModal(true)}
                   >
-                    <KeyIcon size={18} />
-                    {t('account.changePassword')}
+                    <div className="settings-row-left">
+                      <KeyIcon size={18} className="settings-row-icon" />
+                      <span>{t('account.changePassword')}</span>
+                    </div>
+                    <ChevronRightIcon size={18} className="settings-row-chevron" />
                   </button>
-                </div>
-                {user.role !== 'admin' && (
-                  <div className="settings-option">
+                  {user.role !== 'admin' && (
                     <button 
-                      className="settings-button danger-button" 
+                      className="settings-row settings-row-clickable settings-row-danger"
                       onClick={() => setShowAccountDeleteModal(true)}
                     >
-                      <TrashIcon size={18} />
-                      {t('account.deleteAccount')}
+                      <div className="settings-row-left">
+                        <TrashIcon size={18} className="settings-row-icon" />
+                        <span>{t('account.deleteAccount')}</span>
+                      </div>
+                      <ChevronRightIcon size={18} className="settings-row-chevron" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Theme Settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">{t('account.themeSettings')}</h3>
-              <div className="settings-option">
-                <button 
-                  className="settings-button"
-                  onClick={toggleTheme}
-                  disabled={useSystemTheme}
-                >
-                  {theme === 'dark' ? t('account.themeDark') : t('account.themeLight')}
-                </button>
-              </div>
-              <div className="settings-option">
-                <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center'}}>
-                  <input
-                    type="checkbox"
-                    checked={useSystemTheme}
-                    onChange={(e) => setUseSystemTheme(e.target.checked)}
-                    style={{
-                      width: '15px', 
-                      height: '15px',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <div>
-                    <p style={{margin: 0}}>{t('account.systemThemeLabel')}</p>
+            {/* Appearance */}
+            <div className="settings-group">
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <div className="settings-row-left">
+                    <span>{t('account.systemThemeLabel')}</span>
                   </div>
-                </label>
+                  <label className="settings-switch">
+                    <input
+                      type="checkbox"
+                      checked={useSystemTheme}
+                      onChange={(e) => setUseSystemTheme(e.target.checked)}
+                    />
+                    <span className="settings-switch-slider"></span>
+                  </label>
+                </div>
+                {!useSystemTheme && (
+                  <>
+                    <button
+                      className={`settings-row settings-row-clickable settings-theme-row ${theme === 'dark' ? 'settings-theme-active' : ''}`}
+                      onClick={() => { if (theme !== 'dark') toggleTheme(); }}
+                    >
+                      <div className="settings-row-left">
+                        <span className="settings-theme-icon">🌙</span>
+                        <span>{t('account.themeDark')}</span>
+                      </div>
+                      {theme === 'dark' && (
+                        <CheckMarkIcon size={18} className="settings-lang-check" />
+                      )}
+                    </button>
+                    <button
+                      className={`settings-row settings-row-clickable settings-theme-row ${theme === 'light' ? 'settings-theme-active' : ''}`}
+                      onClick={() => { if (theme !== 'light') toggleTheme(); }}
+                    >
+                      <div className="settings-row-left">
+                        <span className="settings-theme-icon">☀️</span>
+                        <span>{t('account.themeLight')}</span>
+                      </div>
+                      {theme === 'light' && (
+                        <CheckMarkIcon size={18} className="settings-lang-check" />
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Language Settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">{t('account.languageSettings')}</h3>
-              <div className="settings-option">
-                <LanguageSwitcher />
+            {/* Language */}
+            <div className="settings-group">
+              <div className="settings-group-content">
+                {supportedLanguages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    className={`settings-row settings-row-clickable settings-lang-row ${i18n.resolvedLanguage === lang.code ? 'settings-lang-active' : ''}`}
+                    onClick={() => i18n.changeLanguage(lang.code)}
+                  >
+                    <div className="settings-row-left">
+                      <span className="settings-lang-flag">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                    {i18n.resolvedLanguage === lang.code && (
+                      <CheckMarkIcon size={18} className="settings-lang-check" />
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Update Settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">{t('account.updateSettings')}</h3>
-              <div className="settings-option">
-                <label style={{display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center', justifyContent: 'center'}}>
-                  <input
-                    type="checkbox"
-                    checked={autoUpdate}
-                    onChange={handleAutoUpdateChange}
-                    style={{
-                      width: '15px', 
-                      height: '15px',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <div>
-                    <p>
-                      {autoUpdate 
-                        ? t('account.autoUpdateEnabled') 
-                        : t('account.autoUpdateDisabled')}
-                    </p>
+            {/* Updates */}
+            <div className="settings-group">
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <div className="settings-row-left">
+                    <span>{t('account.autoUpdates')}</span>
                   </div>
-                </label>
+                  <label className="settings-switch">
+                    <input
+                      type="checkbox"
+                      checked={autoUpdate}
+                      onChange={handleAutoUpdateChange}
+                    />
+                    <span className="settings-switch-slider"></span>
+                  </label>
+                </div>
               </div>
             </div>
 
             {/* Data Management */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">{t('account.dataManagement')}</h3>
-              <div className="settings-card info-card">
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">{t('account.storageFormat')}</span>
-                    <span className="info-value">
-                      {migrationStatus && migrationStatus.version === '3.0' ? t('account.storageFormatV3') : t('account.storageFormatLegacy')}
+            <div className="settings-group">
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.storageFormat')}</span>
+                  <span className="settings-row-value">
+                    {migrationStatus && migrationStatus.version === '3.0' ? t('account.storageFormatV3') : t('account.storageFormatLegacy')}
+                  </span>
+                </div>
+                {migrationStatus && migrationStatus.lastMigration && (
+                  <div className="settings-row">
+                    <span className="settings-row-label">{t('account.lastMigration')}</span>
+                    <span className="settings-row-value">
+                      {formatDate(migrationStatus.lastMigration)}
                     </span>
                   </div>
-                  {migrationStatus && migrationStatus.lastMigration && (
-                    <div className="info-item">
-                      <span className="info-label">{t('account.lastMigration')}</span>
-                      <span className="info-value">
-                        {formatDate(migrationStatus.lastMigration)}
-                      </span>
-                    </div>
-                  )}
-                  {needsMigration && (
-                    <div className="info-item" style={{gridColumn: '1 / -1'}}>
-                      <span style={{color: 'var(--warning)', fontSize: '0.9rem'}}>
-                        ⚠️ {t('account.needsMigrationWarning')}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                )}
+                {needsMigration && (
+                  <div className="settings-row settings-row-warning">
+                    <span>⚠️ {t('account.needsMigrationWarning')}</span>
+                  </div>
+                )}
+                <button 
+                  className="settings-row settings-row-clickable"
+                  onClick={handleMigrateGames}
+                  disabled={migrating || (!needsMigration && migrationStatus?.version === '3.0')}
+                  title={t('account.migrateTitle')}
+                >
+                  <div className="settings-row-left">
+                    <RefreshIcon size={18} className="settings-row-icon" />
+                    <span>{migrating ? t('account.migrating') : needsMigration ? t('account.migrateGamesToV3') : t('account.allGamesUpToDate')}</span>
+                  </div>
+                </button>
+                {migrationStatus && migrationStatus.stats && (
+                  <div className="settings-row settings-row-muted">
+                    <span>{t('account.lastMigrationStats', { migrated: migrationStatus.stats.migrated, alreadyV3: migrationStatus.stats.alreadyV3 })}</span>
+                  </div>
+                )}
               </div>
-              <button 
-                className="settings-button-update"
-                onClick={handleMigrateGames}
-                disabled={migrating || (!needsMigration && migrationStatus?.version === '3.0')}
-                title={t('account.migrateTitle')}
-                style={{marginTop: 'var(--spacing-md)', width: '100%'}}
-              >
-                <RefreshIcon size={18} />
-                {migrating ? t('account.migrating') : needsMigration ? t('account.migrateGamesToV3') : t('account.allGamesUpToDate')}
-              </button>
-              {migrationStatus && migrationStatus.stats && (
-                <div style={{fontSize: '0.85rem', color: 'var(--text-light)', marginTop: 'var(--spacing-sm)', textAlign: 'center'}}>
-                  {t('account.lastMigrationStats', { migrated: migrationStatus.stats.migrated, alreadyV3: migrationStatus.stats.alreadyV3 })}
-                </div>
-              )}
             </div>
 
             {/* App Information */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">{t('account.appInformation')}</h3>
-              <div className="settings-card info-card">
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">{t('account.versionLabel')}</span>
-                    <span className="info-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('account.buildDateLabel')}</span>
-                    <span className="info-value">
-                      {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
-                    </span>
-                  </div>
+            <div className="settings-group">
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.versionLabel')}</span>
+                  <span className="settings-row-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
                 </div>
-              </div>
-              <div style={{display: 'flex', gap: 'var(--spacing-xs)', marginTop: 'var(--spacing-md)', flexDirection: 'row'}}>
-                <button 
-                  className={`settings-button-update`}
-                  onClick={handleCheckForUpdates}
-                  disabled={checkingForUpdates || forcingUpdate}
-                  title={t('account.checkForUpdatesTitle')}
-                >
-                  <RefreshIcon size={18} />{t('account.checkForUpdates')}
-                </button>
-                <button 
-                  className={`settings-button-update`}
-                  onClick={handleForceUpdate}
-                  disabled={forcingUpdate || checkingForUpdates}
-                  title={t('account.forceUpdateTitle')}
-                  style={{backgroundColor: 'var(--primary)'}}
-                >
-                  <TrashIcon size={18} />{t('account.forceUpdate')}
-                </button>
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.buildDateLabel')}</span>
+                  <span className="settings-row-value">
+                    {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
+                  </span>
+                </div>
+                <div className="settings-row-actions">
+                  <button 
+                    className="settings-row settings-row-clickable"
+                    onClick={handleCheckForUpdates}
+                    disabled={checkingForUpdates || forcingUpdate}
+                    title={t('account.checkForUpdatesTitle')}
+                  >
+                    <div className="settings-row-left">
+                      <RefreshIcon size={18} className="settings-row-icon" />
+                      <span>{t('account.checkForUpdates')}</span>
+                    </div>
+                  </button>
+                  <button 
+                    className="settings-row settings-row-clickable"
+                    onClick={handleForceUpdate}
+                    disabled={forcingUpdate || checkingForUpdates}
+                    title={t('account.forceUpdateTitle')}
+                  >
+                    <div className="settings-row-left">
+                      <RefreshIcon size={18} className="settings-row-icon" />
+                      <span>{t('account.forceUpdate')}</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Data Management */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">{t('account.dataManagement', 'Data Management')}</h3>
-              <div className="settings-actions">
-                <button className="settings-button danger-button" onClick={handleDeleteAllData}>
-                  <TrashIcon size={18} />
-                  {t('account.clearAllData')}
+            {/* Danger Zone */}
+            <div className="settings-group settings-group-danger">
+              <div className="settings-group-content">
+                <button 
+                  className="settings-row settings-row-clickable settings-row-danger"
+                  onClick={handleDeleteAllData}
+                >
+                  <div className="settings-row-left">
+                    <TrashIcon size={18} className="settings-row-icon" />
+                    <span>{t('account.clearAllData')}</span>
+                  </div>
+                  <ChevronRightIcon size={18} className="settings-row-chevron" />
                 </button>
               </div>
             </div>
@@ -2359,71 +2388,78 @@ const Account = () => {
         {/* Password Change Modal */}
         {showPasswordChangeModal && (
           <div className="modal-overlay" onClick={() => setShowPasswordChangeModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2>{t('passwordModal.title')}</h2>
-              <form onSubmit={handlePasswordChange}>
-                <div className="form-group">
-                  <label htmlFor="currentPassword">{t('passwordModal.currentPassword')}</label>
-                  <input
-                    type="password"
-                    id="currentPassword"
-                    value={passwordChangeData.currentPassword}
-                    onChange={(e) => setPasswordChangeData({
-                      ...passwordChangeData,
-                      currentPassword: e.target.value
-                    })}
-                    required
-                    disabled={passwordChangeLoading}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="newPassword">{t('passwordModal.newPassword')}</label>
-                  <input
-                    type="password"
-                    id="newPassword"
-                    value={passwordChangeData.newPassword}
-                    onChange={(e) => setPasswordChangeData({
-                      ...passwordChangeData,
-                      newPassword: e.target.value
-                    })}
-                    required
-                    minLength={6}
-                    disabled={passwordChangeLoading}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">{t('passwordModal.confirmNewPassword')}</label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    value={passwordChangeData.confirmPassword}
-                    onChange={(e) => setPasswordChangeData({
-                      ...passwordChangeData,
-                      confirmPassword: e.target.value
-                    })}
-                    required
-                    minLength={6}
-                    disabled={passwordChangeLoading}
-                  />
-                </div>
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => setShowPasswordChangeModal(false)}
-                    disabled={passwordChangeLoading}
-                  >
-                    {t('passwordModal.cancel')}
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={passwordChangeLoading}
-                  >
-                    {passwordChangeLoading ? t('passwordModal.changing') : t('passwordModal.changePassword')}
-                  </button>
-                </div>
-              </form>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{t('passwordModal.title')}</h2>
+                <button className="modal-close-btn" onClick={() => setShowPasswordChangeModal(false)}>
+                  <XIcon size={18} />
+                </button>
+              </div>
+              <div className="modal-content">
+                <form onSubmit={handlePasswordChange}>
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">{t('passwordModal.currentPassword')}</label>
+                    <input
+                      type="password"
+                      id="currentPassword"
+                      value={passwordChangeData.currentPassword}
+                      onChange={(e) => setPasswordChangeData({
+                        ...passwordChangeData,
+                        currentPassword: e.target.value
+                      })}
+                      required
+                      disabled={passwordChangeLoading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="newPassword">{t('passwordModal.newPassword')}</label>
+                    <input
+                      type="password"
+                      id="newPassword"
+                      value={passwordChangeData.newPassword}
+                      onChange={(e) => setPasswordChangeData({
+                        ...passwordChangeData,
+                        newPassword: e.target.value
+                      })}
+                      required
+                      minLength={6}
+                      disabled={passwordChangeLoading}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">{t('passwordModal.confirmNewPassword')}</label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      value={passwordChangeData.confirmPassword}
+                      onChange={(e) => setPasswordChangeData({
+                        ...passwordChangeData,
+                        confirmPassword: e.target.value
+                      })}
+                      required
+                      minLength={6}
+                      disabled={passwordChangeLoading}
+                    />
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => setShowPasswordChangeModal(false)}
+                      disabled={passwordChangeLoading}
+                    >
+                      {t('passwordModal.cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-primary"
+                      disabled={passwordChangeLoading}
+                    >
+                      {passwordChangeLoading ? t('passwordModal.changing') : t('passwordModal.changePassword')}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}
@@ -2431,61 +2467,68 @@ const Account = () => {
         {/* Account Deletion Modal */}
         {showAccountDeleteModal && (
           <div className="modal-overlay" onClick={() => setShowAccountDeleteModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2 style={{ color: 'var(--danger-color)' }}>{t('deleteAccountModal.title')}</h2>
-              <p style={{ marginBottom: 'var(--spacing-md)' }}>
-                {t('deleteAccountModal.permanentWarning')}
-              </p>
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <strong>{t('deleteAccountModal.willBeRemovedTitle')}</strong>
-                <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
-                  <li>{t('deleteAccountModal.removedUsername')}</li>
-                  <li>{t('deleteAccountModal.removedFriends')}</li>
-                  <li>{t('deleteAccountModal.removedIdentities')}</li>
-                </ul>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 style={{ color: 'var(--danger-color)' }}>{t('deleteAccountModal.title')}</h2>
+                <button className="modal-close-btn" onClick={() => setShowAccountDeleteModal(false)}>
+                  <XIcon size={18} />
+                </button>
               </div>
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <strong>{t('deleteAccountModal.willBePreservedTitle')}</strong>
-                <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
-                  <li>{t('deleteAccountModal.preservedGames')}</li>
-                  <li>{t('deleteAccountModal.preservedTemplates')}</li>
-                  <li>{t('deleteAccountModal.preservedHistory')}</li>
-                </ul>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                  {t('deleteAccountModal.preservedNote')}
+              <div className="modal-content">
+                <p style={{ marginBottom: 'var(--spacing-md)' }}>
+                  {t('deleteAccountModal.permanentWarning')}
                 </p>
+                <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                  <strong>{t('deleteAccountModal.willBeRemovedTitle')}</strong>
+                  <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
+                    <li>{t('deleteAccountModal.removedUsername')}</li>
+                    <li>{t('deleteAccountModal.removedFriends')}</li>
+                    <li>{t('deleteAccountModal.removedIdentities')}</li>
+                  </ul>
+                </div>
+                <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                  <strong>{t('deleteAccountModal.willBePreservedTitle')}</strong>
+                  <ul style={{ marginTop: '0.5rem', paddingLeft: 'var(--spacing-md)' }}>
+                    <li>{t('deleteAccountModal.preservedGames')}</li>
+                    <li>{t('deleteAccountModal.preservedTemplates')}</li>
+                    <li>{t('deleteAccountModal.preservedHistory')}</li>
+                  </ul>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    {t('deleteAccountModal.preservedNote')}
+                  </p>
+                </div>
+                <form onSubmit={handleAccountDeletion}>
+                  <div className="form-group">
+                    <label htmlFor="deletePassword">{t('deleteAccountModal.confirmLabel')}</label>
+                    <input
+                      type="password"
+                      id="deletePassword"
+                      value={deleteAccountPassword}
+                      onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                      required
+                      disabled={accountDeletionLoading}
+                      placeholder={t('deleteAccountModal.passwordPlaceholder')}
+                    />
+                  </div>
+                  <div className="modal-actions">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => setShowAccountDeleteModal(false)}
+                      disabled={accountDeletionLoading}
+                    >
+                      {t('deleteAccountModal.cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-danger"
+                      disabled={accountDeletionLoading}
+                    >
+                      {accountDeletionLoading ? t('deleteAccountModal.deleting') : t('deleteAccountModal.deleteMyAccount')}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <form onSubmit={handleAccountDeletion}>
-                <div className="form-group">
-                  <label htmlFor="deletePassword">{t('deleteAccountModal.confirmLabel')}</label>
-                  <input
-                    type="password"
-                    id="deletePassword"
-                    value={deleteAccountPassword}
-                    onChange={(e) => setDeleteAccountPassword(e.target.value)}
-                    required
-                    disabled={accountDeletionLoading}
-                    placeholder={t('deleteAccountModal.passwordPlaceholder')}
-                  />
-                </div>
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => setShowAccountDeleteModal(false)}
-                    disabled={accountDeletionLoading}
-                  >
-                    {t('deleteAccountModal.cancel')}
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-danger"
-                    disabled={accountDeletionLoading}
-                  >
-                    {accountDeletionLoading ? t('deleteAccountModal.deleting') : t('deleteAccountModal.deleteMyAccount')}
-                  </button>
-                </div>
-              </form>
             </div>
           </div>
         )}

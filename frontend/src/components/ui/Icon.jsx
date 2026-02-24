@@ -45,6 +45,7 @@ export const MenuIcon = (props) => <Icon name="Menu" {...props} />;
 export const XIcon = (props) => <Icon name="X" {...props} />;
 export const ChevronDownIcon = (props) => <Icon name="ChevronDown" {...props} />;
 export const ChevronUpIcon = (props) => <Icon name="ChevronUp" {...props} />;
+export const ChevronRightIcon = (props) => <Icon name="ChevronRight" {...props} />;
 export const LogOutIcon = (props) => <Icon name="LogOut" {...props} />;
 export const EyeIcon = (props) => <Icon name="Eye" {...props} />;
 export const EyeOffIcon = (props) => <Icon name="EyeOff" {...props} />;

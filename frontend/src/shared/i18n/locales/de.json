@@ -170,16 +170,15 @@
     "clickToViewFullSize": "Klicken, um in voller Größe anzuzeigen",
     "syncedToCloud": "Mit Cloud synchronisiert",
 
-    "accountSettings": "Kontoeinstellungen",
     "changePassword": "Passwort ändern",
     "deleteAccount": "Konto löschen",
 
-    "themeSettings": "Design",
-    "themeDark": "🌙 Dunkel",
-    "themeLight": "☀️ Hell",
+    "themeDark": "Dunkel",
+    "themeLight": "Hell",
     "systemThemeLabel": "Automatisch an das Geräte-Design anpassen",
 
     "updateSettings": "Update-Einstellungen",
+    "autoUpdates": "Automatische Updates",
     "autoUpdateEnabled": "Updates werden automatisch installiert",
     "autoUpdateDisabled": "Du wirst vor der Installation von Updates gefragt",
 
