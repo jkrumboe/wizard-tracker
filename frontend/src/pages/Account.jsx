@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 
@@ -1610,7 +1610,7 @@ const Account = () => {
             {!user ? (
               <div className="settings-section">
                 <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Link to="/login">{t('account.login')}</Link> {t('account.loginToViewStats')}
+                  <Trans i18nKey="account.loginToViewStats" components={{ loginLink: <Link to="/login" /> }} />
                 </p>
               </div>
             ) : allGamesForStats.length > 0 || (Object.keys(savedGames).length > 0 || savedTableGames.length > 0) ? (

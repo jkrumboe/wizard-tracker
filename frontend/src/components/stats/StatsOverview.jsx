@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import { useGameStats } from '@/shared/hooks/useGameStats';
 import { useAllUserElo } from '@/shared/hooks/useElo';
@@ -26,7 +27,7 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
     return (
       <div className="settings-section">
         <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-          {t('account.loginToViewStats', { loginLink: '' }) || 'Please login to view game statistics'}
+          <Trans i18nKey="account.loginToViewStats" components={{ loginLink: <Link to="/login" /> }} />
         </p>
       </div>
     );
