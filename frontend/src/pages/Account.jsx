@@ -10,10 +10,10 @@ import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
-import { TrashIcon, RefreshIcon, CloudIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
 import { supportedLanguages } from '@/shared/i18n/i18n';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
-import CloudGameSelectModal from '@/components/modals/CloudGameSelectModal';
+
 import GameFilterModal from '@/components/modals/GameFilterModal';
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
 import { SwipeableGameCard } from '@/components/common';
@@ -47,22 +47,10 @@ const Account = () => {
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [cloudSyncStatus, setCloudSyncStatus] = useState({ uploading: false, progress: '', uploadedCount: 0, totalCount: 0 });
   const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
   const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
-  const [syncStatusLoaded, setSyncStatusLoaded] = useState(false); // Track if sync status has been checked
   const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
-  const [debugLogs, setDebugLogs] = useState([]); // Debug logs for mobile debugging
-  const [showDebugPanel, setShowDebugPanel] = useState(false); // Show/hide debug panel
-  const [showCloudGameSelectModal, setShowCloudGameSelectModal] = useState(false); // Cloud game select modal
 
-  // Helper to add debug logs visible in UI
-  const addDebugLog = (message, data = null) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = { timestamp, message, data };
-    console.log(message, data);
-    setDebugLogs(prev => [...prev.slice(-20), logEntry]); // Keep last 20 logs
-  };
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
   const [showProfilePictureModal, setShowProfilePictureModal] = useState(false); // Profile picture modal
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -371,9 +359,6 @@ const Account = () => {
           if (gameIds.length > 0) {
             const syncStatuses = await batchCheckGamesSyncStatus(gameIds);
             setGameSyncStatuses(syncStatuses);
-            setSyncStatusLoaded(true); // Mark sync status as loaded
-          } else {
-            setSyncStatusLoaded(true); // No games, mark as loaded
           }
         } catch (error) {
           console.debug('Error checking batch sync status:', error.message);
@@ -384,9 +369,52 @@ const Account = () => {
             fallbackStatuses[id] = { status: 'Local', synced: false };
           });
           setGameSyncStatuses(fallbackStatuses);
-          setSyncStatusLoaded(true); // Mark sync status as loaded even on error
         }
       }, 1000); // Reduced delay since batch check is much faster
+
+      // Auto-sync: download cloud games that don't exist locally
+      // This ensures cross-device visibility without manual download
+      setTimeout(async () => {
+        try {
+          console.debug('[AutoSync] Starting automatic cloud game sync...');
+          let totalDownloaded = 0;
+
+          // Auto-download wizard games from cloud
+          const { getUserCloudGamesList, downloadSelectedCloudGames } = await import('@/shared/api/gameService');
+          const cloudWizardGames = await getUserCloudGamesList();
+          const missingWizardGames = cloudWizardGames.filter(g => !g.existsLocally);
+          
+          if (missingWizardGames.length > 0) {
+            console.debug(`[AutoSync] Found ${missingWizardGames.length} wizard games to download`);
+            const wizardResult = await downloadSelectedCloudGames(missingWizardGames.map(g => g.cloudId));
+            totalDownloaded += wizardResult.downloaded || 0;
+          }
+
+          // Auto-download table games from cloud
+          const { getUserCloudTableGamesList, downloadSelectedCloudTableGames } = await import('@/shared/api/tableGameService');
+          const cloudTableGames = await getUserCloudTableGamesList();
+          const missingTableGames = cloudTableGames.filter(g => !g.existsLocally);
+          
+          if (missingTableGames.length > 0) {
+            console.debug(`[AutoSync] Found ${missingTableGames.length} table games to download`);
+            const tableResult = await downloadSelectedCloudTableGames(missingTableGames.map(g => g.cloudId));
+            totalDownloaded += tableResult.downloaded || 0;
+          }
+
+          if (totalDownloaded > 0) {
+            console.debug(`[AutoSync] Downloaded ${totalDownloaded} games from cloud`);
+            // Refresh local games to include newly downloaded ones
+            const updatedGames = LocalGameStorage.getAllSavedGames();
+            setSavedGames(updatedGames);
+            const updatedTableGames = LocalTableGameStorage.getSavedTableGamesList();
+            setSavedTableGames(updatedTableGames);
+          } else {
+            console.debug('[AutoSync] All cloud games already exist locally');
+          }
+        } catch (error) {
+          console.debug('[AutoSync] Auto-sync failed (games still available locally):', error.message);
+        }
+      }, 2000); // Wait 2 seconds to avoid rate limiting with other checks
     }
   }, [user]);
 
@@ -879,13 +907,13 @@ const Account = () => {
       return { success: false, error: 'Game already uploaded', isDuplicate: true };
     }
     
-    addDebugLog(`🆔 Game ID: ${gameId}`, { 
+    console.debug(`🆔 Game ID: ${gameId}`, { 
       gameId,
       timestamp: gameData.created_at,
       players: gameData.players?.length || 0
     });
     
-    addDebugLog('🔍 Game structure check', {
+    console.debug('🔍 Game structure check', {
       hasRoundData: !!gameData.roundData,
       hasRound_data: !!gameData.round_data,
       hasTotalRounds: !!gameData.total_rounds,
@@ -926,7 +954,7 @@ const Account = () => {
         }
       }
       
-      addDebugLog('🔍 Round validation', {
+      console.debug('🔍 Round validation', {
         declared: declaredRounds,
         actual: actualRounds,
         finished: gameData.gameFinished,
@@ -942,7 +970,7 @@ const Account = () => {
       // Case 1: Game is finished and has incomplete rounds at the end - trim to last complete round
       if (gameData.gameFinished && incompleteRounds > 0 && lastCompleteRoundIndex < actualRounds - 1) {
         const newRoundCount = lastCompleteRoundIndex + 1;
-        addDebugLog(`🔧 Trimming incomplete rounds: ${actualRounds} → ${newRoundCount} (last complete round)`);
+        console.debug(`🔧 Trimming incomplete rounds: ${actualRounds} → ${newRoundCount} (last complete round)`);
         
         if (gameData.round_data) {
           gameData.round_data = gameData.round_data.slice(0, newRoundCount);
@@ -959,7 +987,7 @@ const Account = () => {
       }
       // Case 2: round_data has more entries than total_rounds (old bug)
       else if (actualRounds > declaredRounds) {
-        addDebugLog(`🔧 Trimming rounds: ${actualRounds} → ${declaredRounds}`);
+        console.debug(`🔧 Trimming rounds: ${actualRounds} → ${declaredRounds}`);
         if (gameData.round_data) {
           gameData.round_data = gameData.round_data.slice(0, declaredRounds);
         }
@@ -970,7 +998,7 @@ const Account = () => {
       
       // Case 3: total_rounds is larger than actual round_data (game finished early after reducing rounds)
       else if (declaredRounds > actualRounds && gameData.gameFinished) {
-        addDebugLog(`🔧 Adjusting total_rounds: ${declaredRounds} → ${actualRounds}`);
+        console.debug(`🔧 Adjusting total_rounds: ${declaredRounds} → ${actualRounds}`);
         if (gameData.total_rounds) {
           gameData.total_rounds = actualRounds;
         }
@@ -984,7 +1012,7 @@ const Account = () => {
         const targetRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
         gameData.players = gameData.players.map(player => {
           if (player.rounds && player.rounds.length > targetRounds) {
-            addDebugLog(`🔧 Trimming ${player.name}'s rounds: ${player.rounds.length} → ${targetRounds}`);
+            console.debug(`🔧 Trimming ${player.name}'s rounds: ${player.rounds.length} → ${targetRounds}`);
             return {
               ...player,
               rounds: player.rounds.slice(0, targetRounds)
@@ -994,14 +1022,14 @@ const Account = () => {
         });
       }
     } else {
-      addDebugLog('⚠️ No round data found in game', { gameId });
+      console.debug('⚠️ No round data found in game', { gameId });
     }
     
     try {
       const { createGame } = await import('@/shared/api/gameService');
-      addDebugLog('📤 Attempting upload', { gameId });
+      console.debug('📤 Attempting upload', { gameId });
       const result = await createGame(gameData, gameId);
-      addDebugLog('✅ Upload successful', { gameId, cloudId: result.game?.id });
+      console.debug('✅ Upload successful', { gameId, cloudId: result.game?.id });
       if (result.duplicate) {
         // Mark as uploaded with existing cloud ID
         LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
@@ -1025,7 +1053,7 @@ const Account = () => {
         return { success: true, cloudGameId: result.game.id };
       }
     } catch (error) {
-      addDebugLog('❌ Upload failed', { 
+      console.debug('❌ Upload failed', { 
         gameId, 
         error: error.message,
         validationErrors: error.message.includes('validation') ? error.message.split('\n') : null
@@ -1162,211 +1190,6 @@ const Account = () => {
           return newSet;
         });
       }, 3000);
-    }
-  };
-
-  const handleBulkCloudSync = async () => {
-    // Check authentication before attempting bulk upload
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      // Navigate to login page
-      navigate('/login');
-      return;
-    }
-    
-    // Get wizard games
-    const gameEntries = Object.entries(savedGames);
-    const uploadableGames = gameEntries.filter(([, game]) => !game.isPaused);
-    
-    // Get table games
-    const allTableGames = LocalTableGameStorage.getAllSavedTableGames();
-    const tableGameEntries = Object.entries(allTableGames);
-    const uploadableTableGames = tableGameEntries.filter(([, game]) => 
-      game.gameFinished && !LocalTableGameStorage.isGameUploaded(game.id)
-    );
-    
-    const totalUploadable = uploadableGames.length + uploadableTableGames.length;
-    
-    if (totalUploadable === 0) {
-      setMessage({ text: t('accountMessages.noGamesForUpload'), type: 'error' });
-      return;
-    }
-
-    setCloudSyncStatus({ 
-      uploading: true, 
-      progress: t('account.startingUpload'), 
-      uploadedCount: 0, 
-      totalCount: totalUploadable 
-    });
-
-    let successful = 0;
-    let failed = 0;
-    const errors = [];
-
-    try {
-      // Upload wizard games
-      for (let i = 0; i < uploadableGames.length; i++) {
-        const [gameId, gameData] = uploadableGames[i];
-        
-        setCloudSyncStatus(prev => ({
-          ...prev,
-          progress: t('account.uploadingWizardGame', { current: i + 1, total: uploadableGames.length }),
-          uploadedCount: successful
-        }));
-
-        try {
-          const result = await uploadSingleGameToCloud(gameId, gameData);
-          if (result && !result.error) {
-            successful++;
-          } else {
-            failed++;
-            const errorMsg = `Game ${gameId}: ${result?.error || 'Unknown error'}`;
-            errors.push(errorMsg);
-            addDebugLog('❌ Upload failed', { gameId, error: result?.error });
-          }
-        } catch (error) {
-          failed++;
-          const errorMsg = `Game ${gameId}: ${error.message}`;
-          errors.push(errorMsg);
-          addDebugLog('❌ Upload exception', { gameId, error: error.message, stack: error.stack });
-        }
-      }
-
-      // Upload table games
-      for (let i = 0; i < uploadableTableGames.length; i++) {
-        const [gameId, gameData] = uploadableTableGames[i];
-        
-        setCloudSyncStatus(prev => ({
-          ...prev,
-          progress: t('account.uploadingTableGame', { current: i + 1, total: uploadableTableGames.length }),
-          uploadedCount: successful
-        }));
-
-        try {
-          await uploadSingleTableGameToCloud(gameId, gameData);
-          successful++;
-        } catch (error) {
-          failed++;
-          errors.push(`Table Game ${gameId}: ${error.message}`);
-        }
-      }
-
-      setCloudSyncStatus({ 
-        uploading: false, 
-        progress: '', 
-        uploadedCount: 0, 
-        totalCount: 0 
-      });
-
-      // Refresh the saved games list to show updated badge status
-      loadSavedGames();
-
-      if (successful > 0 && failed === 0) {
-        setMessage({ 
-          text: t('accountMessages.allGamesUploaded', { count: successful }), 
-          type: 'success' 
-        });
-      } else if (successful > 0 && failed > 0) {
-        setMessage({ 
-          text: t('accountMessages.someGamesUploadFailed', { successful, failed, error: errors[0] || '' }), 
-          type: 'warning' 
-        });
-        addDebugLog('Upload summary', { successful, failed, errors });
-      } else {
-        setMessage({ 
-          text: t('accountMessages.allUploadsFailed', { error: errors[0] || '' }), 
-          type: 'error' 
-        });
-        addDebugLog('All uploads failed', { errors });
-      }
-    } catch (error) {
-      setCloudSyncStatus({ 
-        uploading: false, 
-        progress: '', 
-        uploadedCount: 0, 
-        totalCount: 0 
-      });
-      setMessage({ text: t('accountMessages.uploadFailed', { error: error.message }), type: 'error' });
-    }
-  };
-
-  const handleDownloadCloudGames = () => {
-    // Check authentication
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-
-    // Open the cloud game select modal
-    setShowCloudGameSelectModal(true);
-  };
-
-  const handleDownloadSelectedGames = async ({ wizardGameIds, tableGameIds }) => {
-    const totalCount = wizardGameIds.length + tableGameIds.length;
-    
-    setCloudSyncStatus({ 
-      uploading: true, 
-      progress: t('account.downloadingSelectedGames'), 
-      uploadedCount: 0, 
-      totalCount: totalCount
-    });
-
-    try {
-      let totalDownloaded = 0;
-      let totalSkipped = 0;
-
-      // Download wizard games
-      if (wizardGameIds.length > 0) {
-        const { downloadSelectedCloudGames } = await import('@/shared/api/gameService');
-        const wizardResult = await downloadSelectedCloudGames(wizardGameIds);
-        totalDownloaded += wizardResult.downloaded;
-        totalSkipped += wizardResult.skipped;
-      }
-
-      // Download table games
-      if (tableGameIds.length > 0) {
-        const { downloadSelectedCloudTableGames } = await import('@/shared/api/tableGameService');
-        const tableResult = await downloadSelectedCloudTableGames(tableGameIds);
-        totalDownloaded += tableResult.downloaded;
-        totalSkipped += tableResult.skipped;
-      }
-
-      setCloudSyncStatus({ 
-        uploading: false, 
-        progress: '', 
-        uploadedCount: 0, 
-        totalCount: 0 
-      });
-
-      // Refresh the saved games list
-      loadSavedGames();
-
-      if (totalDownloaded > 0) {
-        setMessage({ 
-          text: t('accountMessages.downloadedGames', { count: totalDownloaded, skipped: totalSkipped }), 
-          type: 'success' 
-        });
-      } else if (totalSkipped > 0) {
-        setMessage({ 
-          text: t('accountMessages.allGamesExistLocally', { count: totalSkipped }), 
-          type: 'info' 
-        });
-      } else {
-        setMessage({ 
-          text: t('accountMessages.noGamesDownloaded'), 
-          type: 'info' 
-        });
-      }
-    } catch (error) {
-      setCloudSyncStatus({ 
-        uploading: false, 
-        progress: '', 
-        uploadedCount: 0, 
-        totalCount: 0 
-      });
-      setMessage({ text: t('accountMessages.downloadFailed', { error: error.message }), type: 'error' });
-      console.error('Download error:', error);
     }
   };
 
@@ -1758,107 +1581,7 @@ const Account = () => {
               className="settings-section"
               style={{background: 'transparent', border: 'none', padding: '0'}}
             >
-          {cloudSyncStatus.uploading && (
-            <div className="upload-progress">
-              <div className="progress-text">{cloudSyncStatus.progress}</div>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ 
-                    width: `${(cloudSyncStatus.uploadedCount / cloudSyncStatus.totalCount) * 100}%` 
-                  }}
-                ></div>
-              </div>
-              <div className="progress-stats">
-                {t('account.uploadProgress', { uploaded: cloudSyncStatus.uploadedCount, total: cloudSyncStatus.totalCount })}
-              </div>
-            </div>
-          )}
-
-          <div className="settings-actions">
-            {user && (
-              <div className="cloud-sync-actions">
-                <button 
-                  className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
-                  onClick={handleBulkCloudSync}
-                  disabled={
-                    cloudSyncStatus.uploading || 
-                    !syncStatusLoaded || // Disable until sync status is loaded
-                    (
-                      // Check wizard games
-                      Object.values(savedGames).filter(game => !game.isPaused).length === 0 &&
-                      // Check table games
-                      savedTableGames.filter(game => game.gameFinished && !LocalTableGameStorage.isGameUploaded(game.id)).length === 0
-                    ) ||
-                    (
-                      syncStatusLoaded && (
-                        // All wizard games are synced
-                        Object.entries(savedGames)
-                          .filter(([, game]) => !game.isPaused)
-                          .every(([gameId]) => gameSyncStatuses[gameId]?.status === 'Synced') &&
-                        // All table games are synced
-                        savedTableGames.every(game => LocalTableGameStorage.isGameUploaded(game.id) || !game.gameFinished)
-                      )
-                    )
-                  }
-                >
-                  {cloudSyncStatus.uploading ? (
-                    <span className="share-spinner" aria-label="Syncing..." />
-                  ) : (
-                    <CloudIcon size={18} />
-                  )}
-                  {cloudSyncStatus.uploading ? t('account.uploading') : t('account.uploadAll')}
-                </button>
-                <button 
-                  className={`settings-button cloud-sync-button ${cloudSyncStatus.uploading ? 'loading' : ''}`}
-                  onClick={handleDownloadCloudGames}
-                  disabled={cloudSyncStatus.uploading}
-                >
-                  {cloudSyncStatus.uploading ? (
-                    <span className="share-spinner" aria-label="Downloading..." />
-                  ) : (
-                    <CloudIcon size={18} />
-                  )}
-                  {cloudSyncStatus.uploading ? t('account.downloading') : t('account.download')}
-                </button>
-                {user && user.role === 'admin' && (
-                  <button 
-                    className="settings-button"
-                    onClick={() => setShowDebugPanel(!showDebugPanel)}
-                    style={{ border: '1px solid var(--primary)' }}
-                  >
-                    {showDebugPanel ? '✓' : '🐛'} {t('account.debugLog')}
-                  </button>
-                )}
-              </div>
-            )}
-            {!user && (
-              <button 
-                className="settings-button cloud-sync-button"
-                onClick={() => navigate('/login')}
-              >
-                <CloudIcon size={18} />
-                {t('auth.signInToUpload')}
-              </button>
-            )}
-          </div>
         </div>
-
-        {!user && (
-          <div style={{
-            borderRadius: 'var(--radius-md)',
-            marginBottom: 'var(--spacing-sm)',
-            fontSize: '1rem',
-            color: 'var(--text)',
-            display: 'flex',
-            alignItems: 'center',
-            textAlign: 'center',
-            justifyContent: 'center',
-            gap: 'var(--spacing-sm)'
-          }}>
-            <span>{t('auth.signInToShareGames')}</span>
-          </div>
-        )}
 
         {/* Search & Filters */}
         <div className="games-filter-bar">
@@ -2358,11 +2081,7 @@ const Account = () => {
           deleteAll={deleteAll}
         />
 
-        <CloudGameSelectModal
-          isOpen={showCloudGameSelectModal}
-          onClose={() => setShowCloudGameSelectModal(false)}
-          onDownload={handleDownloadSelectedGames}
-        />
+
 
         <GameFilterModal
           isOpen={showFilterModal}
@@ -2526,87 +2245,7 @@ const Account = () => {
           </div>
         )}
 
-        {/* Debug Panel for Mobile (Admin Only) */}
-        {showDebugPanel && user && user.role === 'admin' && (
-          <div style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            maxHeight: '50vh',
-            background: 'var(--card-bg)',
-            border: '2px solid var(--primary-color)',
-            borderRadius: '12px 12px 0 0',
-            padding: 'var(--spacing-md)',
-            overflow: 'auto',
-            zIndex: 1000,
-            boxShadow: '0 -4px 20px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-sm)' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>🐛 {t('account.debugLog')}</h3>
-              <button 
-                onClick={() => setDebugLogs([])}
-                style={{ 
-                  padding: '4px 8px', 
-                  fontSize: '0.8rem',
-                  background: 'var(--danger-color)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                {t('account.clearDebugLogs')}
-              </button>
-            </div>
-            <div style={{ 
-              fontSize: '0.75rem', 
-              fontFamily: 'monospace',
-              maxHeight: '40vh',
-              overflow: 'auto'
-            }}>
-              {debugLogs.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)' }}>{t('account.noDebugLogs')}</p>
-              ) : (
-                debugLogs.map((log, idx) => (
-                  <div key={idx} style={{ 
-                    marginBottom: 'var(--spacing-xs)', 
-                    padding: 'var(--spacing-xs)',
-                    background: 'var(--secondary-bg)',
-                    borderRadius: '4px',
-                    borderLeft: log.message.includes('🆔 Game ID') ? '3px solid var(--success-color)' : '3px solid var(--primary-color)'
-                  }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
-                      {log.timestamp}
-                    </div>
-                    <div style={{ 
-                      marginTop: '2px',
-                      fontWeight: log.message.includes('🆔 Game ID') ? 'bold' : 'normal',
-                      fontSize: log.message.includes('🆔 Game ID') ? '0.85rem' : '0.75rem'
-                    }}>
-                      {log.message}
-                    </div>
-                    {log.data && (
-                      <pre style={{ 
-                        marginTop: '4px', 
-                        fontSize: '0.7rem', 
-                        background: 'var(--bg-color)', 
-                        padding: '4px',
-                        borderRadius: '2px',
-                        overflow: 'auto',
-                        maxHeight: '150px',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all'
-                      }}>
-                        {JSON.stringify(log.data, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+
       </div>
   );
 };
