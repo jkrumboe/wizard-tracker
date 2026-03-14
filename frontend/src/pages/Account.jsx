@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { useTheme } from '@/shared/hooks/useTheme';
@@ -25,7 +25,7 @@ import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
-import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced';
+const PerformanceStatsEnhanced = lazy(() => import('@/pages/profile/PerformanceStatsEnhanced'));
 import StatsOverview from '@/components/stats/StatsOverview';
 import '@/styles/pages/account.css';
 
@@ -1569,12 +1569,18 @@ const Account = () => {
                 )}
                 
                 {allGamesForStats.length > 0 ? (
-                  <PerformanceStatsEnhanced 
-                    games={allGamesForStats} 
-                    currentPlayer={currentPlayer} 
-                    isWizardGame={statsGameType === 'wizard'}
-                    gameType={statsGameType}
-                  />
+                  <Suspense fallback={
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                      <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    </div>
+                  }>
+                    <PerformanceStatsEnhanced
+                      games={allGamesForStats}
+                      currentPlayer={currentPlayer}
+                      isWizardGame={statsGameType === 'wizard'}
+                      gameType={statsGameType}
+                    />
+                  </Suspense>
                 ) : (
                   <div className="settings-section">
                     <p style={{ textAlign: 'center', padding: '40px 20px' }}>

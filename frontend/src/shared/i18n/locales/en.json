@@ -108,8 +108,6 @@
     "creatingAccount": "Creating Account...",
     "switchToSignIn": "Already have an account? Sign In",
     "switchToSignUp": "No account yet? Sign Up",
-    "signInSubtitle": "Sign in to continue to your account",
-    "signUpSubtitle": "Sign up to start tracking your game scores",
     "loginFailed": "Failed to sign in. Please try again.",
     "registerFailed": "Failed to create account. Please try again.",
     "signInToUpload": "Sign In to Upload Games",

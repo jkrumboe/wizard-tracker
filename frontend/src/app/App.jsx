@@ -8,17 +8,22 @@ import { AuthProtectedRoute, UpdateNotification } from "@/components/common"
 import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
-// Eagerly import critical pages that should work offline
-import Account from "@/pages/Account"
-import { NewGame, GameDetails, GameInProgress, TableGame, TableGameDetails } from "@/pages/game"
+// Lazy load heavy pages for better initial load performance
+// Service worker precaches all chunks, so offline support is maintained
+const Account = lazy(() => import("@/pages/Account"))
+const NewGame = lazy(() => import("@/pages/game/NewGame"))
+const GameDetails = lazy(() => import("@/pages/game/GameDetails"))
+const GameInProgress = lazy(() => import("@/pages/game/GameInProgress"))
+const TableGame = lazy(() => import("@/pages/game/TableGame"))
+const TableGameDetails = lazy(() => import("@/pages/game/TableGameDetails"))
 
-// Admin pages
-import AdminLayout from "@/pages/admin/AdminLayout"
-import TemplateSuggestions from "@/pages/admin/TemplateSuggestions"
-import UserManagement from "@/pages/admin/UserManagement"
-import GameLinkageManagement from "@/pages/admin/GameLinkageManagement"
-import PlayerLinking from "@/pages/admin/PlayerLinking"
-import EloManagement from "@/pages/admin/EloManagement"
+// Lazy load admin pages - only accessible to admins
+const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"))
+const TemplateSuggestions = lazy(() => import("@/pages/admin/TemplateSuggestions"))
+const UserManagement = lazy(() => import("@/pages/admin/UserManagement"))
+const GameLinkageManagement = lazy(() => import("@/pages/admin/GameLinkageManagement"))
+const PlayerLinking = lazy(() => import("@/pages/admin/PlayerLinking"))
+const EloManagement = lazy(() => import("@/pages/admin/EloManagement"))
 
 // Lazy load less critical pages for better performance
 const Profile = lazy(() => import("@/pages/profile/Profile"))
@@ -242,7 +247,11 @@ function App() {
                 <Navbar />
                 <div className="main-container">
                 <LazyLoadErrorBoundary>
-                  <Suspense fallback={<div className="loading-spinner">Loading...</div>}>
+                  <Suspense fallback={
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: 'var(--text-muted)' }}>
+                      <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    </div>
+                  }>
                     <Routes>
                       <Route path="/" element={<Home />} />
                     <Route path="/profile" element={<Navigate to="/account" replace />} />

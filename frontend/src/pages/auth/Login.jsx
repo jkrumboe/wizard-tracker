@@ -171,12 +171,6 @@ const Login = () => {
           {isRegistering ? t('auth.switchToSignIn') : t('auth.switchToSignUp')}
         </button>
       </form>
-
-      <p className="login-subtitle">
-            {isRegistering 
-              ? t('auth.signUpSubtitle') 
-              : t('auth.signInSubtitle')}
-          </p>
     </div>
   );
 };

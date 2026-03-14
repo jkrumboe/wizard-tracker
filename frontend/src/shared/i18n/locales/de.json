@@ -108,8 +108,6 @@
     "creatingAccount": "Konto wird erstellt...",
     "switchToSignIn": "Bereits ein Konto? Anmelden",
     "switchToSignUp": "Noch kein Konto? Registrieren",
-    "signInSubtitle": "Melde dich an, um auf dein Konto zuzugreifen",
-    "signUpSubtitle": "Registriere dich, um deine Spielergebnisse zu verfolgen",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
     "registerFailed": "Konto konnte nicht erstellt werden. Bitte versuche es erneut.",
     "signInToUpload": "Anmelden, um Spiele hochzuladen",

@@ -28,7 +28,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'chart-vendor': ['chart.js', 'react-chartjs-2', 'recharts'],
+          'chartjs-vendor': ['chart.js', 'react-chartjs-2'],
+          'recharts-vendor': ['recharts'],
           'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities', '@dnd-kit/modifiers'],
           'utils': ['axios', 'dexie', 'uuid', 'jwt-decode'],
         },

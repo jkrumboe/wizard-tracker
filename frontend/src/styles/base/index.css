@@ -339,6 +339,12 @@ button:disabled,
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* Global spinner animation - used by Suspense fallback and loading states */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Main container for content with spacing for fixed navigation */
 .main-container {
   /* padding-top: var(--spacing-md); */

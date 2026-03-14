@@ -35,13 +35,6 @@
     background-clip: text;
   }
 
-  .login-subtitle {
-    margin: var(--spacing-sm) 0 0 0;
-    color: var(--text);
-    font-size: 1rem;
-    line-height: 1.4;
-  }
-
   /* .input-group {
     margin-bottom: var(--spacing-sm);
   } */
@@ -249,9 +242,5 @@
 
     .login-title {
       font-size: 1.5rem;
-    }
-
-    .login-subtitle {
-      font-size: 0.9rem;
     }
   }
