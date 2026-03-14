@@ -5,6 +5,7 @@ import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon, RotateCcwIcon } fro
 import { EllipsisVertical } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import '@/styles/components/SwipeableGameCard.css';
 
 /**
  * SwipeableGameCard — wraps a card with a "⋮" context-menu button.

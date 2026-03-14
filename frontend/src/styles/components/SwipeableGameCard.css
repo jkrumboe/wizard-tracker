@@ -1,0 +1,154 @@
+/* Card Actions Container — card + "⋮" menu button */
+.card-actions-container {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: 6px;
+}
+
+.card-actions-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-actions-content .game-card {
+  margin-bottom: 0;
+  height: 100%;
+}
+
+/* "⋮" trigger button */
+.card-actions-menu-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.card-actions-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+
+.card-actions-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.card-actions-menu-btn.active {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Dropdown action bar — rendered via portal, floats above everything */
+.card-actions-dropdown {
+  position: fixed;
+  z-index: 9999;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 0 4px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Each menu item */
+.card-actions-dropdown-item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--spacing-sm);
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.card-actions-dropdown-item:last-child {
+  border-right: none;
+}
+
+.card-actions-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card-actions-dropdown-item.disabled,
+.card-actions-dropdown-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.card-actions-dropdown-item.disabled:hover,
+.card-actions-dropdown-item:disabled:hover {
+  background: transparent;
+}
+
+.card-actions-dropdown-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.card-actions-dropdown-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Action color accents (icon color) */
+.card-actions-dropdown-item.action-view .card-actions-dropdown-icon {
+  color: var(--secondary);
+}
+.card-actions-dropdown-item.action-edit .card-actions-dropdown-icon {
+  color: #FFC107;
+}
+.card-actions-dropdown-item.action-sync .card-actions-dropdown-icon {
+  color: var(--primary);
+}
+.card-actions-dropdown-item.action-sync-system .card-actions-dropdown-icon {
+  color: #9333ea;
+}
+.card-actions-dropdown-item.action-share .card-actions-dropdown-icon {
+  color: var(--primary);
+}
+.card-actions-dropdown-item.action-delete {
+  color: var(--danger-color);
+}
+.card-actions-dropdown-item.action-delete .card-actions-dropdown-icon {
+  color: var(--danger-color);
+}
