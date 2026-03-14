@@ -1315,6 +1315,24 @@ const Account = () => {
     return types;
   }, [savedGames, savedTableGames, t]);
 
+  const gamesDatePlaceholder = useMemo(() => {
+    const language = i18n.language || 'en';
+    const dayToken = language.toLowerCase().startsWith('de') ? 'tt' : 'dd';
+    const yearToken = language.toLowerCase().startsWith('de') ? 'jjjj' : 'yyyy';
+    const formatter = new Intl.DateTimeFormat(language, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+    return formatter.formatToParts(new Date(2006, 10, 24)).map((part) => {
+      if (part.type === 'day') return dayToken;
+      if (part.type === 'month') return 'mm';
+      if (part.type === 'year') return yearToken;
+      return part.value;
+    }).join('');
+  }, [i18n.language]);
+
   // Merge and filter games for the Games tab based on type, search, and date range
   const displayedGames = useMemo(() => {
     // Build a unified list: wizard games + table games, each tagged with their source type
@@ -1622,23 +1640,29 @@ const Account = () => {
           <div className="games-date-filters">
             <div className="games-date-field">
               <label htmlFor="games-date-from">{t('account.dateFrom', 'From')}</label>
-              <input
-                id="games-date-from"
-                type="date"
-                className="games-date-input"
-                value={gamesDateFrom}
-                onChange={(e) => setGamesDateFrom(e.target.value)}
-              />
+              <div className={`games-date-input-wrapper${gamesDateFrom ? ' has-value' : ''}`}>
+                <input
+                  id="games-date-from"
+                  type="date"
+                  className="games-date-input"
+                  value={gamesDateFrom}
+                  onChange={(e) => setGamesDateFrom(e.target.value)}
+                />
+                <span className="games-date-placeholder" aria-hidden="true">{gamesDatePlaceholder}</span>
+              </div>
             </div>
             <div className="games-date-field">
               <label htmlFor="games-date-to">{t('account.dateTo', 'To')}</label>
-              <input
-                id="games-date-to"
-                type="date"
-                className="games-date-input"
-                value={gamesDateTo}
-                onChange={(e) => setGamesDateTo(e.target.value)}
-              />
+              <div className={`games-date-input-wrapper${gamesDateTo ? ' has-value' : ''}`}>
+                <input
+                  id="games-date-to"
+                  type="date"
+                  className="games-date-input"
+                  value={gamesDateTo}
+                  onChange={(e) => setGamesDateTo(e.target.value)}
+                />
+                <span className="games-date-placeholder" aria-hidden="true">{gamesDatePlaceholder}</span>
+              </div>
             </div>
             {(gamesDateFrom || gamesDateTo) && (
               <button

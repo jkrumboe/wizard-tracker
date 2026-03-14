@@ -344,8 +344,8 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: left 2% center;
@@ -395,8 +395,8 @@ html:not([data-theme="dark"]) .game-type-selector {
   text-align: center;
   text-align-last: center;
   min-width: 40px;
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: left 8px center;
@@ -470,6 +470,13 @@ html:not([data-theme="dark"]) .games-type-select {
   flex: 1;
 }
 
+.games-date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .games-date-field label {
   font-size: 0.75rem;
   color: var(--text-light);
@@ -478,6 +485,8 @@ html:not([data-theme="dark"]) .games-type-select {
 }
 
 .games-date-input {
+  width: 100%;
+  min-width: 0;
   padding: var(--spacing-xs);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
@@ -485,6 +494,10 @@ html:not([data-theme="dark"]) .games-type-select {
   color: var(--text-light);
   font-size: 0.9rem;
   color-scheme: dark;
+}
+
+.games-date-placeholder {
+  display: none;
 }
 
 html:not([data-theme="dark"]) .games-date-input {
@@ -1622,6 +1635,61 @@ html:not([data-theme="dark"]) .settings-tab button {
   .theme-button {
     padding: var(--spacing-sm);
     font-size: 0.9rem;
+  }
+
+  .games-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(92px, 28%, 120px);
+    align-items: center;
+  }
+
+  .games-type-select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding-right: var(--spacing-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .games-date-input {
+    color: transparent;
+    caret-color: var(--text-light);
+  }
+
+  .games-date-input::-webkit-datetime-edit {
+    color: transparent;
+  }
+
+  .games-date-input:focus,
+  .games-date-input-wrapper.has-value .games-date-input {
+    color: var(--text-light);
+  }
+
+  .games-date-input:focus::-webkit-datetime-edit,
+  .games-date-input-wrapper.has-value .games-date-input::-webkit-datetime-edit {
+    color: var(--text-light);
+  }
+
+  .games-date-placeholder {
+    display: block;
+    position: absolute;
+    left: var(--spacing-xs);
+    right: 2rem;
+    color: var(--text-light);
+    opacity: 0.7;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+  }
+
+  .games-date-input:focus + .games-date-placeholder,
+  .games-date-input-wrapper.has-value .games-date-placeholder {
+    display: none;
   }
 }
 
