@@ -845,7 +845,7 @@
     "resumeGame": "Resume",
     "deleteGameTitle": "Delete Game",
     "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
-    "searchPlaceholder": "Search by game name or player...",
+    "searchPlaceholder": "Search for players...",
     "pausedGames": "Paused",
     "finishedGames": "Finished",
     "noMatches": "No games found",
