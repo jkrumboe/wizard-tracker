@@ -4,6 +4,7 @@ import { LocalGameStorage } from "@/shared/api"
 import { stateRecovery } from "@/shared/utils/stateRecovery"
 import { getSyncManager } from "@/shared/sync/syncManager"
 import { getSecureRandomInt } from "@/shared/utils/secureRandom"
+import { calculateScore, WIZARD_FORMULA, generateRoundPattern } from "@/shared/utils/scoringFormulas"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
@@ -24,7 +25,9 @@ export function GameStateProvider({ children }) {
     startingDealerIndex: 0, // Starting dealer for rotation
     // Auto-upload status
     autoUploadStatus: null, // 'uploading', 'success', 'warning', null
-    autoUploadMessage: null // Message to show user
+    autoUploadMessage: null, // Message to show user
+    // Template configuration for Call & Made games
+    templateConfig: null, // { scoringFormula, roundPattern, maxRounds, hasDealerRotation, hasForbiddenCall, templateName }
   })
 
   // Register state recovery for game state
@@ -341,12 +344,9 @@ export function GameStateProvider({ children }) {
         
         // Recalculate score for this round if possible
         if (player.call !== null && player.made !== null) {
-          if (player.call === player.made) {
-            player.score = 20 + player.made * 10;
-          } else {
-            player.score = -10 * Math.abs(player.call - player.made);
-          }
-          
+          const formula = gameState.templateConfig?.scoringFormula || WIZARD_FORMULA;
+          player.score = calculateScore(formula, player.call, player.made);
+
           // Calculate total score based on previous round or 0 if first round
           const prevRoundIdx = roundIdx - 1;
           const prevScore = prevRoundIdx >= 0 && updatedRoundData[prevRoundIdx].players[playerIndex].totalScore !== null 
@@ -372,45 +372,97 @@ export function GameStateProvider({ children }) {
     return updatedRoundData;
   }, []);
 
+  const buildInitialRoundData = useCallback((players, maxRounds, templateConfig = null) => {
+    const patternKey = templateConfig?.roundPattern || 'pyramid';
+    const cardsPattern = generateRoundPattern(patternKey, maxRounds);
+    const initialRoundData = [];
+
+    for (let i = 1; i <= maxRounds; i++) {
+      initialRoundData.push({
+        round: i,
+        cards: cardsPattern[i - 1],
+        players: players.map((player) => ({
+          id: player.id,
+          name: player.name,
+          call: null,
+          made: null,
+          score: null,
+          totalScore: 0,
+        })),
+      });
+    }
+
+    return initialRoundData;
+  }, []);
+
 // Start a new game
   const startGame = useCallback(() => {
-  if (gameState.players.length < 2) return;
+  if (gameState.players.length < 2) return false;
 
   const referenceDate = new Date();
-  const initialRoundData = [];
-  for (let i = 1; i <= gameState.maxRounds; i++) {
-    initialRoundData.push({
-      round: i,
-      cards: i <= 10 ? i : 20 - i,
-      players: gameState.players.map((player) => ({
-        id: player.id,
-        name: player.name,
-        call: null,
-        made: null,
-        score: null,
-        totalScore: 0, // Initialize all rounds to start with 0
-      })),
-    });
-  }
+  const initialRoundData = buildInitialRoundData(gameState.players, gameState.maxRounds, gameState.templateConfig);
 
   const newGameState = {
     ...gameState,
     roundData: initialRoundData,
     gameStarted: true,
-    gameFinished: false, // Reset gameFinished
+    gameFinished: false,
     referenceDate,
-    isLocal: true, // Ensure this is set for local games
-    mode: "Local", // Set the game mode to Local
+    isLocal: true,
+    mode: "Local",
   };
 
-  // Create an initial auto-save for the new game
   const gameId = LocalGameStorage.saveGame(newGameState, 'Current Game (Auto-save)', true);
-  
+
   setGameState({
     ...newGameState,
-    gameId: gameId,
+    gameId,
   });
-}, [gameState]);
+
+  return true;
+}, [buildInitialRoundData, gameState]);
+
+  const startGameWithSetup = useCallback((setup = {}) => {
+    const setupPlayers = Array.isArray(setup.players) ? setup.players : [];
+    if (setupPlayers.length < 2) {
+      return { success: false, error: 'At least 2 players required' };
+    }
+
+    const maxRounds = Number.isInteger(setup.maxRounds) && setup.maxRounds > 0 ? setup.maxRounds : 20;
+    const templateConfig = setup.templateConfig || null;
+    const referenceDate = new Date();
+
+    const players = setupPlayers.map((player, index) => ({
+      id: player.id || (Date.now().toString() + getSecureRandomInt(0, 999).toString() + index.toString()),
+      name: player.name || `Player ${index + 1}`,
+      isVerified: !!player.isVerified,
+    }));
+
+    const roundData = buildInitialRoundData(players, maxRounds, templateConfig);
+    const newGameState = {
+      players,
+      currentRound: 1,
+      maxRounds,
+      roundData,
+      gameStarted: true,
+      gameFinished: false,
+      mode: 'Local',
+      isLocal: true,
+      gameId: null,
+      isPaused: false,
+      gameName: null,
+      startingDealerIndex: 0,
+      autoUploadStatus: null,
+      autoUploadMessage: null,
+      templateConfig,
+      referenceDate,
+    };
+
+    const gameId = LocalGameStorage.saveGame(newGameState, 'Current Game (Auto-save)', true);
+    setGameState({ ...newGameState, gameId });
+
+    return { success: true, gameId };
+  }, [buildInitialRoundData]);
 
   // Update player's call for current round
   const updateCall = useCallback((playerId, call) => {
@@ -435,12 +487,9 @@ export function GameStateProvider({ children }) {
         
         // If player has made values already entered, recalculate score for this round
         if (player.made !== null) {
-          if (player.call === player.made) {
-            player.score = 20 + player.made * 10;
-          } else {
-            player.score = -10 * Math.abs(player.call - player.made);
-          }
-          
+          const formula = gameState.templateConfig?.scoringFormula || WIZARD_FORMULA;
+          player.score = calculateScore(formula, player.call, player.made);
+
           // Update total score
           const prevRound = roundIndex > 0 ? newRoundData[roundIndex - 1] : null;
           const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
@@ -497,14 +546,9 @@ export function GameStateProvider({ children }) {
         // This allows scores to be calculated when made values are entered early
         if (player.made !== null) {
           if (player.call !== null) {
-            if (player.call === player.made) {
-              // 20 points + 10 points per trick
-              player.score = 20 + player.made * 10;
-            } else {
-              // -10 points per difference
-              player.score = -10 * Math.abs(player.call - player.made);
-            }
-            
+            const formula = gameState.templateConfig?.scoringFormula || WIZARD_FORMULA;
+            player.score = calculateScore(formula, player.call, player.made);
+
             // Calculate total score
             const prevRound = roundIndex > 0 ? newRoundData[roundIndex - 1] : null;
             const prevScore = prevRound && prevRound.players[playerIndex].totalScore !== null 
@@ -784,13 +828,24 @@ export function GameStateProvider({ children }) {
       gameFinished: false,
       mode: "Local",
       isLocal: true,
+      gameId: null,
+      isPaused: false,
+      gameName: null,
+      startingDealerIndex: 0,
+      autoUploadStatus: null,
+      autoUploadMessage: null,
+      templateConfig: null,
     })
   }, [])
 
   const setMaxRounds = useCallback((rounds) => {
     setGameState((prev) => ({ ...prev, maxRounds: rounds }))
   }, []);
-  
+
+  const setTemplateConfig = useCallback((config) => {
+    setGameState((prev) => ({ ...prev, templateConfig: config }));
+  }, []);
+
   const setMode = useCallback((mode) => {
     setGameState((prevState) => ({
       ...prevState,
@@ -957,6 +1012,10 @@ export function GameStateProvider({ children }) {
         gameId: null,
         isPaused: false,
         gameName: null,
+        startingDealerIndex: 0,
+        autoUploadStatus: null,
+        autoUploadMessage: null,
+        templateConfig: null,
       });
 
       return { success: true };
@@ -993,6 +1052,7 @@ export function GameStateProvider({ children }) {
         addPlayer,
         removePlayer,
         startGame,
+        startGameWithSetup,
         updateCall,
         updateMade,
         nextRound,
@@ -1000,6 +1060,7 @@ export function GameStateProvider({ children }) {
         finishGame,
         resetGame,
         setMaxRounds,
+        setTemplateConfig,
         setMode,
         updatePlayerName,
         updatePlayerNameWithLookup,

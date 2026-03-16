@@ -6,7 +6,6 @@
   gap: var(--spacing-md);
   max-width: 800px;
   height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px);
-  margin: 0 auto;
   border-radius: var(--radius-lg);
 }
 
@@ -69,10 +68,6 @@
 }
 
 /* Template List */
-.template-section {
-  margin-bottom: var(--spacing-lg);
-}
-
 .template-section-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -156,12 +151,6 @@
 .template-badge.altered-badge {
   background: rgba(147, 51, 234, 0.2);
   color: #9333ea;
-}
-
-.template-description {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin-top: var(--spacing-xs);
 }
 
 .template-meta {

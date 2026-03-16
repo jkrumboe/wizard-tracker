@@ -76,7 +76,8 @@
     "table": "Table",
     "leaderboard": "Leaderboard",
     "compareWithFriends": "Compare with Friends",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "newGame": "New Game"
   },
 
   "home": {
@@ -413,7 +414,26 @@
 
   "gameHistory": {
     "viewDetails": "View Details",
-    "roundsCount": "Rounds: {{count}}"
+    "roundsCount": "Rounds: {{count}}",
+    "title": "Game History",
+    "pausedGames": "Paused",
+    "finishedGames": "Finished",
+    "searchPlaceholder": "Search by game name or player...",
+    "noPausedGames": "No paused games yet",
+    "noFinishedGames": "No finished games yet",
+    "paused": "Paused",
+    "finished": "Finished",
+    "continueGame": "Continue",
+    "viewGame": "View Game",
+    "deleteGame": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this game?",
+    "noGames": "No games saved yet",
+    "noMatches": "No games found",
+    "tryDifferentSearch": "Try a different search term",
+    "roundProgress": "Round Progress",
+    "rounds": "Rounds",
+    "playersInline": "Players",
+    "tied": "Tied"
   },
 
   "gameTemplates": {
@@ -817,13 +837,27 @@
 
   "loadTableGame": {
     "gamesTitle": "{{name}} Games",
+    "tableGames": "Game History",
     "loadingSavedGames": "Loading saved games...",
     "noSavedGames": "No saved table games found.",
     "saveHint": "Save a table game to see it here.",
     "viewGame": "View",
     "resumeGame": "Resume",
     "deleteGameTitle": "Delete Game",
-    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "searchPlaceholder": "Search by game name or player...",
+    "pausedGames": "Paused",
+    "finishedGames": "Finished",
+    "noMatches": "No games found",
+    "tryDifferentSearch": "Try a different search term",
+    "paused": "Paused",
+    "finished": "Finished",
+    "playersList": "Players",
+    "rounds": "Rounds"
+  },
+
+  "startGame": {
+    "callAndMadeSection": "Call & Made Games"
   },
 
   "templateModal": {
@@ -849,13 +883,28 @@
     "saveChanges": "Save Changes",
     "createGame": "Create Game",
     "enterGameNameError": "Please enter a game name",
-    "targetPositiveError": "Target number must be a positive number"
+    "targetPositiveError": "Target number must be a positive number",
+    "gameCategoryLabel": "Game Category:",
+    "tableCategory": "Table",
+    "callAndMadeCategory": "Call & Made",
+    "scoringFormulaLabel": "Scoring Formula:",
+    "baseCorrectLabel": "Base points when correct",
+    "bonusPerTrickLabel": "Bonus per trick when correct",
+    "penaltyPerDiffLabel": "Penalty per difference when wrong",
+    "roundPatternLabel": "Round Pattern:",
+    "patternPyramid": "Pyramid (1, 2, ... max, ... 2, 1)",
+    "patternAscending": "Ascending (1, 2, ... max)",
+    "patternFixed": "Fixed (same each round)",
+    "maxRoundsLabel": "Max Rounds:",
+    "gameRulesLabel": "Game Rules:",
+    "dealerRotationLabel": "Dealer rotates each round",
+    "forbiddenCallLabel": "Last caller has a forbidden call"
   },
 
   "templateDetails": {
     "gameSettings": "Game Settings",
-    "targetNumber": "Target Number:",
-    "scoringTarget": "Scoring Target:",
+    "targetNumber": "Target Number",
+    "scoringTarget": "Scoring Target",
     "lowScores": "Low Scores",
     "highScores": "High Scores",
     "description": "Description",

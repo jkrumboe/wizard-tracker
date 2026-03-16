@@ -18,6 +18,10 @@ const templateSuggestionSchema = new mongoose.Schema({
     ref: 'SystemGameTemplate',
     default: null
   },
+  builtinTemplateId: {
+    type: String,
+    default: null
+  },
   suggestionType: {
     type: String,
     enum: ['new', 'change'],
@@ -35,6 +39,33 @@ const templateSuggestionSchema = new mongoose.Schema({
   lowIsBetter: {
     type: Boolean,
     default: false
+  },
+  gameCategory: {
+    type: String,
+    enum: ['table', 'callAndMade'],
+    default: 'table'
+  },
+  scoringFormula: {
+    baseCorrect: { type: Number, default: null },
+    bonusPerTrick: { type: Number, default: null },
+    penaltyPerDiff: { type: Number, default: null }
+  },
+  roundPattern: {
+    type: String,
+    enum: ['pyramid', 'ascending', 'fixed', null],
+    default: null
+  },
+  maxRounds: {
+    type: Number,
+    default: null
+  },
+  hasDealerRotation: {
+    type: Boolean,
+    default: true
+  },
+  hasForbiddenCall: {
+    type: Boolean,
+    default: true
   },
   description: {
     type: String,
@@ -70,6 +101,7 @@ const templateSuggestionSchema = new mongoose.Schema({
 // Index for efficient queries
 templateSuggestionSchema.index({ status: 1, createdAt: -1 });
 templateSuggestionSchema.index({ userId: 1, status: 1 });
+templateSuggestionSchema.index({ builtinTemplateId: 1, status: 1 });
 
 const TemplateSuggestion = mongoose.model('TemplateSuggestion', templateSuggestionSchema);
 

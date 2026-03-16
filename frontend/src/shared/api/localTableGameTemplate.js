@@ -24,13 +24,20 @@ export class LocalTableGameTemplate {
       const template = {
         id: templateId,
         name: gameName.trim(),
+        gameCategory: settings.gameCategory || 'table',
         createdAt: timestamp,
         lastUsed: timestamp,
         usageCount: 0,
         targetNumber: settings.targetNumber || null,
         lowIsBetter: settings.lowIsBetter || false,
         description: settings.description || '',
-        descriptionMarkdown: settings.descriptionMarkdown || ''
+        descriptionMarkdown: settings.descriptionMarkdown || '',
+        // Call & Made specific settings
+        scoringFormula: settings.scoringFormula || null,
+        roundPattern: settings.roundPattern || null,
+        maxRounds: settings.maxRounds || null,
+        hasDealerRotation: settings.hasDealerRotation !== undefined ? settings.hasDealerRotation : true,
+        hasForbiddenCall: settings.hasForbiddenCall !== undefined ? settings.hasForbiddenCall : true,
       };
 
       const existingTemplates = this.getAllTemplates();
@@ -70,6 +77,24 @@ export class LocalTableGameTemplate {
         }
         if (settings.descriptionMarkdown !== undefined) {
           templates[templateId].descriptionMarkdown = settings.descriptionMarkdown;
+        }
+        if (settings.gameCategory !== undefined) {
+          templates[templateId].gameCategory = settings.gameCategory;
+        }
+        if (settings.scoringFormula !== undefined) {
+          templates[templateId].scoringFormula = settings.scoringFormula;
+        }
+        if (settings.roundPattern !== undefined) {
+          templates[templateId].roundPattern = settings.roundPattern;
+        }
+        if (settings.maxRounds !== undefined) {
+          templates[templateId].maxRounds = settings.maxRounds;
+        }
+        if (settings.hasDealerRotation !== undefined) {
+          templates[templateId].hasDealerRotation = settings.hasDealerRotation;
+        }
+        if (settings.hasForbiddenCall !== undefined) {
+          templates[templateId].hasForbiddenCall = settings.hasForbiddenCall;
         }
         
         localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));
@@ -229,6 +254,12 @@ export class LocalTableGameTemplate {
         name: template.name,
         targetNumber: template.targetNumber,
         lowIsBetter: template.lowIsBetter,
+        gameCategory: template.gameCategory || 'table',
+        scoringFormula: template.scoringFormula || null,
+        roundPattern: template.roundPattern || null,
+        maxRounds: template.maxRounds || null,
+        hasDealerRotation: template.hasDealerRotation !== false,
+        hasForbiddenCall: template.hasForbiddenCall !== false,
         description: template.description || '',
         descriptionMarkdown: template.descriptionMarkdown || ''
       };
@@ -290,6 +321,12 @@ export class LocalTableGameTemplate {
             name: cloudTemplate.name,
             targetNumber: cloudTemplate.targetNumber,
             lowIsBetter: cloudTemplate.lowIsBetter,
+            gameCategory: cloudTemplate.gameCategory || existingLocalTemplate.gameCategory || 'table',
+            scoringFormula: cloudTemplate.scoringFormula || existingLocalTemplate.scoringFormula || null,
+            roundPattern: cloudTemplate.roundPattern || existingLocalTemplate.roundPattern || null,
+            maxRounds: cloudTemplate.maxRounds || existingLocalTemplate.maxRounds || null,
+            hasDealerRotation: cloudTemplate.hasDealerRotation !== undefined ? cloudTemplate.hasDealerRotation : (existingLocalTemplate.hasDealerRotation !== false),
+            hasForbiddenCall: cloudTemplate.hasForbiddenCall !== undefined ? cloudTemplate.hasForbiddenCall : (existingLocalTemplate.hasForbiddenCall !== false),
             description: cloudTemplate.description || existingLocalTemplate.description,
             descriptionMarkdown: cloudTemplate.descriptionMarkdown || existingLocalTemplate.descriptionMarkdown,
             usageCount: cloudTemplate.usageCount || existingLocalTemplate.usageCount,
@@ -307,6 +344,12 @@ export class LocalTableGameTemplate {
             name: cloudTemplate.name,
             targetNumber: cloudTemplate.targetNumber,
             lowIsBetter: cloudTemplate.lowIsBetter,
+            gameCategory: cloudTemplate.gameCategory || 'table',
+            scoringFormula: cloudTemplate.scoringFormula || null,
+            roundPattern: cloudTemplate.roundPattern || null,
+            maxRounds: cloudTemplate.maxRounds || null,
+            hasDealerRotation: cloudTemplate.hasDealerRotation !== false,
+            hasForbiddenCall: cloudTemplate.hasForbiddenCall !== false,
             description: cloudTemplate.description || '',
             descriptionMarkdown: cloudTemplate.descriptionMarkdown || '',
             usageCount: cloudTemplate.usageCount || 0,

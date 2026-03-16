@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
-import { LocalTableGameTemplate, LocalTableGameStorage } from "../../shared/api";
+import { LocalTableGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
-import GameTemplateSelector from "../../components/game/GameTemplateSelector";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
 import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
 import { useUser } from "../../shared/hooks/useUser";
@@ -58,7 +57,7 @@ const TableGame = () => {
   };
   
   const [players, setPlayers] = useState(getDefaultPlayers());
-  const [showTemplateSelector, setShowTemplateSelector] = useState(true);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
   const [currentGameName, setCurrentGameName] = useState("");
   const [currentGameId, setCurrentGameId] = useState(() => {
     // Initialize from sessionStorage to survive HMR reloads
@@ -224,18 +223,8 @@ const TableGame = () => {
           }
         }
       } else {
-        // No ID in URL - show template selector if we're currently viewing a game
-        if (!showTemplateSelector) {
-          setShowTemplateSelector(true);
-          setCurrentGameName("");
-          setCurrentGameId(null);
-          setCurrentRound(1); // Reset round when leaving game
-          setTargetNumber(null);
-          setLowIsBetter(false);
-          setGameFinished(false);
-          sessionStorage.removeItem('currentTableGameId');
-          sessionStorage.removeItem('currentTableGameState');
-        }
+        // No ID in URL - redirect to unified start page
+        navigate('/start', { replace: true });
       }
     };
     
@@ -798,86 +787,9 @@ const TableGame = () => {
     }
   }, [players, targetNumber, gameFinished, lowIsBetter]);
 
-  const loadGame = (gameData) => {
-    try {
-      if (gameData?.gameId) {
-        // Navigate to the game with its ID
-        navigate(`/table/${gameData.gameId}`);
-      }
-    } catch (error) {
-      console.error("Error loading table game:", error);
-    }
-  };
-
-  const handleSelectTemplate = (templateName, settings = {}) => {
-    // Create a new game
-    const firstPlayerName = user?.username || user?.name || "Player 1";
-    const firstPlayerId = user?.id || user?.$id || generateSecureId('player');
-    
-    // settings.players now contains objects with { name, userId } instead of just strings
-    const playerData = settings.players || settings.playerNames;
-    
-    const initialPlayers = playerData && Array.isArray(playerData) && playerData.length > 0
-      ? playerData.map((playerInfo, idx) => {
-          // Handle both new format (object with name/userId) and legacy format (string)
-          const isObject = typeof playerInfo === 'object';
-          const name = isObject ? playerInfo.name : playerInfo;
-          const userId = isObject ? playerInfo.userId : null;
-          
-          // For the first player, use their userId if available, otherwise use logged-in user's ID
-          let playerId;
-          if (idx === 0) {
-            playerId = userId || firstPlayerId;
-          } else {
-            playerId = userId || generateSecureId('player');
-          }
-          
-          return { 
-            id: playerId,
-            name: name, 
-            userId: userId, // Store the userId for backend sync
-            points: [] 
-          };
-        })
-      : [
-          { id: firstPlayerId, name: firstPlayerName, userId: user?.id || null, points: [] },
-          { id: generateSecureId('player'), name: "Player 2", userId: null, points: [] },
-          { id: generateSecureId('player'), name: "Player 3", userId: null, points: [] }
-        ];
-    
-    const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
-    const newRows = isSmallLandscape ? 8 : 10;
-    
-    const gameData = {
-      players: initialPlayers,
-      rows: newRows,
-      timestamp: new Date().toISOString(),
-      targetNumber: settings.targetNumber || null,
-      lowIsBetter: settings.lowIsBetter || false,
-      gameFinished: false,
-      gameName: templateName
-    };
-    
-    // Save the new game and get the ID
-    const newGameId = LocalTableGameStorage.saveTableGame(gameData, templateName);
-    
-    // Navigate to the new game
-    navigate(`/table/${newGameId}`);
-  };
-
-  const handleCreateNewGame = (newGameName, settings = {}) => {
-    if (newGameName?.trim()) {
-      const trimmedName = newGameName.trim();
-      // Save as a template with settings
-      LocalTableGameTemplate.saveTemplate(trimmedName, settings);
-      // Don't auto-start the game, just close the selector to show the new template
-      // User can manually click "New Game" when they're ready
-    }
-  };
 
   const handleBackToTemplates = () => {
-    // Navigate back to where the user came from
-    navigate(-1);
+    navigate('/start');
   };
 
   const _saveGame = () => {
@@ -934,13 +846,6 @@ const TableGame = () => {
 
   return (
     <div className="table-game-container">
-      {showTemplateSelector ? (
-        <GameTemplateSelector
-          onSelectTemplate={handleSelectTemplate}
-          onCreateNew={handleCreateNewGame}
-          onLoadGame={loadGame}
-        />
-      ) : (
         <div className={`game-in-progress players-${players.length} ${players.length > 3 ? 'many-players' : ''}`}>
           {/* Round Info Header */}
           <div className="round-info">
@@ -1258,7 +1163,6 @@ const TableGame = () => {
             gameFinished={gameFinished}
           />
         </div>
-      )}
     </div>
   );
 };

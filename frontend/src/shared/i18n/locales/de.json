@@ -76,7 +76,8 @@
     "table": "Tisch",
     "leaderboard": "Rangliste",
     "compareWithFriends": "Mit Freunden vergleichen",
-    "adminPanel": "Admin-Bereich"
+    "adminPanel": "Admin-Bereich",
+    "newGame": "Neues Spiel"
   },
 
   "home": {
@@ -413,7 +414,26 @@
 
   "gameHistory": {
     "viewDetails": "Details ansehen",
-    "roundsCount": "Runden: {{count}}"
+    "roundsCount": "Runden: {{count}}",
+    "title": "Spielverlauf",
+    "pausedGames": "Pausiert",
+    "finishedGames": "Beendet",
+    "searchPlaceholder": "Nach Spielname oder Spieler suchen...",
+    "noPausedGames": "Noch keine pausierten Spiele",
+    "noFinishedGames": "Noch keine beendeten Spiele",
+    "paused": "Pausiert",
+    "finished": "Beendet",
+    "continueGame": "Fortsetzen",
+    "viewGame": "Spiel ansehen",
+    "deleteGame": "Löschen",
+    "deleteConfirm": "Bist du sicher, dass du dieses Spiel löschen möchtest?",
+    "noGames": "Noch keine Spiele gespeichert",
+    "noMatches": "Keine Spiele gefunden",
+    "tryDifferentSearch": "Versuche einen anderen Suchbegriff",
+    "roundProgress": "Rundenfortschritt",
+    "rounds": "Runden",
+    "playersInline": "Spieler",
+    "tied": "Unentschieden"
   },
 
   "gameTemplates": {
@@ -817,13 +837,27 @@
 
   "loadTableGame": {
     "gamesTitle": "{{name}} Spiele",
+    "tableGames": "Spielverlauf",
     "loadingSavedGames": "Gespeicherte Spiele werden geladen...",
     "noSavedGames": "Keine gespeicherten Tabellenspiele gefunden.",
     "saveHint": "Speichere ein Tabellenspiel, um es hier zu sehen.",
     "viewGame": "Ansehen",
     "resumeGame": "Fortsetzen",
     "deleteGameTitle": "Spiel löschen",
-    "deleteConfirm": "Bist du sicher, dass du \"{{name}}\" löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden."
+    "deleteConfirm": "Bist du sicher, dass du \"{{name}}\" löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "searchPlaceholder": "Nach Spielname oder Spieler suchen...",
+    "pausedGames": "Pausiert",
+    "finishedGames": "Beendet",
+    "noMatches": "Keine Spiele gefunden",
+    "tryDifferentSearch": "Versuche einen anderen Suchbegriff",
+    "paused": "Pausiert",
+    "finished": "Beendet",
+    "playersList": "Spieler",
+    "rounds": "Runden"
+  },
+
+  "startGame": {
+    "callAndMadeSection": "Ansage & Stich Spiele"
   },
 
   "templateModal": {
@@ -849,13 +883,28 @@
     "saveChanges": "Änderungen speichern",
     "createGame": "Spiel erstellen",
     "enterGameNameError": "Bitte gib einen Spielnamen ein",
-    "targetPositiveError": "Zielpunktzahl muss eine positive Zahl sein"
+    "targetPositiveError": "Zielpunktzahl muss eine positive Zahl sein",
+    "gameCategoryLabel": "Spielkategorie:",
+    "tableCategory": "Tabelle",
+    "callAndMadeCategory": "Ansage & Stich",
+    "scoringFormulaLabel": "Wertungsformel:",
+    "baseCorrectLabel": "Basispunkte bei richtig",
+    "bonusPerTrickLabel": "Bonus pro Stich bei richtig",
+    "penaltyPerDiffLabel": "Strafe pro Differenz bei falsch",
+    "roundPatternLabel": "Rundenmuster:",
+    "patternPyramid": "Pyramide (1, 2, ... max, ... 2, 1)",
+    "patternAscending": "Aufsteigend (1, 2, ... max)",
+    "patternFixed": "Fest (gleich jede Runde)",
+    "maxRoundsLabel": "Max. Runden:",
+    "gameRulesLabel": "Spielregeln:",
+    "dealerRotationLabel": "Geber wechselt jede Runde",
+    "forbiddenCallLabel": "Letzter Ansager hat verbotene Ansage"
   },
 
   "templateDetails": {
     "gameSettings": "Spieleinstellungen",
-    "targetNumber": "Zielpunktzahl:",
-    "scoringTarget": "Wertungsziel:",
+    "targetNumber": "Zielpunktzahl",
+    "scoringTarget": "Wertungsziel",
     "lowScores": "Niedrig",
     "highScores": "Hoch",
     "description": "Beschreibung",

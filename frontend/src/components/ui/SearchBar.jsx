@@ -21,7 +21,7 @@ const SearchBar = ({ onSearch, placeholder = "Search...", value }) => {
     onSearch(val)
   }
 
-  const isOnNewGamePage = location.pathname === "/new-game"
+  const isOnNewGamePage = location.pathname === "/start"
 
   return (
     <div className="search-bar">

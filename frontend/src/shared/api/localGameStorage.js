@@ -5,6 +5,7 @@
  */
 
 import { generateSecureId } from '../utils/secureRandom.js';
+import { generateRoundPattern } from '../utils/scoringFormulas.js';
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames";
 
@@ -140,7 +141,8 @@ export class LocalGameStorage {
           mode: gameState.mode || "Local",
           isLocal: gameState.isLocal !== undefined ? gameState.isLocal : true,
           isPaused: isPaused,
-          referenceDate: gameState.referenceDate
+          referenceDate: gameState.referenceDate,
+          templateConfig: gameState.templateConfig || null,
         }
       };
       
@@ -253,17 +255,19 @@ export class LocalGameStorage {
         // Also add round numbers and fill missing future rounds for paused games
         const savedRounds = savedGame.round_data || [];
         const totalRounds = savedGame.total_rounds || internalState.maxRounds || 20;
-        
+        const patternKey = internalState.templateConfig?.roundPattern || 'pyramid';
+        const cardsPattern = generateRoundPattern(patternKey, totalRounds);
+
         // Create all rounds (both saved and future ones)
         const roundData = [];
         for (let i = 1; i <= totalRounds; i++) {
           const savedRound = savedRounds[i - 1]; // Saved rounds are 0-indexed
-          
+
           if (savedRound) {
             // Use saved round data and add round number
             roundData.push({
               round: i,
-              cards: i <= 10 ? i : 20 - i,
+              cards: cardsPattern[i - 1],
               players: (savedRound.players || []).map(roundPlayer => {
                 // If player name is missing, get it from root players array
                 if (!roundPlayer.name) {
@@ -280,7 +284,7 @@ export class LocalGameStorage {
             // Create empty round for future rounds
             roundData.push({
               round: i,
-              cards: i <= 10 ? i : 20 - i,
+              cards: cardsPattern[i - 1],
               players: (savedGame.players || []).map(player => ({
                 id: player.id,
                 name: player.name,
@@ -309,7 +313,8 @@ export class LocalGameStorage {
           duration_seconds: savedGame.duration_seconds,
           winner_id: savedGame.winner_id,
           final_scores: savedGame.final_scores,
-          total_rounds: savedGame.total_rounds
+          total_rounds: savedGame.total_rounds,
+          templateConfig: internalState.templateConfig || null,
         };
       }
       
@@ -733,6 +738,9 @@ export class LocalGameStorage {
         games[gameId]._internalState.currentRound = gameState.currentRound;
         games[gameId]._internalState.maxRounds = gameState.maxRounds;
         games[gameId]._internalState.gameStarted = gameState.gameStarted;
+        if (gameState.templateConfig) {
+          games[gameId]._internalState.templateConfig = gameState.templateConfig;
+        }
         
         // If the game has transitioned from paused to finished, update metadata
         if (gameState.gameFinished && !games[gameId].gameFinished) {

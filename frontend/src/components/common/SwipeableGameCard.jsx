@@ -28,6 +28,8 @@ const SwipeableGameCard = ({
   showShare = false,
   showEdit = false,
   showViewDetails = false,
+  viewDetailsLabel = '',
+  viewDetailsIcon = null,
   showDelete = true,
   syncTitle = '',
   syncToSystemTitle = '',
@@ -76,8 +78,8 @@ const SwipeableGameCard = ({
   if (showViewDetails && onViewDetails) {
     actions.push({
       key: 'viewDetails',
-      label: t('common.viewDetails'),
-      icon: <EyeIcon size={16} />,
+      label: viewDetailsLabel || t('common.viewDetails'),
+      icon: viewDetailsIcon || <EyeIcon size={16} />,
       className: 'action-view',
       handler: onViewDetails,
     });

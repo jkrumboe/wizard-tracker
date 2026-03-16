@@ -505,6 +505,8 @@ const GameInProgress = () => {
   // Check if there's an illegal call (last caller made forbidden call)
   const hasIllegalCall = () => {
     if (!currentRound) return false;
+    // If forbidden call rule is disabled via template config, no call is illegal
+    if (gameState.templateConfig?.hasForbiddenCall === false) return false;
     // If cloud is active, no call is illegal
     if (increaseCallMax) return false;
     const uncalledPlayers = currentRound.players.filter(p => p.call === null);
@@ -525,6 +527,8 @@ const GameInProgress = () => {
   // Returns the forbidden call value for the last player, or null if not applicable
   const lastPlayerCantCall = () => {
     if (!currentRound) return "--";
+    // If forbidden call rule is disabled via template config, no restrictions
+    if (gameState.templateConfig?.hasForbiddenCall === false) return "0";
     // If cloud is active, no call restrictions apply
     if (increaseCallMax) return "0";
     const players = currentRound.players;
@@ -563,6 +567,11 @@ const GameInProgress = () => {
   // Calculate dealer and caller for the current round
   const getDealerAndCaller = () => {
     if (!currentRound || !currentRound.players || currentRound.players.length === 0) {
+      return { dealer: null, caller: null };
+    }
+
+    // If dealer rotation is disabled via template config, don't show dealer/caller
+    if (gameState.templateConfig?.hasDealerRotation === false) {
       return { dealer: null, caller: null };
     }
     
@@ -686,8 +695,8 @@ const GameInProgress = () => {
                       const uncalledPlayers = currentRound.players.filter(p => p.call === null);
                       const isLastCaller = uncalledPlayers.length === 0 && player.call !== null;
                       const forbiddenCall = currentRound.round - (totalCalls - (player.call || 0));
-                      // If cloud is active, no call is illegal
-                      const isIllegalCall = !increaseCallMax && isLastCaller && player.call === forbiddenCall && forbiddenCall >= 0 && forbiddenCall <= currentRound.round;
+                      // If cloud is active or forbidden call rule is disabled, no call is illegal
+                      const isIllegalCall = gameState.templateConfig?.hasForbiddenCall !== false && !increaseCallMax && isLastCaller && player.call === forbiddenCall && forbiddenCall >= 0 && forbiddenCall <= currentRound.round;
                       
                       return (
                         <input

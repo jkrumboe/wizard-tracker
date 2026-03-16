@@ -25,11 +25,8 @@ const GamesMenu = ({ show, onClose, user, t }) => {
           </button>
         </div>
         <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-          <Link to="/new-game" className="modal-button" onClick={onClose}>
-            {t('nav.wizard')}
-          </Link>
-          <Link to="/table" className="modal-button" onClick={onClose}>
-            {t('nav.table')}
+          <Link to="/start" className="modal-button" onClick={onClose}>
+            {t('nav.newGame')}
           </Link>
           <Link to="/leaderboard" className="modal-button" onClick={onClose}>
             {t('nav.leaderboard')}

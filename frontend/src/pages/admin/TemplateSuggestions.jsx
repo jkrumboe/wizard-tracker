@@ -104,7 +104,10 @@ const TemplateSuggestions = () => {
         </div>
       ) : (
         <div className="suggestions-list">
-          {suggestions.map((suggestion) => (
+          {suggestions.map((suggestion) => {
+            const originalTemplate = suggestion.originalTemplate || suggestion.systemTemplateId;
+
+            return (
             <div key={suggestion._id} className="suggestion-card">
               <div className="suggestion-header">
                 <h2>{suggestion.name}</h2>
@@ -126,7 +129,7 @@ const TemplateSuggestions = () => {
                   </div>
 
                   {/* Show diff view for change requests */}
-                  {suggestion.suggestionType === 'change' && suggestion.systemTemplateId ? (
+                  {suggestion.suggestionType === 'change' && originalTemplate ? (
                     <>
                       {/* <div className="detail-item full-width">
                         <label>Modifying Template:</label>
@@ -138,39 +141,39 @@ const TemplateSuggestions = () => {
                         <div className="diff-container">
                           <DiffView 
                             label={t('adminTemplates.templateName')} 
-                            oldValue={suggestion.systemTemplateId.name}
+                            oldValue={originalTemplate.name}
                             newValue={suggestion.name}
                           />
                           <DiffView 
                             label={t('adminTemplates.targetNumber')} 
-                            oldValue={suggestion.systemTemplateId.targetNumber}
+                            oldValue={originalTemplate.targetNumber}
                             newValue={suggestion.targetNumber}
                           />
                           <DiffView 
                             label={t('adminTemplates.scoring')} 
-                            oldValue={suggestion.systemTemplateId.lowIsBetter ? t('adminTemplates.lowScore') : t('adminTemplates.highScore')}
+                            oldValue={originalTemplate.lowIsBetter ? t('adminTemplates.lowScore') : t('adminTemplates.highScore')}
                             newValue={suggestion.lowIsBetter ? t('adminTemplates.lowScore') : t('adminTemplates.highScore')}
                           />
                           <DiffView 
                             label={t('adminTemplates.description')} 
-                            oldValue={suggestion.systemTemplateId.description}
+                            oldValue={originalTemplate.description}
                             newValue={suggestion.description}
                           />
                         </div>
                       </div>
 
                       {/* Show markdown diff */}
-                      {(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) && (
+                      {(suggestion.descriptionMarkdown || originalTemplate.descriptionMarkdown) && (
                         <div className="detail-item full-width">
                           <label>{t('adminTemplates.gameRulesChanges')}</label>
-                          {suggestion.systemTemplateId.descriptionMarkdown !== suggestion.descriptionMarkdown ? (
+                          {originalTemplate.descriptionMarkdown !== suggestion.descriptionMarkdown ? (
                             <div className="markdown-diff">
-                              {suggestion.systemTemplateId.descriptionMarkdown && (
+                              {originalTemplate.descriptionMarkdown && (
                                 <div className="markdown-old">
                                   <h4>{t('adminTemplates.previousRules')}</h4>
                                   <div 
                                     className="markdown-preview-admin"
-                                    dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.systemTemplateId.descriptionMarkdown) }}
+                                    dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(originalTemplate.descriptionMarkdown) }}
                                   />
                                 </div>
                               )}
@@ -187,7 +190,7 @@ const TemplateSuggestions = () => {
                           ) : (
                             <div 
                               className="markdown-preview-admin"
-                              dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown || suggestion.systemTemplateId.descriptionMarkdown) }}
+                              dangerouslySetInnerHTML={{ __html: safeMarkdownToHtml(suggestion.descriptionMarkdown || originalTemplate.descriptionMarkdown) }}
                             />
                           )}
                         </div>
@@ -251,7 +254,8 @@ const TemplateSuggestions = () => {
                 </button>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

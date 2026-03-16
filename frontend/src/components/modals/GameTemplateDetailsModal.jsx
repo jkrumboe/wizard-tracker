@@ -36,14 +36,6 @@ const GameTemplateDetailsModal = ({ isOpen, onClose, template }) => {
             </div>
           </div>
 
-          {/* Short Description */}
-          {template.description && (
-            <div className="details-section">
-              <h3>{t('templateDetails.description')}</h3>
-              <p className="template-description">{template.description}</p>
-            </div>
-          )}
-
           {/* Game Rules & Instructions */}
           {template.descriptionMarkdown && template.descriptionMarkdown.trim() && (
             <div className="details-section">

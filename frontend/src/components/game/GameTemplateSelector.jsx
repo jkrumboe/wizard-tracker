@@ -3,15 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { EditIcon, TrashIcon, PlusIcon, ListIcon, EyeIcon } from '@/components/ui/Icon';
 import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
 import gameTemplateService from '@/shared/api/gameTemplateService';
+import { BUILTIN_SYSTEM_TEMPLATES } from '@/shared/constants/gameTemplates';
 import SwipeableGameCard from '@/components/common/SwipeableGameCard';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import LoadTableGameDialog from '@/components/modals/LoadTableGameDialog';
-import StartTableGameModal from '@/components/modals/StartTableGameModal';
 import GameTemplateDetailsModal from '@/components/modals/GameTemplateDetailsModal';
 import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/GameTemplateSelector.css';
 
-const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => {
+const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame, onLoadWizardGames, embedded, gameCategory, hideCreateButton }) => {
   const { t } = useTranslation();
   const { user } = useUser();
   const [templates, setTemplates] = useState([]);
@@ -23,27 +23,62 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   const [editingSystemTemplate, setEditingSystemTemplate] = useState(null);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [filterGameName, setFilterGameName] = useState(null);
-  const [showStartModal, setShowStartModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsTemplate, setDetailsTemplate] = useState(null);
 
   const loadTemplates = () => {
     const templatesList = LocalTableGameTemplate.getTemplatesList();
     // Filter out templates that have been approved as system templates
-    const filteredTemplates = templatesList.filter(template => !template.approvedAsSystemTemplate);
+    let filteredTemplates = templatesList.filter(template => !template.approvedAsSystemTemplate);
+    // Filter by game category if specified
+    if (gameCategory) {
+      filteredTemplates = filteredTemplates.filter(template => (template.gameCategory || 'table') === gameCategory);
+    }
     setTemplates(filteredTemplates);
   };
 
   const loadSystemTemplates = async () => {
+    // Start with built-in templates filtered by category
+    let builtins = BUILTIN_SYSTEM_TEMPLATES;
+    if (gameCategory) {
+      builtins = builtins.filter(t => (t.gameCategory || 'table') === gameCategory);
+    }
+
     try {
-      const systemTemplatesList = await gameTemplateService.getSystemTemplates();
-      console.log('Loaded system templates:', systemTemplatesList);
-      setSystemTemplates(systemTemplatesList);
+      let serverTemplates = await gameTemplateService.getSystemTemplates();
+      if (gameCategory) {
+        serverTemplates = serverTemplates.filter(t => (t.gameCategory || 'table') === gameCategory);
+      }
+
+      // Merge server templates with built-ins by name, preserving builtin defaults for missing fields.
+      const builtinsByName = new Map(builtins.map((b) => [b.name, b]));
+      const mergedServer = serverTemplates.map((serverTemplate) => {
+        const builtin = builtinsByName.get(serverTemplate.name);
+        if (!builtin) return serverTemplate;
+
+        return {
+          ...builtin,
+          ...serverTemplate,
+          gameCategory: serverTemplate.gameCategory || builtin.gameCategory,
+          scoringFormula: serverTemplate.scoringFormula || builtin.scoringFormula,
+          roundPattern: serverTemplate.roundPattern || builtin.roundPattern,
+          maxRounds: serverTemplate.maxRounds || builtin.maxRounds,
+          hasDealerRotation: serverTemplate.hasDealerRotation !== undefined ? serverTemplate.hasDealerRotation : builtin.hasDealerRotation,
+          hasForbiddenCall: serverTemplate.hasForbiddenCall !== undefined ? serverTemplate.hasForbiddenCall : builtin.hasForbiddenCall,
+        };
+      });
+
+      const serverNames = new Set(mergedServer.map(t => t.name));
+      const extraBuiltins = builtins.filter(b => !serverNames.has(b.name));
+      const merged = [...extraBuiltins, ...mergedServer];
+
+      console.log('Loaded system templates:', merged);
+      setSystemTemplates(merged);
     } catch (error) {
       console.error('Error loading system templates:', error);
-      // If offline or error (including not logged in), continue with local templates only
-      setSystemTemplates([]);
+      // Offline or error — use built-in templates so games are still playable
+      console.log('Using built-in system templates (offline):', builtins);
+      setSystemTemplates(builtins);
     }
   };
 
@@ -75,6 +110,12 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     return (
       localTemplate.targetNumber !== systemTemplate.targetNumber ||
       localTemplate.lowIsBetter !== systemTemplate.lowIsBetter ||
+      (localTemplate.gameCategory || 'table') !== (systemTemplate.gameCategory || 'table') ||
+      (localTemplate.roundPattern || null) !== (systemTemplate.roundPattern || null) ||
+      (localTemplate.maxRounds || null) !== (systemTemplate.maxRounds || null) ||
+      JSON.stringify(localTemplate.scoringFormula || null) !== JSON.stringify(systemTemplate.scoringFormula || null) ||
+      (localTemplate.hasDealerRotation !== false) !== (systemTemplate.hasDealerRotation !== false) ||
+      (localTemplate.hasForbiddenCall !== false) !== (systemTemplate.hasForbiddenCall !== false) ||
       localTemplate.description !== systemTemplate.description ||
       localTemplate.descriptionMarkdown !== systemTemplate.descriptionMarkdown
     );
@@ -156,9 +197,15 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     loadTemplates();
   };
 
-  const getSavedGamesCount = (templateName) => {
+  const getSavedGamesCount = (template) => {
+    if (template.gameCategory === 'callAndMade' && template.isBuiltin) {
+      try {
+        const savedGames = JSON.parse(localStorage.getItem('wizardTracker_localGames') || '{}');
+        return Object.keys(savedGames).length;
+      } catch { return 0; }
+    }
     const allSavedGames = LocalTableGameStorage.getSavedTableGamesList();
-    return allSavedGames.filter(game => game.name === templateName).length;
+    return allSavedGames.filter(game => game.name === template.name).length;
   };
 
   const handleEditClick = (template, e) => {
@@ -207,9 +254,17 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
     LocalTableGameStorage.deleteTableGame(gameId);
   };
 
-  const handleLoadSavedGamesForTemplate = (templateName, e) => {
+  const handleLoadSavedGamesForTemplate = (template, e) => {
     e.stopPropagation();
+
+    // Wizard/built-in callAndMade games use the wizard history modal
+    if (template.gameCategory === 'callAndMade' && template.isBuiltin && onLoadWizardGames) {
+      onLoadWizardGames();
+      return;
+    }
+
     // Get all saved games for this template/game type
+    const templateName = typeof template === 'string' ? template : template.name;
     const allSavedGames = LocalTableGameStorage.getSavedTableGamesList();
     const gamesForTemplate = allSavedGames.filter(game => game.name === templateName);
     
@@ -237,22 +292,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
       // Multiple games - show load dialog filtered to this template
       setFilterGameName(templateName);
       setShowLoadDialog(true);
-    }
-  };
-
-  const handleStartWithFriends = (template, e) => {
-    e.stopPropagation();
-    setSelectedTemplate(template);
-    setShowStartModal(true);
-  };
-
-  const handleStartGameWithPlayers = (playerData, settings) => {
-    if (selectedTemplate) {
-      // Pass the player data (with userId) to the parent component
-      onSelectTemplate(selectedTemplate.name, {
-        ...settings,
-        players: playerData // Now includes { name, userId } for each player
-      });
     }
   };
 
@@ -322,7 +361,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
   };
 
   return (
-    <div className="game-template-selector">
+    <div className={`game-template-selector ${embedded ? 'embedded' : ''}`}>
       {/* <div className="template-selector-header">
         <h2>Select a Gametype</h2>
       </div> */}
@@ -334,16 +373,18 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
           <div className="template-list">
             {systemTemplates.map((template) => {
               const isCreator = user && template.createdBy && template.createdBy === user.id;
-              const savedCount = getSavedGamesCount(template.name);
-              
+              const isAdmin = user && user.role === 'admin';
+              const canEdit = isCreator || isAdmin;
+              const savedCount = getSavedGamesCount(template);
+
               return (
                 <SwipeableGameCard
                   key={template._id}
-                  onEdit={isCreator ? () => handleEditSystemTemplate(template, { stopPropagation: () => {} }) : null}
-                  onViewDetails={!isCreator ? () => handleViewDetails(template, { stopPropagation: () => {} }) : null}
-                  onDelete={() => {}} 
-                  showEdit={isCreator}
-                  showViewDetails={!isCreator}
+                  onEdit={canEdit ? () => handleEditSystemTemplate(template, { stopPropagation: () => {} }) : null}
+                  onViewDetails={() => handleViewDetails(template, { stopPropagation: () => {} })}
+                  onDelete={() => {}}
+                  showEdit={canEdit}
+                  showViewDetails={true}
                   showDelete={false}
                 >
                   <div className="template-item">
@@ -359,17 +400,22 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                         </div>
                         <span className="template-badge system-badge" title={t('gameTemplates.systemBadgeTitle')}>{t('gameTemplates.systemBadge')}</span>
                       </div>
-                      {template.description && (
-                        <div className="template-description">{template.description}</div>
-                      )}
                     </div>
                     <div className="template-actions">
                       <button
                         className="template-action-btn play-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedTemplate(template);
-                          setShowStartModal(true);
+                          onSelectTemplate(template.name, {
+                            targetNumber: template.targetNumber,
+                            lowIsBetter: template.lowIsBetter,
+                            gameCategory: template.gameCategory || 'table',
+                            scoringFormula: template.scoringFormula,
+                            roundPattern: template.roundPattern,
+                            maxRounds: template.maxRounds,
+                            hasDealerRotation: template.hasDealerRotation,
+                            hasForbiddenCall: template.hasForbiddenCall,
+                          });
                         }}
                         title={t('gameTemplates.startNewGame')}
                       >
@@ -377,7 +423,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                       </button>
                       <button
                         className="template-action-btn continue-btn"
-                        onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
+                        onClick={(e) => handleLoadSavedGamesForTemplate(template, e)}
                         title={t('gameTemplates.viewSavedGames')}
                         disabled={savedCount === 0}
                       >
@@ -392,7 +438,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         </div>
       )}
 
-      {/* User Templates Section */}
+      {/* User Templates Section - hide entirely when empty and hideCreateButton is set */}
+      {(getUniqueLocalTemplates().length > 0 || !hideCreateButton) && (
       <div className="template-section">
         <h3 className="template-section-title">{t('gameTemplates.myTemplatesSection')}</h3>
         <div className="template-list">
@@ -400,7 +447,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
           getUniqueLocalTemplates().map((template) => {
             const isVariant = isLocalVariant(template, systemTemplates);
             const hasCloudSync = !template.isSynced && !template.cloudId;
-            
+
             return (
               <SwipeableGameCard
                 key={template.id}
@@ -420,7 +467,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                       <div className="template-name">{template.name}</div>
                       <div className="template-meta">
                         {(() => {
-                          const savedCount = getSavedGamesCount(template.name);
+                          const savedCount = getSavedGamesCount(template);
                           return savedCount > 0 ? (
                             <span className="template-usage">
                               {t('gameTemplates.gameCount', { count: savedCount })}
@@ -437,16 +484,28 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
                   <div className="template-actions">
                     <button
                       className="template-action-btn play-btn"
-                      onClick={(e) => handleStartWithFriends(template, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectTemplate(template.name, {
+                          targetNumber: template.targetNumber,
+                          lowIsBetter: template.lowIsBetter,
+                          gameCategory: template.gameCategory || 'table',
+                          scoringFormula: template.scoringFormula,
+                          roundPattern: template.roundPattern,
+                          maxRounds: template.maxRounds,
+                          hasDealerRotation: template.hasDealerRotation,
+                          hasForbiddenCall: template.hasForbiddenCall,
+                        });
+                      }}
                       title={t('gameTemplates.startWithFriends')}
                     >
                       {t('gameTemplates.newGame')}
                     </button>
                     <button
                       className="template-action-btn continue-btn"
-                      onClick={(e) => handleLoadSavedGamesForTemplate(template.name, e)}
+                      onClick={(e) => handleLoadSavedGamesForTemplate(template, e)}
                       title={t('gameTemplates.viewSavedGames')}
-                      disabled={getSavedGamesCount(template.name) === 0}
+                      disabled={getSavedGamesCount(template) === 0}
                     >
                       <ListIcon size={18} />
                     </button>
@@ -463,18 +522,22 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         )}
         </div>
       </div>
+      )}
+      {!hideCreateButton && (
       <div className="template-selector-actions">
         <button className="create-new-btn" onClick={() => setShowAddModal(true)}>
           <PlusIcon size={20} />
           {t('gameTemplates.addNewGameType')}
         </button>
       </div>
+      )}
 
       {/* Add Game Template Modal */}
       <AddGameTemplateModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleCreateNewGame}
+        defaultGameCategory={gameCategory || 'table'}
       />
 
       {/* Edit Game Template Modal */}
@@ -504,21 +567,6 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame }) => 
         onLoadGame={handleLoadGame}
         onDeleteGame={handleDeleteSavedGame}
         filterByGameName={filterGameName}
-      />
-
-      {/* Start Table Game with Friends Modal */}
-      <StartTableGameModal
-        isOpen={showStartModal}
-        onClose={() => {
-          setShowStartModal(false);
-          setSelectedTemplate(null);
-        }}
-        onStart={handleStartGameWithPlayers}
-        templateName={selectedTemplate?.name || ''}
-        templateSettings={{
-          targetNumber: selectedTemplate?.targetNumber,
-          lowIsBetter: selectedTemplate?.lowIsBetter
-        }}
       />
 
       {/* Delete Confirmation Modal */}

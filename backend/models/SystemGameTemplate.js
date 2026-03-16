@@ -16,6 +16,33 @@ const systemGameTemplateSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  gameCategory: {
+    type: String,
+    enum: ['table', 'callAndMade'],
+    default: 'table'
+  },
+  scoringFormula: {
+    baseCorrect: { type: Number, default: null },
+    bonusPerTrick: { type: Number, default: null },
+    penaltyPerDiff: { type: Number, default: null }
+  },
+  roundPattern: {
+    type: String,
+    enum: ['pyramid', 'ascending', 'fixed', null],
+    default: null
+  },
+  maxRounds: {
+    type: Number,
+    default: null
+  },
+  hasDealerRotation: {
+    type: Boolean,
+    default: true
+  },
+  hasForbiddenCall: {
+    type: Boolean,
+    default: true
+  },
   usageCount: {
     type: Number,
     default: 0

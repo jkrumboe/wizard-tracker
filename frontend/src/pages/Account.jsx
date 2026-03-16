@@ -1843,7 +1843,7 @@ const Account = () => {
                         <div className="settings-card-header">
                           <div className="game-info">
                             <div className="game-name">
-                              {game.name}
+                              {game.gameTypeName || game.name}
                             </div>
                             <div className="game-badges">
                               {eloData && eloData.change !== undefined && (

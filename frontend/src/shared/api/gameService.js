@@ -600,7 +600,7 @@ export async function getPlayerGameHistory(_id, _limit = 20) {
  */
 export async function getGameById(id, options = {}) {
   const { preferCloud = false } = options;
-  
+
   // Try local first for compatibility (unless preferCloud is true)
   if (!preferCloud) {
     const localGames = LocalGameStorage.getAllSavedGames();
@@ -609,55 +609,80 @@ export async function getGameById(id, options = {}) {
       return { ...localGame, is_local: true };
     }
   }
-  
+
   // Try backend (wizard-games collection) if online
   if (navigator.onLine) {
+    const token = localStorage.getItem('auth_token');
+
+    // Helper function to transform cloud game to local format
+    const transformCloudGame = (cloudGame) => {
+      const gameData = cloudGame.gameData || {};
+      return {
+        id: cloudGame._id || cloudGame.id || id,
+        cloudId: cloudGame._id || cloudGame.id,
+        localId: cloudGame.localId,
+        is_local: false,
+        is_cloud: true,
+        version: gameData.version || '3.0',
+        players: gameData.players || [],
+        round_data: gameData.round_data || gameData.roundData || [],
+        final_scores: gameData.final_scores || {},
+        winner_id: gameData.winner_id,
+        total_rounds: gameData.total_rounds || gameData.totalRounds,
+        created_at: cloudGame.createdAt || gameData.created_at,
+        gameFinished: gameData.gameFinished,
+        game_mode: gameData.game_mode || gameData.mode || 'Local',
+        gameState: gameData.gameState,
+        ...gameData // Spread remaining game data
+      };
+    };
+
+    // Helper function to fetch from public endpoint
+    const fetchFromPublicEndpoint = async () => {
+      const publicEndpoint = API_ENDPOINTS.wizardGames.getPublicById(id);
+      const publicRes = await fetch(publicEndpoint, { method: 'GET' });
+      if (publicRes.ok) {
+        const publicData = await publicRes.json();
+        if (publicData.game) {
+          return transformCloudGame(publicData.game);
+        }
+      }
+      return null;
+    };
+
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      // Use authenticated endpoint if logged in, otherwise use public endpoint
-      const endpoint = token 
-        ? API_ENDPOINTS.wizardGames.getById(id)
-        : API_ENDPOINTS.wizardGames.getPublicById(id);
-      
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const res = await fetch(endpoint, { headers });
-      console.debug(`[getGameById] Cloud fetch for ${id}: status=${res.status}`);
-      if (res.ok) {
-        const data = await res.json();
-        // Backend returns the game directly (not wrapped in { game: ... })
-        const cloudGame = data.game || data;
-        console.debug(`[getGameById] Cloud game data:`, { hasId: !!(cloudGame._id || cloudGame.id), hasGameData: !!cloudGame.gameData });
-        if (cloudGame && (cloudGame._id || cloudGame.id)) {
-          // Transform cloud game data to match expected format
-          const gameData = cloudGame.gameData || {};
-          return {
-            id: cloudGame._id || cloudGame.id || id,
-            cloudId: cloudGame._id || cloudGame.id,
-            localId: cloudGame.localId,
-            is_local: false,
-            is_cloud: true,
-            version: gameData.version || '3.0',
-            players: gameData.players || [],
-            round_data: gameData.round_data || gameData.roundData || [],
-            final_scores: gameData.final_scores || {},
-            winner_id: gameData.winner_id,
-            total_rounds: gameData.total_rounds || gameData.totalRounds,
-            created_at: cloudGame.createdAt || gameData.created_at,
-            gameFinished: gameData.gameFinished,
-            game_mode: gameData.game_mode || gameData.mode || 'Local',
-            gameState: gameData.gameState,
-            ...gameData // Spread remaining game data
-          };
+      // Try authenticated endpoint first if logged in
+      if (token) {
+        const authEndpoint = API_ENDPOINTS.wizardGames.getById(id);
+        const res = await fetch(authEndpoint, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.game) {
+            return transformCloudGame(data.game);
+          }
+        } else if (res.status === 403) {
+          // User doesn't have permission - fall back to public endpoint
+          // This allows logged-in users to view shared games they don't own
+          console.debug(`Wizard game ${id} not accessible to user, trying public endpoint`);
+          const publicResult = await fetchFromPublicEndpoint();
+          if (publicResult) return publicResult;
+        } else {
+          console.debug(`Wizard game fetch returned ${res.status} for ID: ${id}`);
         }
       } else {
-        console.debug(`[getGameById] Cloud fetch failed with status ${res.status}`);
+        // Not logged in - use public endpoint directly
+        const publicResult = await fetchFromPublicEndpoint();
+        if (publicResult) return publicResult;
       }
     } catch (error) {
       console.debug('Error fetching cloud game:', error.message);
     }
   }
-  
+
   // If preferCloud was true but cloud failed, try local as fallback
   if (preferCloud) {
     const localGames = LocalGameStorage.getAllSavedGames();
@@ -666,7 +691,7 @@ export async function getGameById(id, options = {}) {
       return { ...localGame, is_local: true };
     }
   }
-  
+
   return null;
 }
 

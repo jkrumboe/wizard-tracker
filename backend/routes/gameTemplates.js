@@ -1,8 +1,10 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const SystemGameTemplate = require('../models/SystemGameTemplate');
 const UserGameTemplate = require('../models/UserGameTemplate');
 const TemplateSuggestion = require('../models/TemplateSuggestion');
 const auth = require('../middleware/auth');
+const { getBuiltinSystemTemplateById } = require('../utils/builtinSystemTemplates');
 
 const router = express.Router();
 
@@ -10,7 +12,7 @@ const router = express.Router();
 router.get('/public', async (req, res, next) => {
   try {
     const systemTemplates = await SystemGameTemplate.find({ isActive: true })
-      .select('_id name targetNumber lowIsBetter usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+      .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
       .sort({ name: 1 });
 
     res.json({ 
@@ -29,10 +31,10 @@ router.get('/', auth, async (req, res, next) => {
     // Get system templates and user's own templates in parallel
     const [systemTemplates, userTemplates] = await Promise.all([
       SystemGameTemplate.find({ isActive: true })
-        .select('_id name targetNumber lowIsBetter usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+        .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
         .sort({ name: 1 }),
       UserGameTemplate.find({ userId, approvedAsSystemTemplate: false })
-        .select('_id localId name targetNumber lowIsBetter usageCount description descriptionMarkdown approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
+        .select('_id localId name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
         .sort({ name: 1 })
     ]);
 
@@ -51,7 +53,20 @@ router.get('/', auth, async (req, res, next) => {
 // POST /api/game-templates - Create a new user template
 router.post('/', auth, async (req, res, next) => {
   try {
-    const { name, localId, targetNumber, lowIsBetter, description, descriptionMarkdown } = req.body;
+    const {
+      name,
+      localId,
+      targetNumber,
+      lowIsBetter,
+      description,
+      descriptionMarkdown,
+      gameCategory,
+      scoringFormula,
+      roundPattern,
+      maxRounds,
+      hasDealerRotation,
+      hasForbiddenCall,
+    } = req.body;
     const userId = req.user._id;
 
     // Validation
@@ -92,6 +107,12 @@ router.post('/', auth, async (req, res, next) => {
       name: name.trim(),
       targetNumber: targetNumber || null,
       lowIsBetter: lowIsBetter || false,
+      gameCategory: gameCategory || 'table',
+      scoringFormula: scoringFormula || null,
+      roundPattern: roundPattern || null,
+      maxRounds: maxRounds || null,
+      hasDealerRotation: hasDealerRotation !== undefined ? hasDealerRotation : true,
+      hasForbiddenCall: hasForbiddenCall !== undefined ? hasForbiddenCall : true,
       description: description || '',
       descriptionMarkdown: descriptionMarkdown || ''
     });
@@ -112,7 +133,19 @@ router.post('/', auth, async (req, res, next) => {
 router.put('/:id', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, targetNumber, lowIsBetter, description, descriptionMarkdown } = req.body;
+    const {
+      name,
+      targetNumber,
+      lowIsBetter,
+      description,
+      descriptionMarkdown,
+      gameCategory,
+      scoringFormula,
+      roundPattern,
+      maxRounds,
+      hasDealerRotation,
+      hasForbiddenCall,
+    } = req.body;
     const userId = req.user._id;
 
     const template = await UserGameTemplate.findOne({ _id: id, userId });
@@ -125,6 +158,12 @@ router.put('/:id', auth, async (req, res, next) => {
     if (name !== undefined) template.name = name.trim();
     if (targetNumber !== undefined) template.targetNumber = targetNumber;
     if (lowIsBetter !== undefined) template.lowIsBetter = lowIsBetter;
+    if (gameCategory !== undefined) template.gameCategory = gameCategory;
+    if (scoringFormula !== undefined) template.scoringFormula = scoringFormula;
+    if (roundPattern !== undefined) template.roundPattern = roundPattern;
+    if (maxRounds !== undefined) template.maxRounds = maxRounds;
+    if (hasDealerRotation !== undefined) template.hasDealerRotation = hasDealerRotation;
+    if (hasForbiddenCall !== undefined) template.hasForbiddenCall = hasForbiddenCall;
     if (description !== undefined) template.description = description;
     if (descriptionMarkdown !== undefined) template.descriptionMarkdown = descriptionMarkdown;
 
@@ -199,6 +238,12 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
       name: userTemplate.name,
       targetNumber: userTemplate.targetNumber,
       lowIsBetter: userTemplate.lowIsBetter,
+      gameCategory: userTemplate.gameCategory || 'table',
+      scoringFormula: userTemplate.scoringFormula || null,
+      roundPattern: userTemplate.roundPattern || null,
+      maxRounds: userTemplate.maxRounds || null,
+      hasDealerRotation: userTemplate.hasDealerRotation !== false,
+      hasForbiddenCall: userTemplate.hasForbiddenCall !== false,
       description: userTemplate.description,
       descriptionMarkdown: descriptionMarkdown || userTemplate.descriptionMarkdown || '',
       suggestionNote: suggestionNote || '',
@@ -220,23 +265,45 @@ router.post('/:id/suggest', auth, async (req, res, next) => {
 router.post('/system/:id/suggest-change', auth, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, targetNumber, lowIsBetter, description, descriptionMarkdown, suggestionNote } = req.body;
+    const {
+      name,
+      targetNumber,
+      lowIsBetter,
+      gameCategory,
+      scoringFormula,
+      roundPattern,
+      maxRounds,
+      hasDealerRotation,
+      hasForbiddenCall,
+      description,
+      descriptionMarkdown,
+      suggestionNote,
+    } = req.body;
     const userId = req.user._id;
 
-    // Find the system template
-    const systemTemplate = await SystemGameTemplate.findById(id);
+    const isMongoId = mongoose.Types.ObjectId.isValid(id);
+    const systemTemplate = isMongoId
+      ? await SystemGameTemplate.findById(id)
+      : getBuiltinSystemTemplateById(id);
 
     if (!systemTemplate) {
       return res.status(404).json({ error: 'System template not found' });
     }
 
-    // Check if user already has a pending change request for this template
-    const existingSuggestion = await TemplateSuggestion.findOne({
-      systemTemplateId: id,
+    const existingSuggestionQuery = {
       userId,
       status: 'pending',
       suggestionType: 'change'
-    });
+    };
+
+    if (isMongoId) {
+      existingSuggestionQuery.systemTemplateId = id;
+    } else {
+      existingSuggestionQuery.builtinTemplateId = id;
+    }
+
+    // Check if user already has a pending change request for this template
+    const existingSuggestion = await TemplateSuggestion.findOne(existingSuggestionQuery);
 
     if (existingSuggestion) {
       return res.status(400).json({ 
@@ -248,11 +315,18 @@ router.post('/system/:id/suggest-change', auth, async (req, res, next) => {
     // Create a change request suggestion
     const suggestion = new TemplateSuggestion({
       userId,
-      systemTemplateId: id,
+      systemTemplateId: isMongoId ? id : null,
+      builtinTemplateId: isMongoId ? null : id,
       suggestionType: 'change',
       name: name || systemTemplate.name,
       targetNumber: targetNumber !== undefined ? targetNumber : systemTemplate.targetNumber,
       lowIsBetter: lowIsBetter !== undefined ? lowIsBetter : systemTemplate.lowIsBetter,
+      gameCategory: gameCategory !== undefined ? gameCategory : (systemTemplate.gameCategory || 'table'),
+      scoringFormula: scoringFormula !== undefined ? scoringFormula : (systemTemplate.scoringFormula || null),
+      roundPattern: roundPattern !== undefined ? roundPattern : (systemTemplate.roundPattern || null),
+      maxRounds: maxRounds !== undefined ? maxRounds : (systemTemplate.maxRounds || null),
+      hasDealerRotation: hasDealerRotation !== undefined ? hasDealerRotation : (systemTemplate.hasDealerRotation !== false),
+      hasForbiddenCall: hasForbiddenCall !== undefined ? hasForbiddenCall : (systemTemplate.hasForbiddenCall !== false),
       description: description !== undefined ? description : systemTemplate.description,
       descriptionMarkdown: descriptionMarkdown !== undefined ? descriptionMarkdown : systemTemplate.descriptionMarkdown,
       suggestionNote: suggestionNote || '',
@@ -284,7 +358,17 @@ router.get('/admin/suggestions', auth, async (req, res, next) => {
       .populate('systemTemplateId', 'name')
       .sort({ createdAt: -1 });
 
-    res.json({ suggestions });
+    const hydratedSuggestions = suggestions.map((suggestion) => {
+      const suggestionObject = suggestion.toObject();
+
+      if (suggestionObject.suggestionType === 'change') {
+        suggestionObject.originalTemplate = suggestionObject.systemTemplateId || getBuiltinSystemTemplateById(suggestionObject.builtinTemplateId);
+      }
+
+      return suggestionObject;
+    });
+
+    res.json({ suggestions: hydratedSuggestions });
   } catch (error) {
     next(error);
   }
@@ -309,16 +393,33 @@ router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
 
     let systemTemplate;
 
-    if (suggestion.suggestionType === 'change' && suggestion.systemTemplateId) {
-      // Update existing system template
-      systemTemplate = await SystemGameTemplate.findById(suggestion.systemTemplateId);
-      if (!systemTemplate) {
-        return res.status(404).json({ error: 'System template not found' });
+    if (suggestion.suggestionType === 'change') {
+      if (suggestion.systemTemplateId) {
+        systemTemplate = await SystemGameTemplate.findById(suggestion.systemTemplateId);
+      } else if (suggestion.builtinTemplateId) {
+        const builtinTemplate = getBuiltinSystemTemplateById(suggestion.builtinTemplateId);
+
+        if (builtinTemplate) {
+          systemTemplate = await SystemGameTemplate.findOne({ name: builtinTemplate.name });
+        }
       }
-      
+
+      if (!systemTemplate) {
+        systemTemplate = new SystemGameTemplate({
+          createdBy: suggestion.userId,
+          isActive: true
+        });
+      }
+
       systemTemplate.name = suggestion.name;
       systemTemplate.targetNumber = suggestion.targetNumber;
       systemTemplate.lowIsBetter = suggestion.lowIsBetter;
+      systemTemplate.gameCategory = suggestion.gameCategory || 'table';
+      systemTemplate.scoringFormula = suggestion.scoringFormula || null;
+      systemTemplate.roundPattern = suggestion.roundPattern || null;
+      systemTemplate.maxRounds = suggestion.maxRounds || null;
+      systemTemplate.hasDealerRotation = suggestion.hasDealerRotation !== false;
+      systemTemplate.hasForbiddenCall = suggestion.hasForbiddenCall !== false;
       systemTemplate.description = suggestion.description;
       systemTemplate.descriptionMarkdown = suggestion.descriptionMarkdown;
       await systemTemplate.save();
@@ -328,6 +429,12 @@ router.post('/admin/suggestions/:id/approve', auth, async (req, res, next) => {
         name: suggestion.name,
         targetNumber: suggestion.targetNumber,
         lowIsBetter: suggestion.lowIsBetter,
+        gameCategory: suggestion.gameCategory || 'table',
+        scoringFormula: suggestion.scoringFormula || null,
+        roundPattern: suggestion.roundPattern || null,
+        maxRounds: suggestion.maxRounds || null,
+        hasDealerRotation: suggestion.hasDealerRotation !== false,
+        hasForbiddenCall: suggestion.hasForbiddenCall !== false,
         description: suggestion.description,
         descriptionMarkdown: suggestion.descriptionMarkdown || '',
         createdBy: suggestion.userId,
