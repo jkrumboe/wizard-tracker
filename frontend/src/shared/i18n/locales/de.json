@@ -717,7 +717,8 @@
     "sendRequest": "Anfrage senden",
     "requestSent": "Anfrage gesendet",
     "friendRequests": "Freundschaftsanfragen",
-    "yourFriends": "Deine Freunde"
+    "yourFriends": "Deine Freunde",
+    "addFriendTab": "Freund hinzufügen"
   },
 
   "settings": {

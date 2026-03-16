@@ -467,7 +467,6 @@ const FriendsModal = ({ isOpen, onClose }) => {
               // setSuccessMessage('');
             }}
           >
-            {/* <ClockIcon size={16} /> */}
             {t('friends.friendRequests')}
             {receivedRequests.length > 0 && (
               <span className="tab-badge highlight">{receivedRequests.length}</span>
@@ -482,8 +481,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
               // setSuccessMessage('');
             }}
           >
-            {/* <PlusIcon size={16} /> */}
-            Add Friend
+            {t('friends.addFriendTab')}
           </button>
         </div>
 
