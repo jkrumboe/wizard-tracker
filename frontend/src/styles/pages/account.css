@@ -631,7 +631,7 @@ html:not([data-theme="dark"]) .games-date-input {
 }
 
 .settings-section:has(.table-game-card) {
-  max-height: 59dvh;
+  max-height: 66dvh;
   margin-bottom: 0 !important;
 }
 

@@ -1643,7 +1643,7 @@ const Account = () => {
               </select>
             )}
           </div>
-          <div className="games-date-filters">
+          {/* <div className="games-date-filters">
             <div className="games-date-field">
               <label htmlFor="games-date-from">{t('account.dateFrom', 'From')}</label>
               <div className={`games-date-input-wrapper${gamesDateFrom ? ' has-value' : ''}`}>
@@ -1679,7 +1679,7 @@ const Account = () => {
                 <XIcon size={14} />
               </button>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Games Count */}
