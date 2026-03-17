@@ -1059,11 +1059,9 @@
   .setup-section{
     display: flex;
     flex-direction: column;
-  
     background-color: transparent;
     border-radius: var(--radius-lg);
     gap: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
   }
   
   .setup-section h2 {

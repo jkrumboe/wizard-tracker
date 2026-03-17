@@ -83,7 +83,6 @@
 
 /* Start button area */
 .start-game-actions {
-  margin-top: auto;
   padding-top: var(--spacing-sm);
   padding-bottom: var(--spacing-sm);
 }
