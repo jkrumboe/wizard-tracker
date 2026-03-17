@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
 import { XIcon, UsersIcon, PlayIcon, TrophyIcon } from '@/components/ui/Icon';
@@ -12,20 +12,34 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const loadGames = () => {
+  const loadGames = useCallback(() => {
     setLoading(true);
     try {
       const allGames = LocalGameStorage.getAllSavedGames();
 
       const gamesList = Object.entries(allGames).map(([id, game]) => {
-        const date = new Date(game.lastPlayed || game.saved_at || game.created_at);
+        const gameState = game.gameState || {};
+        const stableDateSource =
+          game.created_at ||
+          game.referenceDate ||
+          game._internalState?.referenceDate ||
+          game.savedAt ||
+          game.saved_at ||
+          game.lastPlayed;
+        const date = new Date(stableDateSource || Date.now());
 
         // Handle nested gameState structure
-        const gameState = game.gameState || {};
         const players = game.players || gameState.players || [];
         const isPaused = game.isPaused || gameState.isPaused || false;
-        const currentRound = game.currentRound || gameState.currentRound || 0;
-        const maxRounds = game.maxRounds || gameState.maxRounds || game.totalRounds || 0;
+        const currentRound = game.currentRound || gameState.currentRound || game._internalState?.currentRound || 0;
+        const maxRounds =
+          game.total_rounds ||
+          game.maxRounds ||
+          gameState.maxRounds ||
+          game.totalRounds ||
+          game.round_data?.length ||
+          gameState.round_data?.length ||
+          0;
 
         return {
           id,
@@ -37,8 +51,10 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
           gameFinished: game.gameFinished || gameState.gameFinished || false,
           winner_id: game.winner_id || gameState.winner_id || [],
           final_scores: game.final_scores || gameState.final_scores || {},
-          created_at: game.created_at || game.savedAt,
-          lastPlayed: game.lastPlayed || game.saved_at || game.created_at,
+          created_at: game.created_at || game.referenceDate || game.savedAt,
+          lastPlayed: game.lastPlayed || game.saved_at || game.savedAt,
+          eloChange: game.eloChange ?? game.elo_change ?? null,
+          eloRating: game.eloRating ?? game.elo_rating ?? null,
           displayDate: date.toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'short',
@@ -54,9 +70,9 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
 
       // Sort by date (newest first)
       gamesList.sort((a, b) => {
-        const dateA = new Date(b.lastPlayed || b.created_at);
-        const dateB = new Date(a.lastPlayed || a.created_at);
-        return dateA - dateB;
+        const dateA = new Date(a.created_at || a.lastPlayed || 0);
+        const dateB = new Date(b.created_at || b.lastPlayed || 0);
+        return dateB - dateA;
       });
 
       setGames(gamesList);
@@ -68,7 +84,7 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm]);
 
   useEffect(() => {
     if (isOpen) {
@@ -235,6 +251,16 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
                           {game.isPaused ? ' | ' + t('gameHistory.paused') : ''}
                         </div>
                         <div className="game-badges">
+                          {game.eloChange !== null && (
+                            <span className={`mode-badge ${game.eloChange >= 0 ? 'elo-positive' : 'elo-negative'}`}>
+                              {game.eloChange >= 0 ? '+' : ''}{Math.round(game.eloChange)} ELO
+                            </span>
+                          )}
+                          {game.eloRating !== null && (
+                            <span className="mode-badge table">
+                              {Math.round(game.eloRating)}
+                            </span>
+                          )}
                           <span className={`mode-badge ${game.isPaused ? 'paused' : 'finished'}`}>
                             {game.isPaused ? t('gameHistory.paused') : t('gameHistory.finished')}
                           </span>
@@ -247,9 +273,9 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
                       <div className="actions-game-history">
                         <div className="bottom-actions-game-history">
                           <div className="game-rounds">
-                            {t('common.rounds')}: {game.isPaused && game.currentRound
-                              ? `${game.currentRound} / ${game.maxRounds}`
-                              : game.maxRounds || 0}
+                            {t('common.rounds')}: {game.isPaused
+                              ? `${game.currentRound || 0} / ${game.maxRounds || 0}`
+                              : game.maxRounds || game.currentRound || 0}
                           </div>
                           <div className="game-date">{game.displayDate}</div>
                         </div>

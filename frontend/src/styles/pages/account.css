@@ -623,7 +623,7 @@ html:not([data-theme="dark"]) .games-date-input {
   flex-direction: column;
   box-shadow: none;
   padding: 0;
-  max-height: 40dvh;
+  max-height: 66dvh;
 }
 
 .settings-section:has(.player-order-list) {

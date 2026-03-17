@@ -573,6 +573,30 @@ const Account = () => {
     });
   };
 
+  const getGameDisplayDate = (game) => {
+    return (
+      game?.created_at ||
+      game?.referenceDate ||
+      game?._internalState?.referenceDate ||
+      game?.savedAt ||
+      game?.saved_at ||
+      game?.lastPlayed
+    );
+  };
+
+  const getGameRounds = (game) => {
+    if (game?._gameCategory === 'table') {
+      return game.totalRounds || game.gameData?.rows || 0;
+    }
+
+    if (game.gameFinished) {
+      return game.total_rounds || game.totalRounds || game.round_data?.length || game.roundsCompleted || 0;
+    }
+
+    const currentRound = game._internalState?.currentRound ?? game.currentRound;
+    return currentRound ?? game.roundsCompleted ?? 0;
+  };
+
   const handleLogout = async () => {
     try {
       // Clear user data first
@@ -1356,8 +1380,8 @@ const Account = () => {
 
     // Sort by date descending (newest first)
     allGames.sort((a, b) => {
-      const dateA = new Date(a.created_at || a.lastPlayed || a.savedAt || 0);
-      const dateB = new Date(b.created_at || b.lastPlayed || b.savedAt || 0);
+      const dateA = new Date(getGameDisplayDate(a) || 0);
+      const dateB = new Date(getGameDisplayDate(b) || 0);
       return dateB - dateA;
     });
 
@@ -1708,17 +1732,9 @@ const Account = () => {
                           </div>
                           <div className="actions-game-history">
                             <div className="bottom-actions-game-history">
-                              <div className="game-rounds">{t('common.rounds')}: {(() => {
-                                const rounds = game.gameFinished 
-                                  ? (game.total_rounds || game.totalRounds || game.roundsCompleted || "N/A") 
-                                  : (game._internalState?.currentRound || game.roundsCompleted !== undefined ? (game._internalState?.currentRound || game.roundsCompleted + 1) : "N/A");
-                                return rounds;
-                              })()}</div>
+                              <div className="game-rounds">{t('common.rounds')}: {getGameRounds(game)}</div>
                               <div className="game-date">
-                                {(() => {
-                                  const dateToUse = game.created_at || game.lastPlayed;
-                                  return formatDate(dateToUse);
-                                })()}
+                                {formatDate(getGameDisplayDate(game))}
                               </div>
                             </div>
                           </div>
@@ -1798,9 +1814,9 @@ const Account = () => {
                           </div>
                           <div className="actions-game-history">
                             <div className="bottom-actions-game-history">
-                              <div>{t('common.rounds')}: {game.totalRounds}</div>
+                              <div>{t('common.rounds')}: {getGameRounds(game)}</div>
                               <div className="game-date">
-                                {formatDate(game.lastPlayed)}
+                                {formatDate(getGameDisplayDate(game))}
                               </div>
                             </div>
                           </div>
