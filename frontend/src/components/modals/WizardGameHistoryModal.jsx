@@ -12,12 +12,6 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadGames();
-    }
-  }, [isOpen]);
-
   const loadGames = () => {
     setLoading(true);
     try {
@@ -75,6 +69,12 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadGames();
+    }
+  }, [isOpen, loadGames]);
 
   const filterGames = (gamesList, search) => {
     let filtered = gamesList.filter(game => {

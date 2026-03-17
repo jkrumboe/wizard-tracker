@@ -36,8 +36,6 @@ const Account = () => {
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
   const [gamesListType, setGamesListType] = useState('all'); // all, wizard, or specific table game type
   const [gamesSearchQuery, setGamesSearchQuery] = useState('');
-  const [gamesDateFrom, setGamesDateFrom] = useState('');
-  const [gamesDateTo, setGamesDateTo] = useState('');
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
   const [cloudGames, setCloudGames] = useState([]); // Games from API (includes identity consolidation)
@@ -1315,23 +1313,6 @@ const Account = () => {
     return types;
   }, [savedGames, savedTableGames, t]);
 
-  const gamesDatePlaceholder = useMemo(() => {
-    const language = i18n.language || 'en';
-    const dayToken = language.toLowerCase().startsWith('de') ? 'tt' : 'dd';
-    const yearToken = language.toLowerCase().startsWith('de') ? 'jjjj' : 'yyyy';
-    const formatter = new Intl.DateTimeFormat(language, {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-
-    return formatter.formatToParts(new Date(2006, 10, 24)).map((part) => {
-      if (part.type === 'day') return dayToken;
-      if (part.type === 'month') return 'mm';
-      if (part.type === 'year') return yearToken;
-      return part.value;
-    }).join('');
-  }, [i18n.language]);
 
   // Merge and filter games for the Games tab based on type, search, and date range
   const displayedGames = useMemo(() => {
@@ -1371,23 +1352,7 @@ const Account = () => {
       });
     }
 
-    // Apply date range filter
-    if (gamesDateFrom) {
-      const from = new Date(gamesDateFrom);
-      from.setHours(0, 0, 0, 0);
-      allGames = allGames.filter(game => {
-        const d = new Date(game.created_at || game.lastPlayed || game.savedAt);
-        return d >= from;
-      });
-    }
-    if (gamesDateTo) {
-      const to = new Date(gamesDateTo);
-      to.setHours(23, 59, 59, 999);
-      allGames = allGames.filter(game => {
-        const d = new Date(game.created_at || game.lastPlayed || game.savedAt);
-        return d <= to;
-      });
-    }
+
 
     // Sort by date descending (newest first)
     allGames.sort((a, b) => {
@@ -1397,7 +1362,7 @@ const Account = () => {
     });
 
     return allGames;
-  }, [filteredGames, savedTableGames, gamesListType, gamesSearchQuery, gamesDateFrom, gamesDateTo]);
+  }, [filteredGames, savedTableGames, gamesListType, gamesSearchQuery]);
 
   // Auto-select first available game type if 'all' or invalid selection
   React.useEffect(() => {
@@ -1643,43 +1608,7 @@ const Account = () => {
               </select>
             )}
           </div>
-          {/* <div className="games-date-filters">
-            <div className="games-date-field">
-              <label htmlFor="games-date-from">{t('account.dateFrom', 'From')}</label>
-              <div className={`games-date-input-wrapper${gamesDateFrom ? ' has-value' : ''}`}>
-                <input
-                  id="games-date-from"
-                  type="date"
-                  className="games-date-input"
-                  value={gamesDateFrom}
-                  onChange={(e) => setGamesDateFrom(e.target.value)}
-                />
-                <span className="games-date-placeholder" aria-hidden="true">{gamesDatePlaceholder}</span>
-              </div>
-            </div>
-            <div className="games-date-field">
-              <label htmlFor="games-date-to">{t('account.dateTo', 'To')}</label>
-              <div className={`games-date-input-wrapper${gamesDateTo ? ' has-value' : ''}`}>
-                <input
-                  id="games-date-to"
-                  type="date"
-                  className="games-date-input"
-                  value={gamesDateTo}
-                  onChange={(e) => setGamesDateTo(e.target.value)}
-                />
-                <span className="games-date-placeholder" aria-hidden="true">{gamesDatePlaceholder}</span>
-              </div>
-            </div>
-            {(gamesDateFrom || gamesDateTo) && (
-              <button
-                className="games-date-clear"
-                onClick={() => { setGamesDateFrom(''); setGamesDateTo(''); }}
-                aria-label="Clear date filters"
-              >
-                <XIcon size={14} />
-              </button>
-            )}
-          </div> */}
+
         </div>
 
         {/* Games Count */}
