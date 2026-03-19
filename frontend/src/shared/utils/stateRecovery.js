@@ -72,7 +72,7 @@ class StateRecoveryService {
    * Handle page unload - save all critical state
    */
   handleBeforeUnload() {
-    console.debug('💾 Saving state before unload...');
+    console.debug('Saving state before unload...');
     this.saveAllState({ immediate: true });
   }
 
@@ -81,10 +81,10 @@ class StateRecoveryService {
    */
   handleVisibilityChange() {
     if (document.hidden) {
-      console.debug('👁️ Tab hidden, saving state...');
+      console.debug('Tab hidden, saving state...');
       this.saveAllState({ immediate: true });
     } else {
-      console.debug('👁️ Tab visible, checking for recovery...');
+      console.debug('Tab visible, checking for recovery...');
       this.attemptRecovery();
     }
   }
@@ -93,7 +93,7 @@ class StateRecoveryService {
    * Handle going offline
    */
   handleOffline() {
-    console.debug('📡 Going offline, saving state...');
+    console.debug('Going offline, saving state...');
     this.saveAllState({ immediate: true });
     sessionCache.set('network_state', 'offline', { persist: true });
   }
@@ -102,7 +102,7 @@ class StateRecoveryService {
    * Handle coming back online
    */
   async handleOnline() {
-    console.debug('📡 Back online, attempting recovery...');
+    console.debug('Back online, attempting recovery...');
     const previousState = await sessionCache.get('network_state');
     
     if (previousState === 'offline') {
@@ -120,7 +120,7 @@ class StateRecoveryService {
    */
   registerStateProvider(key, getState, setState) {
     this.recoveryCallbacks.set(key, { getState, setState });
-    console.debug(`✅ Registered state provider: ${key}`);
+    console.debug(`Registered state provider: ${key}`);
   }
 
   /**
@@ -144,7 +144,7 @@ class StateRecoveryService {
       // Save immediately, bypass throttling
       await sessionCache.set(`state_${key}`, state, { persist, indexedDB, immediate: true });
       await sessionCache.set(`state_${key}_timestamp`, Date.now(), { persist, immediate: true });
-      console.debug(`💾 Saved state: ${key}`);
+      console.debug(`Saved state: ${key}`);
     } else {
       // Debounce the save
       if (this.pendingSaves.has(key)) {
@@ -155,7 +155,7 @@ class StateRecoveryService {
         await sessionCache.set(`state_${key}`, state, { persist, indexedDB });
         await sessionCache.set(`state_${key}_timestamp`, Date.now(), { persist });
         this.pendingSaves.delete(key);
-        console.debug(`💾 Saved state (debounced): ${key}`);
+        console.debug(`Saved state (debounced): ${key}`);
       }, this.autoSaveDelay);
 
       this.pendingSaves.set(key, timeoutId);
@@ -174,7 +174,7 @@ class StateRecoveryService {
     
     if (state && timestamp) {
       const age = Date.now() - timestamp;
-      console.debug(`🔄 Recovered state: ${key} (age: ${Math.round(age / 1000)}s)`);
+      console.debug(`Recovered state: ${key} (age: ${Math.round(age / 1000)}s)`);
       return state;
     }
     
@@ -216,7 +216,7 @@ class StateRecoveryService {
           // Call the setState function to restore the state
           provider.setState(state);
           recoveredStates.push(key);
-          console.debug(`✅ Recovered state: ${key}`);
+          console.debug(`Recovered state: ${key}`);
         }
       } catch (error) {
         console.error(`Error recovering state for ${key}:`, error);
@@ -224,7 +224,7 @@ class StateRecoveryService {
     }
     
     if (recoveredStates.length > 0) {
-      console.debug(`🔄 Recovery complete: ${recoveredStates.join(', ')}`);
+      console.debug(`Recovery complete: ${recoveredStates.join(', ')}`);
       
       // Notify about recovery
       await sessionCache.set('last_recovery', {
@@ -279,7 +279,7 @@ class StateRecoveryService {
       }
     }
     
-    console.debug('🧹 Recovery state cleared');
+    console.debug('Recovery state cleared');
   }
 
   /**
@@ -355,7 +355,7 @@ class StateRecoveryService {
       }
     }
     
-    console.debug(`✅ Restored snapshot: ${restored.join(', ')}`);
+    console.debug(`Restored snapshot: ${restored.join(', ')}`);
     return restored;
   }
 
