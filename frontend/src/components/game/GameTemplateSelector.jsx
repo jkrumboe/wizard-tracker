@@ -11,7 +11,17 @@ import GameTemplateDetailsModal from '@/components/modals/GameTemplateDetailsMod
 import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/GameTemplateSelector.css';
 
-const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame, onLoadWizardGames, embedded, gameCategory, hideCreateButton }) => {
+const GameTemplateSelector = ({
+  onSelectTemplate,
+  onCreateNew,
+  onLoadGame,
+  onLoadWizardGames,
+  embedded,
+  gameCategory,
+  hideCreateButton,
+  alwaysShowSavedGamesModal = false,
+  savedGamesInitialStatus = 'all'
+}) => {
   const { t } = useTranslation();
   const { user } = useUser();
   const [templates, setTemplates] = useState([]);
@@ -273,8 +283,8 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame, onLoa
       return;
     }
     
-    // If only one game, load it directly
-    if (gamesForTemplate.length === 1) {
+    // If only one game, load it directly unless caller prefers modal filtering UX
+    if (gamesForTemplate.length === 1 && !alwaysShowSavedGamesModal) {
       const games = LocalTableGameStorage.getAllSavedTableGames();
       const savedGame = games[gamesForTemplate[0].id];
       if (savedGame) {
@@ -567,6 +577,7 @@ const GameTemplateSelector = ({ onSelectTemplate, onCreateNew, onLoadGame, onLoa
         onLoadGame={handleLoadGame}
         onDeleteGame={handleDeleteSavedGame}
         filterByGameName={filterGameName}
+        initialStatusFilter={savedGamesInitialStatus}
       />
 
       {/* Delete Confirmation Modal */}

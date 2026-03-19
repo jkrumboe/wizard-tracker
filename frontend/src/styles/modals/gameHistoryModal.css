@@ -1,4 +1,4 @@
-.wizard-game-history-modal {
+.game-history-modal {
   background: var(--bg-color);
   width: 100%;
   max-width: 700px;
@@ -10,8 +10,7 @@
   overflow: hidden;
 }
 
-/* Header */
-.wizard-game-history-modal .modal-header {
+.game-history-modal .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -19,32 +18,31 @@
   border-bottom: 1px solid var(--border);
 }
 
-.wizard-game-history-modal .header-content h2 {
+.game-history-modal .header-content h2 {
   margin: 0 0 4px 0;
   font-size: 24px;
   font-weight: 700;
   color: var(--text);
 }
 
-/* Search */
-.wizard-game-history-modal .modal-search {
+.game-history-modal .modal-search {
   padding: var(--spacing-sm);
   border-bottom: 1px solid var(--border);
 }
 
-.wizard-game-history-modal .search-input-wrapper {
+.game-history-modal .search-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.wizard-game-history-modal .search-input-wrapper .search-input {
+.game-history-modal .search-input-wrapper .search-input {
   width: 100%;
   padding-right: 36px;
   margin: 0 !important;
 }
 
-.wizard-game-history-modal .search-clear-btn {
+.game-history-modal .search-clear-btn {
   position: absolute;
   right: 8px;
   top: 50%;
@@ -60,13 +58,12 @@
   border-radius: 50%;
 }
 
-.wizard-game-history-modal .search-clear-btn:hover {
+.game-history-modal .search-clear-btn:hover {
   color: var(--text);
   background: var(--border);
 }
 
-/* Stats */
-.wizard-game-history-modal .modal-stats {
+.game-history-modal .modal-stats {
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -75,38 +72,67 @@
   border-bottom: 1px solid var(--border);
 }
 
-.wizard-game-history-modal .stat-item {
+.game-history-modal .stat-item {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.wizard-game-history-modal .stat-badge {
+.game-history-modal .stat-badge {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
 
-.wizard-game-history-modal .stat-item.paused .stat-badge {
+.game-history-modal .stat-item.paused .stat-badge {
   background: #fbbf24;
 }
 
-.wizard-game-history-modal .stat-item.finished .stat-badge {
+.game-history-modal .stat-item.finished .stat-badge {
   background: #10b981;
 }
 
-.wizard-game-history-modal .stat-divider {
+.game-history-modal .stat-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.game-history-modal .stat-item:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.game-history-modal .stat-item.active {
+  color: var(--text);
+}
+
+.game-history-modal .stat-item.paused.active {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.game-history-modal .stat-item.finished.active {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.game-history-modal .stat-divider {
   width: 1px;
   height: 20px;
   background: var(--border);
 }
 
-/* Games List */
-.wizard-game-history-modal .games-list {
+.game-history-modal .games-list {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
@@ -115,19 +141,17 @@
   gap: 12px;
 }
 
-/* Mode badges for paused/finished status */
-.wizard-game-history-modal .mode-badge.paused {
+.game-history-modal .mode-badge.paused {
   background: rgba(251, 191, 36, 0.1);
   color: #f59e0b;
 }
 
-.wizard-game-history-modal .mode-badge.finished {
+.game-history-modal .mode-badge.finished {
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;
 }
 
-/* Empty State */
-.wizard-game-history-modal .empty-state {
+.game-history-modal .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -137,44 +161,44 @@
   gap: 12px;
 }
 
-.wizard-game-history-modal .loading-spinner {
+.game-history-modal .loading-spinner {
   width: 48px;
   height: 48px;
   border: 3px solid var(--border);
   border-top-color: var(--primary);
   border-radius: 50%;
-  animation: wizardHistorySpin 0.8s linear infinite;
+  animation: gameHistorySpin 0.8s linear infinite;
 }
 
-@keyframes wizardHistorySpin {
+@keyframes gameHistorySpin {
   to { transform: rotate(360deg); }
 }
 
-.wizard-game-history-modal .empty-title {
+.game-history-modal .empty-title {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: var(--text);
 }
 
-.wizard-game-history-modal .empty-subtitle {
+.game-history-modal .empty-subtitle {
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
 }
 
-/* Mobile Responsive */
 @media (max-width: 600px) {
-  .wizard-game-history-modal {
+  .game-history-modal {
     max-width: 100%;
     border-radius: 0;
+    max-height: 100vh;
   }
 
-  .wizard-game-history-modal .modal-header {
+  .game-history-modal .modal-header {
     padding: 20px 16px;
   }
 
-  .wizard-game-history-modal .modal-stats {
+  .game-history-modal .modal-stats {
     flex-wrap: wrap;
   }
 }

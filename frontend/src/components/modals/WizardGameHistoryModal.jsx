@@ -1,15 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
-import { XIcon, UsersIcon, PlayIcon, TrophyIcon } from '@/components/ui/Icon';
+import { UsersIcon, PlayIcon, TrophyIcon } from '@/components/ui/Icon';
 import SwipeableGameCard from '@/components/common/SwipeableGameCard';
-import '@/styles/modals/wizardGameHistoryModal.css';
+import GameHistoryModal from '@/components/modals/GameHistoryModal';
 
-const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame }) => {
+const WizardGameHistoryModal = ({
+  isOpen,
+  onClose,
+  onSelectGame,
+  onDeleteGame,
+  initialStatusFilter = 'all'
+}) => {
   const { t } = useTranslation();
   const [games, setGames] = useState([]);
-  const [filteredGames, setFilteredGames] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
   const loadGames = useCallback(() => {
@@ -76,41 +82,50 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
       });
 
       setGames(gamesList);
-      filterGames(gamesList, searchTerm);
     } catch (error) {
       console.error('Error loading games:', error);
       setGames([]);
-      setFilteredGames([]);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       loadGames();
+      setSearchTerm('');
+      setStatusFilter(initialStatusFilter);
     }
-  }, [isOpen, loadGames]);
-
-  const filterGames = (gamesList, search) => {
-    let filtered = gamesList.filter(game => {
-      const searchMatch = search === '' ||
-        (game.name && game.name.toLowerCase().includes(search.toLowerCase())) ||
-        (game.players && game.players.some(p => {
-          const playerName = typeof p === 'string' ? p : p.name;
-          return playerName?.toLowerCase().includes(search.toLowerCase());
-        }));
-
-      return searchMatch;
-    });
-
-    setFilteredGames(filtered);
-  };
+  }, [isOpen, loadGames, initialStatusFilter]);
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
-    filterGames(games, value);
   };
+
+  const handleStatusFilterChange = (nextFilter) => {
+    setStatusFilter(prev => (prev === nextFilter ? 'all' : nextFilter));
+  };
+
+  const filteredGames = useMemo(() => {
+    const normalizedSearch = searchTerm.toLowerCase();
+
+    return games.filter((game) => {
+      const searchMatch =
+        searchTerm === '' ||
+        game.name?.toLowerCase().includes(normalizedSearch) ||
+        game.players?.some((p) => {
+          const playerName = typeof p === 'string' ? p : p.name;
+          return playerName?.toLowerCase().includes(normalizedSearch);
+        });
+
+      const statusMatch =
+        statusFilter === 'all' ||
+        (statusFilter === 'paused' && game.isPaused) ||
+        (statusFilter === 'finished' && !game.isPaused);
+
+      return searchMatch && statusMatch;
+    });
+  }, [games, searchTerm, statusFilter]);
 
   const handleSelectGame = (game) => {
     const shouldClose = onSelectGame?.(game);
@@ -134,76 +149,17 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
     }
   };
 
-  if (!isOpen) return null;
-
   const pausedCount = games.filter(g => g.isPaused).length;
   const finishedCount = games.filter(g => !g.isPaused).length;
-  const totalCount = games.length;
+  const emptyTitle = searchTerm
+    ? t('gameHistory.noMatches')
+    : statusFilter === 'paused'
+      ? t('gameHistory.noPausedGames')
+      : statusFilter === 'finished'
+        ? t('gameHistory.noFinishedGames')
+        : t('gameHistory.noGames');
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="wizard-game-history-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <div className="header-content">
-            <h2>{t('gameHistory.title')}</h2>
-          </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
-            <XIcon size={24} />
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="modal-search">
-          <div className="search-input-wrapper">
-            <input
-              type="text"
-              placeholder={t('gameHistory.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="search-input"
-            />
-            {searchTerm && (
-              <button className="search-clear-btn" onClick={() => handleSearchChange('')} aria-label="Clear search">
-                <XIcon size={14} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Stats */}
-        {totalCount > 0 && (
-          <div className="modal-stats">
-            <div className="stat-item paused">
-              <span className="stat-badge"></span>
-              <span>{pausedCount} {t('gameHistory.pausedGames')}</span>
-            </div>
-            <div className="stat-divider"></div>
-            <div className="stat-item finished">
-              <span className="stat-badge"></span>
-              <span>{finishedCount} {t('gameHistory.finishedGames')}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Games List */}
-        <div className="games-list">
-          {loading ? (
-            <div className="empty-state">
-              <div className="loading-spinner"></div>
-              <p>{t('common.loading')}</p>
-            </div>
-          ) : filteredGames.length === 0 ? (
-            <div className="empty-state">
-              <p className="empty-title">
-                {searchTerm ? t('gameHistory.noMatches') : t('gameHistory.noGames')}
-              </p>
-              {searchTerm && (
-                <p className="empty-subtitle">{t('gameHistory.tryDifferentSearch')}</p>
-              )}
-            </div>
-          ) : (
-            filteredGames.map((game) => {
+  const renderGameCard = (game) => {
               const playerList = Array.isArray(game.players)
                 ? game.players.map(p => typeof p === 'string' ? p : p.name || 'Unknown')
                 : [];
@@ -229,68 +185,87 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
                 }
               }
 
-              return (
-                <SwipeableGameCard
-                  key={game.id}
-                  onDelete={() => handleDeleteGame(game.id, game.name)}
-                  onViewDetails={() => handleSelectGame(game)}
-                  viewDetailsLabel={game.isPaused ? t('gameHistory.continueGame') : undefined}
-                  viewDetailsIcon={game.isPaused ? <PlayIcon size={16} /> : undefined}
-                  showViewDetails
-                  showDelete
-                >
-                  <div className="game-card">
-                    <div className="settings-card-header">
-                      <div className="game-info">
-                        <div className="game-winner">
-                          {leaderName ? (
-                            <><TrophyIcon size={12} /> {leaderName}</>
-                          ) : isTied ? (
-                            <><TrophyIcon size={12} /> {t('gameHistory.tied')}</>
-                          ) : (
-                            <><UsersIcon size={12} /> {playerList.length} {t('common.players')}</>
-                          )}
-                          {game.isPaused ? ' | ' + t('gameHistory.paused') : ''}
-                        </div>
-                        <div className="game-badges">
-                          {game.eloChange !== null && (
-                            <span className={`mode-badge ${game.eloChange >= 0 ? 'elo-positive' : 'elo-negative'}`}>
-                              {game.eloChange >= 0 ? '+' : ''}{Math.round(game.eloChange)} ELO
-                            </span>
-                          )}
-                          {game.eloRating !== null && (
-                            <span className="mode-badge table">
-                              {Math.round(game.eloRating)}
-                            </span>
-                          )}
-                          <span className={`mode-badge ${game.isPaused ? 'paused' : 'finished'}`}>
-                            {game.isPaused ? t('gameHistory.paused') : t('gameHistory.finished')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="game-players">
-                        <UsersIcon size={12} />{" "}
-                        {playerList.join(', ') || t('common.noPlayers')}
-                      </div>
-                      <div className="actions-game-history">
-                        <div className="bottom-actions-game-history">
-                          <div className="game-rounds">
-                            {t('common.rounds')}: {game.isPaused
-                              ? `${game.currentRound || 0} / ${game.maxRounds || 0}`
-                              : game.maxRounds || game.currentRound || 0}
-                          </div>
-                          <div className="game-date">{game.displayDate}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </SwipeableGameCard>
-              );
-            })
-          )}
+    return (
+      <SwipeableGameCard
+        key={game.id}
+        onDelete={() => handleDeleteGame(game.id, game.name)}
+        onViewDetails={() => handleSelectGame(game)}
+        viewDetailsLabel={game.isPaused ? t('gameHistory.continueGame') : undefined}
+        viewDetailsIcon={game.isPaused ? <PlayIcon size={16} /> : undefined}
+        showViewDetails
+        showDelete
+      >
+        <div className="game-card">
+          <div className="settings-card-header">
+            <div className="game-info">
+              <div className="game-winner">
+                {leaderName ? (
+                  <><TrophyIcon size={12} /> {leaderName}</>
+                ) : isTied ? (
+                  <><TrophyIcon size={12} /> {t('gameHistory.tied')}</>
+                ) : (
+                  <><UsersIcon size={12} /> {playerList.length} {t('common.players')}</>
+                )}
+                {game.isPaused ? ' | ' + t('gameHistory.paused') : ''}
+              </div>
+              <div className="game-badges">
+                {game.eloChange !== null && (
+                  <span className={`mode-badge ${game.eloChange >= 0 ? 'elo-positive' : 'elo-negative'}`}>
+                    {game.eloChange >= 0 ? '+' : ''}{Math.round(game.eloChange)} ELO
+                  </span>
+                )}
+                {game.eloRating !== null && (
+                  <span className="mode-badge table">
+                    {Math.round(game.eloRating)}
+                  </span>
+                )}
+                <span className={`mode-badge ${game.isPaused ? 'paused' : 'finished'}`}>
+                  {game.isPaused ? t('gameHistory.paused') : t('gameHistory.finished')}
+                </span>
+              </div>
+            </div>
+            <div className="game-players">
+              <UsersIcon size={12} />{' '}
+              {playerList.join(', ') || t('common.noPlayers')}
+            </div>
+            <div className="actions-game-history">
+              <div className="bottom-actions-game-history">
+                <div className="game-rounds">
+                  {t('common.rounds')}: {game.isPaused
+                    ? `${game.currentRound || 0} / ${game.maxRounds || 0}`
+                    : game.maxRounds || game.currentRound || 0}
+                </div>
+                <div className="game-date">{game.displayDate}</div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </SwipeableGameCard>
+    );
+  };
+
+  return (
+    <GameHistoryModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('gameHistory.title')}
+      searchPlaceholder={t('gameHistory.searchPlaceholder')}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchChange}
+      loading={loading}
+      loadingText={t('common.loading')}
+      games={games}
+      filteredGames={filteredGames}
+      pausedCount={pausedCount}
+      finishedCount={finishedCount}
+      pausedLabel={t('gameHistory.pausedGames')}
+      finishedLabel={t('gameHistory.finishedGames')}
+      statusFilter={statusFilter}
+      onStatusFilterChange={handleStatusFilterChange}
+      emptyTitle={emptyTitle}
+      emptySubtitle={searchTerm ? t('gameHistory.tryDifferentSearch') : undefined}
+      renderGameCard={renderGameCard}
+    />
   );
 };
 

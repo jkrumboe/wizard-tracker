@@ -358,6 +358,8 @@ const StartGame = () => {
             }}
             embedded
             hideCreateButton
+            alwaysShowSavedGamesModal
+            savedGamesInitialStatus="paused"
           />
 
           {/* Single Add New Game Type button */}
@@ -381,6 +383,7 @@ const StartGame = () => {
               setResumeErrorMessage('');
             }}
             onSelectGame={handleSelectWizardGame}
+            initialStatusFilter="paused"
           />
         </div>
       </div>
