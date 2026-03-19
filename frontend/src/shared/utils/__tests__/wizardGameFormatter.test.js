@@ -36,6 +36,7 @@ describe('Wizard Game Formatter', () => {
       const result = formatWizardGameForBackend(gameData);
       
       expect(result).toEqual({
+        version: '3.0',
         created_at: '2025-12-10T16:37:51.059Z',
         duration_seconds: 1200,
         total_rounds: 10,
@@ -297,7 +298,7 @@ describe('Wizard Game Formatter', () => {
       const result = validateGameForUpload(gameData);
       
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('missing name'))).toBe(true);
+      expect(result.errors.some(e => e.includes('missing or empty name'))).toBe(true);
     });
     
     it('should reject round missing made value', () => {
@@ -319,7 +320,7 @@ describe('Wizard Game Formatter', () => {
       const result = validateGameForUpload(gameData);
       
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('missing made value'))).toBe(true);
+      expect(result.errors.some(e => e.includes("missing 'made' value"))).toBe(true);
     });
     
     it('should reject round missing score value', () => {
@@ -341,7 +342,7 @@ describe('Wizard Game Formatter', () => {
       const result = validateGameForUpload(gameData);
       
       expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('missing score value'))).toBe(true);
+      expect(result.errors.some(e => e.includes("missing 'score' value"))).toBe(true);
     });
     
   });

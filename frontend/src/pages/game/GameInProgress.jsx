@@ -256,7 +256,14 @@ const GameInProgress = () => {
       const currentGameState = gameStateRef.current;
       const currentPauseGame = pauseGameRef.current;
       
-      if (!isFirstVisit && !isViteReload && currentGameState && currentGameState.gameStarted) {
+      if (
+        !isFirstVisit &&
+        !isViteReload &&
+        currentGameState &&
+        currentGameState.gameStarted &&
+        Array.isArray(currentGameState.players) &&
+        currentGameState.players.length > 0
+      ) {
         const gameName = t('gameInProgress.autoPausedGameName', { current: currentGameState.currentRound, max: currentGameState.maxRounds });
         try {
           currentPauseGame(gameName);
@@ -268,7 +275,7 @@ const GameInProgress = () => {
         }
       } else {
         console.debug('Skipping auto-pause on unmount');
-        console.debug('Unmount reasons: isFirstVisit:', isFirstVisit, 'isViteReload:', isViteReload, 'gameStarted:', currentGameState?.gameStarted);
+        console.debug('Unmount reasons: isFirstVisit:', isFirstVisit, 'isViteReload:', isViteReload, 'gameStarted:', currentGameState?.gameStarted, 'players:', currentGameState?.players?.length || 0);
       }
     };
   }, [gameState, t]); // Include gameState dependency for backup functionality

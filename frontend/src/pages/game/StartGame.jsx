@@ -53,6 +53,7 @@ const StartGame = () => {
 
   // Wizard game history modal
   const [showWizardHistoryModal, setShowWizardHistoryModal] = useState(false);
+  const [resumeErrorMessage, setResumeErrorMessage] = useState('');
 
   // Add game type modal
   const [showAddGameModal, setShowAddGameModal] = useState(false);
@@ -305,14 +306,31 @@ const StartGame = () => {
     if (game.isPaused || game.gameState?.isPaused) {
       // For paused games, resume and navigate to GameInProgress
       const result = resumeGame(game.id);
-      if (result.success) {
+      const resumedPlayers = result?.gameState?.players;
+      if (result.success && Array.isArray(resumedPlayers) && resumedPlayers.length > 0) {
+        setResumeErrorMessage('');
         navigate(`/game/current`);
+        return true;
       } else {
         console.error('Failed to resume game:', result.error);
+        const message = t('gameHistory.resumeFailedCorrupted', {
+          defaultValue: 'Could not resume this paused game. The save appears to be corrupted.'
+        });
+        setResumeErrorMessage(message);
+        globalThis.dispatchEvent(new CustomEvent('show-toast', {
+          detail: {
+            message,
+            type: 'error',
+            duration: 6000
+          }
+        }));
+        return false;
       }
     } else {
       // For finished games, navigate to GameDetails to view
+      setResumeErrorMessage('');
       navigate(`/game/${game.id}`);
+      return true;
     }
   };
 
@@ -323,12 +341,21 @@ const StartGame = () => {
     return (
       <div className="start-game-page">
         <div className="game-type-selection">
+          {resumeErrorMessage && (
+            <div className="error-message" role="alert">
+              {resumeErrorMessage}
+            </div>
+          )}
+
           {/* All game templates in one unified list */}
           <GameTemplateSelector
             onSelectTemplate={handleTemplateSelectorSelect}
             onCreateNew={handleCreateNewTemplate}
             onLoadGame={handleLoadTableGame}
-            onLoadWizardGames={() => setShowWizardHistoryModal(true)}
+            onLoadWizardGames={() => {
+              setResumeErrorMessage('');
+              setShowWizardHistoryModal(true);
+            }}
             embedded
             hideCreateButton
           />
@@ -349,7 +376,10 @@ const StartGame = () => {
 
           <WizardGameHistoryModal
             isOpen={showWizardHistoryModal}
-            onClose={() => setShowWizardHistoryModal(false)}
+            onClose={() => {
+              setShowWizardHistoryModal(false);
+              setResumeErrorMessage('');
+            }}
             onSelectGame={handleSelectWizardGame}
           />
         </div>

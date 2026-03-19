@@ -180,5 +180,11 @@ export default defineConfig({
       "@": "/src",
     },
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    exclude: ['dist/**', 'node_modules/**'],
+  },
 })
 

@@ -248,6 +248,12 @@ export class LocalGameStorage {
       
       // Check if it's v3.0 format (has version field and no gameState wrapper)
       if (savedGame.version === '3.0' && !savedGame.gameState) {
+        const rootPlayers = Array.isArray(savedGame.players) ? savedGame.players : [];
+        if (rootPlayers.length === 0) {
+          console.error('Cannot load saved game without players:', gameId);
+          return null;
+        }
+
         // Convert v3.0 format back to internal format
         const internalState = savedGame._internalState || {};
         
@@ -264,14 +270,25 @@ export class LocalGameStorage {
           const savedRound = savedRounds[i - 1]; // Saved rounds are 0-indexed
 
           if (savedRound) {
+            const roundPlayers = (savedRound.players && savedRound.players.length > 0)
+              ? savedRound.players
+              : rootPlayers.map(player => ({
+                  id: player.id,
+                  name: player.name,
+                  call: null,
+                  made: null,
+                  score: null,
+                  totalScore: 0
+                }));
+
             // Use saved round data and add round number
             roundData.push({
               round: i,
               cards: cardsPattern[i - 1],
-              players: (savedRound.players || []).map(roundPlayer => {
+              players: roundPlayers.map(roundPlayer => {
                 // If player name is missing, get it from root players array
                 if (!roundPlayer.name) {
-                  const fullPlayer = (savedGame.players || []).find(p => String(p.id) === String(roundPlayer.id));
+                  const fullPlayer = rootPlayers.find(p => String(p.id) === String(roundPlayer.id));
                   return {
                     ...roundPlayer,
                     name: fullPlayer?.name || `Player ${roundPlayer.id}`
@@ -285,7 +302,7 @@ export class LocalGameStorage {
             roundData.push({
               round: i,
               cards: cardsPattern[i - 1],
-              players: (savedGame.players || []).map(player => ({
+              players: rootPlayers.map(player => ({
                 id: player.id,
                 name: player.name,
                 call: null,
@@ -296,12 +313,21 @@ export class LocalGameStorage {
             });
           }
         }
+
+        if (roundData.length === 0) {
+          console.error('Cannot load saved game without round data:', gameId);
+          return null;
+        }
+
+        const currentRound = internalState.currentRound || 1;
+        const maxRounds = internalState.maxRounds || savedGame.total_rounds || totalRounds;
+        const normalizedCurrentRound = Math.max(1, Math.min(currentRound, maxRounds));
         
         return {
           gameId: savedGame.id,
-          players: savedGame.players || [],
-          currentRound: internalState.currentRound || 1,
-          maxRounds: internalState.maxRounds || savedGame.total_rounds || 0,
+          players: rootPlayers,
+          currentRound: normalizedCurrentRound,
+          maxRounds,
           roundData: roundData,
           gameStarted: internalState.gameStarted !== undefined ? internalState.gameStarted : true,
           gameFinished: savedGame.gameFinished || false,
@@ -319,6 +345,10 @@ export class LocalGameStorage {
       }
       
       // Legacy format with gameState wrapper
+      if (!savedGame.gameState || !Array.isArray(savedGame.gameState.players) || savedGame.gameState.players.length === 0) {
+        console.error('Cannot load legacy saved game without valid players:', gameId);
+        return null;
+      }
       return savedGame.gameState;
     }
     

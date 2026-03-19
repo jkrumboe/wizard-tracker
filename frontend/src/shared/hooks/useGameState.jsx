@@ -30,6 +30,28 @@ export function GameStateProvider({ children }) {
     templateConfig: null, // { scoringFormula, roundPattern, maxRounds, hasDealerRotation, hasForbiddenCall, templateName }
   })
 
+  const isValidLoadedGameState = useCallback((state) => {
+    if (!state || typeof state !== 'object') {
+      return false;
+    }
+
+    if (!Array.isArray(state.players) || state.players.length === 0) {
+      return false;
+    }
+
+    if (!Array.isArray(state.roundData) || state.roundData.length === 0) {
+      return false;
+    }
+
+    const currentRound = Number(state.currentRound || 1);
+    const maxRounds = Number(state.maxRounds || state.roundData.length || 1);
+    if (!Number.isFinite(currentRound) || !Number.isFinite(maxRounds) || currentRound < 1 || maxRounds < 1) {
+      return false;
+    }
+
+    return true;
+  }, []);
+
   // Register state recovery for game state
   useEffect(() => {
     stateRecovery.registerStateProvider(
@@ -926,13 +948,15 @@ export function GameStateProvider({ children }) {
   const resumeGame = useCallback((gameId) => {
     try {
       const loadedGameState = LocalGameStorage.loadGame(gameId);
-      if (loadedGameState) {
+      if (loadedGameState && isValidLoadedGameState(loadedGameState)) {
         setGameState({
           ...loadedGameState,
           isPaused: false,
           gameId
         });
-        return { success: true };
+        return { success: true, gameState: loadedGameState };
+      } else if (loadedGameState) {
+        return { success: false, error: "Saved game is invalid or corrupted" };
       } else {
         return { success: false, error: "Game not found" };
       }
@@ -940,18 +964,20 @@ export function GameStateProvider({ children }) {
       console.error("Error resuming game:", error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [isValidLoadedGameState]);
 
   // Load a saved game (different from resume - this replaces current state)
   const loadSavedGame = useCallback((gameId) => {
     try {
       const loadedGameState = LocalGameStorage.loadGame(gameId);
-      if (loadedGameState) {
+      if (loadedGameState && isValidLoadedGameState(loadedGameState)) {
         setGameState({
           ...loadedGameState,
           gameId
         });
         return { success: true };
+      } else if (loadedGameState) {
+        return { success: false, error: "Saved game is invalid or corrupted" };
       } else {
         return { success: false, error: "Game not found" };
       }
@@ -959,7 +985,7 @@ export function GameStateProvider({ children }) {
       console.error("Error loading saved game:", error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [isValidLoadedGameState]);
 
   // Get all saved games
   const getSavedGames = useCallback(() => {

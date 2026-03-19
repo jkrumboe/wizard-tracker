@@ -84,7 +84,7 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
                 <div className="stat-item">
                   <span className="stat-label">{t('account.winRateLabel')}</span>
                   <span className="stat-value win-rate">
-                    {Math.round((gameType.wins / gameType.matches) * 100)}
+                    {Math.round((gameType.wins / gameType.matches) * 100)}%
                   </span>
                 </div>
                 <div className="stat-item">

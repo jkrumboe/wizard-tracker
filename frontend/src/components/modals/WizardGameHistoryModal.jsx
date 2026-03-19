@@ -113,8 +113,10 @@ const WizardGameHistoryModal = ({ isOpen, onClose, onSelectGame, onDeleteGame })
   };
 
   const handleSelectGame = (game) => {
-    onSelectGame?.(game);
-    onClose();
+    const shouldClose = onSelectGame?.(game);
+    if (shouldClose !== false) {
+      onClose();
+    }
   };
 
   const handleDeleteGame = (gameId, gameName) => {
