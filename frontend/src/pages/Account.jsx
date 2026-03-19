@@ -25,9 +25,14 @@ import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { shareGame } from '@/shared/utils/gameSharing';
 import { createSharedGameRecord } from '@/shared/api/sharedGameService';
 import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
+import { createLogger } from '@/shared/utils/logger';
 const PerformanceStatsEnhanced = lazy(() => import('@/pages/profile/PerformanceStatsEnhanced'));
 import StatsOverview from '@/components/stats/StatsOverview';
 import '@/styles/pages/account.css';
+
+const logger = createLogger('account');
+const syncLogger = logger.child('sync');
+const autoSyncLogger = syncLogger.child('auto');
 
 const Account = () => {
   const navigate = useNavigate();
@@ -337,13 +342,13 @@ const Account = () => {
                                 error.message.includes('404') ||
                                 error.message.includes('Not Found');
               if (isNotFound) {
-                console.debug(`[Settings] Table game ${game.id} not found on server, clearing upload status`);
+                syncLogger.debug('Table game missing on server, clearing upload status', { gameId: game.id });
                 LocalTableGameStorage.clearUploadStatus(game.id);
                 // Reload games to reflect changes
                 const updatedTableGames = LocalTableGameStorage.getSavedTableGamesList();
                 setSavedTableGames(updatedTableGames);
               } else {
-                console.debug(`[Settings] Error checking table game ${game.id}:`, error.message);
+                syncLogger.debug('Error checking table game on server', { gameId: game.id, error: error.message });
               }
             }
           }
@@ -359,7 +364,7 @@ const Account = () => {
             setGameSyncStatuses(syncStatuses);
           }
         } catch (error) {
-          console.debug('Error checking batch sync status:', error.message);
+          syncLogger.debug('Error checking batch sync status', { error: error.message });
           // Set all games as local on error
           const gameIds = Object.keys(allGames);
           const fallbackStatuses = {};
@@ -374,7 +379,7 @@ const Account = () => {
       // This ensures cross-device visibility without manual download
       setTimeout(async () => {
         try {
-          console.debug('[AutoSync] Starting automatic cloud game sync...');
+          autoSyncLogger.debug('Starting automatic cloud game sync');
           let totalDownloaded = 0;
 
           // Auto-download wizard games from cloud
@@ -383,7 +388,7 @@ const Account = () => {
           const missingWizardGames = cloudWizardGames.filter(g => !g.existsLocally);
           
           if (missingWizardGames.length > 0) {
-            console.debug(`[AutoSync] Found ${missingWizardGames.length} wizard games to download`);
+            autoSyncLogger.info('Wizard games queued for download', { count: missingWizardGames.length });
             const wizardResult = await downloadSelectedCloudGames(missingWizardGames.map(g => g.cloudId));
             totalDownloaded += wizardResult.downloaded || 0;
           }
@@ -394,23 +399,23 @@ const Account = () => {
           const missingTableGames = cloudTableGames.filter(g => !g.existsLocally);
           
           if (missingTableGames.length > 0) {
-            console.debug(`[AutoSync] Found ${missingTableGames.length} table games to download`);
+            autoSyncLogger.info('Table games queued for download', { count: missingTableGames.length });
             const tableResult = await downloadSelectedCloudTableGames(missingTableGames.map(g => g.cloudId));
             totalDownloaded += tableResult.downloaded || 0;
           }
 
           if (totalDownloaded > 0) {
-            console.debug(`[AutoSync] Downloaded ${totalDownloaded} games from cloud`);
+            autoSyncLogger.info('Downloaded games from cloud', { totalDownloaded });
             // Refresh local games to include newly downloaded ones
             const updatedGames = LocalGameStorage.getAllSavedGames();
             setSavedGames(updatedGames);
             const updatedTableGames = LocalTableGameStorage.getSavedTableGamesList();
             setSavedTableGames(updatedTableGames);
           } else {
-            console.debug('[AutoSync] All cloud games already exist locally');
+            autoSyncLogger.debug('All cloud games already exist locally');
           }
         } catch (error) {
-          console.debug('[AutoSync] Auto-sync failed (games still available locally):', error.message);
+          autoSyncLogger.warn('Auto-sync failed (local games remain available)', { error: error.message });
         }
       }, 2000); // Wait 2 seconds to avoid rate limiting with other checks
     }
@@ -427,11 +432,11 @@ const Account = () => {
 
     try {
       setCloudGamesLoading(true);
-      console.log('🔄 [Account] Fetching cloud games for userId:', user.id);
+      syncLogger.debug('Fetching cloud games', { userId: user.id });
       const userService = (await import('@/shared/api/userService')).default;
       const data = await userService.getUserPublicProfile(user.id);
       
-      console.log('✅ [Account] Fetched cloud games from API:', {
+      syncLogger.info('Fetched cloud games from API', {
         username: data.username,
         identities: data.identities,
         totalGames: data.totalGames,
@@ -441,7 +446,7 @@ const Account = () => {
       setProfileData(data);
       setCloudGames(data.games || []);
     } catch (error) {
-      console.error('[Account] Failed to fetch cloud games:', error);
+      syncLogger.error('Failed to fetch cloud games', { error });
       setCloudGames([]);
     } finally {
       setCloudGamesLoading(false);
@@ -879,12 +884,12 @@ const Account = () => {
       // Clear all caches
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-      console.debug(`🧹 Cleared ${cacheNames.length} caches`);
+      logger.info('Cleared caches during force update', { count: cacheNames.length });
       
       // Unregister service workers
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(registrations.map(registration => registration.unregister()));
-      console.debug(`🧹 Unregistered ${registrations.length} service workers`);
+      logger.info('Unregistered service workers during force update', { count: registrations.length });
       
       setMessage({ text: t('accountMessages.cachesCleared'), type: 'success' });
       
@@ -893,7 +898,7 @@ const Account = () => {
         globalThis.location.reload(true);
       }, 1000);
     } catch (error) {
-      console.error('Error forcing update:', error);
+      logger.error('Error forcing update', { error });
       setForcingUpdate(false);
       setMessage({ 
         text: t('accountMessages.clearCachesFailed'), 
@@ -929,13 +934,13 @@ const Account = () => {
       return { success: false, error: 'Game already uploaded', isDuplicate: true };
     }
     
-    console.debug(`🆔 Game ID: ${gameId}`, { 
+    syncLogger.debug('Preparing game upload', {
       gameId,
       timestamp: gameData.created_at,
       players: gameData.players?.length || 0
     });
     
-    console.debug('🔍 Game structure check', {
+    syncLogger.debug('Game structure check', {
       hasRoundData: !!gameData.roundData,
       hasRound_data: !!gameData.round_data,
       hasTotalRounds: !!gameData.total_rounds,
@@ -976,7 +981,7 @@ const Account = () => {
         }
       }
       
-      console.debug('🔍 Round validation', {
+      syncLogger.debug('Round validation', {
         declared: declaredRounds,
         actual: actualRounds,
         finished: gameData.gameFinished,
@@ -992,7 +997,7 @@ const Account = () => {
       // Case 1: Game is finished and has incomplete rounds at the end - trim to last complete round
       if (gameData.gameFinished && incompleteRounds > 0 && lastCompleteRoundIndex < actualRounds - 1) {
         const newRoundCount = lastCompleteRoundIndex + 1;
-        console.debug(`🔧 Trimming incomplete rounds: ${actualRounds} → ${newRoundCount} (last complete round)`);
+        syncLogger.info('Trimming incomplete rounds', { actualRounds, newRoundCount, reason: 'last complete round' });
         
         if (gameData.round_data) {
           gameData.round_data = gameData.round_data.slice(0, newRoundCount);
@@ -1009,7 +1014,7 @@ const Account = () => {
       }
       // Case 2: round_data has more entries than total_rounds (old bug)
       else if (actualRounds > declaredRounds) {
-        console.debug(`🔧 Trimming rounds: ${actualRounds} → ${declaredRounds}`);
+        syncLogger.info('Trimming extra rounds', { actualRounds, declaredRounds });
         if (gameData.round_data) {
           gameData.round_data = gameData.round_data.slice(0, declaredRounds);
         }
@@ -1020,7 +1025,7 @@ const Account = () => {
       
       // Case 3: total_rounds is larger than actual round_data (game finished early after reducing rounds)
       else if (declaredRounds > actualRounds && gameData.gameFinished) {
-        console.debug(`🔧 Adjusting total_rounds: ${declaredRounds} → ${actualRounds}`);
+        syncLogger.info('Adjusting total rounds to actual', { declaredRounds, actualRounds });
         if (gameData.total_rounds) {
           gameData.total_rounds = actualRounds;
         }
@@ -1034,7 +1039,12 @@ const Account = () => {
         const targetRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
         gameData.players = gameData.players.map(player => {
           if (player.rounds && player.rounds.length > targetRounds) {
-            console.debug(`🔧 Trimming ${player.name}'s rounds: ${player.rounds.length} → ${targetRounds}`);
+            syncLogger.debug('Trimming player rounds', {
+              gameId,
+              playerName: player.name,
+              originalRounds: player.rounds.length,
+              targetRounds,
+            });
             return {
               ...player,
               rounds: player.rounds.slice(0, targetRounds)
@@ -1044,14 +1054,14 @@ const Account = () => {
         });
       }
     } else {
-      console.debug('⚠️ No round data found in game', { gameId });
+      syncLogger.warn('No round data found in game', { gameId });
     }
     
     try {
       const { createGame } = await import('@/shared/api/gameService');
-      console.debug('📤 Attempting upload', { gameId });
+      syncLogger.info('Attempting game upload', { gameId });
       const result = await createGame(gameData, gameId);
-      console.debug('✅ Upload successful', { gameId, cloudId: result.game?.id });
+      syncLogger.info('Upload successful', { gameId, cloudId: result.game?.id });
       if (result.duplicate) {
         // Mark as uploaded with existing cloud ID
         LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
@@ -1075,7 +1085,7 @@ const Account = () => {
         return { success: true, cloudGameId: result.game.id };
       }
     } catch (error) {
-      console.debug('❌ Upload failed', { 
+      syncLogger.error('Upload failed', {
         gameId, 
         error: error.message,
         validationErrors: error.message.includes('validation') ? error.message.split('\n') : null
@@ -1108,7 +1118,7 @@ const Account = () => {
     } catch (error) {
       // If error suggests game was deleted from server, clear upload status
       if (error.message.includes('not found') || error.message.includes('404')) {
-        console.debug('[Settings] Game not found on server, clearing upload status');
+        syncLogger.warn('Table game not found on server, clearing upload status', { gameId });
         LocalTableGameStorage.clearUploadStatus(gameId);
         await loadSavedGames();
       }
@@ -1118,7 +1128,7 @@ const Account = () => {
 
   // Share Game Function
   const handleShareGame = async (gameId, gameData) => {
-    console.debug('handleShareGame called with gameId:', gameId, 'gameData:', gameData);
+    syncLogger.debug('handleShareGame called', { gameId, hasGameData: !!gameData });
     
     // Check authentication before attempting to share
     const token = localStorage.getItem('auth_token');
@@ -1159,21 +1169,21 @@ const Account = () => {
           const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
           const syncStatuses = await checkAllGamesSyncStatus();
           setGameSyncStatuses(syncStatuses);
-          console.debug('[SyncDebug] Updated sync statuses after share upload:', syncStatuses);
+          syncLogger.debug('Updated sync statuses after share upload', { syncStatuses });
         }
         // Update syncStatus after upload
         syncStatus = gameSyncStatuses[gameId];
         isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
       } catch (error) {
         setMessage({ text: t('accountMessages.syncBeforeShareError', { error: error.message }), type: 'error' });
-        console.error('[SyncDebug] Failed to sync before sharing:', error);
+        syncLogger.error('Failed to sync before sharing', { error });
         return;
       }
     }
 
     if (!isGameOnline) {
       setMessage({ text: t('accountMessages.gameMustBeUploaded'), type: 'error' });
-      console.warn('[SyncDebug] Tried to share but game is not online:', syncStatus);
+      syncLogger.warn('Tried to share game that is not online', { gameId, syncStatus });
       return;
     }
 
@@ -1185,7 +1195,7 @@ const Account = () => {
         ...gameData,
         id: idToShare
       };
-      console.debug('Game to share:', gameToShare);
+      syncLogger.debug('Prepared game for share', { gameId, idToShare });
       // Generate share link and handle sharing
       const shareResult = await shareGame(gameToShare);
       if (shareResult.success) {
@@ -1201,7 +1211,7 @@ const Account = () => {
         setMessage({ text: t('accountMessages.shareGameFailed'), type: 'error' });
       }
     } catch (error) {
-      console.error('Failed to share game:', error);
+      syncLogger.error('Failed to share game', { gameId, error });
       setMessage({ text: t('accountMessages.shareFailed', { error: error.message }), type: 'error' });
     } finally {
       // Delay spinner removal for 1.5s to allow UI to update smoothly

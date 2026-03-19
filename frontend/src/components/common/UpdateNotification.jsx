@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { XIcon } from '@/components/ui/Icon';
 import { useTranslation } from 'react-i18next';
+import { createLogger } from '@/shared/utils/logger';
 
 const RELOAD_COOLDOWN_MS = 10000; // 10 seconds between reloads
 const LAST_RELOAD_KEY = 'last_sw_reload';
@@ -11,6 +12,7 @@ const RELOAD_ATTEMPTS_KEY = 'sw_reload_attempts';
 const SNOOZE_KEY = 'sw_update_snoozed_until';
 const SNOOZE_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
 const DISMISSED_KEY = 'sw_update_dismissed_version'; // Track dismissed version for session
+const logger = createLogger('updateNotification');
 
 // Semantic version comparison utilities
 const parseVersion = (version) => {
@@ -77,17 +79,19 @@ const UpdateNotification = () => {
     const updateInProgress = sessionStorage.getItem(UPDATE_IN_PROGRESS_KEY);
     
     if (updateInProgress === 'true') {
-      console.debug('❌ Update already in progress, skipping reload');
+      logger.debug('Update already in progress, skipping reload');
       return false;
     }
     
     if (timeSinceReload < RELOAD_COOLDOWN_MS) {
-      console.debug(`❌ In reload cooldown (${Math.ceil((RELOAD_COOLDOWN_MS - timeSinceReload) / 1000)}s remaining)`);
+      logger.debug('In reload cooldown', {
+        secondsRemaining: Math.ceil((RELOAD_COOLDOWN_MS - timeSinceReload) / 1000),
+      });
       return false;
     }
     
     if (reloadAttempts >= MAX_RELOAD_ATTEMPTS) {
-      console.warn('❌ Max reload attempts reached. Manual intervention required.');
+      logger.warn('Max reload attempts reached, manual intervention required', { reloadAttempts });
       // Clear attempts after 1 hour
       if (timeSinceReload > 3600000) {
         localStorage.removeItem(RELOAD_ATTEMPTS_KEY);
@@ -123,7 +127,7 @@ const UpdateNotification = () => {
         setTimeout(() => resolve(null), 2000);
       });
     } catch (error) {
-      console.error('Error getting service worker version:', error);
+      logger.error('Error getting service worker version', { error });
       return null;
     }
   }, []);
@@ -134,13 +138,13 @@ const UpdateNotification = () => {
     const lastVersion = localStorage.getItem(LAST_SW_VERSION_KEY);
     
     if (!newSWVersion) {
-      console.debug('⚠️ Could not determine service worker version');
+      logger.debug('Could not determine service worker version');
       return false; // Don't reload if we can't verify version change
     }
     
     if (!lastVersion) {
       // First time tracking version
-      console.debug(`📌 Initial version: ${newSWVersion}`);
+      logger.debug('Initializing service worker version tracking', { newVersion: newSWVersion });
       localStorage.setItem(LAST_SW_VERSION_KEY, newSWVersion);
       setCurrentVersion(newSWVersion);
       return false;
@@ -154,9 +158,9 @@ const UpdateNotification = () => {
       const type = getUpdateType(lastVersion, newSWVersion);
       setUpdateType(type);
       setCurrentVersion(lastVersion);
-      console.debug(`🔍 Version check: ${lastVersion} -> ${newSWVersion} (${type} update)`);
+      logger.info('Service worker version changed', { lastVersion, newVersion: newSWVersion, updateType: type });
     } else {
-      console.debug(`🔍 Version check: ${lastVersion} -> ${newSWVersion} (No update needed)`);
+      logger.debug('No service worker version update needed', { lastVersion, newVersion: newSWVersion });
     }
     
     return changed;
@@ -165,19 +169,19 @@ const UpdateNotification = () => {
   // Perform reload with safety checks
   const performReload = useCallback(async () => {
     if (updateHandledRef.current) {
-      console.debug('❌ Update already handled');
+      logger.debug('Update already handled');
       return;
     }
     
     if (!canReload()) {
-      console.debug('❌ Cannot reload - safety check failed');
+      logger.debug('Cannot reload due to safety checks');
       setShowNotification(true); // Show notification instead
       return;
     }
     
     const versionChanged = await hasVersionChanged();
     if (!versionChanged) {
-      console.debug('❌ Version unchanged or not newer, skipping reload');
+      logger.debug('Version unchanged or not newer, skipping reload');
       sessionStorage.removeItem('sw_update_ready');
       sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
       return;
@@ -201,7 +205,7 @@ const UpdateNotification = () => {
     // Clear snooze on successful update
     localStorage.removeItem(SNOOZE_KEY);
     
-    console.debug(`🔄 Reloading for update (attempt ${attempts + 1}/${MAX_RELOAD_ATTEMPTS})...`);
+    logger.info('Reloading for update', { attempt: attempts + 1, maxAttempts: MAX_RELOAD_ATTEMPTS, newVersion: newSWVersion });
     
     // Update stored version before reload
     if (newSWVersion) {
@@ -219,7 +223,7 @@ const UpdateNotification = () => {
     if (sessionStorage.getItem(UPDATE_IN_PROGRESS_KEY) === 'true') {
       const lastReload = Number.parseInt(localStorage.getItem(LAST_RELOAD_KEY) || '0', 10);
       if (Date.now() - lastReload > 30000) { // 30 seconds
-        console.debug('🧹 Clearing stale update-in-progress flag');
+        logger.debug('Clearing stale update-in-progress flag');
         sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
         // Reset attempts if old reload completed successfully
         localStorage.removeItem(RELOAD_ATTEMPTS_KEY);
@@ -232,7 +236,7 @@ const UpdateNotification = () => {
           if (newSWVersion && lastVersion && compareVersions(newSWVersion, lastVersion) > 0) {
             // Update was successful!
             const type = getUpdateType(lastVersion, newSWVersion);
-            console.debug(`✅ Update completed successfully: ${lastVersion} → ${newSWVersion} (${type})`);
+            logger.info('Update completed successfully', { lastVersion, newVersion: newSWVersion, updateType: type });
             localStorage.setItem(LAST_SW_VERSION_KEY, newSWVersion);
             localStorage.removeItem(RELOAD_ATTEMPTS_KEY);
             sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
@@ -253,7 +257,7 @@ const UpdateNotification = () => {
             globalThis.dispatchEvent(event);
           } else if (newSWVersion === lastVersion) {
             // Same version - update completed
-            console.debug(`✅ Update confirmed: v${newSWVersion}`);
+            logger.info('Update confirmed', { version: newSWVersion });
             localStorage.removeItem(RELOAD_ATTEMPTS_KEY);
             sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
           }
@@ -327,13 +331,13 @@ const UpdateNotification = () => {
     // Listen for update events
     const handleUpdateReady = async () => {
       if (updateHandledRef.current) {
-        console.debug('❌ Update already handled, ignoring event');
+        logger.debug('Update already handled, ignoring event');
         return;
       }
       
       // Check if snoozed
       if (isUpdateSnoozed()) {
-        console.debug('💤 Update snoozed, skipping notification');
+        logger.debug('Update snoozed, skipping notification');
         return;
       }
       
@@ -342,7 +346,7 @@ const UpdateNotification = () => {
       
       if (autoUpdateEnabled) {
         // Auto-reload if setting is enabled and safety checks pass
-        console.debug('🔄 Auto-update enabled - checking if reload is safe');
+        logger.debug('Auto-update enabled, checking if reload is safe');
         await performReload();
       } else {
         // Show notification if auto-update is disabled
@@ -354,10 +358,10 @@ const UpdateNotification = () => {
           if (!isUpdateDismissed(newSWVersion)) {
             setShowNotification(true);
           } else {
-            console.debug('❌ Update dismissed by user for this version, skipping notification');
+            logger.debug('Update dismissed for this version, skipping notification', { version: newSWVersion });
           }
         } else {
-          console.debug('❌ No version change detected, hiding notification');
+          logger.debug('No version change detected, hiding notification');
           sessionStorage.removeItem('sw_update_ready');
         }
       }
@@ -375,12 +379,12 @@ const UpdateNotification = () => {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       const handleControllerChange = async () => {
         if (controllerChangeHandledRef.current) {
-          console.debug('❌ Controller change already handled');
+          logger.debug('Controller change already handled');
           return;
         }
         
         controllerChangeHandledRef.current = true;
-        console.debug('🔄 Service worker controller changed');
+        logger.info('Service worker controller changed');
         
         if (!autoUpdateEnabled) {
           const versionChanged = await hasVersionChanged();
@@ -438,7 +442,7 @@ const UpdateNotification = () => {
     const snoozeUntil = Date.now() + SNOOZE_DURATION_MS;
     localStorage.setItem(SNOOZE_KEY, snoozeUntil.toString());
     setShowNotification(false);
-    console.debug(`💤 Update snoozed for 4 hours`);
+    logger.info('Update snoozed', { durationHours: 4, snoozedUntil: new Date(snoozeUntil).toISOString() });
   };
 
   // Get update type label and styling

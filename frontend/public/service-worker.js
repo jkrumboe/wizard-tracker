@@ -11,6 +11,38 @@ import { ExpirationPlugin } from 'workbox-expiration';
 const APP_VERSION = "__APP_VERSION__" // Will be replaced during build
 const API_CACHE_NAME = `keep-wiz-api-v${APP_VERSION}`
 
+const logPrefix = '[KeepWiz][serviceWorker:runtime]';
+const swLogger = {
+  debug(message, meta) {
+    if (meta !== undefined) {
+      console.debug(`${logPrefix} ${message}`, meta);
+      return;
+    }
+    console.debug(`${logPrefix} ${message}`);
+  },
+  info(message, meta) {
+    if (meta !== undefined) {
+      console.info(`${logPrefix} ${message}`, meta);
+      return;
+    }
+    console.info(`${logPrefix} ${message}`);
+  },
+  warn(message, meta) {
+    if (meta !== undefined) {
+      console.warn(`${logPrefix} ${message}`, meta);
+      return;
+    }
+    console.warn(`${logPrefix} ${message}`);
+  },
+  error(message, meta) {
+    if (meta !== undefined) {
+      console.error(`${logPrefix} ${message}`, meta);
+      return;
+    }
+    console.error(`${logPrefix} ${message}`);
+  },
+};
+
 // Update state management
 let updateState = {
   isInstalling: false,
@@ -38,7 +70,7 @@ const broadcastUpdateProgress = async (state) => {
 
 // Install event - Workbox handles precaching, we just skip waiting
 self.addEventListener("install", (event) => {
-  console.debug(`Service Worker installing version ${APP_VERSION}...`);
+  swLogger.info('Installing service worker', { version: APP_VERSION });
   self.skipWaiting(); // Force immediate activation
   
   // Notify clients that a new version is installing
@@ -66,24 +98,24 @@ self.addEventListener("install", (event) => {
 
 // Activate event - clean up old caches and take control immediately
 self.addEventListener("activate", (event) => {
-  console.debug(`Service Worker activating version ${APP_VERSION}...`);
+  swLogger.info('Activating service worker', { version: APP_VERSION });
   event.waitUntil(
     Promise.all([
       // Clear ALL caches on activation to ensure fresh state
       // This prevents issues with stale manifests from old service workers
       caches.keys().then((cacheNames) => {
-        console.debug(`Found ${cacheNames.length} caches, cleaning up...`);
+        swLogger.debug('Cleaning up caches during activation', { cacheCount: cacheNames.length });
         return Promise.all(
           cacheNames.map((cacheName) => {
             // Delete all old caches - Workbox will recreate what's needed
-            console.debug('Deleting cache:', cacheName);
+            swLogger.debug('Deleting cache', { cacheName });
             return caches.delete(cacheName);
           })
         );
       }),
     ]).then(() => {
       // Take control of all clients immediately
-      console.debug(`Service Worker v${APP_VERSION} taking control of all clients`);
+      swLogger.info('Taking control of all clients', { version: APP_VERSION });
       return self.clients.claim();
     })
   );
@@ -105,11 +137,11 @@ try {
   // Cleanup can happen async
   cleanupOutdatedCaches();
   
-  console.debug(`Service Worker v${APP_VERSION} initialized with ${manifest.length} assets to precache`);
+  swLogger.info('Initialized precache manifest', { version: APP_VERSION, assetCount: manifest.length });
 } catch (error) {
   // Log but don't throw - allow SW to continue functioning
-  console.error('Precaching setup failed (this may indicate stale manifest):', error);
-  console.info('Service worker will continue to function. Perform a hard refresh to clear old caches.');
+  swLogger.error('Precaching setup failed (possible stale manifest)', { error });
+  swLogger.warn('Service worker will continue to function; hard refresh may be required');
 }
 
 // API endpoints that should be cached for offline access
@@ -154,12 +186,12 @@ registerRoute(
 // Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.debug(`Received SKIP_WAITING message for version ${APP_VERSION}`);
+    swLogger.debug('Received SKIP_WAITING message', { version: APP_VERSION });
     self.skipWaiting();
   }
   
   if (event.data && event.data.type === 'GET_VERSION') {
-    console.debug(`Sending version ${APP_VERSION}`);
+    swLogger.debug('Sending service worker version', { version: APP_VERSION });
     // Always respond with version, even if no port provided (backwards compatibility)
     if (event.ports && event.ports[0]) {
       event.ports[0].postMessage({ version: APP_VERSION });
@@ -186,7 +218,7 @@ self.addEventListener('message', (event) => {
   }
   
   if (event.data && event.data.type === 'CLEAR_CACHE') {
-    console.debug('Clearing cache');
+    swLogger.info('Received CLEAR_CACHE request');
     event.waitUntil(
       caches.keys().then((cacheNames) => {
         return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
@@ -253,7 +285,7 @@ async function networkFirstStrategy(request) {
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
-      console.debug('Serving from cache (offline):', request.url);
+      swLogger.debug('Serving API response from cache (offline)', { url: request.url });
       return cachedResponse;
     }
     
@@ -270,7 +302,7 @@ async function handleWriteOperation(request) {
     return response;
   } catch {
     // Network failed - queue for background sync
-    console.debug('Write operation failed, will retry when online:', request.url);
+    swLogger.warn('Write operation failed; request will be retried when online', { url: request.url });
     
     // Return synthetic 202 Accepted response
     return new Response(JSON.stringify({
@@ -287,7 +319,7 @@ async function handleWriteOperation(request) {
 
 // Background Sync event - sync pending changes when back online
 self.addEventListener('sync', (event) => {
-  console.debug('Background sync event:', event.tag);
+  swLogger.debug('Background sync event', { tag: event.tag });
   
   if (event.tag.startsWith('sync-game-')) {
     const gameId = event.tag.replace('sync-game-', '');
@@ -302,7 +334,7 @@ self.addEventListener('sync', (event) => {
 // Sync a specific game
 async function syncGame(gameId) {
   try {
-    console.debug('Syncing game:', gameId);
+    swLogger.info('Syncing game', { gameId });
     
     // Notify all clients that sync is starting
     const clients = await self.clients.matchAll();
@@ -318,7 +350,7 @@ async function syncGame(gameId) {
     
     return true;
   } catch (error) {
-    console.error('Sync failed for game:', gameId, error);
+    swLogger.error('Sync failed for game', { gameId, error });
     throw error;
   }
 }
@@ -326,7 +358,7 @@ async function syncGame(gameId) {
 // Sync all games with pending changes
 async function syncAllGames() {
   try {
-    console.debug('Syncing all games');
+    swLogger.info('Syncing all games');
     
     const clients = await self.clients.matchAll();
     clients.forEach(client => {
@@ -337,7 +369,7 @@ async function syncAllGames() {
     
     return true;
   } catch (error) {
-    console.error('Sync all failed:', error);
+    swLogger.error('Sync all failed', { error });
     throw error;
   }
 }

@@ -1,10 +1,13 @@
 // Enhanced service worker registration with custom update UI
+import { createLogger } from '@/shared/utils/logger';
+
 let updateCheckInProgress = false;
 let lastUpdateCheck = 0;
 const UPDATE_CHECK_INTERVAL = 300000; // 5 minutes
 const MIN_UPDATE_CHECK_DELAY = 10000; // 10 seconds minimum between checks
 const LAST_SW_VERSION_KEY = 'last_sw_version';
 const VERSION_MISMATCH_KEY = 'sw_version_mismatch_detected';
+const logger = createLogger('serviceWorkerRegistration');
 
 // Get app version from build-time constant
 const getAppVersion = () => {
@@ -18,19 +21,19 @@ const dispatchUpdateProgress = (data) => {
 
 // Force unregister all service workers and clear caches
 const forceCleanInstall = async (reason) => {
-  console.warn(`🔄 Forcing clean install: ${reason}`);
+  logger.warn('Forcing clean install', { reason });
   
   try {
     // Unregister all service workers
     const registrations = await navigator.serviceWorker.getRegistrations();
     await Promise.all(registrations.map(reg => reg.unregister()));
-    console.debug(`Unregistered ${registrations.length} service workers`);
+    logger.info('Unregistered service workers', { count: registrations.length });
     
     // Clear all caches
     if ('caches' in globalThis) {
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map(name => caches.delete(name)));
-      console.debug(`Cleared ${cacheNames.length} caches`);
+      logger.info('Cleared caches', { count: cacheNames.length });
     }
     
     // Mark that we're doing a clean install
@@ -39,7 +42,7 @@ const forceCleanInstall = async (reason) => {
     // Hard reload to get fresh service worker
     globalThis.location.reload();
   } catch (error) {
-    console.error('Force clean install failed:', error);
+    logger.error('Force clean install failed', { error });
   }
 };
 
@@ -47,20 +50,20 @@ const forceCleanInstall = async (reason) => {
 const verifyVersionMatch = async (registration) => {
   const appVersion = getAppVersion();
   if (!appVersion) {
-    console.debug('App version not available, skipping verification');
+    logger.debug('App version not available, skipping verification');
     return true;
   }
   
   const worker = registration.active || registration.waiting || registration.installing;
   if (!worker) {
-    console.debug('No service worker available for version check');
+    logger.debug('No service worker available for version check');
     return true;
   }
   
   return new Promise((resolve) => {
     const messageChannel = new MessageChannel();
     const timeout = setTimeout(() => {
-      console.warn('SW version check timed out');
+      logger.warn('SW version check timed out');
       resolve(true); // Don't block on timeout
     }, 3000);
     
@@ -69,15 +72,15 @@ const verifyVersionMatch = async (registration) => {
       const swVersion = event.data?.version;
       
       if (!swVersion) {
-        console.warn('SW did not report version');
+        logger.warn('Service worker did not report version');
         resolve(true);
         return;
       }
       
-      console.debug(`📋 Version check: App=${appVersion}, SW=${swVersion}`);
+      logger.debug('Version check', { appVersion, swVersion });
       
       if (swVersion !== appVersion) {
-        console.warn(`⚠️ Version mismatch detected! App=${appVersion}, SW=${swVersion}`);
+        logger.warn('Version mismatch detected', { appVersion, swVersion });
         
         // Check if we already tried to fix this recently
         const lastMismatch = sessionStorage.getItem(VERSION_MISMATCH_KEY);
@@ -85,7 +88,7 @@ const verifyVersionMatch = async (registration) => {
         
         if (lastMismatch && (now - Number.parseInt(lastMismatch, 10)) < 30000) {
           // Already tried within 30 seconds, don't loop
-          console.warn('Version mismatch persists after recent fix attempt, manual intervention needed');
+          logger.warn('Version mismatch persists after recent fix attempt');
           // Show a toast to user
           globalThis.dispatchEvent(new CustomEvent('show-toast', {
             detail: {
@@ -108,7 +111,7 @@ const verifyVersionMatch = async (registration) => {
       
       // Versions match - clear any mismatch flag
       sessionStorage.removeItem(VERSION_MISMATCH_KEY);
-      console.debug('✅ Version verified: SW matches App');
+      logger.info('Version verified: service worker matches app');
       resolve(true);
     };
     
@@ -123,12 +126,12 @@ export function register() {
 
   const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
   if (isDev) {
-    console.debug('Skipping service worker registration in development');
+    logger.debug('Skipping service worker registration in development');
     // Unregister any old service workers from previous production/Docker builds
     // to prevent them from intercepting API requests and bypassing the Vite dev proxy
     navigator.serviceWorker.getRegistrations().then(registrations => {
       if (registrations.length > 0) {
-        console.warn(`🧹 Unregistering ${registrations.length} stale service worker(s) from previous build`);
+        logger.warn('Unregistering stale service workers from previous build', { count: registrations.length });
         registrations.forEach(reg => reg.unregister());
       }
     });
@@ -138,7 +141,7 @@ export function register() {
   // Check if this is a clean install recovery
   if (sessionStorage.getItem('sw_clean_install') === 'true') {
     sessionStorage.removeItem('sw_clean_install');
-    console.debug('✅ Clean install completed');
+    logger.info('Clean install completed');
     globalThis.dispatchEvent(new CustomEvent('show-toast', {
       detail: {
         message: 'App updated successfully!',
@@ -152,7 +155,7 @@ export function register() {
     // We just need to listen for the registration and handle updates
     navigator.serviceWorker.ready
       .then(async (registration) => {
-        console.debug("ServiceWorker ready with scope: ", registration.scope)
+        logger.info('Service worker ready', { scope: registration.scope });
         
         // Verify version match on load - auto-fix if mismatched
         const versionOk = await verifyVersionMatch(registration);
@@ -167,7 +170,7 @@ export function register() {
             if (event.data?.version) {
               const lastVersion = localStorage.getItem(LAST_SW_VERSION_KEY);
               if (!lastVersion) {
-                console.debug(`📌 Initializing version tracking: ${event.data.version}`);
+                logger.debug('Initializing version tracking', { version: event.data.version });
                 localStorage.setItem(LAST_SW_VERSION_KEY, event.data.version);
               }
             }
@@ -181,7 +184,7 @@ export function register() {
             dispatchUpdateProgress(event.data);
           }
           if (event.data?.type === 'SW_INSTALLING') {
-            console.debug(`📦 New service worker v${event.data.version} is installing...`);
+            logger.info('New service worker installing', { version: event.data.version });
             dispatchUpdateProgress({ status: 'downloading', version: event.data.version });
           }
         });
@@ -193,7 +196,7 @@ export function register() {
           
           // Skip if checked recently or if update is in progress
           if (timeSinceLastCheck < MIN_UPDATE_CHECK_DELAY || updateCheckInProgress) {
-            console.debug('Skipping update check - too soon or already in progress');
+            logger.debug('Skipping update check (throttled or in progress)');
             return;
           }
           
@@ -205,21 +208,21 @@ export function register() {
           // Skip if an update is already being processed
           const updateState = localStorage.getItem('pwa_update_state');
           if (updateState === 'updating' || updateState === 'completed') {
-            console.debug('Skipping update check - update already in progress or completed');
+            logger.debug('Skipping update check (update already in progress or completed)');
             return;
           }
           
           updateCheckInProgress = true;
           lastUpdateCheck = now;
           
-          console.debug('Checking for service worker updates...');
+          logger.debug('Checking for service worker updates');
           
           registration.update()
             .then(() => {
-              console.debug('Update check completed');
+              logger.debug('Update check completed');
             })
             .catch((error) => {
-              console.error('Update check failed:', error);
+              logger.error('Update check failed', { error });
             })
             .finally(() => {
               // Reset after a delay to prevent rapid successive checks
@@ -245,17 +248,17 @@ export function register() {
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
-            console.debug('New service worker detected, installing...');
+            logger.info('New service worker detected, installing');
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.debug('New version available - UpdateNotification component will handle the update.');
+                logger.info('New version available for activation');
               }
             });
           }
         });
       })
       .catch((error) => {
-        console.error("ServiceWorker ready failed: ", error)
+        logger.error('ServiceWorker ready failed', { error });
       })
   })
 
@@ -263,12 +266,12 @@ export function register() {
   let controllerChangeHandled = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (controllerChangeHandled) {
-      console.debug('Controller change already handled, skipping');
+      logger.debug('Controller change already handled, skipping');
       return;
     }
 
     controllerChangeHandled = true;
-    console.debug('New service worker activated - ready to reload');
+    logger.info('New service worker activated and ready to reload');
     
     // Dispatch custom event instead of automatic reload
     globalThis.dispatchEvent(new CustomEvent('sw-update-ready'));
@@ -285,7 +288,7 @@ export function unregister() {
         registration.unregister()
       })
       .catch((error) => {
-        console.error(error.message)
+        logger.error('Service worker unregister failed', { error: error.message });
       })
   }
 }

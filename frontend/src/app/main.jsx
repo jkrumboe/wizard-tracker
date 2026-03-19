@@ -12,12 +12,13 @@ import "@/styles/components/multi-player-scorecard.css" // Enhanced scorecard st
 import { createSyncManager } from "@/shared/sync/syncManager"
 import { syncApiClient } from "@/shared/api"
 import { wasServiceWorkerForceUpdated, clearServiceWorkerUpdateFlag, forceServiceWorkerUpdate } from "@/shared/utils/swCleanup"
+import { appLogger, getLogLevel, setLogLevel } from "@/shared/utils/logger"
 
 // Handle service worker precache errors
 if (wasServiceWorkerForceUpdated()) {
   // Clear the flag after successful reload
   clearServiceWorkerUpdateFlag();
-  console.log('Service worker was force updated and page reloaded');
+  appLogger.info('Service worker was force updated and page reloaded');
 }
 
 // Listen for unhandled promise rejections (like SW precache errors)
@@ -32,7 +33,9 @@ globalThis.addEventListener('unhandledrejection', (event) => {
   );
   
   if (isPrecacheError) {
-    console.warn('Detected service worker precache error from old Workbox version');
+    appLogger.warn('Detected service worker precache error from old Workbox version', {
+      reason: error?.message || error,
+    });
     event.preventDefault(); // Prevent the error from being logged
     
     // Store flag to show recovery UI
@@ -55,7 +58,10 @@ globalThis.addEventListener('error', (event) => {
   if (message.includes('bad-precaching-response') || 
       message.includes('workbox') ||
       error?.name === 'bad-precaching-response') {
-    console.warn('Detected synchronous service worker error');
+    appLogger.warn('Detected synchronous service worker error', {
+      message,
+      errorName: error?.name,
+    });
     localStorage.setItem('sw_precache_error', 'true');
     globalThis.location.reload();
   }
@@ -64,7 +70,7 @@ globalThis.addEventListener('error', (event) => {
 // Check if SW needs cleanup from previous visit
 if (localStorage.getItem('sw_needs_cleanup') === 'true') {
   localStorage.removeItem('sw_needs_cleanup');
-  console.log('Forcing service worker cleanup due to previous precache error');
+  appLogger.info('Forcing service worker cleanup due to previous precache error');
   forceServiceWorkerUpdate();
 }
 
@@ -72,20 +78,22 @@ if (localStorage.getItem('sw_needs_cleanup') === 'true') {
 let syncManager;
 try {
   syncManager = createSyncManager(syncApiClient);
-  console.debug('Offline sync manager initialized');
+  appLogger.info('Offline sync manager initialized');
   
   // Add global sync event listener for debugging
   syncManager.addListener((event) => {
-    console.debug('Sync event:', event.type, event);
+    appLogger.debug('Sync event', { type: event.type, event });
   });
 } catch (error) {
-  console.warn('Failed to initialize sync manager:', error);
+  appLogger.warn('Failed to initialize sync manager', { error });
 }
 
 // Make sync manager globally available for debugging
 if (import.meta.env.DEV) {
   globalThis.__syncManager = syncManager;
   globalThis.__db = import('@/shared/db/database').then(m => m.db);
+  globalThis.__getLogLevel = getLogLevel;
+  globalThis.__setLogLevel = (level, persist = false) => setLogLevel(level, { persist });
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));

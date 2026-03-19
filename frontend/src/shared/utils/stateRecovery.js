@@ -10,6 +10,9 @@
  */
 
 import { sessionCache } from './sessionCache';
+import { createLogger } from './logger';
+
+const logger = createLogger('stateRecovery');
 
 class StateRecoveryService {
   constructor() {
@@ -49,7 +52,7 @@ class StateRecoveryService {
     this.startAutoSave();
     
     this.initialized = true;
-    console.debug('✅ StateRecovery initialized');
+    logger.debug('Initialized');
   }
 
   /**
@@ -72,7 +75,7 @@ class StateRecoveryService {
    * Handle page unload - save all critical state
    */
   handleBeforeUnload() {
-    console.debug('Saving state before unload...');
+    logger.debug('Saving state before unload');
     this.saveAllState({ immediate: true });
   }
 
@@ -81,10 +84,10 @@ class StateRecoveryService {
    */
   handleVisibilityChange() {
     if (document.hidden) {
-      console.debug('Tab hidden, saving state...');
+      logger.debug('Tab hidden, saving state');
       this.saveAllState({ immediate: true });
     } else {
-      console.debug('Tab visible, checking for recovery...');
+      logger.debug('Tab visible, checking for recovery');
       this.attemptRecovery();
     }
   }
@@ -93,7 +96,7 @@ class StateRecoveryService {
    * Handle going offline
    */
   handleOffline() {
-    console.debug('Going offline, saving state...');
+    logger.info('Going offline, saving state');
     this.saveAllState({ immediate: true });
     sessionCache.set('network_state', 'offline', { persist: true });
   }
@@ -102,7 +105,7 @@ class StateRecoveryService {
    * Handle coming back online
    */
   async handleOnline() {
-    console.debug('Back online, attempting recovery...');
+    logger.info('Back online, attempting recovery');
     const previousState = await sessionCache.get('network_state');
     
     if (previousState === 'offline') {
@@ -120,7 +123,7 @@ class StateRecoveryService {
    */
   registerStateProvider(key, getState, setState) {
     this.recoveryCallbacks.set(key, { getState, setState });
-    console.debug(`Registered state provider: ${key}`);
+    logger.debug('Registered state provider', { key });
   }
 
   /**
@@ -144,7 +147,7 @@ class StateRecoveryService {
       // Save immediately, bypass throttling
       await sessionCache.set(`state_${key}`, state, { persist, indexedDB, immediate: true });
       await sessionCache.set(`state_${key}_timestamp`, Date.now(), { persist, immediate: true });
-      console.debug(`Saved state: ${key}`);
+      logger.debug('Saved state', { key, immediate: true });
     } else {
       // Debounce the save
       if (this.pendingSaves.has(key)) {
@@ -155,7 +158,7 @@ class StateRecoveryService {
         await sessionCache.set(`state_${key}`, state, { persist, indexedDB });
         await sessionCache.set(`state_${key}_timestamp`, Date.now(), { persist });
         this.pendingSaves.delete(key);
-        console.debug(`Saved state (debounced): ${key}`);
+        logger.debug('Saved state', { key, immediate: false });
       }, this.autoSaveDelay);
 
       this.pendingSaves.set(key, timeoutId);
@@ -174,7 +177,7 @@ class StateRecoveryService {
     
     if (state && timestamp) {
       const age = Date.now() - timestamp;
-      console.debug(`Recovered state: ${key} (age: ${Math.round(age / 1000)}s)`);
+      logger.debug('Recovered state', { key, ageSeconds: Math.round(age / 1000) });
       return state;
     }
     
@@ -195,7 +198,7 @@ class StateRecoveryService {
           promises.push(this.saveState(key, state, options));
         }
       } catch (error) {
-        console.error(`Error saving state for ${key}:`, error);
+        logger.error('Error saving state', { key, error });
       }
     }
     
@@ -216,15 +219,15 @@ class StateRecoveryService {
           // Call the setState function to restore the state
           provider.setState(state);
           recoveredStates.push(key);
-          console.debug(`Recovered state: ${key}`);
+          logger.debug('Recovered provider state', { key });
         }
       } catch (error) {
-        console.error(`Error recovering state for ${key}:`, error);
+        logger.error('Error recovering state', { key, error });
       }
     }
     
     if (recoveredStates.length > 0) {
-      console.debug(`Recovery complete: ${recoveredStates.join(', ')}`);
+      logger.info('Recovery complete', { recoveredStates });
       
       // Notify about recovery
       await sessionCache.set('last_recovery', {
@@ -279,7 +282,7 @@ class StateRecoveryService {
       }
     }
     
-    console.debug('Recovery state cleared');
+    logger.info('Recovery state cleared', { keys: keys || 'all' });
   }
 
   /**
@@ -323,7 +326,7 @@ class StateRecoveryService {
       try {
         snapshot.states[key] = provider.getState();
       } catch (error) {
-        console.error(`Error creating snapshot for ${key}:`, error);
+        logger.error('Error creating snapshot', { key, error });
       }
     }
     
@@ -336,7 +339,7 @@ class StateRecoveryService {
    */
   async restoreSnapshot(snapshot) {
     if (!snapshot || !snapshot.states) {
-      console.warn('Invalid snapshot');
+      logger.warn('Invalid snapshot payload');
       return;
     }
     
@@ -350,12 +353,12 @@ class StateRecoveryService {
           provider.setState(state);
           restored.push(key);
         } catch (error) {
-          console.error(`Error restoring ${key}:`, error);
+          logger.error('Error restoring snapshot state', { key, error });
         }
       }
     }
     
-    console.debug(`Restored snapshot: ${restored.join(', ')}`);
+    logger.info('Restored snapshot', { restored });
     return restored;
   }
 

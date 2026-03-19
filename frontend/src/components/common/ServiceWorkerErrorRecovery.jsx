@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createLogger } from '@/shared/utils/logger';
+
+const logger = createLogger('serviceWorkerErrorRecovery');
 
 /**
  * ServiceWorkerErrorRecovery Component
@@ -31,7 +34,10 @@ export default function ServiceWorkerErrorRecovery() {
       );
 
       if (isPrecacheError) {
-        console.warn('Service worker precaching error detected');
+        logger.warn('Service worker precaching error detected', {
+          errorName: error?.name,
+          errorMessage: error?.message || error,
+        });
         event.preventDefault?.(); // Prevent error propagation
         
         // Mark that we need recovery
@@ -49,6 +55,7 @@ export default function ServiceWorkerErrorRecovery() {
     console.error = function(...args) {
       const message = args.join(' ');
       if (message.includes('bad-precaching-response') || message.includes('workbox')) {
+        logger.warn('Detected service worker error via console interception', { message });
         localStorage.setItem('sw_precache_error', 'true');
         setShowRecovery(true);
       }
@@ -69,7 +76,7 @@ export default function ServiceWorkerErrorRecovery() {
       // Unregister all service workers
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        console.log(`Unregistering ${registrations.length} service worker(s)...`);
+        logger.info('Unregistering service workers', { count: registrations.length });
         
         await Promise.all(
           registrations.map(registration => registration.unregister())
@@ -78,7 +85,7 @@ export default function ServiceWorkerErrorRecovery() {
 
       // Clear all caches
       const cacheNames = await caches.keys();
-      console.log(`Clearing ${cacheNames.length} cache(s)...`);
+      logger.info('Clearing caches during recovery', { count: cacheNames.length });
       await Promise.all(
         cacheNames.map(cacheName => caches.delete(cacheName))
       );
@@ -87,12 +94,12 @@ export default function ServiceWorkerErrorRecovery() {
       localStorage.removeItem('sw_precache_error');
       localStorage.removeItem('sw_needs_cleanup');
       
-      console.log('Service worker recovery complete - reloading...');
+      logger.info('Service worker recovery complete, reloading');
       
       // Force a hard reload
       globalThis.location.reload(true);
     } catch (error) {
-      console.error('Recovery failed:', error);
+      logger.error('Service worker recovery failed', { error });
       // Still try to reload
       globalThis.location.reload(true);
     }

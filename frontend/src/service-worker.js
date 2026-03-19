@@ -3,15 +3,33 @@ const CACHE_NAME = "keep-wiz-v1.17.2"
 const SW_VERSION = "1.11.0" // Separate version for easier tracking
 const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png"]
 
+const logPrefix = '[KeepWiz][serviceWorker:legacy]';
+const swLogger = {
+  debug(message, meta) {
+    if (meta !== undefined) {
+      console.debug(`${logPrefix} ${message}`, meta);
+      return;
+    }
+    console.debug(`${logPrefix} ${message}`);
+  },
+  info(message, meta) {
+    if (meta !== undefined) {
+      console.info(`${logPrefix} ${message}`, meta);
+      return;
+    }
+    console.info(`${logPrefix} ${message}`);
+  },
+};
+
 // Install event - cache assets
 self.addEventListener("install", (event) => {
-  console.debug(`[SW] Installing version ${SW_VERSION}`);
+  swLogger.debug('Installing service worker', { version: SW_VERSION });
   // Skip waiting to activate immediately
   self.skipWaiting();
   
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.debug(`[SW] Opened cache: ${CACHE_NAME}`)
+      swLogger.debug('Opened cache', { cacheName: CACHE_NAME })
       return cache.addAll(urlsToCache)
     }),
   )
@@ -52,16 +70,16 @@ self.addEventListener("fetch", (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
-  console.debug(`[SW] Activating version ${SW_VERSION}`);
+  swLogger.info('Activating service worker', { version: SW_VERSION });
   // Take control of all clients immediately
   event.waitUntil(
     clients.claim().then(() => {
-      console.debug(`[SW] Claimed all clients for version ${SW_VERSION}`);
+      swLogger.info('Claimed all clients', { version: SW_VERSION });
       const cacheWhitelist = [CACHE_NAME];
       return caches.keys().then((cacheNames) => {
         const deletePromises = cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.debug(`[SW] Deleting old cache: ${cacheName}`);
+            swLogger.debug('Deleting old cache', { cacheName });
             return caches.delete(cacheName)
           }
         });
@@ -69,7 +87,7 @@ self.addEventListener("activate", (event) => {
       }).then(() => {
         // Notify all clients that a new version is active
         return self.clients.matchAll().then(clients => {
-          console.debug(`[SW] Notifying ${clients.length} client(s) of activation`);
+          swLogger.debug('Notifying clients of activation', { clientCount: clients.length, version: SW_VERSION });
           clients.forEach(client => {
             client.postMessage({
               type: 'SW_ACTIVATED',
@@ -85,7 +103,7 @@ self.addEventListener("activate", (event) => {
 
 // Message handler for version checks and skip waiting
 self.addEventListener('message', (event) => {
-  console.debug('Service worker received message:', event.data);
+  swLogger.debug('Received message', { data: event.data });
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
