@@ -4,7 +4,7 @@ import { useEffect, lazy, Suspense, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { AuthProtectedRoute, UpdateNotification } from "@/components/common"
+import { AuthProtectedRoute, UpdateNotification, SeoRouteMeta } from "@/components/common"
 import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
@@ -244,6 +244,7 @@ function App() {
               <ServiceWorkerErrorRecovery />
               <GameStateProvider>
                 <URLImportHandler />
+                <SeoRouteMeta />
                 <Navbar />
                 <div className="main-container">
                 <LazyLoadErrorBoundary>
