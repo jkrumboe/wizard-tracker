@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UsersIcon, PlayIcon, TrophyIcon } from '@/components/ui/Icon';
 import { LocalTableGameStorage } from '@/shared/api';
+import { LocalScoreboardGameStorage } from '@/shared/api';
 import SwipeableGameCard from '@/components/common/SwipeableGameCard';
 import GameHistoryModal from '@/components/modals/GameHistoryModal';
 
@@ -11,6 +12,7 @@ const LoadTableGameDialog = ({
   onLoadGame,
   onDeleteGame,
   filterByGameName = null, // Optional filter by game name/type
+  storageType = 'table',
   initialStatusFilter = 'all'
 }) => {
   const { t } = useTranslation();
@@ -18,12 +20,13 @@ const LoadTableGameDialog = ({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const activeStorage = storageType === 'scoreboard' ? LocalScoreboardGameStorage : LocalTableGameStorage;
 
   useEffect(() => {
     const loadSavedGames = async () => {
       setLoading(true);
       try {
-        let games = LocalTableGameStorage.getSavedTableGamesList();
+        let games = activeStorage.getSavedTableGamesList();
 
         // Filter by game name if provided
         if (filterByGameName) {
@@ -65,17 +68,17 @@ const LoadTableGameDialog = ({
       setStatusFilter(initialStatusFilter);
       loadSavedGames();
     }
-  }, [isOpen, filterByGameName, initialStatusFilter]);
+  }, [isOpen, filterByGameName, initialStatusFilter, activeStorage]);
 
   const handleLoadGame = async (gameId) => {
     setLoading(true);
     try {
       // Get the full saved game object first to get the name
-      const games = LocalTableGameStorage.getAllSavedTableGames();
+      const games = activeStorage.getAllSavedTableGames();
       const savedGame = games[gameId];
 
       if (savedGame) {
-        const gameData = LocalTableGameStorage.loadTableGame(gameId);
+        const gameData = activeStorage.loadTableGame(gameId);
         if (gameData) {
           // Pass gameData with metadata from the saved game object
           // The gameFinished flag can be in either gameData or the savedGame object
@@ -98,9 +101,9 @@ const LoadTableGameDialog = ({
   const handleDeleteGame = async (gameId, gameName) => {
     if (globalThis.confirm(t('loadTableGame.deleteConfirm', { name: gameName }))) {
       try {
-        LocalTableGameStorage.deleteTableGame(gameId);
+        activeStorage.deleteTableGame(gameId);
         // Refresh the list with the current filter
-        let games = LocalTableGameStorage.getSavedTableGamesList();
+        let games = activeStorage.getSavedTableGamesList();
 
         // Re-apply filter if it exists
         if (filterByGameName) {

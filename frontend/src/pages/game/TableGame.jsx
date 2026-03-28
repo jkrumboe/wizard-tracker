@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import PropTypes from 'prop-types';
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
-import { LocalTableGameStorage } from "../../shared/api";
+import { LocalTableGameStorage, LocalScoreboardGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
 import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
@@ -10,6 +11,7 @@ import StatsChart from "../../components/game/StatsChart";
 import { AdvancedStats } from "../../components/game";
 import { generateSecureId } from "../../shared/utils/secureRandom";
 import { useTranslation } from "react-i18next";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import "../../styles/components/TableGame.css";
 import "../../styles/pages/gameInProgress.css";
 import "../../styles/components/statsChart.css";
@@ -17,11 +19,16 @@ import "../../styles/components/scorecard.css";
 
 const MIN_PLAYERS = 2;
 
-const TableGame = () => {
+const TableGame = ({ forceScoreEntryMode = null }) => {
   const { user } = useUser(); // Get the logged-in user
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const isDedicatedScoreboardPage = forceScoreEntryMode === 'twoSideGesture' || location.pathname.startsWith('/scoreboard/');
+  const activeStorage = isDedicatedScoreboardPage ? LocalScoreboardGameStorage : LocalTableGameStorage;
+  const currentGameIdSessionKey = isDedicatedScoreboardPage ? 'currentScoreboardGameId' : 'currentTableGameId';
+  const currentGameStateSessionKey = isDedicatedScoreboardPage ? 'currentScoreboardGameState' : 'currentTableGameState';
   
   const [rows, setRows] = useState(() => {
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
@@ -40,6 +47,11 @@ const TableGame = () => {
   // Game settings
   const [targetNumber, setTargetNumber] = useState(null);
   const [lowIsBetter, setLowIsBetter] = useState(false);
+  const [scoreEntryMode, setScoreEntryMode] = useState(null);
+  const [setTargets, setSetTargets] = useState({});
+  const [pointHistoryBySet, setPointHistoryBySet] = useState({});
+  const [teamMembers, setTeamMembers] = useState([[], []]);
+  const [gestureFeedback, setGestureFeedback] = useState({});
   const [gameFinished, setGameFinished] = useState(false);
   const [isCloudGame, setIsCloudGame] = useState(false);
   const [_isLoadingGame, setIsLoadingGame] = useState(false);
@@ -47,6 +59,13 @@ const TableGame = () => {
   
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
+    if (isDedicatedScoreboardPage) {
+      return [
+        { id: 'team-1', name: t('startTableGame.teamOne'), points: [] },
+        { id: 'team-2', name: t('startTableGame.teamTwo'), points: [] },
+      ];
+    }
+
     const firstPlayerName = user?.username || user?.name || "Player 1";
     const firstPlayerId = user?.id || user?.$id || generateSecureId('player');
     return [
@@ -58,10 +77,13 @@ const TableGame = () => {
   
   const [players, setPlayers] = useState(getDefaultPlayers());
   const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
-  const [currentGameName, setCurrentGameName] = useState("");
+  const [currentGameName, setCurrentGameName] = useState(
+    isDedicatedScoreboardPage ? 'Volleyball Scoreboard' : ""
+  );
   const [currentGameId, setCurrentGameId] = useState(() => {
-    // Initialize from sessionStorage to survive HMR reloads
-    return sessionStorage.getItem('currentTableGameId') || null;
+    // Prefer route ID on direct loads/refresh, fallback to session state for HMR restores
+    if (id) return id;
+    return sessionStorage.getItem(currentGameIdSessionKey) || null;
   });
 
   // Refs to store current values for auto-save on unmount
@@ -73,16 +95,24 @@ const TableGame = () => {
   const showTemplateSelectorRef = useRef(showTemplateSelector);
   const targetNumberRef = useRef(targetNumber);
   const lowIsBetterRef = useRef(lowIsBetter);
+  const scoreEntryModeRef = useRef(scoreEntryMode);
+  const setTargetsRef = useRef(setTargets);
+  const pointHistoryBySetRef = useRef(pointHistoryBySet);
+  const teamMembersRef = useRef(teamMembers);
   const gameFinishedRef = useRef(gameFinished);
+  const touchStateRef = useRef({});
+  const feedbackTimeoutRef = useRef({});
+  const lastTouchTimestampRef = useRef({});
+  const loadedRouteGameIdRef = useRef(null);
 
   // Persist game ID to sessionStorage whenever it changes
   useEffect(() => {
     if (currentGameId) {
-      sessionStorage.setItem('currentTableGameId', currentGameId);
+      sessionStorage.setItem(currentGameIdSessionKey, currentGameId);
     } else {
-      sessionStorage.removeItem('currentTableGameId');
+      sessionStorage.removeItem(currentGameIdSessionKey);
     }
-  }, [currentGameId]);
+  }, [currentGameId, currentGameIdSessionKey]);
 
   // Persist game state to sessionStorage to survive HMR reloads
   useEffect(() => {
@@ -95,23 +125,34 @@ const TableGame = () => {
         currentGameId,
         targetNumber,
         lowIsBetter,
+        scoreEntryMode,
+        setTargets,
+        pointHistoryBySet,
+        teamMembers,
         gameFinished
       };
-      sessionStorage.setItem('currentTableGameState', JSON.stringify(gameState));
+      sessionStorage.setItem(currentGameStateSessionKey, JSON.stringify(gameState));
     }
-  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
+  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished, currentGameStateSessionKey]);
 
   // Restore game state from sessionStorage on mount (after HMR)
   useEffect(() => {
-    const savedState = sessionStorage.getItem('currentTableGameState');
+    const savedState = sessionStorage.getItem(currentGameStateSessionKey);
     
     // Only restore if:
     // 1. We have saved state
     // 2. We're on the template selector
     // 3. There's NO gameId in URL (meaning this is HMR restore, not a fresh navigation)
-    if (savedState && showTemplateSelector && !id) {
+    if (savedState) {
       try {
         const gameState = JSON.parse(savedState);
+        const isTemplateRestore = showTemplateSelector && !id;
+        const isRouteRestore = Boolean(id) && gameState.currentGameId === id;
+
+        if (!isTemplateRestore && !isRouteRestore) {
+          return;
+        }
+
         // Only restore if we have valid data
         if (gameState.currentGameId && gameState.players) {
           setPlayers(gameState.players);
@@ -134,6 +175,10 @@ const TableGame = () => {
           setCurrentGameId(gameState.currentGameId);
           setTargetNumber(gameState.targetNumber || null);
           setLowIsBetter(gameState.lowIsBetter || false);
+          setScoreEntryMode(gameState.scoreEntryMode || null);
+          setSetTargets(gameState.setTargets || {});
+          setPointHistoryBySet(gameState.pointHistoryBySet || {});
+          setTeamMembers(gameState.teamMembers || [[], []]);
           setGameFinished(gameState.gameFinished || false);
           setShowTemplateSelector(false);
           setActiveTab('game'); // Always start at game view
@@ -143,25 +188,47 @@ const TableGame = () => {
         console.error('Failed to restore game state:', error);
       }
     }
-  }, [id, showTemplateSelector]); // Dependencies for restoration logic
+  }, [id, showTemplateSelector, currentGameStateSessionKey]); // Dependencies for restoration logic
 
   // Check for gameId in URL parameters and load that game
   useEffect(() => {
     const loadGame = async () => {
       if (id) {
-        // Only load if we're currently showing the template selector AND don't have this game loaded already
-        if (showTemplateSelector || currentGameId !== id) {
+        // Always hydrate once per route ID, even if session state currently matches,
+        // so refreshes reliably restore persisted scores.
+        const isFirstHydrationForRoute = loadedRouteGameIdRef.current !== id;
+
+        if (isFirstHydrationForRoute || showTemplateSelector || currentGameId !== id) {
           setIsLoadingGame(true);
           setLoadError(null);
           
           try {
             // Try to load the game - this will check local first, then cloud
-            const savedGame = await getTableGameById(id);
+            let savedGame = null;
+
+            if (isDedicatedScoreboardPage) {
+              const localScoreboardGame = activeStorage.getTableGameById(id);
+              if (localScoreboardGame) {
+                savedGame = { ...localScoreboardGame, is_local: true };
+              }
+            }
+
+            if (!savedGame && !id.startsWith('scoreboard_game')) {
+              savedGame = await getTableGameById(id);
+            }
           
           if (savedGame) {
             const gameData = savedGame.gameData || savedGame;
             const isFinished = savedGame.gameFinished || gameData.gameFinished || false;
             const isCloud = savedGame.is_cloud || false;
+
+            if (
+              (gameData.scoreEntryMode === 'twoSideGesture' || gameData.gameType === 'scoreboard') &&
+              location.pathname.startsWith('/table/')
+            ) {
+              navigate(`/scoreboard/${id}`, { replace: true });
+              return;
+            }
             
             // Redirect to TableGameDetails for finished or cloud games
             if (isFinished || isCloud) {
@@ -178,6 +245,13 @@ const TableGame = () => {
             
             // Set all the state to display the game
             setPlayers(loadedPlayers);
+            const loadedTeamMembers = Array.isArray(gameData.teamMembers)
+              ? gameData.teamMembers
+              : [
+                  loadedPlayers.length > 0 ? [{ id: loadedPlayers[0].id, name: loadedPlayers[0].name }] : [],
+                  loadedPlayers.length > 1 ? [{ id: loadedPlayers[1].id, name: loadedPlayers[1].name }] : [],
+                ];
+            setTeamMembers(loadedTeamMembers);
             setRows(gameData.rows || 10);
             setShowTemplateSelector(false);
             setIsCloudGame(false);
@@ -207,13 +281,18 @@ const TableGame = () => {
             // This prevents altered local variants from overriding games created with system templates
             setTargetNumber(gameData.targetNumber || null);
             setLowIsBetter(gameData.lowIsBetter || false);
+            setScoreEntryMode(forceScoreEntryMode || gameData.scoreEntryMode || (gameData.gameType === 'scoreboard' ? 'twoSideGesture' : null));
+            setSetTargets(gameData.setTargets || {});
+            setPointHistoryBySet(gameData.pointHistoryBySet || {});
             console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
             
             setGameFinished(false);
+            loadedRouteGameIdRef.current = id;
             console.debug(`Loaded local game: "${savedGame.name || gameData.gameName}" (ID: ${id}), players: ${loadedPlayers.length}, rows: ${gameData.rows || 10}, round: ${restoredRound}`);
           } else {
             console.error(`Game with ID ${id} not found in storage or cloud`);
             setLoadError(t('tableGame.gameNotFound'));
+            setCurrentGameId(null);
           }
           } catch (error) {
             console.error('Error loading game:', error);
@@ -229,7 +308,7 @@ const TableGame = () => {
     };
     
     loadGame();
-  }, [id, showTemplateSelector, currentGameId, navigate, t]);
+  }, [id, showTemplateSelector, currentGameId, navigate, t, location.pathname, forceScoreEntryMode, isDedicatedScoreboardPage, activeStorage]);
 
   // Listen for orientation changes
   useEffect(() => {
@@ -269,8 +348,12 @@ const TableGame = () => {
     showTemplateSelectorRef.current = showTemplateSelector;
     targetNumberRef.current = targetNumber;
     lowIsBetterRef.current = lowIsBetter;
+    scoreEntryModeRef.current = scoreEntryMode;
+    setTargetsRef.current = setTargets;
+    pointHistoryBySetRef.current = pointHistoryBySet;
+    teamMembersRef.current = teamMembers;
     gameFinishedRef.current = gameFinished;
-  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished]);
+  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished]);
 
   // Note: We intentionally removed the template sync useEffect that was here.
   // It was causing issues where altered local variants would override settings
@@ -313,6 +396,10 @@ const TableGame = () => {
             timestamp: new Date().toISOString(),
             targetNumber: targetNumber,
             lowIsBetter: lowIsBetter,
+            scoreEntryMode: scoreEntryMode,
+            setTargets: setTargets,
+            pointHistoryBySet: pointHistoryBySet,
+            teamMembers: teamMembers,
             gameFinished: gameFinished,
             gameName: currentGameName
           };
@@ -321,16 +408,19 @@ const TableGame = () => {
           
           // If no game ID, create a new save
           if (!currentGameId) {
-            const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+            const newGameId = activeStorage.saveTableGame(gameData, name);
             setCurrentGameId(newGameId);
             console.debug(`💾 Created initial save: "${name}" (ID: ${newGameId})`);
-          } else if (LocalTableGameStorage.tableGameExists(currentGameId)) {
-            LocalTableGameStorage.updateTableGame(currentGameId, {
+          } else if (activeStorage.tableGameExists(currentGameId)) {
+            activeStorage.updateTableGame(currentGameId, {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
               name: name,
               targetNumber: targetNumber,
               lowIsBetter: lowIsBetter,
+              scoreEntryMode: scoreEntryMode,
+              setTargets: setTargets,
+              pointHistoryBySet: pointHistoryBySet,
               gameFinished: gameFinished
             });
             console.debug(`💾 Periodic auto-save: "${name}" (ID: ${currentGameId}, finished: ${gameFinished})`);
@@ -342,7 +432,7 @@ const TableGame = () => {
     }, 5000); // Save every 5 seconds
     
     return () => clearInterval(autoSaveInterval);
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, gameFinished, t]);
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished, t, activeStorage]);
 
   // Auto-save game when navigating away or closing tab
   useEffect(() => {
@@ -359,6 +449,10 @@ const TableGame = () => {
       const isShowingTemplateSelector = showTemplateSelectorRef.current;
       const currentTargetNumber = targetNumberRef.current;
       const currentLowIsBetter = lowIsBetterRef.current;
+      const currentScoreEntryMode = scoreEntryModeRef.current;
+      const currentSetTargets = setTargetsRef.current;
+      const currentPointHistoryBySet = pointHistoryBySetRef.current;
+      const currentTeamMembers = teamMembersRef.current;
       const currentGameFinished = gameFinishedRef.current;
       
       console.debug('💾 Silent save on unmount:', {
@@ -376,6 +470,10 @@ const TableGame = () => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
+            scoreEntryMode: currentScoreEntryMode,
+            setTargets: currentSetTargets,
+            pointHistoryBySet: currentPointHistoryBySet,
+            teamMembers: currentTeamMembers,
             gameFinished: currentGameFinished,
             gameName: currentName
           };
@@ -384,16 +482,19 @@ const TableGame = () => {
           
           // If no game ID, create a new save
           if (!currentId) {
-            const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+            const newGameId = activeStorage.saveTableGame(gameData, name);
             console.debug(`✅ Created save on navigation: "${name}" (ID: ${newGameId})`);
-          } else if (LocalTableGameStorage.tableGameExists(currentId)) {
+          } else if (activeStorage.tableGameExists(currentId)) {
             // Update the existing game
-            LocalTableGameStorage.updateTableGame(currentId, {
+            activeStorage.updateTableGame(currentId, {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
               name: name,
               targetNumber: currentTargetNumber,
               lowIsBetter: currentLowIsBetter,
+              scoreEntryMode: currentScoreEntryMode,
+              setTargets: currentSetTargets,
+              pointHistoryBySet: currentPointHistoryBySet,
               gameFinished: currentGameFinished
             });
             console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId}, finished: ${currentGameFinished})`);
@@ -403,7 +504,7 @@ const TableGame = () => {
         }
       }
     };
-  }, [t]); // Empty dependency array - only set up once
+  }, [t, activeStorage]);
 
   // Auto-save on browser close/refresh
   useEffect(() => {
@@ -415,6 +516,10 @@ const TableGame = () => {
       const isShowingTemplateSelector = showTemplateSelectorRef.current;
       const currentTargetNumber = targetNumberRef.current;
       const currentLowIsBetter = lowIsBetterRef.current;
+      const currentScoreEntryMode = scoreEntryModeRef.current;
+      const currentSetTargets = setTargetsRef.current;
+      const currentPointHistoryBySet = pointHistoryBySetRef.current;
+      const currentTeamMembers = teamMembersRef.current;
       const currentGameFinished = gameFinishedRef.current;
       
       console.debug('💾 Silent save on browser close:', {
@@ -431,6 +536,10 @@ const TableGame = () => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
+            scoreEntryMode: currentScoreEntryMode,
+            setTargets: currentSetTargets,
+            pointHistoryBySet: currentPointHistoryBySet,
+            teamMembers: currentTeamMembers,
             gameFinished: currentGameFinished,
             gameName: currentName
           };
@@ -439,16 +548,19 @@ const TableGame = () => {
           
           // If no game ID, create a new save
           if (!currentId) {
-            const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+            const newGameId = activeStorage.saveTableGame(gameData, name);
             console.debug(`✅ Created save on browser close: "${name}" (ID: ${newGameId})`);
-          } else if (LocalTableGameStorage.tableGameExists(currentId)) {
+          } else if (activeStorage.tableGameExists(currentId)) {
             // Update the existing game
-            LocalTableGameStorage.updateTableGame(currentId, {
+            activeStorage.updateTableGame(currentId, {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
               name: name,
               targetNumber: currentTargetNumber,
               lowIsBetter: currentLowIsBetter,
+              scoreEntryMode: currentScoreEntryMode,
+              setTargets: currentSetTargets,
+              pointHistoryBySet: currentPointHistoryBySet,
               gameFinished: currentGameFinished
             });
             console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId}, finished: ${currentGameFinished})`);
@@ -464,7 +576,18 @@ const TableGame = () => {
     return () => {
       globalThis.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [t]); // Empty dependency array - set up once
+  }, [t, activeStorage]);
+
+  useEffect(() => {
+    const feedbackTimeouts = feedbackTimeoutRef.current;
+    return () => {
+      Object.values(feedbackTimeouts).forEach((timeoutId) => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      });
+    };
+  }, []);
 
   const handleNameChange = (idx, value) => {
     const updated = [...players];
@@ -550,6 +673,234 @@ const TableGame = () => {
     return player.points.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0);
   };
 
+  const isTwoSideScoreboard = (
+    forceScoreEntryMode === 'twoSideGesture'
+    || scoreEntryMode === 'twoSideGesture'
+    || isDedicatedScoreboardPage
+  ) && players.length === 2;
+
+  const clearGestureFeedbackTimeout = (playerIdx) => {
+    if (feedbackTimeoutRef.current[playerIdx]) {
+      clearTimeout(feedbackTimeoutRef.current[playerIdx]);
+      delete feedbackTimeoutRef.current[playerIdx];
+    }
+  };
+
+  const getGestureFeedbackLabel = (type) => {
+    if (type === 'up') return '↑ +1';
+    if (type === 'down') return '↓ -1';
+    if (type === 'swipe-up') return '↑';
+    if (type === 'swipe-down') return '↓';
+    return '+1';
+  };
+
+  const showGestureFeedback = (playerIdx, type) => {
+    setGestureFeedback((prev) => ({ ...prev, [playerIdx]: type }));
+    clearGestureFeedbackTimeout(playerIdx);
+    feedbackTimeoutRef.current[playerIdx] = setTimeout(() => {
+      setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
+    }, 420);
+  };
+
+  const updatePointHistoryForScoreChange = (roundNumber, playerIdx, delta) => {
+    if (!isTwoSideScoreboard || delta === 0) {
+      return;
+    }
+
+    setPointHistoryBySet((prev) => {
+      const roundKey = String(roundNumber);
+      const history = Array.isArray(prev[roundKey]) ? [...prev[roundKey]] : [];
+
+      if (delta > 0) {
+        for (let i = 0; i < delta; i += 1) {
+          history.push(playerIdx);
+        }
+      } else {
+        let removals = Math.abs(delta);
+        for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
+          if (history[i] === playerIdx) {
+            history.splice(i, 1);
+            removals -= 1;
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        [roundKey]: history,
+      };
+    });
+  };
+
+  const updatePlayerLiveScore = (playerIdx, delta) => {
+    if (gameFinished || playerIdx < 0 || playerIdx >= players.length) {
+      return;
+    }
+
+    const updated = [...players];
+    const roundIndex = currentRound - 1;
+    const currentValue = Number.parseInt(updated[playerIdx].points[roundIndex], 10) || 0;
+    const nextValue = Math.max(0, currentValue + delta);
+    updated[playerIdx].points[roundIndex] = nextValue;
+    setPlayers(updated);
+
+    const actualDelta = nextValue - currentValue;
+    updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);
+  };
+
+  const setPlayerLiveScore = (playerIdx, newScore) => {
+    if (gameFinished || playerIdx < 0 || playerIdx >= players.length) {
+      return;
+    }
+
+    const parsedValue = Number.parseInt(newScore, 10);
+    const updated = [...players];
+    const roundIndex = currentRound - 1;
+    const currentValue = Number.parseInt(updated[playerIdx].points[roundIndex], 10) || 0;
+    const nextValue = Number.isNaN(parsedValue) ? 0 : Math.max(0, parsedValue);
+    updated[playerIdx].points[roundIndex] = nextValue;
+    setPlayers(updated);
+
+    const actualDelta = nextValue - currentValue;
+    updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);
+  };
+
+  const getLiveScore = (playerIdx) => {
+    const roundIndex = currentRound - 1;
+    return Number.parseInt(players[playerIdx]?.points?.[roundIndex], 10) || 0;
+  };
+
+  const getDefaultSetTarget = () => {
+    if (isTwoSideScoreboard && currentRound === 5) {
+      return 15;
+    }
+    return targetNumber || 25;
+  };
+
+  const getSetTarget = () => {
+    const explicitSetTarget = setTargets[currentRound];
+    if (explicitSetTarget && Number.isFinite(explicitSetTarget)) {
+      return explicitSetTarget;
+    }
+    return getDefaultSetTarget();
+  };
+
+  const isCurrentSetWon = () => {
+    if (!isTwoSideScoreboard || players.length < 2) {
+      return false;
+    }
+
+    const teamOneScore = getLiveScore(0);
+    const teamTwoScore = getLiveScore(1);
+    const scoreTarget = getSetTarget();
+    const scoreDiff = Math.abs(teamOneScore - teamTwoScore);
+
+    return (teamOneScore >= scoreTarget || teamTwoScore >= scoreTarget) && scoreDiff >= 2;
+  };
+
+  const handleScoreTouchStart = (playerIdx, event) => {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    clearGestureFeedbackTimeout(playerIdx);
+    setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
+
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    touchStateRef.current[playerIdx] = {
+      startY: touch.clientY,
+      moved: false,
+      preview: null,
+    };
+  };
+
+  const handleScoreTouchMove = (playerIdx, event) => {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    const state = touchStateRef.current[playerIdx];
+    const touch = event.touches?.[0];
+    if (!state || !touch) return;
+
+    const deltaY = touch.clientY - state.startY;
+    const threshold = 30;
+    let preview = null;
+
+    if (deltaY <= -threshold) {
+      preview = 'swipe-up';
+    } else if (deltaY >= threshold) {
+      preview = 'swipe-down';
+    }
+
+    if (state.preview !== preview) {
+      state.preview = preview;
+      setGestureFeedback((prev) => ({ ...prev, [playerIdx]: preview }));
+    }
+
+    if (Math.abs(deltaY) > 12) {
+      state.moved = true;
+    }
+  };
+
+  const handleScoreTouchEnd = (playerIdx, event) => {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    const state = touchStateRef.current[playerIdx];
+    const touch = event.changedTouches?.[0];
+    if (!state || !touch) return;
+
+    const deltaY = touch.clientY - state.startY;
+    const threshold = 30;
+
+    if (deltaY <= -threshold) {
+      updatePlayerLiveScore(playerIdx, 1);
+      showGestureFeedback(playerIdx, 'up');
+    } else if (deltaY >= threshold) {
+      updatePlayerLiveScore(playerIdx, -1);
+      showGestureFeedback(playerIdx, 'down');
+    } else if (!state.moved) {
+      updatePlayerLiveScore(playerIdx, 1);
+      showGestureFeedback(playerIdx, 'tap');
+    }
+
+    lastTouchTimestampRef.current[playerIdx] = Date.now();
+    delete touchStateRef.current[playerIdx];
+  };
+
+  const handleScoreCardClick = (playerIdx) => {
+    const lastTouchAt = lastTouchTimestampRef.current[playerIdx] || 0;
+    if (Date.now() - lastTouchAt < 500) {
+      return;
+    }
+
+    updatePlayerLiveScore(playerIdx, 1);
+    showGestureFeedback(playerIdx, 'tap');
+  };
+
+  const toggleCurrentSetTarget = () => {
+    if (!isTwoSideScoreboard) return;
+
+    const defaultTarget = getDefaultSetTarget();
+    const currentTarget = getSetTarget();
+    const nextTarget = currentTarget === 15 ? 25 : 15;
+
+    setSetTargets((prev) => {
+      const next = { ...prev };
+
+      if (nextTarget === defaultTarget) {
+        delete next[currentRound];
+      } else {
+        next[currentRound] = nextTarget;
+      }
+
+      return next;
+    });
+  };
+
   // Calculate comprehensive game statistics for all players
   const calculateDetailedGameStats = () => {
     return players.map((player, playerIndex) => {
@@ -583,10 +934,53 @@ const TableGame = () => {
 
   const detailedStats = calculateDetailedGameStats();
 
+  const getCurrentSetPointHistory = () => {
+    const roundKey = String(currentRound);
+    return Array.isArray(pointHistoryBySet[roundKey]) ? pointHistoryBySet[roundKey] : [];
+  };
+
+  const buildScoreProgressionSeries = (history) => {
+    const points = [{ pointNumber: 0, teamOne: 0, teamTwo: 0 }];
+    let teamOne = 0;
+    let teamTwo = 0;
+
+    history.forEach((scorer, index) => {
+      if (scorer === 0) {
+        teamOne += 1;
+      } else if (scorer === 1) {
+        teamTwo += 1;
+      }
+
+      points.push({
+        pointNumber: index + 1,
+        teamOne,
+        teamTwo,
+      });
+    });
+
+    return points;
+  };
+
+  const currentSetPointHistory = isTwoSideScoreboard ? getCurrentSetPointHistory() : [];
+  const scoreProgressionSeries = isTwoSideScoreboard ? buildScoreProgressionSeries(currentSetPointHistory) : [];
+  const progressionMaxScore = scoreProgressionSeries.reduce((max, point) => Math.max(max, point.teamOne, point.teamTwo), 0);
+  const progressionTickStep = progressionMaxScore <= 6 ? 1 : (progressionMaxScore <= 12 ? 2 : 5);
+  const progressionAxisTop = Math.max(3, Math.ceil(Math.max(1, progressionMaxScore) / progressionTickStep) * progressionTickStep);
+  const progressionYAxisTicks = Array.from(
+    { length: Math.floor(progressionAxisTop / progressionTickStep) + 1 },
+    (_, idx) => idx * progressionTickStep,
+  );
+
   // Check if any player has reached or exceeded the target
   const hasReachedTarget = () => {
     // No target set or game already finished
-    if (!targetNumber || gameFinished) return false;
+    if (gameFinished) return false;
+
+    if (isTwoSideScoreboard) {
+      return isCurrentSetWon();
+    }
+
+    if (!targetNumber) return false;
     
     return players.some(player => {
       const total = getTotal(player);
@@ -664,6 +1058,10 @@ const TableGame = () => {
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
+        scoreEntryMode: scoreEntryMode,
+        setTargets: setTargets,
+        pointHistoryBySet: pointHistoryBySet,
+        teamMembers: teamMembers,
         gameFinished: true, // Explicitly set to true
         gameName: currentGameName,
         winner_ids: winnerIds || [], // Array to handle ties
@@ -674,13 +1072,16 @@ const TableGame = () => {
       const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
       let savedGameId = currentGameId;
       
-      if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
-        LocalTableGameStorage.updateTableGame(currentGameId, {
+      if (currentGameId && activeStorage.tableGameExists(currentGameId)) {
+        activeStorage.updateTableGame(currentGameId, {
           gameData: gameData,
           lastPlayed: new Date().toISOString(),
           name: name,
           targetNumber: targetNumber,
           lowIsBetter: lowIsBetter,
+          scoreEntryMode: scoreEntryMode,
+          setTargets: setTargets,
+          pointHistoryBySet: pointHistoryBySet,
           gameFinished: true,
           totalRounds: actualUsedRows,
           playerCount: trimmedPlayers.length,
@@ -690,7 +1091,7 @@ const TableGame = () => {
         });
         console.debug(`Game finished and saved: "${name}" (ID: ${currentGameId}, actual rounds: ${actualUsedRows})`);
       } else {
-        const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+        const newGameId = activeStorage.saveTableGame(gameData, name);
         setCurrentGameId(newGameId);
         savedGameId = newGameId;
         console.debug(`Game finished and saved as new: "${name}" (ID: ${newGameId})`);
@@ -701,14 +1102,14 @@ const TableGame = () => {
       if (token && savedGameId) {
         try {
           // Check if already uploaded
-          if (!LocalTableGameStorage.isGameUploaded(savedGameId)) {
+          if (!activeStorage.isGameUploaded(savedGameId)) {
             console.debug('Auto-uploading finished table game to cloud...');
             const { createTableGame } = await import('@/shared/api/tableGameService');
             const result = await createTableGame(gameData, savedGameId);
             
             // Backend returns game._id for table games (full document)
             if (result?.game?._id) {
-              LocalTableGameStorage.markGameAsUploaded(savedGameId, result.game._id);
+              activeStorage.markGameAsUploaded(savedGameId, result.game._id);
               console.debug(`✅ Table game auto-uploaded to cloud (ID: ${result.game._id})`);
             }
           }
@@ -736,24 +1137,31 @@ const TableGame = () => {
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
+        scoreEntryMode: scoreEntryMode,
+        setTargets: setTargets,
+        pointHistoryBySet: pointHistoryBySet,
+        teamMembers: teamMembers,
         gameFinished: false, // Explicitly set to false
         gameName: currentGameName
       };
 
       const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
       
-      if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
-        LocalTableGameStorage.updateTableGame(currentGameId, {
+      if (currentGameId && activeStorage.tableGameExists(currentGameId)) {
+        activeStorage.updateTableGame(currentGameId, {
           gameData: gameData,
           lastPlayed: new Date().toISOString(),
           name: name,
           targetNumber: targetNumber,
           lowIsBetter: lowIsBetter,
+          scoreEntryMode: scoreEntryMode,
+          setTargets: setTargets,
+          pointHistoryBySet: pointHistoryBySet,
           gameFinished: false
         });
         console.debug(`Game reopened for editing: "${name}" (ID: ${currentGameId})`);
       } else {
-        const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+        const newGameId = activeStorage.saveTableGame(gameData, name);
         setCurrentGameId(newGameId);
         console.debug(`Game saved for editing: "${name}" (ID: ${newGameId})`);
       }
@@ -800,6 +1208,10 @@ const TableGame = () => {
         timestamp: new Date().toISOString(),
         targetNumber: targetNumber,
         lowIsBetter: lowIsBetter,
+        scoreEntryMode: scoreEntryMode,
+        setTargets: setTargets,
+        pointHistoryBySet: pointHistoryBySet,
+        teamMembers: teamMembers,
         gameFinished: gameFinished,
         gameName: currentGameName
       };
@@ -807,19 +1219,22 @@ const TableGame = () => {
       const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
       
       // If we have a game ID, update the existing game
-      if (currentGameId && LocalTableGameStorage.tableGameExists(currentGameId)) {
-        LocalTableGameStorage.updateTableGame(currentGameId, {
+      if (currentGameId && activeStorage.tableGameExists(currentGameId)) {
+        activeStorage.updateTableGame(currentGameId, {
           gameData: gameData,
           lastPlayed: new Date().toISOString(),
           name: name,
           targetNumber: targetNumber,
           lowIsBetter: lowIsBetter,
+          scoreEntryMode: scoreEntryMode,
+          setTargets: setTargets,
+          pointHistoryBySet: pointHistoryBySet,
           gameFinished: gameFinished
         });
         console.debug(`Updated existing game: "${name}" (ID: ${currentGameId}, finished: ${gameFinished})`);
       } else {
         // Create new save and store the ID
-        const newGameId = LocalTableGameStorage.saveTableGame(gameData, name);
+        const newGameId = activeStorage.saveTableGame(gameData, name);
         setCurrentGameId(newGameId);
         console.debug(`Saved new game: "${name}" (ID: ${newGameId})`);
         alert(t('tableGame.gameSavedSuccess', { name }));
@@ -845,7 +1260,7 @@ const TableGame = () => {
   }
 
   return (
-    <div className="table-game-container">
+    <div className={isDedicatedScoreboardPage ? 'scoreboard-game-container' : 'table-game-container'}>
         <div className={`game-in-progress players-${players.length} ${players.length > 3 ? 'many-players' : ''}`}>
           {/* Round Info Header */}
           <div className="round-info">
@@ -859,7 +1274,9 @@ const TableGame = () => {
             <span className="game-info-header">
               {currentGameName || t('tableGame.defaultGameName')}
               <div className="total-calls">
-                {isCloudGame ? t('tableGame.roundsLabel', { n: currentRound }) : t('tableGame.roundLabel', { n: currentRound })}
+                {isTwoSideScoreboard
+                  ? (isCloudGame ? t('tableGame.setsLabel', { n: currentRound }) : t('tableGame.setLabel', { n: currentRound }))
+                  : (isCloudGame ? t('tableGame.roundsLabel', { n: currentRound }) : t('tableGame.roundLabel', { n: currentRound }))}
               </div>
             </span>
             <button 
@@ -872,7 +1289,7 @@ const TableGame = () => {
           </div>
 
           {/* Finish Game Button */}
-          {targetNumber && hasReachedTarget() && !gameFinished && (
+          {hasReachedTarget() && !gameFinished && (
             <button className="finish-btn" onClick={handleFinishGame}>
               {t('tableGame.finishGame')}
             </button>
@@ -880,64 +1297,100 @@ const TableGame = () => {
 
           {/* Game Tab - Player Scores */}
           {activeTab === 'game' && (
-            <div className="tab-panel">
-              <div className="player-scores">
-                <table className="score-table">
-                  <thead>
-                    <tr>
-                      <th className="player-header">{t('tableGame.playerHeader')}</th>
-                      <th className="input-header">{t('tableGame.pointsHeader')}</th>
-                      <th className="score-header">{t('tableGame.totalHeader')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map((player, idx) => {
-                      // Use currentRound state (0-based index for array)
-                      const roundIndex = currentRound - 1;
-                      
-                      return (
-                        <tr key={idx} className="player-row">
-                          <td className="player-cell">
-                            <div className="player-name-container">
-                              <input
-                                value={player.name}
-                                onChange={(e) => handleNameChange(idx, e.target.value)}
-                                className="player-name-input"
-                                placeholder={`${t('common.player')} ${idx + 1}`}
-                                type="text"
-                                disabled={gameFinished}
-                              />
-                            </div>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              className="rounds-input"
-                              value={player.points[roundIndex] === 0 ? "0" : (player.points[roundIndex] ?? "")}
-                              onChange={(e) => handlePointChange(idx, roundIndex, e.target.value)}
-                              placeholder="0"
-                              disabled={gameFinished}
-                            />
-                          </td>
-                          <td className="score-cell">
-                            <div className="score">
-                              <span className="total-score">
-                                {getTotal(player)}
-                              </span>
-                            </div>
-                          </td>
+            <div className={`tab-panel ${isTwoSideScoreboard ? 'scoreboard-game-panel' : ''}`}>
+              {isTwoSideScoreboard ? (
+                <>
+                  <div className="two-side-scoreboard">
+                    {players.map((player, idx) => (
+                      <button
+                        key={player.id || idx}
+                        type="button"
+                        className="score-side-card"
+                        onClick={() => handleScoreCardClick(idx)}
+                        onTouchStart={(e) => handleScoreTouchStart(idx, e)}
+                        onTouchMove={(e) => handleScoreTouchMove(idx, e)}
+                        onTouchEnd={(e) => handleScoreTouchEnd(idx, e)}
+                        disabled={gameFinished}
+                        title={t('tableGame.gestureHint')}
+                      >
+                        <span className="score-side-name">{player.name}</span>
+                        <span className="score-side-members">
+                          {(teamMembers[idx] || []).map((member) => member.name).join(' • ')}
+                        </span>
+                        <span className="score-side-value">{getLiveScore(idx)}</span>
+                        <span className="score-side-total">
+                          {t('tableGame.totalWithScore', { score: getTotal(player) })}
+                        </span>
+                        {gestureFeedback[idx] && (
+                          <span className={`score-gesture-feedback ${gestureFeedback[idx]}`}>
+                            {getGestureFeedbackLabel(gestureFeedback[idx])}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="player-scores">
+                    <table className="score-table">
+                      <thead>
+                        <tr>
+                          <th className="player-header">{t('tableGame.playerHeader')}</th>
+                          <th className="input-header">{t('tableGame.pointsHeader')}</th>
+                          <th className="score-header">{t('tableGame.totalHeader')}</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {players.map((player, idx) => {
+                          // Use currentRound state (0-based index for array)
+                          const roundIndex = currentRound - 1;
 
-              {currentRound === 1 && !gameFinished && (
-              <div className="explanation">
-                <p>{t('tableGame.roundExplanation1')}</p>
-                <p>{t('tableGame.roundExplanation2')}</p>
-              </div>)}
+                          return (
+                            <tr key={idx} className="player-row">
+                              <td className="player-cell">
+                                <div className="player-name-container">
+                                  <input
+                                    value={player.name}
+                                    onChange={(e) => handleNameChange(idx, e.target.value)}
+                                    className="player-name-input"
+                                    placeholder={`${t('common.player')} ${idx + 1}`}
+                                    type="text"
+                                    disabled={gameFinished}
+                                  />
+                                </div>
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  className="rounds-input"
+                                  value={player.points[roundIndex] === 0 ? "0" : (player.points[roundIndex] ?? "")}
+                                  onChange={(e) => handlePointChange(idx, roundIndex, e.target.value)}
+                                  placeholder="0"
+                                  disabled={gameFinished}
+                                />
+                              </td>
+                              <td className="score-cell">
+                                <div className="score">
+                                  <span className="total-score">
+                                    {getTotal(player)}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {currentRound === 1 && !gameFinished && (
+                  <div className="explanation">
+                    <p>{t('tableGame.roundExplanation1')}</p>
+                    <p>{t('tableGame.roundExplanation2')}</p>
+                  </div>)}
+                </>
+              )}
             </div>
           )}
 
@@ -1011,19 +1464,110 @@ const TableGame = () => {
                 
                 {/* Show both views in landscape, otherwise show based on selected tab */}
                 {(statsSubTab === 'chart' || isLandscape) && (
-                  <div className="stats-chart-container">
-                    <StatsChart 
-                      playersData={detailedStats} 
-                      roundData={players[0]?.points.map((_, roundIndex) => ({
-                        round: roundIndex + 1,
-                        players: players.map((player, playerIndex) => ({
-                          id: playerIndex,
-                          name: player.name,
-                          totalScore: player.points.slice(0, roundIndex + 1).reduce((sum, p) => sum + (Number.parseInt(p, 10) || 0), 0)
-                        }))
-                      })) || []} 
-                    />
-                  </div>
+                  isTwoSideScoreboard ? (
+                    <div className="score-progression-analytics">
+                      <div className="score-progression-header">
+                        <h3>{t('tableGame.pointProgressionSubtitle', { n: currentRound })}</h3>
+                      </div>
+
+                      <div className="score-progression-chart-wrap">
+                        <div
+                          className="score-progression-chart"
+                          role="img"
+                          aria-label={t('tableGame.pointProgressionChartAria', { set: currentRound })}
+                        >
+                          <ResponsiveContainer width="100%" height={220}>
+                            <LineChart
+                              data={scoreProgressionSeries}
+                              margin={{ top: 8, right: 5, left: -10, bottom: 0 }}
+                            >
+                              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                              <XAxis
+                                dataKey="pointNumber"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={false}
+                                height={0}
+                              />
+                              <YAxis
+                                className="score-progression-y-axis"
+                                allowDecimals={false}
+                                domain={[0, progressionAxisTop]}
+                                ticks={progressionYAxisTicks}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 11 }}
+                                width={28}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  background: 'var(--card-bg)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '8px',
+                                  color: 'var(--text)',
+                                }}
+                                labelFormatter={(value) => `${t('common.points')} ${value}`}
+                              />
+                              <Line
+                                type="stepAfter"
+                                dataKey="teamOne"
+                                stroke="#60a5fa"
+                                strokeWidth={3}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                              <Line
+                                type="stepAfter"
+                                dataKey="teamTwo"
+                                stroke="#f87171"
+                                strokeWidth={3}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        <div className="score-progression-legend">
+                          <div className="legend-item team-one">
+                            <span className="legend-dot" />
+                            <span>{players[0]?.name || t('startTableGame.teamOne')}</span>
+                          </div>
+                          <div className="legend-item team-two">
+                            <span className="legend-dot" />
+                            <span>{players[1]?.name || t('startTableGame.teamTwo')}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="score-progression-timeline-wrap">
+                        <h4>{t('tableGame.rallyTimelineTitle')}</h4>
+                        <div className="score-progression-timeline" aria-label={t('tableGame.rallyTimelineAria', { set: currentRound })}>
+                          {currentSetPointHistory.map((scorer, idx) => (
+                            <span
+                              key={`rally-${idx}`}
+                              className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'}`}
+                              title={`${idx + 1}. ${scorer === 0 ? (players[0]?.name || t('startTableGame.teamOne')) : (players[1]?.name || t('startTableGame.teamTwo'))}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="stats-chart-container">
+                      <StatsChart 
+                        playersData={detailedStats} 
+                        roundData={players[0]?.points.map((_, roundIndex) => ({
+                          round: roundIndex + 1,
+                          players: players.map((player, playerIndex) => ({
+                            id: playerIndex,
+                            name: player.name,
+                            totalScore: player.points.slice(0, roundIndex + 1).reduce((sum, p) => sum + (Number.parseInt(p, 10) || 0), 0)
+                          }))
+                        })) || []} 
+                      />
+                    </div>
+                  )
                 )}
 
                 {(statsSubTab === 'table' || isLandscape) && (
@@ -1107,7 +1651,16 @@ const TableGame = () => {
             
 
             <div className="game-controls">
-              {/* Pause button placeholder - can be added if needed */}
+              {isTwoSideScoreboard && (
+                <button
+                  type="button"
+                  className="game-control-btn"
+                  onClick={toggleCurrentSetTarget}
+                  title={t('tableGame.toggleSetTargetHint', { n: currentRound, target: getSetTarget() === 15 ? 25 : 15 })}
+                >
+                  {getSetTarget() === 15 ? t('tableGame.setTargetTo25') : t('tableGame.setTargetTo15')}
+                </button>
+              )}
             </div>
 
             <button 
@@ -1123,7 +1676,7 @@ const TableGame = () => {
               className="nav-btn" 
               id="nextRoundBtn" 
               onClick={nextRound} 
-              disabled={!isCurrentRoundComplete()}
+              disabled={isTwoSideScoreboard ? !isCurrentSetWon() : !isCurrentRoundComplete()}
             >
               <ArrowRightIcon />
             </button>
@@ -1153,6 +1706,12 @@ const TableGame = () => {
             currentRound={currentRound}
             targetNumber={targetNumber}
             lowIsBetter={lowIsBetter}
+            scoreEntryMode={scoreEntryMode}
+            teamMembers={teamMembers}
+            currentRoundScores={players.map((_, idx) => getLiveScore(idx))}
+            onUpdateRoundScore={setPlayerLiveScore}
+            onAdjustRoundScore={updatePlayerLiveScore}
+            onUpdateTeamMembers={setTeamMembers}
             onUpdateSettings={(settings) => {
               if (settings.players) setPlayers(settings.players);
               if (settings.rows) setRows(settings.rows);
@@ -1167,4 +1726,9 @@ const TableGame = () => {
   );
 };
 
+export { TableGame };
 export default TableGame;
+
+TableGame.propTypes = {
+  forceScoreEntryMode: PropTypes.string,
+};

@@ -15,6 +15,7 @@ const StartGame = lazy(() => import("@/pages/game/StartGame"))
 const GameDetails = lazy(() => import("@/pages/game/GameDetails"))
 const GameInProgress = lazy(() => import("@/pages/game/GameInProgress"))
 const TableGame = lazy(() => import("@/pages/game/TableGame"))
+const ScoreboardGame = lazy(() => import("@/pages/game/ScoreboardGame"))
 const TableGameDetails = lazy(() => import("@/pages/game/TableGameDetails"))
 
 // Lazy load admin pages - only accessible to admins
@@ -276,6 +277,7 @@ function App() {
                     <Route path="/start" element={<StartGame />} />
                     <Route path="/table" element={<Navigate to="/start" replace />} />
                     <Route path="/table/:id" element={<TableGame />} />
+                    <Route path="/scoreboard/:id" element={<ScoreboardGame />} />
                     <Route path="/table-game/:id" element={<TableGameDetails />} />
                     <Route path="/game/:id" element={<GameDetails />} />
                     <Route path="/game/current" element={<GameInProgress />} />

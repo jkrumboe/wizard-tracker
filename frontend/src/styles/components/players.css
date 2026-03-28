@@ -147,6 +147,16 @@
     touch-action: manipulation;
 }
 
+.player-team-select {
+    min-width: 92px;
+    padding: 0.35rem 0.45rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    background: var(--input-bg);
+    color: var(--text);
+    font-weight: 600;
+}
+
 /* Player Actions Buttons */
 .player-actions {
     display: flex;

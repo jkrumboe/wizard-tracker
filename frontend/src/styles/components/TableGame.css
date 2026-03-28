@@ -56,6 +56,17 @@
   overflow-x: hidden;
 }
 
+.scoreboard-game-container {
+  width: 100%;
+  max-width: 100vw;
+  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px);
+  margin: 0 auto;
+  padding: 0;
+  margin-top: var(--spacing-md);
+  overflow: hidden;
+  overscroll-behavior-y: contain;
+}
+
 /* Loading and error states */
 .table-game-container .game-loading-state,
 .table-game-container .game-error-state {
@@ -777,4 +788,319 @@
   .scoreboard-score {
     font-size: 1.2rem;
   }
+}
+
+.two-side-scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.45rem, 1.2vh, var(--spacing-md));
+  width: 100%;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  padding: 0 var(--spacing-xs);
+}
+
+.scoreboard-game-panel {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  overflow: visible;
+}
+
+.scoreboard-game-panel .two-side-scoreboard {
+  flex: 1;
+  min-height: 0;
+}
+
+.score-side-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--card-bg-light) 0%, var(--card-bg) 100%);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding: var(--spacing-md);
+  position: relative;
+  touch-action: none;
+}
+
+.score-side-card:hover,
+.score-side-card:focus,
+.score-side-card:focus-visible {
+  transform: none;
+  box-shadow: none;
+}
+
+.score-side-card:active {
+  transform: scale(0.99);
+}
+
+.score-side-card:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.score-side-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.score-side-members {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 95%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-side-value {
+  font-size: clamp(3rem, 10vw, 5rem);
+  line-height: 1;
+  font-weight: 800;
+}
+
+.score-side-total {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+.score-gesture-feedback {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  color: var(--text-white);
+  animation: scoreGesturePop 0.42s ease-out;
+}
+
+.score-gesture-feedback.up,
+.score-gesture-feedback.tap {
+  background: rgba(34, 197, 94, 0.88);
+}
+
+.score-gesture-feedback.down {
+  background: rgba(239, 68, 68, 0.9);
+}
+
+.score-gesture-feedback.swipe-up,
+.score-gesture-feedback.swipe-down {
+  animation: none;
+  opacity: 0.95;
+}
+
+.score-gesture-feedback.swipe-up {
+  background: rgba(34, 197, 94, 0.6);
+}
+
+.score-gesture-feedback.swipe-down {
+  background: rgba(239, 68, 68, 0.62);
+}
+
+@keyframes scoreGesturePop {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.85);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(0) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(1);
+  }
+}
+
+.score-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.score-adjust-btn {
+  min-width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.score-adjust-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.score-editor-input {
+  text-align: center;
+  min-width: 88px;
+}
+
+@media (min-width: 900px) {
+  .two-side-scoreboard {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+  }
+
+  .score-side-card {
+    min-height: 430px;
+  }
+}
+
+.score-progression-analytics {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.score-progression-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.score-progression-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.score-progression-header span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.score-progression-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.005) 100%);
+  padding: var(--spacing-sm);
+}
+
+.score-progression-chart {
+  width: min(100%, 640px);
+  height: auto;
+  display: block;
+}
+
+.score-progression-chart .score-progression-y-axis .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary, var(--text));
+}
+
+.score-progression-chart .score-progression-y-axis .recharts-cartesian-axis-line,
+.score-progression-chart .score-progression-y-axis .recharts-cartesian-axis-tick-line {
+  stroke: var(--border);
+}
+
+.score-progression-axis {
+  stroke: var(--border);
+  stroke-width: 3;
+}
+
+.score-progression-line {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.score-progression-line.team-one {
+  stroke: #60a5fa;
+}
+
+.score-progression-line.team-two {
+  stroke: #f87171;
+}
+
+.score-progression-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: var(--spacing-sm);
+  margin-top: 0.2rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-item.team-one .legend-dot {
+  background: #60a5fa;
+}
+
+.legend-item.team-two .legend-dot {
+  background: #f87171;
+}
+
+.score-progression-timeline-wrap h4 {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 0.92rem;
+}
+
+.score-progression-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.rally-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.92;
+  transition: transform 0.15s ease;
+}
+
+.rally-dot.team-one {
+  background: #60a5fa;
+}
+
+.rally-dot.team-two {
+  background: #f87171;
+}
+
+.score-progression-empty {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  padding: var(--spacing-md);
+  text-align: center;
 }

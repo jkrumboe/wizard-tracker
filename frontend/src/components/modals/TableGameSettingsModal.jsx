@@ -99,8 +99,15 @@ const TableGameSettingsModal = ({
   onClose, 
   players, 
   rows,
+  currentRound,
   targetNumber,
   lowIsBetter,
+  scoreEntryMode,
+  teamMembers,
+  currentRoundScores,
+  onUpdateRoundScore,
+  onAdjustRoundScore,
+  onUpdateTeamMembers,
   onUpdateSettings,
   gameFinished 
 }) => {
@@ -109,6 +116,7 @@ const TableGameSettingsModal = ({
   const [localRows, setLocalRows] = useState(10);
   const [localTargetNumber, setLocalTargetNumber] = useState(null);
   const [localLowIsBetter, setLocalLowIsBetter] = useState(false);
+  const [localTeamMembers, setLocalTeamMembers] = useState([[], []]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
 
@@ -140,10 +148,13 @@ const TableGameSettingsModal = ({
       setLocalRows(rows);
       setLocalTargetNumber(targetNumber);
       setLocalLowIsBetter(lowIsBetter);
+      setLocalTeamMembers(Array.isArray(teamMembers) ? teamMembers : [[], []]);
     }
-  }, [isOpen, players, rows, targetNumber, lowIsBetter]);
+  }, [isOpen, players, rows, targetNumber, lowIsBetter, teamMembers]);
 
   if (!isOpen) return null;
+
+  const isTwoSideScoreboard = scoreEntryMode === 'twoSideGesture';
 
   const handleSave = () => {
     onUpdateSettings({
@@ -178,6 +189,7 @@ const TableGameSettingsModal = ({
   };
 
   const handleAddPlayer = () => {
+    if (isTwoSideScoreboard) return;
     const newPlayer = {
       id: `player-${Date.now()}`,
       name: `Player ${localPlayers.length + 1}`,
@@ -188,6 +200,7 @@ const TableGameSettingsModal = ({
   };
 
   const handleRemovePlayer = (index) => {
+    if (isTwoSideScoreboard) return;
     if (localPlayers.length > MIN_PLAYERS) {
       setPlayerToDelete(index);
       setShowDeleteConfirm(true);
@@ -240,7 +253,7 @@ const TableGameSettingsModal = ({
                       index={index}
                       onNameChange={handlePlayerNameChange}
                       onRemove={handleRemovePlayer}
-                      canRemove={localPlayers.length > MIN_PLAYERS}
+                      canRemove={!isTwoSideScoreboard && localPlayers.length > MIN_PLAYERS}
                       disabled={gameFinished}
                     />
                   ))}
@@ -250,7 +263,7 @@ const TableGameSettingsModal = ({
             <button
               className="add-player-modal-btn"
               onClick={handleAddPlayer}
-              disabled={gameFinished}
+              disabled={gameFinished || isTwoSideScoreboard}
             >
               <PlusIcon size={16} />
               {t('tableGameSettings.addPlayer')}
@@ -302,6 +315,77 @@ const TableGameSettingsModal = ({
               </div>
             </div>
           </div>
+
+          {isTwoSideScoreboard && Array.isArray(currentRoundScores) && (
+            <div className="settings-section game-settings-info">
+              <h3>{t('tableGameSettings.currentScoreEditor', { round: currentRound })}</h3>
+              <div className="settings-details">
+                {localPlayers.map((player, index) => (
+                  <div className="add-section" key={player.id || index}>
+                    <label>{player.name || `${t('common.player')} ${index + 1}`}</label>
+                    <div className="score-editor-row">
+                      <button
+                        type="button"
+                        className="score-adjust-btn"
+                        onClick={() => onAdjustRoundScore(index, -1)}
+                        disabled={gameFinished}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        className="game-name-input score-editor-input"
+                        value={currentRoundScores[index] ?? 0}
+                        onChange={(e) => onUpdateRoundScore(index, e.target.value)}
+                        disabled={gameFinished}
+                      />
+                      <button
+                        type="button"
+                        className="score-adjust-btn"
+                        onClick={() => onAdjustRoundScore(index, 1)}
+                        disabled={gameFinished}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isTwoSideScoreboard && (
+            <div className="settings-section game-settings-info">
+              <h3>{t('tableGameSettings.teamMembers')}</h3>
+              <div className="settings-details">
+                {[0, 1].map((teamIndex) => (
+                  <div className="add-section" key={teamIndex}>
+                    <label>{localPlayers[teamIndex]?.name || `Team ${teamIndex + 1}`}</label>
+                    <textarea
+                      className="game-markdown-input"
+                      value={(localTeamMembers[teamIndex] || []).map((member) => member.name).join('\n')}
+                      onChange={(e) => {
+                        const lines = e.target.value
+                          .split('\n')
+                          .map((name) => name.trim())
+                          .filter(Boolean);
+                        const updated = [...localTeamMembers];
+                        updated[teamIndex] = lines.map((name, idx) => ({
+                          id: `${teamIndex}-${idx}-${Date.now()}`,
+                          name,
+                        }));
+                        setLocalTeamMembers(updated);
+                        onUpdateTeamMembers?.(updated);
+                      }}
+                      rows={4}
+                      disabled={gameFinished}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">
@@ -343,6 +427,12 @@ TableGameSettingsModal.propTypes = {
   currentRound: PropTypes.number.isRequired,
   targetNumber: PropTypes.number,
   lowIsBetter: PropTypes.bool.isRequired,
+  scoreEntryMode: PropTypes.string,
+  teamMembers: PropTypes.array,
+  currentRoundScores: PropTypes.array,
+  onUpdateRoundScore: PropTypes.func,
+  onAdjustRoundScore: PropTypes.func,
+  onUpdateTeamMembers: PropTypes.func,
   onUpdateSettings: PropTypes.func.isRequired,
   gameFinished: PropTypes.bool.isRequired
 };

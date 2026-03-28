@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
-import { userService, LocalTableGameStorage, LocalTableGameTemplate } from "@/shared/api"
+import { userService, LocalTableGameStorage, LocalScoreboardGameStorage, LocalTableGameTemplate } from "@/shared/api"
 import { secureArrayShuffle, generateSecureId } from "@/shared/utils/secureRandom"
 import { SelectFriendsModal } from '@/components/modals'
 import WizardGameHistoryModal from '@/components/modals/WizardGameHistoryModal'
@@ -67,6 +67,7 @@ const StartGame = () => {
         id: `player-${Date.now()}-0`,
         name: user.username,
         userId: user.id || null,
+        teamIndex: 0,
       }]);
       setHasInitializedUser(true);
     }
@@ -92,13 +93,31 @@ const StartGame = () => {
 
   // --- Player management ---
   const isCallAndMade = selectedGameType?.gameCategory === 'callAndMade';
+  const isTwoSideScoreboard = selectedGameType?.scoreEntryMode === 'twoSideGesture'
+    || selectedGameType?.name === 'Volleyball Scoreboard';
+
+  const getMaxPlayersForSelection = () => {
+    if (isTwoSideScoreboard) return MAX_PLAYERS_TABLE;
+    return isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE;
+  };
+
+  const getBalancedTeamIndex = (currentPlayers) => {
+    const teamOneCount = currentPlayers.filter((p) => (p.teamIndex ?? 0) === 0).length;
+    const teamTwoCount = currentPlayers.filter((p) => (p.teamIndex ?? 0) === 1).length;
+    return teamOneCount <= teamTwoCount ? 0 : 1;
+  };
 
   const handleAddPlayer = () => {
-    const maxPlayers = isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE;
+    const maxPlayers = getMaxPlayersForSelection();
     if (players.length >= maxPlayers) return;
     setPlayers(prev => [
       ...prev,
-      { id: `player-${Date.now()}-${prev.length}`, name: '', userId: null }
+      {
+        id: `player-${Date.now()}-${prev.length}`,
+        name: '',
+        userId: null,
+        teamIndex: isTwoSideScoreboard ? getBalancedTeamIndex(prev) : undefined,
+      }
     ]);
   };
 
@@ -118,6 +137,12 @@ const StartGame = () => {
   const handlePlayerNameChange = (playerId, name) => {
     setPlayers(prev => prev.map(p =>
       p.id === playerId ? { ...p, name, userId: null } : p
+    ));
+  };
+
+  const handlePlayerTeamChange = (playerId, teamIndex) => {
+    setPlayers((prev) => prev.map((p) =>
+      p.id === playerId ? { ...p, teamIndex } : p
     ));
   };
 
@@ -170,15 +195,32 @@ const StartGame = () => {
   };
 
   const handleAddFriends = (selectedFriends) => {
-    const maxPlayers = isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE;
+    const maxPlayers = getMaxPlayersForSelection();
     const newPlayers = selectedFriends.map((friend, idx) => ({
       id: `player-${Date.now()}-friend-${idx}`,
       name: friend.username,
       userId: friend.id,
     }));
-    setPlayers(prev => [...prev, ...newPlayers].slice(0, maxPlayers));
+    setPlayers((prev) => {
+      const working = [...prev];
+      const assigned = newPlayers.map((friend) => {
+        const teamIndex = isTwoSideScoreboard ? getBalancedTeamIndex(working) : undefined;
+        const updated = { ...friend, teamIndex };
+        working.push(updated);
+        return updated;
+      });
+      return [...prev, ...assigned].slice(0, maxPlayers);
+    });
     setShowSelectFriendsModal(false);
   };
+
+  useEffect(() => {
+    if (!isTwoSideScoreboard) return;
+    setPlayers((prev) => prev.map((p, index) => ({
+      ...p,
+      teamIndex: p.teamIndex === 0 || p.teamIndex === 1 ? p.teamIndex : (index % 2),
+    })));
+  }, [isTwoSideScoreboard]);
 
   // --- Game type selection ---
   const handleSelectTemplate = (template) => {
@@ -224,6 +266,7 @@ const StartGame = () => {
     if (!selectedGameType) return;
 
     const template = selectedGameType;
+    const scoreboardMode = template.scoreEntryMode === 'twoSideGesture' || template.name === 'Volleyball Scoreboard';
     const firstPlayerId = user?.id || generateSecureId('player');
 
     const initialPlayers = players.map((p, idx) => {
@@ -237,24 +280,54 @@ const StartGame = () => {
         id: playerId,
         name: p.name,
         userId: p.userId,
+        teamIndex: p.teamIndex,
         points: [],
       };
     });
 
+    const teamOneName = t('startTableGame.teamOne');
+    const teamTwoName = t('startTableGame.teamTwo');
+
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
     const newRows = isSmallLandscape ? 8 : 10;
 
-    const gameData = {
-      players: initialPlayers,
-      rows: newRows,
-      timestamp: new Date().toISOString(),
-      targetNumber: template.targetNumber || null,
-      lowIsBetter: template.lowIsBetter || false,
-      gameFinished: false,
-      gameName: template.name,
-    };
+    const gameData = scoreboardMode
+      ? {
+          players: [
+            { id: 'team-1', name: teamOneName, points: [] },
+            { id: 'team-2', name: teamTwoName, points: [] },
+          ],
+          teamMembers: [
+            initialPlayers.filter((p) => (p.teamIndex ?? 0) === 0),
+            initialPlayers.filter((p) => (p.teamIndex ?? 0) === 1),
+          ],
+          rows: newRows,
+          timestamp: new Date().toISOString(),
+          targetNumber: template.targetNumber || null,
+          lowIsBetter: template.lowIsBetter || false,
+          gameFinished: false,
+          gameName: template.name,
+          scoreEntryMode: 'twoSideGesture',
+          gameType: 'scoreboard',
+        }
+      : {
+          players: initialPlayers,
+          rows: newRows,
+          timestamp: new Date().toISOString(),
+          targetNumber: template.targetNumber || null,
+          lowIsBetter: template.lowIsBetter || false,
+          gameFinished: false,
+          gameName: template.name,
+          scoreEntryMode: template.scoreEntryMode || null,
+        };
 
-    const newGameId = LocalTableGameStorage.saveTableGame(gameData, template.name);
+    const newGameId = scoreboardMode
+      ? LocalScoreboardGameStorage.saveTableGame(gameData, template.name)
+      : LocalTableGameStorage.saveTableGame(gameData, template.name);
+    if (scoreboardMode) {
+      navigate(`/scoreboard/${newGameId}`);
+      return;
+    }
     navigate(`/table/${newGameId}`);
   };
 
@@ -280,16 +353,29 @@ const StartGame = () => {
 
   const handleLoadTableGame = (gameData) => {
     if (gameData?.gameId) {
+      if (
+        gameData.scoreEntryMode === 'twoSideGesture'
+        || gameData.gameType === 'scoreboard'
+        || gameData.gameName === 'Volleyball Scoreboard'
+        || gameData.gameId?.startsWith('scoreboard_game')
+      ) {
+        navigate(`/scoreboard/${gameData.gameId}`);
+        return;
+      }
       navigate(`/table/${gameData.gameId}`);
     }
   };
 
   // --- Derived values ---
-  const maxPlayers = isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE;
-  const minPlayers = isCallAndMade ? MIN_PLAYERS_WIZARD : MIN_PLAYERS_TABLE;
+  const maxPlayers = isTwoSideScoreboard ? MAX_PLAYERS_TABLE : (isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE);
+  const minPlayers = isTwoSideScoreboard ? 2 : (isCallAndMade ? MIN_PLAYERS_WIZARD : MIN_PLAYERS_TABLE);
+  const teamOneCount = players.filter((p) => (p.teamIndex ?? 0) === 0).length;
+  const teamTwoCount = players.filter((p) => (p.teamIndex ?? 0) === 1).length;
+  const bothTeamsHavePlayers = !isTwoSideScoreboard || (teamOneCount > 0 && teamTwoCount > 0);
   const canStart = players.length >= minPlayers
     && players.length <= maxPlayers
-    && players.every(p => p.name && p.name.trim().length > 0);
+    && players.every(p => p.name && p.name.trim().length > 0)
+    && bothTeamsHavePlayers;
 
   const recommendedRounds = players.length >= 3
     ? Math.floor(totalCards / players.length)
@@ -410,6 +496,8 @@ const StartGame = () => {
           onPlayerNameBlur={handlePlayerNameBlur}
           onRandomize={handleRandomize}
           onAddFriends={() => setShowSelectFriendsModal(true)}
+          onPlayerTeamChange={handlePlayerTeamChange}
+          isTwoSideScoreboard={isTwoSideScoreboard}
           maxPlayers={maxPlayers}
           minPlayers={minPlayers}
           lookingUpPlayers={lookingUpPlayers}
@@ -503,6 +591,12 @@ const StartGame = () => {
           {players.length >= minPlayers && players.length <= maxPlayers && !players.every(p => p.name && p.name.trim().length > 0) && (
             <div className="error-message">
               {t('startTableGame.allPlayersNamedError')}
+            </div>
+          )}
+
+          {players.length >= minPlayers && players.length <= maxPlayers && players.every(p => p.name && p.name.trim().length > 0) && !bothTeamsHavePlayers && (
+            <div className="error-message">
+              {t('startTableGame.bothTeamsRequiredError')}
             </div>
           )}
         </div>

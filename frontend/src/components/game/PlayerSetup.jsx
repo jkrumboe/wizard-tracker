@@ -24,7 +24,16 @@ import {
 } from '@dnd-kit/modifiers';
 
 // Sortable Player Item Component
-const SortablePlayerItem = ({ player, index, onNameChange, onNameBlur, onRemove, isLookingUp }) => {
+const SortablePlayerItem = ({
+  player,
+  index,
+  onNameChange,
+  onNameBlur,
+  onRemove,
+  isLookingUp,
+  isTwoSideScoreboard,
+  onTeamChange,
+}) => {
   const { t } = useTranslation();
   const {
     attributes,
@@ -74,6 +83,18 @@ const SortablePlayerItem = ({ player, index, onNameChange, onNameBlur, onRemove,
         placeholder={t('game.playerPlaceholder', { n: index + 1 })}
       />
 
+      {isTwoSideScoreboard && (
+        <select
+          className="player-team-select"
+          value={player.teamIndex === 1 ? '1' : '0'}
+          onChange={(e) => onTeamChange?.(player.id, Number(e.target.value))}
+          title={t('startTableGame.teamAssignment')}
+        >
+          <option value="0">{t('startTableGame.teamOne')}</option>
+          <option value="1">{t('startTableGame.teamTwo')}</option>
+        </select>
+      )}
+
       {isLookingUp && (
         <span className="lookup-spinner" title={t('startTableGame.lookingUpUser')}>
           ⏳
@@ -103,6 +124,8 @@ const PlayerSetup = ({
   onPlayerNameBlur,
   onRandomize,
   onAddFriends,
+  onPlayerTeamChange,
+  isTwoSideScoreboard = false,
   maxPlayers,
   lookingUpPlayers = new Set(),
 }) => {
@@ -174,6 +197,8 @@ const PlayerSetup = ({
                     onNameBlur={onPlayerNameBlur}
                     onRemove={onRemovePlayer}
                     isLookingUp={lookingUpPlayers.has(player.id)}
+                    isTwoSideScoreboard={isTwoSideScoreboard}
+                    onTeamChange={onPlayerTeamChange}
                   />
                 ))}
               </div>

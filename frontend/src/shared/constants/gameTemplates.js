@@ -21,6 +21,16 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
     _id: '__builtin_wizard__',
   },
   {
+    _id: '__builtin_volleyball__',
+    name: 'Volleyball Scoreboard',
+    gameCategory: 'table',
+    isBuiltin: true,
+    targetNumber: 25,
+    lowIsBetter: false,
+    scoreEntryMode: 'twoSideGesture',
+    description: 'Two-side live scoreboard with tap and swipe controls.',
+  },
+  {
     _id: '__builtin_dutch__',
     name: 'Dutch',
     gameCategory: 'table',

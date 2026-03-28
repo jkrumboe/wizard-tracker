@@ -6,6 +6,7 @@ export { default as eloService } from './eloService.js';
 export * from './tableGameService.js';
 export { LocalGameStorage } from './localGameStorage.js';
 export { LocalTableGameStorage } from './localTableGameStorage.js';
+export { LocalScoreboardGameStorage } from './localScoreboardGameStorage.js';
 export { LocalTableGameTemplate } from './localTableGameTemplate.js';
 export { LocalUserProfileService } from './localUserProfileService.js';
 export { localFriendsService } from './localFriendsService.js';

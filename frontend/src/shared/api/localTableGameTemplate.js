@@ -30,6 +30,7 @@ export class LocalTableGameTemplate {
         usageCount: 0,
         targetNumber: settings.targetNumber || null,
         lowIsBetter: settings.lowIsBetter || false,
+        scoreEntryMode: settings.scoreEntryMode || null,
         description: settings.description || '',
         descriptionMarkdown: settings.descriptionMarkdown || '',
         // Call & Made specific settings
@@ -71,6 +72,9 @@ export class LocalTableGameTemplate {
         }
         if (settings.lowIsBetter !== undefined) {
           templates[templateId].lowIsBetter = settings.lowIsBetter;
+        }
+        if (settings.scoreEntryMode !== undefined) {
+          templates[templateId].scoreEntryMode = settings.scoreEntryMode;
         }
         if (settings.description !== undefined) {
           templates[templateId].description = settings.description;
@@ -254,6 +258,7 @@ export class LocalTableGameTemplate {
         name: template.name,
         targetNumber: template.targetNumber,
         lowIsBetter: template.lowIsBetter,
+        scoreEntryMode: template.scoreEntryMode || null,
         gameCategory: template.gameCategory || 'table',
         scoringFormula: template.scoringFormula || null,
         roundPattern: template.roundPattern || null,
@@ -322,6 +327,7 @@ export class LocalTableGameTemplate {
             targetNumber: cloudTemplate.targetNumber,
             lowIsBetter: cloudTemplate.lowIsBetter,
             gameCategory: cloudTemplate.gameCategory || existingLocalTemplate.gameCategory || 'table',
+            scoreEntryMode: cloudTemplate.scoreEntryMode || existingLocalTemplate.scoreEntryMode || null,
             scoringFormula: cloudTemplate.scoringFormula || existingLocalTemplate.scoringFormula || null,
             roundPattern: cloudTemplate.roundPattern || existingLocalTemplate.roundPattern || null,
             maxRounds: cloudTemplate.maxRounds || existingLocalTemplate.maxRounds || null,
@@ -345,6 +351,7 @@ export class LocalTableGameTemplate {
             targetNumber: cloudTemplate.targetNumber,
             lowIsBetter: cloudTemplate.lowIsBetter,
             gameCategory: cloudTemplate.gameCategory || 'table',
+            scoreEntryMode: cloudTemplate.scoreEntryMode || null,
             scoringFormula: cloudTemplate.scoringFormula || null,
             roundPattern: cloudTemplate.roundPattern || null,
             maxRounds: cloudTemplate.maxRounds || null,

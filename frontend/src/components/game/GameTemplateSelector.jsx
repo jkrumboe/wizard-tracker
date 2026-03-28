@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditIcon, TrashIcon, PlusIcon, ListIcon, EyeIcon } from '@/components/ui/Icon';
-import { LocalTableGameTemplate, LocalTableGameStorage } from '@/shared/api';
+import { LocalTableGameTemplate, LocalTableGameStorage, LocalScoreboardGameStorage } from '@/shared/api';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { BUILTIN_SYSTEM_TEMPLATES } from '@/shared/constants/gameTemplates';
 import SwipeableGameCard from '@/components/common/SwipeableGameCard';
@@ -33,8 +33,13 @@ const GameTemplateSelector = ({
   const [editingSystemTemplate, setEditingSystemTemplate] = useState(null);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [filterGameName, setFilterGameName] = useState(null);
+  const [loadStorageType, setLoadStorageType] = useState('table');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsTemplate, setDetailsTemplate] = useState(null);
+
+  const isScoreboardTemplate = (template) => {
+    return template?.scoreEntryMode === 'twoSideGesture' || template?.name === 'Volleyball Scoreboard';
+  };
 
   const loadTemplates = () => {
     const templatesList = LocalTableGameTemplate.getTemplatesList();
@@ -70,6 +75,7 @@ const GameTemplateSelector = ({
           ...builtin,
           ...serverTemplate,
           gameCategory: serverTemplate.gameCategory || builtin.gameCategory,
+          scoreEntryMode: serverTemplate.scoreEntryMode || builtin.scoreEntryMode || null,
           scoringFormula: serverTemplate.scoringFormula || builtin.scoringFormula,
           roundPattern: serverTemplate.roundPattern || builtin.roundPattern,
           maxRounds: serverTemplate.maxRounds || builtin.maxRounds,
@@ -149,6 +155,7 @@ const GameTemplateSelector = ({
       name: systemTemplate.name,
       targetNumber: systemTemplate.targetNumber,
       lowIsBetter: systemTemplate.lowIsBetter,
+      scoreEntryMode: systemTemplate.scoreEntryMode || null,
       description: systemTemplate.description || '',
       descriptionMarkdown: systemTemplate.descriptionMarkdown || ''
     };
@@ -159,6 +166,7 @@ const GameTemplateSelector = ({
       {
         targetNumber: localCopy.targetNumber,
         lowIsBetter: localCopy.lowIsBetter,
+        scoreEntryMode: localCopy.scoreEntryMode,
         description: localCopy.description,
         descriptionMarkdown: localCopy.descriptionMarkdown
       }
@@ -198,6 +206,7 @@ const GameTemplateSelector = ({
       {
         targetNumber: systemTemplate.targetNumber,
         lowIsBetter: systemTemplate.lowIsBetter,
+        scoreEntryMode: systemTemplate.scoreEntryMode || null,
         description: systemTemplate.description || '',
         descriptionMarkdown: systemTemplate.descriptionMarkdown || ''
       }
@@ -214,7 +223,8 @@ const GameTemplateSelector = ({
         return Object.keys(savedGames).length;
       } catch { return 0; }
     }
-    const allSavedGames = LocalTableGameStorage.getSavedTableGamesList();
+    const storage = isScoreboardTemplate(template) ? LocalScoreboardGameStorage : LocalTableGameStorage;
+    const allSavedGames = storage.getSavedTableGamesList();
     return allSavedGames.filter(game => game.name === template.name).length;
   };
 
@@ -262,6 +272,7 @@ const GameTemplateSelector = ({
 
   const handleDeleteSavedGame = (gameId) => {
     LocalTableGameStorage.deleteTableGame(gameId);
+    LocalScoreboardGameStorage.deleteTableGame(gameId);
   };
 
   const handleLoadSavedGamesForTemplate = (template, e) => {
@@ -275,7 +286,8 @@ const GameTemplateSelector = ({
 
     // Get all saved games for this template/game type
     const templateName = typeof template === 'string' ? template : template.name;
-    const allSavedGames = LocalTableGameStorage.getSavedTableGamesList();
+    const storage = isScoreboardTemplate(template) ? LocalScoreboardGameStorage : LocalTableGameStorage;
+    const allSavedGames = storage.getSavedTableGamesList();
     const gamesForTemplate = allSavedGames.filter(game => game.name === templateName);
     
     if (gamesForTemplate.length === 0) {
@@ -285,10 +297,10 @@ const GameTemplateSelector = ({
     
     // If only one game, load it directly unless caller prefers modal filtering UX
     if (gamesForTemplate.length === 1 && !alwaysShowSavedGamesModal) {
-      const games = LocalTableGameStorage.getAllSavedTableGames();
+      const games = storage.getAllSavedTableGames();
       const savedGame = games[gamesForTemplate[0].id];
       if (savedGame) {
-        const gameData = LocalTableGameStorage.loadTableGame(gamesForTemplate[0].id);
+        const gameData = storage.loadTableGame(gamesForTemplate[0].id);
         if (gameData) {
           handleLoadGame({ 
             ...gameData, 
@@ -301,6 +313,7 @@ const GameTemplateSelector = ({
     } else {
       // Multiple games - show load dialog filtered to this template
       setFilterGameName(templateName);
+      setLoadStorageType(isScoreboardTemplate(template) ? 'scoreboard' : 'table');
       setShowLoadDialog(true);
     }
   };
@@ -420,6 +433,7 @@ const GameTemplateSelector = ({
                             targetNumber: template.targetNumber,
                             lowIsBetter: template.lowIsBetter,
                             gameCategory: template.gameCategory || 'table',
+                            scoreEntryMode: template.scoreEntryMode || null,
                             scoringFormula: template.scoringFormula,
                             roundPattern: template.roundPattern,
                             maxRounds: template.maxRounds,
@@ -500,6 +514,7 @@ const GameTemplateSelector = ({
                           targetNumber: template.targetNumber,
                           lowIsBetter: template.lowIsBetter,
                           gameCategory: template.gameCategory || 'table',
+                          scoreEntryMode: template.scoreEntryMode || null,
                           scoringFormula: template.scoringFormula,
                           roundPattern: template.roundPattern,
                           maxRounds: template.maxRounds,
@@ -573,10 +588,12 @@ const GameTemplateSelector = ({
         onClose={() => {
           setShowLoadDialog(false);
           setFilterGameName(null);
+          setLoadStorageType('table');
         }}
         onLoadGame={handleLoadGame}
         onDeleteGame={handleDeleteSavedGame}
         filterByGameName={filterGameName}
+        storageType={loadStorageType}
         initialStatusFilter={savedGamesInitialStatus}
       />
 
