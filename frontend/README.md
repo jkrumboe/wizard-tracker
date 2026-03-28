@@ -40,4 +40,18 @@ The app will operate in offline mode using browser storage.
 
 Run `npm run build` to create optimized static files in the `dist/` folder. You can serve these with any static file server or via Docker using the provided `Dockerfile`.
 
+## Deployment Safety (Service Worker + Cached Assets)
+
+To avoid `bad-precaching-response` errors during updates:
+
+1. Deploy atomically: publish the full `dist/` output in one switch-over.
+2. Do not publish `index.html` or `service-worker.js` before all hashed files under `dist/assets/` are available.
+3. Keep the previous release's assets available briefly during rollout (or use blue/green release switching).
+4. Use cache headers:
+   - `index.html`: `Cache-Control: no-cache, must-revalidate`
+   - `service-worker.js`: `Cache-Control: no-cache, must-revalidate`
+   - hashed files in `assets/`: `Cache-Control: public, max-age=31536000, immutable`
+
+This repository enforces build-output integrity with `scripts/verify-dist-integrity.js` as part of `npm run build`.
+
 See [`src/docs/Frontend-Setup.md`](src/docs/Frontend-Setup.md) for more details on configuration and usage.
