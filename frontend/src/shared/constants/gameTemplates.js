@@ -22,7 +22,7 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
   },
   {
     _id: '__builtin_volleyball__',
-    name: 'Volleyball Scoreboard',
+    name: 'Volleyball',
     gameCategory: 'table',
     isBuiltin: true,
     targetNumber: 25,

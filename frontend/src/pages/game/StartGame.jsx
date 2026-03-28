@@ -94,7 +94,7 @@ const StartGame = () => {
   // --- Player management ---
   const isCallAndMade = selectedGameType?.gameCategory === 'callAndMade';
   const isTwoSideScoreboard = selectedGameType?.scoreEntryMode === 'twoSideGesture'
-    || selectedGameType?.name === 'Volleyball Scoreboard';
+    || selectedGameType?.name === 'Volleyball';
 
   const getMaxPlayersForSelection = () => {
     if (isTwoSideScoreboard) return MAX_PLAYERS_TABLE;
@@ -266,7 +266,7 @@ const StartGame = () => {
     if (!selectedGameType) return;
 
     const template = selectedGameType;
-    const scoreboardMode = template.scoreEntryMode === 'twoSideGesture' || template.name === 'Volleyball Scoreboard';
+    const scoreboardMode = template.scoreEntryMode === 'twoSideGesture' || template.name === 'Volleyball';
     const firstPlayerId = user?.id || generateSecureId('player');
 
     const initialPlayers = players.map((p, idx) => {
@@ -356,7 +356,7 @@ const StartGame = () => {
       if (
         gameData.scoreEntryMode === 'twoSideGesture'
         || gameData.gameType === 'scoreboard'
-        || gameData.gameName === 'Volleyball Scoreboard'
+        || gameData.gameName === 'Volleyball'
         || gameData.gameId?.startsWith('scoreboard_game')
       ) {
         navigate(`/scoreboard/${gameData.gameId}`);

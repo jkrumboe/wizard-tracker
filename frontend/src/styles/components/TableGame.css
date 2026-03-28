@@ -870,6 +870,15 @@ button.score-side-card:focus-visible:not(:disabled) {
   transform: scale(0.99);
 }
 
+.score-side-card.swiping-up,
+.score-side-card.swiping-down {
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.35), 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.score-side-card.swiping-down {
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35), 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
 .score-side-card:disabled {
   opacity: 0.75;
   cursor: not-allowed;
@@ -894,6 +903,16 @@ button.score-side-card:focus-visible:not(:disabled) {
   font-size: clamp(3rem, 10vw, 5rem);
   line-height: 1;
   font-weight: 800;
+  display: inline-block;
+  transform-origin: center;
+}
+
+.score-side-value.increment {
+  animation: scoreValueRise 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.score-side-value.decrement {
+  animation: scoreValueFall 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .score-side-total {
@@ -911,43 +930,61 @@ button.score-side-card:focus-visible:not(:disabled) {
   border-radius: 999px;
   color: var(--text-white);
   animation: scoreGesturePop 0.42s ease-out;
-}
-
-.score-gesture-feedback.up,
-.score-gesture-feedback.tap {
-  background: rgba(34, 197, 94, 0.88);
-}
-
-.score-gesture-feedback.down {
-  background: rgba(239, 68, 68, 0.9);
+  pointer-events: none;
 }
 
 .score-gesture-feedback.swipe-up,
 .score-gesture-feedback.swipe-down {
-  animation: none;
-  opacity: 0.95;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  animation: swipePreviewPulse 0.28s ease-in-out infinite alternate;
+  opacity: 1;
 }
 
 .score-gesture-feedback.swipe-up {
-  background: rgba(34, 197, 94, 0.6);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.75) 0%, rgba(21, 128, 61, 0.68) 100%);
 }
 
 .score-gesture-feedback.swipe-down {
-  background: rgba(239, 68, 68, 0.62);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.78) 0%, rgba(185, 28, 28, 0.66) 100%);
 }
 
-@keyframes scoreGesturePop {
-  0% {
-    opacity: 0;
-    transform: translateY(8px) scale(0.85);
+@keyframes swipePreviewPulse {
+  from {
+    transform: translate(-50%, -50%) scale(0.98);
+    filter: brightness(1);
   }
-  35% {
-    opacity: 1;
-    transform: translateY(0) scale(1.05);
+  to {
+    transform: translate(-50%, -50%) scale(1.04);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes scoreValueRise {
+  0% {
+    transform: translateY(4px) scale(0.92);
   }
   100% {
-    opacity: 0;
-    transform: translateY(-10px) scale(1);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scoreValueFall {
+  0% {
+    transform: translateY(-4px) scale(0.92);
+  }
+  100% {
+    transform: translateY(0) scale(1);
   }
 }
 

@@ -38,7 +38,7 @@ const GameTemplateSelector = ({
   const [detailsTemplate, setDetailsTemplate] = useState(null);
 
   const isScoreboardTemplate = (template) => {
-    return template?.scoreEntryMode === 'twoSideGesture' || template?.name === 'Volleyball Scoreboard';
+    return template?.scoreEntryMode === 'twoSideGesture' || template?.name === 'Volleyball';
   };
 
   const loadTemplates = () => {

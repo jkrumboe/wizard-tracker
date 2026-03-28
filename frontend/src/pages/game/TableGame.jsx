@@ -52,6 +52,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   const [pointHistoryBySet, setPointHistoryBySet] = useState({});
   const [teamMembers, setTeamMembers] = useState([[], []]);
   const [gestureFeedback, setGestureFeedback] = useState({});
+  const [scoreValueFeedback, setScoreValueFeedback] = useState({});
   const [gameFinished, setGameFinished] = useState(false);
   const [isCloudGame, setIsCloudGame] = useState(false);
   const [_isLoadingGame, setIsLoadingGame] = useState(false);
@@ -78,7 +79,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   const [players, setPlayers] = useState(getDefaultPlayers());
   const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
   const [currentGameName, setCurrentGameName] = useState(
-    isDedicatedScoreboardPage ? 'Volleyball Scoreboard' : ""
+    isDedicatedScoreboardPage ? 'Volleyball' : ""
   );
   const [currentGameId, setCurrentGameId] = useState(() => {
     // Prefer route ID on direct loads/refresh, fallback to session state for HMR restores
@@ -101,7 +102,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   const teamMembersRef = useRef(teamMembers);
   const gameFinishedRef = useRef(gameFinished);
   const touchStateRef = useRef({});
-  const feedbackTimeoutRef = useRef({});
+  const scoreValueTimeoutRef = useRef({});
   const lastTouchTimestampRef = useRef({});
   const loadedRouteGameIdRef = useRef(null);
 
@@ -579,9 +580,9 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   }, [t, activeStorage]);
 
   useEffect(() => {
-    const feedbackTimeouts = feedbackTimeoutRef.current;
+    const scoreFeedbackTimeouts = scoreValueTimeoutRef.current;
     return () => {
-      Object.values(feedbackTimeouts).forEach((timeoutId) => {
+      Object.values(scoreFeedbackTimeouts).forEach((timeoutId) => {
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
@@ -679,27 +680,23 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     || isDedicatedScoreboardPage
   ) && players.length === 2;
 
-  const clearGestureFeedbackTimeout = (playerIdx) => {
-    if (feedbackTimeoutRef.current[playerIdx]) {
-      clearTimeout(feedbackTimeoutRef.current[playerIdx]);
-      delete feedbackTimeoutRef.current[playerIdx];
+  const clearScoreValueFeedbackTimeout = (playerIdx) => {
+    if (scoreValueTimeoutRef.current[playerIdx]) {
+      clearTimeout(scoreValueTimeoutRef.current[playerIdx]);
+      delete scoreValueTimeoutRef.current[playerIdx];
     }
   };
 
-  const getGestureFeedbackLabel = (type) => {
-    if (type === 'up') return '↑ +1';
-    if (type === 'down') return '↓ -1';
-    if (type === 'swipe-up') return '↑';
-    if (type === 'swipe-down') return '↓';
-    return '+1';
-  };
+  const triggerScoreValueAnimation = (playerIdx, delta) => {
+    if (delta === 0) return;
 
-  const showGestureFeedback = (playerIdx, type) => {
-    setGestureFeedback((prev) => ({ ...prev, [playerIdx]: type }));
-    clearGestureFeedbackTimeout(playerIdx);
-    feedbackTimeoutRef.current[playerIdx] = setTimeout(() => {
-      setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
-    }, 420);
+    const animationType = delta > 0 ? 'increment' : 'decrement';
+    setScoreValueFeedback((prev) => ({ ...prev, [playerIdx]: animationType }));
+
+    clearScoreValueFeedbackTimeout(playerIdx);
+    scoreValueTimeoutRef.current[playerIdx] = setTimeout(() => {
+      setScoreValueFeedback((prev) => ({ ...prev, [playerIdx]: null }));
+    }, 240);
   };
 
   const updatePointHistoryForScoreChange = (roundNumber, playerIdx, delta) => {
@@ -746,6 +743,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
     const actualDelta = nextValue - currentValue;
     updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);
+    triggerScoreValueAnimation(playerIdx, actualDelta);
   };
 
   const setPlayerLiveScore = (playerIdx, newScore) => {
@@ -763,6 +761,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
     const actualDelta = nextValue - currentValue;
     updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);
+    triggerScoreValueAnimation(playerIdx, actualDelta);
   };
 
   const getLiveScore = (playerIdx) => {
@@ -799,7 +798,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   };
 
   const handleScoreTouchStart = (playerIdx, event) => {
-    clearGestureFeedbackTimeout(playerIdx);
     setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
 
     const touch = event.touches?.[0];
@@ -846,15 +844,13 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
     if (deltaY <= -threshold) {
       updatePlayerLiveScore(playerIdx, 1);
-      showGestureFeedback(playerIdx, 'up');
     } else if (deltaY >= threshold) {
       updatePlayerLiveScore(playerIdx, -1);
-      showGestureFeedback(playerIdx, 'down');
     } else if (!state.moved) {
       updatePlayerLiveScore(playerIdx, 1);
-      showGestureFeedback(playerIdx, 'tap');
     }
 
+    setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
     lastTouchTimestampRef.current[playerIdx] = Date.now();
     event.currentTarget?.blur?.();
     delete touchStateRef.current[playerIdx];
@@ -873,7 +869,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     }
 
     updatePlayerLiveScore(playerIdx, 1);
-    showGestureFeedback(playerIdx, 'tap');
   };
 
   const toggleCurrentSetTarget = () => {
@@ -1300,7 +1295,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                       <button
                         key={player.id || idx}
                         type="button"
-                        className={`score-side-card ${idx === 0 ? 'team-one' : 'team-two'}`}
+                        className={`score-side-card ${idx === 0 ? 'team-one' : 'team-two'} ${gestureFeedback[idx] === 'swipe-up' ? 'swiping-up' : ''} ${gestureFeedback[idx] === 'swipe-down' ? 'swiping-down' : ''}`}
                         onClick={() => handleScoreCardClick(idx)}
                         onTouchStart={(e) => handleScoreTouchStart(idx, e)}
                         onTouchMove={(e) => handleScoreTouchMove(idx, e)}
@@ -1313,13 +1308,13 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                         <span className="score-side-members">
                           {(teamMembers[idx] || []).map((member) => member.name).join(' • ')}
                         </span>
-                        <span className="score-side-value">{getLiveScore(idx)}</span>
+                        <span className={`score-side-value ${scoreValueFeedback[idx] || ''}`}>{getLiveScore(idx)}</span>
                         <span className="score-side-total">
                           {t('tableGame.totalWithScore', { score: getTotal(player) })}
                         </span>
-                        {gestureFeedback[idx] && (
+                        {(gestureFeedback[idx] === 'swipe-up' || gestureFeedback[idx] === 'swipe-down') && (
                           <span className={`score-gesture-feedback ${gestureFeedback[idx]}`}>
-                            {getGestureFeedbackLabel(gestureFeedback[idx])}
+                            {gestureFeedback[idx] === 'swipe-up' ? '↑' : '↓'}
                           </span>
                         )}
                       </button>
@@ -1411,7 +1406,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                     className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
                     onClick={() => setStatsSubTab('table')}
                   >
-                    {t('tableGame.tableSubTab')}
+                    {isTwoSideScoreboard ? t('tableGame.setsSubTab') : t('tableGame.tableSubTab')}
                   </button>
                 </div>
                 
@@ -1568,7 +1563,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                       <table className="scorecard-table">
                         <thead>
                           <tr>
-                            <th className="round-header sticky-cell">{t('tableGame.roundHeader')}</th>
+                            <th className="round-header sticky-cell">{isTwoSideScoreboard ? t('tableGame.setHeader') : t('tableGame.roundHeader')}</th>
                             {players.map((player, idx) => (
                               <th key={idx} className="player-header">
                                 <div className="player-header-name">{player.name}</div>
