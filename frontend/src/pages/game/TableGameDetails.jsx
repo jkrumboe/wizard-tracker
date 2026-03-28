@@ -138,7 +138,25 @@ const TableGameDetails = () => {
   const gameName = game.gameTypeName || game.name || gameData.gameName || 'Table Game'
   const lowIsBetter = game.lowIsBetter ?? gameData.lowIsBetter ?? false
   const rows = gameData.rows || 10
-  const createdAt = game.createdAt || game.created_at
+  const timestampCandidates = [
+    game.createdAt,
+    game.created_at,
+    game.savedAt,
+    game.saved_at,
+    game.lastPlayed,
+    gameData.createdAt,
+    gameData.created_at,
+    gameData.savedAt,
+    gameData.saved_at,
+    gameData.lastPlayed,
+    gameData.referenceDate,
+    gameData._internalState?.referenceDate,
+  ]
+  const gameTimestamp = timestampCandidates.find((value) => {
+    if (!value) return false
+    const parsedDate = new Date(value)
+    return !Number.isNaN(parsedDate.getTime())
+  })
 
   const filledRounds = players.reduce((maxRounds, player) => {
     const roundsForPlayer = (player.points || []).filter((p) => p !== '' && p !== undefined && p !== null).length
@@ -146,8 +164,8 @@ const TableGameDetails = () => {
   }, 0)
   const hasMultipleRounds = filledRounds > 1
 
-  const formattedDate = createdAt
-    ? new Date(createdAt).toLocaleDateString('en-GB', {
+  const formattedDate = gameTimestamp
+    ? new Date(gameTimestamp).toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',

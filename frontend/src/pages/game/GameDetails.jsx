@@ -338,14 +338,37 @@ const GameDetails = () => {
   }
   const playerStats = calculatePlayerStats(game);
 
-  const formattedDate = new Date(game.created_at).toLocaleDateString("en-DE", {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
+  const timestampCandidates = [
+    game.created_at,
+    game.createdAt,
+    game.savedAt,
+    game.saved_at,
+    game.lastPlayed,
+    game.referenceDate,
+    game._internalState?.referenceDate,
+    game.gameState?.created_at,
+    game.gameState?.createdAt,
+    game.gameState?.savedAt,
+    game.gameState?.saved_at,
+    game.gameState?.lastPlayed,
+    game.gameState?.referenceDate,
+  ];
+  const gameTimestamp = timestampCandidates.find((value) => {
+    if (!value) return false;
+    const parsedDate = new Date(value);
+    return !Number.isNaN(parsedDate.getTime());
   });
+
+  const formattedDate = gameTimestamp
+    ? new Date(gameTimestamp).toLocaleDateString("en-DE", {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    : 'Unknown date';
 
   // Prepare data for StatsChart component
   const prepareChartData = () => {

@@ -119,7 +119,25 @@ const ScoreboardGameDetails = () => {
   const players = Array.isArray(gameData.players) ? gameData.players : []
   const gameName = normalizedGame.gameTypeName || normalizedGame.name || gameData.gameName || 'Scoreboard Game'
   const rows = gameData.rows || 10
-  const createdAt = normalizedGame.createdAt || normalizedGame.created_at
+  const timestampCandidates = [
+    normalizedGame.createdAt,
+    normalizedGame.created_at,
+    normalizedGame.savedAt,
+    normalizedGame.saved_at,
+    normalizedGame.lastPlayed,
+    gameData.createdAt,
+    gameData.created_at,
+    gameData.savedAt,
+    gameData.saved_at,
+    gameData.lastPlayed,
+    gameData.referenceDate,
+    gameData._internalState?.referenceDate,
+  ]
+  const gameTimestamp = timestampCandidates.find((value) => {
+    if (!value) return false
+    const parsedDate = new Date(value)
+    return !Number.isNaN(parsedDate.getTime())
+  })
   const pointHistoryBySet = useMemo(() => {
     if (gameData.pointHistoryBySet && typeof gameData.pointHistoryBySet === 'object') {
       return gameData.pointHistoryBySet
@@ -149,8 +167,8 @@ const ScoreboardGameDetails = () => {
     })
   }, [availableSetNumbers])
 
-  const formattedDate = createdAt
-    ? new Date(createdAt).toLocaleDateString('en-GB', {
+  const formattedDate = gameTimestamp
+    ? new Date(gameTimestamp).toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
