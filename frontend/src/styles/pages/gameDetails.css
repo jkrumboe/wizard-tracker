@@ -300,3 +300,36 @@
   border-bottom: 2px solid var(--border);
   margin-bottom: var(--spacing-sm);
 }
+
+.game-details-score-progression-analytics {
+  gap: var(--spacing-md);
+}
+
+.game-details-set-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.game-details-set-chip {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.game-details-set-chip:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.game-details-set-chip.active {
+  border-color: var(--primary);
+  background: rgba(52, 152, 219, 0.22);
+  color: var(--text-white);
+}

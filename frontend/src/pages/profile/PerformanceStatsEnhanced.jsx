@@ -399,7 +399,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
         winRate: ((wins / totalGames) * 100).toFixed(1),
         bidAccuracy: gameBidAccuracy !== null ? parseFloat(gameBidAccuracy.toFixed(1)) : null,
         gameId: game._id || game.id || game.gameId,
-        isTableGame
+        isTableGame,
+        gameType: game.gameType || (isTableGame ? 'table' : 'wizard')
       });
       
       winLossData.push({
@@ -551,11 +552,14 @@ const GameTooltip = ({ active, payload, _label, navigate, formatter }) => {
   const data = payload[0]?.payload;
   const gameId = data?.gameId;
   const isTableGame = data?.isTableGame;
+  const isScoreboardGame = data?.gameType === 'scoreboard' || String(gameId || '').startsWith('scoreboard_game_');
 
   const handleViewGame = (e) => {
     e.stopPropagation();
     if (!gameId) return;
-    const route = isTableGame ? `/table-game/${gameId}` : `/game/${gameId}`;
+    const route = isTableGame
+      ? (isScoreboardGame ? `/scoreboard-game/${gameId}` : `/table-game/${gameId}`)
+      : `/game/${gameId}`;
     navigate(route);
   };
 
@@ -620,7 +624,10 @@ const EloTooltip = ({ active, payload, _label, navigate, gameType: gt }) => {
     if (!gameId) return;
     // ELO is currently only for wizard games
     const isTableGame = gt && gt !== 'wizard';
-    const route = isTableGame ? `/table-game/${gameId}` : `/game/${gameId}`;
+    const isScoreboardGame = data?.gameType === 'scoreboard' || String(gameId || '').startsWith('scoreboard_game_');
+    const route = isTableGame
+      ? (isScoreboardGame ? `/scoreboard-game/${gameId}` : `/table-game/${gameId}`)
+      : `/game/${gameId}`;
     navigate(route);
   };
 

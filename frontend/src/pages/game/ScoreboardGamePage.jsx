@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import PropTypes from 'prop-types';
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
-import { LocalTableGameStorage, LocalScoreboardGameStorage } from "../../shared/api";
+import { LocalScoreboardGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
 import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
-import { useUser } from "../../shared/hooks/useUser";
 import StatsChart from "../../components/game/StatsChart";
 import { AdvancedStats } from "../../components/game";
 import { generateSecureId } from "../../shared/utils/secureRandom";
@@ -19,16 +17,14 @@ import "../../styles/components/scorecard.css";
 
 const MIN_PLAYERS = 2;
 
-const TableGame = ({ forceScoreEntryMode = null }) => {
-  const { user } = useUser(); // Get the logged-in user
+const ScoreboardGamePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const isDedicatedScoreboardPage = forceScoreEntryMode === 'twoSideGesture' || location.pathname.startsWith('/scoreboard/');
-  const activeStorage = isDedicatedScoreboardPage ? LocalScoreboardGameStorage : LocalTableGameStorage;
-  const currentGameIdSessionKey = isDedicatedScoreboardPage ? 'currentScoreboardGameId' : 'currentTableGameId';
-  const currentGameStateSessionKey = isDedicatedScoreboardPage ? 'currentScoreboardGameState' : 'currentTableGameState';
+  const activeStorage = LocalScoreboardGameStorage;
+  const currentGameIdSessionKey = 'currentScoreboardGameId';
+  const currentGameStateSessionKey = 'currentScoreboardGameState';
   
   const [rows, setRows] = useState(() => {
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
@@ -60,27 +56,15 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   
   // Initialize players with the logged-in user as the first player if available
   const getDefaultPlayers = () => {
-    if (isDedicatedScoreboardPage) {
-      return [
-        { id: 'team-1', name: t('startTableGame.teamOne'), points: [] },
-        { id: 'team-2', name: t('startTableGame.teamTwo'), points: [] },
-      ];
-    }
-
-    const firstPlayerName = user?.username || user?.name || "Player 1";
-    const firstPlayerId = user?.id || user?.$id || generateSecureId('player');
     return [
-      { id: firstPlayerId, name: firstPlayerName, points: [] },
-      { id: generateSecureId('player'), name: "Player 2", points: [] },
-      { id: generateSecureId('player'), name: "Player 3", points: [] }
+      { id: 'team-1', name: t('startTableGame.teamOne'), points: [] },
+      { id: 'team-2', name: t('startTableGame.teamTwo'), points: [] },
     ];
   };
   
   const [players, setPlayers] = useState(getDefaultPlayers());
   const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
-  const [currentGameName, setCurrentGameName] = useState(
-    isDedicatedScoreboardPage ? 'Volleyball' : ""
-  );
+  const [currentGameName, setCurrentGameName] = useState('Volleyball');
   const [currentGameId, setCurrentGameId] = useState(() => {
     // Prefer route ID on direct loads/refresh, fallback to session state for HMR restores
     if (id) return id;
@@ -207,11 +191,9 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             // Try to load the game - this will check local first, then cloud
             let savedGame = null;
 
-            if (isDedicatedScoreboardPage) {
-              const localScoreboardGame = activeStorage.getTableGameById(id);
-              if (localScoreboardGame) {
-                savedGame = { ...localScoreboardGame, is_local: true };
-              }
+            const localScoreboardGame = activeStorage.getTableGameById(id);
+            if (localScoreboardGame) {
+              savedGame = { ...localScoreboardGame, is_local: true };
             }
 
             if (!savedGame && !id.startsWith('scoreboard_game')) {
@@ -283,7 +265,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             // This prevents altered local variants from overriding games created with system templates
             setTargetNumber(gameData.targetNumber || null);
             setLowIsBetter(gameData.lowIsBetter || false);
-            setScoreEntryMode(forceScoreEntryMode || gameData.scoreEntryMode || (gameData.gameType === 'scoreboard' ? 'twoSideGesture' : null));
+            setScoreEntryMode(gameData.scoreEntryMode || 'twoSideGesture');
             setSetTargets(gameData.setTargets || {});
             setPointHistoryBySet(gameData.pointHistoryBySet || {});
             console.debug(`📋 Using saved game settings: target=${gameData.targetNumber}, lowIsBetter=${gameData.lowIsBetter}`);
@@ -310,7 +292,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     };
     
     loadGame();
-  }, [id, showTemplateSelector, currentGameId, navigate, t, location.pathname, forceScoreEntryMode, isDedicatedScoreboardPage, activeStorage]);
+  }, [id, showTemplateSelector, currentGameId, navigate, t, location.pathname, activeStorage]);
 
   // Listen for orientation changes
   useEffect(() => {
@@ -675,11 +657,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     return player.points.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0);
   };
 
-  const isTwoSideScoreboard = (
-    forceScoreEntryMode === 'twoSideGesture'
-    || scoreEntryMode === 'twoSideGesture'
-    || isDedicatedScoreboardPage
-  ) && players.length === 2;
+  const isTwoSideScoreboard = players.length === 2;
 
   const clearScoreValueFeedbackTimeout = (playerIdx) => {
     if (scoreValueTimeoutRef.current[playerIdx]) {
@@ -1251,7 +1229,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   }
 
   return (
-    <div className={isDedicatedScoreboardPage ? 'scoreboard-game-container' : 'table-game-container'}>
+    <div className="scoreboard-game-container">
         <div className={`game-in-progress players-${players.length} ${players.length > 3 ? 'many-players' : ''}`}>
           {/* Round Info Header */}
           <div className="round-info">
@@ -1714,9 +1692,4 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   );
 };
 
-export { TableGame };
-export default TableGame;
-
-TableGame.propTypes = {
-  forceScoreEntryMode: PropTypes.string,
-};
+export default ScoreboardGamePage;

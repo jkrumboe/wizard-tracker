@@ -81,8 +81,13 @@ const GameHistoryItem = ({ game }) => {
 
   if (!game) return null;
   
-  // Check if this is a table game
-  const isTableGame = game.gameType === 'table';
+  // Check if this is a table-like game
+  const isScoreboardGame =
+    game.gameType === 'scoreboard'
+    || game.gameData?.gameType === 'scoreboard'
+    || game.gameData?.scoreEntryMode === 'twoSideGesture'
+    || game.id?.startsWith?.('scoreboard_game_');
+  const isTableGame = game.gameType === 'table' || isScoreboardGame;
   
   // Check if this is v3.0 format
   const isV3Format = game.version === '3.0';
@@ -217,7 +222,7 @@ const GameHistoryItem = ({ game }) => {
             <div className="game-date"> {formattedDate}
             </div>
           </div>
-          <Link to={isTableGame ? `/table-game/${id}` : `/game/${id}`} className="game-details">
+          <Link to={isTableGame ? (isScoreboardGame ? `/scoreboard-game/${id}` : `/table-game/${id}`) : `/game/${id}`} className="game-details">
             {t('gameHistory.viewDetails')}
           </Link>
         </div>

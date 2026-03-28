@@ -159,7 +159,11 @@ const FriendLeaderboard = () => {
 
   const navigateToGame = (game) => {
     if (!game?.id) return
-    const route = game.type === 'Wizard' ? `/game/${game.id}` : `/table-game/${game.id}`
+    const gameType = String(game.type || '').toLowerCase()
+    const isScoreboardGame = gameType.includes('scoreboard') || gameType.includes('volleyball') || String(game.id).startsWith('scoreboard_game_')
+    const route = game.type === 'Wizard'
+      ? `/game/${game.id}`
+      : (isScoreboardGame ? `/scoreboard-game/${game.id}` : `/table-game/${game.id}`)
     navigate(route)
   }
 

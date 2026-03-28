@@ -1,8 +1,8 @@
 import React from 'react';
-import { TableGame } from './TableGame';
+import ScoreboardGamePage from './ScoreboardGamePage';
 
 const ScoreboardGame = () => {
-  return <TableGame forceScoreEntryMode="twoSideGesture" />;
+  return <ScoreboardGamePage />;
 };
 
 export default ScoreboardGame;
