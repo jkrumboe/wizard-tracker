@@ -830,17 +830,40 @@
   justify-content: center;
   gap: 0.4rem;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   padding: var(--spacing-md);
   position: relative;
   touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.score-side-card:hover,
-.score-side-card:focus,
-.score-side-card:focus-visible {
+.score-side-card.team-one {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.12) 100%);
+}
+
+.score-side-card.team-two {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.12) 100%);
+}
+
+.score-side-card.team-one .score-side-name,
+.score-side-card.team-one .score-side-value {
+  color: #83b9fa;
+}
+
+.score-side-card.team-two .score-side-name,
+.score-side-card.team-two .score-side-value {
+  color: #ff7474;
+}
+
+button.score-side-card:hover:not(:disabled),
+button.score-side-card:focus:not(:disabled),
+button.score-side-card:focus-visible:not(:disabled) {
   transform: none;
   box-shadow: none;
+  border-color: inherit;
+  outline: none;
 }
 
 .score-side-card:active {
@@ -977,23 +1000,6 @@
   gap: var(--spacing-md);
 }
 
-.score-progression-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.score-progression-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.score-progression-header span {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
 .score-progression-chart-wrap {
   display: flex;
   flex-direction: column;
@@ -1019,18 +1025,13 @@
   stroke: var(--border);
 }
 
-.score-progression-axis {
-  stroke: var(--border);
-  stroke-width: 3;
-}
-
 .score-progression-line {
   fill: none;
   stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-
+  
 .score-progression-line.team-one {
   stroke: #60a5fa;
 }

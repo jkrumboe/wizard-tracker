@@ -799,10 +799,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   };
 
   const handleScoreTouchStart = (playerIdx, event) => {
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-
     clearGestureFeedbackTimeout(playerIdx);
     setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
 
@@ -816,10 +812,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   };
 
   const handleScoreTouchMove = (playerIdx, event) => {
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-
     const state = touchStateRef.current[playerIdx];
     const touch = event.touches?.[0];
     if (!state || !touch) return;
@@ -845,10 +837,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   };
 
   const handleScoreTouchEnd = (playerIdx, event) => {
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-
     const state = touchStateRef.current[playerIdx];
     const touch = event.changedTouches?.[0];
     if (!state || !touch) return;
@@ -868,6 +856,13 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     }
 
     lastTouchTimestampRef.current[playerIdx] = Date.now();
+    event.currentTarget?.blur?.();
+    delete touchStateRef.current[playerIdx];
+  };
+
+  const handleScoreTouchCancel = (playerIdx, event) => {
+    setGestureFeedback((prev) => ({ ...prev, [playerIdx]: null }));
+    event.currentTarget?.blur?.();
     delete touchStateRef.current[playerIdx];
   };
 
@@ -1305,11 +1300,12 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                       <button
                         key={player.id || idx}
                         type="button"
-                        className="score-side-card"
+                        className={`score-side-card ${idx === 0 ? 'team-one' : 'team-two'}`}
                         onClick={() => handleScoreCardClick(idx)}
                         onTouchStart={(e) => handleScoreTouchStart(idx, e)}
                         onTouchMove={(e) => handleScoreTouchMove(idx, e)}
                         onTouchEnd={(e) => handleScoreTouchEnd(idx, e)}
+                        onTouchCancel={(e) => handleScoreTouchCancel(idx, e)}
                         disabled={gameFinished}
                         title={t('tableGame.gestureHint')}
                       >
@@ -1466,10 +1462,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                 {(statsSubTab === 'chart' || isLandscape) && (
                   isTwoSideScoreboard ? (
                     <div className="score-progression-analytics">
-                      <div className="score-progression-header">
-                        <h3>{t('tableGame.pointProgressionSubtitle', { n: currentRound })}</h3>
-                      </div>
-
                       <div className="score-progression-chart-wrap">
                         <div
                           className="score-progression-chart"

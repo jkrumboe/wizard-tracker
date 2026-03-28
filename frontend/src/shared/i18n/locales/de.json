@@ -394,7 +394,6 @@
     "setTargetTo15": "zu 15",
     "setTargetTo25": "zu 25",
     "toggleSetTargetHint": "Satz {{n}}: Ziel auf {{target}} umstellen.",
-    "pointProgressionSubtitle": "Satz {{n}} Rallye-Verlauf",
     "pointProgressionChartAria": "Punktverlauf-Diagramm fuer Satz {{set}}",
     "rallyTimelineTitle": "Rallye-Zeitleiste",
     "rallyTimelineAria": "Rallye-Punktzeitleiste fuer Satz {{set}}",

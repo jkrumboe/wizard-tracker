@@ -394,7 +394,6 @@
     "setTargetTo15": "to 15",
     "setTargetTo25": "to 25",
     "toggleSetTargetHint": "Set {{n}}: switch target to {{target}}.",
-    "pointProgressionSubtitle": "Set {{n}} rally flow",
     "pointProgressionChartAria": "Score progression chart for set {{set}}",
     "rallyTimelineTitle": "Rally Timeline",
     "rallyTimelineAria": "Rally dots timeline for set {{set}}",
