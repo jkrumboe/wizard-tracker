@@ -59,7 +59,8 @@ const TableGameDetails = () => {
       try {
         setLoading(true)
 
-        if (typeof id === 'string' && id.startsWith('scoreboard_game_')) {
+        const isScoreboardById = typeof id === 'string' && id.startsWith('scoreboard_game_')
+        if (isScoreboardById) {
           navigate(`/scoreboard-game/${id}`, { replace: true })
           return
         }
@@ -70,8 +71,15 @@ const TableGameDetails = () => {
           throw new Error('Game not found')
         }
 
-        const normalized = gameData.gameData || gameData
-        if (normalized.scoreEntryMode === 'twoSideGesture' || normalized.gameType === 'scoreboard') {
+        const normalized = gameData.gameData?.gameData || gameData.gameData || gameData
+        const isScoreboardGame =
+          normalized.scoreEntryMode === 'twoSideGesture'
+          || normalized.gameType === 'scoreboard'
+          || gameData.scoreEntryMode === 'twoSideGesture'
+          || gameData.gameType === 'scoreboard'
+          || gameData.gameTypeName === 'Volleyball'
+          || gameData.name === 'Volleyball'
+        if (isScoreboardGame) {
           navigate(`/scoreboard-game/${id}`, { replace: true })
           return
         }

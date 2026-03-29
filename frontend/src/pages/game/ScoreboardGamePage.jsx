@@ -448,6 +448,13 @@ const ScoreboardGamePage = () => {
       // Save if we have a game in progress (not on template selector)
       if (!isShowingTemplateSelector) {
         try {
+          const existingGame = currentId && activeStorage.tableGameExists(currentId)
+            ? activeStorage.getTableGameById(currentId)
+            : null;
+          const persistedFinished = currentGameFinished
+            || existingGame?.gameFinished === true
+            || existingGame?.gameData?.gameFinished === true;
+
           const gameData = {
             players: currentPlayers,
             rows: currentRows,
@@ -458,7 +465,7 @@ const ScoreboardGamePage = () => {
             setTargets: currentSetTargets,
             pointHistoryBySet: currentPointHistoryBySet,
             teamMembers: currentTeamMembers,
-            gameFinished: currentGameFinished,
+            gameFinished: persistedFinished,
             gameName: currentName
           };
 
@@ -479,9 +486,9 @@ const ScoreboardGamePage = () => {
               scoreEntryMode: currentScoreEntryMode,
               setTargets: currentSetTargets,
               pointHistoryBySet: currentPointHistoryBySet,
-              gameFinished: currentGameFinished
+              gameFinished: persistedFinished
             });
-            console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId}, finished: ${currentGameFinished})`);
+            console.debug(`✅ Silent save on navigation: "${name}" (ID: ${currentId}, finished: ${persistedFinished})`);
           }
         } catch (error) {
           console.error('❌ Failed to save on navigation:', error);
@@ -514,6 +521,13 @@ const ScoreboardGamePage = () => {
       // Save if we have a game in progress (not on template selector)
       if (!isShowingTemplateSelector) {
         try {
+          const existingGame = currentId && activeStorage.tableGameExists(currentId)
+            ? activeStorage.getTableGameById(currentId)
+            : null;
+          const persistedFinished = currentGameFinished
+            || existingGame?.gameFinished === true
+            || existingGame?.gameData?.gameFinished === true;
+
           const gameData = {
             players: currentPlayers,
             rows: currentRows,
@@ -524,7 +538,7 @@ const ScoreboardGamePage = () => {
             setTargets: currentSetTargets,
             pointHistoryBySet: currentPointHistoryBySet,
             teamMembers: currentTeamMembers,
-            gameFinished: currentGameFinished,
+            gameFinished: persistedFinished,
             gameName: currentName
           };
 
@@ -545,9 +559,9 @@ const ScoreboardGamePage = () => {
               scoreEntryMode: currentScoreEntryMode,
               setTargets: currentSetTargets,
               pointHistoryBySet: currentPointHistoryBySet,
-              gameFinished: currentGameFinished
+              gameFinished: persistedFinished
             });
-            console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId}, finished: ${currentGameFinished})`);
+            console.debug(`✅ Silent save on browser close: "${name}" (ID: ${currentId}, finished: ${persistedFinished})`);
           }
         } catch (error) {
           console.error('❌ Failed to save on browser close:', error);
@@ -976,6 +990,8 @@ const ScoreboardGamePage = () => {
   };
 
   const handleFinishGame = async () => {
+    // Keep unmount autosave in sync during immediate post-finish redirect.
+    gameFinishedRef.current = true;
     setGameFinished(true);
     
     // Calculate the actual number of used rows (find the last row with any data)
@@ -1088,6 +1104,11 @@ const ScoreboardGamePage = () => {
         }
       }
       
+      // Ensure cleanup autosave writes to the just-finished game instead of creating a stale duplicate.
+      currentGameIdRef.current = savedGameId;
+      playersRef.current = trimmedPlayers;
+      rowsRef.current = actualUsedRows;
+
       // Navigate to the details page after finishing
       navigate(isTwoSideScoreboard ? `/scoreboard-game/${savedGameId}` : `/table-game/${savedGameId}`, { replace: true });
     } catch (error) {

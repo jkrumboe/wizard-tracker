@@ -21,6 +21,7 @@ const LoadTableGameDialog = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const activeStorage = storageType === 'scoreboard' ? LocalScoreboardGameStorage : LocalTableGameStorage;
+  const isGameFinished = (game) => Boolean(game?.gameFinished || game?.gameData?.gameFinished);
 
   useEffect(() => {
     const loadSavedGames = async () => {
@@ -153,15 +154,15 @@ const LoadTableGameDialog = ({
 
       const statusMatch =
         statusFilter === 'all' ||
-        (statusFilter === 'paused' && !game.gameFinished) ||
-        (statusFilter === 'finished' && game.gameFinished);
+        (statusFilter === 'paused' && !isGameFinished(game)) ||
+        (statusFilter === 'finished' && isGameFinished(game));
 
       return searchMatch && statusMatch;
     });
   }, [savedGames, searchTerm, statusFilter]);
 
-  const finishedCount = savedGames.filter(g => g.gameFinished).length;
-  const pausedCount = savedGames.filter(g => !g.gameFinished).length;
+  const finishedCount = savedGames.filter((g) => isGameFinished(g)).length;
+  const pausedCount = savedGames.filter((g) => !isGameFinished(g)).length;
 
   const emptyTitle = searchTerm
     ? t('loadTableGame.noMatches')
@@ -199,8 +200,8 @@ const LoadTableGameDialog = ({
         key={game.id}
         onDelete={onDeleteGame ? () => handleDeleteGame(game.id, game.name) : undefined}
         onViewDetails={() => handleLoadGame(game.id)}
-        viewDetailsLabel={!game.gameFinished ? t('loadTableGame.resumeGame') : undefined}
-        viewDetailsIcon={!game.gameFinished ? <PlayIcon size={16} /> : undefined}
+        viewDetailsLabel={!isGameFinished(game) ? t('loadTableGame.resumeGame') : undefined}
+        viewDetailsIcon={!isGameFinished(game) ? <PlayIcon size={16} /> : undefined}
         showViewDetails
         showDelete={!!onDeleteGame}
       >
@@ -217,8 +218,8 @@ const LoadTableGameDialog = ({
                 )}
               </div>
               <div className="game-badges">
-                <span className={`mode-badge ${game.gameFinished ? 'finished' : 'paused'}`}>
-                  {game.gameFinished ? t('loadTableGame.finished') : t('loadTableGame.paused')}
+                <span className={`mode-badge ${isGameFinished(game) ? 'finished' : 'paused'}`}>
+                  {isGameFinished(game) ? t('loadTableGame.finished') : t('loadTableGame.paused')}
                 </span>
               </div>
             </div>
