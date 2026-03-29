@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import Icon, { TrashIcon, DiceIcon, UsersIcon } from '@/components/ui/Icon';
+import Icon, { TrashIcon, DiceIcon, UsersIcon, EditIcon } from '@/components/ui/Icon';
 
 const TeamSection = ({
   teamIndex,
   title,
+  otherTeamLabel,
+  onTeamNameChange,
   players,
   onNameChange,
   onNameBlur,
@@ -13,14 +15,70 @@ const TeamSection = ({
   lookingUpPlayers,
 }) => {
   const { t } = useTranslation();
-  const otherTeamLabel = teamIndex === 0 ? t('startTableGame.teamTwo') : t('startTableGame.teamOne');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(title);
+  const inputRef = useRef(null);
+
+  const handleEditClick = () => {
+    setIsEditingName(true);
+    setEditNameValue(title);
+  };
+
+  const handleSaveName = (newName) => {
+    onTeamNameChange(newName);
+    setIsEditingName(false);
+  };
+
+  const handleInputBlur = () => {
+    handleSaveName(editNameValue);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveName(editNameValue);
+    } else if (e.key === 'Escape') {
+      setIsEditingName(false);
+    }
+  };
 
   return (
     <section className={`team-builder-panel ${teamIndex === 0 ? 'team-one' : 'team-two'}`}>
       <header className="team-builder-panel-header">
-        <div>
-          <h3>{title}</h3>
-        </div>
+        {isEditingName ? (
+          <input
+            ref={inputRef}
+            type="text"
+            className="team-builder-name-input"
+            value={editNameValue}
+            onChange={(e) => setEditNameValue(e.target.value)}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            autoFocus
+            placeholder={
+              teamIndex === 0
+                ? t('startTableGame.teamNamePlaceholderOne', { defaultValue: 'Team 1 name' })
+                : t('startTableGame.teamNamePlaceholderTwo', { defaultValue: 'Team 2 name' })
+            }
+            aria-label={
+              teamIndex === 0
+                ? t('startTableGame.teamNameAriaOne', { defaultValue: 'Team 1 name' })
+                : t('startTableGame.teamNameAriaTwo', { defaultValue: 'Team 2 name' })
+            }
+          />
+        ) : (
+          <div className="team-builder-name-display">
+            <span className="team-builder-name-text">{title}</span>
+            <button
+              type="button"
+              className="team-builder-edit-btn"
+              onClick={handleEditClick}
+              title={t('common.edit', { defaultValue: 'Edit' })}
+              aria-label={t('common.edit', { defaultValue: 'Edit' })}
+            >
+              <EditIcon size={16} />
+            </button>
+          </div>
+        )}
       </header>
 
       {players.length === 0 && (
@@ -84,6 +142,7 @@ const TeamBuilderSetup = ({
   maxPlayers,
   lookingUpPlayers,
   teamNames,
+  onTeamNameChange,
 }) => {
   const { t } = useTranslation();
 
@@ -99,6 +158,8 @@ const TeamBuilderSetup = ({
         <TeamSection
           teamIndex={0}
           title={teamNames.teamOne}
+          otherTeamLabel={teamNames.teamTwo || t('startTableGame.teamTwo')}
+          onTeamNameChange={(value) => onTeamNameChange('teamOne', value)}
           players={teams[0]}
           onNameChange={onPlayerNameChange}
           onNameBlur={onPlayerNameBlur}
@@ -110,6 +171,8 @@ const TeamBuilderSetup = ({
         <TeamSection
           teamIndex={1}
           title={teamNames.teamTwo}
+          otherTeamLabel={teamNames.teamOne || t('startTableGame.teamOne')}
+          onTeamNameChange={(value) => onTeamNameChange('teamTwo', value)}
           players={teams[1]}
           onNameChange={onPlayerNameChange}
           onNameBlur={onPlayerNameBlur}

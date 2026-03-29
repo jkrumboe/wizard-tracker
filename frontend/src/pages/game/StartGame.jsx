@@ -54,6 +54,12 @@ const StartGame = () => {
   const [lookingUpPlayers, setLookingUpPlayers] = useState(new Set());
   const [friends, setFriends] = useState([]);
 
+  // Scoreboard team naming
+  const [teamNames, setTeamNames] = useState({
+    teamOne: t('startTableGame.teamOne'),
+    teamTwo: t('startTableGame.teamTwo'),
+  });
+
   // Friends modal
   const [showSelectFriendsModal, setShowSelectFriendsModal] = useState(false);
 
@@ -162,6 +168,13 @@ const StartGame = () => {
       if (p.id !== playerId) return p;
       const currentTeam = p.teamIndex === 1 ? 1 : 0;
       return { ...p, teamIndex: currentTeam === 0 ? 1 : 0 };
+    }));
+  };
+
+  const handleTeamNameChange = (teamKey, value) => {
+    setTeamNames((prev) => ({
+      ...prev,
+      [teamKey]: value,
     }));
   };
 
@@ -312,8 +325,10 @@ const StartGame = () => {
       };
     });
 
-    const teamOneName = t('startTableGame.teamOne');
-    const teamTwoName = t('startTableGame.teamTwo');
+    const defaultTeamOneName = t('startTableGame.teamOne');
+    const defaultTeamTwoName = t('startTableGame.teamTwo');
+    const teamOneName = teamNames.teamOne?.trim() || defaultTeamOneName;
+    const teamTwoName = teamNames.teamTwo?.trim() || defaultTeamTwoName;
 
     const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
     const newRows = isSmallLandscape ? 8 : 10;
@@ -536,10 +551,8 @@ const StartGame = () => {
             onAddFriends={() => setShowSelectFriendsModal(true)}
             maxPlayers={maxPlayers}
             lookingUpPlayers={lookingUpPlayers}
-            teamNames={{
-              teamOne: t('startTableGame.teamOne'),
-              teamTwo: t('startTableGame.teamTwo'),
-            }}
+            teamNames={teamNames}
+            onTeamNameChange={handleTeamNameChange}
           />
         ) : (
           <PlayerSetup
