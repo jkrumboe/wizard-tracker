@@ -13,7 +13,37 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  flex: 1;
+
+}
+
+.start-select-header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.start-select-back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  min-height: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  line-height: 0;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.start-select-back-button:hover {
+  background: var(--primary-hover);
+}
+
+.start-select-title {
+  margin: 0;
 }
 
 /* Embedded GameTemplateSelector — no fixed height, flow naturally */

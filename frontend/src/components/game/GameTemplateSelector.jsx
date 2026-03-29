@@ -18,6 +18,8 @@ const GameTemplateSelector = ({
   onLoadWizardGames,
   embedded,
   gameCategory,
+  tableTemplateMode = 'all',
+  hideSystemSectionTitle = false,
   hideCreateButton,
   alwaysShowSavedGamesModal = false,
   savedGamesInitialStatus = 'all'
@@ -41,6 +43,12 @@ const GameTemplateSelector = ({
     return template?.scoreEntryMode === 'twoSideGesture' || template?.name === 'Volleyball';
   };
 
+  const matchesTableTemplateMode = (template) => {
+    if (tableTemplateMode === 'scoreboard') return isScoreboardTemplate(template);
+    if (tableTemplateMode === 'table') return !isScoreboardTemplate(template);
+    return true;
+  };
+
   const loadTemplates = () => {
     const templatesList = LocalTableGameTemplate.getTemplatesList();
     // Filter out templates that have been approved as system templates
@@ -49,6 +57,7 @@ const GameTemplateSelector = ({
     if (gameCategory) {
       filteredTemplates = filteredTemplates.filter(template => (template.gameCategory || 'table') === gameCategory);
     }
+    filteredTemplates = filteredTemplates.filter(matchesTableTemplateMode);
     setTemplates(filteredTemplates);
   };
 
@@ -58,12 +67,14 @@ const GameTemplateSelector = ({
     if (gameCategory) {
       builtins = builtins.filter(t => (t.gameCategory || 'table') === gameCategory);
     }
+    builtins = builtins.filter(matchesTableTemplateMode);
 
     try {
       let serverTemplates = await gameTemplateService.getSystemTemplates();
       if (gameCategory) {
         serverTemplates = serverTemplates.filter(t => (t.gameCategory || 'table') === gameCategory);
       }
+      serverTemplates = serverTemplates.filter(matchesTableTemplateMode);
 
       // Merge server templates with built-ins by name, preserving builtin defaults for missing fields.
       const builtinsByName = new Map(builtins.map((b) => [b.name, b]));
@@ -392,7 +403,9 @@ const GameTemplateSelector = ({
       {/* System Templates Section */}
       {systemTemplates.length > 0 && (
         <div className="template-section">
-          <h3 className="template-section-title">{t('gameTemplates.templatesSection')}</h3>
+          {!hideSystemSectionTitle && (
+            <h3 className="template-section-title">{t('gameTemplates.templatesSection')}</h3>
+          )}
           <div className="template-list">
             {systemTemplates.map((template) => {
               const isCreator = user && template.createdBy && template.createdBy === user.id;

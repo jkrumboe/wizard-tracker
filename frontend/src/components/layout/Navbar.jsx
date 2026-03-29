@@ -1,49 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useLocation } from "react-router-dom"
 import { Link } from "react-router-dom"
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/hooks/useUser'
 // import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
-import { TrophyIcon, GamepadIcon, HomeIcon, UsersIcon, UserIcon, ShieldIcon } from '@/components/ui/Icon'
-
-import { XIcon } from '@/components/ui/Icon';
-import '@/styles/components/modal.css';
-
-// Modal for Games tab, styled like other modals
-const GamesMenu = ({ show, onClose, user, t }) => {
-  if (!show) return null;
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{t('nav.games')}</h2>
-          <button className="close-btn" onClick={onClose} aria-label={t('nav.closeGamesMenu')}>
-            <XIcon size={20} />
-          </button>
-        </div>
-        <div className="modal-content games-menu-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-          <Link to="/start" className="modal-button" onClick={onClose}>
-            {t('nav.newGame')}
-          </Link>
-          <Link to="/leaderboard" className="modal-button" onClick={onClose}>
-            {t('nav.leaderboard')}
-          </Link>
-          <Link to="/friend-leaderboard" className="modal-button" onClick={onClose}>
-            {t('nav.compareWithFriends')}
-          </Link>
-          {user && user.role === 'admin' && (
-            <Link to="/admin" className="modal-button" onClick={onClose}>
-              {t('nav.adminPanel')}
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+import { GamepadIcon, HomeIcon, UserIcon } from '@/components/ui/Icon'
 import "@/styles/components/components.css"
 
 const Navbar = () => {
@@ -51,10 +15,6 @@ const Navbar = () => {
   const { t } = useTranslation()
   // const { isOnline } = useOnlineStatus()
   const location = useLocation()
-  // Add state for Games menu
-  const [showGamesMenu, setShowGamesMenu] = useState(false);
-  // Close menu on route change
-  useEffect(() => { setShowGamesMenu(false); }, [location.pathname]);
 
   // Debug logging for user role
   useEffect(() => {
@@ -77,17 +37,12 @@ const Navbar = () => {
   return (
     <>
       <nav className="bottom-navbar">
-        <GamesMenu show={showGamesMenu} onClose={() => setShowGamesMenu(false)} user={user} t={t} />
-        <div
-          className={`bottom-nav-item games-tab ${showGamesMenu ? "active" : ""}`}
-          onClick={() => setShowGamesMenu(v => !v)}
-          aria-label="Games"
-        >
+        <Link to="/games" className={`bottom-nav-item games-tab ${isActive(["/games", "/start", "/leaderboard", "/friend-leaderboard", "/admin"])}`} aria-label={t('nav.games')}>
           <div className="nav-icon">
             <GamepadIcon size={20} />
           </div>
           <span>{t('nav.games')}</span>
-        </div>
+        </Link>
         <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
           <div className="nav-icon">
             <HomeIcon size={20} />

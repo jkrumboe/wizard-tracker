@@ -11,6 +11,7 @@ import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRe
 // Lazy load heavy pages for better initial load performance
 // Service worker precaches all chunks, so offline support is maintained
 const Account = lazy(() => import("@/pages/Account"))
+const GamesPage = lazy(() => import("@/pages/game/GamesPage"))
 const StartGame = lazy(() => import("@/pages/game/StartGame"))
 const GameDetails = lazy(() => import("@/pages/game/GameDetails"))
 const GameInProgress = lazy(() => import("@/pages/game/GameInProgress"))
@@ -275,6 +276,7 @@ function App() {
                     <Route path="/stats/:name" element={<Stats />} />
                     <Route path="/profile/stats" element={<Stats />} />
                     <Route path="/new-game" element={<Navigate to="/start" replace />} />
+                    <Route path="/games" element={<GamesPage />} />
                     <Route path="/start" element={<StartGame />} />
                     <Route path="/table" element={<Navigate to="/start" replace />} />
                     <Route path="/table/:id" element={<TableGame />} />

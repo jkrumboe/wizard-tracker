@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
 import { userService, LocalTableGameStorage, LocalScoreboardGameStorage, LocalTableGameTemplate } from "@/shared/api"
@@ -13,7 +13,7 @@ import GameTemplateSelector from '@/components/game/GameTemplateSelector'
 import PlayerSetup from '@/components/game/PlayerSetup'
 import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeftIcon, PlusIcon } from '@/components/ui/Icon'
+import { ArrowLeftIcon, ArrowLeftCircleIcon, PlusIcon } from '@/components/ui/Icon'
 import '@/styles/pages/startGame.css'
 import '@/styles/components/players.css'
 import '@/styles/components/components.css'
@@ -27,11 +27,16 @@ const MIN_PLAYERS_TABLE = 2;
 const StartGame = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useUser();
   const {
     startGameWithSetup,
     resumeGame,
   } = useGameStateContext();
+
+  const startType = searchParams.get('type');
+  const selectorGameCategory = startType === 'call-made' ? 'callAndMade' : (startType === 'scoreboard' || startType === 'table' ? 'table' : undefined);
+  const selectorTableMode = startType === 'scoreboard' ? 'scoreboard' : (startType === 'table' ? 'table' : 'all');
 
   // View state
   const [activeView, setActiveView] = useState('select'); // 'select' or 'setup'
@@ -251,6 +256,14 @@ const StartGame = () => {
     // Keep players and selectedGameType so user can switch back
   };
 
+  const handlePageBack = () => {
+    if (globalThis.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate('/games');
+  };
+
   // --- Start game ---
   const handleStartCallAndMadeGame = () => {
     const result = startGameWithSetup({
@@ -441,6 +454,13 @@ const StartGame = () => {
     return (
       <div className="start-game-page">
         <div className="game-type-selection">
+          <div className="start-select-header">
+            <button className="start-select-back-button" onClick={handlePageBack} title={t('common.back')}>
+              <ArrowLeftCircleIcon size={30} />
+            </button>
+            <h3 className="template-section-title start-select-title">{t('gameTemplates.templatesSection')}</h3>
+          </div>
+
           {resumeErrorMessage && (
             <div className="error-message" role="alert">
               {resumeErrorMessage}
@@ -457,6 +477,9 @@ const StartGame = () => {
               setShowWizardHistoryModal(true);
             }}
             embedded
+            gameCategory={selectorGameCategory}
+            tableTemplateMode={selectorTableMode}
+            hideSystemSectionTitle
             hideCreateButton
             alwaysShowSavedGamesModal
             savedGamesInitialStatus="paused"

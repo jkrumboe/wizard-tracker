@@ -77,8 +77,22 @@
     "table": "Tisch",
     "leaderboard": "Rangliste",
     "compareWithFriends": "Mit Freunden vergleichen",
+    "friendCompareShort": "Freunde",
     "adminPanel": "Admin-Bereich",
     "newGame": "Neues Spiel"
+  },
+
+  "gamesPage": {
+    "subtitle": "Wähle, wohin du gehen möchtest",
+    "scoreboardGames": "Scoreboard-Spiele",
+    "scoreboardDescription": "Starte oder setze Team-Scoreboard-Spiele fort",
+    "callAndMadeGames": "Ansage & Gemacht",
+    "callAndMadeDescription": "Starte Wizard und andere Ansage-Spiele",
+    "tableGames": "Tischspiele",
+    "tableDescription": "Starte oder setze freie Tischspiel-Vorlagen fort",
+    "leaderboardDescription": "Sieh dir Ranglisten und Spielstatistiken an",
+    "friendsDescription": "Vergleiche deine Leistung mit deinen Freunden",
+    "adminDescription": "Öffne Moderation und Systemverwaltung"
   },
 
   "home": {

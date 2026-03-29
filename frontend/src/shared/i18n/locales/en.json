@@ -77,8 +77,22 @@
     "table": "Table",
     "leaderboard": "Leaderboard",
     "compareWithFriends": "Compare with Friends",
+    "friendCompareShort": "Friends",
     "adminPanel": "Admin Panel",
     "newGame": "New Game"
+  },
+
+  "gamesPage": {
+    "subtitle": "Pick where you want to go",
+    "scoreboardGames": "Scoreboard Games",
+    "scoreboardDescription": "Start or resume two-team scoreboard games",
+    "callAndMadeGames": "Call & Made",
+    "callAndMadeDescription": "Start Wizard and other call-and-made games",
+    "tableGames": "Table Games",
+    "tableDescription": "Start or resume free-form table game templates",
+    "leaderboardDescription": "View your overall rankings and match stats",
+    "friendsDescription": "Compare performance with people you know",
+    "adminDescription": "Open moderation and system management tools"
   },
 
   "home": {
