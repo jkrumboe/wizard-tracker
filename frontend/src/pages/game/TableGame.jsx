@@ -925,6 +925,15 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
   const detailedStats = calculateDetailedGameStats();
 
+  const getTeamMembersLabel = (teamIndex) => {
+    if (!isTwoSideScoreboard) return '';
+    const members = Array.isArray(teamMembers?.[teamIndex]) ? teamMembers[teamIndex] : [];
+    return members
+      .map((member) => member?.name)
+      .filter(Boolean)
+      .join(' • ');
+  };
+
   const getCurrentSetPointHistory = () => {
     const roundKey = String(currentRound);
     return Array.isArray(pointHistoryBySet[roundKey]) ? pointHistoryBySet[roundKey] : [];
@@ -1442,8 +1451,13 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                           <div key={playerStats.id} className="results-row">
                               <div className={`rank-col ${medalClass}`}>{currentRank}</div>
                               <div className="player-col">
-                                <div className="player-info">
+                                <div className={`player-info ${isTwoSideScoreboard ? 'team-standings-info' : ''}`}>
                                   <span>{playerStats.name}</span>
+                                  {isTwoSideScoreboard && (
+                                    <span className="team-members-list">
+                                      {getTeamMembersLabel(playerStats.id)}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="score-col">{playerStats.totalPoints || 0}</div>

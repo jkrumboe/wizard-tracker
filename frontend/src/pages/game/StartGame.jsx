@@ -11,6 +11,7 @@ import WizardGameHistoryModal from '@/components/modals/WizardGameHistoryModal'
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal'
 import GameTemplateSelector from '@/components/game/GameTemplateSelector'
 import PlayerSetup from '@/components/game/PlayerSetup'
+import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeftIcon, PlusIcon } from '@/components/ui/Icon'
 import '@/styles/pages/startGame.css'
@@ -107,16 +108,21 @@ const StartGame = () => {
     return teamOneCount <= teamTwoCount ? 0 : 1;
   };
 
-  const handleAddPlayer = () => {
+  const handleAddPlayer = (teamIndex = null) => {
     const maxPlayers = getMaxPlayersForSelection();
     if (players.length >= maxPlayers) return;
+
+    const resolvedTeamIndex = isTwoSideScoreboard
+      ? (teamIndex === 0 || teamIndex === 1 ? teamIndex : getBalancedTeamIndex(players))
+      : undefined;
+
     setPlayers(prev => [
       ...prev,
       {
         id: `player-${Date.now()}-${prev.length}`,
         name: '',
         userId: null,
-        teamIndex: isTwoSideScoreboard ? getBalancedTeamIndex(prev) : undefined,
+        teamIndex: resolvedTeamIndex,
       }
     ]);
   };
@@ -144,6 +150,14 @@ const StartGame = () => {
     setPlayers((prev) => prev.map((p) =>
       p.id === playerId ? { ...p, teamIndex } : p
     ));
+  };
+
+  const handleMovePlayerToOtherTeam = (playerId) => {
+    setPlayers((prev) => prev.map((p) => {
+      if (p.id !== playerId) return p;
+      const currentTeam = p.teamIndex === 1 ? 1 : 0;
+      return { ...p, teamIndex: currentTeam === 0 ? 1 : 0 };
+    }));
   };
 
   const handlePlayerNameBlur = async (playerId, name) => {
@@ -487,21 +501,40 @@ const StartGame = () => {
           <h2>{selectedGameType?.name}</h2>
         </div>
 
-        <PlayerSetup
-          players={players}
-          onAddPlayer={handleAddPlayer}
-          onRemovePlayer={handleRemovePlayer}
-          onReorderPlayers={handleReorderPlayers}
-          onPlayerNameChange={handlePlayerNameChange}
-          onPlayerNameBlur={handlePlayerNameBlur}
-          onRandomize={handleRandomize}
-          onAddFriends={() => setShowSelectFriendsModal(true)}
-          onPlayerTeamChange={handlePlayerTeamChange}
-          isTwoSideScoreboard={isTwoSideScoreboard}
-          maxPlayers={maxPlayers}
-          minPlayers={minPlayers}
-          lookingUpPlayers={lookingUpPlayers}
-        />
+        {isTwoSideScoreboard ? (
+          <TeamBuilderSetup
+            players={players}
+            onAddPlayer={handleAddPlayer}
+            onRemovePlayer={handleRemovePlayer}
+            onPlayerNameChange={handlePlayerNameChange}
+            onPlayerNameBlur={handlePlayerNameBlur}
+            onMovePlayerToOtherTeam={handleMovePlayerToOtherTeam}
+            onRandomize={handleRandomize}
+            onAddFriends={() => setShowSelectFriendsModal(true)}
+            maxPlayers={maxPlayers}
+            lookingUpPlayers={lookingUpPlayers}
+            teamNames={{
+              teamOne: t('startTableGame.teamOne'),
+              teamTwo: t('startTableGame.teamTwo'),
+            }}
+          />
+        ) : (
+          <PlayerSetup
+            players={players}
+            onAddPlayer={handleAddPlayer}
+            onRemovePlayer={handleRemovePlayer}
+            onReorderPlayers={handleReorderPlayers}
+            onPlayerNameChange={handlePlayerNameChange}
+            onPlayerNameBlur={handlePlayerNameBlur}
+            onRandomize={handleRandomize}
+            onAddFriends={() => setShowSelectFriendsModal(true)}
+            onPlayerTeamChange={handlePlayerTeamChange}
+            isTwoSideScoreboard={isTwoSideScoreboard}
+            maxPlayers={maxPlayers}
+            minPlayers={minPlayers}
+            lookingUpPlayers={lookingUpPlayers}
+          />
+        )}
 
         {/* Call & Made game settings */}
         {isCallAndMade && (
@@ -556,6 +589,7 @@ const StartGame = () => {
                   <p>{selectedGameType.targetNumber}</p>
                 </div>
               )}
+
               {selectedGameType.lowIsBetter !== undefined && (
                 <div className="setting-item">
                   <span>{t('startTableGame.goal')}: </span>

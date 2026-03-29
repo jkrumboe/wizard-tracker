@@ -183,6 +183,20 @@ const ScoreboardGameDetails = () => {
     .map((player) => ({ ...player, totalScore: getTotal(player) }))
     .sort((a, b) => b.totalScore - a.totalScore)
 
+  const getTeamMembersLabel = (teamPlayer) => {
+    const teamIndex = players.findIndex((player) => player.id === teamPlayer.id)
+    if (teamIndex < 0) return ''
+
+    const members = Array.isArray(gameData.teamMembers?.[teamIndex])
+      ? gameData.teamMembers[teamIndex]
+      : []
+
+    return members
+      .map((member) => member?.name)
+      .filter(Boolean)
+      .join(' • ')
+  }
+
   let currentRank = 1
   const rankedPlayers = sortedPlayers.map((player, index) => {
     if (index > 0 && sortedPlayers[index - 1].totalScore !== player.totalScore) {
@@ -291,7 +305,7 @@ const ScoreboardGameDetails = () => {
                       {player.rank}
                     </div>
                     <div className="player-col">
-                      <div className="player-info">
+                      <div className="player-info team-standings-info">
                         {player.name ? (
                           <Link to={`/user/${player.name}`} className="player-link">
                             {player.name}
@@ -299,6 +313,7 @@ const ScoreboardGameDetails = () => {
                         ) : (
                           <span>{player.name}</span>
                         )}
+                        <span className="team-members-list">{getTeamMembersLabel(player)}</span>
                       </div>
                     </div>
                     <div className="score-col">{player.totalScore}</div>
