@@ -26,6 +26,7 @@
     "points": "Points",
     "round": "Round",
     "rounds": "Rounds",
+    "sets": "Sets",
     "score": "Score",
     "guest": "Guest",
     "version": "Version",
@@ -427,6 +428,7 @@
   "gameHistory": {
     "viewDetails": "View Details",
     "roundsCount": "Rounds: {{count}}",
+    "setsCount": "Sets: {{count}}",
     "title": "Game History",
     "pausedGames": "Paused",
     "finishedGames": "Finished",

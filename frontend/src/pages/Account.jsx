@@ -1758,6 +1758,13 @@ const Account = () => {
                   const showSync = !isUploaded && game.gameFinished;
                   const cloudGameId = game.cloudGameId;
                   const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
+                  const isScoreboardGame =
+                    game.gameType === 'scoreboard'
+                    || game.scoreEntryMode === 'twoSideGesture'
+                    || game.gameData?.scoreEntryMode === 'twoSideGesture'
+                    || game.id?.startsWith?.('scoreboard_game_')
+                    || game.gameTypeName === 'Volleyball'
+                    || game.name === 'Volleyball';
 
                   return (
                     <SwipeableGameCard
@@ -1783,7 +1790,7 @@ const Account = () => {
                           setUploadingGames(prev => { const newSet = new Set(prev); newSet.delete(game.id); return newSet; });
                         }
                       } : undefined}
-                      detailsPath={`/table/${game.id}`}
+                      detailsPath={isScoreboardGame ? `/scoreboard/${game.id}` : `/table/${game.id}`}
                       isUploading={uploadingGames.has(game.id)}
                       showSync={showSync}
                       syncTitle={
@@ -1824,7 +1831,7 @@ const Account = () => {
                           </div>
                           <div className="actions-game-history">
                             <div className="bottom-actions-game-history">
-                              <div>{t('common.rounds')}: {getGameRounds(game)}</div>
+                              <div>{isScoreboardGame ? t('common.sets') : t('common.rounds')}: {getGameRounds(game)}</div>
                               <div className="game-date">
                                 {formatDate(getGameDisplayDate(game))}
                               </div>

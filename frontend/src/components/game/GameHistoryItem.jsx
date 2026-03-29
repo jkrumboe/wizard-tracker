@@ -85,7 +85,9 @@ const GameHistoryItem = ({ game }) => {
   const isScoreboardGame =
     game.gameType === 'scoreboard'
     || game.gameData?.gameType === 'scoreboard'
+    || game.scoreEntryMode === 'twoSideGesture'
     || game.gameData?.scoreEntryMode === 'twoSideGesture'
+    || game.rawData?.gameData?.scoreEntryMode === 'twoSideGesture'
     || game.id?.startsWith?.('scoreboard_game_');
   const isTableGame = game.gameType === 'table' || isScoreboardGame;
   
@@ -218,7 +220,9 @@ const GameHistoryItem = ({ game }) => {
         </div>
         <div className="actions-game-history">
           <div className="bottom-actions-game-history">
-            <div className="game-rounds">{t('gameHistory.roundsCount', { count: total_rounds })}</div>
+            <div className="game-rounds">
+              {t(isScoreboardGame ? 'gameHistory.setsCount' : 'gameHistory.roundsCount', { count: total_rounds })}
+            </div>
             <div className="game-date"> {formattedDate}
             </div>
           </div>

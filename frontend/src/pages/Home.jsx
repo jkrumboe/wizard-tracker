@@ -74,6 +74,12 @@ const Home = () => {
           // Get the full game data to calculate winner
           const fullGame = LocalTableGameStorage.getTableGameById(game.id);
           const gameData = fullGame?.gameData;
+          const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || null;
+          const isScoreboardGame =
+            scoreEntryMode === 'twoSideGesture'
+            || game.id?.startsWith?.('scoreboard_game_')
+            || game.gameTypeName === 'Volleyball'
+            || game.name === 'Volleyball';
           
           // Calculate winner based on scores
           let winnerName = "Not determined";
@@ -105,7 +111,8 @@ const Home = () => {
           return {
             ...game,
             created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
-            gameType: 'table',
+            gameType: isScoreboardGame ? 'scoreboard' : 'table',
+            scoreEntryMode,
             winner_name: winnerName,
             isUploaded: isUploaded,
             isLocal: true
@@ -162,6 +169,14 @@ const Home = () => {
       const formattedTableGames = tableGames
         .filter(game => game.gameFinished) // Only show finished table games
         .map(game => {
+          const rawGameData = game.rawData?.gameData;
+          const scoreEntryMode = rawGameData?.scoreEntryMode || game.scoreEntryMode || null;
+          const isScoreboardGame =
+            scoreEntryMode === 'twoSideGesture'
+            || game.cloudId?.startsWith?.('scoreboard_game_')
+            || game.gameTypeName === 'Volleyball'
+            || game.name === 'Volleyball';
+
           // Calculate winner from players data
           let winnerName = "Not determined";
           if (game.players && Array.isArray(game.players)) {
@@ -197,7 +212,9 @@ const Home = () => {
             gameFinished: game.gameFinished,
             isUploaded: true,
             isCloud: true,
-            gameType: 'table',
+            gameType: isScoreboardGame ? 'scoreboard' : 'table',
+            scoreEntryMode,
+            gameData: rawGameData,
             winner_name: winnerName
           };
         });
