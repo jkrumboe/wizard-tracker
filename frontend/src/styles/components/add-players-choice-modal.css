@@ -1,0 +1,142 @@
+/* Add Players Choice Modal Styles */
+.add-players-choice-modal {
+  max-width: 600px;
+  max-height: auto;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  position: relative;
+}
+
+.add-players-choice-modal .modal-header {
+  justify-content: right;
+  border: none;
+  padding: 0 0 var(--spacing-md) 0;
+}
+
+.add-players-choice-modal .close-btn {
+  background: var(--card-bg);
+}
+
+.choice-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.choice-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  width: 100%;
+  max-width: 550px;
+}
+
+.choice-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, var(--card-bg) 0%, var(--card-bg-alt) 100%);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary);
+  font-size: inherit;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.choice-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.choice-button:hover::before {
+  left: 100%;
+}
+
+.choice-button:hover {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark, var(--primary)) 100%);
+  border-color: var(--primary);
+  color: var(--text);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.choice-button:active {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.choice-button svg {
+  color: currentColor;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.choice-button:hover svg {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.choice-label {
+  font-weight: 700;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.choice-description {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  text-align: center;
+  line-height: 1.5;
+  transition: opacity 0.3s ease;
+}
+
+.choice-button:hover .choice-description {
+  opacity: 1;
+}
+
+/* Responsive for mobile */
+@media (max-width: 600px) {
+  .add-players-choice-modal {
+    max-width: 95vw;
+  }
+
+  .choice-buttons {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .choice-button {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .choice-label {
+    font-size: 1.1rem;
+  }
+
+  .choice-description {
+    font-size: 0.9rem;
+  }
+
+  .add-players-choice-modal .modal-header h2 {
+    font-size: 1.4rem;
+  }
+}

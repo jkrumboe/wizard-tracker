@@ -1,0 +1,144 @@
+/* Select Recent Group Modal Styles */
+.recent-group-modal {
+  max-width: 550px;
+  max-height: 85vh;
+}
+
+.recent-group-modal .modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recent-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+.group-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.group-item:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateX(2px);
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.group-info {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--spacing-md);
+}
+
+.group-game-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.group-date {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.group-item:hover .group-date {
+  opacity: 0.9;
+}
+
+.group-player-count {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.group-item:hover .group-player-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.group-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: 0.25rem;
+}
+
+.group-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.group-player.already-added .player-name {
+  opacity: 0.5;
+}
+
+.player-name {
+  font-weight: 500;
+}
+
+.already-added-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px; 
+}
+
+/* Responsive for mobile */
+@media (max-width: 480px) {
+  .recent-group-modal {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+
+  .recent-groups-list {
+    max-height: 65vh;
+  }
+
+  .group-header {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .group-player-count {
+    align-self: flex-end;
+  }
+
+  .group-players {
+    gap: 0.4rem;
+  }
+
+  .group-player {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}

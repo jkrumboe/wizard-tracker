@@ -6,7 +6,7 @@ import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
 import { userService, LocalTableGameStorage, LocalScoreboardGameStorage, LocalTableGameTemplate } from "@/shared/api"
 import { secureArrayShuffle, generateSecureId } from "@/shared/utils/secureRandom"
-import { SelectFriendsModal } from '@/components/modals'
+import { SelectFriendsModal, AddPlayersChoiceModal, SelectRecentGroupModal } from '@/components/modals'
 import WizardGameHistoryModal from '@/components/modals/WizardGameHistoryModal'
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal'
 import GameTemplateSelector from '@/components/game/GameTemplateSelector'
@@ -61,7 +61,9 @@ const StartGame = () => {
   });
 
   // Friends modal
+  const [showAddPlayersChoiceModal, setShowAddPlayersChoiceModal] = useState(false);
   const [showSelectFriendsModal, setShowSelectFriendsModal] = useState(false);
+  const [showSelectRecentGroupModal, setShowSelectRecentGroupModal] = useState(false);
 
   // Wizard game history modal
   const [showWizardHistoryModal, setShowWizardHistoryModal] = useState(false);
@@ -230,7 +232,7 @@ const StartGame = () => {
     const maxPlayers = getMaxPlayersForSelection();
     const newPlayers = selectedFriends.map((friend, idx) => ({
       id: `player-${Date.now()}-friend-${idx}`,
-      name: friend.username,
+      name: friend.username || friend.name,
       userId: friend.id,
     }));
     setPlayers((prev) => {
@@ -244,6 +246,26 @@ const StartGame = () => {
       return [...prev, ...assigned].slice(0, maxPlayers);
     });
     setShowSelectFriendsModal(false);
+  };
+
+  const handleSelectRecentGroup = (selectedPlayers) => {
+    const maxPlayers = getMaxPlayersForSelection();
+    const newPlayers = selectedPlayers.map((player, idx) => ({
+      id: `player-${Date.now()}-recent-${idx}`,
+      name: player.name,
+      userId: player.userId,
+    }));
+    setPlayers((prev) => {
+      const working = [...prev];
+      const assigned = newPlayers.map((player) => {
+        const teamIndex = isTwoSideScoreboard ? getBalancedTeamIndex(working) : undefined;
+        const updated = { ...player, teamIndex };
+        working.push(updated);
+        return updated;
+      });
+      return [...prev, ...assigned].slice(0, maxPlayers);
+    });
+    setShowSelectRecentGroupModal(false);
   };
 
   useEffect(() => {
@@ -548,7 +570,7 @@ const StartGame = () => {
             onPlayerNameBlur={handlePlayerNameBlur}
             onMovePlayerToOtherTeam={handleMovePlayerToOtherTeam}
             onRandomize={handleRandomize}
-            onAddFriends={() => setShowSelectFriendsModal(true)}
+            onAddFriends={() => setShowAddPlayersChoiceModal(true)}
             maxPlayers={maxPlayers}
             lookingUpPlayers={lookingUpPlayers}
             teamNames={teamNames}
@@ -563,7 +585,7 @@ const StartGame = () => {
             onPlayerNameChange={handlePlayerNameChange}
             onPlayerNameBlur={handlePlayerNameBlur}
             onRandomize={handleRandomize}
-            onAddFriends={() => setShowSelectFriendsModal(true)}
+            onAddFriends={() => setShowAddPlayersChoiceModal(true)}
             onPlayerTeamChange={handlePlayerTeamChange}
             isTwoSideScoreboard={isTwoSideScoreboard}
             maxPlayers={maxPlayers}
@@ -677,6 +699,26 @@ const StartGame = () => {
         onClose={() => setShowSelectFriendsModal(false)}
         onConfirm={handleAddFriends}
         alreadySelectedPlayers={players.filter(p => p.userId).map(p => ({ userId: p.userId, name: p.name }))}
+      />
+
+      <AddPlayersChoiceModal
+        isOpen={showAddPlayersChoiceModal}
+        onClose={() => setShowAddPlayersChoiceModal(false)}
+        onSelectFriends={() => {
+          setShowAddPlayersChoiceModal(false);
+          setShowSelectFriendsModal(true);
+        }}
+        onSelectRecentGroup={() => {
+          setShowAddPlayersChoiceModal(false);
+          setShowSelectRecentGroupModal(true);
+        }}
+      />
+
+      <SelectRecentGroupModal
+        isOpen={showSelectRecentGroupModal}
+        onClose={() => setShowSelectRecentGroupModal(false)}
+        onConfirm={handleSelectRecentGroup}
+        alreadySelectedPlayers={players.filter(p => p.userId || p.name).map(p => ({ userId: p.userId, name: p.name }))}
       />
     </div>
   );

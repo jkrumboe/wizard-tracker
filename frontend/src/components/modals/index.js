@@ -1,5 +1,6 @@
 // Modal Components exports
 export { default as AddGameTemplateModal } from './AddGameTemplateModal.jsx';
+export { default as AddPlayersChoiceModal } from './AddPlayersChoiceModal.jsx';
 export { default as CloudGameSelectModal } from './CloudGameSelectModal.jsx';
 // export { default as CreateGameModal } from './CreateGameModal.jsx';
 export { default as FriendsModal } from './FriendsModal.jsx';
@@ -13,4 +14,5 @@ export { default as ProfilePictureModal } from './ProfilePictureModal.jsx';
 export { default as SaveGameDialog } from './SaveGameDialog.jsx';
 export { default as PauseConfirmationModal } from './PauseConfirmationModal.jsx';
 export { default as SelectFriendsModal } from './SelectFriendsModal.jsx';
+export { default as SelectRecentGroupModal } from './SelectRecentGroupModal.jsx';
 export { default as WizardGameHistoryModal } from './WizardGameHistoryModal.jsx';

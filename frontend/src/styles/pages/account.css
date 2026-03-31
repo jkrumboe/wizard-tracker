@@ -956,6 +956,7 @@ html:not([data-theme="dark"]) .settings-tab button {
 .settings-row-clickable {
   cursor: pointer;
   transition: background 0.15s;
+  box-shadow: none !important;
 }
 
 .settings-row-clickable:disabled {
@@ -974,6 +975,10 @@ html:not([data-theme="dark"]) .settings-tab button {
 
 .settings-row-clickable:disabled:hover {
   background: transparent;
+}
+
+.settings-row-clickable:hover:not(:disabled), .settings-row-clickable:hover:not(:disabled) {
+  transform: none !important;
 }
 
 .settings-row-left {
