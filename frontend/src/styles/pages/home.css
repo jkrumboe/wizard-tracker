@@ -50,6 +50,10 @@
   justify-content: center;
 }
 
+.home-container .friends-button {
+  background-color: var(--primary);
+}
+
 .friends-button:hover {
   /* background: var(--primary-dark); */
   transform: translateY(-2px);
