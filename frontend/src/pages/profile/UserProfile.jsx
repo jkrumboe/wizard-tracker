@@ -186,7 +186,7 @@ const UserProfile = () => {
               alignItems: 'center',
               justifyContent: 'center',
               height: '60px',
-              color: 'var(--text-primary)',
+              color: 'var(--primary)',
               borderRadius: 'var(--radius-md)',
               transition: 'background-color 0.2s',
               boxShadow: 'none',
