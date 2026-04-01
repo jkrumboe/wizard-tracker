@@ -15,6 +15,38 @@ function isSafeKey(key) {
     && !key.startsWith('__');
 }
 
+function hasMeaningfulPoint(point) {
+  return point !== '' && point !== undefined && point !== null;
+}
+
+function derivePlayedRounds(gameData) {
+  const players = Array.isArray(gameData?.players) ? gameData.players : [];
+  const configuredRows = Number.isFinite(gameData?.rows) ? gameData.rows : 0;
+
+  let lastRoundWithData = 0;
+  players.forEach((player) => {
+    const points = Array.isArray(player?.points) ? player.points : [];
+    points.forEach((point, idx) => {
+      if (hasMeaningfulPoint(point)) {
+        lastRoundWithData = Math.max(lastRoundWithData, idx + 1);
+      }
+    });
+  });
+
+  if (gameData?.gameFinished) {
+    return Math.max(lastRoundWithData, configuredRows);
+  }
+
+  return lastRoundWithData;
+}
+
+function derivePlayerCount(gameData) {
+  if (Array.isArray(gameData?.teamMembers)) {
+    return (gameData.teamMembers[0]?.length || 0) + (gameData.teamMembers[1]?.length || 0);
+  }
+  return Array.isArray(gameData?.players) ? gameData.players.length : 0;
+}
+
 export class LocalScoreboardGameStorage {
   static getCurrentUserId() {
     return localStorage.getItem('wizardTracker_currentUserId');
@@ -72,10 +104,8 @@ export class LocalScoreboardGameStorage {
         gameData,
         savedAt: timestamp,
         lastPlayed: timestamp,
-        playerCount: gameData.teamMembers
-          ? (gameData.teamMembers[0]?.length || 0) + (gameData.teamMembers[1]?.length || 0)
-          : (gameData.players ? gameData.players.length : 0),
-        totalRounds: gameData.rows || 0,
+        playerCount: derivePlayerCount(gameData),
+        totalRounds: derivePlayedRounds(gameData),
         gameType: 'scoreboard',
         gameFinished: !!gameData.gameFinished,
         userId: currentUserId,
@@ -130,7 +160,22 @@ export class LocalScoreboardGameStorage {
 
     const games = this.getAllSavedTableGamesAllUsers();
     if (games[gameId]) {
-      games[gameId] = { ...games[gameId], ...updates };
+      const merged = { ...games[gameId], ...updates };
+      const mergedGameData = merged.gameData || games[gameId].gameData;
+
+      if (mergedGameData) {
+        merged.playerCount = derivePlayerCount(mergedGameData);
+
+        if (merged.gameFinished === true) {
+          merged.totalRounds = Number.isFinite(mergedGameData.rows)
+            ? mergedGameData.rows
+            : derivePlayedRounds(mergedGameData);
+        } else {
+          merged.totalRounds = derivePlayedRounds(mergedGameData);
+        }
+      }
+
+      games[gameId] = merged;
       localStorage.setItem(LOCAL_SCOREBOARD_GAMES_STORAGE_KEY, JSON.stringify(games));
     }
   }
@@ -158,7 +203,9 @@ export class LocalScoreboardGameStorage {
           savedAt: game.savedAt || new Date().toISOString(),
           lastPlayed: game.lastPlayed || new Date().toISOString(),
           playerCount: game.playerCount || 0,
-          totalRounds: game.totalRounds || 0,
+          totalRounds: game.gameFinished
+            ? (game.totalRounds || derivePlayedRounds(game.gameData))
+            : derivePlayedRounds(game.gameData),
           gameType: 'scoreboard',
           gameFinished: !!game.gameFinished,
           userId: game.userId,
