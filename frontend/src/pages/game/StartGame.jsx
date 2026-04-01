@@ -123,6 +123,29 @@ const StartGame = () => {
     return teamOneCount <= teamTwoCount ? 0 : 1;
   };
 
+  const normalizeName = (value) => (value || '').trim().toLowerCase();
+
+  const isSamePerson = (a, b) => {
+    if (!a || !b) return false;
+    if (a.userId && b.userId) return a.userId === b.userId;
+    return normalizeName(a.name) !== '' && normalizeName(a.name) === normalizeName(b.name);
+  };
+
+  const appendUniquePlayers = (prevPlayers, candidates, maxPlayers) => {
+    const working = [...prevPlayers];
+
+    for (const candidate of candidates) {
+      const alreadyAdded = working.some((existing) => isSamePerson(existing, candidate));
+      if (alreadyAdded) continue;
+      if (working.length >= maxPlayers) break;
+
+      const teamIndex = isTwoSideScoreboard ? getBalancedTeamIndex(working) : undefined;
+      working.push({ ...candidate, teamIndex });
+    }
+
+    return working;
+  };
+
   const handleAddPlayer = (teamIndex = null) => {
     const maxPlayers = getMaxPlayersForSelection();
     if (players.length >= maxPlayers) return;
@@ -237,16 +260,7 @@ const StartGame = () => {
       name: friend.username || friend.name,
       userId: friend.id,
     }));
-    setPlayers((prev) => {
-      const working = [...prev];
-      const assigned = newPlayers.map((friend) => {
-        const teamIndex = isTwoSideScoreboard ? getBalancedTeamIndex(working) : undefined;
-        const updated = { ...friend, teamIndex };
-        working.push(updated);
-        return updated;
-      });
-      return [...prev, ...assigned].slice(0, maxPlayers);
-    });
+    setPlayers((prev) => appendUniquePlayers(prev, newPlayers, maxPlayers));
     setShowSelectFriendsModal(false);
   };
 
@@ -257,16 +271,7 @@ const StartGame = () => {
       name: player.name,
       userId: player.userId,
     }));
-    setPlayers((prev) => {
-      const working = [...prev];
-      const assigned = newPlayers.map((player) => {
-        const teamIndex = isTwoSideScoreboard ? getBalancedTeamIndex(working) : undefined;
-        const updated = { ...player, teamIndex };
-        working.push(updated);
-        return updated;
-      });
-      return [...prev, ...assigned].slice(0, maxPlayers);
-    });
+    setPlayers((prev) => appendUniquePlayers(prev, newPlayers, maxPlayers));
     setShowSelectRecentGroupModal(false);
   };
 
