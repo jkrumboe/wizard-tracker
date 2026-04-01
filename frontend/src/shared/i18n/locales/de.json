@@ -77,7 +77,7 @@
     "table": "Tisch",
     "leaderboard": "Rangliste",
     "compareWithFriends": "Mit Freunden vergleichen",
-    "friendCompareShort": "Freunde",
+    "friendCompareShort": "Mit Freunden vergleichen",
     "adminPanel": "Admin-Bereich",
     "newGame": "Neues Spiel"
   },
@@ -85,14 +85,14 @@
   "gamesPage": {
     "subtitle": "Wähle, wohin du gehen möchtest",
     "scoreboardGames": "Scoreboard-Spiele",
-    "scoreboardDescription": "Starte oder setze Team-Scoreboard-Spiele fort",
+    "scoreboardDescription": "Verfolge Teamstände für Spiele wie Volleyball, Tischtennis oder Basketball.",
     "callAndMadeGames": "Ansage & Gemacht",
-    "callAndMadeDescription": "Starte Wizard und andere Ansage-Spiele",
+    "callAndMadeDescription": "Spiele Ansage-Spiele wie Wizard. Vergleiche dein Gebot mit dem, was du gemacht hast.",
     "tableGames": "Tischspiele",
-    "tableDescription": "Starte oder setze freie Tischspiel-Vorlagen fort",
-    "leaderboardDescription": "Sieh dir Ranglisten und Spielstatistiken an",
-    "friendsDescription": "Vergleiche deine Leistung mit deinen Freunden",
-    "adminDescription": "Öffne Moderation und Systemverwaltung"
+    "tableDescription": "Nutze flexible Punkteblätter für Spiele wie Darts oder Skyjo oder erstelle eigene Vorlagen.",
+    "leaderboardDescription": "Sieh dir Rankings, Gesamtleistung, Elo-Bewertung und Gewinnquote an.",
+    "friendsDescription": "Vergleiche Ergebnisse mit Freunden und prüfe eure Kopf-an-Kopf-Statistiken.",
+    "adminDescription": "Öffne Moderations- und Systemwerkzeuge für die Administration."
   },
 
   "home": {

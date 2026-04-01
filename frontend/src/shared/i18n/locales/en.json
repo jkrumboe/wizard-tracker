@@ -77,7 +77,7 @@
     "table": "Table",
     "leaderboard": "Leaderboard",
     "compareWithFriends": "Compare with Friends",
-    "friendCompareShort": "Friends",
+    "friendCompareShort": "Compare with Friends",
     "adminPanel": "Admin Panel",
     "newGame": "New Game"
   },
@@ -85,14 +85,14 @@
   "gamesPage": {
     "subtitle": "Pick where you want to go",
     "scoreboardGames": "Scoreboard Games",
-    "scoreboardDescription": "Start or resume two-team scoreboard games",
+    "scoreboardDescription": "Track team scores for games like volleyball, ping pong, or basketball.",
     "callAndMadeGames": "Call & Made",
-    "callAndMadeDescription": "Start Wizard and other call-and-made games",
+    "callAndMadeDescription": "Play prediction-based games like Wizard. Track what you bid and what you made.",
     "tableGames": "Table Games",
-    "tableDescription": "Start or resume free-form table game templates",
-    "leaderboardDescription": "View your overall rankings and match stats",
-    "friendsDescription": "Compare performance with people you know",
-    "adminDescription": "Open moderation and system management tools"
+    "tableDescription": "Use flexible score sheets for games like darts or skyjo, or create your own custom template.",
+    "leaderboardDescription": "See your rankings, overall performance, Elo rating, and win percentage.",
+    "friendsDescription": "Compare results with friends and review your head-to-head stats.",
+    "adminDescription": "Open moderation and system tools for admin management."
   },
 
   "home": {
