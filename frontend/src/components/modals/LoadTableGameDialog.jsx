@@ -22,6 +22,12 @@ const LoadTableGameDialog = ({
   const [statusFilter, setStatusFilter] = useState('all');
   const activeStorage = storageType === 'scoreboard' ? LocalScoreboardGameStorage : LocalTableGameStorage;
   const isGameFinished = (game) => Boolean(game?.gameFinished || game?.gameData?.gameFinished);
+  const isScoreboardGame = (game) => (
+    storageType === 'scoreboard'
+    || game?.gameType === 'scoreboard'
+    || game?.scoreEntryMode === 'twoSideGesture'
+    || game?.gameData?.scoreEntryMode === 'twoSideGesture'
+  );
 
   useEffect(() => {
     const loadSavedGames = async () => {
@@ -230,7 +236,7 @@ const LoadTableGameDialog = ({
             <div className="actions-game-history">
               <div className="bottom-actions-game-history">
                 <div className="game-rounds">
-                  {t('common.rounds')}: {game.totalRounds || 0}
+                  {isScoreboardGame(game) ? t('common.sets') : t('common.rounds')}: {game.totalRounds || 0}
                 </div>
                 <div className="game-date">{game.displayDate}</div>
               </div>
