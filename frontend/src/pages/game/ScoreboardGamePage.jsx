@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import Icon from "../../components/ui/Icon";
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
 import { LocalScoreboardGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
@@ -1314,7 +1315,13 @@ const ScoreboardGamePage = () => {
                         </span>
                         {(gestureFeedback[idx] === 'swipe-up' || gestureFeedback[idx] === 'swipe-down') && (
                           <span className={`score-gesture-feedback ${gestureFeedback[idx]}`}>
-                            {gestureFeedback[idx] === 'swipe-up' ? '↑' : '↓'}
+                            <Icon
+                              name={gestureFeedback[idx] === 'swipe-up' ? 'ArrowUp' : 'ArrowDown'}
+                              className="score-gesture-feedback-icon"
+                              size={48}
+                              strokeWidth={1.5}
+                              aria-hidden="true"
+                            />
                           </span>
                         )}
                       </button>
