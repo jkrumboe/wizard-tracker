@@ -838,12 +838,12 @@
 }
 
 .score-side-card.team-one {
-  border-color: rgba(96, 165, 250, 0.45);
+  border-color: rgba(96, 165, 250, 0.45) !important;
   background: linear-gradient(180deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.12) 100%);
 }
 
 .score-side-card.team-two {
-  border-color: rgba(248, 113, 113, 0.45);
+  border-color: rgba(248, 113, 113, 0.45) !important;
   background: linear-gradient(180deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.12) 100%);
 }
 
@@ -862,7 +862,6 @@ button.score-side-card:focus:not(:disabled),
 button.score-side-card:focus-visible:not(:disabled) {
   transform: none;
   box-shadow: none;
-  border-color: inherit;
   outline: none;
 }
 

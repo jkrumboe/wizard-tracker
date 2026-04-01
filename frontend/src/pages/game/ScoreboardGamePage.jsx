@@ -1319,7 +1319,7 @@ const ScoreboardGamePage = () => {
                               name={gestureFeedback[idx] === 'swipe-up' ? 'ArrowUp' : 'ArrowDown'}
                               className="score-gesture-feedback-icon"
                               size={48}
-                              strokeWidth={1.5}
+                              strokeWidth={2}
                               aria-hidden="true"
                             />
                           </span>
