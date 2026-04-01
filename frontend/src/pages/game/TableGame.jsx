@@ -945,7 +945,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     return members
       .map((member) => member?.name)
       .filter(Boolean)
-      .join(' • ');
+      .join(' - ');
   };
 
   const getCurrentSetPointHistory = () => {

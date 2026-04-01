@@ -43,6 +43,7 @@ const ScoreboardGameDetails = () => {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('standings')
   const [selectedChartSet, setSelectedChartSet] = useState(1)
+  const [expandedTeamId, setExpandedTeamId] = useState(null)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [isLandscape] = useState(() => {
     if (typeof window !== 'undefined' && globalThis.screen && globalThis.screen.orientation) {
@@ -190,18 +191,40 @@ const ScoreboardGameDetails = () => {
     .map((player) => ({ ...player, totalScore: getTotal(player) }))
     .sort((a, b) => b.totalScore - a.totalScore)
 
-  const getTeamMembersLabel = (teamPlayer) => {
+  const getTeamMembers = (teamPlayer) => {
     const teamIndex = players.findIndex((player) => player.id === teamPlayer.id)
-    if (teamIndex < 0) return ''
+    if (teamIndex < 0) return []
 
     const members = Array.isArray(gameData.teamMembers?.[teamIndex])
       ? gameData.teamMembers[teamIndex]
       : []
 
     return members
+      .map((member) => {
+        if (!member) return null
+        if (typeof member === 'string') {
+          return { id: member, name: member }
+        }
+        return {
+          id: member.id || member.name,
+          name: member.name,
+        }
+      })
+      .filter((member) => member?.name)
+  }
+
+  const getTeamMembersLabel = (teamPlayer) => {
+    const members = getTeamMembers(teamPlayer)
+
+    return members
       .map((member) => member?.name)
       .filter(Boolean)
-      .join(' • ')
+      .join(' - ')
+  }
+
+  const getProfilePath = (name) => `/user/${encodeURIComponent(name)}`
+  const toggleTeamExpanded = (teamId) => {
+    setExpandedTeamId((prev) => (prev === teamId ? null : teamId))
   }
 
   let currentRank = 1
@@ -306,7 +329,21 @@ const ScoreboardGameDetails = () => {
           <div className="results-section">
             <div className="results-table">
               {rankedPlayers.map((player) => (
-                <div key={player.id || player.name} className="results-row">
+                <div
+                  key={player.id || player.name}
+                  className="results-row team-results-row"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={expandedTeamId === player.id}
+                  aria-label={`Open ${player.name} players`}
+                  onClick={() => toggleTeamExpanded(player.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      toggleTeamExpanded(player.id)
+                    }
+                  }}
+                >
                   <div className="top-result-row">
                     <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
                       {player.rank}
@@ -314,13 +351,50 @@ const ScoreboardGameDetails = () => {
                     <div className="player-col">
                       <div className="player-info team-standings-info">
                         {player.name ? (
-                          <Link to={`/user/${player.name}`} className="player-link">
+                          <button
+                            type="button"
+                            className="player-link team-link-toggle"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              toggleTeamExpanded(player.id)
+                            }}
+                            aria-expanded={expandedTeamId === player.id}
+                            aria-label={`Open ${player.name} players`}
+                          >
                             {player.name}
-                          </Link>
+                          </button>
                         ) : (
                           <span>{player.name}</span>
                         )}
-                        <span className="team-members-list">{getTeamMembersLabel(player)}</span>
+                        {expandedTeamId !== player.id && (
+                          <span className="team-members-list">{getTeamMembersLabel(player)}</span>
+                        )}
+                        {expandedTeamId === player.id && (
+                          <div className="team-members-links" role="list">
+                            {getTeamMembers(player).length > 0 ? (
+                              getTeamMembers(player).map((member) => (
+                                <Link
+                                  key={`${player.id}-${member.id || member.name}`}
+                                  to={getProfilePath(member.name)}
+                                  className="player-link team-member-link"
+                                  role="listitem"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  {member.name}
+                                </Link>
+                              ))
+                            ) : (
+                              <Link
+                                to={getProfilePath(player.name)}
+                                className="player-link team-member-link"
+                                role="listitem"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {player.name}
+                              </Link>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="score-col">{player.totalScore}</div>
@@ -432,7 +506,7 @@ const ScoreboardGameDetails = () => {
                         <th key={idx} className="player-header">
                           <div className="player-header-name">
                             {player.name ? (
-                              <Link to={`/user/${player.name}`} className="player-link">
+                              <Link to={getProfilePath(player.name)} className="player-link">
                                 {player.name}
                               </Link>
                             ) : (

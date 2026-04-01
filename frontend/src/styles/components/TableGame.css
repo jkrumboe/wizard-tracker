@@ -907,13 +907,46 @@ button.score-side-card:focus-visible:not(:disabled) {
 }
 
 .team-members-list {
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   line-height: 1.2;
   max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.team-results-row {
+  cursor: pointer;
+}
+
+.team-results-row:focus-visible {
+  outline: 2px solid var(--accent, #60a5fa);
+  outline-offset: 2px;
+}
+
+.team-link-toggle {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.team-members-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.team-member-link {
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
 }
 
 .score-side-value {

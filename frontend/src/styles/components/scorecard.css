@@ -175,13 +175,6 @@
   min-height: 24px;
 }
 
-
-.round-score {
-  font-size: 0.65rem;
-  min-height: 0;
-
-}
-
 .round-score.positive {
   color: var(--success-color);
 }
