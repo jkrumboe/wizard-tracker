@@ -104,7 +104,7 @@ const LoadGameDialog = ({
                     </div>
                     <div className="saved-game-details">
                       <UsersIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
-                      {t('loadGameDialog.playerCount', { count: game.playerCount || (game.players ? game.players.length : 0) })} • {t('loadGameDialog.roundProgress', { current: (game.roundsCompleted || 0) + 1, total: game.totalRounds })}
+                      {t('loadGameDialog.playerCount', { count: game.playerCount || (game.players ? game.players.length : 0) })} - {t('loadGameDialog.roundProgress', { current: (game.roundsCompleted || 0) + 1, total: game.totalRounds })}
                       <br />
                       <CalendarIcon size={14} style={{ marginRight: '4px', display: 'inline' }} />
                       {t('loadGameDialog.lastPlayed', { date: formatDate(game.lastPlayed) })}

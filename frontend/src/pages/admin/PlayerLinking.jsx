@@ -481,7 +481,7 @@ const PlayerLinking = () => {
                       </span>
                       {identity.linkedAt && (
                         <>
-                          <span>•</span>
+                          <span>-</span>
                           <span>{t('adminPlayerLinking.linkedDate', { date: new Date(identity.linkedAt).toLocaleDateString() })}</span>
                         </>
                       )}

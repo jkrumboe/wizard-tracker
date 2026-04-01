@@ -31,6 +31,16 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
     description: 'Two-side live scoreboard with tap and swipe controls.',
   },
   {
+    _id: '__builtin_basketball__',
+    name: 'Basketball',
+    gameCategory: 'table',
+    isBuiltin: true,
+    targetNumber: null,
+    lowIsBetter: false,
+    scoreEntryMode: 'twoSideGesture',
+    description: 'Two-side live scoreboard with +2/+3 and revert controls.',
+  },
+  {
     _id: '__builtin_dutch__',
     name: 'Dutch',
     gameCategory: 'table',

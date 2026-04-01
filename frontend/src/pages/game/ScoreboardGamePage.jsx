@@ -40,6 +40,7 @@ const ScoreboardGamePage = () => {
   const [showDeletePlayerConfirm, setShowDeletePlayerConfirm] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const [showGameSettingsModal, setShowGameSettingsModal] = useState(false);
+  const [showFinishGameConfirm, setShowFinishGameConfirm] = useState(false);
   
   // Game settings
   const [targetNumber, setTargetNumber] = useState(null);
@@ -89,6 +90,7 @@ const ScoreboardGamePage = () => {
   const touchStateRef = useRef({});
   const scoreValueTimeoutRef = useRef({});
   const lastTouchTimestampRef = useRef({});
+  const scoreActionHistoryByRoundRef = useRef({});
   const loadedRouteGameIdRef = useRef(null);
 
   // Persist game ID to sessionStorage whenever it changes
@@ -673,6 +675,8 @@ const ScoreboardGamePage = () => {
   };
 
   const isTwoSideScoreboard = players.length === 2;
+  const isBasketballGame = (currentGameName || '').trim().toLowerCase() === 'basketball';
+  const isVolleyballGame = (currentGameName || '').trim().toLowerCase() === 'volleyball';
 
   const clearScoreValueFeedbackTimeout = (playerIdx) => {
     if (scoreValueTimeoutRef.current[playerIdx]) {
@@ -724,6 +728,12 @@ const ScoreboardGamePage = () => {
   };
 
   const updatePlayerLiveScore = (playerIdx, delta) => {
+    let trackUndo = true;
+    if (typeof delta === 'object' && delta !== null) {
+      trackUndo = delta.trackUndo !== false;
+      delta = delta.delta;
+    }
+
     if (gameFinished || playerIdx < 0 || playerIdx >= players.length) {
       return;
     }
@@ -738,6 +748,41 @@ const ScoreboardGamePage = () => {
     const actualDelta = nextValue - currentValue;
     updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);
     triggerScoreValueAnimation(playerIdx, actualDelta);
+
+    if (trackUndo && actualDelta > 0) {
+      const roundKey = String(currentRound);
+      const existingRoundHistory = Array.isArray(scoreActionHistoryByRoundRef.current[roundKey])
+        ? scoreActionHistoryByRoundRef.current[roundKey]
+        : [];
+      scoreActionHistoryByRoundRef.current = {
+        ...scoreActionHistoryByRoundRef.current,
+        [roundKey]: [...existingRoundHistory, { playerIdx, delta: actualDelta }],
+      };
+    }
+  };
+
+  const revertLastScoreAction = (playerIdx) => {
+    if (gameFinished || playerIdx < 0 || playerIdx >= players.length) {
+      return;
+    }
+
+    const roundKey = String(currentRound);
+    const roundHistory = Array.isArray(scoreActionHistoryByRoundRef.current[roundKey])
+      ? [...scoreActionHistoryByRoundRef.current[roundKey]]
+      : [];
+
+    for (let i = roundHistory.length - 1; i >= 0; i -= 1) {
+      const action = roundHistory[i];
+      if (action.playerIdx === playerIdx) {
+        roundHistory.splice(i, 1);
+        scoreActionHistoryByRoundRef.current = {
+          ...scoreActionHistoryByRoundRef.current,
+          [roundKey]: roundHistory,
+        };
+        updatePlayerLiveScore(playerIdx, { delta: -Math.abs(action.delta), trackUndo: false });
+        return;
+      }
+    }
   };
 
   const setPlayerLiveScore = (playerIdx, newScore) => {
@@ -990,7 +1035,13 @@ const ScoreboardGamePage = () => {
     });
   };
 
-  const handleFinishGame = async () => {
+  const handleFinishGame = () => {
+    // Show confirmation dialog instead of immediately finishing
+    setShowFinishGameConfirm(true);
+  };
+
+  const confirmFinishGame = async () => {
+    setShowFinishGameConfirm(false);
     // Keep unmount autosave in sync during immediate post-finish redirect.
     gameFinishedRef.current = true;
     setGameFinished(true);
@@ -1280,7 +1331,7 @@ const ScoreboardGamePage = () => {
           </div>
 
           {/* Finish Game Button */}
-          {hasReachedTarget() && !gameFinished && (
+          {hasReachedTarget() && !gameFinished && !isBasketballGame && (
             <button className="finish-btn" onClick={handleFinishGame}>
               {t('tableGame.finishGame')}
             </button>
@@ -1292,40 +1343,81 @@ const ScoreboardGamePage = () => {
               {isTwoSideScoreboard ? (
                 <>
                   <div className="two-side-scoreboard">
-                    {players.map((player, idx) => (
-                      <button
-                        key={player.id || idx}
-                        type="button"
-                        className={`score-side-card ${idx === 0 ? 'team-one' : 'team-two'} ${gestureFeedback[idx] === 'swipe-up' ? 'swiping-up' : ''} ${gestureFeedback[idx] === 'swipe-down' ? 'swiping-down' : ''}`}
-                        onClick={() => handleScoreCardClick(idx)}
-                        onTouchStart={(e) => handleScoreTouchStart(idx, e)}
-                        onTouchMove={(e) => handleScoreTouchMove(idx, e)}
-                        onTouchEnd={(e) => handleScoreTouchEnd(idx, e)}
-                        onTouchCancel={(e) => handleScoreTouchCancel(idx, e)}
-                        disabled={gameFinished}
-                        title={t('tableGame.gestureHint')}
-                      >
-                        <span className="score-side-name">{player.name}</span>
-                        <span className="score-side-members">
-                          {(teamMembers[idx] || []).map((member) => member.name).join(' • ')}
-                        </span>
-                        <span className={`score-side-value ${scoreValueFeedback[idx] || ''}`}>{getLiveScore(idx)}</span>
-                        <span className="score-side-total">
-                          {t('tableGame.totalWithScore', { score: getTotal(player) })}
-                        </span>
-                        {(gestureFeedback[idx] === 'swipe-up' || gestureFeedback[idx] === 'swipe-down') && (
-                          <span className={`score-gesture-feedback ${gestureFeedback[idx]}`}>
-                            <Icon
-                              name={gestureFeedback[idx] === 'swipe-up' ? 'ArrowUp' : 'ArrowDown'}
-                              className="score-gesture-feedback-icon"
-                              size={48}
-                              strokeWidth={2}
-                              aria-hidden="true"
-                            />
+                    {players.map((player, idx) => {
+                      const scoreCard = (
+                        <button
+                          type="button"
+                          className={`score-side-card ${idx === 0 ? 'team-one' : 'team-two'} ${gestureFeedback[idx] === 'swipe-up' ? 'swiping-up' : ''} ${gestureFeedback[idx] === 'swipe-down' ? 'swiping-down' : ''}`}
+                          onClick={() => handleScoreCardClick(idx)}
+                          onTouchStart={(e) => handleScoreTouchStart(idx, e)}
+                          onTouchMove={(e) => handleScoreTouchMove(idx, e)}
+                          onTouchEnd={(e) => handleScoreTouchEnd(idx, e)}
+                          onTouchCancel={(e) => handleScoreTouchCancel(idx, e)}
+                          disabled={gameFinished}
+                          title={t('tableGame.gestureHint')}
+                        >
+                          <span className="score-side-name">{player.name}</span>
+                          <span className="score-side-members">
+                            {(teamMembers[idx] || []).map((member) => member.name).join(' - ')}
                           </span>
-                        )}
-                      </button>
-                    ))}
+                          <span className={`score-side-value ${scoreValueFeedback[idx] || ''}`}>{getLiveScore(idx)}</span>
+                          <span className="score-side-total">
+                            {t('tableGame.totalWithScore', { score: getTotal(player) })}
+                          </span>
+                          {(gestureFeedback[idx] === 'swipe-up' || gestureFeedback[idx] === 'swipe-down') && (
+                            <span className={`score-gesture-feedback ${gestureFeedback[idx]}`}>
+                              <Icon
+                                name={gestureFeedback[idx] === 'swipe-up' ? 'ArrowUp' : 'ArrowDown'}
+                                className="score-gesture-feedback-icon"
+                                size={48}
+                                strokeWidth={2}
+                                aria-hidden="true"
+                              />
+                            </span>
+                          )}
+                        </button>
+                      );
+
+                      if (!isBasketballGame) {
+                        return <React.Fragment key={player.id || idx}>{scoreCard}</React.Fragment>;
+                      }
+
+                      return (
+                        <div key={player.id || idx} className="score-side-row">
+                          {scoreCard}
+                          <div className="basketball-score-controls">
+                            <button
+                              type="button"
+                              className="basketball-score-btn"
+                              onClick={() => updatePlayerLiveScore(idx, 3)}
+                              disabled={gameFinished}
+                              title="Add 3 points"
+                            >
+                              +3
+                            </button>
+                            <button
+                              type="button"
+                              className="basketball-score-btn"
+                              onClick={() => updatePlayerLiveScore(idx, 2)}
+                              disabled={gameFinished}
+                              title="Add 2 points"
+                            >
+                              +2
+                            </button>
+                            <button
+                              type="button"
+                              className="basketball-score-btn basketball-revert-btn"
+                              onClick={() => revertLastScoreAction(idx)}
+                              disabled={gameFinished}
+                              title="Revert last score"
+                              aria-label="Revert last score"
+                            >
+                              <ArrowLeftIcon size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               ) : (
@@ -1645,7 +1737,7 @@ const ScoreboardGamePage = () => {
             
 
             <div className="game-controls">
-              {isTwoSideScoreboard && (
+              {isTwoSideScoreboard && isVolleyballGame && (
                 <button
                   type="button"
                   className="game-control-btn"
@@ -1653,6 +1745,16 @@ const ScoreboardGamePage = () => {
                   title={t('tableGame.toggleSetTargetHint', { n: currentRound, target: getSetTarget() === 15 ? 25 : 15 })}
                 >
                   {getSetTarget() === 15 ? t('tableGame.setTargetTo25') : t('tableGame.setTargetTo15')}
+                </button>
+              )}
+              {isTwoSideScoreboard && isBasketballGame && !gameFinished && (
+                <button
+                  type="button"
+                  className="game-control-btn"
+                  onClick={handleFinishGame}
+                  title={t('tableGame.finishGame')}
+                >
+                  {t('tableGame.finishGame')}
                 </button>
               )}
             </div>
@@ -1714,6 +1816,16 @@ const ScoreboardGamePage = () => {
               setShowGameSettingsModal(false);
             }}
             gameFinished={gameFinished}
+          />
+
+          {/* Finish Game Confirmation Modal */}
+          <DeleteConfirmationModal
+            isOpen={showFinishGameConfirm}
+            onClose={() => setShowFinishGameConfirm(false)}
+            onConfirm={confirmFinishGame}
+            title={t('tableGame.finishGame')}
+            message={t('tableGame.finishGameConfirm')}
+            confirmText={t('tableGame.finishGame')}
           />
         </div>
     </div>

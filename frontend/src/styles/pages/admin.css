@@ -1031,7 +1031,7 @@
 
 .admin-layout .delete-info-list li::before,
 .admin-container .delete-info-list li::before {
-  content: '•';
+  content: '-';
   position: absolute;
   left: 0.5rem;
   color: var(--error-color);

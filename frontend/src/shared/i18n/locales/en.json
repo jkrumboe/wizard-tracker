@@ -358,7 +358,7 @@
     "callsLabel": "Calls: {{count}}",
     "free": "free",
     "gameSettings": "Game Settings",
-    "finishGame": "Finish Game",
+    "finishGame": "Finish",
     "playerHeader": "Player",
     "callsHeader": "Calls",
     "madeHeader": "Made",
@@ -414,7 +414,8 @@
     "rallyTimelineAria": "Rally dots timeline for set {{set}}",
     "noPointProgression": "Point progression appears here as soon as points are scored in this set.",
     "gameSettings": "Game Settings",
-    "finishGame": "Finish Game",
+    "finishGame": "Finish",
+    "finishGameConfirm": "Are you sure you want to finish this game? This cannot be undone.",
     "playerHeader": "Player",
     "pointsHeader": "Points",
     "totalHeader": "Total",
@@ -786,6 +787,15 @@
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
     "addCount": "Add ({{count}})"
+  },
+
+  "addPlayers": {
+    "friends": "Friends",
+    "friendsDesc": "Add players from your friends list",
+    "selectFriends": "Select from your friends",
+    "recentGroup": "Recent Group",
+    "recentDesc": "Add players from a previous game",
+    "selectRecent": "Select from recent play groups"
   },
 
   "cloudGames": {

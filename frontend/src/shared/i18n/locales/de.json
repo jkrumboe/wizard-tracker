@@ -358,7 +358,7 @@
     "callsLabel": "Ansagen: {{count}}",
     "free": "frei",
     "gameSettings": "Spieleinstellungen",
-    "finishGame": "Spiel beenden",
+    "finishGame": "Beenden",
     "playerHeader": "Spieler",
     "callsHeader": "Ansagen",
     "madeHeader": "Gemacht",
@@ -414,7 +414,8 @@
     "rallyTimelineAria": "Rallye-Punktzeitleiste fuer Satz {{set}}",
     "noPointProgression": "Der Punktverlauf wird hier angezeigt, sobald in diesem Satz gepunktet wird.",
     "gameSettings": "Spieleinstellungen",
-    "finishGame": "Spiel beenden",
+    "finishGame": "Beenden",
+    "finishGameConfirm": "Bist du sicher, dass du dieses Spiel beenden möchtest? Dies kann nicht rückgängig gemacht werden.",
     "playerHeader": "Spieler",
     "pointsHeader": "Punkte",
     "totalHeader": "Gesamt",
@@ -786,6 +787,15 @@
     "selectAll": "Alle auswählen",
     "deselectAll": "Alle abwählen",
     "addCount": "Hinzufügen ({{count}})"
+  },
+
+  "addPlayers": {
+    "friends": "Freunde",
+    "friendsDesc": "Spieler aus deiner Freundesliste hinzufügen",
+    "selectFriends": "Aus deinen Freunden auswählen",
+    "recentGroup": "Letzte Gruppe",
+    "recentDesc": "Spieler aus einem vorherigen Spiel hinzufügen",
+    "selectRecent": "Aus den letzten Spielgruppen auswählen"
   },
 
   "cloudGames": {

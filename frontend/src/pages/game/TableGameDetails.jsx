@@ -78,7 +78,9 @@ const TableGameDetails = () => {
           || gameData.scoreEntryMode === 'twoSideGesture'
           || gameData.gameType === 'scoreboard'
           || gameData.gameTypeName === 'Volleyball'
+          || gameData.gameTypeName === 'Basketball'
           || gameData.name === 'Volleyball'
+          || gameData.name === 'Basketball'
         if (isScoreboardGame) {
           navigate(`/scoreboard-game/${id}`, { replace: true })
           return

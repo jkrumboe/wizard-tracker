@@ -40,7 +40,10 @@ const GameTemplateSelector = ({
   const [detailsTemplate, setDetailsTemplate] = useState(null);
 
   const isScoreboardTemplate = (template) => {
-    return template?.scoreEntryMode === 'twoSideGesture' || template?.name === 'Volleyball';
+    const normalizedName = (template?.name || '').trim().toLowerCase();
+    return template?.scoreEntryMode === 'twoSideGesture'
+      || normalizedName === 'volleyball'
+      || normalizedName === 'basketball';
   };
 
   const matchesTableTemplateMode = (template) => {

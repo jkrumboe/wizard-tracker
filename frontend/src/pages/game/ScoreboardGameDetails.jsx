@@ -83,7 +83,9 @@ const ScoreboardGameDetails = () => {
           || gameData.scoreEntryMode === 'twoSideGesture'
           || gameData.gameType === 'scoreboard'
           || gameData.gameTypeName === 'Volleyball'
+          || gameData.gameTypeName === 'Basketball'
           || gameData.name === 'Volleyball'
+          || gameData.name === 'Basketball'
         if (!isScoreboardGame) {
           navigate(`/table-game/${id}`, { replace: true })
           return

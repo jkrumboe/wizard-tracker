@@ -107,8 +107,10 @@ const StartGame = () => {
 
   // --- Player management ---
   const isCallAndMade = selectedGameType?.gameCategory === 'callAndMade';
+  const normalizedSelectedGameTypeName = (selectedGameType?.name || '').trim().toLowerCase();
   const isTwoSideScoreboard = selectedGameType?.scoreEntryMode === 'twoSideGesture'
-    || selectedGameType?.name === 'Volleyball';
+    || normalizedSelectedGameTypeName === 'volleyball'
+    || normalizedSelectedGameTypeName === 'basketball';
 
   const getMaxPlayersForSelection = () => {
     if (isTwoSideScoreboard) return MAX_PLAYERS_TABLE;
@@ -328,7 +330,10 @@ const StartGame = () => {
     if (!selectedGameType) return;
 
     const template = selectedGameType;
-    const scoreboardMode = template.scoreEntryMode === 'twoSideGesture' || template.name === 'Volleyball';
+    const normalizedTemplateName = (template.name || '').trim().toLowerCase();
+    const scoreboardMode = template.scoreEntryMode === 'twoSideGesture'
+      || normalizedTemplateName === 'volleyball'
+      || normalizedTemplateName === 'basketball';
     const firstPlayerId = user?.id || generateSecureId('player');
 
     const initialPlayers = players.map((p, idx) => {
@@ -421,6 +426,7 @@ const StartGame = () => {
         gameData.scoreEntryMode === 'twoSideGesture'
         || gameData.gameType === 'scoreboard'
         || gameData.gameName === 'Volleyball'
+        || gameData.gameName === 'Basketball'
         || gameData.gameId?.startsWith('scoreboard_game')
       ) {
         navigate(`/scoreboard/${gameData.gameId}`);
