@@ -8,6 +8,7 @@ import FriendsModal from '@/components/modals/FriendsModal'
 import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames } from '@/shared/api/gameService'
 import { getUserCloudTableGamesList } from '@/shared/api/tableGameService'
 import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage'
+import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useUser } from '@/shared/hooks/useUser'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
@@ -118,9 +119,51 @@ const Home = () => {
             isLocal: true
           };
         });
+
+      const scoreboardGames = LocalScoreboardGameStorage.getSavedTableGamesList()
+        .filter(game => game.gameFinished)
+        .map(game => {
+          const fullGame = LocalScoreboardGameStorage.getTableGameById(game.id);
+          const gameData = fullGame?.gameData;
+          const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || 'twoSideGesture';
+
+          let winnerName = 'Not determined';
+          if (gameData?.players && Array.isArray(gameData.players)) {
+            const playersWithScores = gameData.players.map(player => {
+              const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
+              return { ...player, total };
+            });
+
+            if (playersWithScores.length > 0) {
+              const lowIsBetter = gameData.lowIsBetter || false;
+              const winner = playersWithScores.reduce((best, current) => {
+                if (!best) return current;
+                if (lowIsBetter) {
+                  return current.total < best.total ? current : best;
+                }
+                return current.total > best.total ? current : best;
+              }, null);
+
+              winnerName = winner?.name || 'Not determined';
+            }
+          }
+
+          const isUploaded = LocalScoreboardGameStorage.isGameUploaded(game.id);
+
+          return {
+            ...game,
+            created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
+            gameType: 'scoreboard',
+            scoreEntryMode,
+            winner_name: winnerName,
+            isUploaded,
+            isLocal: true,
+            storageType: 'scoreboard'
+          };
+        });
       
       // Combine and sort by date
-      const allLocalGames = [...formattedLocalGames, ...formattedTableGames].sort((a, b) => {
+      const allLocalGames = [...formattedLocalGames, ...formattedTableGames, ...scoreboardGames].sort((a, b) => {
         const dateA = new Date(a.created_at || a.lastPlayed || a.savedAt);
         const dateB = new Date(b.created_at || b.lastPlayed || b.savedAt);
         return dateB - dateA;
@@ -241,7 +284,60 @@ const Home = () => {
         if (user && isOnline) {
           try {
             const cloudGames = await fetchCloudGames();
-            setAllGames(cloudGames);
+            const localScoreboardGames = LocalScoreboardGameStorage.getSavedTableGamesList()
+              .filter(game => game.gameFinished)
+              .map(game => {
+                const fullGame = LocalScoreboardGameStorage.getTableGameById(game.id);
+                const gameData = fullGame?.gameData;
+                const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || 'twoSideGesture';
+
+                let winnerName = 'Not determined';
+                if (gameData?.players && Array.isArray(gameData.players)) {
+                  const playersWithScores = gameData.players.map(player => {
+                    const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
+                    return { ...player, total };
+                  });
+
+                  if (playersWithScores.length > 0) {
+                    const lowIsBetter = gameData.lowIsBetter || false;
+                    const winner = playersWithScores.reduce((best, current) => {
+                      if (!best) return current;
+                      if (lowIsBetter) {
+                        return current.total < best.total ? current : best;
+                      }
+                      return current.total > best.total ? current : best;
+                    }, null);
+
+                    winnerName = winner?.name || 'Not determined';
+                  }
+                }
+
+                return {
+                  ...game,
+                  created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
+                  gameType: 'scoreboard',
+                  scoreEntryMode,
+                  winner_name: winnerName,
+                  isUploaded: LocalScoreboardGameStorage.isGameUploaded(game.id),
+                  isLocal: true,
+                  storageType: 'scoreboard'
+                };
+              });
+
+            const mergedGames = [...cloudGames];
+            localScoreboardGames.forEach((localGame) => {
+              const hasMatchingCloudGame = mergedGames.some((cloudGame) =>
+                cloudGame.id === localGame.id
+                || cloudGame.cloudId === localGame.id
+                || cloudGame.localId === localGame.id
+              );
+
+              if (!hasMatchingCloudGame) {
+                mergedGames.push(localGame);
+              }
+            });
+
+            setAllGames(mergedGames);
             setIsShowingCloudGames(true);
             setGameSyncStatuses({}); // No need to check sync status for cloud games
             console.debug('Showing cloud games');

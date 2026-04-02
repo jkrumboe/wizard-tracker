@@ -399,10 +399,10 @@ const StartGame = () => {
       ? LocalScoreboardGameStorage.saveTableGame(gameData, template.name)
       : LocalTableGameStorage.saveTableGame(gameData, template.name);
     if (scoreboardMode) {
-      navigate(`/scoreboard/${newGameId}`);
+      navigate(`/scoreboard/${newGameId}`, { state: { gameName: template.name } });
       return;
     }
-    navigate(`/table/${newGameId}`);
+    navigate(`/table/${newGameId}`, { state: { gameName: template.name } });
   };
 
   const handleStartGame = () => {

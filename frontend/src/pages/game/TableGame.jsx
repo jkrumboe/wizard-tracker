@@ -723,20 +723,46 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
       return;
     }
 
+    const shouldUseBasketballPointEvents = isBasketballGame;
+
     setPointHistoryBySet((prev) => {
       const roundKey = String(roundNumber);
       const history = Array.isArray(prev[roundKey]) ? [...prev[roundKey]] : [];
 
       if (delta > 0) {
-        for (let i = 0; i < delta; i += 1) {
-          history.push(playerIdx);
+        if (shouldUseBasketballPointEvents) {
+          history.push({ scorer: playerIdx, points: delta });
+        } else {
+          for (let i = 0; i < delta; i += 1) {
+            history.push(playerIdx);
+          }
         }
       } else {
         let removals = Math.abs(delta);
-        for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
-          if (history[i] === playerIdx) {
-            history.splice(i, 1);
-            removals -= 1;
+
+        if (shouldUseBasketballPointEvents) {
+          for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
+            const currentEntry = history[i];
+            const scorer = typeof currentEntry === 'number' ? currentEntry : currentEntry?.scorer;
+            const entryPointsRaw = typeof currentEntry === 'number' ? 1 : Number.parseInt(currentEntry?.points, 10);
+            const entryPoints = Number.isFinite(entryPointsRaw) && entryPointsRaw > 0 ? entryPointsRaw : 1;
+
+            if (scorer === playerIdx) {
+              if (entryPoints <= removals) {
+                history.splice(i, 1);
+                removals -= entryPoints;
+              } else {
+                history[i] = { scorer: playerIdx, points: entryPoints - removals };
+                removals = 0;
+              }
+            }
+          }
+        } else {
+          for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
+            if (history[i] === playerIdx) {
+              history.splice(i, 1);
+              removals -= 1;
+            }
           }
         }
       }
@@ -998,16 +1024,40 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     return Array.isArray(pointHistoryBySet[roundKey]) ? pointHistoryBySet[roundKey] : [];
   };
 
+  const getPointEventMeta = (entry) => {
+    if (typeof entry === 'number') {
+      return {
+        scorer: entry,
+        points: 1,
+      };
+    }
+
+    if (entry && typeof entry === 'object') {
+      const parsedPoints = Number.parseInt(entry.points, 10);
+      return {
+        scorer: entry.scorer,
+        points: Number.isFinite(parsedPoints) && parsedPoints > 0 ? parsedPoints : 1,
+      };
+    }
+
+    return {
+      scorer: null,
+      points: 1,
+    };
+  };
+
   const buildScoreProgressionSeries = (history) => {
     const points = [{ pointNumber: 0, teamOne: 0, teamTwo: 0 }];
     let teamOne = 0;
     let teamTwo = 0;
 
-    history.forEach((scorer, index) => {
+    history.forEach((entry, index) => {
+      const { scorer, points: scoredPoints } = getPointEventMeta(entry);
+
       if (scorer === 0) {
-        teamOne += 1;
+        teamOne += scoredPoints;
       } else if (scorer === 1) {
-        teamTwo += 1;
+        teamTwo += scoredPoints;
       }
 
       points.push({
@@ -1658,13 +1708,26 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                       <div className="score-progression-timeline-wrap">
                         <h4>{t('tableGame.rallyTimelineTitle')}</h4>
                         <div className="score-progression-timeline" aria-label={t('tableGame.rallyTimelineAria', { set: currentRound })}>
-                          {currentSetPointHistory.map((scorer, idx) => (
-                            <span
-                              key={`rally-${idx}`}
-                              className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'}`}
-                              title={`${idx + 1}. ${scorer === 0 ? (players[0]?.name || t('startTableGame.teamOne')) : (players[1]?.name || t('startTableGame.teamTwo'))}`}
-                            />
-                          ))}
+                          {currentSetPointHistory.map((entry, idx) => {
+                            const { scorer, points: scoredPoints } = getPointEventMeta(entry);
+                            if (scorer !== 0 && scorer !== 1) {
+                              return null;
+                            }
+
+                            const teamName = scorer === 0
+                              ? (players[0]?.name || t('startTableGame.teamOne'))
+                              : (players[1]?.name || t('startTableGame.teamTwo'));
+
+                            return (
+                              <span
+                                key={`rally-${idx}`}
+                                className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'} ${isBasketballGame ? 'basketball' : ''}`}
+                                title={`${idx + 1}. ${teamName}${isBasketballGame ? ` (+${scoredPoints})` : ''}`}
+                              >
+                                {isBasketballGame ? `+${scoredPoints}` : ''}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

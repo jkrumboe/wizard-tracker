@@ -88,6 +88,10 @@ const GameHistoryItem = ({ game }) => {
     || game.scoreEntryMode === 'twoSideGesture'
     || game.gameData?.scoreEntryMode === 'twoSideGesture'
     || game.rawData?.gameData?.scoreEntryMode === 'twoSideGesture'
+    || game.gameTypeName === 'Volleyball'
+    || game.gameTypeName === 'Basketball'
+    || game.name === 'Volleyball'
+    || game.name === 'Basketball'
     || game.id?.startsWith?.('scoreboard_game_');
   const isTableGame = game.gameType === 'table' || isScoreboardGame;
   

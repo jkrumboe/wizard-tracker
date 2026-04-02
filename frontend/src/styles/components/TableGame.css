@@ -982,6 +982,8 @@ button.score-side-card:focus-visible:not(:disabled) {
   padding: 0;
   text-align: left;
   cursor: pointer;
+  padding: 0 var(--spacing-sm);
+  box-shadow: none;
 }
 
 .team-members-links {
@@ -1234,9 +1236,23 @@ button.score-side-card:focus-visible:not(:disabled) {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0.92;
   transition: transform 0.15s ease;
+}
+
+.rally-dot.basketball {
+  min-width: 2.2rem;
+  width: auto;
+  height: 1.4rem;
+  border-radius: 999px;
+  padding: 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
 }
 
 .rally-dot.team-one {

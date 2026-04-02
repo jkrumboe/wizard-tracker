@@ -7,7 +7,7 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
-import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api';
+import { LocalGameStorage, LocalTableGameStorage, LocalScoreboardGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
 import { TrashIcon, RefreshIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
@@ -92,6 +92,20 @@ const Account = () => {
     }));
     return filterGames(gamesArray, filters);
   }, [savedGames, filters]);
+
+  const getCombinedLocalTableGames = useCallback(() => {
+    const tableGames = LocalTableGameStorage.getSavedTableGamesList().map((game) => ({
+      ...game,
+      storageType: 'table',
+    }));
+
+    const scoreboardGames = LocalScoreboardGameStorage.getSavedTableGamesList().map((game) => ({
+      ...game,
+      storageType: 'scoreboard',
+    }));
+
+    return [...tableGames, ...scoreboardGames].sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
+  }, []);
 
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
@@ -319,7 +333,7 @@ const Account = () => {
     setSavedGames(allGames);
     
     // Load table games
-    const tableGames = LocalTableGameStorage.getSavedTableGamesList();
+    const tableGames = getCombinedLocalTableGames();
     setSavedTableGames(tableGames);
     
     // Check sync status if user is logged in - do it in background with delay to avoid rate limiting
@@ -345,7 +359,7 @@ const Account = () => {
                 syncLogger.debug('Table game missing on server, clearing upload status', { gameId: game.id });
                 LocalTableGameStorage.clearUploadStatus(game.id);
                 // Reload games to reflect changes
-                const updatedTableGames = LocalTableGameStorage.getSavedTableGamesList();
+                const updatedTableGames = getCombinedLocalTableGames();
                 setSavedTableGames(updatedTableGames);
               } else {
                 syncLogger.debug('Error checking table game on server', { gameId: game.id, error: error.message });
@@ -409,7 +423,7 @@ const Account = () => {
             // Refresh local games to include newly downloaded ones
             const updatedGames = LocalGameStorage.getAllSavedGames();
             setSavedGames(updatedGames);
-            const updatedTableGames = LocalTableGameStorage.getSavedTableGamesList();
+            const updatedTableGames = getCombinedLocalTableGames();
             setSavedTableGames(updatedTableGames);
           } else {
             autoSyncLogger.debug('All cloud games already exist locally');
@@ -419,7 +433,7 @@ const Account = () => {
         }
       }, 2000); // Wait 2 seconds to avoid rate limiting with other checks
     }
-  }, [user]);
+  }, [user, getCombinedLocalTableGames]);
 
   // Load cloud games from API if user is logged in
   const loadCloudGames = useCallback(async () => {
@@ -549,7 +563,11 @@ const Account = () => {
     } else if (gameToDelete) {
       // Delete specific game
       if (gameToDelete.isTableGame) {
-        LocalTableGameStorage.deleteTableGame(gameToDelete.id);
+        if (gameToDelete.storageType === 'scoreboard') {
+          LocalScoreboardGameStorage.deleteTableGame(gameToDelete.id);
+        } else {
+          LocalTableGameStorage.deleteTableGame(gameToDelete.id);
+        }
       } else {
         LocalGameStorage.deleteGame(gameToDelete.id);
       }
@@ -1265,8 +1283,8 @@ const Account = () => {
     if (!gamesSource || gamesSource.length === 0) return [];
     
     // Filter by game type
-    const wizardGames = gamesSource.filter(g => g.gameType !== 'table');
-    const tableGames = gamesSource.filter(g => g.gameType === 'table');
+    const wizardGames = gamesSource.filter(g => g.gameType !== 'table' && g.gameType !== 'scoreboard');
+    const tableGames = gamesSource.filter(g => g.gameType === 'table' || g.gameType === 'scoreboard');
     
     if (statsGameType === 'wizard') {
       return wizardGames;
@@ -1288,7 +1306,7 @@ const Account = () => {
     const types = [];
     
     // Check for wizard games
-    const wizardGames = gamesSource.filter(g => g.gameType !== 'table');
+    const wizardGames = gamesSource.filter(g => g.gameType !== 'table' && g.gameType !== 'scoreboard');
     if (wizardGames.length > 0) {
       types.push({ value: 'wizard', label: 'Wizard' });
     }
@@ -1296,7 +1314,7 @@ const Account = () => {
     // Add table game types
     const tableGameTypes = new Set();
     gamesSource
-      .filter(g => g.gameType === 'table')
+      .filter(g => g.gameType === 'table' || g.gameType === 'scoreboard')
       .forEach(game => {
         const gameType = game.gameTypeName || game.name;
         if (gameType) {
@@ -1754,7 +1772,9 @@ const Account = () => {
                   );
                 } else {
                   // Table game card
-                  const isUploaded = LocalTableGameStorage.isGameUploaded(game.id);
+                  const isUploaded = game.storageType === 'scoreboard'
+                    ? LocalScoreboardGameStorage.isGameUploaded(game.id)
+                    : LocalTableGameStorage.isGameUploaded(game.id);
                   const showSync = !isUploaded && game.gameFinished;
                   const cloudGameId = game.cloudGameId;
                   const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
@@ -1775,7 +1795,9 @@ const Account = () => {
                         if (!user) { navigate('/login'); return; }
                         setUploadingGames(prev => new Set([...prev, game.id]));
                         try {
-                          const fullGame = LocalTableGameStorage.getAllSavedTableGames()[game.id];
+                          const fullGame = game.storageType === 'scoreboard'
+                            ? LocalScoreboardGameStorage.getAllSavedTableGamesAllUsers()[game.id]
+                            : LocalTableGameStorage.getAllSavedTableGames()[game.id];
                           const result = await uploadSingleTableGameToCloud(game.id, fullGame);
                           setMessage({ 
                             text: result.isDuplicate 

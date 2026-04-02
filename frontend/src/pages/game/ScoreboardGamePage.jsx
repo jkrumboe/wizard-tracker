@@ -17,6 +17,7 @@ import "../../styles/components/statsChart.css";
 import "../../styles/components/scorecard.css";
 
 const MIN_PLAYERS = 2;
+const DEFAULT_SCOREBOARD_GAME_NAME = 'Scoreboard Game';
 
 const ScoreboardGamePage = () => {
   const { id } = useParams();
@@ -66,7 +67,11 @@ const ScoreboardGamePage = () => {
   
   const [players, setPlayers] = useState(getDefaultPlayers());
   const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
-  const [currentGameName, setCurrentGameName] = useState('Volleyball');
+  // Initialize game name from navigation state, with sensible default for initial state
+  const [currentGameName, setCurrentGameName] = useState(() => {
+    // Prefer game name from navigation state if passed from template selection
+    return location.state?.gameName || DEFAULT_SCOREBOARD_GAME_NAME;
+  });
   const [currentGameId, setCurrentGameId] = useState(() => {
     // Prefer route ID on direct loads/refresh, fallback to session state for HMR restores
     if (id) return id;
@@ -92,6 +97,17 @@ const ScoreboardGamePage = () => {
   const lastTouchTimestampRef = useRef({});
   const scoreActionHistoryByRoundRef = useRef({});
   const loadedRouteGameIdRef = useRef(null);
+
+  const hasMeaningfulGameData = (gamePlayers, historyBySet) => {
+    const hasPlayerPoints = Array.isArray(gamePlayers)
+      && gamePlayers.some((player) => Array.isArray(player?.points)
+        && player.points.some((point) => point !== '' && point !== undefined && point !== null));
+
+    const hasPointHistory = historyBySet
+      && Object.values(historyBySet).some((history) => Array.isArray(history) && history.length > 0);
+
+    return hasPlayerPoints || hasPointHistory;
+  };
 
   // Persist game ID to sessionStorage whenever it changes
   useEffect(() => {
@@ -141,14 +157,17 @@ const ScoreboardGamePage = () => {
           return;
         }
 
+        const hasData = hasMeaningfulGameData(gameState.players, gameState.pointHistoryBySet || {});
+        if (!hasData) {
+          sessionStorage.removeItem(currentGameStateSessionKey);
+          return;
+        }
+
         // Only restore if we have valid data
         if (gameState.currentGameId && gameState.players) {
           setPlayers(gameState.players);
           // Check if we should adjust rows based on current orientation
           const isSmallLandscape = globalThis.matchMedia('(orientation: landscape) and (max-width: 950px)').matches;
-          const hasData = gameState.players.some(player => 
-            player.points.some(point => point !== "" && point !== undefined && point !== null)
-          );
           // Only adjust rows if no data or use saved rows
           let restoredRows;
           if (hasData) {
@@ -159,7 +178,7 @@ const ScoreboardGamePage = () => {
           console.log('Restoring game state:', { isSmallLandscape, hasData, savedRows: gameState.rows, restoredRows });
           setRows(restoredRows);
           setCurrentRound(gameState.currentRound || 1);
-          setCurrentGameName(gameState.currentGameName);
+          setCurrentGameName(gameState.currentGameName || DEFAULT_SCOREBOARD_GAME_NAME);
           setCurrentGameId(gameState.currentGameId);
           setTargetNumber(gameState.targetNumber || null);
           setLowIsBetter(gameState.lowIsBetter || false);
@@ -243,7 +262,12 @@ const ScoreboardGamePage = () => {
             setShowTemplateSelector(false);
             setIsCloudGame(false);
             setActiveTab('game');
-            setCurrentGameName(savedGame.name || gameData.gameName || t('tableGame.defaultGameName'));
+            // Use gameData.gameName first (most reliable), then fallback to storage name  
+            const loadedGameName = gameData.gameName || savedGame.name || DEFAULT_SCOREBOARD_GAME_NAME;
+            const gameName = gameData.gameType === 'scoreboard' && loadedGameName === 'Table Game'
+              ? DEFAULT_SCOREBOARD_GAME_NAME
+              : loadedGameName;
+            setCurrentGameName(gameName);
             setCurrentGameId(savedGame.id || savedGame.cloudId || id);
             
             // Reset round to 1 for new games, or restore for existing games with data
@@ -353,7 +377,7 @@ const ScoreboardGamePage = () => {
       const hasData = players.some(player => 
         player.points.some(point => point !== "" && point !== undefined && point !== null)
       );
-      console.debug('📝 Table game state:', {
+      console.debug('📝 Scoreboard game state:', {
         gameName: currentGameName,
         gameId: currentGameId,
         playersCount: players.length,
@@ -391,7 +415,7 @@ const ScoreboardGamePage = () => {
             gameName: currentGameName
           };
           
-          const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
+          const name = currentGameName || `${DEFAULT_SCOREBOARD_GAME_NAME} - ${new Date().toLocaleDateString()}`;
           
           // If no game ID, create a new save
           if (!currentGameId) {
@@ -451,6 +475,10 @@ const ScoreboardGamePage = () => {
       // Save if we have a game in progress (not on template selector)
       if (!isShowingTemplateSelector) {
         try {
+          if (!hasMeaningfulGameData(currentPlayers, currentPointHistoryBySet)) {
+            return;
+          }
+
           const existingGame = currentId && activeStorage.tableGameExists(currentId)
             ? activeStorage.getTableGameById(currentId)
             : null;
@@ -472,7 +500,7 @@ const ScoreboardGamePage = () => {
             gameName: currentName
           };
 
-          const name = currentName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
+          const name = currentName || `${DEFAULT_SCOREBOARD_GAME_NAME} - ${new Date().toLocaleDateString()}`;
           
           // If no game ID, create a new save
           if (!currentId) {
@@ -524,6 +552,10 @@ const ScoreboardGamePage = () => {
       // Save if we have a game in progress (not on template selector)
       if (!isShowingTemplateSelector) {
         try {
+          if (!hasMeaningfulGameData(currentPlayers, currentPointHistoryBySet)) {
+            return;
+          }
+
           const existingGame = currentId && activeStorage.tableGameExists(currentId)
             ? activeStorage.getTableGameById(currentId)
             : null;
@@ -545,7 +577,7 @@ const ScoreboardGamePage = () => {
             gameName: currentName
           };
 
-          const name = currentName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
+          const name = currentName || `${DEFAULT_SCOREBOARD_GAME_NAME} - ${new Date().toLocaleDateString()}`;
           
           // If no game ID, create a new save
           if (!currentId) {
@@ -702,20 +734,46 @@ const ScoreboardGamePage = () => {
       return;
     }
 
+    const shouldUseBasketballPointEvents = isBasketballGame;
+
     setPointHistoryBySet((prev) => {
       const roundKey = String(roundNumber);
       const history = Array.isArray(prev[roundKey]) ? [...prev[roundKey]] : [];
 
       if (delta > 0) {
-        for (let i = 0; i < delta; i += 1) {
-          history.push(playerIdx);
+        if (shouldUseBasketballPointEvents) {
+          history.push({ scorer: playerIdx, points: delta });
+        } else {
+          for (let i = 0; i < delta; i += 1) {
+            history.push(playerIdx);
+          }
         }
       } else {
         let removals = Math.abs(delta);
-        for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
-          if (history[i] === playerIdx) {
-            history.splice(i, 1);
-            removals -= 1;
+
+        if (shouldUseBasketballPointEvents) {
+          for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
+            const currentEntry = history[i];
+            const scorer = typeof currentEntry === 'number' ? currentEntry : currentEntry?.scorer;
+            const entryPointsRaw = typeof currentEntry === 'number' ? 1 : Number.parseInt(currentEntry?.points, 10);
+            const entryPoints = Number.isFinite(entryPointsRaw) && entryPointsRaw > 0 ? entryPointsRaw : 1;
+
+            if (scorer === playerIdx) {
+              if (entryPoints <= removals) {
+                history.splice(i, 1);
+                removals -= entryPoints;
+              } else {
+                history[i] = { scorer: playerIdx, points: entryPoints - removals };
+                removals = 0;
+              }
+            }
+          }
+        } else {
+          for (let i = history.length - 1; i >= 0 && removals > 0; i -= 1) {
+            if (history[i] === playerIdx) {
+              history.splice(i, 1);
+              removals -= 1;
+            }
           }
         }
       }
@@ -968,16 +1026,40 @@ const ScoreboardGamePage = () => {
     return Array.isArray(pointHistoryBySet[roundKey]) ? pointHistoryBySet[roundKey] : [];
   };
 
+  const getPointEventMeta = (entry) => {
+    if (typeof entry === 'number') {
+      return {
+        scorer: entry,
+        points: 1,
+      };
+    }
+
+    if (entry && typeof entry === 'object') {
+      const parsedPoints = Number.parseInt(entry.points, 10);
+      return {
+        scorer: entry.scorer,
+        points: Number.isFinite(parsedPoints) && parsedPoints > 0 ? parsedPoints : 1,
+      };
+    }
+
+    return {
+      scorer: null,
+      points: 1,
+    };
+  };
+
   const buildScoreProgressionSeries = (history) => {
     const points = [{ pointNumber: 0, teamOne: 0, teamTwo: 0 }];
     let teamOne = 0;
     let teamTwo = 0;
 
-    history.forEach((scorer, index) => {
+    history.forEach((entry, index) => {
+      const { scorer, points: scoredPoints } = getPointEventMeta(entry);
+
       if (scorer === 0) {
-        teamOne += 1;
+        teamOne += scoredPoints;
       } else if (scorer === 1) {
-        teamTwo += 1;
+        teamTwo += scoredPoints;
       }
 
       points.push({
@@ -1106,7 +1188,7 @@ const ScoreboardGamePage = () => {
         winner_name: winner?.name || null
       };
 
-      const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
+      const name = currentGameName || `${DEFAULT_SCOREBOARD_GAME_NAME} - ${new Date().toLocaleDateString()}`;
       let savedGameId = currentGameId;
       
       if (currentGameId && activeStorage.tableGameExists(currentGameId)) {
@@ -1187,7 +1269,7 @@ const ScoreboardGamePage = () => {
         gameName: currentGameName
       };
 
-      const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
+      const name = currentGameName || `${DEFAULT_SCOREBOARD_GAME_NAME} - ${new Date().toLocaleDateString()}`;
       
       if (currentGameId && activeStorage.tableGameExists(currentGameId)) {
         activeStorage.updateTableGame(currentGameId, {
@@ -1258,7 +1340,7 @@ const ScoreboardGamePage = () => {
         gameName: currentGameName
       };
 
-      const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
+      const name = currentGameName || `${DEFAULT_SCOREBOARD_GAME_NAME} - ${new Date().toLocaleDateString()}`;
       
       // If we have a game ID, update the existing game
       if (currentGameId && activeStorage.tableGameExists(currentGameId)) {
@@ -1314,7 +1396,7 @@ const ScoreboardGamePage = () => {
               <ArrowLeftCircleIcon size={28} />
             </button>
             <span className="game-info-header">
-              {currentGameName || t('tableGame.defaultGameName')}
+              {currentGameName || DEFAULT_SCOREBOARD_GAME_NAME}
               <div className="total-calls">
                 {isTwoSideScoreboard
                   ? (isCloudGame ? t('tableGame.setsLabel', { n: currentRound }) : t('tableGame.setLabel', { n: currentRound }))
@@ -1629,13 +1711,26 @@ const ScoreboardGamePage = () => {
                       <div className="score-progression-timeline-wrap">
                         <h4>{t('tableGame.rallyTimelineTitle')}</h4>
                         <div className="score-progression-timeline" aria-label={t('tableGame.rallyTimelineAria', { set: currentRound })}>
-                          {currentSetPointHistory.map((scorer, idx) => (
-                            <span
-                              key={`rally-${idx}`}
-                              className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'}`}
-                              title={`${idx + 1}. ${scorer === 0 ? (players[0]?.name || t('startTableGame.teamOne')) : (players[1]?.name || t('startTableGame.teamTwo'))}`}
-                            />
-                          ))}
+                          {currentSetPointHistory.map((entry, idx) => {
+                            const { scorer, points: scoredPoints } = getPointEventMeta(entry);
+                            if (scorer !== 0 && scorer !== 1) {
+                              return null;
+                            }
+
+                            const teamName = scorer === 0
+                              ? (players[0]?.name || t('startTableGame.teamOne'))
+                              : (players[1]?.name || t('startTableGame.teamTwo'));
+
+                            return (
+                              <span
+                                key={`rally-${idx}`}
+                                className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'} ${isBasketballGame ? 'basketball' : ''}`}
+                                title={`${idx + 1}. ${teamName}${isBasketballGame ? ` (+${scoredPoints})` : ''}`}
+                              >
+                                {isBasketballGame ? `+${scoredPoints}` : ''}
+                              </span>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

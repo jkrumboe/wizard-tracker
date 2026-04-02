@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import { useTranslation } from 'react-i18next'
-import { LocalScoreboardGameStorage } from "@/shared/api"
+import { LocalScoreboardGameStorage, LocalTableGameStorage } from "@/shared/api"
 import { getTableGameById } from "@/shared/api/tableGameService"
 import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
@@ -32,6 +32,42 @@ const GameDetailsSkeleton = () => (
     </div>
   </div>
 )
+
+const getFilledPointsCount = (payload) => {
+  const players = Array.isArray(payload?.players) ? payload.players : []
+  return players.reduce((total, player) => {
+    const points = Array.isArray(player?.points) ? player.points : []
+    const filled = points.filter((point) => point !== '' && point !== undefined && point !== null).length
+    return total + filled
+  }, 0)
+}
+
+const normalizeScoreboardGameData = (source) => {
+  const candidates = [
+    source?.gameData?.gameData,
+    source?.gameData,
+    source,
+  ].filter(Boolean)
+
+  if (candidates.length === 0) {
+    return {}
+  }
+
+  const prioritized = [...candidates].sort((a, b) => {
+    const byPoints = getFilledPointsCount(b) - getFilledPointsCount(a)
+    if (byPoints !== 0) return byPoints
+
+    const aPlayers = Array.isArray(a?.players) ? a.players.length : 0
+    const bPlayers = Array.isArray(b?.players) ? b.players.length : 0
+    if (bPlayers !== aPlayers) return bPlayers - aPlayers
+
+    const aRows = Number.isFinite(a?.rows) ? a.rows : 0
+    const bRows = Number.isFinite(b?.rows) ? b.rows : 0
+    return bRows - aRows
+  })
+
+  return prioritized[0]
+}
 
 const ScoreboardGameDetails = () => {
   const { id } = useParams()
@@ -64,18 +100,24 @@ const ScoreboardGameDetails = () => {
           const localScoreboardGame = LocalScoreboardGameStorage.getTableGameById(id)
           if (localScoreboardGame) {
             gameData = { ...localScoreboardGame, is_local: true }
+          } else {
+            // Backward compatibility: some older entries may live in table storage.
+            const legacyScoreboardGame = LocalTableGameStorage.getTableGameById(id)
+            if (legacyScoreboardGame) {
+              gameData = { ...legacyScoreboardGame, is_local: true }
+            }
           }
         }
 
         if (!gameData && !isLocalScoreboardId) {
-          gameData = await getTableGameById(id)
+          gameData = await getTableGameById(id, { preferCloud: true })
         }
 
         if (!gameData) {
           throw new Error('Game not found')
         }
 
-        const normalized = gameData.gameData?.gameData || gameData.gameData || gameData
+        const normalized = normalizeScoreboardGameData(gameData)
         const isScoreboardGame =
           (typeof id === 'string' && id.startsWith('scoreboard_game_'))
           || normalized.scoreEntryMode === 'twoSideGesture'
@@ -125,9 +167,10 @@ const ScoreboardGameDetails = () => {
   }
 
   const normalizedGame = game || {}
-  const gameData = normalizedGame.gameData?.gameData || normalizedGame.gameData || normalizedGame
+  const gameData = normalizeScoreboardGameData(normalizedGame)
   const players = Array.isArray(gameData.players) ? gameData.players : []
   const gameName = normalizedGame.gameTypeName || normalizedGame.name || gameData.gameName || 'Scoreboard Game'
+  const isBasketballGame = gameName.trim().toLowerCase() === 'basketball'
   const rows = gameData.rows || 10
   const timestampCandidates = [
     normalizedGame.createdAt,
@@ -154,6 +197,40 @@ const ScoreboardGameDetails = () => {
     }
     return {}
   }, [gameData.pointHistoryBySet])
+
+  const getPointHistoryForSet = (setNumber) => {
+    const roundKey = String(setNumber)
+    return Array.isArray(pointHistoryBySet[roundKey]) ? pointHistoryBySet[roundKey] : []
+  }
+
+  const getPointEventMeta = (entry) => {
+    if (typeof entry === 'number') {
+      return { scorer: entry, points: 1 }
+    }
+
+    if (entry && typeof entry === 'object') {
+      const parsedPoints = Number.parseInt(entry.points, 10)
+      return {
+        scorer: entry.scorer,
+        points: Number.isFinite(parsedPoints) && parsedPoints > 0 ? parsedPoints : 1,
+      }
+    }
+
+    return { scorer: null, points: 1 }
+  }
+
+  const getTeamScoreFromPointHistory = (teamIndex, historyMap = pointHistoryBySet) => {
+    return Object.values(historyMap).reduce((grandTotal, history) => {
+      if (!Array.isArray(history)) return grandTotal
+
+      const setTotal = history.reduce((total, entry) => {
+        const { scorer, points } = getPointEventMeta(entry)
+        return scorer === teamIndex ? total + points : total
+      }, 0)
+
+      return grandTotal + setTotal
+    }, 0)
+  }
 
   const filledRounds = players.reduce((maxRounds, player) => {
     const roundsForPlayer = (player.points || []).filter((p) => p !== '' && p !== undefined && p !== null).length
@@ -187,10 +264,22 @@ const ScoreboardGameDetails = () => {
       })
     : 'Unknown date'
 
-  const getTotal = (player) => (player.points || []).reduce((sum, p) => sum + (Number.parseInt(p, 10) || 0), 0)
+  const getTotal = (player, playerIndex) => {
+    const directTotal = (player.points || []).reduce((sum, p) => sum + (Number.parseInt(p, 10) || 0), 0)
+
+    if (directTotal > 0) {
+      return directTotal
+    }
+
+    if (pointHistoryBySet && Object.keys(pointHistoryBySet).length > 0) {
+      return getTeamScoreFromPointHistory(playerIndex)
+    }
+
+    return directTotal
+  }
 
   const sortedPlayers = [...players]
-    .map((player) => ({ ...player, totalScore: getTotal(player) }))
+    .map((player, index) => ({ ...player, totalScore: getTotal(player, index) }))
     .sort((a, b) => b.totalScore - a.totalScore)
 
   const getTeamMembers = (teamPlayer) => {
@@ -237,19 +326,15 @@ const ScoreboardGameDetails = () => {
     return { ...player, rank: currentRank }
   })
 
-  const getPointHistoryForSet = (setNumber) => {
-    const roundKey = String(setNumber)
-    return Array.isArray(pointHistoryBySet[roundKey]) ? pointHistoryBySet[roundKey] : []
-  }
-
   const buildScoreProgressionSeries = (history) => {
     const points = [{ pointNumber: 0, teamOne: 0, teamTwo: 0 }]
     let teamOne = 0
     let teamTwo = 0
 
-    history.forEach((scorer, index) => {
-      if (scorer === 0) teamOne += 1
-      if (scorer === 1) teamTwo += 1
+    history.forEach((entry, index) => {
+      const { scorer, points: scoredPoints } = getPointEventMeta(entry)
+      if (scorer === 0) teamOne += scoredPoints
+      if (scorer === 1) teamTwo += scoredPoints
 
       points.push({ pointNumber: index + 1, teamOne, teamTwo })
     })
@@ -479,13 +564,26 @@ const ScoreboardGameDetails = () => {
                   <h4>{t('tableGame.rallyTimelineTitle')}</h4>
                   {selectedSetPointHistory.length > 0 ? (
                     <div className="score-progression-timeline" aria-label={t('tableGame.rallyTimelineAria', { set: selectedChartSet })}>
-                      {selectedSetPointHistory.map((scorer, idx) => (
-                        <span
-                          key={`rally-${selectedChartSet}-${idx}`}
-                          className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'}`}
-                          title={`${idx + 1}. ${scorer === 0 ? (players[0]?.name || t('startTableGame.teamOne')) : (players[1]?.name || t('startTableGame.teamTwo'))}`}
-                        />
-                      ))}
+                      {selectedSetPointHistory.map((entry, idx) => {
+                        const { scorer, points: scoredPoints } = getPointEventMeta(entry)
+                        if (scorer !== 0 && scorer !== 1) {
+                          return null
+                        }
+
+                        const teamName = scorer === 0
+                          ? (players[0]?.name || t('startTableGame.teamOne'))
+                          : (players[1]?.name || t('startTableGame.teamTwo'))
+
+                        return (
+                          <span
+                            key={`rally-${selectedChartSet}-${idx}`}
+                            className={`rally-dot ${scorer === 0 ? 'team-one' : 'team-two'} ${isBasketballGame ? 'basketball' : ''}`}
+                            title={`${idx + 1}. ${teamName}${isBasketballGame ? ` (+${scoredPoints})` : ''}`}
+                          >
+                            {isBasketballGame ? `+${scoredPoints}` : ''}
+                          </span>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className="score-progression-empty">{t('tableGame.noPointProgression')}</div>
