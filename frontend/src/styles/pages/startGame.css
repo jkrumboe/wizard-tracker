@@ -71,12 +71,13 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xs);
+  min-height: 0;
   background: transparent;
   border: none;
-  color: var(--text);
-  cursor: pointer;
   border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  color: var(--primary);
+  line-height: 0;
+  cursor: pointer;
   box-shadow: none;
 }
 
@@ -277,11 +278,6 @@
 }
 
 /* Start button area */
-.start-game-actions {
-  padding-top: var(--spacing-sm);
-  padding-bottom: var(--spacing-sm);
-}
-
 .start-game-actions .start-game-btn {
   display: block;
   width: 100%;

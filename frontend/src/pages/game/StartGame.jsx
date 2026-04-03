@@ -13,7 +13,7 @@ import GameTemplateSelector from '@/components/game/GameTemplateSelector'
 import PlayerSetup from '@/components/game/PlayerSetup'
 import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeftIcon, ArrowLeftCircleIcon, PlusIcon } from '@/components/ui/Icon'
+import { ArrowLeftCircleIcon, PlusIcon } from '@/components/ui/Icon'
 import '@/styles/pages/startGame.css'
 import '@/styles/components/players.css'
 import '@/styles/components/components.css'
@@ -548,7 +548,7 @@ const StartGame = () => {
       <div className="setup-view">
         <div className="setup-header">
           <button className="setup-back-button" onClick={handleBack} title={t('common.back')}>
-            <ArrowLeftIcon size={24} />
+            <ArrowLeftCircleIcon size={24} />
           </button>
           <h2>{selectedGameType?.name}</h2>
         </div>
