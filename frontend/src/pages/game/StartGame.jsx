@@ -50,8 +50,6 @@ const StartGame = () => {
   const [maxRounds, setMaxRoundsLocal] = useState(20);
   const [totalCards, setTotalCards] = useState(60);
 
-  // User lookup state
-  const [lookingUpPlayers, setLookingUpPlayers] = useState(new Set());
   const [friends, setFriends] = useState([]);
 
   // Scoreboard team naming
@@ -206,48 +204,7 @@ const StartGame = () => {
     }));
   };
 
-  const handlePlayerNameBlur = async (playerId, name) => {
-    const trimmedName = name?.trim();
-    if (!trimmedName) return;
 
-    // Check logged-in user
-    if (user && trimmedName.toLowerCase() === user.username?.toLowerCase()) {
-      setPlayers(prev => prev.map(p =>
-        p.id === playerId ? { ...p, name: user.username, userId: user.id } : p
-      ));
-      return;
-    }
-
-    // Check friends
-    const matchingFriend = friends.find(f =>
-      f.username.toLowerCase() === trimmedName.toLowerCase()
-    );
-    if (matchingFriend) {
-      setPlayers(prev => prev.map(p =>
-        p.id === playerId ? { ...p, name: matchingFriend.username, userId: matchingFriend.id } : p
-      ));
-      return;
-    }
-
-    // Backend lookup
-    setLookingUpPlayers(prev => new Set([...prev, playerId]));
-    try {
-      const result = await userService.lookupUserByUsername(trimmedName);
-      if (result.found && result.user) {
-        setPlayers(prev => prev.map(p =>
-          p.id === playerId ? { ...p, name: result.user.username, userId: result.user.id } : p
-        ));
-      }
-    } catch (error) {
-      console.warn('Error looking up user:', error);
-    } finally {
-      setLookingUpPlayers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(playerId);
-        return newSet;
-      });
-    }
-  };
 
   const handleRandomize = () => {
     if (players.length < 2) return;
@@ -602,12 +559,10 @@ const StartGame = () => {
             onAddPlayer={handleAddPlayer}
             onRemovePlayer={handleRemovePlayer}
             onPlayerNameChange={handlePlayerNameChange}
-            onPlayerNameBlur={handlePlayerNameBlur}
             onMovePlayerToOtherTeam={handleMovePlayerToOtherTeam}
             onRandomize={handleRandomize}
             onAddFriends={() => setShowAddPlayersChoiceModal(true)}
             maxPlayers={maxPlayers}
-            lookingUpPlayers={lookingUpPlayers}
             teamNames={teamNames}
             onTeamNameChange={handleTeamNameChange}
           />
@@ -618,14 +573,12 @@ const StartGame = () => {
             onRemovePlayer={handleRemovePlayer}
             onReorderPlayers={handleReorderPlayers}
             onPlayerNameChange={handlePlayerNameChange}
-            onPlayerNameBlur={handlePlayerNameBlur}
             onRandomize={handleRandomize}
             onAddFriends={() => setShowAddPlayersChoiceModal(true)}
             onPlayerTeamChange={handlePlayerTeamChange}
             isTwoSideScoreboard={isTwoSideScoreboard}
             maxPlayers={maxPlayers}
             minPlayers={minPlayers}
-            lookingUpPlayers={lookingUpPlayers}
           />
         )}
 

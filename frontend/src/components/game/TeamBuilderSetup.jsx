@@ -9,10 +9,8 @@ const TeamSection = ({
   onTeamNameChange,
   players,
   onNameChange,
-  onNameBlur,
   onRemovePlayer,
   onMovePlayer,
-  lookingUpPlayers,
 }) => {
   const { t } = useTranslation();
   const [isEditingName, setIsEditingName] = useState(false);
@@ -105,13 +103,9 @@ const TeamSection = ({
                 className="team-player-name-input"
                 value={player.name}
                 onChange={(e) => onNameChange(player.id, e.target.value)}
-                onBlur={(e) => onNameBlur?.(player.id, e.target.value)}
                 onFocus={(e) => e.target.select()}
                 placeholder={t('startTableGame.playerPlaceholder', { n: index + 1 })}
               />
-              {lookingUpPlayers.has(player.id) && (
-                <span className="team-player-lookup">{t('startTableGame.lookingUpUser')}</span>
-              )}
             </div>
 
             <button
@@ -135,12 +129,10 @@ const TeamBuilderSetup = ({
   onAddPlayer,
   onRemovePlayer,
   onPlayerNameChange,
-  onPlayerNameBlur,
   onMovePlayerToOtherTeam,
   onRandomize,
   onAddFriends,
   maxPlayers,
-  lookingUpPlayers,
   teamNames,
   onTeamNameChange,
 }) => {
@@ -162,10 +154,8 @@ const TeamBuilderSetup = ({
           onTeamNameChange={(value) => onTeamNameChange('teamOne', value)}
           players={teams[0]}
           onNameChange={onPlayerNameChange}
-          onNameBlur={onPlayerNameBlur}
           onRemovePlayer={onRemovePlayer}
           onMovePlayer={onMovePlayerToOtherTeam}
-          lookingUpPlayers={lookingUpPlayers}
         />
 
         <TeamSection
@@ -175,10 +165,8 @@ const TeamBuilderSetup = ({
           onTeamNameChange={(value) => onTeamNameChange('teamTwo', value)}
           players={teams[1]}
           onNameChange={onPlayerNameChange}
-          onNameBlur={onPlayerNameBlur}
           onRemovePlayer={onRemovePlayer}
           onMovePlayer={onMovePlayerToOtherTeam}
-          lookingUpPlayers={lookingUpPlayers}
         />
       </div>
 

@@ -30,7 +30,6 @@ const SortablePlayerItem = ({
   onNameChange,
   onNameBlur,
   onRemove,
-  isLookingUp,
   isTwoSideScoreboard,
   onTeamChange,
 }) => {
@@ -53,13 +52,11 @@ const SortablePlayerItem = ({
     zIndex: isDragging ? 1000 : 1,
   };
 
-  const isVerified = !!player.userId;
-
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`player-item ${isDragging ? 'dragging' : ''} ${isVerified ? 'verified' : ''}`}
+      className={`player-item ${isDragging ? 'dragging' : ''}`}
       {...attributes}
     >
       <div
@@ -95,12 +92,6 @@ const SortablePlayerItem = ({
         </select>
       )}
 
-      {isLookingUp && (
-        <span className="lookup-spinner" title={t('startTableGame.lookingUpUser')}>
-          ⏳
-        </span>
-      )}
-
       <button
         className="remove-btn"
         onClick={(e) => {
@@ -127,7 +118,6 @@ const PlayerSetup = ({
   onPlayerTeamChange,
   isTwoSideScoreboard = false,
   maxPlayers,
-  lookingUpPlayers = new Set(),
 }) => {
   const { t } = useTranslation();
   const playerListRef = useRef(null);
@@ -196,7 +186,6 @@ const PlayerSetup = ({
                     onNameChange={onPlayerNameChange}
                     onNameBlur={onPlayerNameBlur}
                     onRemove={onRemovePlayer}
-                    isLookingUp={lookingUpPlayers.has(player.id)}
                     isTwoSideScoreboard={isTwoSideScoreboard}
                     onTeamChange={onPlayerTeamChange}
                   />
