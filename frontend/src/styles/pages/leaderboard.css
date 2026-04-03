@@ -36,7 +36,7 @@
   gap: 8px;
   padding: var(--spacing-xs) var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
-  background: var(--card-bg);
+  background: var(--primary);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
@@ -196,8 +196,14 @@
   font-size: 1.1rem;
 }
 
+/* Medal colors for top 3 ranks */
+
+.rank-col {
+    color: var(--primary)
+}
+
 .rank-col.gold {
-  background: #fde508;
+  background: gold;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -223,7 +229,6 @@
 .medal {
   font-size: 1.5rem;
 }
-
 
 .leaderboard-container .player-col {
   align-items: center;

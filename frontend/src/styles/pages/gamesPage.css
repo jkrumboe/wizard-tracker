@@ -20,6 +20,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  background-color: var(--card-bg);
   text-decoration: none;
   padding: var(--spacing-sm);
   border-radius: 16px;

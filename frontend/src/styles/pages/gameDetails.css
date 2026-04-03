@@ -130,36 +130,6 @@
   animation: slideIn 0.3s ease-out;
 }
 
-/* Medal colors for top 3 ranks */
-
-.rank-col {
-    color: var(--primary)
-}
-
-.rank-col.gold {
-  background: #fde508;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: bold;
-}
-
-.rank-col.silver {
-  background: #ffffff;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: bold;
-}
-
-.rank-col.bronze {
-  background: #ee9f51;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: bold;
-}
-
 @keyframes slideIn {
   from {
     opacity: 0;
