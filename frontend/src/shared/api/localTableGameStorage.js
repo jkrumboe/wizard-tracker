@@ -187,6 +187,8 @@ export class LocalTableGameStorage {
       const gamesList = Object.values(games)
         .filter(game => game && game.id)
         .map(game => {
+          // Normalize gameData in case of double-nested wrapper from cloud downloads
+          const normalizedGameData = game.gameData?.gameData || game.gameData;
           const gameData = {
             id: game.id,
             name: game.name || `Table Game from ${new Date(game.savedAt).toLocaleDateString()}`,
@@ -194,16 +196,16 @@ export class LocalTableGameStorage {
             savedAt: game.savedAt || new Date().toISOString(),
             lastPlayed: game.lastPlayed || new Date().toISOString(),
             playerCount: game.playerCount || 0,
-            totalRounds: game.totalRounds || 0,
+            totalRounds: game.totalRounds || normalizedGameData?.rows || 0,
             gameType: 'table',
             gameFinished: game.gameFinished || false,
             userId: game.userId,
-            lowIsBetter: game.lowIsBetter || game.gameData?.lowIsBetter || false,
-            winner_id: game.winner_id || game.gameData?.winner_id,
-            winner_name: game.winner_name || game.gameData?.winner_name,
+            lowIsBetter: game.lowIsBetter || normalizedGameData?.lowIsBetter || false,
+            winner_id: game.winner_id || normalizedGameData?.winner_id,
+            winner_name: game.winner_name || normalizedGameData?.winner_name,
             gameData: game.gameData, // Include full gameData for access to players and winner info
-            players: game.gameData && game.gameData.players ? 
-              game.gameData.players.map(p => p.name) : []
+            players: normalizedGameData && normalizedGameData.players ? 
+              normalizedGameData.players.map(p => p.name) : []
           };
           
           return gameData;

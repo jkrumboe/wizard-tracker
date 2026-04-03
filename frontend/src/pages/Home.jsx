@@ -74,7 +74,8 @@ const Home = () => {
         .map(game => {
           // Get the full game data to calculate winner
           const fullGame = LocalTableGameStorage.getTableGameById(game.id);
-          const gameData = fullGame?.gameData;
+          // Handle double-nested gameData from cloud downloads
+          const gameData = fullGame?.gameData?.gameData || fullGame?.gameData || fullGame;
           const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || null;
           const isScoreboardGame =
             scoreEntryMode === 'twoSideGesture'
@@ -124,7 +125,8 @@ const Home = () => {
         .filter(game => game.gameFinished)
         .map(game => {
           const fullGame = LocalScoreboardGameStorage.getTableGameById(game.id);
-          const gameData = fullGame?.gameData;
+          // Handle double-nested gameData from cloud downloads
+          const gameData = fullGame?.gameData?.gameData || fullGame?.gameData || fullGame;
           const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || 'twoSideGesture';
 
           let winnerName = 'Not determined';
@@ -212,7 +214,9 @@ const Home = () => {
       const formattedTableGames = tableGames
         .filter(game => game.gameFinished) // Only show finished table games
         .map(game => {
-          const rawGameData = game.rawData?.gameData;
+          // Normalize gameData: handle double-nested wrapper from older uploads
+          const rawGameDataOuter = game.rawData?.gameData;
+          const rawGameData = rawGameDataOuter?.gameData || rawGameDataOuter;
           const scoreEntryMode = rawGameData?.scoreEntryMode || game.scoreEntryMode || null;
           const isScoreboardGame =
             scoreEntryMode === 'twoSideGesture'
@@ -229,8 +233,7 @@ const Home = () => {
             });
             
             if (playersWithScores.length > 0) {
-              const rawData = game.rawData?.gameData;
-              const lowIsBetter = rawData?.lowIsBetter || false;
+              const lowIsBetter = rawGameData?.lowIsBetter || false;
               const winner = playersWithScores.reduce((best, current) => {
                 if (!best) return current;
                 if (lowIsBetter) {
@@ -288,7 +291,8 @@ const Home = () => {
               .filter(game => game.gameFinished)
               .map(game => {
                 const fullGame = LocalScoreboardGameStorage.getTableGameById(game.id);
-                const gameData = fullGame?.gameData;
+                // Handle double-nested gameData from cloud downloads
+                const gameData = fullGame?.gameData?.gameData || fullGame?.gameData || fullGame;
                 const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || 'twoSideGesture';
 
                 let winnerName = 'Not determined';

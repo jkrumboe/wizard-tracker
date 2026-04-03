@@ -82,15 +82,18 @@ export async function getUserCloudTableGamesList() {
       );
       const existsLocally = existsByLocalId || existsByCloudId;
       
+      // Normalize gameData in case it's a double-nested saved game wrapper
+      const rawGameData = cloudGame.gameData?.gameData || cloudGame.gameData;
+
       return {
         cloudId: cloudGame._id,
         localId: localId,
-        name: cloudGame.name || cloudGame.gameData?.gameName || 'Table Game',
-        gameTypeName: cloudGame.gameTypeName || cloudGame.gameData?.gameName,
-        players: cloudGame.gameData?.players || [],
-        playerCount: cloudGame.playerCount || 0,
-        totalRounds: cloudGame.totalRounds || 0,
-        gameFinished: cloudGame.gameFinished || false,
+        name: cloudGame.name || rawGameData?.gameName || cloudGame.gameData?.gameName || 'Table Game',
+        gameTypeName: cloudGame.gameTypeName || rawGameData?.gameName || cloudGame.gameData?.gameName,
+        players: rawGameData?.players || cloudGame.gameData?.players || [],
+        playerCount: cloudGame.playerCount || (rawGameData?.players?.length) || 0,
+        totalRounds: cloudGame.totalRounds || rawGameData?.rows || 0,
+        gameFinished: cloudGame.gameFinished || rawGameData?.gameFinished || false,
         created_at: cloudGame.createdAt,
         existsLocally: existsLocally,
         rawData: cloudGame // Keep raw data for download
@@ -281,8 +284,8 @@ export async function downloadSelectedCloudTableGames(cloudGameIds) {
           continue;
         }
 
-        // Extract game data
-        const gameData = cloudGame.gameData || {};
+        // Extract game data, handling double-nested wrapper from older uploads
+        const gameData = cloudGame.gameData?.gameData || cloudGame.gameData || {};
         const players = gameData.players || [];
         
         // Prepare the game data for local storage

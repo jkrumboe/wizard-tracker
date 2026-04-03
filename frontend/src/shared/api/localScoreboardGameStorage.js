@@ -196,7 +196,10 @@ export class LocalScoreboardGameStorage {
       const games = this.getAllSavedTableGames(userId);
       const gamesList = Object.values(games)
         .filter((game) => game && game.id)
-        .map((game) => ({
+        .map((game) => {
+          // Normalize gameData in case of double-nested wrapper from cloud downloads
+          const normalizedGameData = game.gameData?.gameData || game.gameData;
+          return {
           id: game.id,
           name: game.name || `Scoreboard Game from ${new Date(game.savedAt).toLocaleDateString()}`,
           gameTypeName: game.gameTypeName || game.name || 'Scoreboard Game',
@@ -204,23 +207,23 @@ export class LocalScoreboardGameStorage {
           lastPlayed: game.lastPlayed || new Date().toISOString(),
           playerCount: game.playerCount || 0,
           totalRounds: game.gameFinished
-            ? (game.totalRounds || derivePlayedRounds(game.gameData))
-            : derivePlayedRounds(game.gameData),
+            ? (game.totalRounds || derivePlayedRounds(normalizedGameData))
+            : derivePlayedRounds(normalizedGameData),
           gameType: 'scoreboard',
           gameFinished: !!game.gameFinished,
           userId: game.userId,
-          lowIsBetter: game.lowIsBetter || game.gameData?.lowIsBetter || false,
-          winner_id: game.winner_id || game.gameData?.winner_id,
-          winner_name: game.winner_name || game.gameData?.winner_name,
-          scoreEntryMode: game.gameData?.scoreEntryMode || 'twoSideGesture',
+          lowIsBetter: game.lowIsBetter || normalizedGameData?.lowIsBetter || false,
+          winner_id: game.winner_id || normalizedGameData?.winner_id,
+          winner_name: game.winner_name || normalizedGameData?.winner_name,
+          scoreEntryMode: normalizedGameData?.scoreEntryMode || 'twoSideGesture',
           gameData: game.gameData,
-          players: Array.isArray(game.gameData?.teamMembers)
+          players: Array.isArray(normalizedGameData?.teamMembers)
             ? [
-                ...(game.gameData.teamMembers[0] || []).map((p) => p.name),
-                ...(game.gameData.teamMembers[1] || []).map((p) => p.name),
+                ...(normalizedGameData.teamMembers[0] || []).map((p) => p.name),
+                ...(normalizedGameData.teamMembers[1] || []).map((p) => p.name),
               ]
-            : (game.gameData?.players || []).map((p) => p.name),
-        }));
+            : (normalizedGameData?.players || []).map((p) => p.name),
+        }});
 
       gamesList.sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
       return gamesList;

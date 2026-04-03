@@ -609,7 +609,7 @@ const Account = () => {
 
   const getGameRounds = (game) => {
     if (game?._gameCategory === 'table') {
-      return game.totalRounds || game.gameData?.rows || 0;
+      return game.totalRounds || game.gameData?.rows || game.gameData?.gameData?.rows || 0;
     }
 
     if (game.gameFinished) {
@@ -1122,7 +1122,9 @@ const Account = () => {
 
     try {
       const { createTableGame } = await import('@/shared/api/tableGameService');
-      const result = await createTableGame(gameData, gameId);
+      // Extract the inner gameData if this is a full saved game wrapper
+      const innerGameData = gameData?.gameData || gameData;
+      const result = await createTableGame(innerGameData, gameId);
       
       if (result.duplicate) {
         LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
