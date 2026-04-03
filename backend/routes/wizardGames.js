@@ -29,7 +29,7 @@ router.get('/public/:id', async (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
     
-    res.json(game);
+    res.json({ game });
   } catch (error) {
     console.error('[GET /api/wizard-games/public/:id] Error:', error);
     res.status(500).json({ error: error.message });
@@ -407,7 +407,7 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
     
-    res.json(game);
+    res.json({ game });
   } catch (error) {
     console.error('[GET /api/wizard-games/:id] Error:', error);
     res.status(500).json({ error: error.message });
