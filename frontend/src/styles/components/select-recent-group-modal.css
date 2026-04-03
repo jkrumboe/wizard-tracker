@@ -106,11 +106,28 @@
   font-weight: 500;
 }
 
-.already-added-badge {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.4rem;
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 3px; 
+.group-item.all-already-added {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.group-item.all-already-added:hover {
+  opacity: 0.7;
+}
+
+.group-item.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.group-item.selected .group-date {
+  opacity: 0.9;
+}
+
+.group-item.selected .group-player.already-added .player-name {
+  opacity: 0.7;
 }
 
 /* Responsive for mobile */

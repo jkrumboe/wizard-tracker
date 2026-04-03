@@ -6,7 +6,7 @@ import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
 import '@/styles/components/select-recent-group-modal.css';
 
-const SelectRecentGroupModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers = [] }) => {
+const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupId, alreadySelectedPlayers = [] }) => {
   const { t } = useTranslation();
   const [recentGroups, setRecentGroups] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -48,29 +48,7 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onConfirm, alreadySelectedPla
   };
 
   const handleSelectGroup = (group) => {
-    // Filter out players who are already selected
-    const newPlayers = group.players.filter(player =>
-      !alreadySelectedPlayers.some(p => 
-        p.userId === player.userId || p.name === player.name
-      )
-    );
-
-    if (newPlayers.length === 0) {
-      // Show message that all players are already selected
-      globalThis.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: t('selectRecentGroup.allPlayersAlreadyAdded', { 
-            defaultValue: 'All players from this group are already added.' 
-          }),
-          type: 'info',
-          duration: 3000
-        }
-      }));
-      return;
-    }
-
-    onConfirm(newPlayers);
-    onClose();
+    onSelectGroup(group);
   };
 
   const handleClose = () => {
@@ -109,7 +87,7 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onConfirm, alreadySelectedPla
                 {recentGroups.map((group, idx) => (
                   <button
                     key={`group-${group.gameId}-${idx}`}
-                    className="group-item"
+                    className={`group-item${selectedGroupId === group.gameId ? ' selected' : ''}${group.players.every(player => alreadySelectedPlayers.some(p => p.userId === player.userId || p.name === player.name)) && selectedGroupId !== group.gameId ? ' all-already-added' : ''}`}
                     onClick={() => handleSelectGroup(group)}
                     title={t('selectRecentGroup.selectThisGroup', { defaultValue: 'Select this group' })}
                   >
@@ -128,13 +106,6 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onConfirm, alreadySelectedPla
                           ) ? 'already-added' : ''}`}
                         >
                           <span className="player-name">{player.name}</span>
-                          {alreadySelectedPlayers.some(p => 
-                            p.userId === player.userId || p.name === player.name
-                          ) && (
-                            <span className="already-added-badge">
-                              {t('selectRecentGroup.alreadyAdded', { defaultValue: 'Already added' })}
-                            </span>
-                          )}
                         </div>
                       ))}
                     </div>

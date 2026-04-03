@@ -64,6 +64,7 @@ const StartGame = () => {
   const [showAddPlayersChoiceModal, setShowAddPlayersChoiceModal] = useState(false);
   const [showSelectFriendsModal, setShowSelectFriendsModal] = useState(false);
   const [showSelectRecentGroupModal, setShowSelectRecentGroupModal] = useState(false);
+  const [selectedRecentGroup, setSelectedRecentGroup] = useState(null);
 
   // Wizard game history modal
   const [showWizardHistoryModal, setShowWizardHistoryModal] = useState(false);
@@ -264,15 +265,38 @@ const StartGame = () => {
     setShowSelectFriendsModal(false);
   };
 
-  const handleSelectRecentGroup = (selectedPlayers) => {
+  const handleSelectRecentGroup = (group) => {
+    // Deselect if clicking the already-selected group
+    if (selectedRecentGroup?.gameId === group.gameId) {
+      setPlayers((prev) =>
+        prev.filter(existing =>
+          existing.userId === user?.id ||
+          !selectedRecentGroup.players.some(old => isSamePerson(existing, old))
+        )
+      );
+      setSelectedRecentGroup(null);
+      return;
+    }
+
     const maxPlayers = getMaxPlayersForSelection();
-    const newPlayers = selectedPlayers.map((player, idx) => ({
+    const newPlayers = group.players.map((player, idx) => ({
       id: `player-${Date.now()}-recent-${idx}`,
       name: player.name,
       userId: player.userId,
     }));
-    setPlayers((prev) => appendUniquePlayers(prev, newPlayers, maxPlayers));
-    setShowSelectRecentGroupModal(false);
+
+    setPlayers((prev) => {
+      // Remove players that came from the previously selected group (but not if they're in the new group too)
+      let working = prev;
+      if (selectedRecentGroup) {
+        working = prev.filter(existing =>
+          !selectedRecentGroup.players.some(old => isSamePerson(existing, old)) ||
+          group.players.some(newP => isSamePerson(existing, newP))
+        );
+      }
+      return appendUniquePlayers(working, newPlayers, maxPlayers);
+    });
+    setSelectedRecentGroup(group);
   };
 
   useEffect(() => {
@@ -728,7 +752,8 @@ const StartGame = () => {
       <SelectRecentGroupModal
         isOpen={showSelectRecentGroupModal}
         onClose={() => setShowSelectRecentGroupModal(false)}
-        onConfirm={handleSelectRecentGroup}
+        onSelectGroup={handleSelectRecentGroup}
+        selectedGroupId={selectedRecentGroup?.gameId}
         alreadySelectedPlayers={players.filter(p => p.userId || p.name).map(p => ({ userId: p.userId, name: p.name }))}
       />
     </div>
