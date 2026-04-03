@@ -50,7 +50,7 @@ const StartGame = () => {
   const [maxRounds, setMaxRoundsLocal] = useState(20);
   const [totalCards, setTotalCards] = useState(60);
 
-  const [friends, setFriends] = useState([]);
+  const [_friends, setFriends] = useState([]);
 
   // Scoreboard team naming
   const [teamNames, setTeamNames] = useState({
