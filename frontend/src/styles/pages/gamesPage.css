@@ -70,6 +70,7 @@
   font-size: 1.35rem;
   line-height: 1;
   color: var(--text);
+  margin: 0 2px ;
 }
 
 .mode-tile-team-a {

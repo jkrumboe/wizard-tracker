@@ -16,7 +16,7 @@ const ScoreboardIcon = () => (
 const CallAndMadeIcon = () => (
   <div className="mode-icon mode-icon-call-made">
     <span className="call-made-speaker-wrap" aria-hidden="true">
-      <Icon name="Megaphone" size={40} className="call-made-speaker-icon" />
+      <Icon name="Megaphone" size={40} strokeWidth={1.5} className="call-made-speaker-icon" />
       <span className="call-made-check">
         <CheckMarkIcon size={20} />
       </span>
@@ -79,14 +79,16 @@ const GamesPage = () => {
       label: t('nav.leaderboard'),
       description: t('gamesPage.leaderboardDescription'),
       Icon: TrophyIcon,
-      iconSize: 48
+      iconSize: 48,
+      strokeWidth: 1.5
     },
     {
       to: '/friend-leaderboard',
       label: t('nav.friendCompareShort'),
       description: t('gamesPage.friendsDescription'),
       Icon: UsersIcon,
-      iconSize: 48
+      iconSize: 48,
+      strokeWidth: 1.5
     },
   ];
 
@@ -96,7 +98,8 @@ const GamesPage = () => {
       label: t('nav.adminPanel'),
       description: t('gamesPage.adminDescription'),
       Icon: ShieldIcon,
-      iconSize: 48
+      iconSize: 48,
+      strokeWidth: 1.5
     });
   }
 
@@ -109,7 +112,7 @@ const GamesPage = () => {
           return (
           <Link key={item.to} to={item.to} className="games-link-card">
             <div className="games-link-icon" aria-hidden="true">
-              {item.customIcon ? <LinkIcon /> : <LinkIcon size={item.iconSize ?? 28} />}
+              {item.customIcon ? <LinkIcon /> : <LinkIcon size={item.iconSize ?? 28} strokeWidth={item.strokeWidth} />}
             </div>
             <div className="games-link-text">
               <h2>{item.label}</h2>

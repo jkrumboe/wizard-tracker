@@ -138,12 +138,12 @@
     flex: 0 0 auto;
     width: auto;
     white-space: nowrap;
-    background-color: rgba(255, 215, 0, 0.1);
     color: gold;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     position: relative;
     border: 1px solid gold;
-    padding: 0 var(--spacing-xs);
+    padding: 0 var(--spacing-sm);
     border-radius: var(--radius-md);
     align-self: center; 
   }
