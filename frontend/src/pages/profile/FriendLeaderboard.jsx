@@ -5,7 +5,7 @@ import { getFriendLeaderboard } from '@/shared/api/gameService'
 import { userService } from '@/shared/api'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
-import { ArrowLeftIcon, ExternalLinkIcon } from '@/components/ui/Icon'
+import { ArrowLeftCircleIcon, ExternalLinkIcon } from '@/components/ui/Icon'
 import "@/styles/pages/friend-leaderboard.css"
 
 const FriendLeaderboard = () => {
@@ -181,6 +181,15 @@ const FriendLeaderboard = () => {
     navigate(`/user/${playerName}`)
   }
 
+  const handleSelectionPageBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate('/account')
+  }
+
   if (loadingFriends) {
     return (
       <div className="loading-container">
@@ -192,89 +201,83 @@ const FriendLeaderboard = () => {
 
   return (
     <div className="friend-leaderboard-container">
-      <h1>{t('leaderboard.friendTitle')}</h1>
-      <p className="subtitle">{t('leaderboard.friendSubtitle')}</p>
+      {showPlayerSelect ? (
+        <div className="friend-leaderboard-top-header">
+          <button
+            className="friend-page-back-button"
+            onClick={handleSelectionPageBack}
+            title={t('common.back')}
+            aria-label={t('common.back')}
+          >
+            <ArrowLeftCircleIcon size={24} />
+          </button>
+
+          <div className="friend-leaderboard-header-text">
+            <h1>{t('leaderboard.friendTitle')}</h1>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h1>{t('leaderboard.friendTitle')}</h1>
+          <p className="subtitle">{t('leaderboard.friendSubtitle')}</p>
+        </>
+      )}
       
       {showPlayerSelect ? (
-        <div className="player-selection-section">
-          <div className="selection-header">
-            <h2>{t('leaderboard.selectFriendsCount', { count: selectedPlayers.length })}</h2>
-          </div>
-          
-          {/* Selected players */}
-          {/* {selectedPlayers.length > 0 && (
-            <div className="selected-players">
-              {selectedPlayers.map(player => (
-                <div 
-                  key={player.id} 
-                  className="selected-player-chip"
-                  onClick={() => togglePlayerSelection(player)}
-                >
-                  {player.profilePicture ? (
-                    <img 
-                      src={sanitizeImageUrl(player.profilePicture, '')} 
-                      alt={player.username}
-                      className="chip-avatar"
-                    />
-                  ) : (
-                    <div className="chip-avatar-placeholder">
-                      {player.username?.[0]?.toUpperCase()}
-                    </div>
-                  )}
-                  <span>{player.username}</span>
-                  <span className="remove-chip">×</span>
-                </div>
-              ))}
+        <>
+          <div className="player-selection-section">
+            <div className="selection-header">
+              <h2>{t('leaderboard.selectFriendsCount', { count: selectedPlayers.length })}</h2>
             </div>
-          )} */}
-          
-          {/* Friends list */}
-          <div className="friends-list">
-            {friends.length === 0 ? (
-              <div className="empty-friends">
-                <p>{t('leaderboard.noFriendsYet')}</p>
-                <p>{t('leaderboard.addFriendsToCompare')}</p>
-              </div>
-            ) : (
-              friends.map(friend => {
-                const isSelected = selectedPlayers.some(p => p.id === friend.id)
-                return (
-                  <div 
-                    key={friend.id}
-                    className={`friend-item ${isSelected ? 'selected' : ''}`}
-                    onClick={() => togglePlayerSelection(friend)}
-                  >
-                    {friend.profilePicture ? (
-                      <img 
-                        src={sanitizeImageUrl(friend.profilePicture, '')} 
-                        alt={friend.username}
-                        className="friend-avatar"
-                      />
-                    ) : (
-                      <div className="friend-avatar-placeholder">
-                        {friend.username?.[0]?.toUpperCase()}
+
+            {/* Friends list */}
+            <div className="friends-list">
+              {friends.length === 0 ? (
+                <div className="empty-friends">
+                  <p>{t('leaderboard.noFriendsYet')}</p>
+                  <p>{t('leaderboard.addFriendsToCompare')}</p>
+                </div>
+              ) : (
+                friends.map(friend => {
+                  const isSelected = selectedPlayers.some(p => p.id === friend.id)
+                  return (
+                    <div
+                      key={friend.id}
+                      className={`friend-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => togglePlayerSelection(friend)}
+                    >
+                      {friend.profilePicture ? (
+                        <img
+                          src={sanitizeImageUrl(friend.profilePicture, '')}
+                          alt={friend.username}
+                          className="friend-avatar"
+                        />
+                      ) : (
+                        <div className="friend-avatar-placeholder">
+                          {friend.username?.[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <span className="friend-name">{friend.username}</span>
+                      <div className={`select-indicator ${isSelected ? 'checked' : ''}`}>
+                        {isSelected ? '✓' : ''}
                       </div>
-                    )}
-                    <span className="friend-name">{friend.username}</span>
-                    <div className={`select-indicator ${isSelected ? 'checked' : ''}`}>
-                      {isSelected ? '✓' : ''}
                     </div>
-                  </div>
-                )
-              })
-            )}
+                  )
+                })
+              )}
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
           </div>
-          
-          {error && <div className="error-message">{error}</div>}
-          
-          <button 
+
+          <button
             className="compare-btn"
             onClick={fetchLeaderboard}
             disabled={selectedPlayers.length < 1}
           >
             {t('leaderboard.compare')}
           </button>
-        </div>
+        </>
       ) : (
         <div className="leaderboard-results">
           <button className="back-btn" onClick={resetSelection}>

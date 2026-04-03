@@ -2,9 +2,9 @@
 
 .friend-leaderboard-container {
   width: 100%;
+  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md));
   max-width: 1200px;
   margin: 0 auto;
-  padding-bottom: var(--spacing-md);
   margin-top: var(--spacing-md);
 }
 
@@ -22,8 +22,35 @@
   font-size: 1rem;
 }
 
+.friend-leaderboard-top-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.friend-leaderboard-header-text {
+  flex: 1;
+  padding-right: 32px ;
+}
+
+.friend-leaderboard-container .friend-page-back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
 /* Player Selection Section */
 .player-selection-section {
+  height: calc(100% - var(--bottom-nav-height) - (4 * var(--spacing-lg)));
   background: var(--card-bg);
   border-radius: 12px;
   padding: var(--spacing-lg);
@@ -181,6 +208,7 @@
 
 .compare-btn {
   width: 100%;
+  margin-top: var(--spacing-md);
   padding: var(--spacing-sm);
   background: var(--primary);
   color: var(--text);
@@ -703,6 +731,14 @@
 @media (max-width: 768px) {
   .friend-leaderboard-container h1 {
     font-size: 2rem;
+  }
+
+  .friend-leaderboard-top-header {
+    align-items: center;
+  }
+
+  .friend-leaderboard-container .friend-page-back-button {
+    margin-top: 0;
   }
   
   .friend-leaderboard-container .selection-header {

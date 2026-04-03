@@ -68,7 +68,7 @@
   border: 1px solid var(--border);
   padding: var(--spacing-sm);
   transition: all 0.2s ease;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .game-type-card:hover {
