@@ -23,10 +23,11 @@ const CONFIG = {
   MIN_RATING: 100,            // Floor to prevent negative ratings
   
   // K-factor determines rating volatility
+  // These represent the approximate max rating change per game (after normalization)
   K_FACTOR: {
-    NEW_PLAYER: 40,           // < 10 games: high volatility for placement
-    DEVELOPING: 32,           // 10-30 games: still calibrating
-    ESTABLISHED: 24,          // 30-100 games: stable
+    NEW_PLAYER: 32,           // < 10 games: calibrating quickly
+    DEVELOPING: 24,           // 10-30 games: still settling
+    ESTABLISHED: 20,          // 30-100 games: stable
     VETERAN: 16               // 100+ games: minimal change
   },
   
@@ -39,17 +40,17 @@ const CONFIG = {
   
   // Score margin bonus (percentage of base change) — applied to winners
   MARGIN_BONUS: {
-    BLOWOUT: 0.25,            // Win by 50+ points: +25% bonus
-    DECISIVE: 0.15,           // Win by 30-49 points: +15% bonus
+    BLOWOUT: 0.15,            // Win by 50+ points: +15% bonus
+    DECISIVE: 0.10,           // Win by 30-49 points: +10% bonus
     CLOSE: 0.05               // Win by 10-29 points: +5% bonus
   },
   
   // Loss margin penalty cap (losers never get more than -10% regardless of margin)
   MARGIN_LOSS_MAX: 0.10,
   
-  // Player count scaling: normalize to a 4-player baseline
-  // 6 players = 1.5x, 3 players = 0.75x
-  PLAYER_COUNT_BASELINE: 4,
+  // Per-game rating change cap (absolute value)
+  // Prevents extreme outlier swings regardless of K-factor
+  MAX_CHANGE_PER_GAME: 50,
   
   // Provisional player dampening
   // Reduces rating impact when established players face provisional (<10 games) players
@@ -320,17 +321,18 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
     marginMultiplier = Math.pow(marginMultiplier, 1 / (numPlayers - 1));
     
     // Calculate base rating change
+    // Normalize by number of opponents so K represents max change per game,
+    // not per opponent. Without this, 6-player games produce ~3x the change
+    // of 2-player games just from having more pairwise comparisons.
     const won = player.placement === 1;
-    let ratingChange = kFactor * (actualTotal - expectedTotal) * marginMultiplier;
-    
-    // Player count scaling: normalize to 4-player baseline using square root
-    // Provides diminishing returns so large games don't produce runaway values
-    // 3p=0.87x, 4p=1.0x, 5p=1.12x, 6p=1.22x, 8p=1.41x
-    const playerCountFactor = Math.sqrt(numPlayers / CONFIG.PLAYER_COUNT_BASELINE);
-    ratingChange *= playerCountFactor;
+    const numOpponents = numPlayers - 1;
+    let ratingChange = kFactor * ((actualTotal - expectedTotal) / numOpponents) * marginMultiplier;
     
     // Round to integer
     ratingChange = Math.round(ratingChange);
+    
+    // Apply per-game cap to prevent extreme outlier swings
+    ratingChange = Math.max(-CONFIG.MAX_CHANGE_PER_GAME, Math.min(CONFIG.MAX_CHANGE_PER_GAME, ratingChange));
     
     // Apply minimum rating floor
     const newRating = Math.max(CONFIG.MIN_RATING, currentRating + ratingChange);

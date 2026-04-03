@@ -251,16 +251,21 @@ router.get('/leaderboard', async (req, res, next) => {
         userDisplayNames[playerKey] = user ? user.username : finalIdentity.displayName;
       }
       
-      // Store ELO data - collect from all identities that map to this playerKey
-      // This handles the case where merged identities might have their own ELO history
-      if (identity.eloByGameType) {
-        // If we don't have ELO for this playerKey yet, use current identity's ELO
-        if (!userEloByGameType[playerKey]) {
+      // Store ELO data - pick the identity with the most games played
+      // This handles cases where ELO was calculated before identities were merged,
+      // leaving the bulk of ELO data on the old (merged) identity instead of the primary
+      if (identity.eloByGameType && typeof identity.eloByGameType === 'object') {
+        const existing = userEloByGameType[playerKey];
+        if (!existing || typeof existing !== 'object') {
           userEloByGameType[playerKey] = identity.eloByGameType;
-        }
-        // If the final identity has ELO, prefer that  
-        if (finalIdentity !== identity && finalIdentity.eloByGameType) {
-          userEloByGameType[playerKey] = finalIdentity.eloByGameType;
+        } else {
+          // Merge: for each game type, keep the entry with more gamesPlayed
+          for (const [gt, eloData] of Object.entries(identity.eloByGameType)) {
+            const existingData = existing[gt];
+            if (!existingData || (eloData?.gamesPlayed || 0) > (existingData?.gamesPlayed || 0)) {
+              existing[gt] = eloData;
+            }
+          }
         }
       }
     });

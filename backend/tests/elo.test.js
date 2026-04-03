@@ -26,9 +26,9 @@ describe('ELO Service', () => {
     });
 
     it('should have proper K-factor thresholds', () => {
-      expect(eloService.CONFIG.K_FACTOR.NEW_PLAYER).toBe(40);
-      expect(eloService.CONFIG.K_FACTOR.DEVELOPING).toBe(32);
-      expect(eloService.CONFIG.K_FACTOR.ESTABLISHED).toBe(24);
+      expect(eloService.CONFIG.K_FACTOR.NEW_PLAYER).toBe(32);
+      expect(eloService.CONFIG.K_FACTOR.DEVELOPING).toBe(24);
+      expect(eloService.CONFIG.K_FACTOR.ESTABLISHED).toBe(20);
       expect(eloService.CONFIG.K_FACTOR.VETERAN).toBe(16);
     });
 
@@ -36,8 +36,8 @@ describe('ELO Service', () => {
       expect(eloService.CONFIG.MIN_GAMES_FOR_RANKING).toBe(5);
     });
 
-    it('should have player count baseline of 4', () => {
-      expect(eloService.CONFIG.PLAYER_COUNT_BASELINE).toBe(4);
+    it('should have per-game change cap of 50', () => {
+      expect(eloService.CONFIG.MAX_CHANGE_PER_GAME).toBe(50);
     });
 
     it('should have loss margin cap of 0.10', () => {
@@ -71,22 +71,22 @@ describe('ELO Service', () => {
   });
 
   describe('getKFactor', () => {
-    it('should return 40 for new players (< 10 games)', () => {
-      expect(eloService.getKFactor(0)).toBe(40);
-      expect(eloService.getKFactor(5)).toBe(40);
-      expect(eloService.getKFactor(9)).toBe(40);
+    it('should return 32 for new players (< 10 games)', () => {
+      expect(eloService.getKFactor(0)).toBe(32);
+      expect(eloService.getKFactor(5)).toBe(32);
+      expect(eloService.getKFactor(9)).toBe(32);
     });
 
-    it('should return 32 for developing players (10-29 games)', () => {
-      expect(eloService.getKFactor(10)).toBe(32);
-      expect(eloService.getKFactor(20)).toBe(32);
-      expect(eloService.getKFactor(29)).toBe(32);
+    it('should return 24 for developing players (10-29 games)', () => {
+      expect(eloService.getKFactor(10)).toBe(24);
+      expect(eloService.getKFactor(20)).toBe(24);
+      expect(eloService.getKFactor(29)).toBe(24);
     });
 
-    it('should return 24 for established players (30-99 games)', () => {
-      expect(eloService.getKFactor(30)).toBe(24);
-      expect(eloService.getKFactor(50)).toBe(24);
-      expect(eloService.getKFactor(99)).toBe(24);
+    it('should return 20 for established players (30-99 games)', () => {
+      expect(eloService.getKFactor(30)).toBe(20);
+      expect(eloService.getKFactor(50)).toBe(20);
+      expect(eloService.getKFactor(99)).toBe(20);
     });
 
     it('should return 16 for veteran players (100+ games)', () => {
@@ -431,7 +431,7 @@ describe('ELO Service', () => {
       // Note: Due to asymmetric margin multipliers (winners get more bonus
       // than losers get penalty) and rounding, there will be some imbalance
       const totalChange = result.reduce((sum, r) => sum + r.change, 0);
-      expect(Math.abs(totalChange)).toBeLessThanOrEqual(20);
+      expect(Math.abs(totalChange)).toBeLessThanOrEqual(10);
     });
 
     it('should give larger gains when beating higher-rated opponents', () => {
@@ -463,8 +463,7 @@ describe('ELO Service', () => {
       const underdog = result.find(r => r.playerName === 'Underdog');
       
       // Underdog beating a much higher-rated player should gain significantly
-      // (reduced by player count scaling for 2-player games: 2/4 = 0.5x)
-      expect(underdog.change).toBeGreaterThan(10); // More than standard expected
+      expect(underdog.change).toBeGreaterThan(5); // More than standard expected
     });
   });
 });

@@ -9,8 +9,9 @@ The ELO system provides competitive rankings for players based on their game per
 - **Multi-player support**: Handles 3-6 player games using pairwise comparisons
 - **Dynamic K-factor**: Rating volatility decreases as players complete more games
 - **Placement-based scoring**: Fractional scores based on placement gap, not binary win/loss
+- **Opponent-normalized**: Pairwise changes divided by opponent count so K represents max change per game
 - **Score margin bonuses**: Decisive wins earn extra rating points (capped penalty for losers)
-- **Player count scaling**: Normalized to 4-player baseline (6 players = 1.5x, 3 players = 0.75x)
+- **Per-game cap**: Maximum ±50 rating change per game to prevent extreme swings
 - **Provisional dampening**: Reduced impact when established players face new players
 
 ## Configuration
@@ -22,12 +23,12 @@ Default ELO parameters (configurable in `backend/utils/eloService.js`):
 | Default Rating | 1000 | Starting ELO for new players |
 | Minimum Rating | 100 | Floor to prevent negative ratings |
 | Min Games for Ranking | 5 | Games required to appear on leaderboard |
-| K-factor (new) | 40 | < 10 games |
-| K-factor (developing) | 32 | 10-30 games |
-| K-factor (established) | 24 | 30-100 games |
+| K-factor (new) | 32 | < 10 games |
+| K-factor (developing) | 24 | 10-30 games |
+| K-factor (established) | 20 | 30-100 games |
 | K-factor (veteran) | 16 | 100+ games |
 | Loss Margin Cap | 10% | Max loss penalty regardless of score margin |
-| Player Count Baseline | 4 | Rating changes scale by √(numPlayers/4) |
+| Max Change Per Game | ±50 | Hard cap on rating change per game |
 | Provisional Dampening | 50% | Reduced impact vs players with < 10 games |
 
 ## Development Setup with Production Data
@@ -143,7 +144,9 @@ Each player's rating is compared against every other player in the game:
 
 1. **Expected Score** vs opponent: `E = 1 / (1 + 10^((Rb - Ra) / 400))`
 2. **Actual Score**: Placement-based (fractional, not binary) — e.g. 2nd vs 1st in a 6-player game = 0.4 instead of 0
-3. **Rating Change**: `ΔR = K × (Actual - Expected) × MarginMultiplier × PlayerCountFactor`
+3. **Rating Change**: `ΔR = K × ((ΣActual - ΣExpected) / numOpponents) × MarginMultiplier`
+
+The division by `numOpponents` normalizes the pairwise sum so that K represents the approximate maximum change per game, regardless of how many players are in the game.
 
 ### Placement-Based Scoring
 
@@ -163,10 +166,9 @@ Examples in a 6-player game:
 
 ### Multipliers
 
-- **Score Margin (winners)**: +25% for 50+ point wins, +15% for 30-49, +5% for 10-29
+- **Score Margin (winners)**: +15% for 50+ point wins, +10% for 30-49, +5% for 10-29
 - **Score Margin (losers)**: Capped at -10% maximum, regardless of margin
-- **Player Count**: Rating change × √(numPlayers / 4). Diminishing returns for larger games:
-  - 3 players = 0.87x, 4 players = 1.0x, 5 players = 1.12x, 6 players = 1.22x, 8 players = 1.41x
+- **Per-game cap**: Rating change is hard-capped at ±50 to prevent extreme outlier swings
 
 ### Provisional Dampening
 
@@ -175,12 +177,13 @@ When an established player (10+ games) faces a provisional player (< 10 games), 
 ### Example
 
 A 1200-rated established player beats a 1000-rated player by 40 points in a 5-player game:
-- Expected: 0.76 (76% chance to win)
-- Actual: ~0.88 (placement-based, 1st vs 3rd in 5 players)
-- Margin bonus: 1.15 (decisive win)
-- Player count factor: √(5/4) ≈ 1.12
-- K-factor: 24 (established player)
-- Change: `24 × (0.88 - 0.76) × 1.15 × 1.12 ≈ +4 rating`
+- Expected vs each opponent: ~0.76
+- Actual vs each opponent: ~0.88 (placement-based, 1st vs 3rd average)
+- Average diff: (0.88 - 0.76) = 0.12
+- Margin bonus: 1.10 (decisive win)
+- K-factor: 20 (established player)
+- Change: `20 × 0.12 × 1.10 ≈ +3 rating`
+- Cap check: 3 < 50, no cap applied
 
 ## Production Deployment
 
