@@ -14,6 +14,7 @@ const _ = require('lodash'); // Added for escapeRegExp
 const mongoose = require('mongoose');
 const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
+const catchAsync = require('../utils/catchAsync');
 const router = express.Router();
 
 // POST /users/register - Create new user (with strict rate limiting)
@@ -247,8 +248,14 @@ router.post('/me/change-password', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'New password must be at least 6 characters long' });
     }
 
+    // Fetch full user document (auth middleware uses lean/cache without passwordHash)
+    const userDoc = await User.findById(req.user._id);
+    if (!userDoc) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, req.user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(currentPassword, userDoc.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
@@ -257,8 +264,13 @@ router.post('/me/change-password', auth, async (req, res, next) => {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(newPassword, saltRounds);
 
-    req.user.passwordHash = passwordHash;
-    await req.user.save();
+    userDoc.passwordHash = passwordHash;
+    await userDoc.save();
+
+    // Invalidate cached user so stale credentials aren't used
+    if (cache.isConnected) {
+      await cache.del(`user:${req.user._id}`);
+    }
 
     console.log('🔑 Password changed for user: %s', req.user.username);
 
@@ -560,236 +572,9 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log(`[Profile] Fetching games for user "${user.username}" (ID: ${user._id}, role: ${user.role}) using identity system`);
-
-    // Use PlayerIdentity system to find all identities linked to this user
-    
-    // Find identities directly owned by this user (include eloByGameType for ELO history)
-    const identities = await PlayerIdentity.find({ userId: user._id }).select('_id displayName eloByGameType').lean();
-    const identityIds = identities.map(id => id._id);
-    
-    // ALSO find guest identities that were merged into any of these identities
-    const mergedGuestIdentities = await PlayerIdentity.find({
-      mergedInto: { $in: identityIds }
-    }).select('_id displayName eloByGameType').lean();
-    
-    // Build a map of gameId -> eloChange from all identities' ELO history
-    const gameEloMap = new Map();
-    [...identities, ...mergedGuestIdentities].forEach(identity => {
-      if (identity.eloByGameType) {
-        // eloByGameType is stored as an object in lean() results
-        for (const [gameType, eloData] of Object.entries(identity.eloByGameType)) {
-          if (eloData.history && Array.isArray(eloData.history)) {
-            eloData.history.forEach(entry => {
-              if (entry.gameId) {
-                const gameIdStr = entry.gameId.toString();
-                // Store the ELO change info for this game
-                gameEloMap.set(gameIdStr, {
-                  change: entry.change,
-                  rating: entry.rating,
-                  placement: entry.placement,
-                  gameType: gameType
-                });
-              }
-            });
-          }
-        }
-      }
-    });
-    
-    // Combine all identity IDs (owned + merged guests)
-    const allIdentityIds = [...identityIds, ...mergedGuestIdentities.map(id => id._id)];
-    
-    console.log(`[Profile] Found ${identities.length} identities for user: ${identities.map(i => i.displayName).join(', ')}`);
-    if (mergedGuestIdentities.length > 0) {
-      console.log(`[Profile] Found ${mergedGuestIdentities.length} merged guest identities: ${mergedGuestIdentities.map(i => i.displayName).join(', ')}`);
-    }
-
-    // Get user's games from WizardGame and TableGame collections
-    const WizardGame = require('../models/WizardGame');
-    const TableGame = require('../models/TableGame');
-    
-    // Fetch wizard games where user's identities (including merged guests) appear as players
-    const wizardGames = await WizardGame.find({
-      'gameData.players.identityId': { $in: allIdentityIds }
-    })
-      .select('gameData createdAt localId userId')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // Fetch table games where user's identities (including merged guests) appear as players
-    const tableGames = await TableGame.find({
-      'gameData.players.identityId': { $in: allIdentityIds }
-    })
-      .select('gameData gameTypeName name lowIsBetter createdAt gameFinished userId')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    console.log(`[Profile] Found ${wizardGames.length} wizard games and ${tableGames.length} table games`);
-
-    // Process games to extract relevant stats
-    const allGames = [];
-    const seenGameIds = new Set(); // Track unique games to avoid duplicates
-    let totalWins = 0;
-    
-    // Convert ALL identityIds (including merged guests) to strings for comparison
-    const identityIdStrings = allIdentityIds.map(id => id.toString());
-    
-    // Process wizard games
-    wizardGames.forEach(game => {
-      const gameData = game.gameData;
-      if (!gameData || !gameData.players) return;
-      
-      // Skip paused or unfinished games
-      if (gameData.isPaused || gameData.gameFinished === false) return;
-      
-      // Use localId or _id as unique identifier to avoid duplicates
-      const gameId = gameData.gameId || game.localId || String(game._id);
-      if (seenGameIds.has(gameId)) return; // Skip duplicates
-      
-      // Find if user is a player in this game - match by identityId
-      const userPlayer = gameData.players.find(p => {
-        if (!p.identityId) return false;
-        return identityIdStrings.includes(p.identityId.toString());
-      });
-      
-      // Skip if user is not a player in this game
-      if (!userPlayer) return;
-      
-      seenGameIds.add(gameId); // Mark as seen
-      
-      const winnerIds = gameData.winner_ids || 
-                       (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
-      
-      // Check if user's player ID or originalId is in winner_ids
-      // winner_ids may contain either the migrated player.id or the original player.originalId
-      const isWinner = winnerIds.includes(userPlayer.id) || 
-                      winnerIds.some(id => String(id) === String(userPlayer.id)) ||
-                      (userPlayer.originalId && winnerIds.includes(userPlayer.originalId)) ||
-                      (userPlayer.originalId && winnerIds.some(id => String(id) === String(userPlayer.originalId)));
-      
-      if (isWinner) totalWins++;
-      
-      // Get ELO change for this game (if available)
-      const gameIdStr = game._id.toString();
-      const eloInfo = gameEloMap.get(gameIdStr);
-      
-      allGames.push({
-        id: game._id,
-        gameType: 'wizard',
-        created_at: game.createdAt,
-        winner_ids: winnerIds,
-        winner_id: winnerIds[0], // For backward compatibility
-        eloChange: eloInfo?.change,
-        eloRating: eloInfo?.rating,
-        eloPlacement: eloInfo?.placement,
-        gameData: {
-          players: gameData.players,
-          total_rounds: gameData.total_rounds,
-          final_scores: gameData.final_scores,
-          round_data: gameData.round_data, // Include for bid accuracy
-          winner_ids: winnerIds
-        }
-      });
-    });
-
-    // Process table games
-    tableGames.forEach(game => {
-      const outerGameData = game.gameData;
-      const gameData = outerGameData?.gameData || outerGameData; // Handle nested structure
-      
-      if (!gameData || !game.gameFinished || !gameData.players) {
-        return;
-      }
-      
-      // Match by identityId
-      const userPlayer = gameData.players.find(p => {
-        if (!p.identityId) return false;
-        return identityIdStrings.includes(p.identityId.toString());
-      });
-      
-      // Skip if user is not a player in this game
-      if (!userPlayer) return;
-      
-      // Get the player index for matching with calculated winner
-      const userPlayerIndex = gameData.players.findIndex(p => p === userPlayer);
-      
-      // Calculate final scores from points arrays (like leaderboard does)
-      const finalScores = {};
-      gameData.players.forEach((player, index) => {
-        const playerId = `player_${index}`;
-        const points = player.points || [];
-        const totalScore = points.reduce((sum, p) => {
-          const parsed = parseFloat(p);
-          return sum + (isNaN(parsed) ? 0 : parsed);
-        }, 0);
-        finalScores[playerId] = totalScore;
-      });
-      
-      // Calculate winner(s) dynamically based on scores
-      let calculatedWinnerIds = [];
-      const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
-      
-      if (Object.keys(finalScores).length > 0) {
-        const scores = Object.entries(finalScores);
-        if (lowIsBetter) {
-          const minScore = Math.min(...scores.map(s => s[1]));
-          calculatedWinnerIds = scores.filter(s => s[1] === minScore).map(s => s[0]);
-        } else {
-          const maxScore = Math.max(...scores.map(s => s[1]));
-          calculatedWinnerIds = scores.filter(s => s[1] === maxScore).map(s => s[0]);
-        }
-      }
-      
-      // Use stored winner_ids as fallback
-      const storedWinnerIds = gameData.winner_ids || 
-                       (gameData.winner_id ? (Array.isArray(gameData.winner_id) ? gameData.winner_id : [gameData.winner_id]) : []);
-      
-      // Get winner name(s) for fallback matching (for guests without proper IDs)
-      const winnerName = gameData.winner_name || outerGameData?.winner_name;
-      const winnerNamesLower = winnerName ? [winnerName.toLowerCase()] : [];
-      
-      // Check winner using calculated winners (primary), then stored winner_ids, then winner_name
-      const userPlayerId = `player_${userPlayerIndex}`;
-      const isWinnerByCalculation = calculatedWinnerIds.includes(userPlayerId);
-      const isWinnerByStoredId = storedWinnerIds.includes(userPlayer.id) || storedWinnerIds.some(id => String(id) === String(userPlayer.id));
-      const isWinnerByName = userPlayer.name && winnerNamesLower.includes(userPlayer.name.toLowerCase());
-      const isWinner = isWinnerByCalculation || isWinnerByStoredId || isWinnerByName;
-      
-      // Use calculated winner IDs for the response
-      const winnerIds = calculatedWinnerIds.length > 0 ? calculatedWinnerIds : storedWinnerIds;
-      
-      // Debug log for table games
-      console.log(`[Profile] Found table game ${game._id} (${game.gameTypeName}): player="${userPlayer.name}" playerIndex=${userPlayerIndex}, calculatedWinners=${JSON.stringify(calculatedWinnerIds)}, storedWinnerIds=${JSON.stringify(storedWinnerIds)}, winnerName="${winnerName}", isWinner=${isWinner} (byCalc=${isWinnerByCalculation}, byStoredId=${isWinnerByStoredId}, byName=${isWinnerByName})`);
-      
-      if (isWinner) totalWins++;
-      
-      // Get ELO change for this game (if available)
-      const gameIdStr = game._id.toString();
-      const eloInfo = gameEloMap.get(gameIdStr);
-      
-      allGames.push({
-        id: game._id,
-        gameType: 'table',
-        gameTypeName: game.gameTypeName || game.name,
-        name: game.name,
-        created_at: game.createdAt,
-        winner_ids: winnerIds,
-        winner_id: winnerIds[0],
-        lowIsBetter: game.lowIsBetter,
-        eloChange: eloInfo?.change,
-        eloRating: eloInfo?.rating,
-        eloPlacement: eloInfo?.placement,
-        gameData: {
-          players: gameData.players,
-          winner_ids: winnerIds
-        }
-      });
-    });
-
-    // Sort allGames by date and limit to most recent 200
-    allGames.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const limitedGames = allGames.slice(0, 200);
+    // Use ProfileService to fetch and process all games for this user
+    const { getProfileGames } = require('../utils/profileService');
+    const profileData = await getProfileGames(user._id);
 
     // Set Cache-Control to prevent stale profile data after game completion
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -803,11 +588,14 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       createdAt: user.createdAt,
       profilePicture: user.profilePicture,
       isRegisteredUser: true,
-      totalGames: limitedGames.length,
-      totalWins: totalWins,
-      identities: [...identities.map(i => i.displayName), ...mergedGuestIdentities.map(i => i.displayName)], // Include all identity display names (owned + merged guests)
-      primaryIdentityId: identities.length > 0 ? identities[0]._id : null, // Primary identity ID for ELO lookups
-      games: limitedGames
+      totalGames: profileData.games.length,
+      totalWins: profileData.totalWins,
+      identities: [
+        ...profileData.identities.map(i => i.displayName),
+        ...profileData.mergedGuestIdentities.map(i => i.displayName),
+      ],
+      primaryIdentityId: profileData.primaryIdentityId,
+      games: profileData.games,
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);

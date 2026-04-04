@@ -5,50 +5,45 @@ const PlayerIdentity = require('../models/PlayerIdentity');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
+const catchAsync = require('../utils/catchAsync');
 
 const router = express.Router();
 
 // GET /api/table-games/public/:id - Get table game by ID (public, no auth required)
 // PUBLIC ENDPOINT - No authentication required
-router.get('/public/:id', async (req, res, next) => {
-  try {
-    const gameId = req.params.id;
+router.get('/public/:id', catchAsync(async (req, res) => {
+  const gameId = req.params.id;
 
-    // Validate ID format to prevent injection
-    if (!mongoose.Types.ObjectId.isValid(gameId)) {
-      return res.status(400).json({ error: 'Invalid game ID format' });
-    }
-
-    const tableGame = await TableGame.findOne({ _id: { $eq: gameId } });
-
-    if (!tableGame) {
-      return res.status(404).json({ error: 'Table game not found' });
-    }
-
-    // Return limited public information
-    res.json({
-      game: {
-        _id: tableGame._id,
-        id: tableGame._id,
-        localId: tableGame.localId,
-        name: tableGame.name,
-        gameTypeName: tableGame.gameTypeName,
-        gameData: tableGame.gameData,
-        gameFinished: tableGame.gameFinished,
-        playerCount: tableGame.playerCount,
-        totalRounds: tableGame.totalRounds,
-        createdAt: tableGame.createdAt
-      }
-    });
-  } catch (error) {
-    console.error('[GET /api/table-games/public/:id] Error:', error);
-    res.status(500).json({ error: error.message });
+  // Validate ID format to prevent injection
+  if (!mongoose.Types.ObjectId.isValid(gameId)) {
+    return res.status(400).json({ error: 'Invalid game ID format' });
   }
-});
+
+  const tableGame = await TableGame.findOne({ _id: { $eq: gameId } });
+
+  if (!tableGame) {
+    return res.status(404).json({ error: 'Table game not found' });
+  }
+
+  // Return limited public information
+  res.json({
+    game: {
+      _id: tableGame._id,
+      id: tableGame._id,
+      localId: tableGame.localId,
+      name: tableGame.name,
+      gameTypeName: tableGame.gameTypeName,
+      gameData: tableGame.gameData,
+      gameFinished: tableGame.gameFinished,
+      playerCount: tableGame.playerCount,
+      totalRounds: tableGame.totalRounds,
+      createdAt: tableGame.createdAt
+    }
+  });
+}));
 
 // POST /api/table-games - Create table game for authenticated user
-router.post('/', auth, async (req, res, next) => {
-  try {
+router.post('/', auth, catchAsync(async (req, res) => {
     const { gameData, localId } = req.body;
 
     // Validation
@@ -213,14 +208,10 @@ router.post('/', auth, async (req, res, next) => {
       game: tableGame,
       duplicate: false 
     });
-  } catch (error) {
-    next(error);
-  }
-});
+}));
 
 // GET /api/table-games - Get table games (all or user-specific)
-router.get('/', auth, async (req, res, next) => {
-  try {
+router.get('/', auth, catchAsync(async (req, res) => {
     const userId = req.user._id;
     const { allGames } = req.query;
     
@@ -236,14 +227,10 @@ router.get('/', auth, async (req, res, next) => {
       .sort({ createdAt: -1 });
 
     res.json({ games: tableGames, total: tableGames.length });
-  } catch (error) {
-    next(error);
-  }
-});
+}));
 
 // GET /api/table-games/by-identity/:identityId - Get games by player identity
-router.get('/by-identity/:identityId', auth, async (req, res, next) => {
-  try {
+router.get('/by-identity/:identityId', auth, catchAsync(async (req, res) => {
     const { identityId } = req.params;
     const { limit = 50, skip = 0, gameType } = req.query;
     
@@ -258,15 +245,11 @@ router.get('/by-identity/:identityId', auth, async (req, res, next) => {
     });
     
     res.json({ games, total: games.length });
-  } catch (error) {
-    next(error);
-  }
-});
+}));
 
 // GET /api/table-games/:id - Get specific table game by ID
 // Users can view games they own OR games they participated in
-router.get('/:id', auth, async (req, res, next) => {
-  try {
+router.get('/:id', auth, catchAsync(async (req, res) => {
     const userId = req.user._id;
     const username = req.user.username;
     const gameId = req.params.id;
@@ -341,14 +324,10 @@ router.get('/:id', auth, async (req, res, next) => {
     }
 
     res.json({ game: tableGame });
-  } catch (error) {
-    next(error);
-  }
-});
+}));
 
 // DELETE /api/table-games/:id - Delete a table game
-router.delete('/:id', auth, async (req, res, next) => {
-  try {
+router.delete('/:id', auth, catchAsync(async (req, res) => {
     const userId = req.user._id;
     const gameId = req.params.id;
 
@@ -368,9 +347,6 @@ router.delete('/:id', auth, async (req, res, next) => {
     }
 
     res.json({ message: 'Table game deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-});
+}));
 
 module.exports = router;

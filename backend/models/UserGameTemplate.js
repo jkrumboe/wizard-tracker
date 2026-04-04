@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const templateFieldsPlugin = require('./plugins/templateFields');
 
 // User's Personal Cloud Templates
 const userGameTemplateSchema = new mongoose.Schema({
@@ -13,59 +14,6 @@ const userGameTemplateSchema = new mongoose.Schema({
     required: false, // For syncing with local storage
     index: true
   },
-  name: {
-    type: String,
-    required: [true, 'Template name is required'],
-    trim: true
-  },
-  targetNumber: {
-    type: Number,
-    default: null
-  },
-  lowIsBetter: {
-    type: Boolean,
-    default: false
-  },
-  gameCategory: {
-    type: String,
-    enum: ['table', 'callAndMade'],
-    default: 'table'
-  },
-  scoringFormula: {
-    baseCorrect: { type: Number, default: null },
-    bonusPerTrick: { type: Number, default: null },
-    penaltyPerDiff: { type: Number, default: null }
-  },
-  roundPattern: {
-    type: String,
-    enum: ['pyramid', 'ascending', 'fixed', null],
-    default: null
-  },
-  maxRounds: {
-    type: Number,
-    default: null
-  },
-  hasDealerRotation: {
-    type: Boolean,
-    default: true
-  },
-  hasForbiddenCall: {
-    type: Boolean,
-    default: true
-  },
-  usageCount: {
-    type: Number,
-    default: 0
-  },
-  description: {
-    type: String,
-    default: ''
-  },
-  descriptionMarkdown: {
-    type: String,
-    default: '',
-    maxlength: [5000, 'Description cannot exceed 5000 characters']
-  },
   approvedAsSystemTemplate: {
     type: Boolean,
     default: false
@@ -78,6 +26,8 @@ const userGameTemplateSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+userGameTemplateSchema.plugin(templateFieldsPlugin, { descriptionMaxLength: 5000 });
 
 // Index for efficient queries
 userGameTemplateSchema.index({ userId: 1, name: 1 });

@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const crypto = require('crypto');
 const cache = require('./utils/redis');
 require('dotenv').config();
 
@@ -30,6 +31,8 @@ async function initializeServer() {
   // Middleware
   app.set('trust proxy', 1); // Trust first proxy (nginx/Docker)
   app.use(cors());
+  // Assign a unique request ID to each request
+  app.use((req, res, next) => { req.id = crypto.randomUUID(); next(); });
   // Increase body size limit to handle base64 encoded images (up to 10MB)
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));

@@ -3,14 +3,14 @@ const router = express.Router();
 const Game = require('../models/Game');
 const GameEvent = require('../models/GameEvent');
 const GameSnapshot = require('../models/GameSnapshot');
+const catchAsync = require('../utils/catchAsync');
 
 /**
  * POST /api/games/:id/events
  * Accept batch of events with optimistic locking
  */
-router.post('/:id/events', async (req, res) => {
-  try {
-    const { id: gameId } = req.params;
+router.post('/:id/events', catchAsync(async (req, res) => {
+  const { id: gameId } = req.params;
     const { clientId, baseVersion, events } = req.body;
 
     // Validate request
@@ -133,21 +133,13 @@ router.post('/:id/events', async (req, res) => {
       newEvents: appliedEvents.filter(e => !e.duplicate).length
     });
 
-  } catch (error) {
-    console.error('Error processing events:', error);
-    res.status(500).json({
-      error: 'Failed to process events',
-      message: error.message
-    });
-  }
-});
+}));
 
 /**
  * POST /api/games/:id/snapshots
  * Upload a complete game snapshot (force push)
  */
-router.post('/:id/snapshots', async (req, res) => {
-  try {
+router.post('/:id/snapshots', catchAsync(async (req, res) => {
     const { id: gameId } = req.params;
     const { snapshot, localVersion, force } = req.body;
 
@@ -204,21 +196,13 @@ router.post('/:id/snapshots', async (req, res) => {
       message: 'Snapshot saved successfully'
     });
 
-  } catch (error) {
-    console.error('Error saving snapshot:', error);
-    res.status(500).json({
-      error: 'Failed to save snapshot',
-      message: error.message
-    });
-  }
-});
+}));
 
 /**
  * GET /api/games/:id/events
  * Get events since a specific version
  */
-router.get('/:id/events', async (req, res) => {
-  try {
+router.get('/:id/events', catchAsync(async (req, res) => {
     const { id: gameId } = req.params;
     const { since } = req.query;
 
@@ -237,21 +221,13 @@ router.get('/:id/events', async (req, res) => {
       count: events.length
     });
 
-  } catch (error) {
-    console.error('Error fetching events:', error);
-    res.status(500).json({
-      error: 'Failed to fetch events',
-      message: error.message
-    });
-  }
-});
+}));
 
 /**
  * GET /api/games/:id/snapshot
  * Get latest snapshot and current version
  */
-router.get('/:id/snapshot', async (req, res) => {
-  try {
+router.get('/:id/snapshot', catchAsync(async (req, res) => {
     const { id: gameId } = req.params;
 
     // Get game
@@ -280,14 +256,7 @@ router.get('/:id/snapshot', async (req, res) => {
       gameId
     });
 
-  } catch (error) {
-    console.error('Error fetching snapshot:', error);
-    res.status(500).json({
-      error: 'Failed to fetch snapshot',
-      message: error.message
-    });
-  }
-});
+}));
 
 /**
  * Helper: Reconstruct game state from events

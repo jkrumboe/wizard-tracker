@@ -7,6 +7,7 @@ const { eloPublicLimiter } = require('../middleware/rateLimiter');
 const identityService = require('../utils/identityService');
 const eloService = require('../utils/eloService');
 const cache = require('../utils/redis');
+const catchAsync = require('../utils/catchAsync');
 const router = express.Router();
 
 // Validation helper

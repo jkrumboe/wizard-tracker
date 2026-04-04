@@ -108,6 +108,9 @@ tableGameSchema.index({ gameTypeName: 1, createdAt: -1 });
 // Index for finished games queries
 tableGameSchema.index({ gameFinished: 1, userId: 1 });
 
+// Compound index for duplicate detection
+tableGameSchema.index({ 'gameData.created_at': 1, totalRounds: 1, 'gameData.gameFinished': 1 });
+
 // Index for identity-based lookups (find all games where a player participated)
 tableGameSchema.index({ 'gameData.players.identityId': 1, createdAt: -1 });
 

@@ -98,10 +98,14 @@ class RedisCache {
     }
 
     try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length > 0) {
-        await this.client.del(keys);
-      }
+      let cursor = 0;
+      do {
+        const result = await this.client.scan(cursor, { MATCH: pattern, COUNT: 100 });
+        cursor = result.cursor;
+        if (result.keys.length > 0) {
+          await this.client.del(result.keys);
+        }
+      } while (cursor !== 0);
       return true;
     } catch (error) {
       console.error('Redis DEL pattern error for %s:', pattern, error.message);
@@ -129,10 +133,17 @@ class RedisCache {
     }
 
     try {
-      const keys = await this.client.keys(pattern);
-      if (keys.length === 0) return [];
+      const allKeys = [];
+      let cursor = 0;
+      do {
+        const result = await this.client.scan(cursor, { MATCH: pattern, COUNT: 100 });
+        cursor = result.cursor;
+        allKeys.push(...result.keys);
+      } while (cursor !== 0);
+
+      if (allKeys.length === 0) return [];
       const values = await Promise.all(
-        keys.map(async (k) => {
+        allKeys.map(async (k) => {
           const val = await this.client.get(k);
           return val ? { key: k, value: JSON.parse(val) } : null;
         })

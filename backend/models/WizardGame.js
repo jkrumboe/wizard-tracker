@@ -71,6 +71,7 @@ wizardGameSchema.index({ userId: 1, createdAt: -1 });
 wizardGameSchema.index({ 'gameData.created_at': -1 });
 wizardGameSchema.index({ migratedFrom: 1, migratedAt: -1 });
 wizardGameSchema.index({ 'gameData.players.identityId': 1 }); // Identity lookups
+wizardGameSchema.index({ 'gameData.created_at': 1, 'gameData.total_rounds': 1 }); // Duplicate detection
 
 // Virtual for game version
 wizardGameSchema.virtual('version').get(function() {

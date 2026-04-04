@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const templateFieldsPlugin = require('./plugins/templateFields');
 
 // Template Suggestions from users to admin
 const templateSuggestionSchema = new mongoose.Schema({
@@ -27,55 +28,6 @@ const templateSuggestionSchema = new mongoose.Schema({
     enum: ['new', 'change'],
     default: 'new'
   },
-  name: {
-    type: String,
-    required: [true, 'Template name is required'],
-    trim: true
-  },
-  targetNumber: {
-    type: Number,
-    default: null
-  },
-  lowIsBetter: {
-    type: Boolean,
-    default: false
-  },
-  gameCategory: {
-    type: String,
-    enum: ['table', 'callAndMade'],
-    default: 'table'
-  },
-  scoringFormula: {
-    baseCorrect: { type: Number, default: null },
-    bonusPerTrick: { type: Number, default: null },
-    penaltyPerDiff: { type: Number, default: null }
-  },
-  roundPattern: {
-    type: String,
-    enum: ['pyramid', 'ascending', 'fixed', null],
-    default: null
-  },
-  maxRounds: {
-    type: Number,
-    default: null
-  },
-  hasDealerRotation: {
-    type: Boolean,
-    default: true
-  },
-  hasForbiddenCall: {
-    type: Boolean,
-    default: true
-  },
-  description: {
-    type: String,
-    default: ''
-  },
-  descriptionMarkdown: {
-    type: String,
-    default: '',
-    maxlength: [7500, 'Description cannot exceed 7500 characters']
-  },
   suggestionNote: {
     type: String,
     default: ''
@@ -97,6 +49,8 @@ const templateSuggestionSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+templateSuggestionSchema.plugin(templateFieldsPlugin, { includeUsageCount: false });
 
 // Index for efficient queries
 templateSuggestionSchema.index({ status: 1, createdAt: -1 });

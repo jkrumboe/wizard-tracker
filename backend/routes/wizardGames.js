@@ -6,6 +6,7 @@ const Game = require('../models/Game');
 const WizardGame = require('../models/WizardGame');
 const { migrateWizardGame, validateMigratedGame } = require('../utils/wizardGameMigration');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
+const catchAsync = require('../utils/catchAsync');
 
 /**
  * GET /api/wizard-games/public/:id

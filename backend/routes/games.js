@@ -3,6 +3,10 @@ const Game = require('../models/Game');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
+const { calculateLeaderboard } = require('../utils/leaderboardService');
+const { DUPLICATE_CHECK_WINDOW_MS, DUPLICATE_CHECK_GAME_LIMIT, LEADERBOARD_CACHE_TTL, RECENT_GAMES_CACHE_TTL, MAX_BATCH_CHECK_SIZE, MAX_GAMES_PER_PAGE } = require('../utils/constants');
+const { getWinnerIds } = require('../utils/gameHelpers');
+const catchAsync = require('../utils/catchAsync');
 
 const router = express.Router();
 
@@ -55,29 +59,21 @@ router.post('/', auth, async (req, res, next) => {
 
     // 2. Check for content-based duplicates (same players, scores, rounds)
     // Create a content hash for comparison - support both old and new schema formats
-    // Normalize winner_id to always be an array for consistent comparison
-    const normalizeWinnerId = (winnerId) => {
-      if (!winnerId) return [];
-      if (Array.isArray(winnerId)) return winnerId.sort();
-      return [winnerId];
-    };
-    
     const contentSignature = {
       playerCount: gameData.players?.length || 0,
       totalRounds: gameData.total_rounds || gameData.totals?.total_rounds || 0,
       finalScoresJson: JSON.stringify(gameData.final_scores || gameData.totals?.final_scores || {}),
-      winnerIdJson: JSON.stringify(normalizeWinnerId({ winner_ids: gameData.winner_ids, winner_id: gameData.winner_id || gameData.totals?.winner_id }))
+      winnerIdJson: JSON.stringify(getWinnerIds(gameData).sort())
     };
 
     // Find games with similar content - limit to recent games for performance
-    // Use flexible querying that works with both schema formats
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(Date.now() - DUPLICATE_CHECK_WINDOW_MS);
     const similarGames = await Game.find({
       userId,
-      createdAt: { $gte: oneDayAgo } // Only check games from last 24 hours
+      createdAt: { $gte: oneDayAgo }
     })
     .select('gameData _id userId createdAt')
-    .limit(50) // Check more games but filter in memory
+    .limit(DUPLICATE_CHECK_GAME_LIMIT)
     .lean();
 
     // Check for exact content match (in memory to handle both schema formats)
@@ -92,7 +88,7 @@ router.post('/', auth, async (req, res, next) => {
       if (similarTotalRounds !== contentSignature.totalRounds) continue;
       
       // Check winner (support both formats and arrays)
-      const similarWinnerIdJson = JSON.stringify(normalizeWinnerId({ winner_ids: similarData.winner_ids, winner_id: similarData.winner_id || similarData.totals?.winner_id }));
+      const similarWinnerIdJson = JSON.stringify(getWinnerIds(similarData).sort());
       if (similarWinnerIdJson !== contentSignature.winnerIdJson) continue;
       
       // Check final scores (support both formats)
@@ -152,480 +148,29 @@ router.post('/', auth, async (req, res, next) => {
 // GET /games/leaderboard - Calculate leaderboard from all games
 // IMPORTANT: This must come BEFORE /:id route to avoid conflicts
 // PUBLIC ENDPOINT - No authentication required
-router.get('/leaderboard', async (req, res, next) => {
-  
-  try {
-    const { gameType, page = 1, limit = 50 } = req.query;
-    
-    // Create cache key based on query parameters
-    const cacheKey = `leaderboard:${gameType || 'all'}:${page}:${limit}`;
-    
-    // Try to get from cache first
-    if (cache.isConnected) {
-      const cached = await cache.get(cacheKey);
-      if (cached) {
-        console.debug('✅ Leaderboard served from cache');
-        return res.json(cached);
-      }
+router.get('/leaderboard', catchAsync(async (req, res) => {
+  const { gameType, page = 1, limit = 50 } = req.query;
+
+  // Create cache key based on query parameters
+  const cacheKey = `leaderboard:${gameType || 'all'}:${page}:${limit}`;
+
+  // Try to get from cache first
+  if (cache.isConnected) {
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
     }
-    
-    // Fetch both Wizard games and Table games
-    const TableGame = require('../models/TableGame');
-    const WizardGame = require('../models/WizardGame');
-    
-    // Fetch all users and player identities for ID-based matching
-    const User = require('../models/User');
-    const PlayerIdentity = require('../models/PlayerIdentity');
-    
-    // Fetch all users (including guests with accounts) for ID-based matching
-    const allUsers = await User.find({}).select('_id username role').lean();
-    const userIdMap = {}; // Maps userId string -> user object
-    allUsers.forEach(user => {
-      userIdMap[user._id.toString()] = user;
-    });
-    console.log(`[Leaderboard] Loaded ${allUsers.length} users`);
-    
-    // Load all identities to map identityId -> playerKey and get ELO data
-    // playerKey is the userId if linked, or the identityId itself for unlinked guests
-    const allIdentities = await PlayerIdentity.find({ isDeleted: false })
-      .select('_id userId displayName eloByGameType mergedInto')
-      .lean();
-    const identityToPlayerKeyMap = {}; // Maps identityId string -> playerKey string
-    const playerKeyIsGuest = {}; // Tracks which playerKeys are unlinked guests
-    const userDisplayNames = {}; // Maps playerKey string -> display name
-    
-    const userEloByGameType = {}; // Maps playerKey string -> { gameType: elo data }
-    
-    // First pass: build identity map without handling merges
-    const identityMap = new Map();
-    allIdentities.forEach(identity => {
-      identityMap.set(identity._id.toString(), identity);
-    });
-    
-    // Helper function to resolve identity chain (follow mergedInto)
-    const resolveIdentity = (identityIdStr, visited = new Set()) => {
-      // Prevent infinite loops from circular references
-      if (visited.has(identityIdStr)) {
-        console.warn(`[Leaderboard] Circular reference detected in identity chain: ${identityIdStr}`);
-        return null;
-      }
-      visited.add(identityIdStr);
-      
-      const identity = identityMap.get(identityIdStr);
-      if (!identity) return null;
-      
-      // If merged, follow the chain to the target
-      if (identity.mergedInto) {
-        const targetIdStr = identity.mergedInto.toString();
-        const resolved = resolveIdentity(targetIdStr, visited);
-        return resolved || identity; // Fallback to current identity if chain breaks
-      }
-      
-      return identity;
-    };
-    
-    // Second pass: map all identities to their final playerKey
-    allIdentities.forEach(identity => {
-      const identityIdStr = identity._id.toString();
-      
-      // Resolve to final identity (following merge chain)
-      const finalIdentity = resolveIdentity(identityIdStr);
-      if (!finalIdentity) {
-        console.warn(`[Leaderboard] Could not resolve identity: ${identityIdStr}`);
-        return;
-      }
-      
-      const userIdStr = finalIdentity.userId?.toString();
-      
-      // Use userId as playerKey if linked, otherwise use final identity's ID
-      const playerKey = userIdStr || finalIdentity._id.toString();
-      identityToPlayerKeyMap[identityIdStr] = playerKey;
-      
-      if (!userIdStr) {
-        playerKeyIsGuest[playerKey] = true;
-      }
-      
-      // Use registered username if available, otherwise use identity displayName
-      if (!userDisplayNames[playerKey]) {
-        const user = userIdStr ? userIdMap[userIdStr] : null;
-        userDisplayNames[playerKey] = user ? user.username : finalIdentity.displayName;
-      }
-      
-      // Store ELO data - pick the identity with the most games played
-      // This handles cases where ELO was calculated before identities were merged,
-      // leaving the bulk of ELO data on the old (merged) identity instead of the primary
-      if (identity.eloByGameType && typeof identity.eloByGameType === 'object') {
-        const existing = userEloByGameType[playerKey];
-        if (!existing || typeof existing !== 'object') {
-          userEloByGameType[playerKey] = identity.eloByGameType;
-        } else {
-          // Merge: for each game type, keep the entry with more gamesPlayed
-          for (const [gt, eloData] of Object.entries(identity.eloByGameType)) {
-            const existingData = existing[gt];
-            if (!existingData || (eloData?.gamesPlayed || 0) > (existingData?.gamesPlayed || 0)) {
-              existing[gt] = eloData;
-            }
-          }
-        }
-      }
-    });
-    
-    console.log(`[Leaderboard] Loaded ${allIdentities.length} player identities`);
-    
-    // Get wizard games from WizardGame collection - only fetch needed fields
-    // Only include finished games (gameFinished:true OR has winner + scores)
-    const wizardGames = await WizardGame.find({
-      $or: [
-        { 'gameData.gameFinished': true },
-        { 'gameData.winner_id': { $exists: true, $ne: null } },
-        { 'gameData.winner_ids.0': { $exists: true } }
-      ]
-    }, {
-      'gameData.players': 1,
-      'gameData.winner_id': 1,
-      'gameData.winner_ids': 1,
-      'gameData.final_scores': 1,
-      'userId': 1,
-      'createdAt': 1
-    }).lean(); // Use lean() for better performance
-    
-    // Get table games (from TableGame collection) - only fetch needed fields
-    const tableGames = await TableGame.find({}, {
-      'gameData': 1,
-      'gameTypeName': 1,
-      'lowIsBetter': 1,
-      'createdAt': 1
-    }).lean(); // Use lean() for better performance
-    
-    // Calculate player statistics grouped by USER ID (using identity system)
-    const playerStats = {};
-    const gameTypeSet = new Set(['Wizard']); // Start with 'Wizard'
-    const gameTypeSettings = { 'Wizard': { lowIsBetter: false } }; // Track lowIsBetter per game type
-    
-    // First, collect all available game types from table games
-    tableGames.forEach(game => {
-      const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-      if (gameMode && gameMode !== 'Table Game') {
-        gameTypeSet.add(gameMode);
-        // Store the lowIsBetter setting for this game type
-        const lowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
-        if (!gameTypeSettings[gameMode]) {
-          gameTypeSettings[gameMode] = { lowIsBetter };
-        }
-      }
-    });
-    
-    // Process Wizard games
-    wizardGames.forEach(game => {
-      const gameData = game.gameData;
-      if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
-        return;
-      }
-
-      const gameMode = 'Wizard'; // All games from Game collection are Wizard
-      const winnerIdRaw = gameData.winner_ids || gameData.winner_id || gameData.totals?.winner_ids || gameData.totals?.winner_id;
-      const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
-      const finalScores = gameData.final_scores || gameData.totals?.final_scores || {};
-
-      gameData.players.forEach(player => {
-        const playerId = player.id;
-        const playerOriginalId = player.originalId;
-        const playerName = player.name;
-        const identityId = player.identityId;
-        
-        // Skip players without identity (shouldn't happen after migration)
-        if (!identityId) {
-          console.warn(`[Leaderboard] Player without identityId in game: ${playerName}`);
-          return;
-        }
-
-        // Filter by game type if specified
-        if (gameType && gameType !== gameMode) {
-          return;
-        }
-
-        // Map identityId to playerKey using identity system
-        const identityIdStr = identityId.toString();
-        const playerKey = identityToPlayerKeyMap[identityIdStr];
-        
-        if (!playerKey) {
-          console.warn(`[Leaderboard] No playerKey found for identity ${identityIdStr}`);
-          return;
-        }
-        
-        const displayName = userDisplayNames[playerKey] || playerName;
-        const isGuest = playerKeyIsGuest[playerKey] || false;
-        
-        if (!playerStats[playerKey]) {
-          playerStats[playerKey] = {
-            id: playerKey,
-            name: displayName,
-            userId: isGuest ? null : playerKey,
-            totalGames: 0,
-            wins: 0,
-            totalScore: 0,
-            gameTypes: {},
-            lastPlayed: game.createdAt
-          };
-        }
-
-        const stats = playerStats[playerKey];
-        
-        stats.totalGames++;
-        
-        // Check if player is one of the winners (handles draws)
-        // Check both player.id and player.originalId since winner_ids may contain either
-        const isWinner = winnerIds.includes(playerId) || 
-                        (playerOriginalId && winnerIds.includes(playerOriginalId)) ||
-                        winnerIds.some(id => String(id) === String(playerId)) ||
-                        (playerOriginalId && winnerIds.some(id => String(id) === String(playerOriginalId)));
-        
-        if (isWinner) {
-          stats.wins++;
-        }
-        
-        if (finalScores[playerId] !== undefined) {
-          stats.totalScore += finalScores[playerId];
-        }
-
-        if (!stats.gameTypes[gameMode]) {
-          stats.gameTypes[gameMode] = { games: 0, wins: 0, totalScore: 0 };
-        }
-        stats.gameTypes[gameMode].games++;
-        if (isWinner) {
-          stats.gameTypes[gameMode].wins++;
-        }
-        if (finalScores[playerId] !== undefined) {
-          stats.gameTypes[gameMode].totalScore += finalScores[playerId];
-        }
-
-        if (game.createdAt && new Date(game.createdAt) > new Date(stats.lastPlayed)) {
-          stats.lastPlayed = game.createdAt;
-        }
-      });
-    });
-    
-    // Process Table games
-    tableGames.forEach(game => {
-      // Table games have nested structure: gameData.gameData
-      const outerGameData = game.gameData;
-      const gameData = outerGameData?.gameData || outerGameData;
-      
-      if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
-        return;
-      }
-
-      const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-      
-      // Table games store points arrays, not final_scores
-      // Calculate final scores from points arrays
-      const finalScores = {};
-      gameData.players.forEach((player, index) => {
-        const playerId = `player_${index}`; // Use index as ID since table games don't have player IDs
-        const points = player.points || [];
-        const totalScore = points.reduce((sum, p) => {
-          const parsed = parseFloat(p);
-          return sum + (isNaN(parsed) ? 0 : parsed);
-        }, 0);
-        finalScores[playerId] = totalScore;
-      });
-      
-      // Find winner(s) - highest or lowest score depending on lowIsBetter (supports draws)
-      let winnerIds = [];
-      let winnerNameLower = null;
-      if (Object.keys(finalScores).length > 0) {
-        const lowIsBetter = game.lowIsBetter || outerGameData?.lowIsBetter || gameData.lowIsBetter || false;
-        const scores = Object.entries(finalScores);
-        
-        if (lowIsBetter) {
-          const minScore = Math.min(...scores.map(s => s[1]));
-          winnerIds = scores.filter(s => s[1] === minScore).map(s => s[0]);
-        } else {
-          const maxScore = Math.max(...scores.map(s => s[1]));
-          winnerIds = scores.filter(s => s[1] === maxScore).map(s => s[0]);
-        }
-      }
-      
-      // Fallback: check winner_name for players without proper IDs
-      const winnerName = gameData.winner_name || outerGameData?.winner_name;
-      if (winnerName) {
-        winnerNameLower = winnerName.toLowerCase();
-      }
-
-      gameData.players.forEach((player, index) => {
-        const playerId = `player_${index}`;
-        const playerName = player.name;
-        const identityId = player.identityId;
-        
-        // Skip players without identity
-        if (!identityId) {
-          console.warn(`[Leaderboard] Player without identityId in table game: ${playerName}`);
-          return;
-        }
-
-        // Filter by game type if specified
-        if (gameType && gameType !== gameMode) {
-          return;
-        }
-
-        // Map identityId to playerKey using identity system
-        const identityIdStr = identityId.toString();
-        const playerKey = identityToPlayerKeyMap[identityIdStr];
-        
-        if (!playerKey) {
-          console.warn(`[Leaderboard] No playerKey found for identity ${identityIdStr}`);
-          return;
-        }
-        
-        const displayName = userDisplayNames[playerKey] || playerName;
-        const isGuest = playerKeyIsGuest[playerKey] || false;
-        
-        if (!playerStats[playerKey]) {
-          playerStats[playerKey] = {
-            id: playerKey,
-            name: displayName,
-            userId: isGuest ? null : playerKey,
-            totalGames: 0,
-            wins: 0,
-            totalScore: 0,
-            gameTypes: {},
-            lastPlayed: game.createdAt
-          };
-        }
-
-        const stats = playerStats[playerKey];
-        
-        stats.totalGames++;
-        
-        // Check winner by ID or by name (fallback for guests without proper IDs)
-        const isWinnerById = winnerIds.includes(playerId);
-        const isWinnerByName = winnerNameLower && playerName.toLowerCase() === winnerNameLower;
-        const isWinner = isWinnerById || isWinnerByName;
-        
-        if (isWinner) {
-          stats.wins++;
-        }
-        
-        if (finalScores[playerId] !== undefined) {
-          stats.totalScore += finalScores[playerId];
-        }
-
-        if (!stats.gameTypes[gameMode]) {
-          stats.gameTypes[gameMode] = { games: 0, wins: 0, totalScore: 0 };
-        }
-        stats.gameTypes[gameMode].games++;
-        if (isWinner) {
-          stats.gameTypes[gameMode].wins++;
-        }
-        if (finalScores[playerId] !== undefined) {
-          stats.gameTypes[gameMode].totalScore += finalScores[playerId];
-        }
-
-        if (game.createdAt && new Date(game.createdAt) > new Date(stats.lastPlayed)) {
-          stats.lastPlayed = game.createdAt;
-        }
-      });
-    });
-
-    // Helper function to normalize game type for ELO lookup
-    const normalizeGameType = (type) => {
-      if (!type) return 'wizard';
-      return type.toLowerCase().replace(/\s+/g, '-');
-    };
-
-    // Convert to array and calculate derived stats
-    const leaderboard = Object.values(playerStats).map(player => {
-      const winRate = player.totalGames > 0 
-        ? ((player.wins / player.totalGames) * 100).toFixed(1) 
-        : 0;
-      const avgScore = player.totalGames > 0 
-        ? (player.totalScore / player.totalGames).toFixed(1) 
-        : 0;
-
-      // Get ELO for this player for the selected game type
-      // Use player.id (the playerKey) since guests don't have userId
-      const userElo = userEloByGameType[player.id];
-      let elo = 1000; // Default ELO
-      if (userElo && gameType) {
-        const normalizedType = normalizeGameType(gameType);
-        const eloData = userElo[normalizedType] || userElo.get?.(normalizedType);
-        if (eloData) {
-          elo = eloData.rating || 1000;
-        }
-      }
-
-      return {
-        ...player,
-        winRate: parseFloat(winRate),
-        avgScore: parseFloat(avgScore),
-        elo: Math.round(elo)
-      };
-    });
-
-    // Determine if lower scores are better for the selected game type
-    const selectedGameLowIsBetter = gameType
-      ? gameTypeSettings[gameType]?.lowIsBetter || false 
-      : false;
-
-    // Sort by ELO, then wins, then avg score (considering lowIsBetter), then win rate
-    leaderboard.sort((a, b) => {
-      // Primary sort: ELO (higher is better)
-      if (b.elo !== a.elo) return b.elo - a.elo;
-      
-      // Tiebreaker 1: wins
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      
-      // Tiebreaker 2: average score (direction depends on game type)
-      if (a.avgScore !== b.avgScore) {
-        if (selectedGameLowIsBetter) {
-          // For low-is-better games, lower average is better
-          return a.avgScore - b.avgScore;
-        } else {
-          // For high-is-better games, higher average is better
-          return b.avgScore - a.avgScore;
-        }
-      }
-      
-      // Tiebreaker 3: win rate
-      return b.winRate - a.winRate;
-    });
-
-    // Get unique game types
-    const gameTypes = Array.from(gameTypeSet).sort();
-    
-    // Apply pagination
-    const pageNum = parseInt(page) || 1;
-    const limitNum = Math.min(parseInt(limit) || 50, 100); // Max 100 per page
-    const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = startIndex + limitNum;
-    const paginatedLeaderboard = leaderboard.slice(startIndex, endIndex);
-    
-    const response = {
-      leaderboard: paginatedLeaderboard,
-      gameTypes,
-      gameTypeSettings, // Send the settings so frontend knows which game types have lowIsBetter
-      totalGames: wizardGames.length + tableGames.length,
-      pagination: {
-        currentPage: pageNum,
-        totalPages: Math.ceil(leaderboard.length / limitNum),
-        totalPlayers: leaderboard.length,
-        hasNextPage: endIndex < leaderboard.length,
-        hasPrevPage: pageNum > 1
-      }
-    };
-    
-    // Cache the result for 5 minutes
-    if (cache.isConnected) {
-      await cache.set(cacheKey, response, 300); // 5 minute TTL
-    }
-    
-    res.json(response);
-  } catch (error) {
-    console.error('[GET /api/games/leaderboard] Error:', error);
-    console.error('[GET /api/games/leaderboard] Error stack:', error.stack);
-    res.status(500).json({ error: error.message, details: error.stack });
   }
-});
+
+  const response = await calculateLeaderboard({ gameType, page, limit });
+
+  // Cache the result
+  if (cache.isConnected) {
+    await cache.set(cacheKey, response, LEADERBOARD_CACHE_TTL);
+  }
+
+  res.json(response);
+}));
 
 // GET /games/recent - Get recent games (public endpoint for homepage)
 // PUBLIC ENDPOINT - No authentication required
