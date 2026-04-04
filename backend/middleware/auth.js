@@ -48,6 +48,13 @@ const auth = async (req, res, next) => {
 
     // Add user to request object
     req.user = user;
+
+    // Track user activity for online status (5-min TTL)
+    if (cache.isConnected) {
+      const activityKey = `online:${user._id}`;
+      cache.set(activityKey, { username: user.username, role: user.role }, 300).catch(() => {});
+    }
+
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {

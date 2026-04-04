@@ -5,6 +5,9 @@ const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const PlayerAlias = require('../models/PlayerAlias');
 const PlayerIdentity = require('../models/PlayerIdentity');
+const WizardGame = require('../models/WizardGame');
+const TableGame = require('../models/TableGame');
+const TemplateSuggestion = require('../models/TemplateSuggestion');
 const auth = require('../middleware/auth');
 const { authLimiter, friendsLimiter } = require('../middleware/rateLimiter');
 const _ = require('lodash'); // Added for escapeRegExp
@@ -120,8 +123,14 @@ router.post('/login', authLimiter, async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Update last login timestamp
+    // Update last login timestamp and history
     user.lastLogin = new Date();
+    if (!user.loginHistory) user.loginHistory = [];
+    user.loginHistory.push({ timestamp: user.lastLogin });
+    // Keep only the last 50 entries
+    if (user.loginHistory.length > 50) {
+      user.loginHistory = user.loginHistory.slice(-50);
+    }
     await user.save();
 
     // Generate JWT token
@@ -1579,6 +1588,213 @@ router.delete('/:userId/friend-requests/:requestId', auth, async (req, res, next
       message: 'Friend request cancelled'
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// GET /users/admin/stats - Get comprehensive admin dashboard stats (admin only)
+router.get('/admin/stats', auth, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Run all queries in parallel
+    const [
+      totalUsers,
+      activeUsersLast7d,
+      activeUsersLast30d,
+      newUsersLast7d,
+      newUsersLast30d,
+      deletedUsers,
+      adminUsers,
+      totalWizardGames,
+      wizardGamesLast7d,
+      wizardGamesLast30d,
+      totalTableGames,
+      tableGamesLast7d,
+      tableGamesLast30d,
+      totalIdentities,
+      guestIdentities,
+      linkedIdentities,
+      pendingSuggestions,
+      recentUsers,
+      registrationTrend,
+      gameActivityTrend,
+      topPlayers,
+    ] = await Promise.all([
+      // User stats
+      User.countDocuments({ isDeleted: { $ne: true } }),
+      User.countDocuments({ lastLogin: { $gte: sevenDaysAgo }, isDeleted: { $ne: true } }),
+      User.countDocuments({ lastLogin: { $gte: thirtyDaysAgo }, isDeleted: { $ne: true } }),
+      User.countDocuments({ createdAt: { $gte: sevenDaysAgo }, isDeleted: { $ne: true } }),
+      User.countDocuments({ createdAt: { $gte: thirtyDaysAgo }, isDeleted: { $ne: true } }),
+      User.countDocuments({ isDeleted: true }),
+      User.countDocuments({ role: 'admin', isDeleted: { $ne: true } }),
+
+      // Wizard game stats
+      WizardGame.countDocuments(),
+      WizardGame.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      WizardGame.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+
+      // Table game stats
+      TableGame.countDocuments(),
+      TableGame.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      TableGame.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+
+      // Identity stats
+      PlayerIdentity.countDocuments(),
+      PlayerIdentity.countDocuments({ type: 'guest' }),
+      PlayerIdentity.countDocuments({ userId: { $ne: null } }),
+
+      // Template suggestions
+      TemplateSuggestion.countDocuments({ status: 'pending' }),
+
+      // Recent user registrations (last 10)
+      User.find({ isDeleted: { $ne: true } })
+        .select('username createdAt lastLogin role')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+
+      // Registration trend (last 30 days, grouped by day)
+      User.aggregate([
+        { $match: { createdAt: { $gte: thirtyDaysAgo }, isDeleted: { $ne: true } } },
+        { $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          count: { $sum: 1 }
+        }},
+        { $sort: { _id: 1 } }
+      ]),
+
+      // Game activity trend (last 30 days)
+      WizardGame.aggregate([
+        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          count: { $sum: 1 }
+        }},
+        { $sort: { _id: 1 } }
+      ]),
+
+      // Top players by total games
+      PlayerIdentity.find({ 'stats.totalGames': { $gt: 0 } })
+        .select('displayName stats.totalGames stats.totalWins stats.lastGameAt type userId')
+        .sort({ 'stats.totalGames': -1 })
+        .limit(10)
+        .lean(),
+    ]);
+
+    // Calculate recent logins (last 5 unique logins)
+    const recentLogins = await User.find({
+      lastLogin: { $ne: null },
+      isDeleted: { $ne: true }
+    })
+      .select('username lastLogin role')
+      .sort({ lastLogin: -1 })
+      .limit(5)
+      .lean();
+
+    // Get online users from Redis
+    const onlineEntries = await cache.getByPattern('online:*');
+    const onlineUsers = onlineEntries.map(entry => ({
+      id: entry.key.replace('online:', ''),
+      username: entry.value.username,
+      role: entry.value.role,
+    }));
+
+    res.json({
+      users: {
+        total: totalUsers,
+        admins: adminUsers,
+        deleted: deletedUsers,
+        activeLast7d: activeUsersLast7d,
+        activeLast30d: activeUsersLast30d,
+        newLast7d: newUsersLast7d,
+        newLast30d: newUsersLast30d,
+      },
+      games: {
+        wizard: {
+          total: totalWizardGames,
+          last7d: wizardGamesLast7d,
+          last30d: wizardGamesLast30d,
+        },
+        table: {
+          total: totalTableGames,
+          last7d: tableGamesLast7d,
+          last30d: tableGamesLast30d,
+        },
+        totalAll: totalWizardGames + totalTableGames,
+      },
+      identities: {
+        total: totalIdentities,
+        guest: guestIdentities,
+        linked: linkedIdentities,
+      },
+      pendingSuggestions,
+      onlineUsers,
+      onlineCount: onlineUsers.length,
+      recentUsers: recentUsers.map(u => ({
+        id: u._id,
+        username: u.username,
+        createdAt: u.createdAt,
+        lastLogin: u.lastLogin,
+        role: u.role,
+      })),
+      recentLogins: recentLogins.map(u => ({
+        id: u._id,
+        username: u.username,
+        lastLogin: u.lastLogin,
+        role: u.role,
+      })),
+      registrationTrend: registrationTrend.map(r => ({ date: r._id, count: r.count })),
+      gameActivityTrend: gameActivityTrend.map(r => ({ date: r._id, count: r.count })),
+      topPlayers: topPlayers.map(p => ({
+        id: p._id,
+        name: p.displayName,
+        totalGames: p.stats.totalGames,
+        totalWins: p.stats.totalWins,
+        winRate: p.stats.totalGames > 0
+          ? Math.round((p.stats.totalWins / p.stats.totalGames) * 100)
+          : 0,
+        lastGameAt: p.stats.lastGameAt,
+        type: p.type,
+        isLinked: !!p.userId,
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    next(error);
+  }
+});
+
+// GET /users/admin/login-history/:userId - Get login history for a specific user (admin only)
+router.get('/admin/login-history/:userId', auth, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const user = await User.findById(req.params.userId)
+      .select('username loginHistory lastLogin')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      username: user.username,
+      lastLogin: user.lastLogin,
+      loginHistory: (user.loginHistory || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
+    });
+  } catch (error) {
+    console.error('Error fetching login history:', error);
     next(error);
   }
 });

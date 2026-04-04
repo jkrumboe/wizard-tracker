@@ -743,6 +743,64 @@ class UserService {
     }
   }
 
+  async getAdminStats() {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/stats`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch stats' }));
+        throw new Error(error.message || error.error || 'Failed to fetch admin stats');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      throw error;
+    }
+  }
+
+  async getLoginHistory(userId) {
+    if (this.skipBackend) {
+      throw new Error('Backend server not available');
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const endpoint = `${this.baseURL}/api/users/admin/login-history/${encodeURIComponent(userId)}`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch login history' }));
+        throw new Error(error.message || error.error || 'Failed to fetch login history');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching login history:', error);
+      throw error;
+    }
+  }
+
   async previewLinkAllGames() {
     if (this.skipBackend) {
       throw new Error('Backend server not available');

@@ -58,6 +58,10 @@ const userSchema = new mongoose.Schema({
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  }],
+  loginHistory: [{
+    timestamp: { type: Date, required: true },
+    _id: false
   }]
 }, {
   timestamps: true

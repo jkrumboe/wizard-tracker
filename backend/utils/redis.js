@@ -123,6 +123,27 @@ class RedisCache {
     }
   }
 
+  async getByPattern(pattern) {
+    if (!this.isConnected) {
+      return [];
+    }
+
+    try {
+      const keys = await this.client.keys(pattern);
+      if (keys.length === 0) return [];
+      const values = await Promise.all(
+        keys.map(async (k) => {
+          const val = await this.client.get(k);
+          return val ? { key: k, value: JSON.parse(val) } : null;
+        })
+      );
+      return values.filter(Boolean);
+    } catch (error) {
+      console.error('Redis GET pattern error for %s:', pattern, error.message);
+      return [];
+    }
+  }
+
   async disconnect() {
     if (this.client) {
       await this.client.quit();
