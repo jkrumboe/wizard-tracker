@@ -2356,6 +2356,7 @@
 }
 
 .game-controls {
+  height: 45px;
   position: relative;
   display: flex;
   align-items: center;
@@ -2369,14 +2370,6 @@
 #game-toggle-details {
   padding: var(--spacing-sm);
   color: var(--text)
-}
-
-#prevRoundBtn {
-  padding: var(--spacing-md) var(--spacing-lg);
-}
-
-#nextRoundBtn {
-  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 .toggle-text {
@@ -2910,6 +2903,7 @@
   transition: all 0.2s ease;
   font-size: 1.2rem;
   box-shadow: var(--shadow-lg);
+  height: 45px;
 }
 
 #toggle-button-profile {
@@ -2951,8 +2945,8 @@
 
 #prevRoundBtn,
 #nextRoundBtn {
-  padding: 0.6rem 1.1rem;
   border: none;
+  height: 45px;
 }
 
 

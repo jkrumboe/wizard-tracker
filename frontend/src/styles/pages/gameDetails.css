@@ -60,6 +60,7 @@
   display: flex;
   gap: var(--spacing-sm);
   justify-content: center;
+  height: 45px;
 }
 
 /* Container for mode badge and download button side by side */

@@ -1127,6 +1127,7 @@
   display: flex;
   gap: var(--spacing-md);
   align-items: center;
+  height: 45px;
 }
 
 .game-container .game-control-btn {

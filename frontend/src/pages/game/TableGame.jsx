@@ -1115,6 +1115,15 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     });
   };
 
+  const isCurrentRoundEmptyOrComplete = () => {
+    const roundIndex = currentRound - 1;
+    const filled = players.filter(player => {
+      const point = player.points[roundIndex];
+      return point !== "" && point !== undefined && point !== null;
+    });
+    return filled.length === 0 || filled.length === players.length;
+  };
+
   const handleFinishGame = () => {
     // Show confirmation dialog instead of immediately finishing
     setShowFinishGameConfirm(true);
@@ -1839,7 +1848,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                   {getSetTarget() === 15 ? t('tableGame.setTargetTo25') : t('tableGame.setTargetTo15')}
                 </button>
               )}
-              {isTwoSideScoreboard && isBasketballGame && !gameFinished && (
+              {!targetNumber && !gameFinished && isCurrentRoundEmptyOrComplete() && (
                 <button
                   type="button"
                   className="game-control-btn"
