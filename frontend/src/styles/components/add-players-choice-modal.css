@@ -66,32 +66,10 @@
   transition: left 0.5s ease;
 }
 
-.choice-button:hover::before {
-  left: 100%;
-}
-
-.choice-button:hover {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark, var(--primary)) 100%);
-  border-color: var(--primary);
-  color: var(--text);
-  transform: translateY(-8px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-}
-
-.choice-button:active {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
 .choice-button svg {
   color: currentColor;
   opacity: 0.9;
   transition: all 0.3s ease;
-}
-
-.choice-button:hover svg {
-  opacity: 1;
-  transform: scale(1.1);
 }
 
 .choice-label {
@@ -108,8 +86,27 @@
   transition: opacity 0.3s ease;
 }
 
-.choice-button:hover .choice-description {
-  opacity: 1;
+@media (hover: hover) {
+  .choice-button:hover::before {
+    left: 100%;
+  }
+
+  .choice-button:hover svg {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  .choice-button:hover .choice-description {
+    opacity: 1;
+  }
+
+  .choice-button:hover {
+    border-color: var(--primary);
+  }
+}
+
+.choice-button:active {
+  transform: scale(0.97);
 }
 
 /* Responsive for mobile */
