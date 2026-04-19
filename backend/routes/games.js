@@ -211,7 +211,9 @@ router.get('/recent', async (req, res, next) => {
 
     // Format wizard games
     const formattedWizardGames = wizardGames.map(game => {
-      const gameData = game.gameData || {};
+      // Handle double-nested gameData from older uploads
+      const rawGameData = game.gameData || {};
+      const gameData = rawGameData.gameData || rawGameData;
       return {
         id: game._id,
         cloudId: game._id,
@@ -231,7 +233,9 @@ router.get('/recent', async (req, res, next) => {
 
     // Format table games
     const formattedTableGames = tableGames.map(game => {
-      const gameData = game.gameData || {};
+      // Handle double-nested gameData from older uploads
+      const rawGameData = game.gameData || {};
+      const gameData = rawGameData.gameData || rawGameData;
       const players = gameData.players || [];
       
       // Calculate winner based on scores
@@ -262,7 +266,7 @@ router.get('/recent', async (req, res, next) => {
         name: game.name || game.gameTypeName || 'Table Game',
         players: players.map(p => p.name || 'Unknown'),
         created_at: game.createdAt,
-        totalRounds: game.totalRounds || 0,
+        totalRounds: game.totalRounds || gameData.rows || 0,
         gameFinished: game.gameFinished,
         gameType: 'table',
         winner_name: winnerName
