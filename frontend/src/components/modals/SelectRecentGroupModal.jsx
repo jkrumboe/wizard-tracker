@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { XIcon, UsersIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { getRecentLocalGames } from '@/shared/api/gameService';
+import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage';
+import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage';
 import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
 import '@/styles/components/select-recent-group-modal.css';
@@ -20,21 +22,58 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupI
   const loadRecentGroups = async () => {
     setLoading(true);
     try {
-      const games = await getRecentLocalGames(10);
-      
+      // Fetch wizard games
+      const wizardGames = await getRecentLocalGames(10);
+
+      // Fetch table games
+      const tableGames = LocalTableGameStorage.getSavedTableGamesList()
+        .filter(game => game.gameFinished)
+        .slice(0, 10);
+
+      // Fetch scoreboard games
+      const scoreboardGames = LocalScoreboardGameStorage.getSavedTableGamesList()
+        .filter(game => game.gameFinished)
+        .slice(0, 10);
+
+      // Combine and sort all games by date
+      const allGames = [
+        ...wizardGames.map(g => ({ ...g, _type: 'wizard' })),
+        ...tableGames.map(g => ({ ...g, _type: 'table' })),
+        ...scoreboardGames.map(g => ({ ...g, _type: 'scoreboard' })),
+      ]
+        .sort((a, b) => {
+          const dateA = new Date(a.lastPlayed || a.savedAt || a.created_at || '1970-01-01');
+          const dateB = new Date(b.lastPlayed || b.savedAt || b.created_at || '1970-01-01');
+          return dateB - dateA;
+        })
+        .slice(0, 10);
+
       // Extract player groups from games
-      const groups = games.map(game => {
-        const players = game.gameState?.players || game.players || [];
+      const groups = allGames.map(game => {
+        let players;
+        if (game._type === 'wizard') {
+          players = (game.gameState?.players || game.players || []).map(p => ({
+            id: p.id || p.userId,
+            name: p.name,
+            userId: p.userId || null,
+          }));
+        } else {
+          // Table / scoreboard games store players in gameData
+          const gameData = game.gameData?.gameData || game.gameData;
+          const rawPlayers = gameData?.players || [];
+          players = rawPlayers.map(p => ({
+            id: null,
+            name: typeof p === 'string' ? p : p.name,
+            userId: null,
+          }));
+        }
+
         return {
           gameId: game.id,
           date: new Date(game.lastPlayed || game.savedAt || game.created_at).toLocaleDateString(),
           playerCount: players.length,
-          players: players.map(p => ({
-            id: p.id || p.userId,
-            name: p.name,
-            userId: p.userId || null,
-          })),
-          gameName: game.gameName || 'Wizard Game',
+          players,
+          gameName: game.gameName || game.name || game.gameTypeName || 'Game',
         };
       });
 
