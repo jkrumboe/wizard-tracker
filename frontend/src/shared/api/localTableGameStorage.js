@@ -203,6 +203,7 @@ export class LocalTableGameStorage {
             lowIsBetter: game.lowIsBetter || normalizedGameData?.lowIsBetter || false,
             winner_id: game.winner_id || normalizedGameData?.winner_id,
             winner_name: game.winner_name || normalizedGameData?.winner_name,
+            cloudGameId: game.cloudGameId || null,
             gameData: game.gameData, // Include full gameData for access to players and winner info
             players: normalizedGameData && normalizedGameData.players ? 
               normalizedGameData.players.map(p => p.name) : []

@@ -215,6 +215,7 @@ export class LocalScoreboardGameStorage {
           lowIsBetter: game.lowIsBetter || normalizedGameData?.lowIsBetter || false,
           winner_id: game.winner_id || normalizedGameData?.winner_id,
           winner_name: game.winner_name || normalizedGameData?.winner_name,
+          cloudGameId: game.cloudGameId || null,
           scoreEntryMode: normalizedGameData?.scoreEntryMode || 'twoSideGesture',
           gameData: game.gameData,
           players: Array.isArray(normalizedGameData?.teamMembers)
