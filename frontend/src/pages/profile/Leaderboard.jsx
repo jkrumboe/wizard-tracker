@@ -11,13 +11,19 @@ const Leaderboard = () => {
   const [players, setPlayers] = useState([])
   const [gameTypes, setGameTypes] = useState(['Wizard'])
   const [gameTypeSettings, setGameTypeSettings] = useState({}) // Track lowIsBetter per game type
-  const [selectedGameType, setSelectedGameType] = useState('Wizard') // Default to Wizard
+  const [selectedGameType, setSelectedGameType] = useState(
+    () => sessionStorage.getItem('leaderboard_gameType') || 'Wizard'
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sortBy, setSortBy] = useState('elo')
   const [sortOrder, setSortOrder] = useState('desc')
-  const [filter, setFilter] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [filter, setFilter] = useState(
+    () => sessionStorage.getItem('leaderboard_filter') || ''
+  )
+  const [currentPage, setCurrentPage] = useState(
+    () => parseInt(sessionStorage.getItem('leaderboard_page') || '1', 10)
+  )
   const [lastRefresh, setLastRefresh] = useState(null)
   const playersPerPage = 10
 
@@ -112,6 +118,19 @@ const Leaderboard = () => {
     setFilter(e.target.value)
     setCurrentPage(1)
   }
+
+  // Persist filter state to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('leaderboard_gameType', selectedGameType)
+  }, [selectedGameType])
+
+  useEffect(() => {
+    sessionStorage.setItem('leaderboard_filter', filter)
+  }, [filter])
+
+  useEffect(() => {
+    sessionStorage.setItem('leaderboard_page', String(currentPage))
+  }, [currentPage])
 
   const handleGameTypeChange = (e) => {
     setSelectedGameType(e.target.value)
