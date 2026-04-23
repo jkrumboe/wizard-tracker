@@ -604,7 +604,7 @@ const GameDetails = () => {
                     if (!chartData.roundData || chartData.roundData.length === 0) {
                       return <div className="no-chart-data">{t('gameDetails.noChartDataRounds')}</div>;
                     }
-                    return <StatsChart playersData={chartData.playersData} roundData={chartData.roundData} />;
+                    return <StatsChart playersData={chartData.playersData} roundData={chartData.roundData} supportsBids={true} />;
                   })()
                 ) : (
                   <div className="no-chart-data">{t('gameDetails.noRoundData')}</div>

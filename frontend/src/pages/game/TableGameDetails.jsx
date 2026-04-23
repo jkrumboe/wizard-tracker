@@ -288,7 +288,7 @@ const TableGameDetails = () => {
           <div className="results-section">
             <div className="chart-view-container">
               {players[0]?.points?.length > 0 ? (
-                <StatsChart playersData={prepareChartData().playersData} roundData={prepareChartData().roundData} />
+                <StatsChart playersData={prepareChartData().playersData} roundData={prepareChartData().roundData} supportsBids={false} />
               ) : (
                 <div className="no-chart-data">No round data available for chart visualization</div>
               )}

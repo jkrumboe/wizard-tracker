@@ -823,6 +823,7 @@ const GameInProgress = () => {
                 <StatsChart 
                   playersData={detailedStats} 
                   roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
+                  supportsBids={true}
                 />
               </div>
             )}

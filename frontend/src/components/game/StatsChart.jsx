@@ -66,7 +66,7 @@ const getBorderColorForIndex = (index) => {
   return colors[index % colors.length];
 };
 
-const StatsChart = ({ playersData, roundData }) => {
+const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
   const [chartType, setChartType] = useState(CHART_TYPES.POINTS_PROGRESSION);
   const [selectedPlayers, setSelectedPlayers] = useState(
     playersData.map(player => player.id)
@@ -550,18 +550,20 @@ const StatsChart = ({ playersData, roundData }) => {
             {renderChart()}</div>
 
         <div className="chart-controls">
-        <div className="chart-type-selector">
-            {/* <label>Chart Type:</label> */}
-            <select 
-            value={chartType} 
-            onChange={(e) => setChartType(e.target.value)}
-            className="chart-select"
-            >
-            <option value={CHART_TYPES.POINTS_PROGRESSION}>Points Progression</option>
-            <option value={CHART_TYPES.BID_ACCURACY}>Bid Accuracy</option>
-            <option value={CHART_TYPES.BID_DISTRIBUTION}>Bid Distribution</option>
-            </select>
-        </div>
+        {supportsBids && (
+          <div className="chart-type-selector">
+              {/* <label>Chart Type:</label> */}
+              <select 
+              value={chartType} 
+              onChange={(e) => setChartType(e.target.value)}
+              className="chart-select"
+              >
+              <option value={CHART_TYPES.POINTS_PROGRESSION}>Points Progression</option>
+              <option value={CHART_TYPES.BID_ACCURACY}>Bid Accuracy</option>
+              <option value={CHART_TYPES.BID_DISTRIBUTION}>Bid Distribution</option>
+              </select>
+          </div>
+        )}
 
         <div className="player-toggles">
             <div className="player-toggle-header">
