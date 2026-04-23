@@ -221,11 +221,15 @@ const calculatedStats = useMemo(() => {
     const isTableGame = game.gameType === 'table' || (userPlayer.points && Array.isArray(userPlayer.points));
     let isWin = false;
     
-    if (isTableGame && userPlayer.points) {
-      // For table games: calculate winner from scores (most reliable method)
+    if (isTableGame && winnerIds.length > 0) {
+      // Prefer backend-calculated winner_ids (already correctly accounts for lowIsBetter)
+      isWin = winnerIds.includes(userPositionId) ||
+              winnerIds.includes(userPlayer.id) ||
+              winnerIds.some(wId => String(wId) === String(userPlayer.id));
+    } else if (isTableGame && userPlayer.points) {
+      // Fallback: calculate winner from scores when winner_ids unavailable
       const gameLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
       
-      // Calculate all player scores
       const playerScores = players.map((p, idx) => {
         const total = p.points?.reduce((sum, point) => sum + (parseFloat(point) || 0), 0) || 0;
         return { index: idx, total };
@@ -237,7 +241,6 @@ const calculatedStats = useMemo(() => {
           ? Math.min(...scores)
           : Math.max(...scores);
         
-        // Check if current player has the winning score
         isWin = playerScores[userPlayerIndex]?.total === winningScore;
       }
     } else {

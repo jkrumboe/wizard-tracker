@@ -92,10 +92,16 @@ export const useGameStats = (games, user) => {
           
           if (userPlayerIndex !== -1) {
             userPlayer = players[userPlayerIndex];
-            
-            // For table games: ALWAYS calculate winner from scores (most reliable method)
-            // This handles both old schema (winner_name only) and new schema (winner_ids)
-            if (players[userPlayerIndex].points && players[userPlayerIndex].points.length > 0) {
+            const userPlayerId = `player_${userPlayerIndex}`;
+            const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
+
+            if (winnerIds.length > 0) {
+              // Prefer backend-calculated winner_ids (already correctly accounts for lowIsBetter)
+              userWon = winnerIds.includes(userPlayerId) ||
+                       winnerIds.includes(userPlayer.id) ||
+                       winnerIds.some(id => String(id) === String(userPlayer.id));
+            } else if (players[userPlayerIndex].points && players[userPlayerIndex].points.length > 0) {
+              // Fallback: calculate winner from scores when winner_ids are unavailable
               const lowIsBetter = game.gameData?.lowIsBetter || game.lowIsBetter || false;
               
               const playersWithScores = players.map((player, index) => {
@@ -103,29 +109,19 @@ export const useGameStats = (games, user) => {
                 return { name: player.name, index, total };
               });
               
-              // Find the winning score(s)
               if (playersWithScores.length > 0) {
                 const scores = playersWithScores.map(p => p.total);
                 const winningScore = lowIsBetter 
                   ? Math.min(...scores)
                   : Math.max(...scores);
                 
-                // User won if their score equals the winning score
                 const userScore = playersWithScores[userPlayerIndex]?.total || 0;
                 userWon = userScore === winningScore;
               }
             } else {
-              // Fallback: use winner_ids from API or winner_name for old schema
-              const winnerIds = game.winner_ids || game.gameData?.winner_ids || [];
-              const userPlayerId = `player_${userPlayerIndex}`;
+              // Fallback: use winner_name for old schema
               const winnerName = game.gameData?.winner_name || game.winner_name;
-              
-              if (winnerIds && winnerIds.length > 0) {
-                userWon = winnerIds.includes(userPlayerId) || 
-                         winnerIds.includes(userPlayer.id) ||
-                         winnerIds.some(id => String(id) === String(userPlayer.id));
-              } else if (winnerName && userPlayer.name) {
-                // Old schema fallback: match by winner_name
+              if (winnerName && userPlayer.name) {
                 userWon = winnerName.toLowerCase() === userPlayer.name.toLowerCase();
               }
             }

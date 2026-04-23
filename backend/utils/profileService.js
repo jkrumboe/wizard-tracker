@@ -122,6 +122,7 @@ async function getProfileGames(userId) {
     if (isWinner) totalWins++;
 
     const eloInfo = gameEloMap.get(game._id.toString());
+    const resolvedLowIsBetter = resolveTableGameLowIsBetter(game);
 
     allGames.push({
       id: game._id,
@@ -131,13 +132,14 @@ async function getProfileGames(userId) {
       created_at: game.createdAt,
       winner_ids: winnerIds,
       winner_id: winnerIds[0],
-      lowIsBetter: game.lowIsBetter,
+      lowIsBetter: resolvedLowIsBetter,
       eloChange: eloInfo?.change,
       eloRating: eloInfo?.rating,
       eloPlacement: eloInfo?.placement,
       gameData: {
         players: gameData.players,
         winner_ids: winnerIds,
+        lowIsBetter: resolvedLowIsBetter,
       },
     });
   });

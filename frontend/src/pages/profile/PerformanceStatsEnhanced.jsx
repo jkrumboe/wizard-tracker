@@ -191,26 +191,28 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       let isWin = false;
       
       if (isTableGame && game.gameData?.players) {
-        // For table games: calculate winner from scores (most reliable method)
         const players = game.gameData.players;
-        const gameLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
-        
-        // Calculate all player scores
-        const playerScores = players.map((p, idx) => {
-          const total = p.points?.reduce((sum, point) => sum + (parseFloat(point) || 0), 0) || 0;
-          return { index: idx, name: p.name, total };
-        });
-        
-        if (playerScores.length > 0) {
-          const scores = playerScores.map(p => p.total);
-          const winningScore = gameLowIsBetter 
-            ? Math.min(...scores)
-            : Math.max(...scores);
-          
-          // Check if current player has the winning score
-          const currentPlayerIdx = players.findIndex(p => isCurrentPlayer(p));
-          
-          if (currentPlayerIdx !== -1) {
+        const currentPlayerIdx = players.findIndex(p => isCurrentPlayer(p));
+        const winnerIdRaw = game.winner_ids || game.gameData?.winner_ids;
+        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+
+        if (currentPlayerIdx !== -1 && winnerIds.length > 0) {
+          // Prefer backend-calculated winner_ids (already correctly accounts for lowIsBetter)
+          const userPositionId = `player_${currentPlayerIdx}`;
+          const userPlayer = players[currentPlayerIdx];
+          isWin = winnerIds.includes(userPositionId) ||
+                  winnerIds.includes(userPlayer?.id) ||
+                  winnerIds.some(id => String(id) === String(userPlayer?.id));
+        } else if (currentPlayerIdx !== -1) {
+          // Fallback: calculate from scores when winner_ids unavailable
+          const gameLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
+          const playerScores = players.map((p, idx) => {
+            const total = p.points?.reduce((sum, point) => sum + (parseFloat(point) || 0), 0) || 0;
+            return { index: idx, name: p.name, total };
+          });
+          if (playerScores.length > 0) {
+            const scores = playerScores.map(p => p.total);
+            const winningScore = gameLowIsBetter ? Math.min(...scores) : Math.max(...scores);
             isWin = playerScores[currentPlayerIdx]?.total === winningScore;
           }
         }
