@@ -131,6 +131,13 @@ const GameTemplateSelector = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const handleTemplateCreated = () => loadTemplates();
+    globalThis.addEventListener('templateCreated', handleTemplateCreated);
+    return () => globalThis.removeEventListener('templateCreated', handleTemplateCreated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Check if a local template is a variant of a system template
   const isLocalVariant = (localTemplate, systemTemplates) => {
     const systemTemplate = systemTemplates.find(st => st.name === localTemplate.name);

@@ -403,6 +403,7 @@ const StartGame = () => {
   const handleCreateNewTemplate = (gameName, settings = {}) => {
     if (gameName?.trim()) {
       LocalTableGameTemplate.saveTemplate(gameName.trim(), settings);
+      globalThis.dispatchEvent(new CustomEvent('templateCreated', { detail: { templateName: gameName.trim(), settings } }));
     }
   };
 
