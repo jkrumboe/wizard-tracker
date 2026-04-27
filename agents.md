@@ -8,7 +8,7 @@ This document provides guidance for AI coding agents (GitHub Copilot, Claude, et
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 1.14.2 |
+| **Version** | 1.18.4 |
 | **Frontend** | React 19 + Vite + React Router 7 |
 | **Backend** | Node.js 18+ + Express.js |
 | **Database** | MongoDB 7.x with Mongoose ODM |
@@ -24,7 +24,7 @@ wizard-tracker/
 │   ├── models/              # Mongoose schemas (User, Game, etc.)
 │   ├── routes/              # API endpoint handlers
 │   ├── schemas/             # Validation schemas
-│   ├── scripts/             # Migration and utility scripts
+│   ├── scripts/             # Runtime migrations and utility scripts
 │   ├── tests/               # Jest API tests
 │   └── utils/               # Helper utilities
 ├── frontend/                # React SPA
@@ -44,7 +44,7 @@ wizard-tracker/
 │       │   └── utils/       # Utility functions
 │       └── styles/          # CSS stylesheets
 ├── docs/                    # Project documentation (md files)
-├── scripts/                 # Root-level utility scripts
+├── scripts/                 # Root-level setup/health/env scripts
 └── game_descriptions/       # Game rule documentation
 ```
 
@@ -148,6 +148,28 @@ export function ComponentName({ prop1, prop2 }) {
   return ( /* JSX */ );
 }
 ```
+
+## Backend Scripts (`backend/scripts/`)
+
+| Script | Purpose | How to run |
+|--------|---------|-----------|
+| `runMigrations.js` | Auto-runs DB migrations on server start; also triggered via admin API | Runs automatically |
+| `calculate-initial-elo.js` | Recalculates ELO ratings for all historical games | `npm run elo:calculate` |
+| `copy-prod-to-dev.js` | Copies production data to dev database | `npm run db:copy-prod` |
+| `diagnose-failed-migrations.js` | Diagnostic tool for failed migration records | `node scripts/diagnose-failed-migrations.js` |
+| `ensure-indexes.js` | Ensures all MongoDB indexes exist | `node scripts/ensure-indexes.js` |
+| `monitor-performance.js` | Monitors MongoDB query performance | `node scripts/monitor-performance.js` |
+| `unlink-all-identities.js` | Removes all player identity links (use with caution) | `node scripts/unlink-all-identities.js` |
+
+## Root Scripts (`scripts/`)
+
+| Script | Purpose | How to run |
+|--------|---------|-----------|
+| `init.js` | Interactive first-time setup wizard | `npm run init` |
+| `setup-env.js` | Generates/rotates JWT secret in `.env` | `npm run setup-env` |
+| `verify-setup.js` | Validates prerequisites and environment | `npm run verify` |
+| `health-check.js` | Checks all running services are healthy | `npm run health` |
+| `test-redis.ps1` / `test-redis.sh` | Manual Redis connectivity diagnostic | Run directly (PowerShell/bash) |
 
 ## Common Tasks for Agents
 
