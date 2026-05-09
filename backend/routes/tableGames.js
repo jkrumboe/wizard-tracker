@@ -326,7 +326,7 @@ router.get('/:id', auth, catchAsync(async (req, res) => {
     res.json({ game: tableGame });
 }));
 
-// DELETE /api/table-games/:id - Delete a table game
+// DELETE /api/table-games/:id - Delete a table game (owner or admin)
 router.delete('/:id', auth, catchAsync(async (req, res) => {
     const userId = req.user._id;
     const gameId = req.params.id;
@@ -340,12 +340,18 @@ router.delete('/:id', auth, catchAsync(async (req, res) => {
       return res.status(400).json({ error: 'Invalid game ID format' });
     }
 
-    const tableGame = await TableGame.findOneAndDelete({ _id: { $eq: gameId }, userId });
+    const isAdmin = req.user.role === 'admin';
+    const query = isAdmin
+      ? { _id: { $eq: gameId } }
+      : { _id: { $eq: gameId }, userId };
+
+    const tableGame = await TableGame.findOneAndDelete(query);
 
     if (!tableGame) {
-      return res.status(404).json({ error: 'Table game not found' });
+      return res.status(404).json({ error: 'Table game not found or you do not have permission to delete it' });
     }
 
+    console.log(`[DELETE /api/table-games/${gameId}] Deleted by user ${userId} (role: ${req.user.role})`);
     res.json({ message: 'Table game deleted successfully' });
 }));
 

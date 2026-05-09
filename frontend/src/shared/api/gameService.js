@@ -707,6 +707,72 @@ export async function deleteGame(_id) {
   return false;
 }
 
+//=== Admin Game Management ===//
+
+// Admin: Get all wizard games (paginated)
+export async function adminGetAllWizardGames({ page = 1, limit = 50 } = {}) {
+  const token = localStorage.getItem('auth_token');
+  const params = new URLSearchParams({ allGames: 'true', page: String(page), limit: String(limit) });
+  const res = await fetch(`${API_ENDPOINTS.wizardGames.list}?${params}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch wizard games');
+  return res.json();
+}
+
+// Admin: Get all table games (paginated)
+export async function adminGetAllTableGames({ limit = 200 } = {}) {
+  const token = localStorage.getItem('auth_token');
+  const params = new URLSearchParams({ allGames: 'true', limit: String(limit) });
+  const res = await fetch(`${API_ENDPOINTS.tableGames.list}?${params}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch table games');
+  return res.json();
+}
+
+// Admin: Delete a wizard game by ID
+export async function adminDeleteWizardGame(id) {
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch(API_ENDPOINTS.wizardGames.delete(id), {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete wizard game');
+  }
+  return res.json();
+}
+
+// Admin: Delete a table game by ID
+export async function adminDeleteTableGame(id) {
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch(API_ENDPOINTS.tableGames.delete(id), {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete table game');
+  }
+  return res.json();
+}
+
+// Admin: Delete a legacy game by ID
+export async function adminDeleteLegacyGame(id) {
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch(API_ENDPOINTS.games.delete(id), {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete game');
+  }
+  return res.json();
+}
+
 // Default export for compatibility with index.js
 const gameService = {
   getGames,

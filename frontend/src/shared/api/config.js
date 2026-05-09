@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/games`,
     create: `${API_BASE_URL}/api/games`,
     getById: (id) => `${API_BASE_URL}/api/games/${id}`,
+    delete: (id) => `${API_BASE_URL}/api/games/${id}`,
     batchCheck: `${API_BASE_URL}/api/games/batch-check`,
     stats: `${API_BASE_URL}/api/games/stats`,
     leaderboard: `${API_BASE_URL}/api/games/leaderboard`,
@@ -37,6 +38,7 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/wizard-games`,
     create: `${API_BASE_URL}/api/wizard-games`,
     getById: (id) => `${API_BASE_URL}/api/wizard-games/${id}`,
+    delete: (id) => `${API_BASE_URL}/api/wizard-games/${id}`,
     getPublicById: (id) => `${API_BASE_URL}/api/wizard-games/public/${id}`,
     batchCheck: `${API_BASE_URL}/api/wizard-games/batch-check`,
     stats: `${API_BASE_URL}/api/wizard-games/stats`,
@@ -46,6 +48,7 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/table-games`,
     create: `${API_BASE_URL}/api/table-games`,
     getById: (id) => `${API_BASE_URL}/api/table-games/${id}`,
+    delete: (id) => `${API_BASE_URL}/api/table-games/${id}`,
     getPublicById: (id) => `${API_BASE_URL}/api/table-games/public/${id}`,
   },
   gameTemplates: {

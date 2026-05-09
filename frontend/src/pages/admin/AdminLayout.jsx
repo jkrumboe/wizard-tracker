@@ -15,6 +15,7 @@ import '@/styles/pages/admin.css';
 const NAV_ITEMS = [
   { path: '/admin/template-suggestions', key: 'templateSuggestions', icon: 'FileText', hasBadge: true },
   { path: '/admin/users', key: 'userManagement', icon: 'Users' },
+  { path: '/admin/games', key: 'gameManagement', icon: 'Gamepad2', label: 'Games' },
   { path: '/admin/game-linkage', key: 'gameLinkage', icon: 'Link' },
   { path: '/admin/player-linking', key: 'playerLinking', icon: 'UserCheck' },
   { path: '/admin/elo', key: 'eloManagement', icon: 'BarChart3' },

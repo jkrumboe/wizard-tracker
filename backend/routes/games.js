@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Game = require('../models/Game');
 const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
@@ -1084,5 +1085,33 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// DELETE /games/:id - Delete a game (owner or admin)
+router.delete('/:id', auth, catchAsync(async (req, res) => {
+  const gameId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(gameId)) {
+    return res.status(400).json({ error: 'Invalid game ID format' });
+  }
+
+  const isAdmin = req.user.role === 'admin';
+  const query = isAdmin
+    ? { _id: { $eq: gameId } }
+    : { _id: { $eq: gameId }, userId: req.user._id };
+
+  const game = await Game.findOneAndDelete(query);
+
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found or you do not have permission to delete it' });
+  }
+
+  if (cache.isConnected) {
+    await cache.delPattern('leaderboard:*');
+    await cache.delPattern('recent-games:*');
+  }
+
+  console.log(`[DELETE /api/games/${gameId}] Deleted by user ${req.user._id} (role: ${req.user.role})`);
+  res.json({ message: 'Game deleted successfully' });
+}));
 
 module.exports = router;
