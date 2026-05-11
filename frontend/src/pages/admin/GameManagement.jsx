@@ -8,7 +8,6 @@ import {
 } from '@/shared/api/gameService';
 import { Trash2Icon, SearchIcon, XIcon } from '@/components/ui/Icon';
 import Icon from '@/components/ui/Icon';
-import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
 const TYPE_LABELS = {
@@ -89,8 +88,6 @@ function normaliseTableGame(g) {
 const PAGE_SIZE = 25;
 
 const GameManagement = () => {
-  const { t } = useTranslation();
-
   const [allGames, setAllGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
