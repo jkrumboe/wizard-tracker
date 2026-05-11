@@ -1330,7 +1330,7 @@ const ScoreboardGamePage = () => {
 
 
   const handleBackToTemplates = () => {
-    navigate('/start');
+    navigate('/start?type=scoreboard', { replace: true });
   };
 
   const _saveGame = () => {

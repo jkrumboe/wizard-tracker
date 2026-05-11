@@ -1328,7 +1328,8 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
 
   const handleBackToTemplates = () => {
-    navigate('/start');
+    const backUrl = isDedicatedScoreboardPage ? '/start?type=scoreboard' : '/start?type=table';
+    navigate(backUrl, { replace: true });
   };
 
   const _saveGame = () => {
