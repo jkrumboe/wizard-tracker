@@ -748,8 +748,8 @@
     "remove": "Entfernen",
     "sendRequest": "Anfrage senden",
     "requestSent": "Anfrage gesendet",
-    "friendRequests": "Freundschaftsanfragen",
-    "yourFriends": "Deine Freunde",
+    "friendRequests": "Anfragen",
+    "yourFriends": "Freunde",
     "addFriendTab": "Freund hinzufügen"
   },
 

@@ -37,24 +37,26 @@ const Navbar = () => {
   return (
     <>
       <nav className="bottom-navbar">
-        <Link to="/games" className={`bottom-nav-item games-tab ${isActive(["/games", "/start", "/leaderboard", "/friend-leaderboard", "/admin"])}`} aria-label={t('nav.games')}>
-          <div className="nav-icon">
-            <GamepadIcon size={20} />
-          </div>
-          <span>{t('nav.games')}</span>
-        </Link>
-        <Link to="/" className={`bottom-nav-item ${isActive("/")}`}> 
-          <div className="nav-icon">
-            <HomeIcon size={20} />
-          </div>
-          <span>{t('nav.home')}</span>
-        </Link>
-        <Link to="/account" className={`bottom-nav-item ${isActive("/account")}`}>
-          <div className="nav-icon">
-            <UserIcon size={20} />
-          </div>
-          <span>{t('nav.account')}</span>
-        </Link>
+        <div className="nav-items-pill">
+          <Link to="/games" className={`bottom-nav-item games-tab ${isActive(["/games", "/start", "/leaderboard", "/friend-leaderboard", "/admin"])}`} aria-label={t('nav.games')}>
+            <div className="nav-icon">
+              <GamepadIcon size={20} />
+            </div>
+            <span>{t('nav.games')}</span>
+          </Link>
+          <Link to="/" className={`bottom-nav-item ${isActive("/")}`}>
+            <div className="nav-icon">
+              <HomeIcon size={20} />
+            </div>
+            <span>{t('nav.home')}</span>
+          </Link>
+          <Link to="/account" className={`bottom-nav-item ${isActive("/account")}`}>
+            <div className="nav-icon">
+              <UserIcon size={20} />
+            </div>
+            <span>{t('nav.account')}</span>
+          </Link>
+        </div>
       </nav>
     </>
   );
