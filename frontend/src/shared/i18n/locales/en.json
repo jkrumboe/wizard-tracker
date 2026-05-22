@@ -104,7 +104,10 @@
     "offlineIndicatorTitle": "Showing local games while offline",
     "loadingGames": "Loading games...",
     "noGamesMatchFilters": "No games match your filters",
-    "noGamesFound": "No games found"
+    "noGamesFound": "No games found",
+    "activeGameLabel": "Game in progress",
+    "activeGameProgress": "Round {{current}} of {{max}}",
+    "continueGame": "Continue"
   },
 
   "auth": {

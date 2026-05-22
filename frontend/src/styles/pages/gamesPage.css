@@ -4,6 +4,38 @@
   padding: var(--spacing-md) 0;
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.games-history-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.games-history-section .section-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.games-history-section .offline-indicator {
+  background: var(--warning-color, #f59e0b);
+  color: var(--text-on-warning, #1a1a1a);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.games-history-section .loading-message,
+.games-history-section .empty-message {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--spacing-lg) 0;
+  font-size: 0.9rem;
 }
 
 .games-link-grid {

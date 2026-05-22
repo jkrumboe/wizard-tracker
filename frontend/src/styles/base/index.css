@@ -487,10 +487,10 @@ button:disabled,
 /* Home Page */
 .home-header {
   text-align: center;
-  background-color: var(--card-bg);
-  padding: var(--spacing-md);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .home-header h1 {
@@ -569,7 +569,6 @@ button:disabled,
 
 /* Enhanced card styling for light theme */
 html:not([data-theme="dark"]) .card,
-html:not([data-theme="dark"]) .home-header,
 html:not([data-theme="dark"]) .game-item,
 html:not([data-theme="dark"]) .player-item,
 html:not([data-theme="dark"]) .paused-game-item {
@@ -588,9 +587,9 @@ html:not([data-theme="dark"]) .player-item:hover {
 }
 
 html:not([data-theme="dark"]) .home-header {
-  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 /* Navbar enhancement for light theme */

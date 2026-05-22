@@ -2242,6 +2242,10 @@
   height: calc(100vh - var(--bottom-nav-height) - 24px);
   max-width: 960px;
   margin-top: var(--spacing-md);
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
 }
 
 .home-container .recent-games {

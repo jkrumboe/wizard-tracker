@@ -104,7 +104,10 @@
     "offlineIndicatorTitle": "Zeigt lokale Spiele im Offline-Modus",
     "loadingGames": "Spiele werden geladen...",
     "noGamesMatchFilters": "Keine Spiele entsprechen deinen Filtern",
-    "noGamesFound": "Keine Spiele gefunden"
+    "noGamesFound": "Keine Spiele gefunden",
+    "activeGameLabel": "Spiel läuft",
+    "activeGameProgress": "Runde {{current}} von {{max}}",
+    "continueGame": "Weiterspielen"
   },
 
   "auth": {

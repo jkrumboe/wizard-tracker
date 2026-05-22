@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react";
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTranslation } from 'react-i18next'
 import { useGameStateContext } from "@/shared/hooks/useGameState"
@@ -53,16 +53,6 @@ const GameInProgress = () => {
   const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
   const [increaseCallMax, setIncreaseCallMax] = useState(false) // For Wolke - allows one more call than round max
   
-  // Refs to store current values for event handlers
-  const gameStateRef = useRef(gameState)
-  const pauseGameRef = useRef(pauseGame)
-  
-  // Update refs when values change
-  useEffect(() => {
-    gameStateRef.current = gameState
-    pauseGameRef.current = pauseGame
-  }, [gameState, pauseGame])
-  
   // Listen for orientation changes
   useEffect(() => {
     const mediaQuery = globalThis.matchMedia('(orientation: landscape)')
@@ -108,7 +98,6 @@ const GameInProgress = () => {
     if (success) {
       // Clear game state backup since game is finished
       sessionStorage.removeItem('gameStateBackup');
-      sessionStorage.removeItem('gameInProgressVisited');
       
       // Wait a moment to allow the upload notification to show before resetting and navigating
       setTimeout(() => {
@@ -149,7 +138,6 @@ const GameInProgress = () => {
       if (result && result.success) {
         // Clear game state backup since game is paused
         sessionStorage.removeItem('gameStateBackup');
-        sessionStorage.removeItem('gameInProgressVisited');
         
         // Close all modals
         setShowSaveDialog(false);
@@ -173,7 +161,6 @@ const GameInProgress = () => {
       if (success) {
         // Clear game state backup since game is left
         sessionStorage.removeItem('gameStateBackup');
-        sessionStorage.removeItem('gameInProgressVisited');
         setShowSaveDialog(false)
         resetGame()
         navigate("/", { state: { message: t('game.gameLeftSuccess') } })
@@ -230,55 +217,13 @@ const GameInProgress = () => {
     return () => clearTimeout(timer);
   }, [gameState.roundData, gameState.currentRound, updateMade, reduceTrickCount]);
 
-  // Log page reload and navigation events
+  // Keep sessionStorage backup in sync with the live game state so the
+  // emergency recovery UI on /game/current always has current data to display.
   useEffect(() => {
-    // Use sessionStorage to track if this is truly the first visit
-    const hasVisitedBefore = sessionStorage.getItem('gameInProgressVisited');
-    const isFirstVisit = !hasVisitedBefore;
-    
-    if (isFirstVisit) {
-      sessionStorage.setItem('gameInProgressVisited', 'true');
-    } else {
-      console.debug('Returning to GameInProgress - auto-pause enabled');
-    }
-    
-    // Store current game state in sessionStorage for recovery
-    if (gameState && gameState.gameStarted && gameState.players?.length > 0) {
+    if (gameState && gameState.gameStarted && !gameState.gameFinished && gameState.players?.length > 0) {
       sessionStorage.setItem('gameStateBackup', JSON.stringify(gameState));
     }
-    
-    // Cleanup function runs when component unmounts (navigation away)
-    return () => {      
-      // Check if this is a Vite hot reload (development mode)
-      const isViteReload = import.meta.hot !== undefined;
-      
-      // Only auto-pause if this is NOT the first visit, NOT a Vite reload, and game is started
-      const currentGameState = gameStateRef.current;
-      const currentPauseGame = pauseGameRef.current;
-      
-      if (
-        !isFirstVisit &&
-        !isViteReload &&
-        currentGameState &&
-        currentGameState.gameStarted &&
-        Array.isArray(currentGameState.players) &&
-        currentGameState.players.length > 0
-      ) {
-        const gameName = t('gameInProgress.autoPausedGameName', { current: currentGameState.currentRound, max: currentGameState.maxRounds });
-        try {
-          currentPauseGame(gameName);
-          // Clear backup since game is being auto-paused
-          sessionStorage.removeItem('gameStateBackup');
-          sessionStorage.removeItem('gameInProgressVisited');
-        } catch (error) {
-          console.error('Failed to auto-pause game on navigation:', error);
-        }
-      } else {
-        console.debug('Skipping auto-pause on unmount');
-        console.debug('Unmount reasons: isFirstVisit:', isFirstVisit, 'isViteReload:', isViteReload, 'gameStarted:', currentGameState?.gameStarted, 'players:', currentGameState?.players?.length || 0);
-      }
-    };
-  }, [gameState, t]); // Include gameState dependency for backup functionality
+  }, [gameState]);
 
   // Separate useEffect to handle game state recovery
   useEffect(() => {

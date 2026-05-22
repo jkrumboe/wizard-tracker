@@ -56,10 +56,11 @@ export function GameStateProvider({ children }) {
   useEffect(() => {
     stateRecovery.registerStateProvider(
       'gameState',
-      () => gameState,
+      // Only expose state worth saving: active, non-finished games
+      () => (gameState.gameStarted && !gameState.gameFinished) ? gameState : null,
       (state) => {
-        // Only restore if there's an active game
-        if (state && state.gameStarted) {
+        // Only restore if there's an active, non-finished game
+        if (state && state.gameStarted && !state.gameFinished) {
           setGameState(state);
           console.debug('🔄 Recovered game state');
         }
@@ -168,7 +169,8 @@ export function GameStateProvider({ children }) {
     };
 
     cleanupAutoSaves();
-    restoreCurrentGame();
+    // Note: restoreCurrentGame() is intentionally NOT called a second time here.
+    // The first call above handles recovery; a duplicate call causes a race with cleanupAutoSaves.
   }, []); // Run only once on mount
 
   // Auto-save during gameplay when state changes
@@ -752,6 +754,11 @@ export function GameStateProvider({ children }) {
       };
       const savedGameId = LocalGameStorage.saveGame(gameToSave, `Finished Game - ${new Date().toLocaleDateString()}`, false);
 
+      // Clear recovery cache immediately so attemptRecovery() (triggered by
+      // visibilitychange when the user returns to the app) cannot find the old
+      // in-progress state and restore it on top of the just-finished game.
+      stateRecovery.clearRecoveryState(['gameState']);
+
       // Always attempt cloud sync/upload when user is authenticated
       const token = localStorage.getItem('auth_token');
       if (token) {
@@ -841,6 +848,9 @@ export function GameStateProvider({ children }) {
   }, [gameState]);
   // Reset game state
   const resetGame = useCallback(() => {
+    // Clear the recovery cache so that attemptRecovery() on the next foreground
+    // transition does not resurrect the just-finished/left game.
+    stateRecovery.clearRecoveryState(['gameState']);
     setGameState({
       players: [],
       currentRound: 1,
@@ -1024,6 +1034,9 @@ export function GameStateProvider({ children }) {
           console.warn('Could not delete auto-saved game:', error);
         }
       }
+
+      // Clear recovery cache so attemptRecovery() doesn't restore this game
+      stateRecovery.clearRecoveryState(['gameState']);
 
       // Reset to initial state
       setGameState({
