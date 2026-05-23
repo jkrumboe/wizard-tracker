@@ -28,38 +28,27 @@ const Home = () => {
           <span>Play</span>
         </button>
 
-        {gameState.gameStarted && !gameState.gameFinished && (
-          <div className="active-game-banner">
-            <div className="active-game-info">
-              <span className="active-game-label">{t('home.activeGameLabel')}</span>
-              <span className="active-game-progress">
-                {t('home.activeGameProgress', { current: gameState.currentRound, max: gameState.maxRounds })}
-              </span>
-              {gameState.players?.length > 0 && (
-                <span className="active-game-players">
-                  {gameState.players.map(p => p.name).join(', ')}
-                </span>
-              )}
-            </div>
+        <div className="home-secondary-row">
+          {gameState.gameStarted && !gameState.gameFinished && (
             <button
-              className="active-game-continue-btn"
+              className="active-game-banner"
               onClick={() => navigate('/game/current')}
             >
-              <PlayIcon size={18} />
-              {t('home.continueGame')}
+              <PlayIcon size={16} />
+              <span>{t('home.continueGame')}</span>
+            </button>
+          )}
+
+          <div className="friends-section">
+            <button
+              className="friends-button"
+              onClick={() => setShowFriendsModal(true)}
+              aria-label={t('home.manageFriends')}
+            >
+              <UsersIcon size={16} />
+              <span>{t('home.friends')}</span>
             </button>
           </div>
-        )}
-
-        <div className="friends-section">
-          <button
-            className="friends-button"
-            onClick={() => setShowFriendsModal(true)}
-            aria-label={t('home.manageFriends')}
-          >
-            <UsersIcon size={16} />
-            <span>{t('home.friends')}</span>
-          </button>
         </div>
       </div>
 
