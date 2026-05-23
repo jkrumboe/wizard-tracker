@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
-import Icon from '@/components/ui/Icon';
+import Icon, { CheckMarkIcon, SearchIcon, XIcon } from '@/components/ui/Icon';
 import GameHistoryItem from '@/components/game/GameHistoryItem';
 import GameFilterModal from '@/components/modals/GameFilterModal';
 import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames } from '@/shared/api/gameService';
@@ -68,9 +68,26 @@ const GamesPage = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
   const [gameSyncStatuses, setGameSyncStatuses] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   let isShowingCloudGames = false;
 
-  const filteredGames = useMemo(() => filterGames(allGames, filters), [allGames, filters]);
+  const filteredGames = useMemo(() => {
+    let games = filterGames(allGames, filters);
+    if (typeFilter !== 'all') {
+      games = games.filter(game => game.gameType === typeFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      games = games.filter(game => {
+        const name = (game.name || game.gameType || '').toLowerCase();
+        const players = (game.players || [])
+          .map(p => typeof p === 'string' ? p : (p.name || '')).join(' ').toLowerCase();
+        return name.includes(q) || players.includes(q);
+      });
+    }
+    return games;
+  }, [allGames, filters, searchQuery, typeFilter]);
 
   const handleApplyFilters = (newFilters) => setFilters(newFilters);
 
@@ -362,6 +379,46 @@ const GamesPage = () => {
       </div>
 
       <section className="games-history-section">
+
+        <div className="games-filter-bar">
+          <div className="games-search-row">
+            <div className="games-search-wrapper">
+              <SearchIcon size={16} className="games-search-icon" />
+              <input
+                type="text"
+                className="games-search-input"
+                placeholder={t('account.searchGames')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  className="games-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <XIcon size={14} />
+                </button>
+              )}
+            </div>
+            <select
+              className="games-type-select"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="all">{t('common.all')}</option>
+              <option value="wizard">Wizard</option>
+              <option value="table">{t('gamesPage.tableGames')}</option>
+              <option value="scoreboard">{t('gamesPage.scoreboardGames')}</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="games-list-header">
+          <span className="games-list-count">
+            {t('account.gamesCount', { count: filteredGames.length })}
+          </span>
+        </div>
 
         {filteredGames.length > 0 ? (
           <div className="game-history">

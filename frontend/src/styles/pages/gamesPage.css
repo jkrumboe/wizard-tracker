@@ -1,11 +1,10 @@
 .games-page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: var(--spacing-md) 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
   overflow: hidden;
   border-radius: var(--radius-sm);
 }
@@ -13,8 +12,125 @@
 .games-history-section {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.games-history-section .game-history {
   padding-bottom: var(--spacing-md);
+}
+
+.games-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.games-search-row {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.games-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.games-type-select {
+  flex-shrink: 0;
+  width: fit-content;
+  max-width: 80px;
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--primary);
+  color: var(--text-white);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  text-align-last: center;
+  min-width: 40px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 8px center;
+}
+
+html:not([data-theme="dark"]) .games-type-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
+.games-type-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
+}
+
+.games-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-light);
+  pointer-events: none;
+}
+
+.games-search-input {
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+.games-search-input::placeholder {
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+.games-search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.games-search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s;
+}
+
+.games-search-clear:hover {
+  color: var(--text);
+}
+
+.games-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+  padding: 0 2px;
+}
+
+.games-list-count {
+  font-size: 1rem;
+  color: var(--text-light);
+  font-weight: 500;
 }
 
 .games-history-section .section-header {

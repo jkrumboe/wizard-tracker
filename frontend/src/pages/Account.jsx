@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
@@ -10,21 +10,16 @@ import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage, LocalScoreboardGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
-import { TrashIcon, RefreshIcon, LogOutIcon, FilterIcon, UsersIcon, TrophyIcon, BarChartIcon, KeyIcon, SearchIcon, CalendarIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, LogOutIcon, KeyIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
 import { supportedLanguages } from '@/shared/i18n/i18n';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 
-import GameFilterModal from '@/components/modals/GameFilterModal';
 import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
-import { SwipeableGameCard } from '@/components/common';
 import authService from '@/shared/api/authService';
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
 import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
-import { shareGame } from '@/shared/utils/gameSharing';
-import { createSharedGameRecord } from '@/shared/api/sharedGameService';
-import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
 import { createLogger } from '@/shared/utils/logger';
 const PerformanceStatsEnhanced = lazy(() => import('@/pages/profile/PerformanceStatsEnhanced'));
 import StatsOverview from '@/components/stats/StatsOverview';
@@ -35,12 +30,9 @@ const syncLogger = logger.child('sync');
 const autoSyncLogger = syncLogger.child('auto');
 
 const Account = () => {
-  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState('overview'); // overview, stats, games
+  const [activeTab, setActiveTab] = useState('overview'); // overview, stats, settings
   const [statsGameType, setStatsGameType] = useState('all'); // all, wizard, or specific table game type
-  const [gamesListType, setGamesListType] = useState('all'); // all, wizard, or specific table game type
-  const [gamesSearchQuery, setGamesSearchQuery] = useState('');
   const [savedGames, setSavedGames] = useState({});
   const [savedTableGames, setSavedTableGames] = useState([]);
   const [cloudGames, setCloudGames] = useState([]); // Games from API (includes identity consolidation)
@@ -50,14 +42,10 @@ const Account = () => {
   const [gameToDelete, setGameToDelete] = useState(null);
   const [deleteAll, setDeleteAll] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [uploadingGames, setUploadingGames] = useState(new Set()); // Track which games are currently uploading
-  const [gameSyncStatuses, setGameSyncStatuses] = useState({}); // Track sync status for each game
-  const [sharingGames, setSharingGames] = useState(new Set()); // Track which games are currently being shared
 
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
   const [showProfilePictureModal, setShowProfilePictureModal] = useState(false); // Profile picture modal
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState(getDefaultFilters());
+
   const [checkingForUpdates, setCheckingForUpdates] = useState(false);
   const [forcingUpdate, setForcingUpdate] = useState(false);
   const [autoUpdate, setAutoUpdate] = useState(() => {
@@ -84,15 +72,6 @@ const Account = () => {
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [accountDeletionLoading, setAccountDeletionLoading] = useState(false);
 
-  // Convert saved games object to array and apply filters
-  const filteredGames = useMemo(() => {
-    const gamesArray = Object.entries(savedGames).map(([id, game]) => ({
-      ...game,
-      id
-    }));
-    return filterGames(gamesArray, filters);
-  }, [savedGames, filters]);
-
   const getCombinedLocalTableGames = useCallback(() => {
     const tableGames = LocalTableGameStorage.getSavedTableGamesList().map((game) => ({
       ...game,
@@ -106,10 +85,6 @@ const Account = () => {
 
     return [...tableGames, ...scoreboardGames].sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
   }, []);
-
-  const handleApplyFilters = (newFilters) => {
-    setFilters(newFilters);
-  };
 
   const checkForImportedGames = () => {
     const urlParams = new URLSearchParams(globalThis.location.search);
@@ -374,18 +349,10 @@ const Account = () => {
         try {
           const gameIds = Object.keys(allGames);
           if (gameIds.length > 0) {
-            const syncStatuses = await batchCheckGamesSyncStatus(gameIds);
-            setGameSyncStatuses(syncStatuses);
+            await batchCheckGamesSyncStatus(gameIds);
           }
         } catch (error) {
           syncLogger.debug('Error checking batch sync status', { error: error.message });
-          // Set all games as local on error
-          const gameIds = Object.keys(allGames);
-          const fallbackStatuses = {};
-          gameIds.forEach(id => {
-            fallbackStatuses[id] = { status: 'Local', synced: false };
-          });
-          setGameSyncStatuses(fallbackStatuses);
         }
       }, 1000); // Reduced delay since batch check is much faster
 
@@ -547,12 +514,6 @@ const Account = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDeleteGame = (gameId, isTableGame = false) => {
-    setGameToDelete({ id: gameId, isTableGame });
-    setDeleteAll(false);
-    setShowConfirmDialog(true);
-  };
-
   const handleConfirmDelete = () => {
     if (deleteAll) {
       // Clear all localStorage data
@@ -594,30 +555,6 @@ const Account = () => {
       minute: '2-digit',
       hour12: false
     });
-  };
-
-  const getGameDisplayDate = (game) => {
-    return (
-      game?.created_at ||
-      game?.referenceDate ||
-      game?._internalState?.referenceDate ||
-      game?.savedAt ||
-      game?.saved_at ||
-      game?.lastPlayed
-    );
-  };
-
-  const getGameRounds = (game) => {
-    if (game?._gameCategory === 'table') {
-      return game.totalRounds || game.gameData?.rows || game.gameData?.gameData?.rows || 0;
-    }
-
-    if (game.gameFinished) {
-      return game.total_rounds || game.totalRounds || game.round_data?.length || game.roundsCompleted || 0;
-    }
-
-    const currentRound = game._internalState?.currentRound ?? game.currentRound;
-    return currentRound ?? game.roundsCompleted ?? 0;
   };
 
   const handleLogout = async () => {
@@ -937,313 +874,6 @@ const Account = () => {
     }
   }, [message]);
 
-  // Cloud Sync Functions
-  const uploadSingleGameToCloud = async (gameId, gameData) => {
-    // Check authentication before attempting upload
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      // Navigate to login page
-      navigate('/login');
-      return { success: false, error: 'You must be logged in to upload games to the cloud. Please sign in and try again.', requiresAuth: true };
-    }
-
-    // Prevent uploading if already uploaded
-    if (LocalGameStorage.isGameUploaded(gameId)) {
-      return { success: false, error: 'Game already uploaded', isDuplicate: true };
-    }
-    
-    syncLogger.debug('Preparing game upload', {
-      gameId,
-      timestamp: gameData.created_at,
-      players: gameData.players?.length || 0
-    });
-    
-    syncLogger.debug('Game structure check', {
-      hasRoundData: !!gameData.roundData,
-      hasRound_data: !!gameData.round_data,
-      hasTotalRounds: !!gameData.total_rounds,
-      hasMaxRounds: !!gameData.maxRounds,
-      gameFinished: gameData.gameFinished,
-      hasPlayers: !!(gameData.players && gameData.players.length > 0),
-      hasVersion: !!gameData.version
-    });
-    
-    // Sanitize game data before upload (fix round reduction bug on PWA)
-    // This prevents validation errors when rounds are reduced but data isn't properly updated
-    // Handle both round_data and roundData (internal format)
-    const roundDataArray = gameData.round_data || gameData.roundData;
-    if (roundDataArray && Array.isArray(roundDataArray)) {
-      const actualRounds = roundDataArray.length;
-      const declaredRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
-      
-      // Check round data quality
-      const emptyRounds = roundDataArray.filter(r => !r || !r.players || r.players.length === 0).length;
-      const incompleteRounds = roundDataArray.filter(r => {
-        if (!r || !r.players) return true;
-        return r.players.some(p => p.call === null || p.call === undefined || p.made === null || p.made === undefined);
-      }).length;
-      
-      // Find last complete round (for trimming incomplete rounds at the end)
-      let lastCompleteRoundIndex = actualRounds - 1;
-      for (let i = actualRounds - 1; i >= 0; i--) {
-        const round = roundDataArray[i];
-        if (round && round.players && round.players.length > 0) {
-          const isComplete = round.players.every(p => 
-            p.made !== null && p.made !== undefined && 
-            p.score !== null && p.score !== undefined
-          );
-          if (isComplete) {
-            lastCompleteRoundIndex = i;
-            break;
-          }
-        }
-      }
-      
-      syncLogger.debug('Round validation', {
-        declared: declaredRounds,
-        actual: actualRounds,
-        finished: gameData.gameFinished,
-        emptyRounds,
-        incompleteRounds,
-        lastCompleteRound: lastCompleteRoundIndex + 1,
-        firstRound: roundDataArray[0] ? {
-          hasPlayers: !!roundDataArray[0].players,
-          playerCount: roundDataArray[0].players?.length || 0
-        } : null
-      });
-      
-      // Case 1: Game is finished and has incomplete rounds at the end - trim to last complete round
-      if (gameData.gameFinished && incompleteRounds > 0 && lastCompleteRoundIndex < actualRounds - 1) {
-        const newRoundCount = lastCompleteRoundIndex + 1;
-        syncLogger.info('Trimming incomplete rounds', { actualRounds, newRoundCount, reason: 'last complete round' });
-        
-        if (gameData.round_data) {
-          gameData.round_data = gameData.round_data.slice(0, newRoundCount);
-        }
-        if (gameData.roundData) {
-          gameData.roundData = gameData.roundData.slice(0, newRoundCount);
-        }
-        if (gameData.total_rounds) {
-          gameData.total_rounds = newRoundCount;
-        }
-        if (gameData.maxRounds) {
-          gameData.maxRounds = newRoundCount;
-        }
-      }
-      // Case 2: round_data has more entries than total_rounds (old bug)
-      else if (actualRounds > declaredRounds) {
-        syncLogger.info('Trimming extra rounds', { actualRounds, declaredRounds });
-        if (gameData.round_data) {
-          gameData.round_data = gameData.round_data.slice(0, declaredRounds);
-        }
-        if (gameData.roundData) {
-          gameData.roundData = gameData.roundData.slice(0, declaredRounds);
-        }
-      }
-      
-      // Case 3: total_rounds is larger than actual round_data (game finished early after reducing rounds)
-      else if (declaredRounds > actualRounds && gameData.gameFinished) {
-        syncLogger.info('Adjusting total rounds to actual', { declaredRounds, actualRounds });
-        if (gameData.total_rounds) {
-          gameData.total_rounds = actualRounds;
-        }
-        if (gameData.maxRounds) {
-          gameData.maxRounds = actualRounds;
-        }
-      }
-      
-      // Also trim/fix players' rounds arrays if they exist
-      if (gameData.players && Array.isArray(gameData.players)) {
-        const targetRounds = gameData.total_rounds || gameData.maxRounds || actualRounds;
-        gameData.players = gameData.players.map(player => {
-          if (player.rounds && player.rounds.length > targetRounds) {
-            syncLogger.debug('Trimming player rounds', {
-              gameId,
-              playerName: player.name,
-              originalRounds: player.rounds.length,
-              targetRounds,
-            });
-            return {
-              ...player,
-              rounds: player.rounds.slice(0, targetRounds)
-            };
-          }
-          return player;
-        });
-      }
-    } else {
-      syncLogger.warn('No round data found in game', { gameId });
-    }
-    
-    try {
-      const { createGame } = await import('@/shared/api/gameService');
-      syncLogger.info('Attempting game upload', { gameId });
-      const result = await createGame(gameData, gameId);
-      syncLogger.info('Upload successful', { gameId, cloudId: result.game?.id });
-      if (result.duplicate) {
-        // Mark as uploaded with existing cloud ID
-        LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
-        if (typeof loadSavedGames === 'function') await loadSavedGames();
-        if (typeof window !== 'undefined') {
-          const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
-          const syncStatuses = await checkAllGamesSyncStatus();
-          setGameSyncStatuses(syncStatuses);
-        }
-        return { success: true, isDuplicate: true, cloudGameId: result.game.id };
-      } else {
-        LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
-        if (typeof loadSavedGames === 'function') await loadSavedGames();
-        if (typeof window !== 'undefined') {
-          const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
-          const syncStatuses = await checkAllGamesSyncStatus();
-          setGameSyncStatuses(syncStatuses);
-          // Dispatch event to notify leaderboard of new game
-          window.dispatchEvent(new CustomEvent('gameUploaded'));
-        }
-        return { success: true, cloudGameId: result.game.id };
-      }
-    } catch (error) {
-      syncLogger.error('Upload failed', {
-        gameId, 
-        error: error.message,
-        validationErrors: error.message.includes('validation') ? error.message.split('\n') : null
-      });
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Upload single table game to cloud
-  const uploadSingleTableGameToCloud = async (gameId, gameData) => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      navigate('/login');
-      return { success: false, error: 'You must be logged in to upload table games to the cloud. Please sign in and try again.', requiresAuth: true };
-    }
-
-    try {
-      const { createTableGame } = await import('@/shared/api/tableGameService');
-      // Extract the inner gameData if this is a full saved game wrapper
-      const innerGameData = gameData?.gameData || gameData;
-      const result = await createTableGame(innerGameData, gameId);
-      
-      if (result.duplicate) {
-        LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
-        await loadSavedGames();
-        return { success: true, isDuplicate: true, cloudGameId: result.game._id };
-      } else {
-        LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
-        await loadSavedGames();
-        return { success: true, cloudGameId: result.game._id };
-      }
-    } catch (error) {
-      // If error suggests game was deleted from server, clear upload status
-      if (error.message.includes('not found') || error.message.includes('404')) {
-        syncLogger.warn('Table game not found on server, clearing upload status', { gameId });
-        LocalTableGameStorage.clearUploadStatus(gameId);
-        await loadSavedGames();
-      }
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Share Game Function
-  const handleShareGame = async (gameId, gameData) => {
-    syncLogger.debug('handleShareGame called', { gameId, hasGameData: !!gameData });
-    
-    // Check authentication before attempting to share
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      // Navigate to login page
-      navigate('/login');
-      return;
-    }
-    
-    if (gameData.isPaused) {
-      setMessage({ text: t('accountMessages.cannotSharePaused'), type: 'error' });
-      return;
-    }
-
-    // Check if this is an imported shared game - prevent re-sharing to avoid confusion
-    if (gameData.isImported || gameData.isShared || gameData.originalGameId) {
-      setMessage({ text: t('accountMessages.cannotShareImported'), type: 'error' });
-      return;
-    }
-
-    let syncStatus = gameSyncStatuses[gameId];
-    let isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
-
-    // If not synced, upload first using the new backend sync
-    if (!isGameOnline) {
-      try {
-        const { ensureGameSynced } = await import('@/shared/utils/ensureGameSynced');
-        const syncSuccess = await ensureGameSynced(gameId, gameData, setMessage);
-        
-        if (!syncSuccess) {
-          setMessage({ text: t('accountMessages.syncBeforeShareFailed'), type: 'error' });
-          return;
-        }
-        
-        // Force reload sync status after upload
-        if (typeof loadSavedGames === 'function') await loadSavedGames();
-        if (typeof window !== 'undefined') {
-          const { checkAllGamesSyncStatus } = await import('@/shared/utils/syncChecker');
-          const syncStatuses = await checkAllGamesSyncStatus();
-          setGameSyncStatuses(syncStatuses);
-          syncLogger.debug('Updated sync statuses after share upload', { syncStatuses });
-        }
-        // Update syncStatus after upload
-        syncStatus = gameSyncStatuses[gameId];
-        isGameOnline = syncStatus?.status === 'Online' || syncStatus?.status === 'Synced';
-      } catch (error) {
-        setMessage({ text: t('accountMessages.syncBeforeShareError', { error: error.message }), type: 'error' });
-        syncLogger.error('Failed to sync before sharing', { error });
-        return;
-      }
-    }
-
-    if (!isGameOnline) {
-      setMessage({ text: t('accountMessages.gameMustBeUploaded'), type: 'error' });
-      syncLogger.warn('Tried to share game that is not online', { gameId, syncStatus });
-      return;
-    }
-
-    setSharingGames(prev => new Set([...prev, gameId]));
-    try {
-      // Use cloudGameId for sharing if available, else fallback to local gameId
-      let idToShare = gameData.cloudGameId || gameData.id || gameId;
-      const gameToShare = {
-        ...gameData,
-        id: idToShare
-      };
-      syncLogger.debug('Prepared game for share', { gameId, idToShare });
-      // Generate share link and handle sharing
-      const shareResult = await shareGame(gameToShare);
-      if (shareResult.success) {
-        // Create shared game record in cloud
-        const shareId = shareResult.url.split('/').pop();
-        await createSharedGameRecord(gameData, shareId);
-        if (shareResult.method === 'native') {
-          setMessage({ text: t('accountMessages.gameSharedSuccess'), type: 'success' });
-        } else {
-          setMessage({ text: t('accountMessages.shareLinkCopied'), type: 'success' });
-        }
-      } else {
-        setMessage({ text: t('accountMessages.shareGameFailed'), type: 'error' });
-      }
-    } catch (error) {
-      syncLogger.error('Failed to share game', { gameId, error });
-      setMessage({ text: t('accountMessages.shareFailed', { error: error.message }), type: 'error' });
-    } finally {
-      // Delay spinner removal for 1.5s to allow UI to update smoothly
-      setTimeout(() => {
-        setSharingGames(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(gameId);
-          return newSet;
-        });
-      }, 3000);
-    }
-  };
 
   // Calculate overview stats from all games using shared hook
   const allGamesForOverview = useMemo(() => {
@@ -1331,93 +961,6 @@ const Account = () => {
     return types;
   }, [savedGames, savedTableGames, cloudGames, user]);
 
-  // Build a map of game ID -> ELO data from cloud games
-  const gameEloMap = useMemo(() => {
-    const map = new Map();
-    cloudGames.forEach(game => {
-      if (game.id && (game.eloChange !== undefined || game.eloRating !== undefined)) {
-        map.set(game.id.toString(), {
-          change: game.eloChange,
-          rating: game.eloRating,
-          placement: game.eloPlacement
-        });
-      }
-    });
-    return map;
-  }, [cloudGames]);
-
-  // Game type options for the Games tab selector (includes "All" option)
-  const gamesListGameTypes = useMemo(() => {
-    const types = [{ value: 'all', label: t('common.all', 'All') }];
-    
-    if (Object.keys(savedGames).length > 0) {
-      types.push({ value: 'wizard', label: 'Wizard' });
-    }
-    
-    const tableGameTypes = new Set();
-    savedTableGames.forEach(game => {
-      const gameType = game.gameTypeName || game.name;
-      if (gameType) tableGameTypes.add(gameType);
-    });
-    
-    tableGameTypes.forEach(type => {
-      types.push({ value: type, label: type });
-    });
-    
-    return types;
-  }, [savedGames, savedTableGames, t]);
-
-
-  // Merge and filter games for the Games tab based on type, search, and date range
-  const displayedGames = useMemo(() => {
-    // Build a unified list: wizard games + table games, each tagged with their source type
-    let allGames = [];
-
-    if (gamesListType === 'all' || gamesListType === 'wizard') {
-      filteredGames.forEach(game => {
-        allGames.push({ ...game, _gameCategory: 'wizard' });
-      });
-    }
-
-    if (gamesListType === 'all') {
-      savedTableGames.forEach(game => {
-        allGames.push({ ...game, _gameCategory: 'table' });
-      });
-    } else if (gamesListType !== 'wizard') {
-      // Specific table game type selected
-      savedTableGames
-        .filter(g => (g.gameTypeName || g.name) === gamesListType)
-        .forEach(game => {
-          allGames.push({ ...game, _gameCategory: 'table' });
-        });
-    }
-
-    // Apply search filter
-    if (gamesSearchQuery.trim()) {
-      const q = gamesSearchQuery.trim().toLowerCase();
-      allGames = allGames.filter(game => {
-        const name = (game._gameCategory === 'wizard' ? 'wizard' : (game.name || '')).toLowerCase();
-        const players = game.players
-          ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
-              ? game.players.join(' ')
-              : game.players.map(p => p.name || '').join(' '))
-          : '';
-        return name.includes(q) || players.toLowerCase().includes(q);
-      });
-    }
-
-
-
-    // Sort by date descending (newest first)
-    allGames.sort((a, b) => {
-      const dateA = new Date(getGameDisplayDate(a) || 0);
-      const dateB = new Date(getGameDisplayDate(b) || 0);
-      return dateB - dateA;
-    });
-
-    return allGames;
-  }, [filteredGames, savedTableGames, gamesListType, gamesSearchQuery]);
-
   // Auto-select first available game type if 'all' or invalid selection
   React.useEffect(() => {
     if (availableGameTypes.length > 0 && (statsGameType === 'all' || !availableGameTypes.find(t => t.value === statsGameType))) {
@@ -1504,12 +1047,6 @@ const Account = () => {
             onClick={() => setActiveTab('stats')}
           >
             {t('account.statsTab')}
-          </button>
-          <button 
-            className={`account-tab ${activeTab === 'games' ? 'active' : ''}`}
-            onClick={() => setActiveTab('games')}
-          >
-            {t('account.gamesTab')}
           </button>
           <button 
             className={`account-tab ${activeTab === 'settings' ? 'active' : ''}`}
@@ -1616,265 +1153,6 @@ const Account = () => {
               </div>
             )}
           </div>
-        )}
-
-        {activeTab === 'games' && (
-          <div className="tab-content">
-            <div 
-              className="settings-section"
-              style={{background: 'transparent', border: 'none', padding: '0'}}
-            >
-        </div>
-
-        {/* Search & Filters */}
-        <div className="games-filter-bar">
-          <div className="games-search-row">
-            <div className="games-search-wrapper">
-              <SearchIcon size={16} className="games-search-icon" />
-              <input
-                type="text"
-                className="games-search-input"
-                placeholder={t('account.searchGames', 'Search games...')}
-                value={gamesSearchQuery}
-                onChange={(e) => setGamesSearchQuery(e.target.value)}
-              />
-              {gamesSearchQuery && (
-                <button
-                  className="games-search-clear"
-                  onClick={() => setGamesSearchQuery('')}
-                  aria-label="Clear search"
-                >
-                  <XIcon size={14} />
-                </button>
-              )}
-            </div>
-            {gamesListGameTypes.length > 1 && (
-              <select 
-                className="games-type-select"
-                value={gamesListType}
-                onChange={(e) => setGamesListType(e.target.value)}
-              >
-                {gamesListGameTypes.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-        </div>
-
-        {/* Games Count */}
-        <div className="games-list-header">
-          <span className="games-list-count">
-            {t('account.gamesCount', { count: displayedGames.length, defaultValue: '{{count}} Games' })}
-          </span>
-        </div>
-
-        {/* Unified Games List */}
-        <div className="settings-section" style={{background: 'transparent', border: 'none', padding: '0'}}>
-          {displayedGames.length > 0 ? (
-            <div className="game-history">
-              {displayedGames.map((game) => {
-                if (game._gameCategory === 'wizard') {
-                  // Wizard game card
-                  const syncStatus = gameSyncStatuses[game.id];
-                  const status = syncStatus?.status || (game.isUploaded ? 'Synced' : 'Local');
-                  const isGameSynced = status === 'Synced';
-                  const needsUpload = status === 'Local';
-                  const isImportedGame = game.isImported || game.isShared || game.originalGameId;
-                  const isUploaded = LocalGameStorage.isGameUploaded(game.id);
-                  const badgeClass = status.toLowerCase().replace(' ', '-');
-                  const cloudGameId = syncStatus?.cloudGameId || game.cloudGameId;
-                  const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
-                  const showSync = needsUpload && !isImportedGame;
-                  const showShare = isGameSynced && !isImportedGame;
-
-                  return (
-                    <SwipeableGameCard
-                      key={game.id}
-                      onDelete={() => handleDeleteGame(game.id)}
-                      onSync={showSync ? async () => {
-                        if (uploadingGames.has(game.id) || isUploaded) return;
-                        if (!user) { navigate('/login'); return; }
-                        setUploadingGames(prev => new Set([...prev, game.id]));
-                        try {
-                          const result = await uploadSingleGameToCloud(game.id, game);
-                          setMessage({ text: result.isDuplicate ? t('accountMessages.gameAlreadyUploadedMarked') : t('accountMessages.gameUploadedSuccess'), type: 'success' });
-                          await loadSavedGames();
-                        } catch (error) {
-                          setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                        } finally {
-                          setUploadingGames(prev => { const newSet = new Set(prev); newSet.delete(game.id); return newSet; });
-                        }
-                      } : undefined}
-                      onShare={showShare ? () => {
-                        if (!user) { setMessage({ text: t('accountMessages.signInToShare'), type: 'error' }); return; }
-                        handleShareGame(game.id, game);
-                      } : undefined}
-                      detailsPath={`/game/${game.id}`}
-                      isUploading={uploadingGames.has(game.id)}
-                      isSharing={sharingGames.has(game.id)}
-                      showSync={showSync}
-                      showShare={showShare}
-                      syncTitle={
-                        uploadingGames.has(game.id) ? t('account.syncTitleUploading') :
-                        isUploaded ? t('account.syncTitleAlreadyUploaded') :
-                        game.isPaused ? t('account.syncTitleCannotUploadPaused') :
-                        !user ? t('account.syncTitleSignInToUpload') :
-                        t('account.syncTitleUploadToCloud')
-                      }
-                      shareTitle={
-                        !user ? t('account.shareTitleSignIn') :
-                        game.isPaused ? t('account.shareTitleCannotSharePaused') :
-                        sharingGames.has(game.id) ? t('account.shareTitleSharing') :
-                        t('account.shareTitleShareGame')
-                      }
-                      disableSync={game.isPaused || uploadingGames.has(game.id) || isUploaded}
-                      disableShare={!user || game.isPaused || sharingGames.has(game.id)}
-                    >
-                      <div className={`game-card ${game.isImported ? 'imported-game' : ''}`}>
-                        <div className="settings-card-header">
-                          <div className="game-info">
-                            <div className="game-name">
-                              {t('common.wizard')}
-                              {game.isPaused ? ' | ' + t('common.paused') : ''}
-                            </div>
-                            <div className="game-badges">
-                              {eloData && eloData.change !== undefined && (
-                                <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
-                                  {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
-                                </span>
-                              )}
-                              <span className={`mode-badge ${badgeClass}`}>
-                                {status}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="game-players">
-                            <UsersIcon size={12} />{" "}
-                            {game.players && game.players.length > 0
-                              ? (Array.isArray(game.players[0]) || typeof game.players[0] === 'string'
-                                  ? game.players.join(", ")
-                                  : game.players.map(p => p.name || t('common.unknownPlayer')).join(", "))
-                              : t('common.noPlayers')}
-                          </div>
-                          <div className="actions-game-history">
-                            <div className="bottom-actions-game-history">
-                              <div className="game-rounds">{t('common.rounds')}: {getGameRounds(game)}</div>
-                              <div className="game-date">
-                                {formatDate(getGameDisplayDate(game))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SwipeableGameCard>
-                  );
-                } else {
-                  // Table game card
-                  const isUploaded = game.storageType === 'scoreboard'
-                    ? LocalScoreboardGameStorage.isGameUploaded(game.id)
-                    : LocalTableGameStorage.isGameUploaded(game.id);
-                  const showSync = !isUploaded && game.gameFinished;
-                  const cloudGameId = game.cloudGameId;
-                  const eloData = cloudGameId ? gameEloMap.get(cloudGameId.toString()) : null;
-                  const isScoreboardGame =
-                    game.gameType === 'scoreboard'
-                    || game.scoreEntryMode === 'twoSideGesture'
-                    || game.gameData?.scoreEntryMode === 'twoSideGesture'
-                    || game.id?.startsWith?.('scoreboard_game_')
-                    || game.gameTypeName === 'Volleyball'
-                    || game.name === 'Volleyball';
-
-                  return (
-                    <SwipeableGameCard
-                      key={game.id}
-                      onDelete={() => handleDeleteGame(game.id, true)}
-                      onSync={showSync ? async () => {
-                        if (uploadingGames.has(game.id)) return;
-                        if (!user) { navigate('/login'); return; }
-                        setUploadingGames(prev => new Set([...prev, game.id]));
-                        try {
-                          const fullGame = game.storageType === 'scoreboard'
-                            ? LocalScoreboardGameStorage.getAllSavedTableGamesAllUsers()[game.id]
-                            : LocalTableGameStorage.getAllSavedTableGames()[game.id];
-                          const result = await uploadSingleTableGameToCloud(game.id, fullGame);
-                          setMessage({ 
-                            text: result.isDuplicate 
-                              ? t('accountMessages.tableGameAlreadyUploadedMarked') 
-                              : t('accountMessages.tableGameUploadedSuccess'), 
-                            type: 'success' 
-                          });
-                          await loadSavedGames();
-                        } catch (error) {
-                          setMessage({ text: `Upload failed: ${error.message}`, type: 'error' });
-                        } finally {
-                          setUploadingGames(prev => { const newSet = new Set(prev); newSet.delete(game.id); return newSet; });
-                        }
-                      } : undefined}
-                      detailsPath={isScoreboardGame ? `/scoreboard/${game.id}` : `/table/${game.id}`}
-                      isUploading={uploadingGames.has(game.id)}
-                      showSync={showSync}
-                      syncTitle={
-                        uploadingGames.has(game.id) ? t('account.syncTitleUploadingTableGame') :
-                        !game.gameFinished ? t('account.syncTitleCannotUploadUnfinished') :
-                        !user ? t('account.syncTitleSignInToUpload') :
-                        t('account.syncTitleUploadToCloud')
-                      }
-                      disableSync={uploadingGames.has(game.id)}
-                    >
-                      <div className="game-card table-game-card">
-                        <div className="settings-card-header">
-                          <div className="game-info">
-                            <div className="game-name">
-                              {game.gameTypeName || game.name}
-                            </div>
-                            <div className="game-badges">
-                              {eloData && eloData.change !== undefined && (
-                                <span className={`mode-badge ${eloData.change >= 0 ? 'elo-positive' : 'elo-negative'}`}>
-                                  {eloData.change >= 0 ? '+' : ''}{Math.round(eloData.change)} ELO
-                                </span>
-                              )}
-                              {isUploaded && (
-                                <span className="mode-badge synced" title={t('account.syncedToCloud')}>
-                                  {t('common.synced')}
-                                </span>
-                              )}
-                              {!isUploaded && (
-                                <span className="mode-badge table">
-                                  {t('common.local')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="game-players">
-                            <UsersIcon size={12} />{" "}
-                            {game.players.join(", ")}
-                          </div>
-                          <div className="actions-game-history">
-                            <div className="bottom-actions-game-history">
-                              <div>{isScoreboardGame ? t('common.sets') : t('common.rounds')}: {getGameRounds(game)}</div>
-                              <div className="game-date">
-                                {formatDate(getGameDisplayDate(game))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </SwipeableGameCard>
-                  );
-                }
-              })}
-            </div>
-          ) : (
-            <p className="no-games">{t('account.noGamesMatchFilters')}</p>
-          )}
-        </div>
-
-        {/* End of Games Tab */}
-        </div>
         )}
 
         {/* Settings Tab */}
@@ -2099,15 +1377,6 @@ const Account = () => {
           onClose={() => setShowConfirmDialog(false)}
           onConfirm={handleConfirmDelete}
           deleteAll={deleteAll}
-        />
-
-
-
-        <GameFilterModal
-          isOpen={showFilterModal}
-          onClose={() => setShowFilterModal(false)}
-          onApplyFilters={handleApplyFilters}
-          initialFilters={filters}
         />
 
         <ProfilePictureModal
