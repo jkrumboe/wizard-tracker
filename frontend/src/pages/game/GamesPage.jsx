@@ -70,7 +70,6 @@ const GamesPage = () => {
   const [gameSyncStatuses, setGameSyncStatuses] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  let isShowingCloudGames = false;
 
   const filteredGames = useMemo(() => {
     let games = filterGames(allGames, filters);
@@ -306,13 +305,11 @@ const GamesPage = () => {
             });
 
             setAllGames(mergedGames);
-            isShowingCloudGames = true;
             setGameSyncStatuses({});
           } catch (error) {
             console.debug('Failed to fetch cloud games, falling back to local:', error.message);
             const localGames = await fetchLocalGames();
             setAllGames(localGames);
-            isShowingCloudGames = false;
             if (localGames.length > 0) {
               try {
                 const wizardGameIds = localGames.filter(game => game.gameType !== 'table' && game.id).map(game => game.id);
@@ -329,17 +326,14 @@ const GamesPage = () => {
           try {
             const publicGames = await getRecentPublicGames(100);
             setAllGames(publicGames.map(game => ({ ...game, isCloud: true, isUploaded: true })));
-            isShowingCloudGames = true;
           } catch (error) {
             console.debug('Failed to fetch public games, falling back to local:', error.message);
             const localGames = await fetchLocalGames();
             setAllGames(localGames);
-            isShowingCloudGames = false;
           }
         } else {
           const localGames = await fetchLocalGames();
           setAllGames(localGames);
-          isShowingCloudGames = false;
         }
       } catch (error) {
         console.error('Error fetching games:', error);

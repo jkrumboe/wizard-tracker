@@ -394,7 +394,7 @@ export function GameStateProvider({ children }) {
     }
     
     return updatedRoundData;
-  }, []);
+  }, [gameState.templateConfig?.scoringFormula]);
 
   const buildInitialRoundData = useCallback((players, maxRounds, templateConfig = null) => {
     const patternKey = templateConfig?.roundPattern || 'pyramid';
@@ -511,7 +511,7 @@ export function GameStateProvider({ children }) {
         
         // If player has made values already entered, recalculate score for this round
         if (player.made !== null) {
-          const formula = gameState.templateConfig?.scoringFormula || WIZARD_FORMULA;
+          const formula = prevState.templateConfig?.scoringFormula || WIZARD_FORMULA;
           player.score = calculateScore(formula, player.call, player.made);
 
           // Update total score
@@ -570,7 +570,7 @@ export function GameStateProvider({ children }) {
         // This allows scores to be calculated when made values are entered early
         if (player.made !== null) {
           if (player.call !== null) {
-            const formula = gameState.templateConfig?.scoringFormula || WIZARD_FORMULA;
+            const formula = prevState.templateConfig?.scoringFormula || WIZARD_FORMULA;
             player.score = calculateScore(formula, player.call, player.made);
 
             // Calculate total score
