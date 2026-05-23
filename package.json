@@ -38,6 +38,7 @@
     "docker:rebuild": "docker compose down && docker compose build --no-cache && docker compose up -d",
     "health": "node scripts/health-check.js",
     "precommit": "npm run lint && npm run format:check && npm run test",
+    "prepare": "husky",
     "postinstall": "echo 'Run npm run setup for first-time setup or npm run verify to check your environment'"
   },
   "repository": {
@@ -55,5 +56,9 @@
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
   }
 }
