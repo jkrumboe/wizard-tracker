@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
-import Icon, { CheckMarkIcon, TrophyIcon, UsersIcon, ShieldIcon } from '@/components/ui/Icon';
+import Icon from '@/components/ui/Icon';
 import GameHistoryItem from '@/components/game/GameHistoryItem';
 import GameFilterModal from '@/components/modals/GameFilterModal';
 import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames } from '@/shared/api/gameService';
@@ -336,85 +336,33 @@ const GamesPage = () => {
   }, [user, isOnline]);
 
   const links = [
-    {
-      to: '/start?type=scoreboard',
-      label: t('gamesPage.scoreboardGames'),
-      description: t('gamesPage.scoreboardDescription'),
-      Icon: ScoreboardIcon,
-      customIcon: true,
-    },
-    {
-      to: '/start?type=call-made',
-      label: t('gamesPage.callAndMadeGames'),
-      description: t('gamesPage.callAndMadeDescription'),
-      Icon: CallAndMadeIcon,
-      customIcon: true,
-    },
-    {
-      to: '/start?type=table',
-      label: t('gamesPage.tableGames'),
-      description: t('gamesPage.tableDescription'),
-      Icon: TableTemplateIcon,
-      customIcon: true,
-    },
-    {
-      to: '/leaderboard',
-      label: t('nav.leaderboard'),
-      description: t('gamesPage.leaderboardDescription'),
-      Icon: TrophyIcon,
-      iconSize: 48,
-      strokeWidth: 1.5
-    },
-    {
-      to: '/friend-leaderboard',
-      label: t('nav.friendCompareShort'),
-      description: t('gamesPage.friendsDescription'),
-      Icon: UsersIcon,
-      iconSize: 48,
-      strokeWidth: 1.5
-    },
+    { to: '/start?type=scoreboard', label: t('gamesPage.scoreboardGames'), icon: 'Target'      },
+    { to: '/start?type=call-made',  label: t('gamesPage.callAndMadeGames'),  icon: 'Wand2'       },
+    { to: '/start?type=table',      label: t('gamesPage.tableGames'),         icon: 'Dices'       },
+    { to: '/leaderboard',           label: t('nav.leaderboard'),              icon: 'Trophy'      },
+    { to: '/friend-leaderboard',    label: t('nav.friendCompareShort'),       icon: 'Swords'      },
   ];
 
   if (user?.role === 'admin') {
-    links.push({
-      to: '/admin',
-      label: t('nav.adminPanel'),
-      description: t('gamesPage.adminDescription'),
-      Icon: ShieldIcon,
-      iconSize: 48,
-      strokeWidth: 1.5
-    });
+    links.push({ to: '/admin', label: t('nav.adminPanel'), icon: 'ShieldCheck' });
   }
 
   return (
     <div className="games-page">
 
       <div className="games-link-grid">
-        {links.map((item) => {
-          const LinkIcon = item.Icon;
-          return (
+        {links.map((item) => (
           <Link key={item.to} to={item.to} className="games-link-card">
-            <div className="games-link-icon" aria-hidden="true">
-              {item.customIcon ? <LinkIcon /> : <LinkIcon size={item.iconSize ?? 28} strokeWidth={item.strokeWidth} />}
+            <div className="games-link-icon-wrap" aria-hidden="true">
+              <Icon name={item.icon} size={28} strokeWidth={1.5} />
             </div>
-            <div className="games-link-text">
-              <h2>{item.label}</h2>
-              <p>{item.description}</p>
-            </div>
+            <span className="games-link-label">{item.label}</span>
           </Link>
-          );
-        })}
+        ))}
       </div>
 
       <section className="games-history-section">
-        <div className="section-header">
-          <h2>{t('home.gamesTitle')}</h2>
-          {!isOnline && user && (
-            <span className="offline-indicator" title={t('home.offlineIndicatorTitle')}>
-              {t('common.offline')}
-            </span>
-          )}
-        </div>
+
         {filteredGames.length > 0 ? (
           <div className="game-history">
             {filteredGames.map(game => (

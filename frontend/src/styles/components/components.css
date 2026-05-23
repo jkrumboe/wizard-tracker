@@ -2139,7 +2139,7 @@
 }
 
 /* Add fade effect at the bottom of the list */
-.game-history::after {
+/* .game-history::after {
   content: '';
   position: sticky;
   bottom: 0;
@@ -2151,7 +2151,7 @@
   -webkit-backdrop-filter: blur(4px);
   pointer-events: none;
   z-index: 1;
-}
+} */
 
 /* Scrollbar styling for game-history */
 .game-history::-webkit-scrollbar {
