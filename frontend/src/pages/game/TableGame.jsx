@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import PropTypes from 'prop-types';
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
+import { SkipForward } from 'lucide-react';
 import { LocalTableGameStorage, LocalScoreboardGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
@@ -48,6 +49,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   // Game settings
   const [targetNumber, setTargetNumber] = useState(null);
   const [lowIsBetter, setLowIsBetter] = useState(false);
+  const [allowEmptyAsZero, setAllowEmptyAsZero] = useState(false);
   const [scoreEntryMode, setScoreEntryMode] = useState(null);
   const [setTargets, setSetTargets] = useState({});
   const [pointHistoryBySet, setPointHistoryBySet] = useState({});
@@ -97,6 +99,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   const showTemplateSelectorRef = useRef(showTemplateSelector);
   const targetNumberRef = useRef(targetNumber);
   const lowIsBetterRef = useRef(lowIsBetter);
+  const allowEmptyAsZeroRef = useRef(allowEmptyAsZero);
   const scoreEntryModeRef = useRef(scoreEntryMode);
   const setTargetsRef = useRef(setTargets);
   const pointHistoryBySetRef = useRef(pointHistoryBySet);
@@ -285,6 +288,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             // This prevents altered local variants from overriding games created with system templates
             setTargetNumber(gameData.targetNumber || null);
             setLowIsBetter(gameData.lowIsBetter || false);
+            setAllowEmptyAsZero(gameData.allowEmptyAsZero || false);
             setScoreEntryMode(forceScoreEntryMode || gameData.scoreEntryMode || (gameData.gameType === 'scoreboard' ? 'twoSideGesture' : null));
             setSetTargets(gameData.setTargets || {});
             setPointHistoryBySet(gameData.pointHistoryBySet || {});
@@ -352,12 +356,13 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     showTemplateSelectorRef.current = showTemplateSelector;
     targetNumberRef.current = targetNumber;
     lowIsBetterRef.current = lowIsBetter;
+    allowEmptyAsZeroRef.current = allowEmptyAsZero;
     scoreEntryModeRef.current = scoreEntryMode;
     setTargetsRef.current = setTargets;
     pointHistoryBySetRef.current = pointHistoryBySet;
     teamMembersRef.current = teamMembers;
     gameFinishedRef.current = gameFinished;
-  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished]);
+  }, [players, rows, currentRound, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, allowEmptyAsZero, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished]);
 
   // Note: We intentionally removed the template sync useEffect that was here.
   // It was causing issues where altered local variants would override settings
@@ -400,6 +405,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             timestamp: new Date().toISOString(),
             targetNumber: targetNumber,
             lowIsBetter: lowIsBetter,
+            allowEmptyAsZero: allowEmptyAsZero,
             scoreEntryMode: scoreEntryMode,
             setTargets: setTargets,
             pointHistoryBySet: pointHistoryBySet,
@@ -422,6 +428,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               name: name,
               targetNumber: targetNumber,
               lowIsBetter: lowIsBetter,
+              allowEmptyAsZero: allowEmptyAsZero,
               scoreEntryMode: scoreEntryMode,
               setTargets: setTargets,
               pointHistoryBySet: pointHistoryBySet,
@@ -436,7 +443,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     }, 5000); // Save every 5 seconds
     
     return () => clearInterval(autoSaveInterval);
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished, t, activeStorage]);
+  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, allowEmptyAsZero, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished, t, activeStorage]);
 
   // Auto-save game when navigating away or closing tab
   useEffect(() => {
@@ -453,6 +460,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
       const isShowingTemplateSelector = showTemplateSelectorRef.current;
       const currentTargetNumber = targetNumberRef.current;
       const currentLowIsBetter = lowIsBetterRef.current;
+      const currentAllowEmptyAsZero = allowEmptyAsZeroRef.current;
       const currentScoreEntryMode = scoreEntryModeRef.current;
       const currentSetTargets = setTargetsRef.current;
       const currentPointHistoryBySet = pointHistoryBySetRef.current;
@@ -481,6 +489,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
+            allowEmptyAsZero: currentAllowEmptyAsZero,
             scoreEntryMode: currentScoreEntryMode,
             setTargets: currentSetTargets,
             pointHistoryBySet: currentPointHistoryBySet,
@@ -503,6 +512,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               name: name,
               targetNumber: currentTargetNumber,
               lowIsBetter: currentLowIsBetter,
+              allowEmptyAsZero: currentAllowEmptyAsZero,
               scoreEntryMode: currentScoreEntryMode,
               setTargets: currentSetTargets,
               pointHistoryBySet: currentPointHistoryBySet,
@@ -527,6 +537,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
       const isShowingTemplateSelector = showTemplateSelectorRef.current;
       const currentTargetNumber = targetNumberRef.current;
       const currentLowIsBetter = lowIsBetterRef.current;
+      const currentAllowEmptyAsZero = allowEmptyAsZeroRef.current;
       const currentScoreEntryMode = scoreEntryModeRef.current;
       const currentSetTargets = setTargetsRef.current;
       const currentPointHistoryBySet = pointHistoryBySetRef.current;
@@ -554,6 +565,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
+            allowEmptyAsZero: currentAllowEmptyAsZero,
             scoreEntryMode: currentScoreEntryMode,
             setTargets: currentSetTargets,
             pointHistoryBySet: currentPointHistoryBySet,
@@ -576,6 +588,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               name: name,
               targetNumber: currentTargetNumber,
               lowIsBetter: currentLowIsBetter,
+              allowEmptyAsZero: currentAllowEmptyAsZero,
               scoreEntryMode: currentScoreEntryMode,
               setTargets: currentSetTargets,
               pointHistoryBySet: currentPointHistoryBySet,
@@ -674,6 +687,17 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
   // Navigation functions
   const nextRound = () => {
+    // If allowEmptyAsZero, zero-fill empty inputs for current round before advancing
+    if (allowEmptyAsZero) {
+      const roundIndex = currentRound - 1;
+      setPlayers(prev => prev.map(player => {
+        const points = [...player.points];
+        if (points[roundIndex] === '' || points[roundIndex] === undefined || points[roundIndex] === null) {
+          points[roundIndex] = 0;
+        }
+        return { ...player, points };
+      }));
+    }
     // If we're on the last round, add a new round
     if (currentRound >= rows) {
       setRows(rows + 1);
@@ -1108,6 +1132,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
 
   // Check if current round is complete (all players have entered points)
   const isCurrentRoundComplete = () => {
+    if (allowEmptyAsZero) return true;
     const roundIndex = currentRound - 1;
     return players.every(player => {
       const point = player.points[roundIndex];
@@ -1847,6 +1872,16 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                   title={t('tableGame.toggleSetTargetHint', { n: currentRound, target: getSetTarget() === 15 ? 25 : 15 })}
                 >
                   {getSetTarget() === 15 ? t('tableGame.setTargetTo25') : t('tableGame.setTargetTo15')}
+                </button>
+              )}
+              {!gameFinished && !isTwoSideScoreboard && (
+                <button
+                  type="button"
+                  className={`game-control-btn${allowEmptyAsZero ? ' active' : ''}`}
+                  onClick={() => setAllowEmptyAsZero(v => !v)}
+                  title={t('tableGame.allowEmptyAsZeroHint')}
+                >
+                  <SkipForward size={22} />
                 </button>
               )}
               {!targetNumber && !gameFinished && isCurrentRoundEmptyOrComplete() && (

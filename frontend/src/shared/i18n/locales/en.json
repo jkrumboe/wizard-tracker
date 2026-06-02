@@ -425,6 +425,7 @@
     "totalWithScore": "Total: {{score}}",
     "roundExplanation1": "Always enter the points for each player for the current round.",
     "roundExplanation2": "Use the navigation buttons below to move between rounds.",
+    "allowEmptyAsZeroHint": "Allow advancing to the next round without entering scores — empty inputs count as 0 points.",
     "standingsSubTab": "Standings",
     "chartsSubTab": "Charts",
     "tableSubTab": "Table",

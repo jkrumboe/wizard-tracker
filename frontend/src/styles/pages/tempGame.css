@@ -1147,6 +1147,12 @@
   background-color: var(--card-bg-hover);
 }
 
+.game-container .game-control-btn.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-on-primary, var(--text));
+}
+
 .game-container .nav-btn {
   background-color: var(--primary);
   color: var(--text);

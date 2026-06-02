@@ -425,6 +425,7 @@
     "totalWithScore": "Gesamt: {{score}}",
     "roundExplanation1": "Gib immer die Punkte für jeden Spieler für die aktuelle Runde ein.",
     "roundExplanation2": "Benutze die Navigations-Buttons unten, um zwischen den Runden zu wechseln.",
+    "allowEmptyAsZeroHint": "Erlaubt das Weitergehen zur nächsten Runde ohne Punkteeingabe – leere Felder zählen als 0 Punkte.",
     "standingsSubTab": "Platzierung",
     "chartsSubTab": "Diagramme",
     "tableSubTab": "Tabelle",
