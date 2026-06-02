@@ -112,8 +112,8 @@ const StartGame = () => {
     || normalizedSelectedGameTypeName === 'basketball';
 
   const getMaxPlayersForSelection = () => {
-    if (isTwoSideScoreboard) return MAX_PLAYERS_TABLE;
-    return isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE;
+    if (selectedGameType?.maxPlayers != null) return selectedGameType.maxPlayers;
+    return 100;
   };
 
   const getBalancedTeamIndex = (currentPlayers) => {
@@ -424,8 +424,9 @@ const StartGame = () => {
   };
 
   // --- Derived values ---
-  const maxPlayers = isTwoSideScoreboard ? MAX_PLAYERS_TABLE : (isCallAndMade ? MAX_PLAYERS_WIZARD : MAX_PLAYERS_TABLE);
-  const minPlayers = isTwoSideScoreboard ? 2 : (isCallAndMade ? MIN_PLAYERS_WIZARD : MIN_PLAYERS_TABLE);
+  const maxPlayers = getMaxPlayersForSelection();
+  const minPlayers = selectedGameType?.minPlayers
+    ?? (isTwoSideScoreboard ? 2 : (isCallAndMade ? MIN_PLAYERS_WIZARD : MIN_PLAYERS_TABLE));
   const teamOneCount = players.filter((p) => (p.teamIndex ?? 0) === 0).length;
   const teamTwoCount = players.filter((p) => (p.teamIndex ?? 0) === 1).length;
   const bothTeamsHavePlayers = !isTwoSideScoreboard || (teamOneCount > 0 && teamTwoCount > 0);

@@ -20,7 +20,7 @@ const requireAdmin = (req, res, next) => {
 // GET /api/game-templates/public - Get public system templates (no auth required)
 router.get('/public', catchAsync(async (req, res) => {
   const systemTemplates = await SystemGameTemplate.find({ isActive: true })
-    .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+    .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
     .sort({ name: 1 });
 
   res.json({ 
@@ -35,10 +35,10 @@ router.get('/', auth, catchAsync(async (req, res) => {
   // Get system templates and user's own templates in parallel
   const [systemTemplates, userTemplates] = await Promise.all([
     SystemGameTemplate.find({ isActive: true })
-      .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+      .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
       .sort({ name: 1 }),
     UserGameTemplate.find({ userId, approvedAsSystemTemplate: false })
-      .select('_id localId name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
+      .select('_id localId name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
       .sort({ name: 1 })
   ]);
 
@@ -66,6 +66,8 @@ router.post('/', auth, catchAsync(async (req, res) => {
       maxRounds,
       hasDealerRotation,
       hasForbiddenCall,
+      minPlayers,
+      maxPlayers,
     } = req.body;
     const userId = req.user._id;
 
@@ -113,6 +115,8 @@ router.post('/', auth, catchAsync(async (req, res) => {
       maxRounds: maxRounds || null,
       hasDealerRotation: hasDealerRotation !== undefined ? hasDealerRotation : true,
       hasForbiddenCall: hasForbiddenCall !== undefined ? hasForbiddenCall : true,
+      minPlayers: minPlayers ?? null,
+      maxPlayers: maxPlayers ?? null,
       description: description || '',
       descriptionMarkdown: descriptionMarkdown || ''
     });
@@ -141,6 +145,8 @@ router.put('/:id', auth, catchAsync(async (req, res) => {
       maxRounds,
       hasDealerRotation,
       hasForbiddenCall,
+      minPlayers,
+      maxPlayers,
     } = req.body;
     const userId = req.user._id;
 
@@ -160,6 +166,8 @@ router.put('/:id', auth, catchAsync(async (req, res) => {
     if (maxRounds !== undefined) template.maxRounds = maxRounds;
     if (hasDealerRotation !== undefined) template.hasDealerRotation = hasDealerRotation;
     if (hasForbiddenCall !== undefined) template.hasForbiddenCall = hasForbiddenCall;
+    if (minPlayers !== undefined) template.minPlayers = minPlayers;
+    if (maxPlayers !== undefined) template.maxPlayers = maxPlayers;
     if (description !== undefined) template.description = description;
     if (descriptionMarkdown !== undefined) template.descriptionMarkdown = descriptionMarkdown;
 
@@ -232,6 +240,8 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
       maxRounds: userTemplate.maxRounds || null,
       hasDealerRotation: userTemplate.hasDealerRotation !== false,
       hasForbiddenCall: userTemplate.hasForbiddenCall !== false,
+      minPlayers: userTemplate.minPlayers ?? null,
+      maxPlayers: userTemplate.maxPlayers ?? null,
       description: userTemplate.description,
       descriptionMarkdown: descriptionMarkdown || userTemplate.descriptionMarkdown || '',
       suggestionNote: suggestionNote || '',
@@ -244,6 +254,69 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
       message: 'Template suggestion submitted successfully',
       suggestion
     });
+}));
+
+// PUT /api/game-templates/system/:id - Directly update a system template (admin only)
+router.put('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const {
+      name,
+      targetNumber,
+      lowIsBetter,
+      gameCategory,
+      scoringFormula,
+      roundPattern,
+      maxRounds,
+      hasDealerRotation,
+      hasForbiddenCall,
+      description,
+      descriptionMarkdown,
+      minPlayers,
+      maxPlayers,
+    } = req.body;
+
+    const isMongoId = mongoose.Types.ObjectId.isValid(id);
+    let systemTemplate = null;
+
+    if (isMongoId) {
+      systemTemplate = await SystemGameTemplate.findById(id);
+    }
+
+    if (!systemTemplate) {
+      const builtin = getBuiltinSystemTemplateById(id);
+      if (builtin) {
+        systemTemplate = await SystemGameTemplate.findOne({ name: builtin.name });
+        if (!systemTemplate) {
+          systemTemplate = new SystemGameTemplate({
+            ...builtin,
+            createdBy: req.user._id,
+            isActive: true,
+          });
+        }
+      }
+    }
+
+    if (!systemTemplate) {
+      return res.status(404).json({ error: 'System template not found' });
+    }
+
+    if (name !== undefined) systemTemplate.name = name.trim();
+    if (targetNumber !== undefined) systemTemplate.targetNumber = targetNumber;
+    if (lowIsBetter !== undefined) systemTemplate.lowIsBetter = lowIsBetter;
+    if (gameCategory !== undefined) systemTemplate.gameCategory = gameCategory;
+    if (scoringFormula !== undefined) systemTemplate.scoringFormula = scoringFormula;
+    if (roundPattern !== undefined) systemTemplate.roundPattern = roundPattern;
+    if (maxRounds !== undefined) systemTemplate.maxRounds = maxRounds;
+    if (hasDealerRotation !== undefined) systemTemplate.hasDealerRotation = hasDealerRotation;
+    if (hasForbiddenCall !== undefined) systemTemplate.hasForbiddenCall = hasForbiddenCall;
+    if (description !== undefined) systemTemplate.description = description;
+    if (descriptionMarkdown !== undefined) systemTemplate.descriptionMarkdown = descriptionMarkdown;
+    if (minPlayers !== undefined) systemTemplate.minPlayers = minPlayers ?? null;
+    if (maxPlayers !== undefined) systemTemplate.maxPlayers = maxPlayers ?? null;
+
+    await systemTemplate.save();
+
+    res.json({ message: 'System template updated', template: systemTemplate });
 }));
 
 // POST /api/game-templates/system/:id/suggest-change - Suggest changes to a system template
@@ -262,6 +335,8 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
       description,
       descriptionMarkdown,
       suggestionNote,
+      minPlayers,
+      maxPlayers,
     } = req.body;
     const userId = req.user._id;
 
@@ -311,6 +386,8 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
       maxRounds: maxRounds !== undefined ? maxRounds : (systemTemplate.maxRounds || null),
       hasDealerRotation: hasDealerRotation !== undefined ? hasDealerRotation : (systemTemplate.hasDealerRotation !== false),
       hasForbiddenCall: hasForbiddenCall !== undefined ? hasForbiddenCall : (systemTemplate.hasForbiddenCall !== false),
+      minPlayers: minPlayers !== undefined ? minPlayers : (systemTemplate.minPlayers ?? null),
+      maxPlayers: maxPlayers !== undefined ? maxPlayers : (systemTemplate.maxPlayers ?? null),
       description: description !== undefined ? description : systemTemplate.description,
       descriptionMarkdown: descriptionMarkdown !== undefined ? descriptionMarkdown : systemTemplate.descriptionMarkdown,
       suggestionNote: suggestionNote || '',
@@ -332,7 +409,7 @@ router.get('/admin/suggestions', auth, requireAdmin, catchAsync(async (req, res)
       status: 'pending'
     })
       .populate('userId', 'username')
-      .populate('systemTemplateId', 'name')
+      .populate('systemTemplateId', 'name targetNumber lowIsBetter description gameCategory maxRounds hasDealerRotation hasForbiddenCall minPlayers maxPlayers')
       .sort({ createdAt: -1 });
 
     const hydratedSuggestions = suggestions.map((suggestion) => {
@@ -391,6 +468,8 @@ router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(asy
       systemTemplate.maxRounds = suggestion.maxRounds || null;
       systemTemplate.hasDealerRotation = suggestion.hasDealerRotation !== false;
       systemTemplate.hasForbiddenCall = suggestion.hasForbiddenCall !== false;
+      systemTemplate.minPlayers = suggestion.minPlayers ?? null;
+      systemTemplate.maxPlayers = suggestion.maxPlayers ?? null;
       systemTemplate.description = suggestion.description;
       systemTemplate.descriptionMarkdown = suggestion.descriptionMarkdown;
       await systemTemplate.save();
@@ -406,6 +485,8 @@ router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(asy
         maxRounds: suggestion.maxRounds || null,
         hasDealerRotation: suggestion.hasDealerRotation !== false,
         hasForbiddenCall: suggestion.hasForbiddenCall !== false,
+        minPlayers: suggestion.minPlayers ?? null,
+        maxPlayers: suggestion.maxPlayers ?? null,
         description: suggestion.description,
         descriptionMarkdown: suggestion.descriptionMarkdown || '',
         createdBy: suggestion.userId,

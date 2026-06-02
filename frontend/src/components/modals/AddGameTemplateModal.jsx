@@ -14,6 +14,7 @@ const AddGameTemplateModal = ({
   editMode = false,
   initialData = null,
   isSystemTemplate = false,
+  isAdmin = false,
   defaultGameCategory = 'table',
 }) => {
   const [gameName, setGameName] = useState('');
@@ -30,6 +31,9 @@ const AddGameTemplateModal = ({
   const [callAndMadeMaxRounds, setCallAndMadeMaxRounds] = useState(20);
   const [hasDealerRotation, setHasDealerRotation] = useState(true);
   const [hasForbiddenCall, setHasForbiddenCall] = useState(true);
+  // Player count limits
+  const [minPlayersInput, setMinPlayersInput] = useState('');
+  const [maxPlayersInput, setMaxPlayersInput] = useState('');
 
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'rules'
@@ -60,6 +64,8 @@ const AddGameTemplateModal = ({
         setCallAndMadeMaxRounds(initialData.maxRounds || 20);
         setHasDealerRotation(initialData.hasDealerRotation !== false);
         setHasForbiddenCall(initialData.hasForbiddenCall !== false);
+        setMinPlayersInput(initialData.minPlayers == null ? '' : String(initialData.minPlayers));
+        setMaxPlayersInput(initialData.maxPlayers == null ? '' : String(initialData.maxPlayers));
       } else {
         // Clear fields when creating new
         setGameName('');
@@ -75,6 +81,8 @@ const AddGameTemplateModal = ({
         setCallAndMadeMaxRounds(20);
         setHasDealerRotation(true);
         setHasForbiddenCall(true);
+        setMinPlayersInput('');
+        setMaxPlayersInput('');
       }
       setError('');
       setActiveTab('settings');
@@ -105,10 +113,28 @@ const AddGameTemplateModal = ({
       return;
     }
 
+    const parsedMin = minPlayersInput.trim() ? Number.parseInt(minPlayersInput, 10) : null;
+    const parsedMax = maxPlayersInput.trim() ? Number.parseInt(maxPlayersInput, 10) : null;
+
+    if (parsedMin != null && (Number.isNaN(parsedMin) || parsedMin < 1)) {
+      setError(t('templateModal.minPlayersError'));
+      return;
+    }
+    if (parsedMax != null && (Number.isNaN(parsedMax) || parsedMax < 1)) {
+      setError(t('templateModal.maxPlayersError'));
+      return;
+    }
+    if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
+      setError(t('templateModal.minMaxPlayersError'));
+      return;
+    }
+
     const settings = {
       gameCategory,
       description: description.trim(),
       descriptionMarkdown: descriptionMarkdown.trim(),
+      minPlayers: parsedMin,
+      maxPlayers: parsedMax,
     };
 
     if (gameCategory === 'table') {
@@ -146,6 +172,8 @@ const AddGameTemplateModal = ({
       gameCategory,
       description: description.trim(),
       descriptionMarkdown: descriptionMarkdown.trim(),
+      minPlayers: minPlayersInput.trim() ? Number.parseInt(minPlayersInput, 10) : null,
+      maxPlayers: maxPlayersInput.trim() ? Number.parseInt(maxPlayersInput, 10) : null,
     };
 
     if (gameCategory === 'table') {
@@ -241,6 +269,41 @@ const AddGameTemplateModal = ({
                   >
                     {t('templateModal.callAndMadeCategory')}
                   </button>
+                </div>
+              </div>
+
+              {/* Player count limits */}
+              <div className="add-section">
+                <label className="game-name-label">
+                  {t('templateModal.playerCountLabel')}
+                </label>
+                <div className="scoring-formula-fields">
+                  <div className="formula-field">
+                    <label htmlFor="min-players-input">{t('templateModal.minPlayersLabel')}</label>
+                    <input
+                      id="min-players-input"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={minPlayersInput}
+                      onChange={(e) => { setMinPlayersInput(e.target.value); setError(''); }}
+                      placeholder="2"
+                      className="game-name-input"
+                    />
+                  </div>
+                  <div className="formula-field">
+                    <label htmlFor="max-players-input">{t('templateModal.maxPlayersLabel')}</label>
+                    <input
+                      id="max-players-input"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={maxPlayersInput}
+                      onChange={(e) => { setMaxPlayersInput(e.target.value); setError(''); }}
+                      placeholder={t('templateModal.maxPlayersPlaceholder')}
+                      className="game-name-input"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -456,9 +519,14 @@ const AddGameTemplateModal = ({
               {t('templateModal.makeLocalChanges')}
             </button>
           )}
-          {editMode && isSystemTemplate && onSuggestChange && (
+          {editMode && isSystemTemplate && !isAdmin && onSuggestChange && (
             <button className="modal-btn suggest-btn" onClick={handleSuggestChange}>
               {t('templateModal.requestChanges')}
+            </button>
+          )}
+          {editMode && isSystemTemplate && isAdmin && (
+            <button className="modal-btn save-btn" onClick={handleSave}>
+              {t('templateModal.saveChanges')}
             </button>
           )}
           {editMode && !isSystemTemplate && onSuggest && (

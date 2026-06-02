@@ -39,6 +39,9 @@ export class LocalTableGameTemplate {
         maxRounds: settings.maxRounds || null,
         hasDealerRotation: settings.hasDealerRotation !== undefined ? settings.hasDealerRotation : true,
         hasForbiddenCall: settings.hasForbiddenCall !== undefined ? settings.hasForbiddenCall : true,
+        // Player count limits
+        minPlayers: settings.minPlayers ?? null,
+        maxPlayers: settings.maxPlayers ?? null,
       };
 
       const existingTemplates = this.getAllTemplates();
@@ -99,6 +102,12 @@ export class LocalTableGameTemplate {
         }
         if (settings.hasForbiddenCall !== undefined) {
           templates[templateId].hasForbiddenCall = settings.hasForbiddenCall;
+        }
+        if (settings.minPlayers !== undefined) {
+          templates[templateId].minPlayers = settings.minPlayers;
+        }
+        if (settings.maxPlayers !== undefined) {
+          templates[templateId].maxPlayers = settings.maxPlayers;
         }
         
         localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));

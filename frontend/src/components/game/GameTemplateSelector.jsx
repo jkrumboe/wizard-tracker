@@ -178,7 +178,9 @@ const GameTemplateSelector = ({
       lowIsBetter: systemTemplate.lowIsBetter,
       scoreEntryMode: systemTemplate.scoreEntryMode || null,
       description: systemTemplate.description || '',
-      descriptionMarkdown: systemTemplate.descriptionMarkdown || ''
+      descriptionMarkdown: systemTemplate.descriptionMarkdown || '',
+      minPlayers: systemTemplate.minPlayers ?? null,
+      maxPlayers: systemTemplate.maxPlayers ?? null,
     };
     
     // Save it locally
@@ -189,7 +191,9 @@ const GameTemplateSelector = ({
         lowIsBetter: localCopy.lowIsBetter,
         scoreEntryMode: localCopy.scoreEntryMode,
         description: localCopy.description,
-        descriptionMarkdown: localCopy.descriptionMarkdown
+        descriptionMarkdown: localCopy.descriptionMarkdown,
+        minPlayers: localCopy.minPlayers,
+        maxPlayers: localCopy.maxPlayers,
       }
     );
     
@@ -391,6 +395,20 @@ const GameTemplateSelector = ({
     }
   };
 
+  const handleSaveSystemTemplateDirectly = async (gameName, settings) => {
+    if (editingSystemTemplate) {
+      try {
+        await gameTemplateService.updateSystemTemplate(editingSystemTemplate._id, { name: gameName, ...settings });
+        setShowEditModal(false);
+        setEditingSystemTemplate(null);
+        loadSystemTemplates();
+      } catch (error) {
+        console.error('Error saving system template:', error);
+        alert(t('gameTemplates.changeRequestFailed'));
+      }
+    }
+  };
+
   const handleViewDetails = (template, e) => {
     e.stopPropagation();
     setDetailsTemplate(template);
@@ -403,6 +421,9 @@ const GameTemplateSelector = ({
     }
     return <span className="template-badge local-badge" title={t('gameTemplates.localBadgeTitle')}>{t('gameTemplates.localBadge')}</span>;
   };
+
+  const isCurrentUserAdmin = user?.role === 'admin';
+  const systemTemplateOnSave = isCurrentUserAdmin ? handleSaveSystemTemplateDirectly : undefined;
 
   return (
     <div className={`game-template-selector ${embedded ? 'embedded' : ''}`}>
@@ -596,13 +617,14 @@ const GameTemplateSelector = ({
           setEditingTemplate(null);
           setEditingSystemTemplate(null);
         }}
-        onSave={editingSystemTemplate ? undefined : handleSaveEdit}
+        onSave={editingSystemTemplate ? systemTemplateOnSave : handleSaveEdit}
         onSuggest={editingTemplate ? () => handleSuggestToAdmin(editingTemplate.id) : null}
         onSuggestChange={editingSystemTemplate ? handleSuggestSystemTemplateChanges : null}
         onMakeLocalChanges={editingSystemTemplate ? handleMakeLocalChangesClick : null}
         editMode={true}
         initialData={editingSystemTemplate || editingTemplate}
         isSystemTemplate={!!editingSystemTemplate}
+        isAdmin={isCurrentUserAdmin}
       />
 
       {/* Load Table Game Dialog */}

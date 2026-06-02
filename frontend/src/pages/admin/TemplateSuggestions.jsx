@@ -159,6 +159,16 @@ const TemplateSuggestions = () => {
                             oldValue={originalTemplate.description}
                             newValue={suggestion.description}
                           />
+                          <DiffView 
+                            label={t('adminTemplates.minPlayersLabel')} 
+                            oldValue={originalTemplate.minPlayers ?? t('adminTemplates.empty')}
+                            newValue={suggestion.minPlayers ?? t('adminTemplates.empty')}
+                          />
+                          <DiffView 
+                            label={t('adminTemplates.maxPlayersLabel')} 
+                            oldValue={originalTemplate.maxPlayers ?? t('adminTemplates.empty')}
+                            newValue={suggestion.maxPlayers ?? t('adminTemplates.empty')}
+                          />
                         </div>
                       </div>
 

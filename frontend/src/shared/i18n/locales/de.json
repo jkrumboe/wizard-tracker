@@ -946,7 +946,14 @@
     "maxRoundsLabel": "Max. Runden:",
     "gameRulesLabel": "Spielregeln:",
     "dealerRotationLabel": "Geber wechselt jede Runde",
-    "forbiddenCallLabel": "Letzter Ansager hat verbotene Ansage"
+    "forbiddenCallLabel": "Letzter Ansager hat verbotene Ansage",
+    "playerCountLabel": "Spieleranzahl:",
+    "minPlayersLabel": "Min. Spieler",
+    "maxPlayersLabel": "Max. Spieler (optional)",
+    "maxPlayersPlaceholder": "Unbegrenzt (bis zu 100)",
+    "minPlayersError": "Min. Spieler muss eine positive Zahl sein",
+    "maxPlayersError": "Max. Spieler muss eine positive Zahl sein",
+    "minMaxPlayersError": "Min. Spieler darf nicht größer als Max. Spieler sein"
   },
 
   "templateDetails": {
@@ -1115,6 +1122,8 @@
     "lowScore": "Niedrig",
     "highScore": "Hoch",
     "description": "Beschreibung",
+    "minPlayersLabel": "Min. Spieler",
+    "maxPlayersLabel": "Max. Spieler",
     "gameRulesChanges": "Spielregeländerungen:",
     "previousRules": "Vorherige Regeln:",
     "newRules": "Neue Regeln:",

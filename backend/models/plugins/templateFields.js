@@ -46,6 +46,14 @@ function templateFieldsPlugin(schema, options = {}) {
       type: Number,
       default: null,
     },
+    minPlayers: {
+      type: Number,
+      default: null,
+    },
+    maxPlayers: {
+      type: Number,
+      default: null,
+    },
     hasDealerRotation: {
       type: Boolean,
       default: true,

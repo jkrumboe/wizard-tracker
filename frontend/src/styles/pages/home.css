@@ -86,7 +86,6 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  background: transparent;
   color: var(--text);
   border: 2px solid var(--primary);
   border-radius: var(--radius-md);

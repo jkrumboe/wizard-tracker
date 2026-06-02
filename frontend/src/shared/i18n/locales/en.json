@@ -946,7 +946,14 @@
     "maxRoundsLabel": "Max Rounds:",
     "gameRulesLabel": "Game Rules:",
     "dealerRotationLabel": "Dealer rotates each round",
-    "forbiddenCallLabel": "Last caller has a forbidden call"
+    "forbiddenCallLabel": "Last caller has a forbidden call",
+    "playerCountLabel": "Player Count:",
+    "minPlayersLabel": "Min players",
+    "maxPlayersLabel": "Max players (optional)",
+    "maxPlayersPlaceholder": "Unlimited (up to 100)",
+    "minPlayersError": "Min players must be a positive number",
+    "maxPlayersError": "Max players must be a positive number",
+    "minMaxPlayersError": "Min players cannot be greater than max players"
   },
 
   "templateDetails": {
@@ -1115,6 +1122,8 @@
     "lowScore": "Low Score",
     "highScore": "High Score",
     "description": "Description",
+    "minPlayersLabel": "Min Players",
+    "maxPlayersLabel": "Max Players",
     "gameRulesChanges": "Game Rules Changes:",
     "previousRules": "Previous Rules:",
     "newRules": "New Rules:",

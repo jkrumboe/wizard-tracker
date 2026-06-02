@@ -8,6 +8,7 @@ const ENDPOINTS = {
   templates: `${API_BASE_URL}/api/game-templates`,
   suggest: (id) => `${API_BASE_URL}/api/game-templates/${id}/suggest`,
   suggestChange: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/suggest-change`,
+  updateSystemTemplate: (id) => `${API_BASE_URL}/api/game-templates/system/${id}`,
   adminSuggestions: `${API_BASE_URL}/api/game-templates/admin/suggestions`,
   approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
   rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
@@ -329,6 +330,40 @@ export const rejectSuggestion = async (id) => {
 };
 
 /**
+ * Directly update a system template (admin only)
+ * @param {string} id - System template ID or builtin template key
+ * @param {Object} data - Updated template data
+ * @returns {Promise<Object>} Updated template
+ */
+export const updateSystemTemplate = async (id, data) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(ENDPOINTS.updateSystemTemplate(id), {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update system template');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating system template:', error);
+    throw error;
+  }
+};
+
+/**
  * Suggest changes to a system template
  * @param {string} id - System template ID
  * @param {Object} changes - Proposed changes
@@ -371,6 +406,7 @@ export default {
   updateTemplate,
   deleteTemplate,
   suggestTemplate,
+  updateSystemTemplate,
   suggestSystemTemplateChanges,
   getAdminSuggestions,
   approveSuggestion,

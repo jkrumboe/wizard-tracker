@@ -10,6 +10,8 @@ export const WIZARD_TEMPLATE = {
   maxRounds: 20,
   hasDealerRotation: true,
   hasForbiddenCall: true,
+  minPlayers: 3,
+  maxPlayers: 6,
   description: 'The classic Wizard card game',
 };
 
@@ -28,6 +30,8 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
     targetNumber: 25,
     lowIsBetter: false,
     scoreEntryMode: 'twoSideGesture',
+    minPlayers: 2,
+    maxPlayers: 2,
     description: 'Two-side live scoreboard with tap and swipe controls.',
   },
   {
@@ -38,6 +42,8 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
     targetNumber: null,
     lowIsBetter: false,
     scoreEntryMode: 'twoSideGesture',
+    minPlayers: 2,
+    maxPlayers: 2,
     description: 'Two-side live scoreboard with +2/+3 and revert controls.',
   },
   {
@@ -47,6 +53,8 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
     isBuiltin: true,
     targetNumber: 100,
     lowIsBetter: true,
+    minPlayers: 2,
+    maxPlayers: 8,
     description: 'Classic Dutch card game — lowest score wins!',
   },
   {
@@ -56,6 +64,8 @@ export const BUILTIN_SYSTEM_TEMPLATES = [
     isBuiltin: true,
     targetNumber: null,
     lowIsBetter: true,
+    minPlayers: 2,
+    maxPlayers: 8,
     description: 'Flip cards and try to stay under 7 points.',
   },
 ];
