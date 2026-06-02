@@ -9,6 +9,7 @@
 
 html, body {
   height: 100%;
+  overflow: hidden;
 }
 
 :root {
@@ -54,7 +55,7 @@ html, body {
   --text-muted: #6b7280;
   
   /* Background colors */
-  --bg-color: #ebebeb;
+  --bg-color: #ffffff;
   --card-bg: #ffffff;
   --card-bg-light: #e2e8f0;
   --card-bg-alt: #b9c1cc;
@@ -350,7 +351,7 @@ button:disabled,
   /* padding-top: var(--spacing-md); */
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-  min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -596,13 +597,6 @@ html:not([data-theme="dark"]) .home-header {
 /* Navbar enhancement for light theme */
 html:not([data-theme="dark"]) .top-navbar .navbar-logo {
   color: var(--primary);
-}
-
-/* Bottom navbar enhancement for light theme */
-html:not([data-theme="dark"]) .bottom-navbar {
-  background-color: var(--card-bg);
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Enhanced input styling for light theme */

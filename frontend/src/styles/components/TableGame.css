@@ -49,7 +49,7 @@
 .table-game-container {
   width: 100%;
   max-width: 100vw;
-  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px);
+  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px - env(safe-area-inset-top, 0px));
   margin: 0 auto;
   padding: 0;
   margin-top: var(--spacing-md);
@@ -59,7 +59,7 @@
 .scoreboard-game-container {
   width: 100%;
   max-width: 100vw;
-  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px);
+  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px - env(safe-area-inset-top, 0px));
   margin: 0 auto;
   padding: 0;
   margin-top: var(--spacing-md);
@@ -101,7 +101,7 @@
 .table-game-container .game-in-progress {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 120px - env(safe-area-inset-top, 0px));
   max-width: 100%;
   margin: 0 auto;
   padding: 0;
