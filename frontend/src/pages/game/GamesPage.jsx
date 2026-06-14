@@ -294,16 +294,33 @@ const GamesPage = () => {
                 };
               });
 
-            const mergedGames = [...cloudGames];
-            localScoreboardGames.forEach((localGame) => {
-              const hasMatchingCloudGame = mergedGames.some((cloudGame) =>
+            // Also collect local wizard + table games that aren't yet in the cloud list
+            const allLocalGames = await fetchLocalGames();
+
+            // Helper: check if a local game is already represented in the cloud list
+            const isAlreadyInCloud = (localGame) =>
+              cloudGames.some((cloudGame) =>
                 cloudGame.id === localGame.id
                 || cloudGame.cloudId === localGame.id
                 || cloudGame.localId === localGame.id
+                || (localGame.cloudId && (cloudGame.id === localGame.cloudId || cloudGame.cloudId === localGame.cloudId))
               );
-              if (!hasMatchingCloudGame) mergedGames.push(localGame);
+
+            const mergedGames = [...cloudGames];
+
+            // Merge local wizard/table games not yet uploaded
+            allLocalGames.forEach((localGame) => {
+              if (!isAlreadyInCloud(localGame)) mergedGames.push(localGame);
             });
 
+            // Merge local scoreboard games (different storage)
+            localScoreboardGames.forEach((localGame) => {
+              if (!isAlreadyInCloud(localGame)) mergedGames.push(localGame);
+            });
+
+            mergedGames.sort((a, b) =>
+              new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
+            );
             setAllGames(mergedGames);
             setGameSyncStatuses({});
           } catch (error) {
@@ -324,10 +341,23 @@ const GamesPage = () => {
           }
         } else if (isOnline) {
           try {
-            const publicGames = await getRecentPublicGames(100);
-            setAllGames(publicGames.map(game => ({ ...game, isCloud: true, isUploaded: true })));
+            const [publicGames, localGames] = await Promise.all([
+              getRecentPublicGames(100).catch(() => []),
+              fetchLocalGames()
+            ]);
+            const formattedPublicGames = publicGames.map(game => ({ ...game, isCloud: true, isUploaded: true }));
+            // Always show local games first, then non-duplicate public games
+            const merged = [...localGames];
+            formattedPublicGames.forEach(pg => {
+              if (!merged.some(lg => lg.id === pg.id)) {
+                merged.push(pg);
+              }
+            });
+            setAllGames(merged.sort((a, b) =>
+              new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
+            ));
           } catch (error) {
-            console.debug('Failed to fetch public games, falling back to local:', error.message);
+            console.debug('Failed to fetch games for unauthenticated user, falling back to local:', error.message);
             const localGames = await fetchLocalGames();
             setAllGames(localGames);
           }
