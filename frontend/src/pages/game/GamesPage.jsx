@@ -6,9 +6,10 @@ import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import Icon, { CheckMarkIcon, SearchIcon, XIcon } from '@/components/ui/Icon';
 import GameHistoryItem from '@/components/game/GameHistoryItem';
 import GameFilterModal from '@/components/modals/GameFilterModal';
-import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames } from '@/shared/api/gameService';
+import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames, createGame } from '@/shared/api/gameService';
 import { getUserCloudTableGamesList } from '@/shared/api/tableGameService';
 import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage';
+import { LocalGameStorage } from '@/shared/api/localGameStorage';
 import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage';
 import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
 import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
@@ -374,6 +375,64 @@ const GamesPage = () => {
     };
 
     fetchGames();
+  }, [user, isOnline]);
+
+  // Auto-upload local games (all types) scored while not logged in
+  useEffect(() => {
+    if (!user || !isOnline) return;
+
+    const uploadPendingGames = async () => {
+      try {
+        const { createTableGame } = await import('@/shared/api/tableGameService');
+
+        // Wizard games
+        const localGames = LocalGameStorage.getAllSavedGames();
+        const unsyncedWizard = Object.entries(localGames).filter(([, game]) =>
+          game.gameFinished && !game.isUploaded && !game.isImported && !game.isShared && !game.originalGameId
+        );
+        for (let i = 0; i < unsyncedWizard.length; i++) {
+          const [gameId, gameData] = unsyncedWizard[i];
+          try {
+            if (i > 0) await new Promise(resolve => setTimeout(resolve, 300));
+            const result = await createGame(gameData, gameId);
+            if (result?.game?.id) LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
+          } catch { /* silent fail */ }
+        }
+
+        // Table games
+        const allTableGames = LocalTableGameStorage.getAllSavedTableGamesAllUsers();
+        const unsyncedTable = Object.entries(allTableGames).filter(([, game]) =>
+          game.gameFinished && !game.isUploaded
+        );
+        for (let i = 0; i < unsyncedTable.length; i++) {
+          const [gameId, record] = unsyncedTable[i];
+          try {
+            if (i > 0) await new Promise(resolve => setTimeout(resolve, 300));
+            const gameData = record.gameData?.gameData || record.gameData || record;
+            const result = await createTableGame(gameData, gameId);
+            if (result?.game?._id) LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
+          } catch { /* silent fail */ }
+        }
+
+        // Scoreboard games
+        const allScoreboardGames = LocalScoreboardGameStorage.getAllSavedTableGamesAllUsers();
+        const unsyncedScoreboard = Object.entries(allScoreboardGames).filter(([, game]) =>
+          game.gameFinished && !game.isUploaded
+        );
+        for (let i = 0; i < unsyncedScoreboard.length; i++) {
+          const [gameId, record] = unsyncedScoreboard[i];
+          try {
+            if (i > 0) await new Promise(resolve => setTimeout(resolve, 300));
+            const gameData = record.gameData?.gameData || record.gameData || record;
+            const result = await createTableGame(gameData, gameId);
+            if (result?.game?._id) LocalScoreboardGameStorage.markGameAsUploaded(gameId, result.game._id);
+          } catch { /* silent fail */ }
+        }
+      } catch { /* silent fail */ }
+    };
+
+    const timer = setTimeout(uploadPendingGames, 1500);
+    return () => clearTimeout(timer);
   }, [user, isOnline]);
 
   const links = [

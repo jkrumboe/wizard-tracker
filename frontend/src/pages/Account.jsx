@@ -399,6 +399,84 @@ const Account = () => {
           autoSyncLogger.warn('Auto-sync failed (local games remain available)', { error: error.message });
         }
       }, 2000); // Wait 2 seconds to avoid rate limiting with other checks
+
+      // Auto-upload: upload local games (all types) scored while not logged in
+      setTimeout(async () => {
+        try {
+          const { createGame } = await import('@/shared/api/gameService');
+          const { createTableGame } = await import('@/shared/api/tableGameService');
+          let totalUploaded = 0;
+
+          // Upload unsynced wizard games
+          const localGames = LocalGameStorage.getAllSavedGames();
+          const unsyncedWizard = Object.entries(localGames).filter(([, game]) =>
+            game.gameFinished && !game.isUploaded && !game.isImported && !game.isShared && !game.originalGameId
+          );
+          for (let i = 0; i < unsyncedWizard.length; i++) {
+            const [gameId, gameData] = unsyncedWizard[i];
+            try {
+              if (i > 0) await new Promise(resolve => setTimeout(resolve, 300));
+              const result = await createGame(gameData, gameId);
+              if (result?.game?.id) {
+                LocalGameStorage.markGameAsUploaded(gameId, result.game.id);
+                totalUploaded++;
+              }
+            } catch (uploadError) {
+              autoSyncLogger.warn('Failed to upload wizard game', { gameId, error: uploadError.message });
+            }
+          }
+
+          // Upload unsynced table games
+          const allTableGames = LocalTableGameStorage.getAllSavedTableGamesAllUsers();
+          const unsyncedTable = Object.entries(allTableGames).filter(([, game]) =>
+            game.gameFinished && !game.isUploaded
+          );
+          for (let i = 0; i < unsyncedTable.length; i++) {
+            const [gameId, record] = unsyncedTable[i];
+            try {
+              if (i > 0) await new Promise(resolve => setTimeout(resolve, 300));
+              const gameData = record.gameData?.gameData || record.gameData || record;
+              const result = await createTableGame(gameData, gameId);
+              if (result?.game?._id) {
+                LocalTableGameStorage.markGameAsUploaded(gameId, result.game._id);
+                totalUploaded++;
+              }
+            } catch (uploadError) {
+              autoSyncLogger.warn('Failed to upload table game', { gameId, error: uploadError.message });
+            }
+          }
+
+          // Upload unsynced scoreboard games
+          const allScoreboardGames = LocalScoreboardGameStorage.getAllSavedTableGamesAllUsers();
+          const unsyncedScoreboard = Object.entries(allScoreboardGames).filter(([, game]) =>
+            game.gameFinished && !game.isUploaded
+          );
+          for (let i = 0; i < unsyncedScoreboard.length; i++) {
+            const [gameId, record] = unsyncedScoreboard[i];
+            try {
+              if (i > 0) await new Promise(resolve => setTimeout(resolve, 300));
+              const gameData = record.gameData?.gameData || record.gameData || record;
+              const result = await createTableGame(gameData, gameId);
+              if (result?.game?._id) {
+                LocalScoreboardGameStorage.markGameAsUploaded(gameId, result.game._id);
+                totalUploaded++;
+              }
+            } catch (uploadError) {
+              autoSyncLogger.warn('Failed to upload scoreboard game', { gameId, error: uploadError.message });
+            }
+          }
+
+          if (totalUploaded > 0) {
+            autoSyncLogger.info('Uploaded pending local games to cloud', { totalUploaded });
+            setSavedGames(LocalGameStorage.getAllSavedGames());
+            setSavedTableGames(getCombinedLocalTableGames());
+          } else {
+            autoSyncLogger.debug('No unsynced local games to upload');
+          }
+        } catch (error) {
+          autoSyncLogger.warn('Auto-upload of local games failed', { error: error.message });
+        }
+      }, 3000); // Wait 3 seconds after the download sync
     }
   }, [user, getCombinedLocalTableGames]);
 
