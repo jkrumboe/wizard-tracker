@@ -213,29 +213,27 @@ const UserProfile = () => {
           <button className="account-tab">{t('profile.statsTab')}</button>
         </div>
 
-        <div className="account-content">
-          <div className="tab-content">
-            <div className="overview-grid">
-              <div className="game-type-card" style={{ cursor: 'default' }}>
-                <div className="game-type-header">
-                  <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
-                  <div className="game-type-stats">
-                    <div className="stat-item">
-                      <span className="stat-label">{t('account.winRateLabel')}</span>
-                      <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-label">{t('account.matchesLabel')}</span>
-                      <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
-                    </div>
+        <div className="tab-content">
+          <div className="overview-grid">
+            <div className="game-type-card" style={{ cursor: 'default' }}>
+              <div className="game-type-header">
+                <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
+                <div className="game-type-stats">
+                  <div className="stat-item">
+                    <span className="stat-label">{t('account.winRateLabel')}</span>
+                    <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">{t('account.matchesLabel')}</span>
+                    <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
                   </div>
                 </div>
-                <div className="game-type-recent-results">
-                  <div className="results-string">
-                    {Array.from({ length: 10 }).map((_, idx) => (
-                      <span key={idx} className="result-letter empty"></span>
-                    ))}
-                  </div>
+              </div>
+              <div className="game-type-recent-results">
+                <div className="results-string">
+                  {Array.from({ length: 10 }).map((_, idx) => (
+                    <span key={idx} className="result-letter empty"></span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -361,65 +359,63 @@ const UserProfile = () => {
         </button>
       </div>
 
-      <div className="account-content">
-        {activeTab === 'overview' && (
-          <div className="tab-content">
-            <StatsOverview 
-              games={profileUser?.games} 
-              user={profileUser} 
-              onGameTypeClick={handleGameTypeClick}
-              identityId={profileUser?.primaryIdentityId}
-            />
-          </div>
-        )}
+      {activeTab === 'overview' && (
+        <div className="tab-content">
+          <StatsOverview 
+            games={profileUser?.games} 
+            user={profileUser} 
+            onGameTypeClick={handleGameTypeClick}
+            identityId={profileUser?.primaryIdentityId}
+          />
+        </div>
+      )}
 
-        {activeTab === 'stats' && (
-          <div className="tab-content">
-            {!profileUser?.games || profileUser.games.length === 0 ? (
-              <div className="settings-section">
-                <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  {t('profile.noGamesForStats')}
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Game Type Selector */}
-                {availableGameTypes.length > 1 && (
-                  <div className="settings-section" style={{ padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: 'var(--spacing-sm)' }}>
-                    <select 
-                      className="game-type-selector"
-                      value={statsGameType}
-                      onChange={(e) => setStatsGameType(e.target.value)}
-                    >
-                      {availableGameTypes.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                
-                {allGamesForStats.length > 0 ? (
-                  <PerformanceStatsEnhanced 
-                    games={allGamesForStats} 
-                    currentPlayer={currentPlayer} 
-                    isWizardGame={statsGameType === 'wizard'}
-                    gameType={statsGameType}
-                    identityId={profileUser?.primaryIdentityId}
-                  />
-                ) : (
-                  <div className="settings-section">
-                    <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                      {t('profile.noGamesForType', { type: statsGameType })}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+      {activeTab === 'stats' && (
+        <div className="tab-content">
+          {!profileUser?.games || profileUser.games.length === 0 ? (
+            <div className="settings-section">
+              <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                {t('profile.noGamesForStats')}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Game Type Selector */}
+              {availableGameTypes.length > 1 && (
+                <div className="settings-section" style={{ padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: 'var(--spacing-sm)' }}>
+                  <select 
+                    className="game-type-selector"
+                    value={statsGameType}
+                    onChange={(e) => setStatsGameType(e.target.value)}
+                  >
+                    {availableGameTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {allGamesForStats.length > 0 ? (
+                <PerformanceStatsEnhanced 
+                  games={allGamesForStats} 
+                  currentPlayer={currentPlayer} 
+                  isWizardGame={statsGameType === 'wizard'}
+                  gameType={statsGameType}
+                  identityId={profileUser?.primaryIdentityId}
+                />
+              ) : (
+                <div className="settings-section">
+                  <p style={{ textAlign: 'center', padding: '40px 20px' }}>
+                    {t('profile.noGamesForType', { type: statsGameType })}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <ProfilePictureModal
         isOpen={showProfilePictureModal}
