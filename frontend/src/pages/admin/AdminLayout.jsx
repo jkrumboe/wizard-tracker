@@ -1,25 +1,46 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import userService from '@/shared/api/userService';
 import gameTemplateService from '@/shared/api/gameTemplateService';
-import {
-  MenuIcon, XIcon, UsersIcon, GamepadIcon, TrophyIcon,
-  ActivityIcon, AlertCircleIcon, ShieldCheckIcon, ClockIcon,
-  RefreshIcon, LinkIcon, UserCheckIcon, UserPlusIcon,
-  FileTextIcon, BarChartIcon, DatabaseIcon,
-} from '@/components/ui/Icon';
+import { MenuIcon, XIcon, AlertCircleIcon, ShieldCheckIcon, RefreshIcon } from '@/components/ui/Icon';
 import Icon from '@/components/ui/Icon';
+import { useUser } from '@/shared/hooks/useUser';
 import { useTranslation } from 'react-i18next';
 import '@/styles/pages/admin.css';
 
-const NAV_ITEMS = [
-  { path: '/admin/template-suggestions', key: 'templateSuggestions', icon: 'FileText', hasBadge: true },
-  { path: '/admin/users', key: 'userManagement', icon: 'Users' },
-  { path: '/admin/games', key: 'gameManagement', icon: 'Gamepad2', label: 'Games' },
-  { path: '/admin/game-linkage', key: 'gameLinkage', icon: 'Link' },
-  { path: '/admin/player-linking', key: 'playerLinking', icon: 'UserCheck' },
-  { path: '/admin/elo', key: 'eloManagement', icon: 'BarChart3' },
+// Navigation is grouped by what an admin is actually working on, so the rail
+// reads as four short lists instead of one flat column of six links.
+const NAV_GROUPS = [
+  {
+    key: 'navGroupOverview',
+    items: [
+      { path: '/admin', key: 'dashboard', icon: 'LayoutDashboard', exact: true },
+    ],
+  },
+  {
+    key: 'navGroupPeople',
+    items: [
+      { path: '/admin/users', key: 'userManagement', icon: 'Users' },
+      { path: '/admin/player-linking', key: 'playerLinking', icon: 'UserCheck' },
+    ],
+  },
+  {
+    key: 'navGroupGames',
+    items: [
+      { path: '/admin/games', key: 'gameManagement', icon: 'Gamepad2' },
+      { path: '/admin/game-linkage', key: 'gameLinkage', icon: 'Link' },
+      { path: '/admin/elo', key: 'eloManagement', icon: 'BarChart3' },
+    ],
+  },
+  {
+    key: 'navGroupContent',
+    items: [
+      { path: '/admin/template-suggestions', key: 'templateSuggestions', icon: 'FileText', hasBadge: true },
+    ],
+  },
 ];
+
+const NAV_ITEMS = NAV_GROUPS.flatMap(group => group.items).filter(item => !item.exact);
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -90,12 +111,24 @@ function MiniBarChart({ data, label }) {
 
 const AdminLayout = () => {
   const { t } = useTranslation();
+  const { user } = useUser();
   const location = useLocation();
   const isRootPath = location.pathname === '/admin' || location.pathname === '/admin/';
+
+  const isCurrent = useCallback(
+    (item) => (item.exact ? isRootPath : location.pathname === item.path),
+    [isRootPath, location.pathname]
+  );
+
+  const currentSection = useMemo(
+    () => NAV_ITEMS.find(item => item.path === location.pathname) || null,
+    [location.pathname]
+  );
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
   const [pendingSuggestions, setPendingSuggestions] = useState(0);
   const [loginHistoryModal, setLoginHistoryModal] = useState(null); // { username, history }
   const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
@@ -128,6 +161,20 @@ const AdminLayout = () => {
       setLoginHistoryLoading(false);
     }
   }, []);
+
+  // The drawer must not survive a navigation or an Escape press
+  useEffect(() => {
+    closeMobileMenu();
+  }, [location.pathname, closeMobileMenu]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') closeMobileMenu();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileMenuOpen, closeMobileMenu]);
 
   useEffect(() => {
     if (isRootPath) {
@@ -414,51 +461,85 @@ const AdminLayout = () => {
 
   return (
     <div className="admin-layout">
-      {/* Mobile Menu Button */}
-      <button
-        className="mobile-menu-toggle"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        aria-label={t('admin.toggleMenu')}
-      >
-        {mobileMenuOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
-      </button>
-
-      {/* Navigation Sidebar */}
-      <nav className={`admin-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-        <Link to="/admin" className="admin-nav-brand" onClick={() => setMobileMenuOpen(false)}>
-          <ShieldCheckIcon size={20} />
-          <h2>{t('admin.adminPanel')}</h2>
+      {/* Rail */}
+      <aside className={`admin-rail ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+        <Link to="/admin" className="admin-rail-brand" onClick={closeMobileMenu}>
+          <span className="admin-rail-mark">
+            <ShieldCheckIcon size={18} />
+          </span>
+          <span>
+            <h2>{t('admin.adminPanel')}</h2>
+            <span>{t('admin.railSubtitle')}</span>
+          </span>
         </Link>
-        <ul>
-          {NAV_ITEMS.map(item => (
-            <li key={item.path}>
-              <Link
-                to={item.path}
-                className={location.pathname === item.path ? 'active' : ''}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Icon name={item.icon} size={18} className="nav-link-icon" />
-                <span>{t(`admin.${item.key}`)}</span>
-                {item.hasBadge && pendingSuggestions > 0 && (
-                  <span className="nav-badge">{pendingSuggestions}</span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
 
-      {/* Mobile overlay */}
+        <div className="admin-rail-scroll">
+          {NAV_GROUPS.map(group => (
+            <div key={group.key} className="admin-nav-group">
+              <span className="admin-nav-group-label">{t(`admin.${group.key}`)}</span>
+              {group.items.map(item => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`admin-nav-link ${isCurrent(item) ? 'active' : ''}`}
+                  aria-current={isCurrent(item) ? 'page' : undefined}
+                  onClick={closeMobileMenu}
+                >
+                  <Icon name={item.icon} size={17} className="nav-link-icon" />
+                  <span>{t(`admin.${item.key}`)}</span>
+                  {item.hasBadge && pendingSuggestions > 0 && (
+                    <span className="nav-badge">{pendingSuggestions}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {user && (
+          <div className="admin-rail-footer">
+            <span className="admin-rail-avatar">{(user.username || '?').charAt(0).toUpperCase()}</span>
+            <span className="admin-rail-identity">
+              <strong>{user.username}</strong>
+              <span>{user.role}</span>
+            </span>
+          </div>
+        )}
+      </aside>
+
+      {/* Mobile drawer backdrop */}
       {mobileMenuOpen && (
-        <div
-          className="mobile-menu-overlay"
-          onClick={() => setMobileMenuOpen(false)}
-        />
+        <div className="mobile-menu-overlay" onClick={closeMobileMenu} />
       )}
 
-      <main className="admin-main">
-        {isRootPath ? renderDashboard() : <Outlet />}
-      </main>
+      {/* Workspace */}
+      <div className="admin-workspace">
+        <header className="admin-topbar">
+          <button
+            className="admin-menu-btn"
+            onClick={() => setMobileMenuOpen(open => !open)}
+            aria-label={t('admin.toggleMenu')}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <XIcon size={18} /> : <MenuIcon size={18} />}
+          </button>
+
+          <nav className="admin-breadcrumb" aria-label={t('admin.breadcrumbLabel')}>
+            <Link to="/admin">{t('admin.adminPanel')}</Link>
+            {currentSection && (
+              <>
+                <Icon name="ChevronRight" size={14} />
+                <span className="admin-breadcrumb-current">{t(`admin.${currentSection.key}`)}</span>
+              </>
+            )}
+          </nav>
+        </header>
+
+        {/* The single scrolling region of the admin area */}
+        <div className="admin-scroll">
+          {isRootPath ? renderDashboard() : <Outlet />}
+        </div>
+      </div>
     </div>
   );
 };

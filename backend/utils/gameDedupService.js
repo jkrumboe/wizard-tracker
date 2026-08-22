@@ -210,6 +210,33 @@ function groupDuplicates(docs, { fingerprint, includeDate = true, sameUserOnly =
 }
 
 /**
+ * Compact, API-safe description of a game document.
+ * @param {Object} doc - WizardGame or TableGame document
+ * @param {string} type - 'wizard' or 'table'
+ * @returns {Object}
+ */
+function summarizeGameDoc(doc, type) {
+  const gameData = unwrapGameData(doc);
+  const players = Array.isArray(gameData?.players)
+    ? gameData.players.map(player => (typeof player === 'string' ? player : player?.name)).filter(Boolean)
+    : [];
+
+  return {
+    id: String(doc._id),
+    type,
+    localId: doc.localId || null,
+    userId: doc.userId ? String(doc.userId) : null,
+    name: doc.gameTypeName || doc.name || gameData?.gameName || null,
+    players,
+    playerCount: players.length,
+    rounds: Number(doc.totalRounds ?? gameData?.total_rounds ?? gameData?.rows) || 0,
+    playedAt: gameData?.created_at || gameData?.timestamp || doc.createdAt || null,
+    uploadedAt: doc.createdAt || null,
+    shared: Boolean(doc.isShared || doc.shareId)
+  };
+}
+
+/**
  * Find duplicate wizard and table games in the database.
  * Read-only - nothing is modified.
  * @param {Object} [options]
@@ -316,6 +343,7 @@ async function countOrphanEvents(groups) {
 
 module.exports = {
   unwrapGameData,
+  summarizeGameDoc,
   getWizardFingerprint,
   getTableFingerprint,
   groupDuplicates,

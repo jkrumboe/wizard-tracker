@@ -804,6 +804,11 @@ under a different `localId`.
 
 The script is **read-only unless `--apply` is passed**.
 
+> The same cleanup is available in the app: **Admin → Games → Duplicate detection**.
+> *Scan for duplicates* previews the groups, *Remove duplicates* deletes the extra
+> copies and recalculates ELO. Use the CLI when you want a backup file of the removed
+> documents or a `--game-type` / `--purge-events` run.
+
 **Example:**
 ```bash
 # 1. Dry run - see what would be removed (no changes)

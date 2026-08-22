@@ -51,6 +51,10 @@ export const API_ENDPOINTS = {
     delete: (id) => `${API_BASE_URL}/api/table-games/${id}`,
     getPublicById: (id) => `${API_BASE_URL}/api/table-games/public/${id}`,
   },
+  adminGames: {
+    duplicates: `${API_BASE_URL}/api/admin/games/duplicates`,
+    removeDuplicates: `${API_BASE_URL}/api/admin/games/duplicates/remove`,
+  },
   gameTemplates: {
     list: `${API_BASE_URL}/api/game-templates`,
     create: `${API_BASE_URL}/api/game-templates`,

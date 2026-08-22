@@ -800,6 +800,45 @@ export async function adminDeleteTableGame(id) {
   return res.json();
 }
 
+// Admin: Scan both game collections for duplicates (read-only)
+export async function adminScanDuplicateGames({ includeDate = true, sameUserOnly = false, gameType = null } = {}) {
+  const token = localStorage.getItem('auth_token');
+  const params = new URLSearchParams({
+    includeDate: String(includeDate),
+    sameUserOnly: String(sameUserOnly)
+  });
+  if (gameType) params.set('gameType', gameType);
+
+  const res = await fetch(`${API_ENDPOINTS.adminGames.duplicates}?${params}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to scan for duplicate games');
+  }
+  return res.json();
+}
+
+// Admin: Remove duplicate games, keeping one copy of each
+// `ids` are the duplicate copies the admin reviewed; the server only deletes ids
+// its own re-scan flags as duplicates.
+export async function adminRemoveDuplicateGames({ ids, includeDate = true, sameUserOnly = false, gameType = null, recalculateElo = true } = {}) {
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch(API_ENDPOINTS.adminGames.removeDuplicates, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ ids, includeDate, sameUserOnly, gameType, recalculateElo })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to remove duplicate games');
+  }
+  return res.json();
+}
+
 // Admin: Delete a legacy game by ID
 export async function adminDeleteLegacyGame(id) {
   const token = localStorage.getItem('auth_token');
