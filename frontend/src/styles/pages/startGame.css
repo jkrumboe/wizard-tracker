@@ -2,7 +2,7 @@
 .start-game-page {
   padding-top: var(--spacing-md);
   max-width: 960px;
-  flex: 1;
+  height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
@@ -12,7 +12,10 @@
 .game-type-selection {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  padding-bottom: var(--spacing-md);
 }
 
 .start-select-header {
@@ -57,6 +60,7 @@
   flex-direction: column;
   gap: var(--spacing-sm);
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
