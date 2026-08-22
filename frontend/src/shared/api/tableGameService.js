@@ -2,6 +2,27 @@
 
 import { API_ENDPOINTS } from "@/shared/api/config";
 import { LocalTableGameStorage } from "@/shared/api/localTableGameStorage";
+import { getGameContentKey } from "@/shared/utils/gameDedup";
+
+/**
+ * Build a content key for a table game from whichever shape it comes in, so a
+ * cloud game and its local copy produce the same fingerprint.
+ * @param {Object} record - local storage record or cloud document
+ * @returns {string|null}
+ */
+function getTableGameContentKey(record) {
+  if (!record) return null;
+  const gameData = record.gameData?.gameData || record.gameData || record;
+  return getGameContentKey({
+    gameType: 'table',
+    name: record.gameTypeName || record.name || gameData.gameName,
+    players: gameData.players,
+    totalRounds: record.totalRounds || gameData.rows || 0,
+    // gameData.timestamp is when the game was played; the record dates are when it
+    // was saved or uploaded and differ between a game and its copy
+    created_at: gameData.created_at || gameData.timestamp || record.created_at || record.createdAt || record.savedAt || record.lastPlayed
+  });
+}
 
 /**
  * Create/upload a table game to the backend
@@ -70,18 +91,26 @@ export async function getUserCloudTableGamesList() {
     const data = await res.json();
     const cloudGames = data.games || [];
     
+    // Snapshot local storage once instead of per cloud game
+    const allLocalGames = LocalTableGameStorage.getAllSavedTableGames();
+    const localGameList = Object.values(allLocalGames);
+    const localContentKeys = new Set(
+      localGameList.map(game => getTableGameContentKey(game)).filter(Boolean)
+    );
+
     // Return games with metadata for selection, checking local existence
     return cloudGames.map(cloudGame => {
       const localId = cloudGame.localId || cloudGame._id;
-      
-      // Check if game exists locally by localId OR by cloudGameId
-      const allLocalGames = LocalTableGameStorage.getAllSavedTableGames();
+
+      // Check if game exists locally by localId, by cloudGameId, or by content
       const existsByLocalId = !!allLocalGames[localId];
-      const existsByCloudId = Object.values(allLocalGames).some(game => 
+      const existsByCloudId = localGameList.some(game =>
         game.cloudGameId === cloudGame._id
       );
-      const existsLocally = existsByLocalId || existsByCloudId;
-      
+      const contentKey = getTableGameContentKey(cloudGame);
+      const existsByContent = contentKey ? localContentKeys.has(contentKey) : false;
+      const existsLocally = existsByLocalId || existsByCloudId || existsByContent;
+
       // Normalize gameData in case it's a double-nested saved game wrapper
       const rawGameData = cloudGame.gameData?.gameData || cloudGame.gameData;
 
@@ -271,14 +300,23 @@ export async function downloadSelectedCloudTableGames(cloudGameIds) {
         const cloudGame = cloudGameMeta.rawData;
         const localId = cloudGame.localId || cloudGame._id;
         
-        // Check if game already exists locally
+        // Check if game already exists locally - by localId, by cloudGameId, or by content
         const allLocalGames = LocalTableGameStorage.getAllSavedTableGames();
+        const localGameList = Object.values(allLocalGames);
         const existsByLocalId = !!allLocalGames[localId];
-        const existsByCloudId = Object.values(allLocalGames).some(game => 
+        const existsByCloudId = localGameList.some(game =>
           game.cloudGameId === cloudGame._id
         );
-        
-        if (existsByLocalId || existsByCloudId) {
+        const contentKey = getTableGameContentKey(cloudGame);
+        const localMatchByContent = contentKey
+          ? localGameList.find(game => getTableGameContentKey(game) === contentKey)
+          : null;
+
+        if (existsByLocalId || existsByCloudId || localMatchByContent) {
+          // Link the existing local copy to the cloud id so it is never downloaded again
+          if (!existsByLocalId && !existsByCloudId && localMatchByContent?.id) {
+            LocalTableGameStorage.markGameAsUploaded(localMatchByContent.id, cloudGame._id);
+          }
           console.debug(`Table game ${localId} (cloud ID: ${cloudGame._id}) already exists locally, skipping`);
           skipped++;
           continue;
@@ -293,7 +331,8 @@ export async function downloadSelectedCloudTableGames(cloudGameIds) {
           ...gameData,
           downloadedFromCloud: true,
           cloudGameId: cloudGame._id,
-          created_at: cloudGame.createdAt
+          // Keep when the game was played, not when it was uploaded
+          created_at: gameData.created_at || cloudGame.createdAt
         };
 
         // Save using LocalTableGameStorage.saveTableGame

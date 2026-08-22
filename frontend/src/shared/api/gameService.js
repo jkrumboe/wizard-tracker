@@ -10,6 +10,7 @@ import {
   GameMode 
 } from "@/shared/schemas/gameSchema";
 import { formatWizardGameForBackend, validateGameForUpload } from "@/shared/utils/wizardGameFormatter";
+import { getGameContentKey } from "@/shared/utils/gameDedup";
 
 //=== Game Management ===//
 
@@ -177,28 +178,40 @@ export async function getUserCloudGamesList() {
       }
     }
 
+    // Snapshot local storage once instead of per cloud game
+    const allLocalGames = LocalGameStorage.getAllSavedGames();
+    const localGameList = Object.values(allLocalGames);
+    const localContentKeys = new Set(
+      localGameList.map(game => getGameContentKey(game)).filter(Boolean)
+    );
+
     // Return games with useful metadata for selection
     return allGames.map(cloudGame => {
       const gameData = cloudGame.gameData || {};
       const localId = cloudGame.localId || cloudGame._id || cloudGame.id;
       const cloudId = cloudGame._id || cloudGame.id;
-      
-      // Check if game exists locally by localId OR by cloudGameId
-      const allLocalGames = LocalGameStorage.getAllSavedGames();
+
+      // Check if game exists locally by localId, by cloudGameId, or - when the ids
+      // never got linked (uploaded from another device, upload rejected as a
+      // duplicate) - by content
       const existsByLocalId = !!allLocalGames[localId];
-      const existsByCloudId = Object.values(allLocalGames).some(game => 
-        game.cloudGameId === cloudId || 
+      const existsByCloudId = localGameList.some(game =>
+        game.cloudGameId === cloudId ||
         game.gameState?.cloudGameId === cloudId
       );
-      const existsLocally = existsByLocalId || existsByCloudId;
-      
+      const contentKey = getGameContentKey(gameData);
+      const existsByContent = contentKey ? localContentKeys.has(contentKey) : false;
+      const existsLocally = existsByLocalId || existsByCloudId || existsByContent;
+
       return {
         cloudId: cloudId,
         localId: localId,
         players: gameData.players || gameData.gameState?.players || [],
         winner_id: gameData.winner_id || gameData.gameState?.winner_id,
         final_scores: gameData.final_scores || gameData.gameState?.final_scores || {},
-        created_at: cloudGame.createdAt || gameData.created_at,
+        // Prefer when the game was played over when the document was uploaded, so a
+        // cloud game and its local copy report the same date
+        created_at: gameData.created_at || gameData.gameState?.created_at || cloudGame.createdAt,
         total_rounds: gameData.total_rounds || gameData.gameState?.total_rounds || 0,
         isPaused: gameData.isPaused || gameData.gameState?.isPaused || false,
         gameFinished: gameData.gameFinished || gameData.gameState?.gameFinished || false,
@@ -257,15 +270,24 @@ export async function downloadSelectedCloudGames(cloudGameIds) {
         const localId = cloudGame.localId || cloudGame._id || cloudGame.id;
         const cloudId = cloudGame._id || cloudGame.id;
         
-        // Check if game already exists locally - check by localId AND cloudGameId
+        // Check if game already exists locally - by localId, by cloudGameId, or by content
         const allLocalGames = LocalGameStorage.getAllSavedGames();
+        const localGameList = Object.values(allLocalGames);
         const existsByLocalId = !!allLocalGames[localId];
-        const existsByCloudId = Object.values(allLocalGames).some(game => 
-          game.cloudGameId === cloudId || 
+        const existsByCloudId = localGameList.some(game =>
+          game.cloudGameId === cloudId ||
           game.gameState?.cloudGameId === cloudId
         );
-        
-        if (existsByLocalId || existsByCloudId) {
+        const contentKey = getGameContentKey(cloudGame.gameData || cloudGame);
+        const localMatchByContent = contentKey
+          ? localGameList.find(game => getGameContentKey(game) === contentKey)
+          : null;
+
+        if (existsByLocalId || existsByCloudId || localMatchByContent) {
+          // Link the existing local copy to the cloud id so it is never downloaded again
+          if (!existsByLocalId && !existsByCloudId && localMatchByContent?.id) {
+            LocalGameStorage.markGameAsUploaded(localMatchByContent.id, cloudId);
+          }
           console.debug(`Game ${localId} (cloud ID: ${cloudId}) already exists locally, skipping`);
           skipped++;
           continue;
@@ -569,15 +591,34 @@ export async function createGame(gameData, localId) {
   if (res.status === 401) {
     throw new Error('Your session has expired. Please sign in again to sync games to the cloud.');
   }
-  
+
+  // 409 means the backend already stores this game (same localId, or same content
+  // uploaded from another device). Report it as a successful duplicate so callers
+  // can link the local game to the existing cloud id instead of listing it twice.
+  if (res.status === 409) {
+    const conflictData = await res.json().catch(() => ({}));
+    const existingGame = conflictData.existingGame;
+
+    if (existingGame?.id) {
+      console.debug('Game already exists in cloud, linking to existing id:', existingGame.id);
+      return {
+        duplicate: true,
+        game: { id: existingGame.id, localId: existingGame.localId || localId },
+        message: conflictData.error || 'Game already exists in the cloud'
+      };
+    }
+
+    throw new Error(conflictData.error || 'Game already exists in the cloud');
+  }
+
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    
+
     // Provide detailed error message for validation errors
     if (errorData.validationErrors) {
       throw new Error(`Game validation failed:\n${errorData.validationErrors.join('\n')}`);
     }
-    
+
     throw new Error(errorData.error || `Failed to create game: ${res.status}`);
   }
   

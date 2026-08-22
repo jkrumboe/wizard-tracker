@@ -12,6 +12,7 @@ This document provides a comprehensive reference for all available npm scripts i
 - [Build & Deploy](#build--deploy)
 - [Docker Management](#docker-management)
 - [Health & Utilities](#health--utilities)
+- [Database Maintenance](#database-maintenance)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -784,6 +785,66 @@ Access URLs:
 - Troubleshooting connectivity
 - In CI/CD health checks
 - Monitoring deployments
+
+---
+
+## Database Maintenance
+
+### `npm run games:dedupe` (backend)
+
+**Find and remove duplicate games**
+
+Removes game documents that describe the same played game (same players, same round
+count, same final scores), so the games timeline stops showing a game twice. Wizard
+games must also share the play day; table games, whose team names are often generic
+("Team 1" vs "Team 2"), must share the exact start time so two short games played the
+same evening are never mistaken for one. Duplicates come from uploads made before the content-based duplicate check
+existed - the same game uploaded by two players, or re-uploaded from a second device
+under a different `localId`.
+
+The script is **read-only unless `--apply` is passed**.
+
+**Example:**
+```bash
+# 1. Dry run - see what would be removed (no changes)
+cd backend && npm run games:dedupe -- --verbose
+
+# 2. Apply - back up, delete duplicates, recalculate ELO
+cd backend && npm run games:dedupe:apply
+
+# In production (Docker)
+docker compose exec backend node scripts/dedupe-games.js --verbose
+docker compose exec backend node scripts/dedupe-games.js --apply
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--apply` | Actually delete duplicates (default: dry run) |
+| `--verbose`, `-v` | List every duplicate group with the copy that is kept |
+| `--game-type=wizard` | Only scan wizard games (or `=table`) |
+| `--ignore-date` | Match duplicates even when the stored dates differ |
+| `--same-user-only` | Only treat games uploaded by the same user as duplicates |
+| `--purge-events` | Also delete sync events belonging to removed games |
+| `--skip-elo` | Do not recalculate ELO after applying |
+| `--backup=<path>` | Backup file location (default: `./dedupe-backup-<timestamp>.json`) |
+| `--no-backup` | Skip the backup file (not recommended) |
+
+**Which copy is kept:** a shared game (its share link must keep working), otherwise
+the copy with the most resolved player identities, otherwise the earliest upload.
+The kept document records what was merged into it under `gameData.mergedDuplicates`.
+
+**Safety:**
+- Dry run by default - nothing changes until `--apply`
+- Every removed document is written to the backup JSON first
+- Games without players or scores are never touched (reported as "not comparable")
+- ELO is recalculated afterwards so ratings no longer count the removed games
+
+**When to use:**
+- After deploying a version that fixes duplicate handling
+- When the games timeline shows the same game twice
+- Before recalculating ELO or reviewing leaderboards
 
 ---
 

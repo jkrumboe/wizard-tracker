@@ -9,6 +9,8 @@
     "dev:local": "cross-env MONGO_URI=mongodb://localhost:27017/dev nodemon server.js",
     "test": "cross-env NODE_ENV=test jest --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "games:dedupe": "node scripts/dedupe-games.js",
+    "games:dedupe:apply": "node scripts/dedupe-games.js --apply",
     "elo:calculate": "node scripts/calculate-initial-elo.js",
     "elo:calculate:dry": "node scripts/calculate-initial-elo.js --dry-run --verbose",
     "elo:dev": "cross-env MONGO_URI=mongodb://localhost:27017/dev node scripts/calculate-initial-elo.js --verbose",

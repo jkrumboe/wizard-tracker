@@ -12,6 +12,7 @@ import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
 import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage';
 import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
+import { dedupeGames } from '@/shared/utils/gameDedup';
 import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import '@/styles/pages/gamesPage.css';
 
@@ -173,7 +174,7 @@ const GamesPage = () => {
           };
         });
 
-      return [...formattedLocalGames, ...formattedTableGames, ...scoreboardGames].sort((a, b) =>
+      return dedupeGames([...formattedLocalGames, ...formattedTableGames, ...scoreboardGames]).sort((a, b) =>
         new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
       );
     } catch (error) {
@@ -262,62 +263,13 @@ const GamesPage = () => {
         if (user && isOnline) {
           try {
             const cloudGames = await fetchCloudGames();
-            const localScoreboardGames = LocalScoreboardGameStorage.getSavedTableGamesList()
-              .filter(game => game.gameFinished)
-              .map(game => {
-                const fullGame = LocalScoreboardGameStorage.getTableGameById(game.id);
-                const gameData = fullGame?.gameData?.gameData || fullGame?.gameData || fullGame;
-                const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || 'twoSideGesture';
-                let winnerName = 'Not determined';
-                if (gameData?.players && Array.isArray(gameData.players)) {
-                  const playersWithScores = gameData.players.map(player => {
-                    const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-                    return { ...player, total };
-                  });
-                  if (playersWithScores.length > 0) {
-                    const lowIsBetter = gameData.lowIsBetter || false;
-                    const winner = playersWithScores.reduce((best, current) => {
-                      if (!best) return current;
-                      return lowIsBetter ? (current.total < best.total ? current : best) : (current.total > best.total ? current : best);
-                    }, null);
-                    winnerName = winner?.name || 'Not determined';
-                  }
-                }
-                return {
-                  ...game,
-                  created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
-                  gameType: 'scoreboard',
-                  scoreEntryMode,
-                  winner_name: winnerName,
-                  isUploaded: LocalScoreboardGameStorage.isGameUploaded(game.id),
-                  isLocal: true,
-                  storageType: 'scoreboard'
-                };
-              });
 
-            // Also collect local wizard + table games that aren't yet in the cloud list
+            // Local wizard, table and scoreboard games (already includes every local storage)
             const allLocalGames = await fetchLocalGames();
 
-            // Helper: check if a local game is already represented in the cloud list
-            const isAlreadyInCloud = (localGame) =>
-              cloudGames.some((cloudGame) =>
-                cloudGame.id === localGame.id
-                || cloudGame.cloudId === localGame.id
-                || cloudGame.localId === localGame.id
-                || (localGame.cloudId && (cloudGame.id === localGame.cloudId || cloudGame.cloudId === localGame.cloudId))
-              );
-
-            const mergedGames = [...cloudGames];
-
-            // Merge local wizard/table games not yet uploaded
-            allLocalGames.forEach((localGame) => {
-              if (!isAlreadyInCloud(localGame)) mergedGames.push(localGame);
-            });
-
-            // Merge local scoreboard games (different storage)
-            localScoreboardGames.forEach((localGame) => {
-              if (!isAlreadyInCloud(localGame)) mergedGames.push(localGame);
-            });
+            // Cloud entries come first so the cloud id stays the one used for navigation;
+            // local copies of the same game are folded into them by dedupeGames().
+            const mergedGames = dedupeGames([...cloudGames, ...allLocalGames]);
 
             mergedGames.sort((a, b) =>
               new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
@@ -347,13 +299,8 @@ const GamesPage = () => {
               fetchLocalGames()
             ]);
             const formattedPublicGames = publicGames.map(game => ({ ...game, isCloud: true, isUploaded: true }));
-            // Always show local games first, then non-duplicate public games
-            const merged = [...localGames];
-            formattedPublicGames.forEach(pg => {
-              if (!merged.some(lg => lg.id === pg.id)) {
-                merged.push(pg);
-              }
-            });
+            // Local games first so their local id stays usable offline, public copies fold into them
+            const merged = dedupeGames([...localGames, ...formattedPublicGames]);
             setAllGames(merged.sort((a, b) =>
               new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
             ));
