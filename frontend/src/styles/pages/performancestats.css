@@ -4,3 +4,135 @@
   width: 100%;
   margin-bottom: var(--spacing-sm);
 }
+
+/* Achievements */
+.achievements-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.achievements-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.achievements-count {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.achievements-hint {
+  text-align: center;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  opacity: 0.7;
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: var(--spacing-xs);
+}
+
+.achievement-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  padding: 0.45rem 0.35rem 0.4rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+/* Unlocked: the accent colour on the border, plus a soft wash across the card.
+   Browsers without color-mix() keep the plain card background. */
+.achievement-card.is-unlocked {
+  border-color: var(--primary);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+  background:
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--primary) 12%, transparent),
+      transparent 70%),
+    var(--card-bg);
+}
+
+.achievement-card.is-unlocked .achievement-badge {
+  color: var(--primary);
+}
+
+/* Locked: same layout, drained of colour rather than called out with a padlock */
+.achievement-card.is-locked .achievement-name {
+  opacity: 0.75;
+}
+
+.achievement-card.is-locked .achievement-description {
+  opacity: 0.5;
+}
+
+.achievement-card.is-locked .achievement-badge {
+  opacity: 0.4;
+}
+
+.achievement-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: inline-flex;
+  line-height: 0;
+}
+
+.achievement-name {
+  padding: 0 0.75rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  margin-bottom: 0.15rem;
+}
+
+.achievement-description {
+  font-size: 0.6rem;
+  line-height: 1.25;
+  opacity: 0.75;
+}
+
+/* Pinned to the bottom so cards in a row line up regardless of text length */
+.achievement-progress {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.4rem;
+}
+
+.achievement-progress-track {
+  height: 4px;
+  background: var(--border);
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.achievement-progress-bar {
+  height: 100%;
+  background: currentColor;
+  background: color-mix(in srgb, var(--text) 60%, transparent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.achievement-progress-label {
+  margin-top: 0.25rem;
+  font-size: 0.58rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}

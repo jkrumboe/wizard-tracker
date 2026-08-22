@@ -2,13 +2,12 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, ComposedChart, ReferenceLine } from 'recharts';
-import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Gamepad2, Dices, Spade, Gem, Medal, Crown, Star, Flame, Brain, Undo2, Zap, Target, ExternalLink } from 'lucide-react';
+import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Lock, CircleCheck, Target, ExternalLink } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { useUserElo } from '@/shared/hooks/useElo';
+import { evaluateAchievements, formatAchievementProgress, getAchievementGateKey } from '@/shared/utils/achievements';
 import '@/styles/pages/account.css';
 import "@/styles/pages/performancestats.css";
-
-const COLORS = ['#1DBF73', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
 const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, gameType = 'wizard', identityId = null }) => {
   const { t } = useTranslation();
@@ -68,7 +67,9 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
     let totalBids = 0;
     let correctBids = 0;
     let comebackWins = 0;
+    let closeWins = 0;
     let dominantWins = 0;
+    let bestPerfectRoundsInGame = 0;
     let currentStreakType = null;
     let currentStreakCount = 0;
     let longestWinStreak = 0;
@@ -303,8 +304,12 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       if (roundData && Array.isArray(roundData)) {
         let perfectGameRounds = 0;
         let completedGameRounds = 0;
+        // Running totals per player, used to spot whether the player was ever last
+        const runningTotals = {};
+        const roundLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
+        let wasInLastPlace = false;
         
-        roundData.forEach(round => {
+        roundData.forEach((round, roundIndex) => {
           if (round.players && Array.isArray(round.players)) {
             const roundPlayer = round.players.find(p => 
               isCurrentPlayer(p) || p.id === playerId
@@ -321,6 +326,27 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
                 perfectGameRounds++;
               }
             }
+            
+            // Standings after this round
+            round.players.forEach(p => {
+              const key = p.id ?? p.name;
+              if (key === undefined || key === null) return;
+              runningTotals[key] = (runningTotals[key] || 0) + (parseFloat(p.score) || 0);
+            });
+            
+            const myKey = roundPlayer?.id ?? roundPlayer?.name;
+            const otherTotals = Object.entries(runningTotals)
+              .filter(([key]) => key !== String(myKey))
+              .map(([, total]) => total);
+            
+            // Only from the second round on - being last after a single round means little
+            if (roundIndex >= 1 && myKey !== undefined && myKey !== null && otherTotals.length > 0) {
+              const myTotal = runningTotals[myKey] ?? 0;
+              const isLast = roundLowIsBetter
+                ? otherTotals.every(total => myTotal > total)
+                : otherTotals.every(total => myTotal < total);
+              if (isLast) wasInLastPlace = true;
+            }
           }
         });
         
@@ -329,10 +355,17 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
           gameBidAccuracy = (gameCorrectBids / gameTotalBids) * 100;
         }
         
+        if (perfectGameRounds > bestPerfectRoundsInGame) {
+          bestPerfectRoundsInGame = perfectGameRounds;
+        }
+        
         // Check if ALL rounds in this game were perfect
         if (completedGameRounds > 0 && perfectGameRounds === completedGameRounds) {
           perfectBidsCount++;
         }
+        
+        // Comeback: dead last at some point during the game and still won it
+        if (isWin && wasInLastPlace) comebackWins++;
       }
       
       // Time-based stats
@@ -387,8 +420,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
             
             const margin = Math.abs(winnerScore - secondScore);
             
-            if (margin > 50) dominantWins++;
-            if (margin < 10 && margin > 0) comebackWins++;
+            if (margin >= 50) dominantWins++;
+            if (margin < 10 && margin > 0) closeWins++;
           }
         }
       }
@@ -475,24 +508,26 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       .sort((a, b) => b.games - a.games)
       .slice(0, 5);
 
-    // Calculate achievements
-    const achievements = [];
-    // Games played milestones
-    if (totalGames >= 1) achievements.push({ icon: <Gamepad2 size={32} color="var(--primary)" />, name: t('achievements.firstGame'), description: t('achievements.firstGameDesc') });
-    if (totalGames >= 5) achievements.push({ icon: <Dices size={32} color="var(--primary)" />, name: t('achievements.gettingStarted'), description: t('achievements.gettingStartedDesc') });
-    if (totalGames >= 10) achievements.push({ icon: <Spade size={32} color="var(--primary)" />, name: t('achievements.regularPlayer'), description: t('achievements.regularPlayerDesc') });
-    if (totalGames >= 25) achievements.push({ icon: <Gem size={32} color="var(--primary)" />, name: t('achievements.dedicated'), description: t('achievements.dedicatedDesc') });
-    if (totalGames >= 50) achievements.push({ icon: <Medal size={32} color="var(--primary)" />, name: t('achievements.committed'), description: t('achievements.committedDesc') });
-    // Win milestones
-    if (wins >= 10) achievements.push({ icon: <Trophy size={32} color="#cea51f" />, name: t('achievements.veteran'), description: t('achievements.veteranDesc') });
-    if (wins >= 50) achievements.push({ icon: <Crown size={32} color="#cea51f" />, name: t('achievements.champion'), description: t('achievements.championDesc') });
-    if (wins >= 100) achievements.push({ icon: <Star size={32} color="#cea51f" />, name: t('achievements.legend'), description: t('achievements.legendDesc') });
-    if (longestWinStreak >= 5) achievements.push({ icon: <Flame size={32} color="#EF4444" />, name: t('achievements.hotStreak'), description: t('achievements.hotStreakDesc', { count: longestWinStreak }) });
-    if (winRate >= 70) achievements.push({ icon: <Gem size={32} color="#cea51f" />, name: t('achievements.elite'), description: t('achievements.eliteDesc', { rate: winRate.toFixed(0) }) });
-    if (perfectBidsCount >= 1) achievements.push({ icon: <Target size={32} color="#cea51f" />, name: t('achievements.perfectPredictor'), description: t('achievements.perfectPredictorDesc', { count: perfectBidsCount }) });
-    if (bestBidAccuracyGame?.bidAccuracy >= 80) achievements.push({ icon: <Brain size={32} color="var(--secondary)" />, name: t('achievements.mindReader'), description: t('achievements.mindReaderDesc') });
-    if (comebackWins >= 5) achievements.push({ icon: <Undo2 size={32} color="#cea51f" />, name: t('achievements.comebackKing'), description: t('achievements.comebackKingDesc', { count: comebackWins }) });
-    if (dominantWins >= 5) achievements.push({ icon: <Zap size={32} color="#EF4444" />, name: t('achievements.dominator'), description: t('achievements.dominatorDesc', { count: dominantWins }) });
+    const opponentCount = Object.keys(headToHeadStats).length;
+
+    // Everything an achievement can be measured against
+    const achievementStats = {
+      totalGames,
+      wins,
+      winRateValue: winRate,
+      longestWinStreak,
+      correctBidRounds: correctBids,
+      totalBidRounds: totalBids,
+      bidAccuracyValue: bidAccuracy,
+      bestPerfectRoundsInGame,
+      perfectGames: perfectBidsCount,
+      dominantWins,
+      closeWins,
+      comebackWins,
+      opponentCount,
+      totalRounds
+    };
+    const achievements = evaluateAchievements(achievementStats, { includeBidAchievements: isWizardGame });
 
     return {
       totalGames,
@@ -521,11 +556,16 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       topOpponents,
       bidAccuracy: bidAccuracy.toFixed(1),
       perfectBids: perfectBidsCount,
+      perfectGames: perfectBidsCount,
+      bestPerfectRoundsInGame,
+      opponentCount,
       achievements,
+      unlockedAchievements: achievements.filter(a => a.unlocked).length,
       comebackWins,
+      closeWins,
       dominantWins
     };
-  }, [games, currentPlayer, t]);
+  }, [games, currentPlayer, isWizardGame]);
 
   if (!games || games.length === 0) {
     return (
@@ -962,46 +1002,49 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
 
       {/* ACHIEVEMENTS SECTION */}
       <div>
-        <h2 style={{ margin: '0 0 var(--spacing-sm) 0', fontSize: '1.25rem', fontWeight: '600' }}>{t('profile.achievements')}</h2>
-        {stats.achievements.length > 0 ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-            gap: 'var(--spacing-sm)'
-          }}>
-            {stats.achievements.map((achievement, idx) => (
-              <div key={idx} style={{
-                background: 'var(--card-bg)',
-                padding: 'var(--spacing-sm)',
-                borderRadius: 'var(--radius-md)',
-                border: '2px solid var(--primary)',
-                textAlign: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>
-                  {achievement.icon}
-                </div>
-                <div style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '0.15rem' }}>
-                  {achievement.name}
-                </div>
-                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                  {achievement.description}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: 'var(--spacing-xl)', 
-            background: 'var(--card-bg)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border)',
-            opacity: 0.7 
-          }}>
-            {t('profile.keepPlayingAchievements')}
-          </div>
+        <div className="achievements-header">
+          <h2>{t('profile.achievements')}</h2>
+          <span className="achievements-count">
+            {t('profile.achievementsUnlocked', { unlocked: stats.unlockedAchievements, total: stats.achievements.length })}
+          </span>
+        </div>
+        {stats.unlockedAchievements === 0 && (
+          <div className="achievements-hint">{t('profile.keepPlayingAchievements')}</div>
         )}
+        <div className="achievements-grid">
+          {stats.achievements.map((achievement) => {
+            const gateKey = getAchievementGateKey(achievement);
+
+            return (
+              <div
+                key={achievement.id}
+                className={`achievement-card ${achievement.unlocked ? 'is-unlocked' : 'is-locked'}`}
+                title={t(`achievements.${achievement.id}Desc`)}
+              >
+                <span className="achievement-badge" aria-hidden="true">
+                  {achievement.unlocked
+                    ? <CircleCheck size={11} />
+                    : <Lock size={10} />}
+                </span>
+                <div className="achievement-name">{t(`achievements.${achievement.id}`)}</div>
+                <div className="achievement-description">{t(`achievements.${achievement.id}Desc`)}</div>
+                {!achievement.unlocked && (
+                  <div className="achievement-progress">
+                    <div className="achievement-progress-track">
+                      <div
+                        className="achievement-progress-bar"
+                        style={{ width: `${Math.round(achievement.progress * 100)}%` }}
+                      />
+                    </div>
+                    <div className="achievement-progress-label">
+                      {formatAchievementProgress(achievement)}{gateKey ? ` ${t(gateKey)}` : ''}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
     </div>
