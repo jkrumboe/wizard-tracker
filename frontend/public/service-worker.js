@@ -1,11 +1,13 @@
 // Service Worker for KeepWiz PWA - Automatic Updates + Offline Sync
 // Uses Workbox for precaching with error recovery
 // Chrome 121+ Compliant: Event listeners registered at top level during initial evaluation
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
+import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { cacheNames } from 'workbox-core';
+import { Queue } from 'workbox-background-sync';
 
 // Version is injected during build process
 const APP_VERSION = "__APP_VERSION__" // Will be replaced during build
@@ -96,24 +98,35 @@ self.addEventListener("install", (event) => {
   );
 });
 
+// Caches this service worker version owns. Anything else is from an older
+// build and is safe to drop on activation.
+const CURRENT_CACHES = [
+  cacheNames.precache,
+  cacheNames.runtime,
+  'google-fonts-cache',
+  'images-cache',
+  API_CACHE_NAME,
+];
+
 // Activate event - clean up old caches and take control immediately
 self.addEventListener("activate", (event) => {
   swLogger.info('Activating service worker', { version: APP_VERSION });
   event.waitUntil(
-    Promise.all([
-      // Clear ALL caches on activation to ensure fresh state
-      // This prevents issues with stale manifests from old service workers
-      caches.keys().then((cacheNames) => {
-        swLogger.debug('Cleaning up caches during activation', { cacheCount: cacheNames.length });
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            // Delete all old caches - Workbox will recreate what's needed
-            swLogger.debug('Deleting cache', { cacheName });
-            return caches.delete(cacheName);
-          })
-        );
-      }),
-    ]).then(() => {
+    // Only drop caches this version does not own. Deleting everything here
+    // would wipe the precache that Workbox just populated during install,
+    // and precaching never runs again outside install - that would leave the
+    // app with no offline assets at all.
+    caches.keys().then((existingCacheNames) => {
+      const staleCaches = existingCacheNames.filter((name) => !CURRENT_CACHES.includes(name));
+      swLogger.debug('Cleaning up stale caches during activation', {
+        total: existingCacheNames.length,
+        stale: staleCaches.length,
+      });
+      return Promise.all(staleCaches.map((cacheName) => {
+        swLogger.debug('Deleting stale cache', { cacheName });
+        return caches.delete(cacheName);
+      }));
+    }).then(() => {
       // Take control of all clients immediately
       swLogger.info('Taking control of all clients', { version: APP_VERSION });
       return self.clients.claim();
@@ -136,7 +149,18 @@ try {
   
   // Cleanup can happen async
   cleanupOutdatedCaches();
-  
+
+  // SPA navigation fallback. Routes like /games or /game/current are not
+  // themselves precached URLs, so an offline deep link or refresh would go to
+  // the network and fail. Serve the precached shell instead and let the router
+  // resolve the route client-side. API and asset requests are excluded so they
+  // keep their own strategies.
+  registerRoute(
+    new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+      denylist: [/^\/api\//, /\/[^/?]+\.[^/]+$/],
+    })
+  );
+
   swLogger.info('Initialized precache manifest', { version: APP_VERSION, assetCount: manifest.length });
 } catch (error) {
   // Log but don't throw - allow SW to continue functioning
@@ -294,17 +318,71 @@ async function networkFirstStrategy(request) {
   }
 }
 
+// Durable queue for writes made while offline. Backed by IndexedDB, so it
+// survives the service worker being torn down and the tab being closed;
+// Workbox registers the matching 'sync' listener and replays on reconnect.
+const writeQueue = new Queue('keep-wiz-writes', {
+  maxRetentionTime: 7 * 24 * 60, // minutes
+  onSync: async ({ queue }) => {
+    let replayed = 0;
+    let entry = await queue.shiftRequest();
+
+    while (entry) {
+      try {
+        await fetch(entry.request.clone());
+        replayed += 1;
+      } catch (error) {
+        // Put it back at the front and let the browser retry the whole sync
+        // later. Re-throwing is what tells the browser this sync failed.
+        await queue.unshiftRequest(entry);
+        swLogger.warn('Replay failed; write stays queued', { url: entry.request.url, error });
+        await notifyClients({ type: 'SYNC_QUEUE_PROGRESS', replayed, pending: true });
+        throw error;
+      }
+      entry = await queue.shiftRequest();
+    }
+
+    swLogger.info('Replayed queued writes', { replayed });
+    await notifyClients({ type: 'SYNC_QUEUE_DRAINED', replayed });
+  },
+});
+
+// Post a message to every open client
+async function notifyClients(message) {
+  const clients = await self.clients.matchAll();
+  clients.forEach((client) => client.postMessage(message));
+}
+
 // Handle write operations when offline
 async function handleWriteOperation(request) {
+  // Clone before the fetch attempt - a failed fetch still consumes the body,
+  // so the queued copy has to be taken up front.
+  const queueableRequest = request.clone();
+
   try {
     // Try network first
-    const response = await fetch(request);
-    return response;
-  } catch {
-    // Network failed - queue for background sync
-    swLogger.warn('Write operation failed; request will be retried when online', { url: request.url });
-    
-    // Return synthetic 202 Accepted response
+    return await fetch(request);
+  } catch (networkError) {
+    try {
+      await writeQueue.pushRequest({ request: queueableRequest });
+    } catch (queueError) {
+      // Queuing failed, so this write is genuinely lost. Report a real error
+      // rather than a success the client would take as saved.
+      swLogger.error('Failed to queue offline write', { url: request.url, error: queueError });
+      return new Response(JSON.stringify({
+        status: 'failed',
+        message: 'Request could not be saved for retry',
+        offline: true
+      }), {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    swLogger.warn('Write queued for retry when online', { url: request.url, error: networkError });
+
+    // Accepted, and now actually durable
     return new Response(JSON.stringify({
       status: 'pending',
       message: 'Request queued for sync when online',
@@ -335,19 +413,24 @@ self.addEventListener('sync', (event) => {
 async function syncGame(gameId) {
   try {
     swLogger.info('Syncing game', { gameId });
-    
-    // Notify all clients that sync is starting
+
+    // The event replay itself lives in SyncManager on the client, so this can
+    // only make progress while a page is open. With no client to hand off to,
+    // throw so the browser retries this sync later instead of recording a
+    // success that never happened.
     const clients = await self.clients.matchAll();
+    if (clients.length === 0) {
+      swLogger.warn('No open clients to run game sync; deferring', { gameId });
+      throw new Error(`No client available to sync game ${gameId}`);
+    }
+
     clients.forEach(client => {
       client.postMessage({
         type: 'SYNC_START',
         gameId
       });
     });
-    
-    // The actual sync logic is handled by SyncManager in the client
-    // This event just triggers the sync process
-    
+
     return true;
   } catch (error) {
     swLogger.error('Sync failed for game', { gameId, error });
@@ -359,14 +442,19 @@ async function syncGame(gameId) {
 async function syncAllGames() {
   try {
     swLogger.info('Syncing all games');
-    
+
     const clients = await self.clients.matchAll();
+    if (clients.length === 0) {
+      swLogger.warn('No open clients to run sync; deferring');
+      throw new Error('No client available to sync games');
+    }
+
     clients.forEach(client => {
       client.postMessage({
         type: 'SYNC_ALL'
       });
     });
-    
+
     return true;
   } catch (error) {
     swLogger.error('Sync all failed', { error });

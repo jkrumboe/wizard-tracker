@@ -733,13 +733,11 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       'createdAt': 1
     }).lean();
     
-    // Collect all available game types (before filtering)
-    const gameTypeSet = new Set(['Wizard']);
+    // Scoring direction per game type, used to label the average score column
     const gameTypeSettings = { 'Wizard': { lowIsBetter: false } };
     tableGames.forEach(game => {
       const gm = game.gameTypeName || game.gameData?.gameName || 'Table Game';
       if (gm && gm !== 'Table Game') {
-        gameTypeSet.add(gm);
         const lib = game.lowIsBetter || game.gameData?.lowIsBetter || game.gameData?.gameData?.lowIsBetter || false;
         if (!gameTypeSettings[gm]) {
           gameTypeSettings[gm] = { lowIsBetter: lib };
@@ -751,6 +749,9 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     const playerStats = Object.create(null);
     const headToHead = Object.create(null); // headToHead[playerA][playerB] = { wins: 0, losses: 0, draws: 0, games: 0 }
     const sharedGames = []; // Games where at least 2 of the selected players participated
+    // Game types that actually have games between the selected players. Filled
+    // regardless of the active gameType filter so the filter list stays stable.
+    const sharedGameTypeSet = new Set();
     
     // Initialize stats for each player (skip dangerous keys as extra safety)
     targetCanonicalNames.forEach(name => {
@@ -782,8 +783,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
       const gameMode = 'Wizard';
-      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
-      
+
       // Get participants from this game that are in our target list
       const participantsInGame = [];
       const playerIdToCanonical = {};
@@ -805,7 +805,12 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       
       // Only process games where at least 2 of our target players participated
       if (participantsInGame.length < 2) return;
-      
+
+      // Record the type before filtering, so the client can offer only the game
+      // types these players actually share.
+      sharedGameTypeSet.add(gameMode);
+      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+
       const winnerIdRaw = gameData.winner_ids || gameData.winner_id || gameData.totals?.winner_ids || gameData.totals?.winner_id;
       const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
       const finalScores = gameData.final_scores || gameData.totals?.final_scores || {};
@@ -886,8 +891,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
       const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
-      
+
       // Get participants from this game that are in our target list
       const participantsInGame = [];
       const playerIndexToCanonical = {};
@@ -911,7 +915,12 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       
       // Only process games where at least 2 of our target players participated
       if (participantsInGame.length < 2) return;
-      
+
+      // Record the type before filtering, so the client can offer only the game
+      // types these players actually share.
+      sharedGameTypeSet.add(gameMode);
+      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+
       // Calculate final scores from points arrays
       const finalScores = {};
       gameData.players.forEach((player, index) => {
@@ -1032,30 +1041,31 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       .map(stats => {
         const eloData = canonicalToElo[stats.name] || {};
         
-        // Resolve ELO to a single number based on selected game type
-        let elo = null;
+        // Resolve the ELO record to use, based on the selected game type
+        let chosenElo = null;
         if (gameType && gameType !== 'all') {
           const normalizedType = normalizeGameType(gameType);
-          const typeElo = eloData[normalizedType];
-          if (typeElo) {
-            elo = Math.round(typeElo.rating || 1000);
-          }
+          chosenElo = eloData[normalizedType] || null;
         } else {
           // For "all", pick the game type with the most games played
           const eloEntries = Object.entries(eloData);
           if (eloEntries.length > 0) {
-            const best = eloEntries.reduce((best, [, data]) =>
+            chosenElo = eloEntries.reduce((best, [, data]) =>
               data.gamesPlayed > (best?.gamesPlayed || 0) ? data : best
             , null);
-            elo = best ? Math.round(best.rating) : null;
           }
         }
-        
+
+        const elo = chosenElo ? Math.round(chosenElo.rating || 1000) : null;
+        const eloPeak = chosenElo ? Math.round(chosenElo.peak || 1000) : null;
+
         return {
           ...stats,
           avgScore: stats.totalGames > 0 ? parseFloat((stats.totalScore / stats.totalGames).toFixed(1)) : 0,
           winRate: stats.totalGames > 0 ? parseFloat(((stats.wins / stats.totalGames) * 100).toFixed(1)) : 0,
-          elo
+          elo,
+          eloPeak,
+          eloGamesPlayed: chosenElo?.gamesPlayed || 0
         };
       })
       .sort((a, b) => {
@@ -1070,13 +1080,36 @@ router.post('/friend-leaderboard', async (req, res, next) => {
     
     // Sort shared games by date (most recent first)
     sharedGames.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
+
+    // Current win/loss streak within these shared games. sharedGames is newest
+    // first, so the leading run of identical outcomes is the active streak.
+    const currentStreaks = Object.create(null);
+    const settledStreaks = new Set();
+    sharedGames.forEach(game => {
+      game.players.forEach(p => {
+        if (isDangerousKey(p.canonical) || settledStreaks.has(p.canonical)) return;
+        const outcome = p.won ? 'W' : 'L';
+        const existing = currentStreaks[p.canonical];
+        if (!existing) {
+          currentStreaks[p.canonical] = { type: outcome, count: 1 };
+        } else if (existing.type === outcome) {
+          existing.count++;
+        } else {
+          settledStreaks.add(p.canonical);
+        }
+      });
+    });
+
+    leaderboard.forEach(entry => {
+      entry.streak = currentStreaks[entry.name] || null;
+    });
+
     res.json({
       leaderboard,
       headToHead,
       recentGames: sharedGames,
       totalSharedGames: sharedGames.length,
-      gameTypes: Array.from(gameTypeSet).sort(),
+      gameTypes: Array.from(sharedGameTypeSet).sort(),
       gameTypeSettings
     });
     
