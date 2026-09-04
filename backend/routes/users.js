@@ -595,6 +595,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
         ...profileData.mergedGuestIdentities.map(i => i.displayName),
       ],
       primaryIdentityId: profileData.primaryIdentityId,
+      identityIds: profileData.identityIds,
       games: profileData.games,
     });
   } catch (error) {

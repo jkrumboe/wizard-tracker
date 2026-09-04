@@ -967,11 +967,15 @@ const Account = () => {
     return [...localWizardGames, ...localTableGames];
   }, [savedGames, savedTableGames, cloudGames, user]);
 
-  // Create user object with identities for stats calculation
+  // Create user object with identities for stats calculation.
+  // identityIds is what lets the stats match players on identity rather than on
+  // display name - without it a game's first player can be mistaken for the user.
   const userWithAliases = useMemo(() => {
     if (!user) return null;
     return {
       ...user,
+      identityIds: profileData?.identityIds || [],
+      primaryIdentityId: profileData?.primaryIdentityId || null,
       identities: profileData?.identities || user.identities?.map(i => i.displayName) || [user.username]
     };
   }, [user, profileData]);
@@ -1052,11 +1056,16 @@ const Account = () => {
       return {
         id: user.id,
         name: user.name || user.username || 'User',
-        username: user.username
+        username: user.username,
+        // Same identity data the overview uses, so both tabs agree on which
+        // player in a game is the current user
+        identityIds: profileData?.identityIds || [],
+        primaryIdentityId: profileData?.primaryIdentityId || null,
+        identities: profileData?.identities || []
       };
     }
     return null;
-  }, [user]);
+  }, [user, profileData]);
 
   return (
       <div className="settings-container">

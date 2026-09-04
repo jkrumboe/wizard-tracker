@@ -5,6 +5,12 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { CircleSlash2, Trophy, TrendingDown, TrendingUp, Lock, CircleCheck, Target, ExternalLink } from 'lucide-react';
 import StatCard from '@/components/ui/StatCard';
 import { useUserElo } from '@/shared/hooks/useElo';
+import {
+  createPlayerMatcher,
+  getGamePlayers,
+  getPlayerScore,
+  resolveUserGameResult,
+} from '@/shared/utils/playerMatching';
 import { evaluateAchievements, formatAchievementProgress, getAchievementGateKey } from '@/shared/utils/achievements';
 import '@/styles/pages/account.css';
 import "@/styles/pages/performancestats.css";
@@ -17,40 +23,12 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       return null;
     }
 
-    // Helper function to check if a player matches the current user
-    // Includes matching by identity names (linked guest identities)
-    const isCurrentPlayer = (p) => {
-      if (!p) return false;
-      
-      // Direct ID matches
-      if (p.userId === currentPlayer.id) return true;
-      if (p.identityId === currentPlayer.identityId) return true;
-      if (p.id === currentPlayer.id) return true;
-      
-      // Username match
-      if (p.username && currentPlayer.username && 
-          p.username.toLowerCase() === currentPlayer.username.toLowerCase()) return true;
-      
-      // Name match against current player name/username
-      if (p.name && currentPlayer.name && 
-          p.name.toLowerCase() === currentPlayer.name.toLowerCase()) return true;
-      if (p.name && currentPlayer.username && 
-          p.name.toLowerCase() === currentPlayer.username.toLowerCase()) return true;
-      
-      // Name match against linked identities (e.g., "Feemke" matches identity "feemi")
-      // Identities can be strings (from API) or objects with displayName/name properties
-      if (p.name && currentPlayer.identities && Array.isArray(currentPlayer.identities)) {
-        const playerNameLower = p.name.toLowerCase();
-        if (currentPlayer.identities.some(identity => {
-          const identityName = typeof identity === 'string' ? identity : (identity.displayName || identity.name);
-          return identityName && identityName.toLowerCase() === playerNameLower;
-        })) {
-          return true;
-        }
-      }
-      
-      return false;
-    };
+    // Resolving which player is the current user lives in one place - see
+    // @/shared/utils/playerMatching. It matches identity ids first, then account
+    // ids, then names, and ignores fields that are missing on either side so an
+    // absent id can never make the first player of a game look like the user.
+    const matcher = createPlayerMatcher(currentPlayer);
+    const isCurrentPlayer = (p) => matcher.matches(p);
 
     let totalGames = 0;
     let wins = 0;
@@ -99,64 +77,22 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
     sortedGames.forEach((game, index) => {
       totalGames++;
       
-      // Get player's final score
-      let playerScore = 0;
-      let playerId = null;
-      
-      // Check if it's a wizard game (has gameState) or table game (has gameData)
-      const isTableGame = game.gameType === 'table' || (game.gameData?.players && !game.gameData?.final_scores);
-      
-      if (isTableGame && game.gameData?.players) {
-        // Table game structure
-        const player = game.gameData.players.find(p => isCurrentPlayer(p));
-        if (player) {
-          playerId = player.id;
-          // Calculate total score from points array
-          if (player.points && Array.isArray(player.points)) {
-            playerScore = player.points.reduce((sum, point) => sum + (point || 0), 0);
-          }
-        }
-      } else {
-        // Wizard game structure - check all possible locations for players and scores
-        // Priority: game.players, game.gameData.players, game.gameState.players
-        const players = game.players || game.gameData?.players || game.gameState?.players;
-        if (players) {
-          const player = players.find(p => isCurrentPlayer(p));
-          if (player) {
-            playerId = player.id;
-            // Check if player has totalScore property
-            if (player.totalScore !== undefined) {
-              playerScore = player.totalScore;
-            }
-          }
-        }
-      }
-      
-      // Fallback score lookups for wizard games - check ALL possible locations
-      if (!isTableGame && playerId && playerScore === 0) {
-        // Check: game.final_scores, game.gameData.final_scores, game.gameState.final_scores
-        const finalScores = game.final_scores || game.gameData?.final_scores || game.gameState?.final_scores;
-        if (finalScores) {
-          // Try by playerId first
-          if (finalScores[playerId] !== undefined) {
-            playerScore = finalScores[playerId];
-          }
-          // Then try by player name
-          else if (finalScores[currentPlayer.name] !== undefined) {
-            playerScore = finalScores[currentPlayer.name];
-          }
-          // For older formats, final_scores might be nested in players
-          else {
-            const player = (game.players || game.gameData?.players || game.gameState?.players)?.find(p => isCurrentPlayer(p));
-            if (player && finalScores[player.name] !== undefined) {
-              playerScore = finalScores[player.name];
-            } else if (player && finalScores[player.id] !== undefined) {
-              playerScore = finalScores[player.id];
-            }
-          }
-        }
-      }
-      
+      // Resolve the user's own player once - the score, the win and every
+      // per-player stat below must all describe the same person.
+      const gamePlayers = getGamePlayers(game) || [];
+      const { playerIndex: currentPlayerIdx, player: userPlayer, won } =
+        resolveUserGameResult(game, matcher);
+      const playerId = userPlayer?.id ?? null;
+
+      // Table games score with a points array instead of final_scores
+      const isTableGame =
+        game.gameType === 'table' || (game.gameData?.players && !game.gameData?.final_scores);
+
+      // Get player's final score (points array, totalScore or final_scores)
+      const resolvedScore =
+        currentPlayerIdx === -1 ? null : getPlayerScore(game, gamePlayers, currentPlayerIdx);
+      const playerScore = resolvedScore ?? 0;
+
       totalScore += playerScore;
       if (playerScore > highestScore) highestScore = playerScore;
       if (playerScore < lowestScore) lowestScore = playerScore;
@@ -188,58 +124,10 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       const rounds = game.totalRounds || game.total_rounds || game.gameState?.maxRounds || 0;
       totalRounds += rounds;
       
-      // Determine if player won
-      let isWin = false;
-      
-      if (isTableGame && game.gameData?.players) {
-        const players = game.gameData.players;
-        const currentPlayerIdx = players.findIndex(p => isCurrentPlayer(p));
-        const winnerIdRaw = game.winner_ids || game.gameData?.winner_ids;
-        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
+      // Determine if player won - resolved together with the player above so a
+      // win can never be read off a different player's slot.
+      const isWin = won === true;
 
-        if (currentPlayerIdx !== -1 && winnerIds.length > 0) {
-          // Prefer backend-calculated winner_ids (already correctly accounts for lowIsBetter)
-          const userPositionId = `player_${currentPlayerIdx}`;
-          const userPlayer = players[currentPlayerIdx];
-          isWin = winnerIds.includes(userPositionId) ||
-                  winnerIds.includes(userPlayer?.id) ||
-                  winnerIds.some(id => String(id) === String(userPlayer?.id));
-        } else if (currentPlayerIdx !== -1) {
-          // Fallback: calculate from scores when winner_ids unavailable
-          const gameLowIsBetter = game.lowIsBetter || game.gameData?.lowIsBetter || false;
-          const playerScores = players.map((p, idx) => {
-            const total = p.points?.reduce((sum, point) => sum + (parseFloat(point) || 0), 0) || 0;
-            return { index: idx, name: p.name, total };
-          });
-          if (playerScores.length > 0) {
-            const scores = playerScores.map(p => p.total);
-            const winningScore = gameLowIsBetter ? Math.min(...scores) : Math.max(...scores);
-            isWin = playerScores[currentPlayerIdx]?.total === winningScore;
-          }
-        }
-      } else {
-        // For Wizard games: use winner_ids (new) and winner_id (legacy)
-        const winnerIdRaw = game.winner_ids || game.gameData?.totals?.winner_ids || game.gameData?.winner_ids || game.gameState?.winner_ids ||
-                           game.winner_id || game.gameData?.totals?.winner_id || game.gameState?.winner_id;
-        const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
-        
-        // Check if player's id is in winner_ids
-        isWin = winnerIds.includes(currentPlayer.id) || 
-                winnerIds.includes(playerId) ||
-                winnerIds.some(wId => {
-                  const winnerName = game.winner_name || game.gameData?.winner_name || 
-                                    (game.players || game.gameState?.players)?.find(p => p.id === wId)?.name;
-                  // Match by current player name or any linked identity name
-                  if (!winnerName) return false;
-                  const winnerNameLower = winnerName.toLowerCase();
-                  if (winnerNameLower === currentPlayer.name?.toLowerCase()) return true;
-                  if (currentPlayer.identities && Array.isArray(currentPlayer.identities)) {
-                    return currentPlayer.identities.some(identity => identity.toLowerCase() === winnerNameLower);
-                  }
-                  return false;
-                });
-      }
-      
       if (isWin) {
         wins++;
         tempWinStreak++;
@@ -258,8 +146,8 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
         currentStreakCount = Math.max(tempWinStreak, tempLossStreak);
       }
       
-      // Performance by player count - check v3.0 (game.players), table games (gameData.players), legacy wizard (gameState.players)
-      const playerCount = game.players?.length || game.gameData?.players?.length || game.gameState?.players?.length || 0;
+      // Performance by player count
+      const playerCount = gamePlayers.length || game.playerCount || 0;
       if (playerCount > 0) {
         if (!performanceByPlayerCount[playerCount]) {
           performanceByPlayerCount[playerCount] = { games: 0, wins: 0, totalScore: 0 };
@@ -269,12 +157,13 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
         performanceByPlayerCount[playerCount].totalScore += playerScore;
       }
       
-      // Head-to-head tracking - check v3.0 (game.players), table games (gameData.players), legacy wizard (gameState.players)
-      const players = game.players || game.gameData?.players || game.gameState?.players || [];
+      // Head-to-head tracking
+      const players = gamePlayers;
       if (players.length > 0) {
-        players.forEach(opponent => {
-          // Skip if this is the current player
-          if (isCurrentPlayer(opponent)) {
+        players.forEach((opponent, opponentIdx) => {
+          // Skip the current user's own slot (matched above), not merely anyone
+          // who happens to share one of their identifiers
+          if (opponentIdx === currentPlayerIdx || isCurrentPlayer(opponent)) {
             return;
           }
           const opponentKey = opponent.userId || opponent.name || opponent.id;
@@ -381,7 +270,7 @@ const PerformanceStatsEnhanced = ({ games, currentPlayer, isWizardGame = true, g
       
       // Comeback/dominant win detection
       if (isWin) {
-        const allPlayers = game.players || game.gameData?.players || game.gameState?.players || [];
+        const allPlayers = gamePlayers;
         if (allPlayers.length >= 2) {
           const sortedPlayers = [...allPlayers].sort((a, b) => {
             let scoreA, scoreB;

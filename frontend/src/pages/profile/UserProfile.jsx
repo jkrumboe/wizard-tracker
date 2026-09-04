@@ -165,7 +165,11 @@ const UserProfile = () => {
         id: profileUser.id || profileUser._id,
         name: profileUser.username,
         username: profileUser.username,
-        identities: profileUser.identities // Include linked identity names for player matching
+        // Identity ids match players exactly (including merged guest
+        // identities); the names are only a fallback for local games
+        identityIds: profileUser.identityIds || [],
+        primaryIdentityId: profileUser.primaryIdentityId || null,
+        identities: profileUser.identities
       }
     }
     return null

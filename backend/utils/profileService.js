@@ -80,6 +80,10 @@ async function getProfileGames(userId) {
       created_at: game.createdAt,
       winner_ids: winnerIds,
       winner_id: winnerIds[0],
+      // Authoritative answer to "which player is this profile, and did they
+      // win?" - resolved here by identity id so clients never have to guess.
+      userPlayerIndex: gameData.players.indexOf(userPlayer),
+      userWon: isWinner,
       eloChange: eloInfo?.change,
       eloRating: eloInfo?.rating,
       eloPlacement: eloInfo?.placement,
@@ -113,12 +117,22 @@ async function getProfileGames(userId) {
     const winnerNamesLower = winnerName ? [winnerName.toLowerCase()] : [];
 
     const userPlayerId = `player_${userPlayerIndex}`;
-    const isWinnerByCalculation = calculatedWinnerIds.includes(userPlayerId);
-    const isWinnerByStoredId = isPlayerWinner(userPlayer, storedWinnerIds);
-    const isWinnerByName = userPlayer.name && winnerNamesLower.includes(userPlayer.name.toLowerCase());
-    const isWinner = isWinnerByCalculation || isWinnerByStoredId || isWinnerByName;
 
-    const winnerIds = calculatedWinnerIds.length > 0 ? calculatedWinnerIds : storedWinnerIds;
+    // The recorded points are the source of truth for table games: they account
+    // for lowIsBetter and are indexed against this exact players array. The
+    // stored winner id/name come from the client and may reference ids from
+    // before identity migration, so they are only consulted when the game has
+    // no scores to decide with - ORing them in used to hand a player someone
+    // else's win.
+    const hasScores = gameData.players.some(p => Array.isArray(p.points) && p.points.length > 0);
+    const canDecideByScore = hasScores && calculatedWinnerIds.length > 0;
+
+    const isWinner = canDecideByScore
+      ? calculatedWinnerIds.includes(userPlayerId)
+      : isPlayerWinner(userPlayer, storedWinnerIds) ||
+        Boolean(userPlayer.name && winnerNamesLower.includes(userPlayer.name.toLowerCase()));
+
+    const winnerIds = canDecideByScore ? calculatedWinnerIds : storedWinnerIds;
     if (isWinner) totalWins++;
 
     const eloInfo = gameEloMap.get(game._id.toString());
@@ -132,6 +146,10 @@ async function getProfileGames(userId) {
       created_at: game.createdAt,
       winner_ids: winnerIds,
       winner_id: winnerIds[0],
+      // See the wizard branch: the profile's own player and result, resolved
+      // by identity id rather than by name or list position.
+      userPlayerIndex,
+      userWon: isWinner,
       lowIsBetter: resolvedLowIsBetter,
       eloChange: eloInfo?.change,
       eloRating: eloInfo?.rating,
@@ -154,6 +172,9 @@ async function getProfileGames(userId) {
     identities,
     mergedGuestIdentities,
     primaryIdentityId: identities.length > 0 ? identities[0]._id : null,
+    // Every identity that belongs to this profile, including merged guests, so
+    // the client can match players on identity instead of on display name.
+    identityIds: identityIdStrings,
   };
 }
 
