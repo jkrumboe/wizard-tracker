@@ -630,17 +630,14 @@ const FriendLeaderboard = () => {
               {summary && (
                 <div className="flb-summary">
                   <div className="flb-summary-tile">
-                    <GamepadIcon size={16} />
                     <span className="flb-summary-value">{summary.sharedGames}</span>
                     <span className="flb-summary-label">{t('leaderboard.summarySharedGames')}</span>
                   </div>
                   <div className="flb-summary-tile">
-                    <UsersIcon size={16} />
                     <span className="flb-summary-value">{summary.players}</span>
                     <span className="flb-summary-label">{t('leaderboard.summaryPlayers')}</span>
                   </div>
                   <div className="flb-summary-tile">
-                    <TrophyIcon size={16} />
                     <span
                       className="flb-summary-value flb-summary-name"
                       title={summary.leader.displayName}
@@ -651,7 +648,6 @@ const FriendLeaderboard = () => {
                   </div>
                   {summary.myRank && (
                     <div className="flb-summary-tile">
-                      <TrendingUpIcon size={16} />
                       <span className="flb-summary-value">#{summary.myRank}</span>
                       <span className="flb-summary-label">{t('leaderboard.summaryYourRank')}</span>
                     </div>

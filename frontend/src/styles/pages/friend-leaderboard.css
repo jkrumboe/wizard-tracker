@@ -993,10 +993,6 @@
     font-size: 1.55rem;
   }
 
-  .flb-results-toolbar {
-    flex-wrap: wrap;
-  }
-
   .friend-leaderboard-container .back-btn,
   .friend-leaderboard-container .game-type-selector {
     flex: 1 1 100%;
