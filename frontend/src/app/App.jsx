@@ -4,7 +4,7 @@ import { useEffect, lazy, Suspense, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
-import { AuthProtectedRoute, UpdateNotification, SeoRouteMeta } from "@/components/common"
+import { AuthProtectedRoute, UpdateNotification, SeoRouteMeta, OfflineStatusBar } from "@/components/common"
 import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
@@ -251,6 +251,7 @@ function App() {
                 <SeoRouteMeta />
                 <Navbar />
                 <div className="main-container">
+                <OfflineStatusBar />
                 <LazyLoadErrorBoundary>
                   <Suspense fallback={
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: 'var(--text-muted)' }}>

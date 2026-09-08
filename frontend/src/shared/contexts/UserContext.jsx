@@ -73,7 +73,15 @@ export function UserProvider({ children }) {
           return;
         }
         
-        // No cached session, check with server
+        // No cached session. There is nothing the server can tell us while
+        // offline, and waiting on a request that cannot succeed would hold the
+        // whole app on its loading screen - so boot straight into the signed-out
+        // state and let the online listener sort it out later.
+        if (!navigator.onLine) {
+          console.debug('📴 Offline at startup - skipping auth check')
+          return
+        }
+
         console.debug('🔓 Checking authentication status on app startup')
         const userFromServer = await authService.checkAuthStatus()
         if (userFromServer) {

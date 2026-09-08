@@ -1265,8 +1265,12 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             }
           }
         } catch (uploadError) {
-          // Silent fail for auto-upload - game is still saved locally
-          console.warn('Auto-upload failed (game saved locally):', uploadError.message);
+          // The game is saved locally and still flagged as not uploaded, so the
+          // upload queue owns it from here and retries when the network returns.
+          console.warn('Auto-upload failed (game saved locally, queued for retry):', uploadError.message);
+          import('@/shared/sync/uploadQueueRunner')
+            .then(({ requestUploadFlush }) => requestUploadFlush('table-game-finish-failed'))
+            .catch(() => {});
         }
       }
       

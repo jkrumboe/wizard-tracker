@@ -1017,6 +1017,10 @@
   },
 
   "sync": {
+    "offlineSaved": "Offline - your games are saved on this device",
+    "gamesWaiting": "{{count}} game(s) waiting to upload",
+    "uploadingGames": "Uploading {{count}} game(s)...",
+    "retry": "Retry",
     "offline": "Offline",
     "syncing": "Syncing...",
     "synced": "Synced",

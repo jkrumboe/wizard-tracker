@@ -10,6 +10,7 @@ import "@/styles/components/multi-player-scorecard.css" // Enhanced scorecard st
 
 // Initialize offline sync system
 import { createSyncManager } from "@/shared/sync/syncManager"
+import { startUploadQueue } from "@/shared/sync/uploadQueueRunner"
 import { syncApiClient } from "@/shared/api"
 import { wasServiceWorkerForceUpdated, clearServiceWorkerUpdateFlag, forceServiceWorkerUpdate } from "@/shared/utils/swCleanup"
 import { appLogger, getLogLevel, setLogLevel } from "@/shared/utils/logger"
@@ -86,6 +87,14 @@ try {
   });
 } catch (error) {
   appLogger.warn('Failed to initialize sync manager', { error });
+}
+
+// Retry games that were finished while offline. Independent of the sync
+// manager above: even if that fails to start, finished games still upload.
+try {
+  startUploadQueue();
+} catch (error) {
+  appLogger.warn('Failed to start upload queue', { error });
 }
 
 // Make sync manager globally available for debugging

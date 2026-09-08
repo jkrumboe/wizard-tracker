@@ -168,10 +168,16 @@ try {
   swLogger.warn('Service worker will continue to function; hard refresh may be required');
 }
 
-// API endpoints that should be cached for offline access
+// GET endpoints whose last successful response is kept, so the screens built on
+// them show the most recent known data offline instead of an error. Reads only -
+// the network is always tried first, and the cache is only a fallback.
 const API_CACHE_PATTERNS = [
-  /\/api\/games\/\w+$/,  // GET game details
-  /\/api\/users\/me$/     // User profile
+  /\/api\/games\/\w+$/,           // GET game details
+  /\/api\/wizard-games\/\w+$/,    // GET wizard game details
+  /\/api\/table-games\/\w+$/,     // GET table game details
+  /\/api\/users\/me$/,            // Signed-in user
+  /\/api\/users\/[^/]+\/profile$/, // Profile + stats behind the account screens
+  /\/api\/identities\/elo\//      // ELO ratings shown next to each game type
 ];
 
 // API endpoints for write operations (POST, PUT, DELETE)
@@ -293,16 +299,22 @@ async function networkFirstStrategy(request) {
   try {
     const response = await fetch(request);
     
-    // Cache successful GET requests
+    // Cache successful GET requests. Storing is best-effort: if it fails (quota,
+    // an uncacheable request) the page must still get its fresh response, so the
+    // write is isolated from the outer catch that falls back to the cache.
     if (response && response.status === 200 && request.method === 'GET') {
       const url = new URL(request.url);
       if (shouldCacheAPI(url.pathname)) {
-        const responseToCache = response.clone();
-        const cache = await caches.open(API_CACHE_NAME);
-        await cache.put(request, responseToCache);
+        try {
+          const responseToCache = response.clone();
+          const cache = await caches.open(API_CACHE_NAME);
+          await cache.put(request, responseToCache);
+        } catch (cacheError) {
+          swLogger.debug('Could not cache API response', { url: request.url, error: cacheError });
+        }
       }
     }
-    
+
     return response;
   } catch (error) {
     // Network failed, try cache

@@ -1,6 +1,24 @@
 import { API_ENDPOINTS } from './config.js';
 import { sessionCache } from '../utils/sessionCache';
 
+/**
+ * How long the startup session check may take before we give up and boot with
+ * the cached session instead. `navigator.onLine` reports true on a captive
+ * portal or a dead Wi-Fi connection, where a plain fetch can hang for minutes -
+ * long enough to leave the app sitting on its loading screen.
+ */
+const AUTH_REQUEST_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = AUTH_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 class AuthService {
   constructor() {
     this.currentUser = null;
@@ -43,6 +61,17 @@ class AuthService {
     await sessionCache.set('auth_token', token, { persist: true });
     // Also store in localStorage for backwards compatibility with existing code
     localStorage.setItem('auth_token', token);
+    // Games finished while signed out can be uploaded now.
+    this.notifyAuthChanged();
+  }
+
+  // Let the offline upload queue know that sign-in state changed
+  notifyAuthChanged() {
+    try {
+      globalThis.dispatchEvent(new CustomEvent('keepwiz-auth-changed'));
+    } catch {
+      // Non-browser context (tests) - nothing to notify.
+    }
   }
 
   // Get token from session cache
@@ -283,7 +312,7 @@ class AuthService {
       if (!this.token) return null;
       
       // Call the /me endpoint to verify token and get current user
-      const response = await fetch(API_ENDPOINTS.auth.me, {
+      const response = await fetchWithTimeout(API_ENDPOINTS.auth.me, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -312,8 +341,17 @@ class AuthService {
       
       return this.currentUser;
     } catch (error) {
-      console.debug('Token verification failed:', error);
-      await this.clearToken();
+      // Only the server rejecting the token means the session is dead. A
+      // network failure, an abort or a timeout says nothing about whether the
+      // token is still valid - clearing it here would sign the user out every
+      // time they opened the app on a bad connection, and take their ability to
+      // upload queued games with it.
+      console.debug('Token verification could not reach the server; keeping cached session:', error);
+      const cachedUser = await sessionCache.get('auth_user');
+      if (cachedUser) {
+        this.currentUser = cachedUser;
+        return cachedUser;
+      }
       return null;
     }
   }

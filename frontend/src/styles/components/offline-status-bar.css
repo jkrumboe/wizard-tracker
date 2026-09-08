@@ -1,0 +1,83 @@
+/* Global offline / pending-upload strip.
+   Deliberately quiet: it reports a normal state, so it uses card colours rather
+   than a warning treatment. Only a failed sync is ever red, elsewhere. */
+
+.offline-status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: 0 0 var(--spacing-sm);
+  padding: 9px 12px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-light);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.offline-status-bar.is-pending {
+  border-color: var(--primary);
+}
+
+.offline-bar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.offline-status-bar.is-pending .offline-bar-icon {
+  color: var(--primary);
+}
+
+.offline-bar-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.offline-bar-count {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background-color: var(--card-bg-light);
+  color: var(--text-light);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.offline-bar-action {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-full);
+  background-color: var(--card-bg-light);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.offline-bar-action:hover {
+  background-color: var(--primary);
+  color: var(--text-white);
+}
+
+.offline-bar-spin {
+  animation: offline-bar-spin 1s linear infinite;
+}
+
+@keyframes offline-bar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offline-bar-spin {
+    animation: none;
+  }
+}

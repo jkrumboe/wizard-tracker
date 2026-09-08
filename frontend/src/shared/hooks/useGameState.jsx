@@ -804,12 +804,22 @@ export function GameStateProvider({ children }) {
         } catch (uploadError) {
           console.warn('⚠️ Upload to database failed (game saved locally):', uploadError.message);
           const isAuthError = uploadError.message.includes('logged in') || uploadError.message.includes('session has expired');
+
+          // The game is safe on the device and still flagged as not uploaded,
+          // so the upload queue will pick it up. Ask it to try again as soon as
+          // the network is back rather than leaving the game stranded.
+          if (!isAuthError) {
+            import('@/shared/sync/uploadQueueRunner')
+              .then(({ requestUploadFlush }) => requestUploadFlush('finish-game-failed'))
+              .catch(() => {});
+          }
+
           setGameState((prevState) => ({
             ...prevState,
             autoUploadStatus: 'warning',
-            autoUploadMessage: isAuthError 
+            autoUploadMessage: isAuthError
               ? '⚠️ Game saved locally - sign in to sync to cloud'
-              : '⚠️ Database sync failed - game saved locally.'
+              : '📴 Saved on this device - it will upload when you are back online'
           }));
           setTimeout(() => {
             setGameState((prevState) => ({
