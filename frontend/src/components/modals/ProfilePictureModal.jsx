@@ -1,14 +1,50 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { XIcon } from '@/components/ui/Icon';
-import '@/styles/components/modal.css';
+import { useTranslation } from 'react-i18next';
+import { XIcon, CameraIcon, TrashIcon } from '@/components/ui/Icon';
+import '@/styles/components/avatar.css';
 
+/**
+ * Full screen viewer for a profile picture.
+ *
+ * Behaves like the photo viewers people know from other apps: tap anywhere to
+ * dismiss, Escape closes, the page behind stays put, and the picture's own
+ * actions sit in a bar underneath it.
+ */
 const ProfilePictureModal = ({
   isOpen,
   onClose,
   imageUrl,
-  altText = 'Profile Picture'
+  altText = 'Profile Picture',
+  title,
+  onChangePhoto,
+  onRemovePhoto
 }) => {
+  const { t } = useTranslation();
+  const closeButtonRef = useRef(null);
+
+  // Escape to close, and keep the page behind from scrolling away underneath.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onClose();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
@@ -17,39 +53,53 @@ const ProfilePictureModal = ({
     }
   };
 
+  const hasActions = Boolean(onChangePhoto || onRemovePhoto);
+
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div 
-        className="modal-container profile-picture-modal" 
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          width: 'auto',
-          padding: 0,
-          background: 'transparent',
-          boxShadow: 'none',
-        }}
-      >
-        <img
-          src={imageUrl}
-          alt={altText}
-          style={{
-            maxWidth: '90vw',
-            maxHeight: '85vh',
-            width: 'auto',
-            height: 'auto',
-            borderRadius: 'var(--radius-md)',
-            objectFit: 'contain',
-          }}
-        />
-        <button 
-          className="close-btn" 
+    <div
+      className="photo-viewer-overlay"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || altText}
+    >
+      <div className="photo-viewer-topbar">
+        <span className="photo-viewer-title">{title || altText}</span>
+        <button
+          ref={closeButtonRef}
+          type="button"
+          className="photo-viewer-close"
           onClick={onClose}
+          aria-label={t('common.close')}
         >
           <XIcon size={20} />
         </button>
       </div>
+
+      <figure className="photo-viewer-stage" onClick={handleOverlayClick}>
+        <img src={imageUrl} alt={altText} className="photo-viewer-image" />
+      </figure>
+
+      {hasActions && (
+        <div className="photo-viewer-actions">
+          {onChangePhoto && (
+            <button type="button" className="photo-viewer-action" onClick={onChangePhoto}>
+              <CameraIcon size={18} />
+              <span>{t('avatar.changePhoto')}</span>
+            </button>
+          )}
+          {onRemovePhoto && (
+            <button
+              type="button"
+              className="photo-viewer-action danger"
+              onClick={onRemovePhoto}
+            >
+              <TrashIcon size={18} />
+              <span>{t('avatar.removePhoto')}</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -59,6 +109,9 @@ ProfilePictureModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   imageUrl: PropTypes.string.isRequired,
   altText: PropTypes.string,
+  title: PropTypes.string,
+  onChangePhoto: PropTypes.func,
+  onRemovePhoto: PropTypes.func
 };
 
 export default ProfilePictureModal;

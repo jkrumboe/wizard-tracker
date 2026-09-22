@@ -1,0 +1,638 @@
+/* ============================================
+   PROFILE PICTURE FLOW
+   Avatar editor, action sheet, photo viewer and
+   the crop dialog controls.
+   ============================================ */
+
+/* --------------------------------------------
+   Avatar editor
+   -------------------------------------------- */
+
+.avatar-editor {
+  --avatar-size: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.avatar-editor-stack {
+  position: relative;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+}
+
+.avatar-editor-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 25%;
+  overflow: hidden;
+  background-color: var(--card-bg-alt);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, outline-color 0.2s ease;
+  outline: 3px solid transparent;
+  outline-offset: 3px;
+}
+
+.avatar-editor-frame.interactive {
+  cursor: pointer;
+}
+
+.avatar-editor-frame.interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.avatar-editor-frame.interactive:focus-visible {
+  outline-color: var(--primary);
+}
+
+.avatar-editor-frame.dragging {
+  outline-color: var(--primary);
+  outline-style: dashed;
+  transform: scale(1.02);
+}
+
+.avatar-editor-frame.pending {
+  outline-color: var(--primary);
+}
+
+.avatar-editor-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Camera scrim revealed on hover / focus, the way photo pickers do it. */
+.avatar-editor-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.15));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.avatar-editor-frame.interactive:hover .avatar-editor-overlay,
+.avatar-editor-frame.interactive:focus-visible .avatar-editor-overlay,
+.avatar-editor-frame.dragging .avatar-editor-overlay {
+  opacity: 1;
+}
+
+.avatar-editor-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.avatar-editor-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: var(--radius-full);
+  animation: spin 0.9s linear infinite;
+}
+
+/* Small camera button clipped to the corner of the avatar. */
+.avatar-editor-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--card-bg);
+  background-color: var(--primary);
+  color: var(--text-white, #fff);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.avatar-editor-badge:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: var(--card-bg);
+}
+
+.avatar-editor-status {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.avatar-editor-status.pending {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.avatar-editor-hint {
+  margin: 0;
+  max-width: 260px;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* The drag-and-drop hint is only meaningful with a real pointer. */
+@media (pointer: coarse) {
+  .avatar-editor-hint {
+    display: none;
+  }
+}
+
+/* --------------------------------------------
+   Action sheet
+   -------------------------------------------- */
+
+.avatar-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  animation: avatarSheetFade 0.2s ease;
+}
+
+.avatar-sheet {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md) calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+  background-color: var(--card-bg);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-lg);
+  animation: avatarSheetUp 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.avatar-sheet:focus {
+  outline: none;
+}
+
+.avatar-sheet-grabber {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto var(--spacing-xs);
+  border-radius: var(--radius-full);
+  background-color: var(--border-dark);
+}
+
+.avatar-sheet-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.avatar-sheet-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.avatar-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.avatar-sheet-action {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background-color: var(--card-bg-light);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.avatar-sheet-action:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  border-color: var(--primary);
+  transform: none;
+}
+
+.avatar-sheet-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-soft);
+  color: var(--primary);
+}
+
+.avatar-sheet-action.danger .avatar-sheet-action-icon {
+  background-color: var(--error-bg);
+  color: var(--error-color);
+}
+
+.avatar-sheet-action.danger .avatar-sheet-action-label {
+  color: var(--error-color);
+}
+
+.avatar-sheet-action.danger:hover:not(:disabled) {
+  border-color: var(--error-color);
+  background-color: var(--error-bg);
+}
+
+.avatar-sheet-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.avatar-sheet-action-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.avatar-sheet-action-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.avatar-sheet-button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.avatar-sheet-button.full {
+  width: 100%;
+}
+
+.avatar-sheet-button.ghost {
+  background-color: var(--card-bg-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.avatar-sheet-button.danger {
+  background-color: var(--error-color);
+  border: 1px solid var(--error-color);
+  color: #fff;
+}
+
+.avatar-sheet-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+}
+
+.avatar-sheet-confirm-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.avatar-sheet-confirm-actions .avatar-sheet-button {
+  flex: 1;
+}
+
+@keyframes avatarSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes avatarSheetFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* On wider screens the sheet becomes a centered dialog. */
+@media (min-width: 640px) {
+  .avatar-sheet-overlay {
+    align-items: center;
+  }
+
+  .avatar-sheet {
+    border-radius: var(--radius-xl);
+    animation: modalFadeIn 0.25s ease;
+  }
+
+  .avatar-sheet-grabber {
+    display: none;
+  }
+}
+
+/* --------------------------------------------
+   Photo viewer
+   -------------------------------------------- */
+
+.photo-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(6px);
+  animation: avatarSheetFade 0.2s ease;
+}
+
+.photo-viewer-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: calc(var(--spacing-md) + env(safe-area-inset-top, 0px)) var(--spacing-md) var(--spacing-md);
+}
+
+.photo-viewer-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-viewer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+}
+
+.photo-viewer-close:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+  border-color: transparent;
+}
+
+.photo-viewer-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  max-width: 100%;
+}
+
+.photo-viewer-image {
+  max-width: min(90vw, 620px);
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
+  animation: photoViewerIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.photo-viewer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.photo-viewer-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photo-viewer-action:hover {
+  background-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.photo-viewer-action.danger {
+  color: #ffb4b4;
+  border-color: rgba(255, 180, 180, 0.4);
+}
+
+@keyframes photoViewerIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* --------------------------------------------
+   Crop dialog
+   -------------------------------------------- */
+
+.image-cropper-modal {
+  max-width: 540px;
+}
+
+.cropper-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.crop-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 46vh;
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: #0d1117;
+}
+
+.crop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.crop-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.crop-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background-color: var(--card-bg-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.crop-zoom-slider {
+  flex: 1;
+  min-width: 0;
+  height: 4px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--border);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.crop-zoom-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--card-bg);
+  border-radius: var(--radius-full);
+  background-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.crop-zoom-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--card-bg);
+  border-radius: var(--radius-full);
+  background-color: var(--primary);
+}
+
+.crop-tool-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.crop-tool-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background-color: var(--card-bg-alt);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.crop-instructions {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.cropper-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+}
+
+.cropper-message-icon.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background-color: var(--error-bg);
+  color: var(--error-color);
+}
+
+.cropper-message-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: var(--radius-full);
+  animation: spin 0.9s linear infinite;
+}
+
+.cropper-message-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cropper-message-body {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-sheet,
+  .avatar-sheet-overlay,
+  .photo-viewer-overlay,
+  .photo-viewer-image {
+    animation: none;
+  }
+
+  .avatar-editor-frame.interactive:hover {
+    transform: none;
+  }
+}
+
+/* Local copy so the avatar styles stand alone without modal.css. */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

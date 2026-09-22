@@ -625,7 +625,31 @@
     "rating": "Rating",
     "change": "Change",
     "placement": "Placement",
-    "noGamesYetChart": "No Games Yet"
+    "noGamesYetChart": "No Games Yet",
+    "noFileSelected": "No file selected"
+  },
+
+  "avatar": {
+    "sheetTitle": "Profile picture",
+    "viewPhoto": "View photo",
+    "viewPhotoHint": "See your picture full size",
+    "takePhoto": "Take photo",
+    "takePhotoHint": "Use your camera",
+    "uploadPhoto": "Upload photo",
+    "changePhoto": "Change photo",
+    "choosePhotoHint": "Pick an image from your device",
+    "removePhoto": "Remove photo",
+    "removePhotoHint": "Go back to the default picture",
+    "removeConfirmTitle": "Remove your profile picture?",
+    "removeConfirmBody": "Your default picture will be shown instead. You can upload a new one at any time.",
+    "changePhotoAria": "Change profile picture",
+    "pendingChange": "Not saved yet",
+    "undoChange": "Undo picture change",
+    "dropHint": "Tap to choose a picture, or drop an image here",
+    "photoRemoved": "Profile picture removed",
+    "removingPhoto": "Removing picture...",
+    "removeFailed": "Failed to remove picture: {{error}}",
+    "yourPhotoAlt": "Your profile picture"
   },
 
   "leaderboard": {
@@ -865,9 +889,21 @@
     "imageLoadFailed": "Image Load Failed",
     "processingImage": "Processing image...",
     "processingHint": "This may take a moment for large images",
-    "cropInstructions": "Drag the image to adjust position. Use the slider to zoom.",
+    "cropInstructions": "Drag to reposition, then zoom or rotate until it looks right.",
     "tryAgain": "Try Again",
-    "apply": "Apply"
+    "apply": "Apply",
+    "zoomLabel": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "rotate": "Rotate",
+    "reset": "Reset",
+    "applying": "Applying...",
+    "cropFailed": "Could not crop this image. Please try another one.",
+    "processingTimeout": "Image processing timed out. The image may be too large for your device.",
+    "readFailed": "Failed to read image file",
+    "resizeFailed": "Failed to resize image. Try a smaller image.",
+    "corruptedFile": "Failed to load image. The file may be corrupted.",
+    "loadFailedFallback": "Failed to load image. Please try a different file."
   },
 
   "createGame": {

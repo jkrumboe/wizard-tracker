@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useUser } from '@/shared/hooks/useUser'
-import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 import { getUserPublicProfile } from '@/shared/api/userService'
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api'
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced'
 import StatsOverview from '@/components/stats/StatsOverview'
 import { ArrowLeftIcon, TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
-import ProfilePictureModal from '@/components/modals/ProfilePictureModal'
+import AvatarEditor from '@/components/profile/AvatarEditor'
 import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
 import '@/styles/components/error-container.css'
@@ -25,7 +24,6 @@ const UserProfile = () => {
   const [activeTab, setActiveTab] = useState('overview')
   const [statsGameType, setStatsGameType] = useState('wizard')
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar)
-  const [showProfilePictureModal, setShowProfilePictureModal] = useState(false)
 
   // Check if viewing own profile by comparing userId
   const isOwnProfile = currentUser && currentUser.id === userId
@@ -328,20 +326,12 @@ const UserProfile = () => {
                   </p>
                 )}
               </div>
-              <img
-                src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
+              <AvatarEditor
+                src={avatarUrl}
                 alt={t('profile.avatarAlt', { name: profileUser.username })}
-                onClick={() => setShowProfilePictureModal(true)}
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '25%',
-                  cursor: 'pointer',
-                }}
-                title={t('account.clickToViewFullSize')}
-                onError={(e) => {
-                  e.target.src = defaultAvatar
-                }}
+                size={64}
+                editable={false}
+                hasPicture={avatarUrl !== defaultAvatar}
               />
             </div>
           </div>
@@ -421,12 +411,6 @@ const UserProfile = () => {
         </div>
       )}
 
-      <ProfilePictureModal
-        isOpen={showProfilePictureModal}
-        onClose={() => setShowProfilePictureModal(false)}
-        imageUrl={sanitizeImageUrl(avatarUrl, defaultAvatar)}
-        altText={t('profile.profilePicture', { name: profileUser?.username })}
-      />
     </div>
   )
 }

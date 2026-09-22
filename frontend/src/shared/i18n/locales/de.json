@@ -625,7 +625,31 @@
     "rating": "Wertung",
     "change": "Änderung",
     "placement": "Platzierung",
-    "noGamesYetChart": "Noch keine Spiele"
+    "noGamesYetChart": "Noch keine Spiele",
+    "noFileSelected": "Keine Datei ausgewählt"
+  },
+
+  "avatar": {
+    "sheetTitle": "Profilbild",
+    "viewPhoto": "Bild ansehen",
+    "viewPhotoHint": "Dein Bild in voller Größe anzeigen",
+    "takePhoto": "Foto aufnehmen",
+    "takePhotoHint": "Kamera verwenden",
+    "uploadPhoto": "Bild hochladen",
+    "changePhoto": "Bild ändern",
+    "choosePhotoHint": "Ein Bild von deinem Gerät auswählen",
+    "removePhoto": "Bild entfernen",
+    "removePhotoHint": "Zurück zum Standardbild",
+    "removeConfirmTitle": "Profilbild entfernen?",
+    "removeConfirmBody": "Stattdessen wird dein Standardbild angezeigt. Du kannst jederzeit ein neues hochladen.",
+    "changePhotoAria": "Profilbild ändern",
+    "pendingChange": "Noch nicht gespeichert",
+    "undoChange": "Bildänderung rückgängig machen",
+    "dropHint": "Tippe, um ein Bild zu wählen, oder zieh ein Bild hierher",
+    "photoRemoved": "Profilbild entfernt",
+    "removingPhoto": "Bild wird entfernt...",
+    "removeFailed": "Bild konnte nicht entfernt werden: {{error}}",
+    "yourPhotoAlt": "Dein Profilbild"
   },
 
   "leaderboard": {
@@ -865,9 +889,21 @@
     "imageLoadFailed": "Bild konnte nicht geladen werden",
     "processingImage": "Bild wird verarbeitet...",
     "processingHint": "Dies kann bei großen Bildern einen Moment dauern",
-    "cropInstructions": "Ziehe das Bild, um die Position anzupassen. Verwende den Schieberegler zum Zoomen.",
+    "cropInstructions": "Zieh das Bild an die richtige Stelle und zoome oder drehe es nach Bedarf.",
     "tryAgain": "Erneut versuchen",
-    "apply": "Anwenden"
+    "apply": "Anwenden",
+    "zoomLabel": "Zoom",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "rotate": "Drehen",
+    "reset": "Zurücksetzen",
+    "applying": "Wird angewendet...",
+    "cropFailed": "Dieses Bild konnte nicht zugeschnitten werden. Bitte versuche ein anderes.",
+    "processingTimeout": "Zeitüberschreitung bei der Bildverarbeitung. Das Bild ist möglicherweise zu groß für dein Gerät.",
+    "readFailed": "Bilddatei konnte nicht gelesen werden",
+    "resizeFailed": "Bild konnte nicht verkleinert werden. Versuche ein kleineres Bild.",
+    "corruptedFile": "Bild konnte nicht geladen werden. Die Datei ist möglicherweise beschädigt.",
+    "loadFailedFallback": "Bild konnte nicht geladen werden. Bitte versuche eine andere Datei."
   },
 
   "createGame": {

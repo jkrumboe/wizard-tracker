@@ -759,7 +759,9 @@
     box-shadow: var(--shadow-lg);
     width: 100%;
     max-width: 450px;
-    gap: 0;
+    gap: var(--spacing-lg);
+    /* Balances the picture that overhangs the top edge. */
+    margin-top: 70px;
     position: relative;
   }
 
@@ -801,26 +803,46 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
-  .edit-avatar {
-    display: none;
-  }
-
-  .avatar-preview {
-    object-fit: cover;
-    width: 140px;
-    height: 140px;
-    border-radius: 25%;
-    box-shadow: var(--shadow);
-  }
-
-  .avatar-preview-container {
-    position: absolute;
-    top: -70px;
-    left: 50%;
-    transform: translateX(-50%);
+  .profile-edit-avatar {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: var(--spacing-sm);
+    /* Let the picture overhang the top edge of the card. */
+    margin-top: -70px;
+  }
+
+  .avatar-revert-button {
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .avatar-revert-button:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    transform: none;
+  }
+
+  .profile-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .profile-edit-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .profile-edit-help {
+    color: var(--text-muted);
+    font-size: 0.8rem;
   }
 
   .edit-buttons {
@@ -835,41 +857,6 @@
     .profile-edit-header {
       max-width: 100%;
     }
-
-    .avatar-upload-label {
-      width: auto;
-      font-size: 0.85rem;
-      padding: var(--spacing-xs) var(--spacing-md) !important;
-    }
-  }
-  
-  .avatar-upload-label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-lg);
-    background-color: var(--card-bg-alt);
-    color: var(--text);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-md);
-    font-weight: 500;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s;;
-  }
-  
-  .avatar-upload-label:hover {
-    background-color: var(--primary);
-    border-color: var(--primary);
-    transform: translateY(-1px);
-  }
-
-  .uploading-indicator {
-    color: var(--primary);
-    font-style: italic;
-    font-size: 0.9rem;
-    margin: var(--spacing-xs) 0;
   }
 
   .profile-edit-header .settings-message {

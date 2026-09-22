@@ -6,7 +6,6 @@ import { useTranslation, Trans } from 'react-i18next';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 
-import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import { LocalGameStorage, LocalTableGameStorage, LocalScoreboardGameStorage } from '@/shared/api';
 import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
@@ -14,7 +13,7 @@ import { TrashIcon, RefreshIcon, LogOutIcon, KeyIcon, XIcon, CheckMarkIcon, Chev
 import { supportedLanguages } from '@/shared/i18n/i18n';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 
-import ProfilePictureModal from '@/components/modals/ProfilePictureModal';
+import AvatarEditor from '@/components/profile/AvatarEditor';
 import authService from '@/shared/api/authService';
 import userService from '@/shared/api/userService';
 import avatarService from '@/shared/api/avatarService';
@@ -44,7 +43,7 @@ const Account = () => {
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const [avatarUrl, setAvatarUrl] = useState(defaultAvatar); // Avatar URL state
-  const [showProfilePictureModal, setShowProfilePictureModal] = useState(false); // Profile picture modal
+  const [avatarBusy, setAvatarBusy] = useState(false); // Profile picture upload/removal in flight
 
   const [checkingForUpdates, setCheckingForUpdates] = useState(false);
   const [forcingUpdate, setForcingUpdate] = useState(false);
@@ -568,6 +567,39 @@ const Account = () => {
     };
   }, [user]);
 
+  // From the account page a new picture is applied straight away - there is no
+  // save button here, so waiting for one would only confuse people.
+  const handleAvatarChange = async (blob) => {
+    try {
+      setAvatarBusy(true);
+      await avatarService.replaceAvatar(blob);
+      const url = await avatarService.getAvatarUrl(false);
+      setAvatarUrl(url);
+      globalThis.dispatchEvent(new CustomEvent('avatarUpdated'));
+      setMessage({ text: t('profile.avatarUpdated'), type: 'success' });
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      setMessage({ text: t('profile.avatarUploadFailed', { error: error.message }), type: 'error' });
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    try {
+      setAvatarBusy(true);
+      await avatarService.deleteAvatar();
+      setAvatarUrl(defaultAvatar);
+      globalThis.dispatchEvent(new CustomEvent('avatarUpdated'));
+      setMessage({ text: t('avatar.photoRemoved'), type: 'success' });
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      setMessage({ text: t('avatar.removeFailed', { error: error.message }), type: 'error' });
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
   // Reload games when date filter changes
   // Removed redundant reload on every render
 
@@ -1075,17 +1107,17 @@ const Account = () => {
             <div className="settings-option">
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <img
-                    src={sanitizeImageUrl(avatarUrl, defaultAvatar)}
-                    alt="Profile"
-                    onClick={() => setShowProfilePictureModal(true)}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '25%',
-                      cursor: 'pointer',
-                    }}
-                    title={t('account.clickToViewFullSize')}
+                  <AvatarEditor
+                    src={avatarUrl}
+                    alt={t('avatar.yourPhotoAlt')}
+                    size={80}
+                    editable={Boolean(user)}
+                    hasPicture={avatarUrl !== defaultAvatar}
+                    showBadge={false}
+                    busy={avatarBusy}
+                    onChange={handleAvatarChange}
+                    onRemove={handleAvatarRemove}
+                    onError={(text) => setMessage({ text, type: 'error' })}
                   />
                 <div>
                   <p style={{ margin: 0, fontWeight: 'bold' }}>{user?.username || t('common.guest')}</p>
@@ -1464,13 +1496,6 @@ const Account = () => {
           onClose={() => setShowConfirmDialog(false)}
           onConfirm={handleConfirmDelete}
           deleteAll={deleteAll}
-        />
-
-        <ProfilePictureModal
-          isOpen={showProfilePictureModal}
-          onClose={() => setShowProfilePictureModal(false)}
-          imageUrl={sanitizeImageUrl(avatarUrl, defaultAvatar)}
-          altText="Profile Picture"
         />
 
         {/* Password Change Modal */}
