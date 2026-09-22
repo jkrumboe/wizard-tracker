@@ -1,10 +1,44 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  ACCENT_PRESETS,
+  CUSTOM_ACCENT_ID,
+  DEFAULT_ACCENT_ID,
+  DEFAULT_CUSTOM_ACCENT,
+  applyAccentTokens,
+  buildAccentTokenCache,
+  normalizeHex,
+  resolveAccentSeed,
+} from '@/shared/theme/palettes';
+
+const ACCENT_ID_KEY = 'accentId';
+const ACCENT_CUSTOM_KEY = 'accentCustomColor';
+// Mirrors the derived tokens for both themes so the boot script in index.html
+// can paint the user's accent before React has loaded (see initAccent there).
+const ACCENT_CACHE_KEY = 'accentTokenCache';
 
 // Create the context
 const ThemeContext = createContext();
 
 // Export the context
 export { ThemeContext };
+
+const readStorage = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : value;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage can be unavailable (private mode, quota); the accent still
+    // applies for this session, it just will not survive a reload.
+  }
+};
 
 export function ThemeProvider({ children }) {
   const [useSystemTheme, setUseSystemTheme] = useState(() => {
@@ -21,6 +55,16 @@ export function ThemeProvider({ children }) {
     // Check if user prefers dark mode
     return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
+
+  const [accentId, setAccentIdState] = useState(() => {
+    const saved = readStorage(ACCENT_ID_KEY, DEFAULT_ACCENT_ID);
+    if (saved === CUSTOM_ACCENT_ID) return CUSTOM_ACCENT_ID;
+    return ACCENT_PRESETS.some((preset) => preset.id === saved) ? saved : DEFAULT_ACCENT_ID;
+  });
+
+  const [customAccent, setCustomAccentState] = useState(
+    () => normalizeHex(readStorage(ACCENT_CUSTOM_KEY, DEFAULT_CUSTOM_ACCENT)) || DEFAULT_CUSTOM_ACCENT,
+  );
 
   // Listen for system theme changes when useSystemTheme is true
   useEffect(() => {
@@ -64,18 +108,70 @@ export function ThemeProvider({ children }) {
     localStorage.setItem('useSystemTheme', useSystemTheme.toString());
   }, [useSystemTheme]);
 
+  const accentSeed = useMemo(
+    () => resolveAccentSeed(accentId, customAccent),
+    [accentId, customAccent],
+  );
+
+  // Derive the accent ramp and push it onto :root. Re-runs on theme change
+  // because light and dark need different lightness for the same seed.
+  useEffect(() => {
+    const cache = buildAccentTokenCache(accentSeed);
+    applyAccentTokens(cache[theme]);
+    writeStorage(ACCENT_CACHE_KEY, JSON.stringify(cache));
+  }, [accentSeed, theme]);
+
+  useEffect(() => {
+    writeStorage(ACCENT_ID_KEY, accentId);
+  }, [accentId]);
+
+  useEffect(() => {
+    writeStorage(ACCENT_CUSTOM_KEY, customAccent);
+  }, [customAccent]);
+
   // Toggle theme function
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  }, []);
+
+  const setAccent = useCallback((nextId) => {
+    if (nextId === CUSTOM_ACCENT_ID || ACCENT_PRESETS.some((preset) => preset.id === nextId)) {
+      setAccentIdState(nextId);
+    }
+  }, []);
+
+  /** Picking a custom colour implies switching to the custom accent. */
+  const setCustomAccent = useCallback((hex) => {
+    const normalized = normalizeHex(hex);
+    if (!normalized) return;
+    setCustomAccentState(normalized);
+    setAccentIdState(CUSTOM_ACCENT_ID);
+  }, []);
+
+  const resetAccent = useCallback(() => {
+    setAccentIdState(DEFAULT_ACCENT_ID);
+    setCustomAccentState(DEFAULT_CUSTOM_ACCENT);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      toggleTheme,
+      useSystemTheme,
+      setUseSystemTheme,
+      accentId,
+      setAccent,
+      customAccent,
+      setCustomAccent,
+      resetAccent,
+      accentSeed,
+      accentPresets: ACCENT_PRESETS,
+    }),
+    [theme, toggleTheme, useSystemTheme, accentId, setAccent, customAccent, setCustomAccent, resetAccent, accentSeed],
+  );
 
   return (
-    <ThemeContext.Provider value={{ 
-      theme, 
-      toggleTheme, 
-      useSystemTheme, 
-      setUseSystemTheme 
-    }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

@@ -22,6 +22,7 @@ import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { createLogger } from '@/shared/utils/logger';
 const PerformanceStatsEnhanced = lazy(() => import('@/pages/profile/PerformanceStatsEnhanced'));
 import StatsOverview from '@/components/stats/StatsOverview';
+import AccentColorPicker from '@/components/settings/AccentColorPicker';
 import '@/styles/pages/account.css';
 
 const logger = createLogger('account');
@@ -1320,6 +1321,13 @@ const Account = () => {
                     </button>
                   </>
                 )}
+              </div>
+            </div>
+
+            {/* Accent color */}
+            <div className="settings-group">
+              <div className="settings-group-content">
+                <AccentColorPicker />
               </div>
             </div>
 

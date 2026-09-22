@@ -1,4 +1,5 @@
 {
+
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -172,7 +173,6 @@
     "uploadProgress": "{{uploaded}} / {{total}} games",
     "startingUpload": "Starting upload...",
     "downloadingSelectedGames": "Downloading selected games...",
-
     "syncTitleUploading": "Uploading game...",
     "syncTitleAlreadyUploaded": "Already uploaded",
     "syncTitleCannotUploadPaused": "Cannot upload paused games",
@@ -186,20 +186,37 @@
     "shareTitleShareGame": "Share game",
     "clickToViewFullSize": "Click to view full size",
     "syncedToCloud": "Synced to Cloud",
-
     "changePassword": "Change Password",
     "deleteAccount": "Delete Account",
-
     "themeDark": "Dark",
     "themeLight": "Light",
+    "accentTitle": "Accent color",
+    "accentDescription": "Pick a preset or choose your own colour. Shades are generated for both light and dark mode so text stays readable.",
+    "accentCustom": "Custom colour",
+    "accentCustomLabel": "Choose your own colour",
+    "accentAdjusted": "Applied as {{color}} in this theme so text stays readable.",
+    "accentReset": "Reset to default",
+    "accentPreview": "Preview",
+    "accentPreviewButton": "Primary button",
+    "accentPreviewLink": "Link text",
+    "accents": {
+      "wizard": "Wizard Blue",
+      "arcane": "Arcane Violet",
+      "mystic": "Mystic Orchid",
+      "ruby": "Ruby Trick",
+      "ember": "Ember Orange",
+      "gold": "Royal Gold",
+      "clover": "Clover Green",
+      "jade": "Jade Table",
+      "lagoon": "Lagoon Cyan",
+      "graphite": "Graphite",
+      "custom": "Custom"
+    },
     "systemThemeLabel": "Automatically match your device's theme",
-
     "updateSettings": "Update Settings",
     "autoUpdates": "Auto Updates",
     "autoUpdateEnabled": "Updates will install automatically",
     "autoUpdateDisabled": "You will be prompted before installing updates",
-
-    "dataManagement": "Data Management",
     "storageFormat": "Storage Format:",
     "storageFormatV3": "v3.0",
     "storageFormatLegacy": "Legacy",
@@ -210,7 +227,6 @@
     "allGamesUpToDate": "All Games Up to Date",
     "migrateTitle": "Migrate local games to v3.0 format",
     "lastMigrationStats": "Last migration: {{migrated}} migrated, {{alreadyV3}} already v3.0",
-
     "appInformation": "App Information",
     "versionLabel": "Version:",
     "buildDateLabel": "Build Date:",
@@ -218,7 +234,6 @@
     "forceUpdate": "Force Update",
     "forceUpdateTitle": "Force clear cache and reload (use if stuck in update loop)",
     "checkForUpdatesTitle": "Check for app updates",
-
     "languageSettings": "Language",
     "languageAuto": "Auto-detect"
   },
@@ -1237,7 +1252,7 @@
     "title": "Player Identity Linking",
     "description": "Link guest player identities to registered user accounts",
     "refreshData": "Refresh data",
-    "howItWorks": "\uD83D\uDD17 How Player Identity Linking Works",
+    "howItWorks": "🔗 How Player Identity Linking Works",
     "whenToUse": "When to Use",
     "useCase1": "A user played games as a guest before registering",
     "useCase2": "Multiple guest entries exist for the same person",
@@ -1288,7 +1303,7 @@
   "adminGameLinkage": {
     "title": "Game Linkage Management",
     "description": "Retroactively link games to user accounts based on player names.",
-    "howItWorks": "\uD83D\uDD17 How Game Linking Works",
+    "howItWorks": "🔗 How Game Linking Works",
     "matchingProcess": "Matching Process",
     "caseInsensitive": "Case-insensitive:",
     "caseInsensitiveDesc": "\"john\" matches \"John\" and \"JOHN\"",
@@ -1415,10 +1430,11 @@
     "confirmRemoveElo": "ELO ratings are recalculated afterwards, which may take a moment.",
     "confirmRemoveAction": "Remove duplicates"
   },
+
   "adminElo": {
     "title": "ELO Management",
     "description": "Recalculate ELO ratings for all players from historical game data.",
-    "howItWorks": "\uD83D\uDCCA How ELO Recalculation Works",
+    "howItWorks": "📊 How ELO Recalculation Works",
     "process": "Process",
     "resetRatings": "Resets all ratings to {{rating}}",
     "chronologicalOrder": "Processes games in chronological order",

@@ -1,0 +1,326 @@
+/*
+ * Accent colour picker (Account → Settings → Appearance).
+ *
+ * Swatches set `--swatch` inline to the colour the accent resolves to in the
+ * current theme, so this file never hardcodes any accent value itself.
+ */
+
+/* --- Disclosure row ------------------------------------------------------ */
+
+/* The row borrows .settings-row from account.css, so it only needs the bits
+   that are specific to showing the current accent on the right. */
+.accent-toggle-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.accent-toggle-swatch {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .accent-toggle-swatch {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.accent-toggle-value {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.accent-toggle-chevron {
+  transition: transform 0.2s ease;
+}
+
+.accent-toggle-chevron-open {
+  transform: rotate(90deg);
+}
+
+/* --- Panel --------------------------------------------------------------- */
+
+.accent-picker {
+  animation: accent-panel-in 0.18s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.accent-picker-description {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* --- Swatch grid --------------------------------------------------------- */
+
+.accent-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.accent-swatch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-width: 44px;
+  padding: 0;
+  /* Unset the global `button` chrome from base/index.css — the visible circle
+     is the inner dot, the button itself is only a hit target. */
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.accent-swatch:hover:not(:disabled),
+.accent-swatch:active {
+  transform: none;
+  border-color: transparent;
+}
+
+.accent-swatch-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--swatch);
+  /* Keeps pale swatches visible against a white card. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  color: #ffffff;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] .accent-swatch-dot {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  color: var(--bg-color);
+}
+
+.accent-swatch:hover .accent-swatch-dot {
+  transform: scale(1.08);
+}
+
+.accent-swatch:active .accent-swatch-dot {
+  transform: scale(0.96);
+}
+
+/* The selection ring sits outside the dot so it never tints the colour. */
+.accent-swatch-selected .accent-swatch-dot {
+  transform: scale(1.05);
+  box-shadow:
+    0 0 0 2px var(--card-bg),
+    0 0 0 4px var(--swatch);
+}
+
+.accent-swatch:focus-visible {
+  outline: none;
+}
+
+.accent-swatch:focus-visible .accent-swatch-dot {
+  box-shadow:
+    0 0 0 2px var(--card-bg),
+    0 0 0 4px var(--swatch);
+}
+
+/*
+ * The custom swatch is a solid circle of the user's actual colour, ringed by a
+ * spectrum halo so it reads as "any colour" rather than an 11th preset. The
+ * halo is a plain sibling circle behind the dot — no masks — so it degrades
+ * predictably everywhere.
+ */
+.accent-swatch-custom::before {
+  content: '';
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: conic-gradient(
+    from 0deg,
+    #f43f5e, #f59e0b, #facc15, #22c55e, #06b6d4, #6366f1, #d946ef, #f43f5e
+  );
+}
+
+/* Once selected, the selection ring occupies that space instead. */
+.accent-swatch-custom.accent-swatch-selected::before {
+  display: none;
+}
+
+/* Absolutely-positioned ::before would otherwise paint over the in-flow dot. */
+.accent-swatch-custom .accent-swatch-dot {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Custom colour row --------------------------------------------------- */
+
+.accent-custom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.accent-custom-label {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.accent-custom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Strip the platform chrome so the native picker reads as a swatch button. */
+.accent-color-input {
+  width: 40px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.accent-color-input::-webkit-color-swatch-wrapper {
+  padding: 3px;
+}
+
+.accent-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+}
+
+.accent-color-input::-moz-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+}
+
+.accent-hex-input {
+  width: 6.5rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-size: 0.85rem;
+  text-transform: lowercase;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.accent-hex-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.accent-adjusted-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* --- Live preview -------------------------------------------------------- */
+
+.accent-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius-md);
+}
+
+.accent-preview-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--primary-subtle);
+}
+
+.accent-preview-items {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.accent-preview-button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: var(--radius-full);
+}
+
+.accent-preview-chip {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* --- Reset --------------------------------------------------------------- */
+
+.accent-reset {
+  align-self: flex-start;
+  padding: var(--spacing-xs) 0;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--primary);
+  background: none;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.accent-reset:hover:not(:disabled) {
+  transform: none;
+  border-color: transparent;
+  text-decoration: underline;
+}
+
+@keyframes accent-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accent-swatch-dot,
+  .accent-toggle-chevron {
+    transition: none;
+  }
+
+  .accent-picker {
+    animation: none;
+  }
+}

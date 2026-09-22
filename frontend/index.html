@@ -37,8 +37,8 @@
     <meta property="og:url" content="https://wizard.jkrumboe.dev" />
     <meta property="og:image" content="https://wizard.jkrumboe.dev/icons/logo-512.png" />
     <meta property="og:site_name" content="KeepWiz" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f5f9">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0f172a">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6fa">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0b1120">
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Wizard Tracker" />
@@ -69,15 +69,18 @@
     
     <style>
       /* Critical CSS - Theme variables for immediate loading */
+      /* Keep in sync with src/styles/base/index.css so there is no colour jump
+         when the real stylesheet loads. The accent below is the Wizard Blue
+         default; initAccent() overwrites it with the user's choice. */
       :root {
-        --primary: #3b82f6;
-        --primary-dark: #1d4ed8;
-        --primary-light: #93c5fd;
-        --text: #111827;
-        --text-light: #4b5563;
-        --bg-color: #f1f5f9;
+        --primary: #256cde;
+        --primary-dark: #0251c1;
+        --primary-light: #5897ff;
+        --text: #0f172a;
+        --text-light: #475569;
+        --bg-color: #f4f6fa;
         --card-bg: #ffffff;
-        --border-light: #e2e8f0;
+        --border-light: #eaeef4;
         --shadow: 0 4px 12px rgba(0, 0, 0, 0.20);
         --spacing-sm: 0.5rem;
         --spacing-md: 1rem;
@@ -86,24 +89,28 @@
       /* Dark theme detection and variables */
       @media (prefers-color-scheme: dark) {
         :root {
-          --primary: #60a5fa;
-          --text: #f9fafb;
-          --text-light: #d1d5db;
-          --bg-color: #0f172a;
-          --card-bg: #1e293b;
-          --border-light: #64748b;
+          --primary: #75a9ff;
+          --primary-dark: #5a8de0;
+          --primary-light: #aacaff;
+          --text: #f1f5f9;
+          --text-light: #cbd5e1;
+          --bg-color: #0b1120;
+          --card-bg: #161e2e;
+          --border-light: #3a4760;
           --shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
         }
       }
 
       /* Manual dark theme override */
       [data-theme="dark"] {
-        --primary: #60a5fa;
-        --text: #f9fafb;
-        --text-light: #d1d5db;
-        --bg-color: #0f172a;
-        --card-bg: #1e293b;
-        --border-light: #64748b;
+        --primary: #75a9ff;
+        --primary-dark: #5a8de0;
+        --primary-light: #aacaff;
+        --text: #f1f5f9;
+        --text-light: #cbd5e1;
+        --bg-color: #0b1120;
+        --card-bg: #161e2e;
+        --border-light: #3a4760;
         --shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
       }
 
@@ -333,18 +340,51 @@
       }, 3000);
 
       // Theme detection and persistence
-      const initTheme = () => {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-        
+      const resolveTheme = () => {
+        try {
+          const useSystem = localStorage.getItem('useSystemTheme');
+          const savedTheme = localStorage.getItem('theme');
+          const prefersDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (useSystem === 'false' && savedTheme) return savedTheme;
+          return prefersDark ? 'dark' : 'light';
+        } catch (e) {
+          return 'light';
+        }
+      };
+
+      const initTheme = (theme) => {
         if (theme === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark');
         }
       };
 
+      /*
+       * Paint the user's accent before React boots. The provider writes a cache
+       * of the derived tokens for both themes on every change, so this only has
+       * to read and apply strings — no colour maths in the critical path. If the
+       * cache is missing or malformed we simply keep the stylesheet default.
+       */
+      const initAccent = (theme) => {
+        try {
+          const raw = localStorage.getItem('accentTokenCache');
+          if (!raw) return;
+          const tokens = JSON.parse(raw)[theme];
+          if (!tokens) return;
+          const root = document.documentElement;
+          Object.keys(tokens).forEach((token) => {
+            if (token.indexOf('--') === 0 && typeof tokens[token] === 'string') {
+              root.style.setProperty(token, tokens[token]);
+            }
+          });
+        } catch (e) {
+          // Corrupt cache: fall back to the stylesheet defaults.
+        }
+      };
+
       // Initialize theme immediately
-      initTheme();
+      const initialTheme = resolveTheme();
+      initTheme(initialTheme);
+      initAccent(initialTheme);
     </script>
   </body>
 </html>

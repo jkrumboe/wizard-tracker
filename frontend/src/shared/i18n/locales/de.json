@@ -1,4 +1,5 @@
 {
+
   "common": {
     "save": "Speichern",
     "cancel": "Abbrechen",
@@ -59,8 +60,8 @@
     "filterGames": "Spiele filtern",
     "unknown": "Unbekannt",
     "na": "k.A.",
-    "uploading": "Hochladen\u2026",
-    "sharing": "Teilen\u2026",
+    "uploading": "Hochladen…",
+    "sharing": "Teilen…",
     "uploadToCloud": "In Cloud laden",
     "syncToSystem": "Synchronisieren",
     "elo": "ELO",
@@ -172,7 +173,6 @@
     "uploadProgress": "{{uploaded}} / {{total}} Spiele",
     "startingUpload": "Upload wird gestartet...",
     "downloadingSelectedGames": "Ausgewählte Spiele werden heruntergeladen...",
-
     "syncTitleUploading": "Spiel wird hochgeladen...",
     "syncTitleAlreadyUploaded": "Bereits hochgeladen",
     "syncTitleCannotUploadPaused": "Pausierte Spiele können nicht hochgeladen werden",
@@ -186,20 +186,37 @@
     "shareTitleShareGame": "Spiel teilen",
     "clickToViewFullSize": "Klicken, um in voller Größe anzuzeigen",
     "syncedToCloud": "Mit Cloud synchronisiert",
-
     "changePassword": "Passwort ändern",
     "deleteAccount": "Konto löschen",
-
     "themeDark": "Dunkel",
     "themeLight": "Hell",
+    "accentTitle": "Akzentfarbe",
+    "accentDescription": "Wähle eine Voreinstellung oder deine eigene Farbe. Die Abstufungen werden für hellen und dunklen Modus erzeugt, damit Text lesbar bleibt.",
+    "accentCustom": "Eigene Farbe",
+    "accentCustomLabel": "Eigene Farbe wählen",
+    "accentAdjusted": "Wird in diesem Design als {{color}} angewendet, damit Text lesbar bleibt.",
+    "accentReset": "Auf Standard zurücksetzen",
+    "accentPreview": "Vorschau",
+    "accentPreviewButton": "Primärer Button",
+    "accentPreviewLink": "Linktext",
+    "accents": {
+      "wizard": "Zauberblau",
+      "arcane": "Arkanviolett",
+      "mystic": "Mystische Orchidee",
+      "ruby": "Rubinrot",
+      "ember": "Glutorange",
+      "gold": "Königsgold",
+      "clover": "Kleegrün",
+      "jade": "Jadetisch",
+      "lagoon": "Lagunenblau",
+      "graphite": "Graphit",
+      "custom": "Eigene"
+    },
     "systemThemeLabel": "Automatisch an das Geräte-Design anpassen",
-
     "updateSettings": "Update-Einstellungen",
     "autoUpdates": "Automatische Updates",
     "autoUpdateEnabled": "Updates werden automatisch installiert",
     "autoUpdateDisabled": "Du wirst vor der Installation von Updates gefragt",
-
-    "dataManagement": "Datenverwaltung",
     "storageFormat": "Speicherformat:",
     "storageFormatV3": "v3.0",
     "storageFormatLegacy": "Veraltet",
@@ -210,7 +227,6 @@
     "allGamesUpToDate": "Alle Spiele sind aktuell",
     "migrateTitle": "Lokale Spiele ins v3.0-Format migrieren",
     "lastMigrationStats": "Letzte Migration: {{migrated}} migriert, {{alreadyV3}} bereits v3.0",
-
     "appInformation": "App-Informationen",
     "versionLabel": "Version:",
     "buildDateLabel": "Build-Datum:",
@@ -218,7 +234,6 @@
     "forceUpdate": "Update erzwingen",
     "forceUpdateTitle": "Cache leeren und neu laden (bei Update-Schleifen verwenden)",
     "checkForUpdatesTitle": "Nach App-Updates suchen",
-
     "languageSettings": "Sprache",
     "languageAuto": "Automatisch erkennen"
   },
@@ -1158,7 +1173,7 @@
     "manageUser": "Benutzer verwalten: {{username}}",
     "username": "Benutzername",
     "role": "Rolle",
-    "accountDeletedWarning": "\u26a0\ufe0f Dieses Konto wurde gelöscht und anonymisiert.",
+    "accountDeletedWarning": "⚠️ Dieses Konto wurde gelöscht und anonymisiert.",
     "deletedDate": "Gelöscht: {{date}}",
     "usernameLabel": "Benutzername:",
     "registeredLabel": "Registriert:",
@@ -1186,7 +1201,7 @@
     "preserveGames": "Alle Spiele und Tischspiele",
     "preserveTemplates": "Alle Spielvorlagen",
     "preserveHistory": "Spielverlauf für andere Spieler",
-    "cannotBeUndone": "\u26a0\ufe0f Diese Aktion kann nicht rückgängig gemacht werden!",
+    "cannotBeUndone": "⚠️ Diese Aktion kann nicht rückgängig gemacht werden!",
     "roleCannotBeEmpty": "Rolle darf nicht leer sein",
     "usernameCannotBeEmpty": "Benutzername darf nicht leer sein",
     "usernameUpdated": "Benutzername erfolgreich aktualisiert!",
@@ -1237,7 +1252,7 @@
     "title": "Spieleridentitäts-Verknüpfung",
     "description": "Gast-Spieleridentitäten mit registrierten Benutzerkonten verknüpfen",
     "refreshData": "Daten aktualisieren",
-    "howItWorks": "\uD83D\uDD17 So funktioniert die Spieleridentitäts-Verknüpfung",
+    "howItWorks": "🔗 So funktioniert die Spieleridentitäts-Verknüpfung",
     "whenToUse": "Wann verwenden",
     "useCase1": "Ein Benutzer hat vor der Registrierung als Gast gespielt",
     "useCase2": "Mehrere Gasteinträge existieren für dieselbe Person",
@@ -1288,7 +1303,7 @@
   "adminGameLinkage": {
     "title": "Spielverknüpfungs-Verwaltung",
     "description": "Spiele nachträglich anhand von Spielernamen mit Benutzerkonten verknüpfen.",
-    "howItWorks": "\uD83D\uDD17 So funktioniert die Spielverknüpfung",
+    "howItWorks": "🔗 So funktioniert die Spielverknüpfung",
     "matchingProcess": "Zuordnungsprozess",
     "caseInsensitive": "Groß-/Kleinschreibung ignoriert:",
     "caseInsensitiveDesc": "\"hans\" stimmt mit \"Hans\" und \"HANS\" überein",
@@ -1415,10 +1430,11 @@
     "confirmRemoveElo": "Die ELO-Wertungen werden danach neu berechnet, das kann einen Moment dauern.",
     "confirmRemoveAction": "Duplikate entfernen"
   },
+
   "adminElo": {
     "title": "ELO-Verwaltung",
     "description": "ELO-Bewertungen für alle Spieler aus historischen Spieldaten neu berechnen.",
-    "howItWorks": "\uD83D\uDCCA So funktioniert die ELO-Neuberechnung",
+    "howItWorks": "📊 So funktioniert die ELO-Neuberechnung",
     "process": "Prozess",
     "resetRatings": "Setzt alle Bewertungen auf {{rating}} zurück",
     "chronologicalOrder": "Verarbeitet Spiele in chronologischer Reihenfolge",
