@@ -6,3 +6,5 @@ export { useOnlineStatus } from './useOnlineStatus.js';
 export { usePlayers } from './usePlayers.jsx';
 export { useTheme } from './useTheme.jsx';
 export { useUser } from './useUser.jsx';
+export { useFixedViewportPage } from './useFixedViewportPage.js';
+export { useViewportKeyboard } from './useViewportKeyboard.js';

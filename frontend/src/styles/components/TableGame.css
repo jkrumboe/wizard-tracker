@@ -46,23 +46,31 @@
   box-sizing: border-box;
 }
 /* TableGame styles */
+/*
+ * The page bounds itself to the visible viewport (--app-height follows the
+ * visual viewport, so it shrinks while the keyboard is open) and never scrolls
+ * itself. Only the score table scrolls, which keeps the round header on screen
+ * while points are typed instead of letting iOS pan the whole page away.
+ */
 .table-game-container {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100vw;
-  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px - env(safe-area-inset-top, 0px));
+  height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - var(--bottom-nav-reserve));
   margin: 0 auto;
-  padding: 0;
-  margin-top: var(--spacing-md);
-  overflow-x: hidden;
+  padding-top: var(--spacing-md);
+  overflow: hidden;
 }
 
 .scoreboard-game-container {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100vw;
-  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px - env(safe-area-inset-top, 0px));
+  height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - var(--bottom-nav-reserve));
   margin: 0 auto;
-  padding: 0;
-  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
   overflow: hidden;
   overscroll-behavior-y: contain;
 }
@@ -97,14 +105,62 @@
   cursor: pointer;
 }
 
-/* GameInProgress-style layout */
-.table-game-container .game-in-progress {
+/* GameInProgress-style layout.
+   The page is a flex item of the container, so its auto side margins would
+   otherwise beat the default stretch and shrink it to its content - making the
+   header and the stats panel jump in width as the sub-tab changes. An explicit
+   width keeps every tab on the full page width. */
+.table-game-container .game-in-progress,
+.scoreboard-game-container .game-in-progress {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px - env(safe-area-inset-top, 0px));
+  height: 100%;
+  min-height: 0;
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto;
   padding: 0;
+}
+
+/* Round header never scrolls: it is a fixed row of the page, not of the
+   scrolling score list. */
+.table-game-container .round-info,
+.scoreboard-game-container .round-info {
+  flex-shrink: 0;
+  background-color: var(--bg-color);
+}
+
+/* Keep the last rows scrollable clear of the floating round controls.
+   The two-side scoreboard panel stretches to fill instead of scrolling, so it
+   keeps its full height. */
+.table-game-container .tab-panel:not(.scoreboard-game-panel) {
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-lg));
+}
+
+/*
+ * The score table keeps its full height and the tab panel scrolls around it.
+ * (.player-scores is an overflow:hidden flex item, so by default it would
+ * shrink instead and clip rows in half when the keyboard shortens the panel.)
+ */
+.table-game-container .player-scores,
+.table-game-container .explanation {
+  flex-shrink: 0;
+}
+
+/* The shell is locked to the visible area, so the page simply fills it. */
+body[data-fixed-viewport] .table-game-container,
+body[data-fixed-viewport] .scoreboard-game-container {
+  height: 100%;
+}
+
+/* Scrolling stops at the panel instead of being handed on to the shell, and a
+   field scrolled into view keeps a little room around it. */
+.table-game-container .tab-panel {
+  overscroll-behavior: contain;
+}
+
+.table-game-container .rounds-input,
+.table-game-container .player-name-input {
+  scroll-margin-block: var(--spacing-lg);
 }
 
 .table-game-container .results-row {

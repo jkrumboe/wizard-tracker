@@ -8,6 +8,7 @@ import { getTableGameById } from "../../shared/api/tableGameService";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
 import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
 import { useUser } from "../../shared/hooks/useUser";
+import { useFixedViewportPage } from "../../shared/hooks/useFixedViewportPage";
 import StatsChart from "../../components/game/StatsChart";
 import { AdvancedStats } from "../../components/game";
 import { generateSecureId } from "../../shared/utils/secureRandom";
@@ -21,6 +22,7 @@ import "../../styles/components/scorecard.css";
 const MIN_PLAYERS = 2;
 
 const TableGame = ({ forceScoreEntryMode = null }) => {
+  useFixedViewportPage(); // Only the score list scrolls; the shell stays put
   const { user } = useUser(); // Get the logged-in user
   const { id } = useParams();
   const navigate = useNavigate();

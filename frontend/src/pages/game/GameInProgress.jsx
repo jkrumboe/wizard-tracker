@@ -19,8 +19,10 @@ import "@/styles/components/statsChart.css"
 import "@/styles/components/scorecard.css"
 
 import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
+import { useFixedViewportPage } from "@/shared/hooks/useFixedViewportPage"
 
 const GameInProgress = () => {
+  useFixedViewportPage() // Only the round list scrolls; the shell stays put
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { 

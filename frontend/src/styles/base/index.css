@@ -13,6 +13,21 @@ html, body {
 }
 
 /*
+ * --app-height mirrors the visual viewport (set by useViewportKeyboard), so it
+ * shrinks while the software keyboard is open; --bottom-nav-reserve is the
+ * space the fixed bottom navigation needs, which is nothing once the keyboard
+ * covers it. Pages that bound themselves to the viewport use both so the page
+ * always fits the visible area and iOS has no reason to pan it.
+ */
+:root {
+  --bottom-nav-reserve: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+html[data-keyboard="open"] {
+  --bottom-nav-reserve: 0px;
+}
+
+/*
  * Colour tokens.
  *
  * The neutral and semantic scales below are fixed per theme. The `--primary*`
@@ -387,6 +402,27 @@ button:disabled,
   /* background-image: linear-gradient(to bottom, transparent, rgba(66, 153, 225, 0.03)); */
   background-size: 100% 100%;
   background-attachment: fixed;
+}
+
+/*
+ * Pages that pin themselves to the viewport (the game screens) lock the shell:
+ * it is exactly as tall as the visible area and cannot scroll, so nothing can
+ * drag their header out of view. Their own scroll region is the only thing
+ * that moves.
+ */
+body[data-fixed-viewport] .main-container {
+  height: var(--app-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* While the keyboard is up, shrink the shell to the visible area and drop the
+   reservation for the bottom navigation, which the keyboard now covers. Scoped
+   to the pinned pages so ordinary pages keep their normal layout throughout. */
+html[data-keyboard="open"] body[data-fixed-viewport] .main-container {
+  height: var(--app-height, 100dvh);
+  min-height: 0;
+  padding-bottom: 0;
 }
 
 /* Navbar styles */

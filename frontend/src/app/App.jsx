@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, lazy, Suspense, Component } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom"
 import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
 import { AuthProtectedRoute, UpdateNotification, SeoRouteMeta, OfflineStatusBar } from "@/components/common"
@@ -40,6 +40,7 @@ const Login = lazy(() => import("@/pages/auth/Login"))
 const SharedGamePage = lazy(() => import("@/pages/shared/SharedGamePage"))
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
+import { useViewportKeyboard } from "@/shared/hooks/useViewportKeyboard"
 import { UserProvider, ThemeProvider } from "@/shared/contexts"
 import { authService } from "@/shared/api/authService"
 import { LocalGameStorage } from "@/shared/api/localGameStorage"
@@ -47,6 +48,22 @@ import { autoMigrateIfNeeded } from "@/shared/utils/localStorageMigration"
 import "@/styles/base/theme.css"
 import "@/styles/devices/tablet.css"
 import "@/shared/utils/devUpdateHelper"
+
+// Clears any scroll or keyboard pan the previous page left behind, so every
+// page starts at its top with the safe area intact.
+function ViewportScrollReset() {
+  const location = useLocation();
+
+  useEffect(() => {
+    globalThis.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const shell = document.querySelector('.main-container');
+    if (shell) shell.scrollTop = 0;
+  }, [location.pathname]);
+
+  return null;
+}
 
 // Component to handle URL imports
 function URLImportHandler() {
@@ -217,6 +234,9 @@ class LazyLoadErrorBoundary extends Component {
 }
 
 function App() {
+  // Keep the app sized to the visible viewport when the keyboard opens
+  useViewportKeyboard();
+
   useEffect(() => {
     // Log app version
     // eslint-disable-next-line no-undef
@@ -248,6 +268,7 @@ function App() {
               <ServiceWorkerErrorRecovery />
               <GameStateProvider>
                 <URLImportHandler />
+                <ViewportScrollReset />
                 <SeoRouteMeta />
                 <Navbar />
                 <div className="main-container">

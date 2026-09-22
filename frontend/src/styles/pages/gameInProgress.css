@@ -127,6 +127,29 @@
   padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-sm));
 }
 
+/*
+ * Wizard game page: bound the page to the visible viewport so the tab panel is
+ * the only thing that scrolls. Without this the page itself overflows and iOS
+ * pans it away - taking the round header with it - when the keyboard opens.
+ */
+.main-container > .game-in-progress {
+  height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - var(--bottom-nav-reserve));
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The shell is locked to the visible area, so the page simply fills it. */
+body[data-fixed-viewport] .main-container > .game-in-progress {
+  height: 100%;
+}
+
+/* The round list keeps its height and the tab panel scrolls around it, rather
+   than the list shrinking and clipping rows when the keyboard is up. */
+.game-in-progress .player-scores,
+.game-in-progress .explanation {
+  flex-shrink: 0;
+}
+
 /* Results table styling */
 .game-in-progress .results-table {
   width: 100%;
@@ -142,6 +165,8 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  flex-shrink: 0;
+  background-color: var(--bg-color);
   padding: var(--spacing-sm) 0 var(--spacing-md) 0;
   display: flex;
   justify-content: space-between;
