@@ -109,3 +109,70 @@ describe('LocalGameStorage.loadGame', () => {
     expect(loaded).toBeNull();
   });
 });
+
+describe('LocalGameStorage.markGamePaused', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('flags a v3 game as paused and renames it away from the auto-save placeholder', () => {
+    const saved = buildValidSavedGame({
+      name: 'Current Game (Auto-save)',
+      _internalState: { ...buildValidSavedGame()._internalState, isPaused: false },
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ 'game-1': saved }));
+
+    expect(LocalGameStorage.markGamePaused('game-1', 'Paused Game - Round 2/3')).toBe(true);
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY))['game-1'];
+    expect(stored._internalState.isPaused).toBe(true);
+    expect(stored.name).toBe('Paused Game - Round 2/3');
+  });
+
+  it('keeps the existing name when none is given', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ 'game-1': buildValidSavedGame() }));
+
+    LocalGameStorage.markGamePaused('game-1');
+
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY))['game-1'].name)
+      .toBe('Paused Game - Round 1/3');
+  });
+
+  it('flags legacy wrapper games as paused', () => {
+    const legacy = {
+      id: 'legacy-1',
+      name: 'Current Game (Auto-save)',
+      gameFinished: false,
+      gameState: { players: [{ id: 'p1', name: 'Alice' }], currentRound: 2, isPaused: false },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ 'legacy-1': legacy }));
+
+    expect(LocalGameStorage.markGamePaused('legacy-1', 'Paused Game')).toBe(true);
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY))['legacy-1'];
+    expect(stored.isPaused).toBe(true);
+    expect(stored.gameState.isPaused).toBe(true);
+  });
+
+  it('leaves finished games and unknown ids alone', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      'game-1': buildValidSavedGame({ gameFinished: true }),
+    }));
+
+    expect(LocalGameStorage.markGamePaused('game-1')).toBe(false);
+    expect(LocalGameStorage.markGamePaused('missing')).toBe(false);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY))['game-1'].gameFinished).toBe(true);
+  });
+
+  it('does not touch games belonging to another user on the device', () => {
+    localStorage.setItem('wizardTracker_currentUserId', 'user-a');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      'game-1': buildValidSavedGame({ userId: 'user-a' }),
+      'game-2': buildValidSavedGame({ id: 'game-2', userId: 'user-b' }),
+    }));
+
+    LocalGameStorage.markGamePaused('game-1', 'Paused Game');
+
+    expect(Object.keys(JSON.parse(localStorage.getItem(STORAGE_KEY)))).toEqual(['game-1', 'game-2']);
+  });
+});

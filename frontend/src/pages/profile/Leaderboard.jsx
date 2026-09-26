@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
-import { UsersIcon } from '@/components/ui/Icon'
+import { ArrowLeftCircleIcon, UsersIcon } from '@/components/ui/Icon'
 import "@/styles/pages/leaderboard.css"
 
 const Leaderboard = () => {
@@ -26,6 +26,15 @@ const Leaderboard = () => {
   )
   const [lastRefresh, setLastRefresh] = useState(null)
   const playersPerPage = 10
+
+  const handlePageBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate('/games')
+  }
 
   // Handle player click - Navigate to user profile
   const handlePlayerClick = async (player) => {
@@ -226,7 +235,20 @@ const Leaderboard = () => {
   if (loading) {
     return (
       <div className="leaderboard-container">
-        <h1 style={{marginBottom: '0'}}>{t('leaderboard.title')}</h1>
+        <div className="leaderboard-top-header">
+          <button
+            className="leaderboard-page-back-button"
+            onClick={handlePageBack}
+            title={t('common.back')}
+            aria-label={t('common.back')}
+          >
+            <ArrowLeftCircleIcon size={24} />
+          </button>
+
+          <div className="leaderboard-header-text">
+            <h1>{t('leaderboard.title')}</h1>
+          </div>
+        </div>
         
         <div style={{ 
           fontSize: '0.85rem', 
@@ -307,6 +329,14 @@ const Leaderboard = () => {
   if (error) {
     return (
       <div className="error-container">
+        <button
+          className="leaderboard-page-back-button"
+          onClick={handlePageBack}
+          title={t('common.back')}
+          aria-label={t('common.back')}
+        >
+          <ArrowLeftCircleIcon size={24} />
+        </button>
         <h2>{t('leaderboard.errorLoading')}</h2>
         <p>{error}</p>
         <button onClick={fetchLeaderboard} className="retry-button">
@@ -318,7 +348,20 @@ const Leaderboard = () => {
 
   return (
     <div className="leaderboard-container">
-      <h1 style={{marginBottom: '0'}}>{t('leaderboard.title')}</h1>
+      <div className="leaderboard-top-header">
+        <button
+          className="leaderboard-page-back-button"
+          onClick={handlePageBack}
+          title={t('common.back')}
+          aria-label={t('common.back')}
+        >
+          <ArrowLeftCircleIcon size={24} />
+        </button>
+
+        <div className="leaderboard-header-text">
+          <h1>{t('leaderboard.title')}</h1>
+        </div>
+      </div>
       
       {lastRefresh && (
         <div style={{ 

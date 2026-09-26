@@ -36,7 +36,12 @@ const WizardGameHistoryModal = ({
 
         // Handle nested gameState structure
         const players = game.players || gameState.players || [];
-        const isPaused = game.isPaused || gameState.isPaused || false;
+        // v3.0 saves keep the flag in _internalState; anything unfinished counts
+        // as paused so it can be continued instead of opening as a finished game
+        const isPaused = game.isPaused
+          ?? game._internalState?.isPaused
+          ?? gameState.isPaused
+          ?? true;
         const currentRound = game.currentRound || gameState.currentRound || game._internalState?.currentRound || 0;
         const maxRounds =
           game.total_rounds ||

@@ -136,6 +136,18 @@
   padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-lg));
 }
 
+/* ...but those controls are hidden while the keyboard is up, so the clearance
+   they need would otherwise become dead space at the bottom of the score list. */
+html[data-keyboard="open"] .table-game-container .tab-panel:not(.scoreboard-game-panel) {
+  padding-bottom: var(--spacing-md);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  body:has(input:focus, textarea:focus) .table-game-container .tab-panel:not(.scoreboard-game-panel) {
+    padding-bottom: var(--spacing-md);
+  }
+}
+
 /*
  * The score table keeps its full height and the tab panel scrolls around it.
  * (.player-scores is an overflow:hidden flex item, so by default it would

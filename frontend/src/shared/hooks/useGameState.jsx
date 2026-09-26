@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
 import { createGame } from "@/shared/api/gameService"
 import { LocalGameStorage } from "@/shared/api"
 import { stateRecovery } from "@/shared/utils/stateRecovery"
 import { getSyncManager } from "@/shared/sync/syncManager"
 import { getSecureRandomInt } from "@/shared/utils/secureRandom"
 import { calculateScore, WIZARD_FORMULA, generateRoundPattern } from "@/shared/utils/scoringFormulas"
+import i18n from "@/shared/i18n/i18n"
 
 const LOCAL_GAMES_STORAGE_KEY = "wizardTracker_localGames"
 const GameStateContext = createContext()
@@ -29,6 +30,11 @@ export function GameStateProvider({ children }) {
     // Template configuration for Call & Made games
     templateConfig: null, // { scoringFormula, roundPattern, maxRounds, hasDealerRotation, hasForbiddenCall, templateName }
   })
+
+  // Mirror of the live state so unmount/unload handlers can persist the game
+  // without capturing a stale gameState in their closures.
+  const gameStateRef = useRef(gameState)
+  gameStateRef.current = gameState
 
   const isValidLoadedGameState = useCallback((state) => {
     if (!state || typeof state !== 'object') {
@@ -964,6 +970,48 @@ export function GameStateProvider({ children }) {
     }
   }, [gameState]);
 
+  /**
+   * Persist the active game as paused without any UI flow.
+   *
+   * A running game is stored under the "Current Game (Auto-save)" placeholder,
+   * which the startup cleanup deletes, so simply navigating away from the game
+   * screen used to lose it. This renames the save and flags it as paused, while
+   * leaving the in-memory state active so returning to the game just works.
+   * @param {string} customName - Optional name for the paused save
+   * @returns {Object} - { success, gameId } or { success: false, error }
+   */
+  const pauseActiveGame = useCallback((customName = null) => {
+    const state = gameStateRef.current;
+
+    if (!state.gameStarted || state.gameFinished) {
+      return { success: false };
+    }
+
+    try {
+      const name = customName
+        || state.gameName
+        || i18n.t('gameInProgress.pausedGameName', {
+          current: state.currentRound,
+          max: state.maxRounds,
+        });
+
+      let gameId = state.gameId;
+
+      if (gameId && LocalGameStorage.gameExists(gameId)) {
+        LocalGameStorage.autoSaveGame(state, gameId);
+        LocalGameStorage.markGamePaused(gameId, name);
+      } else {
+        gameId = LocalGameStorage.saveGame(state, name, true);
+        setGameState(prevState => (prevState.gameId ? prevState : { ...prevState, gameId }));
+      }
+
+      return { success: true, gameId };
+    } catch (error) {
+      console.error("Error auto-pausing game:", error);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
   // Resume a paused game
   const resumeGame = useCallback((gameId) => {
     try {
@@ -1120,6 +1168,7 @@ export function GameStateProvider({ children }) {
         saveGame,
         autoSaveGame,
         pauseGame,
+        pauseActiveGame,
         resumeGame,
         loadSavedGame,
         getSavedGames,

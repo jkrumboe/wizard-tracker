@@ -40,6 +40,7 @@ const Login = lazy(() => import("@/pages/auth/Login"))
 import { register } from "./serviceWorkerRegistration"
 import { GameStateProvider } from "@/shared/hooks/useGameState"
 import { useViewportKeyboard } from "@/shared/hooks/useViewportKeyboard"
+import { ViewportDebug } from "@/components/common/ViewportDebug"
 import { UserProvider, ThemeProvider } from "@/shared/contexts"
 import { authService } from "@/shared/api/authService"
 import { autoMigrateIfNeeded } from "@/shared/utils/localStorageMigration"
@@ -157,6 +158,7 @@ function App() {
               <ServiceWorkerErrorRecovery />
               <GameStateProvider>
                 <ViewportScrollReset />
+                <ViewportDebug />
                 <SeoRouteMeta />
                 <Navbar />
                 <div className="main-container">

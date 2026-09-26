@@ -143,6 +143,22 @@ body[data-fixed-viewport] .main-container > .game-in-progress {
   height: 100%;
 }
 
+/* The foot of the page is reserved for the bottom navigation and the floating
+   round controls. Both are gone while the keyboard is open, so holding the
+   space back only eats into the little viewport that is left and pushes the
+   last score row off screen. */
+html[data-keyboard="open"] .main-container > .game-in-progress {
+  padding-bottom: var(--spacing-sm);
+}
+
+/* Same reclaim on the focus-driven path, for the case where the keyboard never
+   shows up in the viewport measurements. */
+@media (hover: none) and (pointer: coarse) {
+  body:has(input:focus, textarea:focus) .main-container > .game-in-progress {
+    padding-bottom: var(--spacing-sm);
+  }
+}
+
 /* The round list keeps its height and the tab panel scrolls around it, rather
    than the list shrinking and clipping rows when the keyboard is up. */
 .game-in-progress .player-scores,

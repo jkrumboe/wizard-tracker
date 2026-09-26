@@ -75,6 +75,23 @@
 .active-game-banner:hover { opacity: 0.75; }
 .active-game-banner:active { opacity: 1; }
 
+/* Game names can be long, so keep them on one line */
+.active-game-banner-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── Resume failure notice ───────────────────────────────── */
+.home-resume-error {
+  width: 80%;
+  margin: 0;
+  color: var(--danger-color, #ef4444);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 /* ── Friends button ──────────────────────────────────────── */
 .friends-section {
   display: flex;

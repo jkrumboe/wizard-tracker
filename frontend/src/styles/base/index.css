@@ -423,7 +423,6 @@ button:disabled,
 
 /* Main container for content with spacing for fixed navigation */
 .main-container {
-  /* padding-top: var(--spacing-md); */
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
   min-height: 100dvh;
@@ -435,7 +434,6 @@ button:disabled,
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  /* background-image: linear-gradient(to bottom, transparent, rgba(66, 153, 225, 0.03)); */
   background-size: 100% 100%;
   background-attachment: fixed;
 }
@@ -459,6 +457,51 @@ html[data-keyboard="open"] body[data-fixed-viewport] .main-container {
   height: var(--app-height, 100dvh);
   min-height: 0;
   padding-bottom: 0;
+}
+
+/*
+ * While the keyboard is open the document is held to the area that is actually
+ * visible. This is the rule that stops the page being panned around, and it has
+ * to reach the document itself: html and body are height:100%, which resolves
+ * against the layout viewport, and the layout viewport does not shrink for the
+ * keyboard on every browser. Left alone they stay full height while only the
+ * top part is on screen, and the browser will pan down through the rest.
+ *
+ * Sized to the visible area, the strip left over below the document is exactly
+ * the strip the keyboard is covering, so there is nothing reachable to pan to.
+ *
+ * The shell keeps whatever overflow it had - the pinned game pages hide it and
+ * scroll their own panel, ordinary pages scroll inside it - so this changes
+ * where the scrolling happens, not whether it can.
+ */
+html[data-keyboard="open"],
+html[data-keyboard="open"] body {
+  height: var(--app-height, 100%);
+  min-height: 0;
+  overflow: hidden;
+}
+
+html[data-keyboard="open"] .main-container {
+  height: var(--app-height, 100dvh);
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+/* The same clamp without the JavaScript, for a touch device whose keyboard the
+   hook did not manage to spot. A focused text field is the keyboard being up. */
+@media (hover: none) and (pointer: coarse) {
+  html:has(input:focus, textarea:focus),
+  html:has(input:focus, textarea:focus) body {
+    height: var(--app-height, 100%);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:has(input:focus, textarea:focus) .main-container {
+    height: var(--app-height, 100dvh);
+    min-height: 0;
+    padding-bottom: 0;
+  }
 }
 
 /* Navbar styles */

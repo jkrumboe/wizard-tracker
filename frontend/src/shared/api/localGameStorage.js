@@ -662,6 +662,60 @@ export class LocalGameStorage {
   }
 
   /**
+   * Flag a saved game as paused so it survives the startup auto-save cleanup
+   * and shows up in the paused games lists. Writes straight to the raw store so
+   * games belonging to other users on this device are left untouched.
+   * @param {string} gameId - The game ID to mark as paused
+   * @param {string} name - Optional replacement name (used to drop the
+   *   "Current Game (Auto-save)" placeholder a running game is saved under)
+   * @returns {boolean} - True if the game was found and marked as paused
+   */
+  static markGamePaused(gameId, name = null) {
+    if (!isSafeKey(gameId)) {
+      console.error('Invalid game ID');
+      return false;
+    }
+
+    try {
+      const stored = localStorage.getItem(LOCAL_GAMES_STORAGE_KEY);
+      if (!stored) {
+        return false;
+      }
+
+      const games = JSON.parse(stored);
+      // The legacy array format only ever holds finished games
+      if (Array.isArray(games) || !Object.prototype.hasOwnProperty.call(games, gameId)) {
+        return false;
+      }
+
+      const game = games[gameId];
+      if (!game || game.gameFinished || game.gameState?.gameFinished) {
+        return false;
+      }
+
+      if (game.version === '3.0' && !game.gameState) {
+        game._internalState = { ...(game._internalState || {}), isPaused: true };
+      } else {
+        game.isPaused = true;
+        if (game.gameState) {
+          game.gameState = { ...game.gameState, isPaused: true };
+        }
+      }
+
+      if (name) {
+        game.name = name;
+      }
+      game.lastPlayed = new Date().toISOString();
+
+      localStorage.setItem(LOCAL_GAMES_STORAGE_KEY, JSON.stringify(games));
+      return true;
+    } catch (error) {
+      console.error('Error marking game as paused:', error);
+      return false;
+    }
+  }
+
+  /**
    * Mark a game as uploaded to cloud
    * @param {string} gameId - The game ID
    * @param {string} cloudGameId - The cloud game ID

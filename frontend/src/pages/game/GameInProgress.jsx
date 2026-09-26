@@ -36,6 +36,7 @@ const GameInProgress = () => {
     saveGame,
     autoSaveGame,
     pauseGame,
+    pauseActiveGame,
     leaveGame,
     loadSavedGame,
     getSavedGames,
@@ -55,6 +56,24 @@ const GameInProgress = () => {
   const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
   const [increaseCallMax, setIncreaseCallMax] = useState(false) // For Wolke - allows one more call than round max
   
+  // Auto-pause when leaving the game screen or closing the tab.
+  // Without this the game only lives under its auto-save placeholder, which the
+  // startup cleanup deletes, so the game could not be continued later.
+  useEffect(() => {
+    const pauseIfActive = () => {
+      pauseActiveGame()
+    }
+
+    globalThis.addEventListener('beforeunload', pauseIfActive)
+
+    return () => {
+      globalThis.removeEventListener('beforeunload', pauseIfActive)
+      // Finishing, pausing and leaving all reset the state first, so this only
+      // fires when the player simply navigated away.
+      pauseIfActive()
+    }
+  }, [pauseActiveGame])
+
   // Listen for orientation changes
   useEffect(() => {
     const mediaQuery = globalThis.matchMedia('(orientation: landscape)')
