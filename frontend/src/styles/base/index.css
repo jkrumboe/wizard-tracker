@@ -35,6 +35,10 @@ html[data-keyboard="open"] {
  * theme provider overwrites them on :root with values derived from whichever
  * preset or custom colour the user picked (see shared/theme/palettes.js), so
  * every value here is both a real default and the fallback when JS is absent.
+ *
+ * The accent itself (`--primary`, `--primary-dark/-light/-rgb`, `--secondary`)
+ * is deliberately the same in both themes — only the tinted surfaces cut from
+ * it (`--primary-soft/-tint/-border/-subtle`) flip.
  */
 :root {
   /* Common variables for both themes */
@@ -50,19 +54,19 @@ html[data-keyboard="open"] {
 
 
   /* Light theme (default) — accent: Wizard Blue */
-  --primary: #256cde;
-  --primary-dark: #0251c1;
-  --primary-light: #5897ff;
-  --primary-rgb: 37, 108, 222;
-  --primary-hover: rgba(37, 108, 222, 0.08);
+  --primary: #3a81f5;
+  --primary-dark: #1e66d8;
+  --primary-light: #7daeff;
+  --primary-rgb: 58, 129, 245;
+  --primary-hover: rgba(58, 129, 245, 0.08);
   --primary-soft: #e8f1ff;
   --primary-tint: #cbdfff;
   --primary-border: #acccff;
   --primary-subtle: #1852af;
-  --primary-contrast: #ffffff;
-  --on-primary: #ffffff;
-  --focus-ring: rgba(37, 108, 222, 0.32);
-  --secondary: #8a5ad2;
+  --primary-contrast: #0b1120;
+  --on-primary: #0b1120;
+  --focus-ring: rgba(58, 129, 245, 0.32);
+  --secondary: #9568e2;
   --accent-seed: #3b82f6;
   --accent-color: #d98e04;
 
@@ -104,19 +108,19 @@ html[data-keyboard="open"] {
 /* Dark theme */
 [data-theme="dark"] {
   /* accent: Wizard Blue */
-  --primary: #75a9ff;
-  --primary-dark: #5a8de0;
-  --primary-light: #aacaff;
-  --primary-rgb: 117, 169, 255;
-  --primary-hover: rgba(117, 169, 255, 0.16);
-  --primary-soft: #162847;
-  --primary-tint: #273d61;
-  --primary-border: #3a5583;
-  --primary-subtle: #a2c5ff;
+  --primary: #3a81f5;
+  --primary-dark: #1e66d8;
+  --primary-light: #7daeff;
+  --primary-rgb: 58, 129, 245;
+  --primary-hover: rgba(58, 129, 245, 0.16);
+  --primary-soft: #0d2752;
+  --primary-tint: #1d3c6e;
+  --primary-border: #2d5493;
+  --primary-subtle: #a2c6ff;
   --primary-contrast: #0b1120;
   --on-primary: #0b1120;
-  --focus-ring: rgba(117, 169, 255, 0.42);
-  --secondary: #c0a3fe;
+  --focus-ring: rgba(58, 129, 245, 0.42);
+  --secondary: #9568e2;
   --accent-seed: #3b82f6;
   --accent-color: #fbbf24;
 

@@ -457,38 +457,47 @@
     max-width: 100%;
   }
 
+  /* Fixed column tracks so the player name always starts at the same
+     position, regardless of how wide the score is */
   .top-result-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) minmax(3.5rem, auto);
+    align-items: center;
     width: 100%;
-    justify-content: space-between;
     gap: var(--spacing-sm);
   }
 
-  /* Proportional column widths to ensure proper fit */
+  .top-result-row:has(.adv-stats-btn) {
+    grid-template-columns: 2.5rem minmax(0, 1fr) minmax(3.5rem, auto) auto;
+  }
+
   .results-row .rank-col {
-    flex: 0 0 15%;
     text-align: center;
     font-weight: bold;
   }
 
   .results-row .player-col {
-    flex: 1 1 40%;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: var(--spacing-sm);
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: left;
+  }
+
+  .results-row .player-col .player-info {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .results-row .score-col {
-    flex: 0 0 20%;
-    text-align: center;
+    text-align: right;
     font-weight: bold;
-  }
-
-  .results-row .adv-stats-btn {
-    flex: 0 0 25%;
+    font-variant-numeric: tabular-nums;
   }
 
 .stats-subtabs {
@@ -520,20 +529,15 @@
 
   /* Responsive adjustments for smaller screens */
   @media (max-width: 480px) {
-    .results-row .rank-col {
-      flex: 0 0 5%;
+    .top-result-row {
+      grid-template-columns: 2rem minmax(0, 1fr) minmax(3rem, auto);
     }
-    
-    .results-row .player-col {
-      flex: 1 1 35%;
+
+    .top-result-row:has(.adv-stats-btn) {
+      grid-template-columns: 2rem minmax(0, 1fr) minmax(3rem, auto) auto;
     }
-    
-    .results-row .score-col {
-      flex: 0 0 5%;
-    }
-    
+
     .results-row .adv-stats-btn {
-      flex: 0 0 36%;
       font-size: 15px;
       padding: 4px 8px;
     }

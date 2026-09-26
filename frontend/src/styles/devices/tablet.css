@@ -85,20 +85,7 @@
     }
 
     .results-row .rank-col {
-        flex: 0 0 15%;
         font-weight: bold;
-    }
-
-    .results-row .player-col {
-        flex: 1 1 35%;
-    }
-
-    .results-row .score-col {
-        flex: 0 0 10%;
-    }
-
-    .results-row .adv-stats-btn {
-        flex: 0 0 40%;
     }
 
     /* Make charts smaller in landscape mode */
@@ -496,7 +483,6 @@
     }
 
     .results-row .rank-col {
-        flex: 0 0 10%;
         font-weight: bold;
     }
 

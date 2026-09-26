@@ -1,10 +1,9 @@
 /* Wizard Scorecard Styles */
 .wizard-scorecard {
-  background-color: var(--card-bg);
-  box-shadow: var(--shadow);
+  /* background-color: var(--card-bg); */
+  /* box-shadow: var(--shadow); */
   overflow-x: auto;
-  position: relative;
-  /* padding: var(--spacing-sm); */
+  /* position: relative; */
   border-radius: var(--radius-lg);
   /* Improve scrolling experience */
   scrollbar-width: thin;
@@ -27,7 +26,6 @@
 
 .scorecard-table th, 
 .scorecard-table td {
-  /* padding: 0.75rem; */
   text-align: center;
 }
 
@@ -75,7 +73,6 @@
   box-shadow: none;
   /* Ensure the background fills the entire cell */
   isolation: isolate;
-  /* font-size: 1.1rem; */
   border-right: none;
 }
 
@@ -107,8 +104,6 @@
 
 .player-round-cell {
   background-color: var(--card-bg) ;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
   transition: background-color 0.2s;
   position: relative;
   z-index: 1; /* Ensure it stacks correctly */
@@ -132,15 +127,10 @@
   border-right: none;
 }
 
-/* .player-round-cell:hover {
-  background-color: var(--input-bg);
-} */
-
 .player-round-data {
   display: grid;
   grid-template-rows: auto auto;
   grid-template-columns: 1fr 1fr;
-  /* gap: 0.05rem; */
   border: 1px solid var(--card-bg);
   border-top: none;
   border-left: none;
@@ -201,7 +191,6 @@
   padding: 0 !important;
   box-shadow: none;
   isolation: isolate;
-  /* border-right: 1px solid var(--primary); */
 }
 
 .total-score {
@@ -248,12 +237,6 @@
   bottom: 0;
   width: 2px;
   z-index: 11;
-  /* background-color: var(--primary); */
-}
-
-/* Special corner case - top left cell */
-.round-header {
-  background-color: var(--card-bg) !important;
 }
 
 /* Common styles for all sticky cells */
@@ -263,7 +246,6 @@
   /* Remove box shadows in favor of a consistent border */
   box-shadow: none !important;
   /* Apply a consistent right border that stays with the cell */
-  /* border-right: 1px solid var(--border) !important; */
   z-index: 11;
   /* Critical fix: ensure the border stays with the cell */
   background-clip: padding-box;

@@ -889,7 +889,7 @@ const GameInProgress = () => {
                         </tr>
                       ))}
                       <tr className="total-row">
-                        <td className="total-label sticky-cell">Total</td>
+                        <td className="total-label sticky-cell" aria-label={t('common.total')}></td>
                         {detailedStats.map(player => (
                           <td key={player.id} className="total-score">
                             {player.totalPoints}

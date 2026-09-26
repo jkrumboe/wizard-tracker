@@ -617,7 +617,7 @@ const ScoreboardGameDetails = () => {
                       )
                     })}
                     <tr className="total-row">
-                      <td className="total-label sticky-cell">{t('common.total')}</td>
+                      <td className="total-label sticky-cell" aria-label={t('common.total')}></td>
                       {players.map((player, idx) => (
                         <td key={idx} className="total-score">{getTotal(player)}</td>
                       ))}

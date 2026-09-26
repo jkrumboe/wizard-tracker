@@ -73,11 +73,12 @@
       /* Critical CSS - Theme variables for immediate loading */
       /* Keep in sync with src/styles/base/index.css so there is no colour jump
          when the real stylesheet loads. The accent below is the Wizard Blue
-         default; initAccent() overwrites it with the user's choice. */
+         default; initAccent() overwrites it with the user's choice. It is the
+         same in both themes, so only the neutrals below differ. */
       :root {
-        --primary: #256cde;
-        --primary-dark: #0251c1;
-        --primary-light: #5897ff;
+        --primary: #3a81f5;
+        --primary-dark: #1e66d8;
+        --primary-light: #7daeff;
         --text: #0f172a;
         --text-light: #475569;
         --bg-color: #f4f6fa;
@@ -91,9 +92,9 @@
       /* Dark theme detection and variables */
       @media (prefers-color-scheme: dark) {
         :root {
-          --primary: #75a9ff;
-          --primary-dark: #5a8de0;
-          --primary-light: #aacaff;
+          --primary: #3a81f5;
+          --primary-dark: #1e66d8;
+          --primary-light: #7daeff;
           --text: #f1f5f9;
           --text-light: #cbd5e1;
           --bg-color: #0b1120;
@@ -105,9 +106,9 @@
 
       /* Manual dark theme override */
       [data-theme="dark"] {
-        --primary: #75a9ff;
-        --primary-dark: #5a8de0;
-        --primary-light: #aacaff;
+        --primary: #3a81f5;
+        --primary-dark: #1e66d8;
+        --primary-light: #7daeff;
         --text: #f1f5f9;
         --text-light: #cbd5e1;
         --bg-color: #0b1120;

@@ -630,7 +630,7 @@ const GameDetails = () => {
                       </tr>
                     ))}
                     <tr className="total-row">
-                      <td className="total-label sticky-cell">{t('common.total')}</td>
+                      <td className="total-label sticky-cell" aria-label={t('common.total')}></td>
                       {sortedPlayers.map(player => (
                         <td key={player.id} className="total-score">
                           {player.score}

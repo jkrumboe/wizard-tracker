@@ -5,6 +5,9 @@
  * the full set of `--primary*` custom properties for both themes. Everything is
  * derived rather than hand-listed so a custom colour gets exactly the same
  * treatment — and the same guaranteed contrast — as a built-in preset.
+ *
+ * The accent reads identically in light and dark: only the tinted surfaces and
+ * accent-on-surface text derived from it flip with the theme.
  */
 
 import {
@@ -50,19 +53,35 @@ export const CUSTOM_ACCENT_ID = 'custom';
 export const DEFAULT_CUSTOM_ACCENT = '#7c5cf5';
 
 /**
- * Per-theme derivation targets. `light`/`dark` differ because an accent on a
- * white card needs to be dark enough to carry white button text, while on the
- * night canvas it needs to be bright enough to read as a highlight.
+ * The accent itself is theme-independent. A chosen colour has to read as the
+ * same colour in both themes, so `--primary` and everything cut straight from
+ * it are derived once, from a working lightness that sits in the band where an
+ * accent still separates from a white card *and* from the night canvas.
+ */
+const ACCENT = {
+  baseLightness: 0.62,
+  // 3:1 is the WCAG floor for UI components and large text, and it is as high
+  // as a single shared value can go: asking for 4.5 on white would force the
+  // accent darker than the dark theme can carry. Only the white card can fail
+  // it — at this lightness every hue clears it comfortably on the night canvas
+  // — so the floor is enforced against the light surface alone.
+  minContrastOnSurface: 3.05,
+  strongDelta: -0.085,
+  lightDelta: 0.13,
+  // A companion hue for two-colour fills (gradients, paired chart series).
+  secondaryHueShift: 38,
+  secondaryChroma: 0.95,
+};
+
+/**
+ * Per-theme derivation targets for the tokens that are *not* the accent: the
+ * tinted fills, borders and accent-coloured text, which sit on the theme's own
+ * surfaces and have to flip with them.
  */
 const RECIPES = {
   light: {
-    baseLightness: 0.555,
-    // 4.5 against a white card keeps white button text at AA-large, which is
-    // what the existing `color: white` primary buttons across the app assume.
-    minContrastOnSurface: 4.5,
     hoverAlpha: 0.08,
     ringAlpha: 0.32,
-    strongDelta: -0.085,
     softLightness: 0.955,
     softChroma: 0.35,
     tintLightness: 0.9,
@@ -70,14 +89,10 @@ const RECIPES = {
     borderLightness: 0.84,
     borderChroma: 0.55,
     subtleLightness: 0.46,
-    lightDelta: 0.13,
   },
   dark: {
-    baseLightness: 0.735,
-    minContrastOnSurface: 4.6,
     hoverAlpha: 0.16,
     ringAlpha: 0.42,
-    strongDelta: -0.09,
     softLightness: 0.28,
     softChroma: 0.45,
     tintLightness: 0.36,
@@ -85,7 +100,6 @@ const RECIPES = {
     borderLightness: 0.45,
     borderChroma: 0.6,
     subtleLightness: 0.82,
-    lightDelta: 0.1,
   },
 };
 
@@ -113,27 +127,30 @@ export function deriveAccentTokens(seedHex, theme = 'light') {
   const cached = derivationCache.get(cacheKey);
   if (cached) return cached;
   const recipe = RECIPES[theme] || RECIPES.light;
-  const surfaces = THEME_SURFACES[theme] || THEME_SURFACES.light;
 
   const seedLch = hexToOklch(seed);
-  // Pull the seed to the theme's working lightness first, then nudge it further
-  // only if it still misses the contrast floor against that theme's surface.
-  const normalized = oklchToHex({ ...seedLch, l: recipe.baseLightness });
-  const primary = ensureContrast(normalized, surfaces.surface, recipe.minContrastOnSurface);
+  // Pull the seed to the shared working lightness, then nudge it further only
+  // if it still misses the contrast floor. Neither step depends on the theme,
+  // so both themes get the identical accent.
+  const normalized = oklchToHex({ ...seedLch, l: ACCENT.baseLightness });
+  const primary = ensureContrast(
+    normalized,
+    THEME_SURFACES.light.surface,
+    ACCENT.minContrastOnSurface,
+  );
   const primaryLch = hexToOklch(primary);
 
-  const primaryDark = shift(primaryLch, recipe.strongDelta);
-  const primaryLight = shift(primaryLch, recipe.lightDelta, 0.9);
+  const primaryDark = shift(primaryLch, ACCENT.strongDelta);
+  const primaryLight = shift(primaryLch, ACCENT.lightDelta, 0.9);
   const soft = at(primaryLch, recipe.softLightness, recipe.softChroma);
   const tint = at(primaryLch, recipe.tintLightness, recipe.tintChroma);
   const border = at(primaryLch, recipe.borderLightness, recipe.borderChroma);
   const subtle = at(primaryLch, recipe.subtleLightness, 0.85);
-  // A companion hue for two-colour fills (gradients, paired chart series).
   const onPrimary = readableTextOn(primary, '#ffffff', '#0b1120');
   const secondary = oklchToHex({
-    l: clamp(primaryLch.l + (theme === 'dark' ? 0.04 : 0.02), 0.04, 0.99),
-    c: primaryLch.c * 0.95,
-    h: (primaryLch.h + 38) % 360,
+    l: primaryLch.l,
+    c: primaryLch.c * ACCENT.secondaryChroma,
+    h: (primaryLch.h + ACCENT.secondaryHueShift) % 360,
   });
 
   const tokens = {
