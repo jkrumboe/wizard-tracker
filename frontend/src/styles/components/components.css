@@ -361,15 +361,11 @@
     color: var(--error-color);
   }
   
-  /* Game Details Page */
+  /* Game Details Page - the container's own box is sized in
+     styles/pages/gameDetails.css, which bounds it to the viewport so its
+     content can scroll. */
   .game-details-container {
-    padding: 0;
-    overflow: hidden;
-    padding-top: var(--spacing-md);
-    min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
     width: 100%;
-    position: relative;
-    z-index: 1;
   }
   
   .game-details-header {
@@ -1683,14 +1679,9 @@
     margin-top: var(--spacing-xs);
   }
   
-  /* Game details container - unified styles */
+  /* Game details container - see styles/pages/gameDetails.css for its box. */
 .game-details-container {
-  min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
-  padding: 0;
-  padding-top: var(--spacing-md);
   width: 100%;
-  position: relative;
-  z-index: 1;
 }
 
 .results-section {

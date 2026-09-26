@@ -1,11 +1,37 @@
 /* Game Details Page Styles */
+
+/*
+ * .main-container has min-height: 100dvh, so it never scrolls internally and
+ * body clips whatever overflows. Like the other pages here, this page bounds
+ * itself to the visible viewport and scrolls in an inner region instead -
+ * without that, a game with many rounds has its scorecard cut off at the
+ * bottom navigation with no way to reach the rest.
+ */
 .game-details-container {
+  display: flex;
+  flex-direction: column;
   padding: 0;
   padding-top: var(--spacing-md);
-  min-height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+  height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - var(--bottom-nav-reserve));
+  min-height: 0;
+  overflow: hidden;
   width: 100%;
   position: relative;
   z-index: 1;
+}
+
+/* The header and the tab bar stay put; only the panel below them moves. */
+.game-details-container > .game-details-header,
+.game-details-container > .account-tabs {
+  flex-shrink: 0;
+}
+
+.game-details-container > .game-summary {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: var(--spacing-sm);
 }
 
 /* Loading state */

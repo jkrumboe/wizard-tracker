@@ -98,12 +98,8 @@ export function useViewportKeyboard() {
 
       if (keyboardOpen) {
         root.dataset.keyboard = 'open';
-        // Published so the CSS - and the debug readout - can tell the two
-        // apart. It says nothing while the keyboard is down.
-        root.dataset.keyboardMode = layoutShrinks ? 'resize' : 'pan';
       } else {
         delete root.dataset.keyboard;
-        delete root.dataset.keyboardMode;
       }
     };
 
@@ -149,7 +145,6 @@ export function useViewportKeyboard() {
       root.style.removeProperty('--app-height');
       root.style.removeProperty('--keyboard-inset');
       delete root.dataset.keyboard;
-      delete root.dataset.keyboardMode;
     };
   }, []);
 }

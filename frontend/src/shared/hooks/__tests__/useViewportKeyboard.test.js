@@ -87,7 +87,6 @@ describe('useViewportKeyboard', () => {
     focusField();
     resize(FULL_HEIGHT - KEYBOARD_HEIGHT);
 
-    expect(document.documentElement.dataset.keyboardMode).toBe('pan');
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe(`${FULL_HEIGHT}px`);
     // The keyboard is still reported at its true size for anything that needs it.
     expect(document.documentElement.style.getPropertyValue('--keyboard-inset')).toBe('330px');
@@ -100,7 +99,6 @@ describe('useViewportKeyboard', () => {
     focusField();
     resize(FULL_HEIGHT - KEYBOARD_HEIGHT);
 
-    expect(document.documentElement.dataset.keyboardMode).toBe('resize');
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('470px');
   });
 
@@ -167,7 +165,6 @@ describe('useViewportKeyboard', () => {
     resize(384);
 
     expect(keyboardState()).toBe('open');
-    expect(document.documentElement.dataset.keyboardMode).toBe('pan');
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('714px');
   });
 
