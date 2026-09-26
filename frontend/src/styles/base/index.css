@@ -273,6 +273,42 @@ h2::after {
   border-radius: 2px;
 }
 
+/*
+ * Touch baseline.
+ *
+ * touch-action: manipulation removes the double-tap-to-zoom gesture (and the
+ * tap delay that comes with it) without blocking pinch-zoom, which is what the
+ * viewport meta used to do via user-scalable=no.
+ */
+button,
+.btn,
+a,
+label,
+summary,
+[role="button"],
+[role="tab"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * iOS Safari zooms the page whenever a focused form control computes to under
+ * 16px, which pans the layout mid-score-entry. Many component rules set inputs
+ * to 0.875rem with a single class, so an element selector alone would lose the
+ * cascade; this is the one place we force the floor, and only on touch devices
+ * so pointer layouts keep their smaller controls.
+ */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Buttons */
 button,
 .btn {

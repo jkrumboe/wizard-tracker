@@ -1,5 +1,33 @@
 import React from 'react';
-import * as LucideIcons from 'lucide-react';
+/*
+ * Icons are imported by name, never as a namespace. A namespace import plus a
+ * dynamic lookup defeats tree-shaking, so Rollup has to bundle all ~3.6k lucide
+ * icons instead of the 76 this app renders. The explicit registry costs one
+ * line per icon and keeps it to what we use.
+ *
+ * Adding an icon: add its lucide name to both the import and ICONS below.
+ */
+import {
+  Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
+  ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
+  ChevronDown, ChevronRight, ChevronUp, Clock, Cloud, Copy, CopyCheck, Database, Dices,
+  Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Gamepad2, Home, Image,
+  ImagePlus, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
+  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanSearch, Search,
+  Settings, Shield, ShieldCheck, Star, Swords, Table, Target, Trash2, TrendingDown,
+  TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
+} from 'lucide-react';
+
+const ICONS = {
+  Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
+  ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
+  ChevronDown, ChevronRight, ChevronUp, Clock, Cloud, Copy, CopyCheck, Database, Dices,
+  Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Gamepad2, Home, Image,
+  ImagePlus, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
+  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanSearch, Search,
+  Settings, Shield, ShieldCheck, Star, Swords, Table, Target, Trash2, TrendingDown,
+  TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
+};
 
 /**
  * Reusable Icon component that uses Lucide React icons
@@ -10,11 +38,10 @@ import * as LucideIcons from 'lucide-react';
  * @param {object} props - Additional props to pass to the icon component
  */
 const Icon = ({ name, size = 24, color = 'currentColor', className = '', ...props }) => {
-  // Get the icon component from Lucide
-  const IconComponent = LucideIcons[name];
+  const IconComponent = ICONS[name];
   
   if (!IconComponent) {
-    console.warn(`Icon "${name}" not found in Lucide React icons`);
+    console.warn(`Icon "${name}" is not registered in Icon.jsx`);
     return null;
   }
   

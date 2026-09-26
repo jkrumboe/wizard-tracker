@@ -21,6 +21,19 @@ import "../../styles/components/scorecard.css";
 
 const MIN_PLAYERS = 2;
 
+/*
+ * Returns a copy of `player` with one round's value replaced. Spreading the
+ * players array alone is not enough: the player objects and their points
+ * arrays are shared with the previous state, so mutating them in place edits
+ * the state React is still rendering from and leaves rows unable to tell that
+ * anything changed.
+ */
+const withPointAt = (player, roundIndex, value) => {
+  const points = [...player.points];
+  points[roundIndex] = value;
+  return { ...player, points };
+};
+
 const TableGame = ({ forceScoreEntryMode = null }) => {
   useFixedViewportPage(); // Only the score list scrolls; the shell stays put
   const { user } = useUser(); // Get the logged-in user
@@ -390,34 +403,47 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     }
   }, [players, currentGameName, currentGameId, showTemplateSelector]);
 
-  // Periodic auto-save every 5 seconds when there's data
+  /*
+   * Periodic auto-save every 5 seconds when there's data.
+   *
+   * The game state used to sit in this effect's dependency array, which meant
+   * every keystroke cleared the interval and restarted its 5s countdown — so
+   * somebody entering scores steadily was never actually saved, and the timer
+   * churned once per render. The state is read from the refs synced above
+   * instead, leaving a single interval to run on a fixed cadence.
+   */
   useEffect(() => {
     if (showTemplateSelector) return; // Don't auto-save on template selector
-    
+
     const autoSaveInterval = setInterval(() => {
-      const hasData = players.some(player => 
+      const players = playersRef.current;
+      const currentGameId = currentGameIdRef.current;
+      const currentGameName = currentGameNameRef.current;
+      const gameFinished = gameFinishedRef.current;
+
+      const hasData = players.some(player =>
         player.points.some(point => point !== "" && point !== undefined && point !== null)
       );
-      
+
       if (hasData) {
         try {
           const gameData = {
             players: players,
-            rows: rows,
+            rows: rowsRef.current,
             timestamp: new Date().toISOString(),
-            targetNumber: targetNumber,
-            lowIsBetter: lowIsBetter,
-            allowEmptyAsZero: allowEmptyAsZero,
-            scoreEntryMode: scoreEntryMode,
-            setTargets: setTargets,
-            pointHistoryBySet: pointHistoryBySet,
-            teamMembers: teamMembers,
+            targetNumber: targetNumberRef.current,
+            lowIsBetter: lowIsBetterRef.current,
+            allowEmptyAsZero: allowEmptyAsZeroRef.current,
+            scoreEntryMode: scoreEntryModeRef.current,
+            setTargets: setTargetsRef.current,
+            pointHistoryBySet: pointHistoryBySetRef.current,
+            teamMembers: teamMembersRef.current,
             gameFinished: gameFinished,
             gameName: currentGameName
           };
-          
+
           const name = currentGameName || `${t('tableGame.defaultGameName')} - ${new Date().toLocaleDateString()}`;
-          
+
           // If no game ID, create a new save
           if (!currentGameId) {
             const newGameId = activeStorage.saveTableGame(gameData, name);
@@ -428,12 +454,12 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               gameData: gameData,
               lastPlayed: new Date().toISOString(),
               name: name,
-              targetNumber: targetNumber,
-              lowIsBetter: lowIsBetter,
-              allowEmptyAsZero: allowEmptyAsZero,
-              scoreEntryMode: scoreEntryMode,
-              setTargets: setTargets,
-              pointHistoryBySet: pointHistoryBySet,
+              targetNumber: gameData.targetNumber,
+              lowIsBetter: gameData.lowIsBetter,
+              allowEmptyAsZero: gameData.allowEmptyAsZero,
+              scoreEntryMode: gameData.scoreEntryMode,
+              setTargets: gameData.setTargets,
+              pointHistoryBySet: gameData.pointHistoryBySet,
               gameFinished: gameFinished
             });
             console.debug(`💾 Periodic auto-save: "${name}" (ID: ${currentGameId}, finished: ${gameFinished})`);
@@ -443,9 +469,9 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
         }
       }
     }, 5000); // Save every 5 seconds
-    
+
     return () => clearInterval(autoSaveInterval);
-  }, [players, rows, currentGameName, currentGameId, showTemplateSelector, targetNumber, lowIsBetter, allowEmptyAsZero, scoreEntryMode, setTargets, pointHistoryBySet, teamMembers, gameFinished, t, activeStorage]);
+  }, [showTemplateSelector, activeStorage, t]);
 
   // Auto-save game when navigating away or closing tab
   useEffect(() => {
@@ -623,29 +649,32 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   }, []);
 
   const handleNameChange = (idx, value) => {
-    const updated = [...players];
-    updated[idx].name = value;
-    setPlayers(updated);
+    setPlayers(prev => prev.map((player, i) => (
+      i === idx ? { ...player, name: value } : player
+    )));
   };
 
   const handlePointChange = (playerIdx, rowIdx, value) => {
-    const updated = [...players];
-    if (value === "" || value === "-") {
-      // Allow empty string or lone minus sign for typing negative numbers
-      updated[playerIdx].points[rowIdx] = value === "" ? "" : value;
-    } else {
-      const parsed = Number.parseInt(value, 10);
-      updated[playerIdx].points[rowIdx] = Number.isNaN(parsed) ? "" : parsed;
-      
-      // Fill all empty cells above this row with 0
-      for (let i = 0; i < rowIdx; i++) {
-        const point = updated[playerIdx].points[i];
-        if (point === "" || point === undefined || point === null) {
-          updated[playerIdx].points[i] = 0;
+    setPlayers(prev => prev.map((player, i) => {
+      if (i !== playerIdx) return player;
+      const points = [...player.points];
+      if (value === "" || value === "-") {
+        // Allow empty string or lone minus sign for typing negative numbers
+        points[rowIdx] = value === "" ? "" : value;
+      } else {
+        const parsed = Number.parseInt(value, 10);
+        points[rowIdx] = Number.isNaN(parsed) ? "" : parsed;
+
+        // Fill all empty cells above this row with 0
+        for (let r = 0; r < rowIdx; r++) {
+          const point = points[r];
+          if (point === "" || point === undefined || point === null) {
+            points[r] = 0;
+          }
         }
       }
-    }
-    setPlayers(updated);
+      return { ...player, points };
+    }));
   };
 
   // Insert a player at a specific index
@@ -811,12 +840,12 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
       return;
     }
 
-    const updated = [...players];
     const roundIndex = currentRound - 1;
-    const currentValue = Number.parseInt(updated[playerIdx].points[roundIndex], 10) || 0;
+    const currentValue = Number.parseInt(players[playerIdx].points[roundIndex], 10) || 0;
     const nextValue = Math.max(0, currentValue + delta);
-    updated[playerIdx].points[roundIndex] = nextValue;
-    setPlayers(updated);
+    setPlayers(prev => prev.map((player, i) => (
+      i === playerIdx ? withPointAt(player, roundIndex, nextValue) : player
+    )));
 
     const actualDelta = nextValue - currentValue;
     updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);
@@ -864,12 +893,12 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
     }
 
     const parsedValue = Number.parseInt(newScore, 10);
-    const updated = [...players];
     const roundIndex = currentRound - 1;
-    const currentValue = Number.parseInt(updated[playerIdx].points[roundIndex], 10) || 0;
+    const currentValue = Number.parseInt(players[playerIdx].points[roundIndex], 10) || 0;
     const nextValue = Number.isNaN(parsedValue) ? 0 : Math.max(0, parsedValue);
-    updated[playerIdx].points[roundIndex] = nextValue;
-    setPlayers(updated);
+    setPlayers(prev => prev.map((player, i) => (
+      i === playerIdx ? withPointAt(player, roundIndex, nextValue) : player
+    )));
 
     const actualDelta = nextValue - currentValue;
     updatePointHistoryForScoreChange(currentRound, playerIdx, actualDelta);

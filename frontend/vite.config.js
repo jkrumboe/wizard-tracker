@@ -139,14 +139,16 @@ export default defineConfig({
         scope: "/",
         capture_links: "existing-client",
         display: "standalone",
+        // Absolute paths: relative ones resolve against the manifest's own
+        // location, which pointed these at a non-existent /logo-*.png.
         icons: [
           {
-            src: 'logo-192.png',
+            src: '/icons/logo-192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'logo-512.png',
+            src: '/icons/logo-512.png',
             sizes: '512x512',
             type: 'image/png'
           }

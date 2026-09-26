@@ -18,11 +18,13 @@
       gtag('config', 'G-25L8GWKF1W');
     </script>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png?v=3" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/logo-192.png?v=3" />
     <link rel="apple-touch-icon" href="/icons/logo-192.png?v=3" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icons/logo-512.png?v=3" />
     <link rel="manifest" href="/manifest.json?v=2">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <!-- No user-scalable=no: blocking pinch-zoom fails WCAG 1.4.4. Double-tap
+         zoom is suppressed with touch-action: manipulation in CSS instead. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="Track Wizard and other card game scores online. Keep rounds, bids, tricks, and stats in one fast scorekeeper app." />
