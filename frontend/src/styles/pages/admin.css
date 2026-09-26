@@ -4056,10 +4056,6 @@
   color: var(--text);
 }
 
-.dedupe-shared-badge {
-  font-size: 0.62rem;
-}
-
 .dedupe-copy-meta {
   display: flex;
   flex-wrap: wrap;

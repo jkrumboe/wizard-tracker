@@ -18,6 +18,7 @@ const PlayerIdentity = require('../models/PlayerIdentity');
 const TableGame = require('../models/TableGame');
 const WizardGame = require('../models/WizardGame');
 const User = require('../models/User');
+const Game = require('../models/Game');
 
 const CURRENT_VERSION = '1.0.0';
 
@@ -67,6 +68,12 @@ const migrations = [
     version: '1.0.0',
     description: 'Normalize gameFinished flag on wizard games and recalculate ELO for all game types',
     run: recalculateEloMigration
+  },
+  {
+    name: '008_remove_game_sharing',
+    version: '1.0.0',
+    description: 'Drop the share fields and their indexes left behind by the removed game sharing feature',
+    run: removeGameSharing
   }
 ];
 
@@ -520,6 +527,38 @@ async function recalculateEloMigration() {
     gameTypeStats: result.gameTypeStats,
     errors: result.errors?.length || 0
   };
+}
+
+/**
+ * Migration 008: Remove game sharing
+ * The sharing feature is gone, so the shareId/isShared/sharedAt fields and the
+ * shareId indexes are dropped from the game collections.
+ */
+async function removeGameSharing() {
+  const stats = { wizardGamesCleaned: 0, gamesCleaned: 0, indexesDropped: 0 };
+  const unset = { $unset: { shareId: '', isShared: '', sharedAt: '' } };
+  const filter = { $or: [{ shareId: { $exists: true } }, { isShared: { $exists: true } }, { sharedAt: { $exists: true } }] };
+
+  const wizardResult = await WizardGame.collection.updateMany(filter, unset);
+  stats.wizardGamesCleaned = wizardResult.modifiedCount;
+
+  const gameResult = await Game.collection.updateMany(filter, unset);
+  stats.gamesCleaned = gameResult.modifiedCount;
+
+  for (const collection of [WizardGame.collection, Game.collection]) {
+    try {
+      await collection.dropIndex('shareId_1');
+      stats.indexesDropped++;
+    } catch (error) {
+      // IndexNotFound (27) and NamespaceNotFound (26) just mean there is nothing to drop
+      if (error.code !== 27 && error.code !== 26) throw error;
+    }
+  }
+
+  console.log(`  Cleared share fields on ${stats.wizardGamesCleaned} wizard games and ${stats.gamesCleaned} legacy games`);
+  console.log(`  Dropped ${stats.indexesDropped} shareId index(es)`);
+
+  return stats;
 }
 
 // ====================

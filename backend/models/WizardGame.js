@@ -48,19 +48,6 @@ const wizardGameSchema = new mongoose.Schema({
     default: null,
     select: false,
     description: 'Reference to original game in legacy collection'
-  },
-  // Sharing features
-  shareId: {
-    type: String,
-    sparse: true,
-    index: true
-  },
-  isShared: {
-    type: Boolean,
-    default: false
-  },
-  sharedAt: {
-    type: Date
   }
 }, {
   timestamps: true

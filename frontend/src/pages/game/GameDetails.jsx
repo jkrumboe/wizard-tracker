@@ -8,8 +8,6 @@ import { useTranslation } from 'react-i18next'
 import { getGameById } from "@/shared/api/gameService"
 import { getPlayerById } from "@/shared/api/playerService"
 // Utilities
-import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing';
-import { ensureGameSynced } from '@/shared/utils/ensureGameSynced';
 // Components
 import StatsChart from "@/components/game/StatsChart"
 import { AdvancedStats } from "@/components/game"
@@ -22,7 +20,7 @@ import "@/styles/components/TableGame.css"
 import "@/styles/pages/account.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon, ShareIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon } from "@/components/ui/Icon"
 
 // Skeleton Loading Component
 const GameDetailsSkeleton = () => (
@@ -87,7 +85,6 @@ const GameDetails = () => {
   const [error, setError] = useState(null)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [activeTab, setActiveTab] = useState('stats')
-  const [message, setMessage] = useState({ text: '', type: '' })
   const [isLandscape] = useState(() => {
     if (typeof window !== 'undefined' && globalThis.screen && globalThis.screen.orientation) {
       return globalThis.screen.orientation.type.startsWith('landscape');
@@ -200,17 +197,6 @@ const GameDetails = () => {
     });
   };
 
-  const clearMessage = () => {
-    setTimeout(() => {
-      setMessage({ text: '', type: '' });
-    }, 3000);
-  };
-
-  useEffect(() => {
-    if (message.text) {
-      clearMessage();
-    }
-  }, [message]);
 
   // Show loading state while fetching game data
   if (loading) {
@@ -455,20 +441,6 @@ const GameDetails = () => {
   };
 
 
-  // Use the shared shareGame utility for sharing
-  const handleShareGame = async () => {
-    if (!game) return;
-    // Ensure the game is synced before sharing
-    const synced = await ensureGameSynced(game.id || game.gameId, game, setMessage);
-    if (!synced) return;
-    const result = await shareGameUtil(game);
-    if (result.success) {
-      setMessage({ text: result.method === 'native' ? t('gameDetails.gameSharedSuccess') : t('gameDetails.shareLinkCopied'), type: 'success' });
-    } else {
-      setMessage({ text: t('gameDetails.shareFailed'), type: 'error' });
-    }
-  };
-
   // const duration = game.duration_seconds
   //   ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
   //   : "N/A";
@@ -476,11 +448,6 @@ const GameDetails = () => {
   return (
     
       <div className="game-details-container">
-        {/* {message.text && (
-          <div className={`settings-message ${message.type}`}>
-            {message.text}
-          </div>
-        )} */}
         
         <div className="game-details-header">
           <button 
@@ -496,14 +463,6 @@ const GameDetails = () => {
             <div className="game-date">{formattedDate}</div>
           </div>
           
-          {/* Container for mode badge and share button */}
-          <div className="badge-controls-container">
-            {/* {game.is_local && <span className="mode-badge local" id="game-detail-badge">Local</span>} */}
-            <button className="settings-button share-button" onClick={handleShareGame}>
-              <ShareIcon size={16} />
-              {t('gameDetails.share')}
-            </button>
-          </div>
         </div>
 
         {/* Tabs - only show on mobile/portrait */}

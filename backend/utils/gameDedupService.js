@@ -137,8 +137,8 @@ const ownerId = (doc) => String(doc?.userId || '');
 
 /**
  * Score a document for keeper selection. Higher wins.
- * Shared games are kept first (deleting one breaks its share link), then the
- * document with the most resolved player identities, then the oldest upload.
+ * The document with the most resolved player identities is kept first, then the
+ * oldest upload.
  */
 function getKeeperRank(doc) {
   const gameData = unwrapGameData(doc);
@@ -146,7 +146,6 @@ function getKeeperRank(doc) {
     ? gameData.players.filter(player => player?.identityId).length
     : 0;
   return {
-    shared: doc?.isShared || doc?.shareId ? 1 : 0,
     identityCount,
     uploadedAt: new Date(doc?.createdAt || 0).getTime() || Number.MAX_SAFE_INTEGER,
     id: String(doc?._id || '')
@@ -162,7 +161,6 @@ function pickKeeper(docs) {
   const sorted = [...docs].sort((a, b) => {
     const rankA = getKeeperRank(a);
     const rankB = getKeeperRank(b);
-    if (rankA.shared !== rankB.shared) return rankB.shared - rankA.shared;
     if (rankA.identityCount !== rankB.identityCount) return rankB.identityCount - rankA.identityCount;
     if (rankA.uploadedAt !== rankB.uploadedAt) return rankA.uploadedAt - rankB.uploadedAt;
     return rankA.id.localeCompare(rankB.id);
@@ -231,8 +229,7 @@ function summarizeGameDoc(doc, type) {
     playerCount: players.length,
     rounds: Number(doc.totalRounds ?? gameData?.total_rounds ?? gameData?.rows) || 0,
     playedAt: gameData?.created_at || gameData?.timestamp || doc.createdAt || null,
-    uploadedAt: doc.createdAt || null,
-    shared: Boolean(doc.isShared || doc.shareId)
+    uploadedAt: doc.createdAt || null
   };
 }
 

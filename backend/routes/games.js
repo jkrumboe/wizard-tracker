@@ -358,114 +358,11 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PUT /games/:id/share - Make a game shareable with a shareId
-router.put('/:id/share', auth, async (req, res) => {
-  try {
-    const { shareId } = req.body;
-    
-    if (!shareId || typeof shareId !== 'string') {
-      return res.status(400).json({ error: 'shareId (string) is required' });
-    }
-
-    // Validate ID format to prevent injection
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ error: 'Invalid game ID format' });
-    }
-
-    // Check if shareId is already in use
-    const existingSharedGame = await Game.findOne({ shareId });
-    if (existingSharedGame && existingSharedGame._id.toString() !== req.params.id) {
-      return res.status(409).json({ error: 'Share ID already in use' });
-    }
-
-    // Verify user owns the game
-    const game = await Game.findOne({ _id: { $eq: req.params.id } });
-    if (!game) {
-      return res.status(404).json({ error: 'Game not found' });
-    }
-
-    if (game.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Not authorized to share this game' });
-    }
-
-    // Update the game
-    game.shareId = shareId;
-    game.isShared = true;
-    game.sharedAt = new Date();
-    await game.save();
-
-    res.json({
-      message: 'Game shared successfully',
-      game: {
-        id: game._id,
-        shareId: game.shareId,
-        isShared: game.isShared,
-        sharedAt: game.sharedAt
-      }
-    });
-  } catch (error) {
-    console.error('[PUT /api/games/:id/share] Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /games/shared/:shareId - Get a shared game by shareId (public endpoint)
-router.get('/shared/:shareId', async (req, res) => {
-  try {
-    // First try to find by shareId
-    let game = await Game.findOne({ shareId: req.params.shareId });
-    
-    // If not found by shareId, try to find by localId as fallback
-    // This handles cases where games were uploaded but never properly shared
-    if (!game) {
-      game = await Game.findOne({ localId: req.params.shareId });
-    }
-    
-    if (!game) {
-      return res.status(404).json({ error: 'Shared game not found' });
-    }
-    
-    res.json({
-      game: {
-        id: game._id,
-        gameData: game.gameData,
-        shareId: game.shareId,
-        sharedAt: game.sharedAt,
-        createdAt: game.createdAt
-      }
-    });
-  } catch (error) {
-    console.error('[GET /api/games/shared/:shareId] Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // GET /games - List games for authenticated user (sorted by createdAt)
 router.get('/', auth, async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, sortOrder = 'desc', shareId } = req.query;
+    const { page = 1, limit = 10, sortOrder = 'desc' } = req.query;
 
-    // Handle shareId query specifically for shared game lookup
-    if (shareId) {
-      try {
-        const game = await Game.findOne({ shareId: { $eq: shareId } });
-        if (!game) {
-          return res.status(404).json({ error: 'Shared game not found' });
-        }
-        return res.json({
-          games: [{
-            id: game._id,
-            userId: game.userId,
-            gameData: game.gameData,
-            shareId: game.shareId,
-            createdAt: game.createdAt
-          }]
-        });
-      } catch (error) {
-        console.error('[GET /api/games] Error finding shared game:', error);
-        return res.status(500).json({ error: 'Error finding shared game' });
-      }
-    }
 
     // Validation
     const pageNum = parseInt(page);
@@ -491,7 +388,7 @@ router.get('/', auth, async (req, res, next) => {
         { 'gameData.player_ids': userId.toString() }
       ]
     })
-      .select('_id userId localId gameData shareId createdAt') // Only select needed fields
+      .select('_id userId localId gameData createdAt') // Only select needed fields
       .sort({ createdAt: sortDirection })
       .skip(skip)
       .limit(limitNum)
@@ -510,7 +407,6 @@ router.get('/', auth, async (req, res, next) => {
         userId: game.userId,
         localId: game.localId,
         gameData: game.gameData,
-        shareId: game.shareId,
         createdAt: game.createdAt
       })),
       pagination: {

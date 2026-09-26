@@ -4,14 +4,13 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import { useTranslation } from 'react-i18next'
 import { getTableGameById } from "@/shared/api/tableGameService"
-import { shareGame as shareGameUtil } from '@/shared/utils/gameSharing'
 import StatsChart from "@/components/game/StatsChart"
 import "@/styles/components/scorecard.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/pages/gameDetails.css"
 import "@/styles/pages/account.css"
 import "@/styles/components/TableGame.css"
-import { ArrowLeftIcon, ShareIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon } from "@/components/ui/Icon"
 
 const GameDetailsSkeleton = () => (
   <div className="game-details-container">
@@ -46,7 +45,6 @@ const TableGameDetails = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('standings')
-  const [message, setMessage] = useState({ text: '', type: '' })
   const [isLandscape] = useState(() => {
     if (typeof window !== 'undefined' && globalThis.screen && globalThis.screen.orientation) {
       return globalThis.screen.orientation.type.startsWith('landscape')
@@ -98,26 +96,6 @@ const TableGameDetails = () => {
     fetchGameData()
   }, [id, navigate])
 
-  const handleShareGame = async () => {
-    if (!game) return
-
-    try {
-      const shareData = {
-        id: game.id || id,
-        gameType: 'table',
-        gameTypeName: game.gameTypeName || game.name || 'Table Game',
-        ...game,
-      }
-
-      await shareGameUtil(shareData)
-      setMessage({ text: 'Game shared successfully!', type: 'success' })
-      setTimeout(() => setMessage({ text: '', type: '' }), 3000)
-    } catch (err) {
-      console.error('Error sharing game:', err)
-      setMessage({ text: 'Failed to share game', type: 'error' })
-      setTimeout(() => setMessage({ text: '', type: '' }), 3000)
-    }
-  }
 
   if (loading) return <GameDetailsSkeleton />
 
@@ -221,7 +199,6 @@ const TableGameDetails = () => {
 
   return (
     <div className="game-details-container table-game-container">
-      {message.text && <div className={`settings-message ${message.type}`}>{message.text}</div>}
 
       <div className="game-details-header">
         <button onClick={() => navigate(-1)} className="back-link" aria-label="Go back">
@@ -233,12 +210,6 @@ const TableGameDetails = () => {
           <div className="game-date">{formattedDate}</div>
         </div>
 
-        <div className="badge-controls-container">
-          <button className="settings-button share-button" onClick={handleShareGame}>
-            <ShareIcon size={16} />
-            {t('common.share')}
-          </button>
-        </div>
       </div>
 
       {hasMultipleRounds && (

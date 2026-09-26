@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { TrashIcon, CloudIcon, ShareIcon, EyeIcon, EditIcon, RotateCcwIcon } from '@/components/ui/Icon';
+import { TrashIcon, CloudIcon, EyeIcon, EditIcon, RotateCcwIcon } from '@/components/ui/Icon';
 import { EllipsisVertical } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
@@ -17,15 +17,12 @@ const SwipeableGameCard = ({
   onDelete,
   onSync,
   onSyncToSystem,
-  onShare,
   onEdit,
   onViewDetails,
   detailsPath,
   isUploading = false,
-  isSharing = false,
   showSync = false,
   showSyncToSystem = false,
-  showShare = false,
   showEdit = false,
   showViewDetails = false,
   viewDetailsLabel = '',
@@ -35,7 +32,6 @@ const SwipeableGameCard = ({
   syncToSystemTitle = '',
   disableSync = false,
   disableSyncToSystem = false,
-  disableShare = false,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
@@ -113,18 +109,6 @@ const SwipeableGameCard = ({
       className: 'action-sync-system',
       handler: onSyncToSystem,
       disabled: disableSyncToSystem,
-    });
-  }
-  if (showShare) {
-    actions.push({
-      key: 'share',
-      label: isSharing ? t('common.sharing') : t('common.share'),
-      icon: isSharing
-        ? <span className="share-spinner small" aria-label="Sharing…" />
-        : <ShareIcon size={16} />,
-      className: 'action-share',
-      handler: onShare,
-      disabled: disableShare || isSharing,
     });
   }
   if (showDelete && onDelete) {
@@ -248,15 +232,12 @@ SwipeableGameCard.propTypes = {
   onDelete: PropTypes.func,
   onSync: PropTypes.func,
   onSyncToSystem: PropTypes.func,
-  onShare: PropTypes.func,
   onEdit: PropTypes.func,
   onViewDetails: PropTypes.func,
   detailsPath: PropTypes.string,
   isUploading: PropTypes.bool,
-  isSharing: PropTypes.bool,
   showSync: PropTypes.bool,
   showSyncToSystem: PropTypes.bool,
-  showShare: PropTypes.bool,
   showEdit: PropTypes.bool,
   showViewDetails: PropTypes.bool,
   showDelete: PropTypes.bool,
@@ -264,7 +245,6 @@ SwipeableGameCard.propTypes = {
   syncToSystemTitle: PropTypes.string,
   disableSync: PropTypes.bool,
   disableSyncToSystem: PropTypes.bool,
-  disableShare: PropTypes.bool,
 };
 
 export default SwipeableGameCard;

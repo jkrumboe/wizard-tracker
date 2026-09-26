@@ -143,9 +143,6 @@
 .card-actions-dropdown-item.action-sync-system .card-actions-dropdown-icon {
   color: #9333ea;
 }
-.card-actions-dropdown-item.action-share .card-actions-dropdown-icon {
-  color: var(--primary);
-}
 .card-actions-dropdown-item.action-delete {
   color: var(--danger-color);
 }

@@ -41,7 +41,6 @@
     "previous": "Zurück",
     "search": "Suchen",
     "edit": "Bearbeiten",
-    "share": "Teilen",
     "upload": "Hochladen",
     "download": "Download",
     "view": "Ansehen",
@@ -61,7 +60,6 @@
     "unknown": "Unbekannt",
     "na": "k.A.",
     "uploading": "Hochladen…",
-    "sharing": "Teilen…",
     "uploadToCloud": "In Cloud laden",
     "syncToSystem": "Synchronisieren",
     "elo": "ELO",
@@ -130,9 +128,7 @@
     "switchToSignUp": "Noch kein Konto? Registrieren",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuche es erneut.",
     "registerFailed": "Konto konnte nicht erstellt werden. Bitte versuche es erneut.",
-    "signInToUpload": "Anmelden, um Spiele hochzuladen",
-    "signInToShareGames": "Melde dich an, um Spiele zu teilen",
-    "pleaseSignIn": "Bitte melde dich an, um Spiele zu teilen"
+    "signInToUpload": "Anmelden, um Spiele hochzuladen"
   },
 
   "account": {
@@ -180,10 +176,6 @@
     "syncTitleUploadToCloud": "In die Cloud hochladen",
     "syncTitleUploadingTableGame": "Tischspiel wird hochgeladen...",
     "syncTitleCannotUploadUnfinished": "Unbeendete Tischspiele können nicht hochgeladen werden",
-    "shareTitleSignIn": "Anmelden, um Spiel zu teilen",
-    "shareTitleCannotSharePaused": "Pausierte Spiele können nicht geteilt werden",
-    "shareTitleSharing": "Wird geteilt...",
-    "shareTitleShareGame": "Spiel teilen",
     "clickToViewFullSize": "Klicken, um in voller Größe anzuzeigen",
     "syncedToCloud": "Mit Cloud synchronisiert",
     "changePassword": "Passwort ändern",
@@ -241,16 +233,6 @@
   "accountMessages": {
     "allDataCleared": "Alle lokalen Daten wurden gelöscht.",
     "gameDeleted": "Spiel erfolgreich gelöscht.",
-    "invalidSharedLink": "Ungültiger geteilter Link: {{error}}",
-    "gamesImportedSuccess": "Spiele wurden erfolgreich vom geteilten Link importiert!",
-    "gamesImportFailed": "Spiele konnten nicht vom geteilten Link importiert werden.",
-    "processSharedLinkFailed": "Geteilter Link konnte nicht verarbeitet werden.",
-    "gameImportedSuccess": "Spiel wurde erfolgreich vom geteilten Link importiert!",
-    "gameImportFailed": "Spiel konnte nicht vom geteilten Link importiert werden.",
-    "shareLinkDifferentDevice": "Dieser Link wurde auf einem anderen Gerät erstellt. Bitte verwende die Download-/Import-Methode für geräteübergreifendes Teilen.",
-    "shareLinkExpired": "Der geteilte Spiellink ist abgelaufen.",
-    "invalidShareLinkData": "Ungültiges Format der geteilten Linkdaten.",
-    "invalidShareLinkFormat": "Ungültiges Format des geteilten Links.",
     "passwordsMismatch": "Die neuen Passwörter stimmen nicht überein",
     "passwordTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein",
     "passwordChanged": "Passwort erfolgreich geändert",
@@ -277,13 +259,6 @@
     "allGamesExistLocally": "Alle {{count}} ausgewählten Spiele sind bereits lokal vorhanden",
     "noGamesDownloaded": "Es wurden keine Spiele heruntergeladen",
     "downloadFailed": "Download fehlgeschlagen: {{error}}",
-    "cannotSharePaused": "Pausierte Spiele können nicht geteilt werden. Bitte beende zuerst das Spiel.",
-    "cannotShareImported": "Importierte Spiele können nicht geteilt werden. Dieses Spiel wurde bereits von jemand anderem geteilt.",
-    "gameSharedSuccess": "Spiel erfolgreich geteilt!",
-    "shareLinkCopied": "Link zum Teilen in die Zwischenablage kopiert!",
-    "shareFailed": "Spiel konnte nicht geteilt werden. Bitte versuche es erneut.",
-    "syncBeforeShareFailed": "Spiel konnte vor dem Teilen nicht synchronisiert werden.",
-    "gameMustBeUploaded": "Das Spiel muss vor dem Teilen hochgeladen werden.",
     "gameUploadedSuccess": "Spiel erfolgreich in die Cloud hochgeladen!",
     "gameAlreadyUploadedMarked": "Spiel war bereits hochgeladen – als synchronisiert markiert!",
     "tableGameUploadedSuccess": "Tischspiel erfolgreich in die Cloud hochgeladen!",
@@ -292,15 +267,7 @@
     "migrationFailed": "Migration fehlgeschlagen",
     "clearDataConfirm": "Bist du sicher, dass du alle lokalen Daten löschen möchtest? Dies kann nicht rückgängig gemacht werden.",
     "deleteGameConfirm": "Bist du sicher, dass du dieses Spiel löschen möchtest?",
-    "invalidShareLink": "Ungültiger geteilter Link: {{error}}",
-    "importGamesFailed": "Import der Spiele über geteilten Link fehlgeschlagen.",
-    "processShareFailed": "Verarbeitung der geteilten Link-Daten fehlgeschlagen.",
-    "importGameFailed": "Import des Spiels über geteilten Link fehlgeschlagen.",
-    "invalidShareDataFormat": "Ungültiges Format der geteilten Link-Daten.",
     "passwordChangeFailed": "Passwortänderung fehlgeschlagen",
-    "signInToShare": "Bitte melde dich an, um Spiele zu teilen",
-    "syncBeforeShareError": "Synchronisierung des Spiels vor dem Teilen fehlgeschlagen: {{error}}",
-    "shareGameFailed": "Spiel konnte nicht geteilt werden. Bitte versuche es erneut.",
     "someGamesUploadFailed": "⚠️ {{successful}} hochgeladen, {{failed}} fehlgeschlagen. Tippe auf 'Debug-Log' für Details.",
     "allGamesUploadFailed": "❌ Upload fehlgeschlagen. Tippe auf 'Debug-Log' für Details."
   },
@@ -400,7 +367,6 @@
   "gameDetails": {
     "goBack": "Zurück",
     "gameName": "Wizard",
-    "share": "Teilen",
     "standingsTab": "Platzierung",
     "chartTab": "Diagramm",
     "roundsTab": "Runden",
@@ -411,10 +377,7 @@
     "noChartDataRounds": "Fehler: Fehlende Rundendaten für die Diagrammdarstellung",
     "noRoundData": "Keine Rundendaten für die Diagrammdarstellung verfügbar",
     "gameNotFound": "Spiel nicht gefunden",
-    "loadGameFailed": "Spieldetails konnten nicht geladen werden: {{error}}",
-    "gameSharedSuccess": "Spiel erfolgreich geteilt!",
-    "shareLinkCopied": "Link zum Teilen in die Zwischenablage kopiert!",
-    "shareFailed": "Spiel konnte nicht geteilt werden. Bitte versuche es erneut."
+    "loadGameFailed": "Spieldetails konnten nicht geladen werden: {{error}}"
   },
 
   "tableGame": {
@@ -773,28 +736,6 @@
     "marathonerDesc": "Spiele insgesamt 500 Runden"
   },
 
-  "sharedGame": {
-    "invalidShareLink": "Ungültiger Teilen-Link - keine Spiel-ID gefunden",
-    "gameNotFound": "Geteiltes Spiel nicht gefunden - es wurde möglicherweise gelöscht",
-    "gameTitle": "Wizard-Spiel - {{winner}} gewinnt!",
-    "alreadyImportedError": "Dieses Spiel wurde bereits importiert",
-    "gameDataNotFound": "Spieldaten nicht gefunden",
-    "importedAndLinked": "Geteiltes Spiel importiert und mit deinem Profil verknüpft!",
-    "importedSuccessfully": "Geteiltes Spiel erfolgreich importiert!",
-    "importFailed": "Import fehlgeschlagen: {{error}}",
-    "unableToLoad": "Geteiltes Spiel konnte nicht geladen werden",
-    "goToHome": "Zur Startseite",
-    "importSuccess": "Spiel erfolgreich importiert!",
-    "addedToCollection": "Das geteilte Spiel wurde zu deiner Sammlung hinzugefügt.",
-    "redirecting": "Weiterleitung zu deinen Spielen...",
-    "winnerWith": "{{winner}} mit",
-    "rounds": "Runden: {{count}}",
-    "alreadyHaveGame": "Du hast dieses Spiel bereits in deiner Sammlung.",
-    "viewMyGames": "Meine Spiele ansehen",
-    "importing": "Importiert...",
-    "importGame": "Spiel importieren"
-  },
-
   "updateNotification": {
     "majorUpdateLabel": "🎉 Großes Update",
     "majorUpdateDescription": "Neue Hauptversion mit bedeutenden Änderungen.",
@@ -881,6 +822,14 @@
     "selectRecent": "Aus den letzten Spielgruppen auswählen"
   },
 
+  "selectRecentGroup": {
+    "title": "Letzte Spielgruppen",
+    "loading": "Letzte Gruppen werden geladen...",
+    "noGroups": "Keine letzten Spiele gefunden. Spiele zuerst eine Partie, um diese Funktion zu nutzen.",
+    "selectThisGroup": "Diese Gruppe auswählen",
+    "lastPlayed": "Zuletzt gespielt {{date}}"
+  },
+
   "cloudGames": {
     "title": "Cloud-Spiele",
     "cloudTableGamesTitle": "Cloud-Tabellenspiele",
@@ -965,14 +914,6 @@
     "highScore": "Hoch",
     "lowScore": "Niedrig",
     "saveChanges": "Änderungen speichern"
-  },
-
-  "importGame": {
-    "title": "Wähle deinen Spieler",
-    "description": "Warst du einer der Spieler in diesem Spiel? Wähle deinen Spieler, um dieses Spiel mit deinem Profil zu verknüpfen.",
-    "loggedInAs": "Angemeldet als:",
-    "skipNotMyGame": "Überspringen - Nicht mein Spiel",
-    "importGame": "Spiel importieren"
   },
 
   "loadTableGame": {
@@ -1421,7 +1362,6 @@
     "groupLabel": "Gruppe {{index}} · {{count}} Kopien",
     "keepLabel": "Behalten",
     "removeLabel": "Entfernen",
-    "sharedBadge": "Geteilt",
     "unnamedGame": "Unbenanntes Spiel",
     "roundsShort": "{{count}} Runden",
     "confirmRemoveTitle": "Duplikate entfernen",

@@ -62,7 +62,6 @@ export const SEO_NOINDEX_PATTERNS = [
   /^\/table(\/|$)/,
   /^\/table-game(\/|$)/,
   /^\/game(\/|$)/,
-  /^\/shared(\/|$)/,
   /^\/admin(\/|$)/,
   /^\/friend-leaderboard(\/|$)/,
 ];

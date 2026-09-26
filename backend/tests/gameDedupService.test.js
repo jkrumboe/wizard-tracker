@@ -145,12 +145,6 @@ describe('getTableFingerprint', () => {
 });
 
 describe('pickKeeper', () => {
-  it('keeps the shared copy so its share link survives', () => {
-    const plain = wizardDoc({ _id: 'a1', createdAt: '2026-08-08T21:00:00.000Z' });
-    const shared = wizardDoc({ _id: 'a2', createdAt: '2026-08-10T21:00:00.000Z', isShared: true, shareId: 'abc' });
-    expect(pickKeeper([plain, shared]).keep._id).toBe('a2');
-  });
-
   it('prefers the copy with resolved player identities', () => {
     const plain = wizardDoc({ _id: 'a1' });
     const migrated = wizardDoc({ _id: 'a2', createdAt: '2026-08-12T21:00:00.000Z' }, {

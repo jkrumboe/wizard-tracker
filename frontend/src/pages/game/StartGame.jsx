@@ -224,7 +224,7 @@ const StartGame = () => {
 
   const handleSelectRecentGroup = (group) => {
     // Deselect if clicking the already-selected group
-    if (selectedRecentGroup?.gameId === group.gameId) {
+    if (selectedRecentGroup?.groupId === group.groupId) {
       setPlayers((prev) =>
         prev.filter(existing =>
           existing.userId === user?.id ||
@@ -708,7 +708,7 @@ const StartGame = () => {
         isOpen={showSelectRecentGroupModal}
         onClose={() => setShowSelectRecentGroupModal(false)}
         onSelectGroup={handleSelectRecentGroup}
-        selectedGroupId={selectedRecentGroup?.gameId}
+        selectedGroupId={selectedRecentGroup?.groupId}
         alreadySelectedPlayers={players.filter(p => p.userId || p.name).map(p => ({ userId: p.userId, name: p.name }))}
       />
     </div>

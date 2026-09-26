@@ -7,7 +7,6 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { useUser } from '@/shared/hooks/useUser';
 
 import { LocalGameStorage, LocalTableGameStorage, LocalScoreboardGameStorage } from '@/shared/api';
-import { ShareValidator } from '@/shared/utils/shareValidator';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
 import { TrashIcon, RefreshIcon, LogOutIcon, KeyIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
 import { supportedLanguages } from '@/shared/i18n/i18n';
@@ -86,218 +85,6 @@ const Account = () => {
     return [...tableGames, ...scoreboardGames].sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
   }, []);
 
-  const checkForImportedGames = () => {
-    const urlParams = new URLSearchParams(globalThis.location.search);
-    const importGamesParam = urlParams.get('importGames');
-    const importGameParam = urlParams.get('importGame');
-    const shareKeyParam = urlParams.get('shareKey');
-    
-    if (importGamesParam) {
-      // Handle multiple games import with security validation
-      const validation = ShareValidator.validateEncodedGamesData(importGamesParam);
-      
-      if (!validation.isValid) {
-        setMessage({ 
-          text: t('accountMessages.invalidShareLink', { error: validation.error }), 
-          type: 'error' 
-        });
-        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-        return;
-      }
-      
-      try {
-        const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
-        if (success) {
-          loadSavedGames();
-          setMessage({ text: t('accountMessages.gamesImportedSuccess'), type: 'success' });
-        } else {
-          setMessage({ text: t('accountMessages.gamesImportFailed'), type: 'error' });
-        }
-      } catch (error) {
-        console.error('Error importing games from URL:', error);
-        setMessage({ text: t('accountMessages.processShareFailed'), type: 'error' });
-      }
-      
-      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-    } else if (importGameParam) {
-      // Handle single game import with security validation
-      const validation = ShareValidator.validateEncodedGameData(importGameParam);
-      
-      if (!validation.isValid) {
-        setMessage({ 
-          text: t('accountMessages.invalidShareLink', { error: validation.error }), 
-          type: 'error' 
-        });
-        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-        return;
-      }
-      
-      try {
-        const compactGameData = validation.data;
-        
-        // Convert compact data back to full game format
-        const fullGameData = {
-          [compactGameData.id]: {
-            id: compactGameData.id,
-            name: `Imported Game - ${new Date(compactGameData.created_at).toLocaleDateString()}`,
-            gameState: {
-              id: compactGameData.id,
-              players: compactGameData.players,
-              winner_id: compactGameData.winner_id,
-              final_scores: compactGameData.final_scores,
-              round_data: compactGameData.round_data,
-              total_rounds: compactGameData.total_rounds,
-              created_at: compactGameData.created_at,
-              game_mode: compactGameData.game_mode,
-              duration_seconds: compactGameData.duration_seconds,
-              currentRound: compactGameData.total_rounds,
-              maxRounds: compactGameData.total_rounds,
-              roundData: compactGameData.round_data,
-              gameStarted: true,
-              gameFinished: true,
-              mode: compactGameData.game_mode,
-              isLocal: true,
-              isPaused: false,
-              referenceDate: compactGameData.created_at,
-              gameId: compactGameData.id,
-              player_ids: compactGameData.players.map(p => p.id)
-            },
-            savedAt: compactGameData.created_at,
-            lastPlayed: compactGameData.created_at,
-            playerCount: compactGameData.players.length,
-            roundsCompleted: compactGameData.total_rounds,
-            totalRounds: compactGameData.total_rounds,
-            mode: compactGameData.game_mode,
-            gameFinished: true,
-            isPaused: false,
-            isImported: true,
-            winner_id: compactGameData.winner_id,
-            final_scores: compactGameData.final_scores,
-            created_at: compactGameData.created_at,
-            player_ids: compactGameData.players.map(p => p.id),
-            round_data: compactGameData.round_data,
-            total_rounds: compactGameData.total_rounds,
-            duration_seconds: compactGameData.duration_seconds,
-            is_local: true
-          }
-        };
-        
-        const success = LocalGameStorage.importGames(JSON.stringify(fullGameData));
-        if (success) {
-          loadSavedGames();
-          setMessage({ text: t('accountMessages.gameImportedSuccess'), type: 'success' });
-        } else {
-          setMessage({ text: t('accountMessages.importGameFailed'), type: 'error' });
-        }
-      } catch (error) {
-        console.error('Error importing game from URL:', error);
-        setMessage({ text: t('accountMessages.processShareFailed'), type: 'error' });
-      }
-      
-      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-    } else if (shareKeyParam) {
-      // Handle share key import (for large data) with security validation
-      
-      // First validate the share key format
-      if (!ShareValidator.isValidShareKey(shareKeyParam)) {
-        setMessage({ 
-          text: t('accountMessages.invalidShareLinkFormat'), 
-          type: 'error' 
-        });
-        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-        return;
-      }
-      
-      try {
-        const jsonData = localStorage.getItem(shareKeyParam);
-        const expirationTime = localStorage.getItem(shareKeyParam + '_expires');
-        
-        if (!jsonData) {
-          setMessage({ 
-            text: t('accountMessages.shareLinkDifferentDevice'), 
-            type: 'error' 
-          });
-          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-          return;
-        }
-        
-        // Check if expired
-        if (expirationTime && Date.now() > parseInt(expirationTime)) {
-          localStorage.removeItem(shareKeyParam);
-          localStorage.removeItem(shareKeyParam + '_expires');
-          setMessage({ text: t('accountMessages.shareLinkExpired'), type: 'error' });
-          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-          return;
-        }
-        
-        // Validate the JSON data structure before importing
-        try {
-          JSON.parse(jsonData); // Just validate it's valid JSON
-        } catch (parseError) {
-          console.warn('Parse error for share key data:', parseError);
-          localStorage.removeItem(shareKeyParam);
-          localStorage.removeItem(shareKeyParam + '_expires');
-          setMessage({ text: t('accountMessages.invalidShareDataFormat'), type: 'error' });
-          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-          return;
-        }
-        
-        // Validate the structure as games data
-        const validation = ShareValidator.validateEncodedGamesData(btoa(jsonData));
-        if (!validation.isValid) {
-          localStorage.removeItem(shareKeyParam);
-          localStorage.removeItem(shareKeyParam + '_expires');
-          setMessage({ 
-            text: t('accountMessages.invalidShareLink', { error: validation.error }), 
-            type: 'error' 
-          });
-          globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-          return;
-        }
-        
-        const success = LocalGameStorage.importGames(JSON.stringify(validation.data));
-        
-        if (success) {
-          loadSavedGames();
-          setMessage({ text: t('accountMessages.gameImportedSuccess'), type: 'success' });
-          
-          // Clean up the temporary storage
-          localStorage.removeItem(shareKeyParam);
-          localStorage.removeItem(shareKeyParam + '_expires');
-        } else {
-          setMessage({ text: t('accountMessages.importGameFailed'), type: 'error' });
-        }
-      } catch (error) {
-        console.error('Error importing game from share key:', error);
-        setMessage({ text: t('accountMessages.processShareFailed'), type: 'error' });
-      }
-      
-      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
-    }
-  };
-
-  const cleanupExpiredShareKeys = () => {
-    const keysToRemove = [];
-    
-    // Find all share keys in localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('share_') && key.endsWith('_expires')) {
-        const expirationTime = localStorage.getItem(key);
-        if (expirationTime && Date.now() > parseInt(expirationTime)) {
-          // Mark for removal
-          const shareKey = key.replace('_expires', '');
-          keysToRemove.push(shareKey);
-          keysToRemove.push(key);
-        }
-      }
-    }
-    
-    // Remove expired keys
-    keysToRemove.forEach(key => {
-      localStorage.removeItem(key);
-    });
-  };
 
   const loadSavedGames = useCallback(async () => {
     // First migrate games to ensure they have upload tracking properties
@@ -520,18 +307,6 @@ const Account = () => {
     if (user) {
       loadCloudGames();
     }
-    
-    checkForImportedGames();
-    cleanupExpiredShareKeys();
-    
-    // Check for import success/error flags from URL handler
-    if (localStorage.getItem('import_success')) {
-      setMessage({ text: t('accountMessages.gameImportedSuccess'), type: 'success' });
-      localStorage.removeItem('import_success');
-    } else if (localStorage.getItem('import_error')) {
-      setMessage({ text: t('accountMessages.importGameFailed'), type: 'error' });
-      localStorage.removeItem('import_error');
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loadCloudGames]); // Re-run when user changes (login/logout)
 
@@ -604,26 +379,6 @@ const Account = () => {
   // Reload games when date filter changes
   // Removed redundant reload on every render
 
-  // Handle URL parameter changes
-  useEffect(() => {
-    const handleUrlParamImport = () => {
-      const urlParams = new URLSearchParams(globalThis.location.search);
-      if (urlParams.has('importGame') || urlParams.has('importGames') || urlParams.has('shareKey')) {
-        checkForImportedGames();
-      }
-    };
-
-    // Run once on mount
-    handleUrlParamImport();
-
-    // Listen for popstate events (back/forward navigation)
-    globalThis.addEventListener('popstate', handleUrlParamImport);
-
-    return () => {
-      globalThis.removeEventListener('popstate', handleUrlParamImport);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleConfirmDelete = () => {
     if (deleteAll) {

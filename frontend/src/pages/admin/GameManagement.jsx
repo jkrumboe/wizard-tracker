@@ -267,9 +267,6 @@ const GameManagement = () => {
       <div className="dedupe-copy-body">
         <div className="dedupe-copy-title">
           {copy.name || copy.players.join(', ') || t('adminGames.unnamedGame')}
-          {copy.shared && (
-            <span className="badge badge-info dedupe-shared-badge">{t('adminGames.sharedBadge')}</span>
-          )}
         </div>
         <div className="dedupe-copy-meta">
           {copy.name && copy.players.length > 0 && <span>{copy.players.join(', ')}</span>}

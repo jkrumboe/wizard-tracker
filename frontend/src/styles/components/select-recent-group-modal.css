@@ -51,14 +51,9 @@
 
 .group-info {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: 100%;
   gap: var(--spacing-md);
-}
-
-.group-game-name {
-  font-weight: 600;
-  font-size: 1rem;
 }
 
 .group-date {

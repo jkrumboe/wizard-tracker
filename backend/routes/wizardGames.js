@@ -164,10 +164,7 @@ router.post('/migrate', auth, async (req, res) => {
           gameData: migrated,
           migratedFrom: originalVersion,
           migratedAt: new Date(),
-          originalGameId: game._id,
-          isShared: game.isShared || false,
-          shareId: game.shareId || null,
-          sharedAt: game.sharedAt || null
+          originalGameId: game._id
         });
         
         await wizardGame.save();
