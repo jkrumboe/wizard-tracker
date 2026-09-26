@@ -1,6 +1,5 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const FriendRequest = require('../models/FriendRequest');
 const PlayerAlias = require('../models/PlayerAlias');
@@ -15,6 +14,7 @@ const mongoose = require('mongoose');
 const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
 const catchAsync = require('../utils/catchAsync');
+const { signAuthToken, shouldRenewToken } = require('../utils/authToken');
 const router = express.Router();
 
 // POST /users/register - Create new user (with strict rate limiting)
@@ -57,11 +57,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
     await user.save();
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = signAuthToken(user);
 
     // ========== Claim/Create Player Identity & Link Previous Games ==========
     // Run identity claiming inline - failures are logged but don't block registration
@@ -135,11 +131,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
     await user.save();
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = signAuthToken(user);
 
     // Fetch identities for the user
     const identities = await PlayerIdentity.find({
@@ -213,7 +205,12 @@ router.get('/me', auth, async (req, res, next) => {
       isDeleted: false
     }).lean();
 
+    // Hand back a fresh token when the current one is past half its life, so a
+    // user who keeps opening the app never gets logged out.
+    const renewedToken = shouldRenewToken(req.tokenPayload) ? signAuthToken(req.user) : undefined;
+
     res.json({
+      ...(renewedToken && { token: renewedToken }),
       user: {
         id: req.user._id,
         username: req.user.username,
@@ -228,6 +225,25 @@ router.get('/me', auth, async (req, res, next) => {
           eloByGameType: id.eloByGameType || {},
           linkedIdentities: id.linkedIdentities || []
         }))
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /users/refresh - Exchange a still-valid token for a fresh one
+// Keeps a returning user signed in without asking for their password again.
+router.post('/refresh', authLimiter, auth, async (req, res, next) => {
+  try {
+    res.json({
+      token: signAuthToken(req.user),
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        role: req.user.role || 'user',
+        createdAt: req.user.createdAt,
+        profilePicture: req.user.profilePicture || null
       }
     });
   } catch (error) {
@@ -850,11 +866,7 @@ router.patch('/:userId/name', auth, async (req, res, next) => {
     }
 
     // Generate new JWT with updated username
-    const token = jwt.sign(
-      { userId: userDoc._id, username: userDoc.username },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = signAuthToken(userDoc);
 
     res.json({
       message: 'Username updated successfully',

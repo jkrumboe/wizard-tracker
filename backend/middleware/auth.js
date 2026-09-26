@@ -15,6 +15,10 @@ const auth = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Routes that hand a token back to the client (see utils/authToken) need
+    // the payload to tell how much of its lifetime is left.
+    req.tokenPayload = decoded;
     
     // Try to get user from cache first
     const cacheKey = `user:${decoded.userId}`;

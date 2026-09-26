@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
     register: `${API_BASE_URL}/api/users/register`,
     login: `${API_BASE_URL}/api/users/login`,
     me: `${API_BASE_URL}/api/users/me`,
+    refresh: `${API_BASE_URL}/api/users/refresh`,
   },
   games: {
     list: `${API_BASE_URL}/api/games`,

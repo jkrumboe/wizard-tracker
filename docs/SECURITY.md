@@ -98,7 +98,7 @@ When deploying KeepWiz, please follow these security best practices:
 
 ### Current Security Measures
 
-- JWT-based authentication with token expiration
+- JWT-based authentication with token expiration (`JWT_EXPIRES_IN_DAYS`, default 90 days; tokens are renewed via `POST /api/users/refresh` once past half their life, so sessions slide forward while a user stays active and expire after that long idle)
 - Bcrypt password hashing (10 rounds)
 - Input validation on all API endpoints
 - CORS configuration for cross-origin requests

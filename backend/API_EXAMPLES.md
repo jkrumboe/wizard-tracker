@@ -57,6 +57,30 @@ curl -X POST http://localhost:5000/api/users/login \
 }
 ```
 
+### Refresh Session Token
+
+Tokens are valid for 90 days (`JWT_EXPIRES_IN_DAYS`). Call this with a still-valid
+token to get a fresh one - the frontend does it automatically once a token is past
+half its lifetime, so an active user is never sent back to the login screen.
+`GET /api/users/me` also returns a `token` field when a renewal is due.
+
+```bash
+curl -X POST http://localhost:5000/api/users/refresh   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "64f8a1b2c3d4e5f6g7h8i9j0",
+    "username": "johndoe",
+    "role": "user",
+    "createdAt": "2023-09-06T10:30:00.000Z"
+  }
+}
+```
+
 ## Game Management Examples
 
 > **Note:** All game endpoints require authentication. Include the token in the Authorization header.

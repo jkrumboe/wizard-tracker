@@ -9,6 +9,14 @@ import { sessionCache } from '../utils/sessionCache';
  */
 const AUTH_REQUEST_TIMEOUT_MS = 8000;
 
+/**
+ * Tokens are swapped for a fresh one once they are past this share of their
+ * lifetime. Mirrors `RENEW_AFTER_FRACTION` in `backend/utils/authToken.js`: as
+ * long as the app is opened once inside a token's lifetime, the session slides
+ * forward and the user is never asked to sign in again.
+ */
+const TOKEN_RENEW_AFTER_FRACTION = 0.5;
+
 async function fetchWithTimeout(url, options = {}, timeoutMs = AUTH_REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -56,13 +64,17 @@ class AuthService {
   }
 
   // Store token in session cache
-  async setToken(token) {
+  // `notify` is false when swapping a token for a fresh one: sign-in state has
+  // not changed, so the offline upload queue has nothing new to do.
+  async setToken(token, { notify = true } = {}) {
     this.token = token;
     await sessionCache.set('auth_token', token, { persist: true });
     // Also store in localStorage for backwards compatibility with existing code
     localStorage.setItem('auth_token', token);
-    // Games finished while signed out can be uploaded now.
-    this.notifyAuthChanged();
+    if (notify) {
+      // Games finished while signed out can be uploaded now.
+      this.notifyAuthChanged();
+    }
   }
 
   // Let the offline upload queue know that sign-in state changed
@@ -229,33 +241,97 @@ class AuthService {
     }
   }
 
-  isTokenExpired(token) {
+  // Decode a JWT payload without validating it - only the server can actually
+  // vouch for a token.
+  decodeTokenPayload(token) {
     try {
-      if (!token) return true;
-      
-      // Decode JWT token (basic decode, not validation)
+      if (!token) return null;
+
       const parts = token.split('.');
-      if (parts.length !== 3) return true;
-      
-      const payload = JSON.parse(atob(parts[1]));
-      
-      // Check expiration (exp is in seconds, Date.now() is in milliseconds)
-      if (payload.exp) {
-        const now = Math.floor(Date.now() / 1000);
-        const isExpired = payload.exp < now;
-        
-        if (isExpired) {
-          console.debug('🔒 Token expired:', new Date(payload.exp * 1000).toLocaleString());
-        }
-        
-        return isExpired;
-      }
-      
-      // No expiration field, assume not expired
-      return false;
+      if (parts.length !== 3) return null;
+
+      return JSON.parse(atob(parts[1]));
     } catch (error) {
-      console.error('Error checking token expiration:', error);
-      return true; // Assume expired on error
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
+
+  isTokenExpired(token) {
+    if (!token) return true;
+
+    const payload = this.decodeTokenPayload(token);
+    if (!payload) return true; // Unreadable token - treat as expired
+
+    // Check expiration (exp is in seconds, Date.now() is in milliseconds)
+    if (payload.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = payload.exp < now;
+
+      if (isExpired) {
+        console.debug('🔒 Token expired:', new Date(payload.exp * 1000).toLocaleString());
+      }
+
+      return isExpired;
+    }
+
+    // No expiration field, assume not expired
+    return false;
+  }
+
+  /**
+   * Whether a token is far enough through its lifetime to be worth swapping for
+   * a fresh one. Tokens without an `exp` never need renewing.
+   */
+  shouldRenewToken(token) {
+    const payload = this.decodeTokenPayload(token);
+    if (!payload?.exp) return false;
+
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp <= now) return false; // Already dead - renewal cannot help
+
+    const lifetime = payload.iat ? payload.exp - payload.iat : 0;
+    if (lifetime <= 0) return false;
+
+    const remaining = payload.exp - now;
+    return remaining <= lifetime * (1 - TOKEN_RENEW_AFTER_FRACTION);
+  }
+
+  /**
+   * Swap a still-valid token for a fresh one. Every session check is a chance to
+   * renew, which is what keeps a returning user signed in without ever being
+   * sent back to the login screen.
+   *
+   * @returns {Promise<boolean>} true when a new token was stored
+   */
+  async renewTokenIfNeeded() {
+    const token = await this.getStoredToken();
+    if (!token || !this.shouldRenewToken(token)) return false;
+    if (!navigator.onLine) return false;
+
+    try {
+      const response = await fetchWithTimeout(API_ENDPOINTS.auth.refresh, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        // A rejected token is handled by the regular session check; anything
+        // else (rate limit, server error) is worth retrying on the next check.
+        console.debug('🔒 Token renewal declined by server:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      if (!data.token) return false;
+
+      await this.setToken(data.token, { notify: false });
+      console.debug('🔄 Auth token renewed');
+      return true;
+    } catch (error) {
+      // Offline or flaky connection - the existing token is still valid.
+      console.debug('Token renewal could not reach the server:', error);
+      return false;
     }
   }
 
@@ -324,7 +400,13 @@ class AuthService {
       }
 
       const data = await response.json();
-      
+
+      // /me hands back a fresh token once the current one is past half its
+      // life, so simply opening the app extends the session.
+      if (data.token) {
+        await this.setToken(data.token, { notify: false });
+      }
+
       // Update current user with data from backend
       this.currentUser = {
         $id: data.user.id,
@@ -412,9 +494,8 @@ class AuthService {
   }
 
   async refreshToken() {
-    // For JWT tokens, we don't need to refresh them actively
-    // They are stateless and valid until expiry
     try {
+      await this.renewTokenIfNeeded();
       return await this.getCurrentUser();
     } catch (error) {
       throw new Error(error.message);
@@ -427,13 +508,20 @@ class AuthService {
       await this.initialize();
       
       // Check if token is expired before proceeding
-      const cachedToken = await sessionCache.get('auth_token');
+      let cachedToken = await sessionCache.get('auth_token');
       if (cachedToken && this.isTokenExpired(cachedToken)) {
         console.debug('🔒 Token expired - logging out');
         await this.logout();
         return null;
       }
-      
+
+      // Slide the session forward while the token is still valid, so an active
+      // user never reaches the expiry above.
+      if (cachedToken && (await this.renewTokenIfNeeded())) {
+        cachedToken = this.token;
+      }
+
+            
       // Simple check: if navigator is offline, try to restore from cache
       if (!navigator.onLine) {
         console.debug('🔒 Browser is offline - checking cached auth');
