@@ -25,6 +25,7 @@ const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"))
 const TemplateSuggestions = lazy(() => import("@/pages/admin/TemplateSuggestions"))
 const UserManagement = lazy(() => import("@/pages/admin/UserManagement"))
 const GameManagement = lazy(() => import("@/pages/admin/GameManagement"))
+const GameEditor = lazy(() => import("@/pages/admin/GameEditor"))
 const GameLinkageManagement = lazy(() => import("@/pages/admin/GameLinkageManagement"))
 const PlayerLinking = lazy(() => import("@/pages/admin/PlayerLinking"))
 const EloManagement = lazy(() => import("@/pages/admin/EloManagement"))
@@ -208,6 +209,7 @@ function App() {
                       <Route path="template-suggestions" element={<TemplateSuggestions />} />
                       <Route path="users" element={<UserManagement />} />
                       <Route path="games" element={<GameManagement />} />
+                      <Route path="games/:type/:id/edit" element={<GameEditor />} />
                       <Route path="game-linkage" element={<GameLinkageManagement />} />
                       <Route path="player-linking" element={<PlayerLinking />} />
                       <Route path="elo" element={<EloManagement />} />

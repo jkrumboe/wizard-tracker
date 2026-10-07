@@ -537,6 +537,14 @@ const GameManagement = () => {
                           >
                             {t('adminGames.view')}
                           </Link>
+                          <Link
+                            to={`/admin/games/${game.type}/${game._id}/edit`}
+                            className="btn-view btn-icon-only"
+                            title={t('adminGames.editGame')}
+                            aria-label={t('adminGames.editGame')}
+                          >
+                            <Icon name="Edit" size={13} />
+                          </Link>
                           <button
                             className="btn-reject btn-icon-only"
                             onClick={() => setDeleteTarget(game)}

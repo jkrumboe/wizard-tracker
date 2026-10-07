@@ -217,12 +217,14 @@ export const suggestTemplate = async (id, note = '') => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ note }),
+      body: JSON.stringify({ suggestionNote: note }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to suggest template');
+      const error = await response.json().catch(() => ({}));
+      const err = new Error(error.error || `Failed to suggest template (HTTP ${response.status})`);
+      err.status = response.status;
+      throw err;
     }
 
     return await response.json();

@@ -839,6 +839,50 @@ export async function adminRemoveDuplicateGames({ ids, includeDate = true, sameU
   return res.json();
 }
 
+// Admin: Load a game for the editor, with the identity each player is linked to
+export async function adminGetGameForEdit(type, id) {
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch(API_ENDPOINTS.adminGames.edit(type, id), {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to load game');
+  }
+  return res.json();
+}
+
+// Admin: Correct a game (player names/links, rounds, points). The server relinks
+// renamed players, recalculates winners, ELO and stats, and retires orphaned guests.
+export async function adminUpdateGame(type, id, { players, rounds, points, name, recalculateElo = true, cleanupOrphans = true } = {}) {
+  const token = localStorage.getItem('auth_token');
+  const res = await fetch(API_ENDPOINTS.adminGames.edit(type, id), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ players, rounds, points, name, recalculateElo, cleanupOrphans })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to save game');
+  }
+  return res.json();
+}
+
+// Admin: Search player identities by name or alias
+export async function adminSearchIdentities(query, { limit = 8 } = {}) {
+  const token = localStorage.getItem('auth_token');
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  const res = await fetch(`${API_ENDPOINTS.identities.search}?${params}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to search players');
+  const data = await res.json();
+  return data.identities || [];
+}
+
 // Admin: Delete a legacy game by ID
 export async function adminDeleteLegacyGame(id) {
   const token = localStorage.getItem('auth_token');

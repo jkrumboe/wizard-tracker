@@ -306,6 +306,11 @@ export class LocalTableGameTemplate {
    * @returns {Promise<Object>} - Object with systemTemplates and userTemplates arrays
    */
   static async downloadFromCloud() {
+    // Logged out or offline: nothing to sync, local and built-in templates are used as-is
+    if (!localStorage.getItem('auth_token') || !navigator.onLine) {
+      return { systemTemplates: [], userTemplates: [] };
+    }
+
     try {
       const allTemplates = await gameTemplateService.getTemplates();
       
@@ -416,9 +421,25 @@ export class LocalTableGameTemplate {
       }
 
       // Submit suggestion with existing cloudId
-      const suggestion = await gameTemplateService.suggestTemplate(template.cloudId, note);
-      
-      return suggestion;
+      try {
+        return await gameTemplateService.suggestTemplate(template.cloudId, note);
+      } catch (error) {
+        if (error.status !== 404) throw error;
+
+        // Stored cloudId no longer exists on the server (deleted, other DB, etc.):
+        // drop it, re-upload the template, and retry once with the new cloudId
+        const templates = this.getAllTemplates();
+        delete templates[templateId].cloudId;
+        templates[templateId].isSynced = false;
+        localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));
+
+        await this.syncToCloud(templateId);
+        const resyncedTemplate = this.getTemplate(templateId);
+        if (!resyncedTemplate?.cloudId) {
+          throw new Error('Failed to sync template to cloud');
+        }
+        return await gameTemplateService.suggestTemplate(resyncedTemplate.cloudId, note);
+      }
     } catch (error) {
       console.error("Error suggesting template to admin:", error);
       throw error;

@@ -9,6 +9,14 @@ const { getBuiltinSystemTemplateById } = require('../utils/builtinSystemTemplate
 
 const router = express.Router();
 
+// Mongoose returns a nested-document wrapper (not null) for an unset nested
+// path, which fails to cast when copied into another model. Read the plain value.
+const getScoringFormula = (template) => {
+  if (!template) return null;
+  const plain = typeof template.toObject === 'function' ? template.toObject() : template;
+  return plain.scoringFormula || null;
+};
+
 // Middleware to check admin role
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
@@ -235,7 +243,7 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
       targetNumber: userTemplate.targetNumber,
       lowIsBetter: userTemplate.lowIsBetter,
       gameCategory: userTemplate.gameCategory || 'table',
-      scoringFormula: userTemplate.scoringFormula || null,
+      scoringFormula: getScoringFormula(userTemplate),
       roundPattern: userTemplate.roundPattern || null,
       maxRounds: userTemplate.maxRounds || null,
       hasDealerRotation: userTemplate.hasDealerRotation !== false,
@@ -381,7 +389,7 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
       targetNumber: targetNumber !== undefined ? targetNumber : systemTemplate.targetNumber,
       lowIsBetter: lowIsBetter !== undefined ? lowIsBetter : systemTemplate.lowIsBetter,
       gameCategory: gameCategory !== undefined ? gameCategory : (systemTemplate.gameCategory || 'table'),
-      scoringFormula: scoringFormula !== undefined ? scoringFormula : (systemTemplate.scoringFormula || null),
+      scoringFormula: scoringFormula !== undefined ? scoringFormula : getScoringFormula(systemTemplate),
       roundPattern: roundPattern !== undefined ? roundPattern : (systemTemplate.roundPattern || null),
       maxRounds: maxRounds !== undefined ? maxRounds : (systemTemplate.maxRounds || null),
       hasDealerRotation: hasDealerRotation !== undefined ? hasDealerRotation : (systemTemplate.hasDealerRotation !== false),
@@ -463,7 +471,7 @@ router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(asy
       systemTemplate.targetNumber = suggestion.targetNumber;
       systemTemplate.lowIsBetter = suggestion.lowIsBetter;
       systemTemplate.gameCategory = suggestion.gameCategory || 'table';
-      systemTemplate.scoringFormula = suggestion.scoringFormula || null;
+      systemTemplate.scoringFormula = getScoringFormula(suggestion);
       systemTemplate.roundPattern = suggestion.roundPattern || null;
       systemTemplate.maxRounds = suggestion.maxRounds || null;
       systemTemplate.hasDealerRotation = suggestion.hasDealerRotation !== false;
@@ -480,7 +488,7 @@ router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(asy
         targetNumber: suggestion.targetNumber,
         lowIsBetter: suggestion.lowIsBetter,
         gameCategory: suggestion.gameCategory || 'table',
-        scoringFormula: suggestion.scoringFormula || null,
+        scoringFormula: getScoringFormula(suggestion),
         roundPattern: suggestion.roundPattern || null,
         maxRounds: suggestion.maxRounds || null,
         hasDealerRotation: suggestion.hasDealerRotation !== false,

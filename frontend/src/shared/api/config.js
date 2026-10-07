@@ -55,6 +55,7 @@ export const API_ENDPOINTS = {
   adminGames: {
     duplicates: `${API_BASE_URL}/api/admin/games/duplicates`,
     removeDuplicates: `${API_BASE_URL}/api/admin/games/duplicates/remove`,
+    edit: (type, id) => `${API_BASE_URL}/api/admin/games/${type}/${id}`,
   },
   gameTemplates: {
     list: `${API_BASE_URL}/api/game-templates`,
@@ -64,6 +65,9 @@ export const API_ENDPOINTS = {
     adminSuggestions: `${API_BASE_URL}/api/game-templates/admin/suggestions`,
     approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
     rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
+  },
+  identities: {
+    search: `${API_BASE_URL}/api/identities/search`,
   },
   elo: {
     rankings: `${API_BASE_URL}/api/identities/elo/rankings`,

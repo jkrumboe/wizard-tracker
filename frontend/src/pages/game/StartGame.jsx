@@ -37,6 +37,7 @@ const StartGame = () => {
   const startType = searchParams.get('type');
   const selectorGameCategory = startType === 'call-made' ? 'callAndMade' : (startType === 'scoreboard' || startType === 'table' ? 'table' : undefined);
   const selectorTableMode = startType === 'scoreboard' ? 'scoreboard' : (startType === 'table' ? 'table' : 'all');
+  const addTemplateType = { 'call-made': 'callAndMade', scoreboard: 'scoreboard', table: 'table' }[startType] || null;
 
   // View state
   const [activeView, setActiveView] = useState('select'); // 'select' or 'setup'
@@ -492,6 +493,14 @@ const StartGame = () => {
             <h3 className="template-section-title start-select-title">{t('gameTemplates.templatesSection')}</h3>
           </div>
 
+          {/* Add New Game Type stays at the top so it's reachable with long template lists */}
+          <div className="template-selector-actions start-create-actions">
+            <button className="create-new-btn" onClick={() => setShowAddGameModal(true)}>
+              <PlusIcon size={20} />
+              {t('gameTemplates.addNewGameType')}
+            </button>
+          </div>
+
           {resumeErrorMessage && (
             <div className="error-message" role="alert">
               {resumeErrorMessage}
@@ -516,18 +525,11 @@ const StartGame = () => {
             savedGamesInitialStatus="paused"
           />
 
-          {/* Single Add New Game Type button */}
-          <div className="template-selector-actions">
-            <button className="create-new-btn" onClick={() => setShowAddGameModal(true)}>
-              <PlusIcon size={20} />
-              {t('gameTemplates.addNewGameType')}
-            </button>
-          </div>
-
           <AddGameTemplateModal
             isOpen={showAddGameModal}
             onClose={() => setShowAddGameModal(false)}
             onSave={handleCreateNewTemplate}
+            templateType={addTemplateType}
           />
 
           <WizardGameHistoryModal

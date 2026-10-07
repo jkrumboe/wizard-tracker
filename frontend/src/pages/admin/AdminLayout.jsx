@@ -115,14 +115,20 @@ const AdminLayout = () => {
   const location = useLocation();
   const isRootPath = location.pathname === '/admin' || location.pathname === '/admin/';
 
+  // Sub-pages (e.g. /admin/games/wizard/:id/edit) belong to their section
+  const isInSection = useCallback(
+    (item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
+    [location.pathname]
+  );
+
   const isCurrent = useCallback(
-    (item) => (item.exact ? isRootPath : location.pathname === item.path),
-    [isRootPath, location.pathname]
+    (item) => (item.exact ? isRootPath : isInSection(item)),
+    [isRootPath, isInSection]
   );
 
   const currentSection = useMemo(
-    () => NAV_ITEMS.find(item => item.path === location.pathname) || null,
-    [location.pathname]
+    () => NAV_ITEMS.find(isCurrent) || null,
+    [isCurrent]
   );
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);

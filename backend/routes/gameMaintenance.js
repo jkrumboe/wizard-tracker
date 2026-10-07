@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const catchAsync = require('../utils/catchAsync');
@@ -7,9 +8,11 @@ const {
   removeDuplicateGroups,
   summarizeGameDoc
 } = require('../utils/gameDedupService');
+const { GameEditError, getGameForEdit, editGame } = require('../utils/gameEditService');
 
 /**
- * Admin-only maintenance endpoints for the games collections.
+ * Admin-only maintenance endpoints for the games collections:
+ * duplicate cleanup and correcting a single game.
  * Mounted at /api/admin/games
  */
 
@@ -168,6 +171,88 @@ router.post('/duplicates/remove', auth, requireAdmin, catchAsync(async (req, res
       gameType: options.collection
     }
   });
+}));
+
+const EDITABLE_TYPES = new Set(['wizard', 'table']);
+
+/**
+ * Validate the :type/:id params shared by the edit endpoints.
+ * @returns {boolean} false when a response has already been sent
+ */
+function checkEditParams(req, res) {
+  if (!EDITABLE_TYPES.has(req.params.type)) {
+    res.status(400).json({ error: 'Game type must be wizard or table' });
+    return false;
+  }
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    res.status(400).json({ error: 'Invalid game ID format' });
+    return false;
+  }
+  return true;
+}
+
+function sendEditError(res, error) {
+  if (error instanceof GameEditError) {
+    res.status(error.status).json({ error: error.message });
+    return true;
+  }
+  return false;
+}
+
+/**
+ * GET /api/admin/games/:type/:id
+ * Load a game for the admin editor, with the identity every player is linked to.
+ */
+router.get('/:type/:id', auth, requireAdmin, catchAsync(async (req, res) => {
+  if (!checkEditParams(req, res)) return;
+  try {
+    res.json(await getGameForEdit(req.params.type, req.params.id));
+  } catch (error) {
+    if (!sendEditError(res, error)) throw error;
+  }
+}));
+
+/**
+ * PUT /api/admin/games/:type/:id
+ * Correct a stored game.
+ *
+ * Body: {
+ *   players?: [{ key, name, identityId? }]  key = player id (wizard) or index (table)
+ *   rounds?:  [{ players: [{ id, call, made, score }] }]  (wizard)
+ *   points?:  [{ index, points: [] }]  (table)
+ *   name?:    string  (table)
+ *   recalculateElo?: boolean (default true)
+ *   cleanupOrphans?: boolean (default true) - retire guest identities left without games
+ * }
+ */
+router.put('/:type/:id', auth, requireAdmin, catchAsync(async (req, res) => {
+  if (!checkEditParams(req, res)) return;
+  const body = req.body || {};
+
+  try {
+    const result = await editGame({
+      type: req.params.type,
+      id: req.params.id,
+      edits: {
+        players: body.players,
+        rounds: body.rounds,
+        points: body.points,
+        name: body.name
+      },
+      admin: req.user,
+      recalculateElo: parseBool(body.recalculateElo, true),
+      cleanupOrphans: parseBool(body.cleanupOrphans, true)
+    });
+
+    console.log(
+      `[PUT /api/admin/games/${req.params.type}/${req.params.id}] admin=${req.user.username} ` +
+      `playerChanges=${result.changes.length} retired=${result.retiredIdentities.length}`
+    );
+
+    res.json(result);
+  } catch (error) {
+    if (!sendEditError(res, error)) throw error;
+  }
 }));
 
 module.exports = router;

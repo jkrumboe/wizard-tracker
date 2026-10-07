@@ -363,7 +363,9 @@ const GameTemplateSelector = ({
       alert(t('gameTemplates.suggestionSubmitted'));
     } catch (error) {
       console.error('Error suggesting to admin:', error);
-      alert(t('gameTemplates.suggestionFailed'));
+      alert(error?.message
+        ? `${t('gameTemplates.suggestionFailed')}\n\n${error.message}`
+        : t('gameTemplates.suggestionFailed'));
     }
   };
 
@@ -420,6 +422,13 @@ const GameTemplateSelector = ({
       return <span className="template-badge cloud-badge" title={t('gameTemplates.cloudBadgeTitle')}>{t('gameTemplates.cloudBadge')}</span>;
     }
     return <span className="template-badge local-badge" title={t('gameTemplates.localBadgeTitle')}>{t('gameTemplates.localBadge')}</span>;
+  };
+
+  const getAddTemplateType = () => {
+    if (tableTemplateMode === 'scoreboard') return 'scoreboard';
+    if (gameCategory === 'callAndMade') return 'callAndMade';
+    if (gameCategory === 'table' || tableTemplateMode === 'table') return 'table';
+    return null;
   };
 
   const isCurrentUserAdmin = user?.role === 'admin';
@@ -607,6 +616,7 @@ const GameTemplateSelector = ({
         onClose={() => setShowAddModal(false)}
         onSave={handleCreateNewGame}
         defaultGameCategory={gameCategory || 'table'}
+        templateType={getAddTemplateType()}
       />
 
       {/* Edit Game Template Modal */}
