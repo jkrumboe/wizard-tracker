@@ -103,6 +103,11 @@ html[data-keyboard="open"] {
   --border: #d9e0ea;
   --border-dark: #bcc6d4;
   --border-light: #eaeef4;
+
+  /* Placement medals */
+  --medal-gold: #a8800f;
+  --medal-silver: #75808f;
+  --medal-bronze: #9c6638;
 }
 
 /* Dark theme */
@@ -158,6 +163,11 @@ html[data-keyboard="open"] {
   --border-light: #3a4760;
   --border-dark: #1e2737;
 
+  /* Placement medals */
+  --medal-gold: #d8b45a;
+  --medal-silver: #a9b2bf;
+  --medal-bronze: #c49170;
+
   /* Shadows - darker for dark mode */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
@@ -169,6 +179,9 @@ html[data-keyboard="open"] {
   /* Layout */
   --top-nav-height: 60px;
   --bottom-nav-height: 70px;
+
+  /* Minimum touch target (Apple HIG 44pt / Material 48dp) */
+  --tap-min: 44px;
 
   /* Border radius */
   --radius-sm: 0.25rem;
@@ -201,7 +214,7 @@ body {
   line-height: 1.5;
   margin: 0;
   padding: 0;
-  height: 100vh;
+  height: 100dvh;
   overflow: none;
   animation: fadeIn 0.3s ease-in;
 }
@@ -216,14 +229,16 @@ a {
   transition: color 0.2s;
 }
 
-a:hover {
-  color: var(--primary-dark);
+@media (hover: hover) {
+  a:hover {
+    color: var(--primary-dark);
+  }
 }
 
 .container {
   width: 100%;
   max-width: 960px;
-  max-height: calc(90vh - 60px);
+  max-height: calc(90dvh - 60px);
   margin: 0 auto;
   padding: var(--spacing-md);
   box-sizing: border-box; /* Ensure padding doesn't cause overflow */
@@ -299,6 +314,81 @@ textarea {
 }
 
 /*
+ * Touch target floor.
+ *
+ * These icon buttons are drawn smaller than a fingertip so dense rows stay
+ * compact. On touch devices an invisible ::after centred on the button grows
+ * the tappable area to --tap-min without changing layout or visuals. The
+ * :where() wrapper keeps specificity at zero, so any component rule that
+ * already positions the button (absolute, fixed) still wins over the
+ * position: relative here.
+ */
+@media (pointer: coarse) {
+  :where(
+    .close-btn,
+    .modal-close-btn,
+    .close-button-edit,
+    .photo-viewer-close,
+    .crop-icon-button,
+    .remove-btn,
+    .remove-player-btn,
+    .count-btn,
+    .card-actions-menu-btn,
+    .table-game-control-btn,
+    .score-adjust-btn,
+    .cloud-upload-game-button,
+    .filter-button,
+    .team-builder-edit-btn,
+    .team-player-move-btn,
+    .team-player-remove-btn
+  ) {
+    position: relative;
+  }
+
+  :where(
+    .close-btn,
+    .modal-close-btn,
+    .close-button-edit,
+    .photo-viewer-close,
+    .crop-icon-button,
+    .remove-btn,
+    .remove-player-btn,
+    .count-btn,
+    .card-actions-menu-btn,
+    .table-game-control-btn,
+    .score-adjust-btn,
+    .cloud-upload-game-button,
+    .filter-button,
+    .team-builder-edit-btn,
+    .team-player-move-btn,
+    .team-player-remove-btn
+  )::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--tap-min));
+    height: max(100%, var(--tap-min));
+    transform: translate(-50%, -50%);
+  }
+}
+
+/*
+ * Hover styles are gated behind @media (hover: hover) so a tap no longer
+ * leaves them stuck on. This gives touch users press feedback in their place;
+ * :where() keeps it at zero specificity so a component's own :active wins.
+ */
+@media (hover: none) {
+  :where(
+    button:not(:disabled):active,
+    .btn:not(:disabled):active,
+    [role="button"]:active
+  ) {
+    opacity: 0.8;
+  }
+}
+
+/*
  * iOS Safari zooms the page whenever a focused form control computes to under
  * 16px, which pans the layout mid-score-entry. Many component rules set inputs
  * to 0.875rem with a single class, so an element selector alone would lose the
@@ -328,10 +418,12 @@ button,
   font-size: 0.875rem;
 }
 
-button:hover:not(:disabled),
-.btn:hover:not(:disabled) {
-  transform: scale(0.95);
-  border-color: var(--primary);
+@media (hover: hover) {
+  button:hover:not(:disabled),
+  .btn:hover:not(:disabled) {
+    transform: scale(0.95);
+    border-color: var(--primary);
+  }
 }
 
 button:disabled,
@@ -347,9 +439,11 @@ button:disabled,
   border-color: var(--primary);
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: scale(0.98);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: var(--shadow);
+  }
 }
 
 .btn-secondary {
@@ -358,12 +452,14 @@ button:disabled,
   border: 1px solid var(--primary);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--primary);
-  color: var(--text-white);
-  border-color: var(--primary);
-  transform: scale(0.98);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--primary);
+    color: var(--text-white);
+    border-color: var(--primary);
+    transform: scale(0.98);
+    box-shadow: var(--shadow);
+  }
 }
 
 .btn-accent {
@@ -371,10 +467,12 @@ button:disabled,
   color: var(--text);
 }
 
-.btn-accent:hover:not(:disabled) {
-  background-color: #d97706;
-  transform: scale(0.95);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .btn-accent:hover:not(:disabled) {
+    background-color: #d97706;
+    transform: scale(0.95);
+    box-shadow: var(--shadow);
+  }
 }
 
 .btn-success {
@@ -382,10 +480,12 @@ button:disabled,
   color: var(--text-white);
 }
 
-.btn-success:hover:not(:disabled) {
-  background-color: var(--success-color-dark);
-  transform: scale(0.95);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .btn-success:hover:not(:disabled) {
+    background-color: var(--success-color-dark);
+    transform: scale(0.95);
+    box-shadow: var(--shadow);
+  }
 }
 
 .btn-error {
@@ -393,10 +493,12 @@ button:disabled,
   color: var(--text-white);
 }
 
-.btn-error:hover:not(:disabled) {
-  background-color: var(--danger-dark);
-  transform: scale(0.95);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .btn-error:hover:not(:disabled) {
+    background-color: var(--danger-dark);
+    transform: scale(0.95);
+    box-shadow: var(--shadow);
+  }
 }
 
 /* Loading and error states */
@@ -722,13 +824,15 @@ html:not([data-theme="dark"]) .paused-game-item {
   background-color: var(--card-bg);
 }
 
-html:not([data-theme="dark"]) .card:hover,
-html:not([data-theme="dark"]) .game-item:hover,
-html:not([data-theme="dark"]) .player-item:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-3px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-color: var(--primary);
+@media (hover: hover) {
+  html:not([data-theme="dark"]) .card:hover,
+  html:not([data-theme="dark"]) .game-item:hover,
+  html:not([data-theme="dark"]) .player-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-color: var(--primary);
+  }
 }
 
 html:not([data-theme="dark"]) .home-header {

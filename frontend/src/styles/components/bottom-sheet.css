@@ -1,0 +1,82 @@
+/*
+ * Bottom sheets on phones.
+ *
+ * Every modal family keeps its centred dialog on wider screens; below 600px
+ * the box docks to the bottom edge instead, full width with rounded top
+ * corners, so its actions sit in thumb reach.
+ *
+ * The overlay is sized to --app-height (the visible area, published by
+ * useViewportKeyboard) rather than pinned to bottom: 0. iOS does not shrink
+ * the layout viewport for the software keyboard, so a sheet pinned to the
+ * layout bottom would slide under it; sized to the visible area it rides on
+ * top of the keyboard instead.
+ *
+ * This file is imported globally because several modal stylesheets are only
+ * loaded with their component and can arrive later in the cascade. The
+ * overlay selectors carry a `body` prefix and the box selectors name their
+ * overlay, so both outrank the single-class rules in those files without
+ * !important. Admin modals and the friends modal are excluded and stay
+ * centred dialogs.
+ */
+@media (max-width: 599px) {
+  body :is(
+    .modal-overlay,
+    .dialog-overlay,
+    .add-game-modal-overlay,
+    .game-details-modal-overlay,
+    .delete-modal-overlay
+  ):not(.admin-layout *, .admin-container *, :has(> .friends-modal)) {
+    top: 0;
+    bottom: auto;
+    height: var(--app-height, 100dvh);
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
+  :is(.modal-overlay > .modal-container,
+    .modal-overlay > .modal-content,
+    .dialog-overlay > .dialog-modal,
+    .add-game-modal-overlay > .add-game-modal,
+    .game-details-modal-overlay > .game-details-modal,
+    .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *, .friends-modal) {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100% - env(safe-area-inset-top, 0px) - var(--spacing-lg));
+    margin: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom: none;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: sheetSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* These boxes pad themselves, so keep that and add the inset on top. */
+  :is(.dialog-overlay > .dialog-modal, .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *) {
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* The keyboard covers the home indicator, so the inset is not needed. */
+  html[data-keyboard="open"] :is(.modal-overlay > .modal-container,
+    .modal-overlay > .modal-content,
+    .add-game-modal-overlay > .add-game-modal,
+    .game-details-modal-overlay > .game-details-modal) {
+    padding-bottom: 0;
+  }
+
+  html[data-keyboard="open"] :is(.dialog-overlay > .dialog-modal,
+    .delete-modal-overlay > .delete-modal) {
+    padding-bottom: var(--spacing-lg);
+  }
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes sheetSlideUp {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}

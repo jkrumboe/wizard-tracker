@@ -1,7 +1,7 @@
 /* Start Table Game Modal Styles */
 .start-table-game-modal {
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 80dvh;
 }
 
 .player-count-section {
@@ -51,10 +51,12 @@
   padding: 0;
 }
 
-.count-btn:hover:not(:disabled) {
-  background: var(--primary);
-  color: var(--text);
-  transform: scale(1.05);
+@media (hover: hover) {
+  .count-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: var(--text);
+    transform: scale(1.05);
+  }
 }
 
 .player-count-display {
@@ -133,10 +135,12 @@
   transition: all 0.2s ease;
 }
 
-.friend-select-btn:hover {
-  background: var(--primary);
-  color: var(--text);
-  border-color: var(--primary);
+@media (hover: hover) {
+  .friend-select-btn:hover {
+    background: var(--primary);
+    color: var(--text);
+    border-color: var(--primary);
+  }
 }
 
 .friend-dropdown {
@@ -162,8 +166,10 @@
   transition: background 0.2s ease;
 }
 
-.friend-dropdown-item:hover {
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .friend-dropdown-item:hover {
+    background: var(--primary-hover);
+  }
 }
 
 .friend-dropdown-avatar {
@@ -268,8 +274,10 @@
   width: 100%;
 }
 
-.start-button:hover {
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .start-button:hover {
+    background: var(--primary-dark);
+  }
 }
 
 .loading-message {

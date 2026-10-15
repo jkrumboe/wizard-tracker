@@ -773,13 +773,10 @@ html[data-keyboard="open"] .main-container > .game-in-progress {
 .game-in-progress .stats-subtabs ~ .rounds-section {
   margin: var(--spacing-md) 0;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden; /* the scorecard itself handles horizontal scrolling */
 }
 
 .game-in-progress .stats-subtabs ~ .rounds-section .wizard-scorecard {
   margin: 0;
 }
 
-.game-in-progress .stats-subtabs ~ .rounds-section .scorecard-table {
-  min-width: 100%;
-}

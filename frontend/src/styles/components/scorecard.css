@@ -1,139 +1,144 @@
-/* Wizard Scorecard Styles */
+/* Scorecard Styles (shared by Wizard, table and scoreboard games) */
 .wizard-scorecard {
-  /* background-color: var(--card-bg); */
-  /* box-shadow: var(--shadow); */
+  --round-col-width: 2.25rem;
+  --player-col-min: 4.5rem;
+  --scorecard-divider: var(--border);
+
   overflow-x: auto;
-  /* position: relative; */
+  overflow-y: hidden;
+  /* Only this element scrolls sideways: no iOS rubber-band bounce (which drags
+     the pinned round column along) and no scroll chaining to the page */
+  overscroll-behavior-x: none;
+  max-width: 100%;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  /* Improve scrolling experience */
   scrollbar-width: thin;
   scrollbar-color: var(--border-light) var(--card-bg);
 }
 
-.scorecard-table {
-  width: 100%;
-  table-layout: fixed; /* Force equal column widths */
+.wizard-scorecard .scorecard-table {
+  /* Grow past the container once players no longer fit, so only the player
+     columns scroll horizontally while the round column stays pinned.
+     Uses width (not min-width): Safari ignores min-width for fixed-layout
+     column sizing, leaving blank space beside the cells. */
+  width: max(100%, calc(var(--round-col-width) + var(--player-count, 2) * var(--player-col-min)));
+  table-layout: fixed; /* Player columns share the remaining width equally */
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: var(--radius-lg);
-  border-color: transparent;
+  font-variant-numeric: tabular-nums;
 }
 
-.scorecard-table tbody {
-  border-radius: var(--radius-lg);
-  border-color: transparent;
-}
-
-.scorecard-table th, 
+.scorecard-table th,
 .scorecard-table td {
   text-align: center;
+  vertical-align: middle;
+}
+
+/* ---- Header row ---- */
+.scorecard-table thead th {
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--scorecard-divider);
 }
 
 .player-header {
-  background-color: var(--card-bg);
   color: var(--text);
   font-weight: 600;
+  font-size: 0.9rem;
   position: sticky;
   top: 0;
   z-index: 10;
-  width: 70px; 
-  min-width: 70px; 
-  max-width: 70px;
   padding: 0 !important;
 }
 
+/* Let player columns size themselves (overrides fixed 70px widths in players.css) */
+.wizard-scorecard .scorecard-table .player-header,
+.wizard-scorecard .scorecard-table .player-round-cell {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
 .player-header-name {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 0.5rem 0.25rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
-  max-width: 100%;
-  display: block;
-  padding: 0.125rem 0;
 }
 
-/* Adjust for 4-6 players - corrected media query */
 @media (min-width: 768px) {
-  /* No width adjustments - we want consistent widths */
   .player-header-name {
-    max-width: 90px;
     font-size: 1rem;
   }
 }
 
-.round-header {
-  background-color: var(--card-bg);
-  color: var(--text);
-  font-weight: 600;
+/* ---- Round column (sticky, fixed width) ---- */
+.scorecard-table .round-header,
+.scorecard-table .round-number,
+.scorecard-table .total-label {
+  width: var(--round-col-width);
+  min-width: var(--round-col-width);
+  max-width: var(--round-col-width);
+}
+
+.scorecard-table .round-header {
   position: sticky;
   top: 0;
   left: 0;
-  z-index: 101; /* Higher than round-number to stay on top */
-  width: 60px;
-  box-shadow: none;
-  /* Ensure the background fills the entire cell */
-  isolation: isolate;
+  z-index: 101; /* Above round-number and player headers */
+  padding: 0;
+  margin: 0;
+}
+
+.scorecard-table .round-number {
+  background-color: var(--card-bg);
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem;
+  position: sticky;
+  left: 0;
+  z-index: 100;
+  padding: 0.375rem 0;
+  /* Divider only between round numbers and scores, not in header/total rows */
+  border-right: 1px solid var(--scorecard-divider);
+}
+
+/* ---- Body cells ---- */
+.player-round-cell {
+  background-color: var(--card-bg);
+  position: relative;
+  z-index: 1;
+  padding: 0 !important;
+  border-right: 1px solid var(--scorecard-divider);
+  transition: background-color 0.2s;
+}
+
+.player-round-cell:last-child {
   border-right: none;
 }
 
-.round-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: -1px;
-  bottom: 0;
-  width: 2px;
-  z-index: 11;
-  background-color: transparent !important;
+.round-row + .round-row td {
+  border-top: 1px solid var(--scorecard-divider);
 }
 
-.round-number {
-  background-color: var(--card-bg);
-  color: var(--text);
-  font-weight: 600;
-  font-size: 1.3rem;
-  position: sticky;
-  left: 0;
-  z-index: 100; /* Increased to ensure it's above all other rows/columns */
-  /* Fix the background to stay with the content */
-  box-shadow: none;
-  /* Ensure the background fills the entire cell */
-  isolation: isolate;
-  text-align: center;
-}
-
-.player-round-cell {
-  background-color: var(--card-bg) ;
-  transition: background-color 0.2s;
-  position: relative;
-  z-index: 1; /* Ensure it stacks correctly */
-  width: 120px; /* Match player header width */
-  min-width: 120px;
-  max-width: 120px;
-  padding: 0 !important;
+/* Subtle zebra striping for readability */
+.round-row:nth-child(even) .player-round-cell,
+.round-row:nth-child(even) .round-number {
+  background-color: var(--card-bg-light);
 }
 
 .table-game-container .player-round-cell {
-  background-color: var(--card-bg-alt);
-  border-bottom: 1px solid var(--card-bg);
-  border-right: 1px solid var(--card-bg);
-  width: 100%;
   height: 100%;
-  align-items: center;
-  justify-content: center;
 }
 
-.table-game-container .player-round-cell:last-child {
-  border-right: none;
-}
-
+/* Wizard: score | bid on top, made underneath */
 .player-round-data {
   display: grid;
   grid-template-rows: auto auto;
   grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--card-bg);
-  border-top: none;
-  border-left: none;
 }
 
 .player-round-data > :nth-child(1) {
@@ -144,25 +149,26 @@
 .player-round-data > :nth-child(2) {
   grid-row: 1;
   grid-column: 2;
-  border-left: 1px solid var(--card-bg);
+  border-left: 1px dashed var(--scorecard-divider);
 }
 
 .player-round-data > :nth-child(3) {
   grid-row: 2;
   grid-column: 1 / span 2;
+  border-top: 1px dashed var(--scorecard-divider);
 }
 
 .round-bid,
 .round-made,
 .round-score {
   color: var(--text);
-  background-color: var(--card-bg-alt);
+  background-color: transparent;
   font-weight: 600;
   font-size: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 24px;
+  min-height: 2rem;
 }
 
 .round-score.positive {
@@ -173,109 +179,69 @@
   color: var(--error-color);
 }
 
-.score .round-score {
-  background-color: transparent;
-}
-
+/* ---- Total row ---- */
 .total-row {
-  background-color: var(--primary);
   font-weight: 700;
 }
 
-.total-label {
+.total-row td {
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--text-white);
+  border-top: none;
+}
+
+.scorecard-table .total-label {
   position: sticky;
   left: 0;
   z-index: 9;
   padding: 0 !important;
-  box-shadow: none;
   isolation: isolate;
 }
 
 .total-score {
-  height: 24px;
-  color: var(--text);
-  font-weight: bold;
+  height: 2.25rem;
+  color: var(--text-white);
+  font-weight: 700;
   font-size: 1.1rem;
-  padding: 0 !important;
+  padding: 0 0.25rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Round the bottom corners of the table */
-.total-row .total-label {
-  border-bottom-left-radius: var(--radius-md);
-}
-
-.total-row .total-score:last-child {
-  border-bottom-right-radius: var(--radius-md);
-}
-
-/* Alternative approach - target the last cell in the total row more specifically */
-.scorecard-table .total-row td:last-child {
-  border-bottom-right-radius: var(--radius-md);
-}
-
-/* Add color coding for correct/incorrect bids */
+/* Bid accuracy colours */
 .correct-bid {
-  color: var(--success-color); /* green for correct bids */
+  color: var(--success-color);
 }
 
-.under-bid {
-  color: var(--error-color); /* amber for under bids */
-}
-
+.under-bid,
 .over-bid {
-  color: var(--error-color); /* red for over bids */
-}
-
-/* Fix for WebKit browsers (Chrome, Safari, etc.) */
-.sticky-cell::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: -1px;
-  bottom: 0;
-  width: 2px;
-  z-index: 11;
+  color: var(--error-color);
 }
 
 /* Common styles for all sticky cells */
 .sticky-cell {
   position: sticky;
   left: 0;
-  /* Remove box shadows in favor of a consistent border */
   box-shadow: none !important;
-  /* Apply a consistent right border that stays with the cell */
   z-index: 11;
-  /* Critical fix: ensure the border stays with the cell */
   background-clip: padding-box;
   -webkit-background-clip: padding-box;
 }
 
-/* Responsive adjustments */
+/* ---- Small screens ---- */
 @media (max-width: 640px) {
+  .wizard-scorecard {
+    --round-col-width: 2rem;
+    --player-col-min: 4.25rem;
+  }
+
   .player-round-data {
     font-size: 0.8rem;
   }
-  
-  .scorecard-table th, 
+
+  .scorecard-table th,
   .scorecard-table td {
     padding: 0;
   }
-  
-  /* Ensure sticky columns look correct on mobile */
-  .round-number, .round-header, .total-label {
-    width: 35px;
-  }
-
-  .table-game-container .round-header {
-    width: 50px;
-  }
-  
-  .player-header {
-    max-width: 70px;
-    width: 70px;
-    min-width: 70px;
-  }
-
 }

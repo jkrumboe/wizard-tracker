@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: var(--spacing-md);
   max-width: 800px;
-  height: calc(100vh - var(--bottom-nav-height) - var(--spacing-md) - 2px);
+  height: calc(100dvh - var(--bottom-nav-height) - var(--spacing-md) - 2px);
   border-radius: var(--radius-lg);
 }
 
@@ -46,9 +46,11 @@
   transition: all 0.2s ease;
 }
 
-.sync-btn:hover:not(:disabled) {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .sync-btn:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+  }
 }
 
 .sync-btn:disabled {
@@ -80,7 +82,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  max-height: calc(70vh - var(--bottom-nav-height));
+  max-height: calc(70dvh - var(--bottom-nav-height));
   overflow-y: scroll;
   overflow-x: hidden;
   padding: 4px;
@@ -278,9 +280,11 @@
   color: var(--text);
 }
 
-.template-edit-btn.save-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .template-edit-btn.save-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+  }
 }
 
 .template-edit-btn.cancel-btn {
@@ -288,9 +292,11 @@
   color: var(--text);
 }
 
-.template-edit-btn.cancel-btn:hover {
-  background: var(--text-muted);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .template-edit-btn.cancel-btn:hover {
+    background: var(--text-muted);
+    transform: translateY(-1px);
+  }
 }
 
 /* No Templates Message */
@@ -328,10 +334,12 @@
   color: var(--text);
 }
 
-.create-new-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) {
+  .create-new-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .create-new-btn:active {
@@ -413,8 +421,10 @@
   color: var(--text);
 }
 
-.delete-modal-btn.cancel:hover {
-  background: var(--text-muted);
+@media (hover: hover) {
+  .delete-modal-btn.cancel:hover {
+    background: var(--text-muted);
+  }
 }
 
 .delete-modal-btn.confirm {
@@ -422,8 +432,10 @@
   color: var(--text);
 }
 
-.delete-modal-btn.confirm:hover {
-  background: var(--danger-dark);
+@media (hover: hover) {
+  .delete-modal-btn.confirm:hover {
+    background: var(--danger-dark);
+  }
 }
 
 /* Responsive Design */

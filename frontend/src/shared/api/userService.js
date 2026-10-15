@@ -592,11 +592,9 @@ class UserService {
         sentRequests: result.sentRequests || []
       };
     } catch (error) {
-      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        return { friends: [], receivedRequests: [], sentRequests: [] };
-      }
+      // Rethrow so callers keep their last good data instead of showing an empty list
       console.error('Error getting friends batch data:', error);
-      return { friends: [], receivedRequests: [], sentRequests: [] };
+      throw error;
     }
   }
 

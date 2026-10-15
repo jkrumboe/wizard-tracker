@@ -90,9 +90,11 @@
   box-shadow: none;
 }
 
-.setup-back-button:hover {
-  color: var(--primary);
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .setup-back-button:hover {
+    color: var(--primary);
+    background: var(--primary-hover);
+  }
 }
 
 .setup-header h2 {
@@ -170,9 +172,11 @@
   flex-shrink: 0;
 }
 
-.team-builder-edit-btn:hover {
-  background: rgba(96, 165, 250, 0.22);
-  border-color: rgba(96, 165, 250, 0.4);
+@media (hover: hover) {
+  .team-builder-edit-btn:hover {
+    background: rgba(96, 165, 250, 0.22);
+    border-color: rgba(96, 165, 250, 0.4);
+  }
 }
 
 .team-builder-edit-btn:active {

@@ -18,8 +18,9 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/components/scorecard.css"
 
-import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, ChevronDownIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
 import { useFixedViewportPage } from "@/shared/hooks/useFixedViewportPage"
+import RankBadge from "@/components/game/RankBadge"
 
 const GameInProgress = () => {
   useFixedViewportPage() // Only the round list scrolls; the shell stays put
@@ -621,10 +622,6 @@ const GameInProgress = () => {
         >
           <SettingsIcon size={24} />
         </button>
-        {/* <SyncStatusIndicator 
-          gameId={gameState.id || gameState.localId}
-          showDetails={false}
-        /> */}
       </div>
 
       {/* Auto-upload notification */}
@@ -811,23 +808,27 @@ const GameInProgress = () => {
                     }
                     
                     // Determine medal class based on rank
-                    let medalClass = '';
-                    if (currentRank === 1) medalClass = 'gold';
-                    else if (currentRank === 2) medalClass = 'silver';
-                    else if (currentRank === 3) medalClass = 'bronze';
                     
                     return (
                       <div key={playerStats.id} className="results-row">
                         <div className="top-result-row">
-                          <div className={`rank-col ${medalClass}`}>{currentRank}</div>
+                          <RankBadge rank={currentRank} />
                           <div className="player-col">
                             <div className="player-info">
                               <span>{playerStats.name}</span>
                             </div>
                           </div>
                           <div className="score-col">{playerStats.totalPoints || 0}</div>
-                          <button className="adv-stats-btn" onClick={() => togglePlayerStats(playerStats.id)}>
-                            {selectedPlayerId === playerStats.id ? t('gameInProgress.hideStats') : t('gameInProgress.advStats')}
+                          <button
+                            type="button"
+                            className={`adv-stats-btn stats-toggle${selectedPlayerId === playerStats.id ? ' is-open' : ''}`}
+                            onClick={() => togglePlayerStats(playerStats.id)}
+                            aria-expanded={selectedPlayerId === playerStats.id}
+                            aria-label={selectedPlayerId === playerStats.id ? t('gameInProgress.hideStats') : t('gameInProgress.advStats')}
+                            title={selectedPlayerId === playerStats.id ? t('gameInProgress.hideStats') : t('gameInProgress.advStats')}
+                          >
+                            <BarChartIcon size={18} aria-hidden="true" />
+                            <ChevronDownIcon size={16} className="stats-toggle-chevron" aria-hidden="true" />
                           </button>
                         </div>
                         <AdvancedStats 
@@ -843,7 +844,7 @@ const GameInProgress = () => {
 
             {(statsSubTab === 'table' || isLandscape) && (
               <div className="rounds-section">
-                <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length}>
+                <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length} style={{ '--player-count': detailedStats.length }}>
                   <table className="scorecard-table">
                     <thead>
                       <tr>

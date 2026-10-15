@@ -43,8 +43,10 @@
   min-width: 120px;
 }
 
-.back-button:hover {
-  background-color: var(--primary-hover, #2563eb);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) {
+  .back-button:hover {
+    background-color: var(--primary-hover, #2563eb);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
 }

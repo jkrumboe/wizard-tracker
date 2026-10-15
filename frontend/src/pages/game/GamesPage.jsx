@@ -382,65 +382,95 @@ const GamesPage = () => {
     return () => clearTimeout(timer);
   }, [user, isOnline]);
 
-  const links = [
-    { to: '/start?type=scoreboard', label: t('gamesPage.scoreboardGames'), icon: 'Target'      },
-    { to: '/start?type=call-made',  label: t('gamesPage.callAndMadeGames'),  icon: 'Wand2'       },
-    { to: '/start?type=table',      label: t('gamesPage.tableGames'),         icon: 'Dices'       },
-    { to: '/leaderboard',           label: t('nav.leaderboard'),              icon: 'Trophy'      },
-    { to: '/friend-leaderboard',    label: t('nav.friendCompareShort'),       icon: 'Swords'      },
+  const startLinks = [
+    { to: '/start?type=call-made',  label: t('gamesPage.callAndMadeGames'), icon: 'Wand2'  },
+    { to: '/start?type=table',      label: t('gamesPage.tableGames'),       icon: 'Dices'  },
+    { to: '/start?type=scoreboard', label: t('gamesPage.scoreboardGames'),  icon: 'Target' },
+  ];
+
+  const quickLinks = [
+    { to: '/leaderboard',        label: t('nav.leaderboard'),        icon: 'Trophy' },
+    { to: '/friend-leaderboard', label: t('nav.friendCompareShort'), icon: 'Swords' },
   ];
 
   if (user?.role === 'admin') {
-    links.push({ to: '/admin', label: t('nav.adminPanel'), icon: 'ShieldCheck' });
+    quickLinks.push({ to: '/admin', label: t('nav.adminPanel'), icon: 'ShieldCheck' });
   }
+
+  const typeChips = [
+    { value: 'all',        label: t('common.all') },
+    { value: 'wizard',     label: 'Wizard' },
+    { value: 'table',      label: t('gamesPage.tableGames') },
+    { value: 'scoreboard', label: t('gamesPage.scoreboardGames') },
+  ];
 
   return (
     <div className="games-page">
 
-      <div className="games-link-grid">
-        {links.map((item) => (
-          <Link key={item.to} to={item.to} className="games-link-card">
-            <div className="games-link-icon-wrap" aria-hidden="true">
-              <Icon name={item.icon} size={28} strokeWidth={1.5} />
-            </div>
-            <span className="games-link-label">{item.label}</span>
-          </Link>
-        ))}
-      </div>
+      <header className="games-header">
+        <h1 className="games-title">{t('nav.games')}</h1>
+        <nav className="games-quick-links">
+          {quickLinks.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="games-quick-link"
+              aria-label={item.label}
+              title={item.label}
+            >
+              <Icon name={item.icon} size={18} strokeWidth={2} aria-hidden="true" />
+              <span className="games-quick-link-label">{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+      </header>
+
+      <section className="games-start" aria-label={t('nav.newGame')}>
+        <span className="games-section-label">{t('nav.newGame')}</span>
+        <div className="games-start-row">
+          {startLinks.map((item) => (
+            <Link key={item.to} to={item.to} className="games-start-pill">
+              <Icon name={item.icon} size={18} strokeWidth={2} aria-hidden="true" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <section className="games-history-section">
 
         <div className="games-filter-bar">
-          <div className="games-search-row">
-            <div className="games-search-wrapper">
-              <SearchIcon size={16} className="games-search-icon" />
-              <input
-                type="text"
-                className="games-search-input"
-                placeholder={t('account.searchGames')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  className="games-search-clear"
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
-                >
-                  <XIcon size={14} />
-                </button>
-              )}
-            </div>
-            <select
-              className="games-type-select"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="all">{t('common.all')}</option>
-              <option value="wizard">Wizard</option>
-              <option value="table">{t('gamesPage.tableGames')}</option>
-              <option value="scoreboard">{t('gamesPage.scoreboardGames')}</option>
-            </select>
+          <div className="games-search-wrapper">
+            <SearchIcon size={16} className="games-search-icon" />
+            <input
+              type="text"
+              className="games-search-input"
+              placeholder={t('account.searchGames')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="games-search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <XIcon size={14} />
+              </button>
+            )}
+          </div>
+          <div className="games-type-chips" role="group">
+            {typeChips.map((chip) => (
+              <button
+                key={chip.value}
+                type="button"
+                className={`games-type-chip${typeFilter === chip.value ? ' active' : ''}`}
+                aria-pressed={typeFilter === chip.value}
+                onClick={() => setTypeFilter(chip.value)}
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
         </div>
 

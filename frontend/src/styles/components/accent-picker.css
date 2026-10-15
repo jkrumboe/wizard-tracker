@@ -88,10 +88,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.accent-swatch:hover:not(:disabled),
 .accent-swatch:active {
   transform: none;
   border-color: transparent;
+}
+
+@media (hover: hover) {
+  .accent-swatch:hover:not(:disabled) {
+    transform: none;
+    border-color: transparent;
+  }
 }
 
 .accent-swatch-dot {
@@ -113,8 +119,10 @@
   color: var(--bg-color);
 }
 
-.accent-swatch:hover .accent-swatch-dot {
-  transform: scale(1.08);
+@media (hover: hover) {
+  .accent-swatch:hover .accent-swatch-dot {
+    transform: scale(1.08);
+  }
 }
 
 .accent-swatch:active .accent-swatch-dot {
@@ -297,10 +305,12 @@
   cursor: pointer;
 }
 
-.accent-reset:hover:not(:disabled) {
-  transform: none;
-  border-color: transparent;
-  text-decoration: underline;
+@media (hover: hover) {
+  .accent-reset:hover:not(:disabled) {
+    transform: none;
+    border-color: transparent;
+    text-decoration: underline;
+  }
 }
 
 @keyframes accent-panel-in {

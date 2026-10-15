@@ -1,8 +1,172 @@
-.performance-insights-header {
+/* Page layout: titled sections stacked with even spacing */
+.performance-stats-container {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-lg);
+}
+
+.perf-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.perf-section > .achievements-header {
+  margin-bottom: 0;
+}
+
+/* A bordered surface grouping related content */
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  padding: var(--spacing-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* Labelled number tiles */
+/* Inside a panel the tiles sit on the panel, so drop their own surface */
+.stats-panel .stats-tile {
+  background: var(--bg-color);
+}
+
+/* Segmented tabs switching the trend chart */
+.stats-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-color);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.stats-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 6px var(--spacing-xs);
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.stats-tab.is-active {
+  background: var(--primary);
+  color: var(--text-white);
+}
+
+@media (hover: hover) {
+  .stats-tab:not(.is-active):hover {
+    color: var(--text);
+  }
+}
+
+.stats-legend {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  font-size: 0.75rem;
+}
+
+.stats-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stats-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.stats-legend-dot.is-best {
+  background: #1DBF73;
+}
+
+.stats-legend-dot.is-worst {
+  background: #EF4444;
+}
+
+.stats-legend-line {
+  width: 18px;
+  border-top: 2px dashed var(--text);
+}
+
+.stats-empty {
+  margin: 0;
+  padding: var(--spacing-md) 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Rivals and table size: stacked on phones, side by side on desktop */
+.stats-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-md);
+  align-items: start;
+}
+
+.stats-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.stats-subsection-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.stats-subsection-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.stats-subsection-header span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Rows inside one panel, split by hairlines instead of separate cards */
+.stats-list {
+  gap: 0;
+  padding-block: 0;
+}
+
+.stats-list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: var(--spacing-sm) 0;
+}
+
+.stats-list-row + .stats-list-row {
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 1024px) {
+  /* One equal column per child, however many are shown */
+  .stats-split {
+    grid-template-columns: none;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+  }
 }
 
 /* Achievements */
@@ -135,4 +299,106 @@
   font-size: 0.58rem;
   opacity: 0.6;
   font-variant-numeric: tabular-nums;
+}
+
+/* Rivals */
+.rival-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.rival-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .rival-name:hover {
+    color: var(--primary);
+  }
+}
+
+.rival-games {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.rival-bar {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.rival-bar-ahead {
+  background: var(--success-color);
+}
+
+.rival-bar-tied {
+  background: var(--text-muted);
+}
+
+.rival-bar-behind {
+  background: var(--error-color);
+}
+
+.rival-record {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  font-size: 0.8rem;
+}
+
+.rival-ahead {
+  color: var(--success-color);
+}
+
+.rival-behind {
+  color: var(--error-color);
+}
+
+.rival-rate {
+  margin-left: auto;
+}
+
+/* Win rate by table size */
+.player-count-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.player-count-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+}
+
+.player-count-fill.is-above {
+  background: var(--success-color);
+}
+
+.player-count-fill.is-below {
+  background: var(--error-color);
+}
+
+/* Tick marking the 1-in-N share */
+.player-count-expected {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--text);
 }

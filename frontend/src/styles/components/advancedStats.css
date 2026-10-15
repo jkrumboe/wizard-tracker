@@ -1,0 +1,153 @@
+/* Per-player stats opened from a game's standings */
+.player-game-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0 var(--spacing-sm);
+}
+
+.bidding-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.bidding-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.bidding-summary-title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Rating as a small pill in the tone of the rating */
+.bidding-quality {
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bidding-quality.is-good {
+  color: var(--success-color);
+}
+
+.bidding-quality.is-warn {
+  color: var(--warning-color);
+}
+
+.bidding-quality.is-bad {
+  color: var(--error-color);
+}
+
+.bid-split-bar {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.bid-split-segment.is-correct,
+.bid-split-dot.is-correct {
+  background: var(--success-color);
+}
+
+.bid-split-segment.is-over,
+.bid-split-dot.is-over {
+  background: var(--error-color);
+}
+
+.bid-split-segment.is-under,
+.bid-split-dot.is-under {
+  background: var(--warning-color);
+}
+
+.bid-split-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--spacing-sm);
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.bid-split-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bid-split-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.bidding-tendency-note,
+.bidding-summary-empty {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.bidding-summary-empty {
+  text-align: center;
+}
+
+/* Standings rows with a stats toggle: a narrower rank column and a slightly
+   smaller name leave the name room next to the bigger button */
+.results-row .top-result-row:has(.stats-toggle) {
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto auto;
+}
+
+.results-row .top-result-row:has(.stats-toggle) .player-col {
+  font-size: 1rem;
+}
+
+/* Stats toggle in a standings row: a quiet icon button instead of a solid one */
+.results-row .adv-stats-btn.stats-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 44px;
+  min-height: 34px;
+  margin-left: var(--spacing-xs);
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  line-height: 0;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.results-row .adv-stats-btn.stats-toggle.is-open {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.stats-toggle-chevron {
+  transition: transform 0.15s ease;
+}
+
+.stats-toggle.is-open .stats-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+@media (hover: hover) {
+  .results-row .adv-stats-btn.stats-toggle:hover {
+    border-color: var(--primary);
+    color: var(--text);
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -6,24 +6,20 @@ import {
   PointElement,
   LineElement,
   BarElement,
-  Title,
   Tooltip,
   Legend,
-  Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
+import { useTranslation } from 'react-i18next';
 
-// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
   BarElement,
-  Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 );
 
 const CHART_TYPES = {
@@ -33,247 +29,192 @@ const CHART_TYPES = {
   POINTS_PER_ROUND: 'pointsPerRound'
 };
 
-// Chart colors with transparency
-const chartColors = {
-  blue: 'rgba(96, 165, 250, 0.7)',
-  green: 'rgba(52, 211, 153, 0.7)',
-  yellow: 'rgba(251, 191, 36, 0.7)',
-  red: 'rgba(248, 113, 113, 0.7)',
-  purple: 'rgba(167, 139, 250, 0.7)',
-  orange: 'rgba(249, 115, 22, 0.7)',
-  cyan: 'rgba(6, 182, 212, 0.7)',
-  pink: 'rgba(236, 72, 153, 0.7)'
+/*
+ * Categorical series colours, assigned to players in a fixed order. The order is
+ * what keeps neighbouring series distinguishable for colour-blind readers, and the
+ * dark steps are tuned for dark surfaces. Validated with the dataviz palette
+ * checker against the app's light (#ffffff) and dark (#0b1120) surfaces.
+ */
+const SERIES_COLORS = {
+  light: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'],
+  dark: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767']
 };
 
-const chartColorsBorders = {
-  blue: 'rgb(53, 99, 233)',
-  green: 'rgb(34, 197, 94)',
-  yellow: 'rgb(234, 179, 8)',
-  red: 'rgb(239, 68, 68)',
-  purple: 'rgb(139, 92, 246)',
-  orange: 'rgb(249, 115, 22)',
-  cyan: 'rgb(8, 145, 178)',
-  pink: 'rgb(219, 39, 119)'
+// Bid outcomes are states, not identities, so they use status colours
+const BID_OUTCOME_COLORS = {
+  correct: '#0ca30c',
+  over: '#ec835a',
+  under: '#d03b3b'
 };
 
-const getColorForIndex = (index) => {
-  const colors = Object.values(chartColors);
+const DIMMED_ALPHA = 0.18;
+
+// Diverging pair for the points-per-round grid: gains blue, losses red, zero neutral
+const DIVERGING_COLORS = {
+  light: { positive: '#2a78d6', negative: '#d03b3b' },
+  dark: { positive: '#3987e5', negative: '#e66767' }
+};
+
+const isDarkTheme = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+const getSeriesColor = (index) => {
+  const colors = isDarkTheme() ? SERIES_COLORS.dark : SERIES_COLORS.light;
   return colors[index % colors.length];
 };
 
-const getBorderColorForIndex = (index) => {
-  const colors = Object.values(chartColorsBorders);
-  return colors[index % colors.length];
+const withAlpha = (hex, alpha) => `${hex}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+
+const readCssVar = (name, fallback) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+// First non-transparent background behind the chart, used for the ring around points
+const findSurfaceColor = (element) => {
+  let node = element;
+  while (node && node !== document.documentElement) {
+    const bg = getComputedStyle(node).backgroundColor;
+    if (bg && bg !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(bg)) return bg;
+    node = node.parentElement;
+  }
+  return readCssVar('--bg-color', '#ffffff');
+};
+
+// Vertical guide line at the hovered round
+const crosshairPlugin = {
+  id: 'crosshair',
+  beforeDatasetsDraw(chart, _args, options) {
+    const active = chart.tooltip?.getActiveElements?.() || [];
+    if (!active.length) return;
+    const { ctx, chartArea } = chart;
+    const x = active[0].element.x;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, chartArea.top);
+    ctx.lineTo(x, chartArea.bottom);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = options.color;
+    ctx.stroke();
+    ctx.restore();
+  }
 };
 
 const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
+  const { t } = useTranslation();
   const [chartType, setChartType] = useState(CHART_TYPES.POINTS_PROGRESSION);
-  const [selectedPlayers, setSelectedPlayers] = useState(
-    playersData.map(player => player.id)
-  );
-  // Track if we're in focus mode (single player)
-  const [focusMode, setFocusMode] = useState(false);
-  // Force re-render when theme changes
-  const [, setThemeChange] = useState(0);
+  // Player highlighted via the legend; everyone else is dimmed, not hidden
+  const [focusedId, setFocusedId] = useState(null);
+  const [surfaceColor, setSurfaceColor] = useState(null);
+  const [themeVersion, setThemeChange] = useState(0);
+  const wrapperRef = useRef(null);
 
-  // Listen for theme changes
+  // Re-render with the right palette when the theme changes
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'data-theme') {
-          setThemeChange(prev => prev + 1); // Force re-render when theme changes
-        }
-      });
+      if (mutations.some((m) => m.attributeName === 'data-theme')) {
+        setThemeChange((prev) => prev + 1);
+      }
     });
-    
     observer.observe(document.documentElement, { attributes: true });
-    
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
-  
-  // Focus on a player or show all players
-  const togglePlayerFocus = (playerId) => {
-    if (focusMode && selectedPlayers.length === 1 && selectedPlayers[0] === playerId) {
-      // If already focused on this player, show all players
-      setSelectedPlayers(playersData.map(player => player.id));
-      setFocusMode(false);
-    } else {
-      // Focus on this player only
-      setSelectedPlayers([playerId]);
-      setFocusMode(true);
-    }
+
+  useEffect(() => {
+    if (wrapperRef.current) setSurfaceColor(findSurfaceColor(wrapperRef.current));
+  }, [themeVersion]);
+
+  const isFocused = (playerId) => focusedId !== null && String(focusedId) === String(playerId);
+  const isDimmed = (playerId) => focusedId !== null && !isFocused(playerId);
+
+  const toggleFocus = (playerId) => {
+    setFocusedId((current) => (current !== null && String(current) === String(playerId) ? null : playerId));
   };
+
+  const playerColor = (player, index) => {
+    const color = getSeriesColor(index);
+    return isDimmed(player.id) ? withAlpha(color, DIMMED_ALPHA) : color;
+  };
+
+  const findInRound = (round, playerId) =>
+    round?.players.find((p) => String(p.id) === String(playerId));
+
+  const roundLabels = () => (roundData || []).map((_, index) => `${index + 1}`);
 
   const generatePointsProgressionData = () => {
-    if (!roundData || roundData.length === 0) {
-      console.debug("No round data available for points progression chart");
-      return { labels: [], datasets: [] };
-    }
-    
-    // Create round labels
-    const labels = roundData.map((_, index) => `${index + 1}`);
-    
-    // Generate datasets for each selected player
-    const datasets = playersData
-      .filter(player => selectedPlayers.includes(player.id))
-      .map((player) => {
-        // Get actual index of the player in the full playersData array (for consistent coloring)
-        const originalIndex = playersData.findIndex(p => String(p.id) === String(player.id));
-        
-        // Collect points per round for this player
-        const pointsData = roundData.map(round => {
-          // Use string comparison for safe comparison regardless of type (string/number)
-          const playerInRound = round.players.find(p => 
-            String(p.id) === String(player.id)
-          );
-          
-          return playerInRound ? playerInRound.totalScore || 0 : null;
-        });
+    if (!roundData || roundData.length === 0) return { labels: [], datasets: [] };
 
-        // Enhance the visual for focused player
-        const isFocused = focusMode && selectedPlayers.length === 1 && String(selectedPlayers[0]) === String(player.id);
-        
-        return {
-          label: player.name,
-          data: pointsData,
-          borderColor: getBorderColorForIndex(originalIndex),
-          backgroundColor: getColorForIndex(originalIndex),
-          tension: 0.3,
-          pointRadius: isFocused ? 6 : 4,
-          borderWidth: isFocused ? 3 : 2,
-          fill: isFocused ? 0.1 : false
-        };
-      });
-
-    return { labels, datasets };
-  };
-
-  const generateBidAccuracyData = () => {
-    // Get selected players with their original indices
-    const selectedPlayersWithIndex = playersData
-      .map((player, index) => ({ player, index }))
-      .filter(item => selectedPlayers.includes(item.player.id));
-    
-    // Create player name labels
-    const labels = selectedPlayersWithIndex.map(item => item.player.name);
-    
-    // Calculate bid accuracy for each player
-    const bidAccuracyData = selectedPlayersWithIndex.map(item => {
-      const player = item.player;
-      const correctBids = player.correctBids || 0;
-      const totalRounds = player.roundsPlayed || 0;
-      return totalRounds > 0 ? (correctBids / totalRounds) * 100 : 0;
+    const lastIndex = roundData.length - 1;
+    const datasets = playersData.map((player, index) => {
+      const color = playerColor(player, index);
+      return {
+        label: player.name,
+        data: roundData.map((round) => {
+          const entry = findInRound(round, player.id);
+          return entry ? entry.totalScore || 0 : null;
+        }),
+        borderColor: color,
+        backgroundColor: color,
+        borderWidth: isFocused(player.id) ? 3 : 2,
+        borderJoinStyle: 'round',
+        borderCapStyle: 'round',
+        tension: 0,
+        // Only mark where each line ends; other points appear on hover
+        pointRadius: (ctx) => (ctx.dataIndex === lastIndex ? 4 : 0),
+        pointHoverRadius: 5,
+        pointBorderWidth: 2,
+        pointHoverBorderWidth: 2,
+        pointBorderColor: surfaceColor || 'transparent',
+        pointHoverBorderColor: surfaceColor || 'transparent',
+        order: isFocused(player.id) ? 0 : 1
+      };
     });
 
-    // Get original indices for consistent colors
-    const originalIndices = selectedPlayersWithIndex.map(item => item.index);
+    return { labels: roundLabels(), datasets };
+  };
 
-    const datasets = [{
-      // label: 'Bid Accuracy (%)',
-      data: bidAccuracyData,
-      backgroundColor: originalIndices.map(index => getColorForIndex(index)),
-      borderColor: originalIndices.map(index => getBorderColorForIndex(index)),
-      borderWidth: focusMode ? 2 : 1
-    }];
+  // Points a player scored in each round (null where they have no entry)
+  const getRoundPoints = (player) => (roundData || []).map((round, roundIndex) => {
+    const entry = findInRound(round, player.id);
+    if (!entry) return null;
+    if (entry.score !== undefined) return entry.score;
+    // Table games only carry running totals - the round's points are the change
+    if (typeof entry.totalScore !== 'number') return null;
+    const previousTotal = roundIndex > 0 ? findInRound(roundData[roundIndex - 1], player.id)?.totalScore || 0 : 0;
+    return entry.totalScore - previousTotal;
+  });
 
-    return { labels, datasets };
+  const generateBidAccuracyData = () => {
+    const colors = playersData.map((player, index) => playerColor(player, index));
+    return {
+      labels: playersData.map((player) => player.name),
+      datasets: [{
+        label: t('statsChart.bidAccuracy'),
+        data: playersData.map((player) => {
+          const rounds = player.roundsPlayed || 0;
+          return rounds > 0 ? ((player.correctBids || 0) / rounds) * 100 : 0;
+        }),
+        backgroundColor: colors,
+        hoverBackgroundColor: colors
+      }]
+    };
   };
 
   const generateBidDistributionData = () => {
-    // Get selected players with their original indices
-    const selectedPlayersWithIndex = playersData
-      .map((player, index) => ({ player, index }))
-      .filter(item => selectedPlayers.includes(item.player.id));
-    
-    // Create player name labels
-    const labels = selectedPlayersWithIndex.map(item => item.player.name);
-    
-    const correctBidsData = selectedPlayersWithIndex.map(item => item.player.correctBids || 0);
-    const overbidsData = selectedPlayersWithIndex.map(item => item.player.overBids || 0);
-    const underbidsData = selectedPlayersWithIndex.map(item => item.player.underBids || 0);
-    
-    const borderWidth = focusMode ? 2 : 1;
-
-    const datasets = [
-      {
-        label: 'Correct Bids',
-        data: correctBidsData,
-        backgroundColor: 'rgba(52, 211, 153, 0.7)', // Green
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth
-      },
-      {
-        label: 'Overbids',
-        data: overbidsData,
-        backgroundColor: 'rgba(249, 115, 22, 0.7)', // Orange
-        borderColor: 'rgb(234, 88, 12)',
-        borderWidth
-      },
-      {
-        label: 'Underbids',
-        data: underbidsData,
-        backgroundColor: 'rgba(212, 54, 54, 0.7)', // Red
-        borderColor: 'rgb(243, 10, 10)',
-        borderWidth
-      }
-    ];
-
-    return { labels, datasets };
+    const outcomeColors = (hex) => playersData.map((player) => (isDimmed(player.id) ? withAlpha(hex, DIMMED_ALPHA) : hex));
+    const outcome = (label, key, hex) => ({
+      label,
+      data: playersData.map((player) => player[key] || 0),
+      backgroundColor: outcomeColors(hex),
+      hoverBackgroundColor: outcomeColors(hex)
+    });
+    return {
+      labels: playersData.map((player) => player.name),
+      datasets: [
+        outcome(t('statsChart.correctBids'), 'correctBids', BID_OUTCOME_COLORS.correct),
+        outcome(t('statsChart.overbids'), 'overBids', BID_OUTCOME_COLORS.over),
+        outcome(t('statsChart.underbids'), 'underBids', BID_OUTCOME_COLORS.under)
+      ]
+    };
   };
 
-  const generatePointsPerRoundData = () => {
-    if (!roundData || roundData.length === 0) {
-      console.debug("No round data available for points per round chart");
-      return { labels: [], datasets: [] };
-    }
-    
-    // Create round labels
-    const labels = roundData.map((_, index) => `Round ${index + 1}`);
-    
-    // In focus mode, show only the focused player
-    // Otherwise, show all selected players
-    const playersToShow = focusMode ? 
-      selectedPlayers.slice(0, 1) : 
-      selectedPlayers;
-      
-    if (playersToShow.length === 0) {
-      return { labels: [], datasets: [] };
-    }
-    
-    // Generate a dataset for each player to show
-    const datasets = playersToShow.map(playerId => {
-      const player = playersData.find(p => String(p.id) === String(playerId));
-      if (!player) {
-        console.debug(`Player with ID ${playerId} not found in playersData`);
-        return null;
-      }
-      
-      // Get original index for consistent colors
-      const originalIndex = playersData.findIndex(p => String(p.id) === String(player.id));
-      
-      // Collect round scores for this player
-      const roundScores = roundData.map(round => {
-        // Use string comparison for safe ID matching
-        const playerInRound = round.players.find(p => String(p.id) === String(player.id));
-        const score = playerInRound && playerInRound.score !== undefined ? playerInRound.score : null;
-        return score;
-      });
-
-      return {
-        label: `${player.name}'s Points Per Round`,
-        data: roundScores,
-        backgroundColor: getColorForIndex(originalIndex),
-        borderColor: getBorderColorForIndex(originalIndex),
-        borderWidth: focusMode ? 2 : 1
-      };
-    }).filter(Boolean); // Filter out null datasets
-
-    return { labels, datasets };
-  };
-
-  // Generate chart data based on selected chart type
   const getChartData = () => {
     switch (chartType) {
       case CHART_TYPES.POINTS_PROGRESSION:
@@ -282,328 +223,257 @@ const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
         return generateBidAccuracyData();
       case CHART_TYPES.BID_DISTRIBUTION:
         return generateBidDistributionData();
-      case CHART_TYPES.POINTS_PER_ROUND:
-        return generatePointsPerRoundData();
       default:
         return { labels: [], datasets: [] };
     }
   };
 
-  // Chart options
   const getChartOptions = () => {
-    // Determine if we're in dark mode by checking the HTML element's data-theme attribute
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    
-    // Use direct color values based on theme
-    const textColor = isDarkMode ? '#e5e7eb' : '#1f2937';
-    const borderColor = isDarkMode ? '#4b5563' : '#d1d5db';
-    const gridColor = isDarkMode ? 'rgba(202, 214, 231, 0.2)' : 'rgba(144, 147, 151, 0.5)';
-    const tooltipBackgroundColor = isDarkMode ? '#374151' : '#ffffff';
-    
-    const baseOptions = {
+    const textColor = readCssVar('--text', '#0f172a');
+    const mutedColor = readCssVar('--text-muted', '#64748b');
+    const gridColor = readCssVar('--border', '#d9e0ea');
+    const baselineColor = withAlpha(isDarkTheme() ? '#94a3b8' : '#64748b', 0.6);
+    const tooltipBg = readCssVar('--card-bg', '#ffffff');
+
+    const isRoundChart = chartType === CHART_TYPES.POINTS_PROGRESSION;
+    const isPercent = chartType === CHART_TYPES.BID_ACCURACY;
+    const tickFont = { size: 11, weight: '500' };
+
+    return {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 300 },
+      layout: { padding: { top: 8, right: 8 } },
+      interaction: isRoundChart
+        ? { mode: 'index', intersect: false }
+        : { mode: 'nearest', intersect: true },
+      datasets: {
+        bar: {
+          maxBarThickness: 24,
+          categoryPercentage: 0.7,
+          barPercentage: 0.9,
+          borderRadius: 4,
+          borderSkipped: 'start',
+          borderWidth: 0
+        }
+      },
       plugins: {
         legend: {
-          display: chartType === CHART_TYPES.BID_DISTRIBUTION, // Show legend only for bid distribution
+          // Players have their own legend below the chart; only bid outcomes need this one
+          display: chartType === CHART_TYPES.BID_DISTRIBUTION,
           position: 'top',
-          align: 'center',
+          align: 'start',
           labels: {
             color: textColor,
-            font: {
-              size: 12,
-              weight: '500'
-            },
-            padding: 20,
+            font: { size: 12, weight: '500' },
+            boxWidth: 8,
+            boxHeight: 8,
+            padding: 12,
             usePointStyle: true,
-            pointStyle: 'rect'
+            pointStyle: 'circle'
           }
         },
         tooltip: {
-          backgroundColor: tooltipBackgroundColor,
+          backgroundColor: tooltipBg,
           titleColor: textColor,
           bodyColor: textColor,
-          borderColor: borderColor,
+          borderColor: gridColor,
           borderWidth: 1,
           padding: 10,
-          boxPadding: 5,
-          usePointStyle: true
-        }
+          boxPadding: 4,
+          boxWidth: 8,
+          boxHeight: 8,
+          usePointStyle: true,
+          // Highest value first so the tooltip reads like the standings
+          itemSort: (a, b) => (b.parsed.y ?? 0) - (a.parsed.y ?? 0),
+          callbacks: {
+            title: (items) => (isRoundChart && items.length
+              ? t('statsChart.roundNumber', { number: items[0].label })
+              : items[0]?.label),
+            label: (item) => {
+              const value = isPercent ? `${Math.round(item.parsed.y)}%` : item.parsed.y;
+              const name = chartType === CHART_TYPES.BID_ACCURACY ? item.label : item.dataset.label;
+              return ` ${name}: ${value}`;
+            },
+            labelPointStyle: () => ({ pointStyle: 'circle', rotation: 0 }),
+            labelColor: (item) => {
+              const bg = Array.isArray(item.dataset.backgroundColor)
+                ? item.dataset.backgroundColor[item.dataIndex]
+                : item.dataset.borderColor || item.dataset.backgroundColor;
+              return { backgroundColor: bg, borderColor: bg, borderWidth: 0 };
+            }
+          }
+        },
+        crosshair: { color: gridColor }
       },
       scales: {
         y: {
           beginAtZero: true,
-          border: {
-            display: true,
-            color: borderColor,
-            width: 2
-          },
+          max: isPercent ? 100 : undefined,
+          border: { display: false },
           grid: {
-            color: (context) => {
-              if (context.tick && context.tick.value === 0) {
-                // Make the zero line more prominent
-                return isDarkMode ? '#d1d5db' : '#4b5563';
-              }
-              return gridColor;
-            },
-            lineWidth: (context) => {
-              if (context.tick && context.tick.value === 0) {
-                return 1.5; // Thicker zero line
-              }
-              return 1.2;
-            },
-            drawBorder: true, // Don't draw border around the entire chart
-            drawTicks: true,
-            z: 1 // Ensure grid lines are drawn above the datasets
+            color: (ctx) => (ctx.tick?.value === 0 ? baselineColor : gridColor),
+            lineWidth: 1,
+            drawTicks: false
           },
           ticks: {
-            color: textColor,
-            font: {
-              weight: '500',
-              size: 12
-            },
-            major: {
-              enabled: true
-            }
+            color: mutedColor,
+            font: tickFont,
+            padding: 8,
+            maxTicksLimit: 6,
+            precision: 0,
+            callback: isPercent ? (value) => `${value}%` : undefined
           }
         },
         x: {
-          border: {
-            display: false
-          },
-          grid: {
-            display: true,
-            color: (context) => {
-              // Highlight the zero value on the x-axis if needed
-              if (context.tick && context.tick.value === 0) {
-                return isDarkMode ? '#4b5563' : '#d1d5db';
-              }
-              return gridColor;
-            },
-            lineWidth: (context) => {
-              if (context.tick && context.tick.value === 0) {
-                return 2; // Thicker zero line
-              }
-              return 1.2;
-            },
-            drawBorder: true,
-            drawTicks: true
-          },
+          border: { display: false },
+          grid: { display: false },
           ticks: {
-            color: textColor,
-            font: {
-              weight: '500',
-              size: 12
-            }
+            color: mutedColor,
+            font: tickFont,
+            maxRotation: 0,
+            autoSkip: true,
+            autoSkipPadding: 8
+          },
+          title: {
+            display: isRoundChart,
+            text: t('statsChart.round'),
+            color: mutedColor,
+            font: { size: 11, weight: '500' },
+            padding: { top: 4 }
           }
         }
       }
     };
-
-    // Add chart-specific options
-    switch (chartType) {
-      case CHART_TYPES.POINTS_PROGRESSION:
-        return {
-          ...baseOptions,
-          plugins: {
-            ...baseOptions.plugins
-          },
-          scales: {
-            ...baseOptions.scales,
-            y: {
-              ...baseOptions.scales.y,
-              title: {
-                ...baseOptions.scales.y.title,
-                text: 'Total Points'
-              }
-            },
-            x: {
-              ...baseOptions.scales.x,
-              title: {
-                ...baseOptions.scales.x.title,
-                text: 'Round'
-              }
-            }
-          }
-        };
-
-      case CHART_TYPES.BID_ACCURACY:
-        return {
-          ...baseOptions,
-          plugins: {
-            ...baseOptions.plugins
-          },
-          scales: {
-            ...baseOptions.scales,
-            y: {
-              ...baseOptions.scales.y,
-              max: 100,
-              ticks: {
-                ...baseOptions.scales.y.ticks,
-                callback: (value) => `${value}%`
-              }
-            },
-            x: {
-              ...baseOptions.scales.x,
-              title: {
-                ...baseOptions.scales.x.title,
-                text: 'Players'
-              }
-            }
-          }
-        };
-
-      case CHART_TYPES.BID_DISTRIBUTION:
-        return {
-          ...baseOptions,
-          plugins: {
-            ...baseOptions.plugins,
-            legend: {
-              ...baseOptions.plugins.legend,
-              labels: {
-                ...baseOptions.plugins.legend.labels,
-                padding: 5 // Reduce padding to bring legend closer to title
-              }
-            }
-          },
-          scales: {
-            ...baseOptions.scales,
-            y: {
-              ...baseOptions.scales.y,
-              ticks: {
-                ...baseOptions.scales.y.ticks,
-                stepSize: 1
-              },
-              grid: {
-                ...baseOptions.scales.y.grid,
-                display: true
-              }
-            },
-            x: {
-              ...baseOptions.scales.x,
-              title: {
-                ...baseOptions.scales.x.title,
-                text: 'Players'
-              }
-            }
-          }
-        };
-
-      case CHART_TYPES.POINTS_PER_ROUND:
-        return {
-          ...baseOptions,
-          plugins: {
-            ...baseOptions.plugins,
-            title: {
-              display: true,
-              text: 'Points Per Round',
-              color: textColor,
-              font: { size: 18, weight: 'bold' }
-            }
-          },
-          scales: {
-            ...baseOptions.scales,
-            y: {
-              ...baseOptions.scales.y,
-              grid: {
-                ...baseOptions.scales.y.grid,
-                display: true
-              }
-            },
-            x: {
-              ...baseOptions.scales.x,
-              title: {
-                ...baseOptions.scales.x.title,
-                text: 'Round'
-              }
-            }
-          }
-        };
-      default:
-        return baseOptions;
-    }
   };
 
-  // Determine which chart component to use
   const renderChart = () => {
-    const chartData = getChartData();
-    const chartOptions = getChartOptions();
-
-    switch (chartType) {
-      case CHART_TYPES.POINTS_PROGRESSION:
-        return <Line data={chartData} options={chartOptions} />;
-      case CHART_TYPES.BID_ACCURACY:
-        return <Bar data={chartData} options={chartOptions} />;
-      case CHART_TYPES.BID_DISTRIBUTION:
-        return <Bar data={chartData} options={chartOptions} />;
-      case CHART_TYPES.POINTS_PER_ROUND:
-        return <Bar data={chartData} options={chartOptions} />;
-      default:
-        return null;
+    const data = getChartData();
+    const options = getChartOptions();
+    if (chartType === CHART_TYPES.POINTS_PROGRESSION) {
+      return <Line data={data} options={options} plugins={[crosshairPlugin]} />;
     }
+    return <Bar data={data} options={options} />;
   };
+
+  /*
+   * Points per round as a players x rounds grid. Grouped bars become unreadable
+   * past a few players/rounds; a grid keeps every value legible and the tint
+   * (blue gain, red loss, stronger = bigger swing) shows the pattern at a glance.
+   */
+  const renderRoundHeatmap = () => {
+    if (!roundData || roundData.length === 0) return null;
+
+    const rows = playersData.map((player, index) => ({ player, index, points: getRoundPoints(player) }));
+    const maxAbs = Math.max(1, ...rows.flatMap((row) => row.points.map((value) => Math.abs(value || 0))));
+    const diverging = isDarkTheme() ? DIVERGING_COLORS.dark : DIVERGING_COLORS.light;
+
+    const cellStyle = (value) => {
+      if (value === null || value === 0) return undefined;
+      const hex = value > 0 ? diverging.positive : diverging.negative;
+      return { backgroundColor: withAlpha(hex, 0.12 + 0.5 * (Math.abs(value) / maxAbs)) };
+    };
+    // Pinned name column: paint the 2px cell gaps on either side so scrolled cells
+    // never peek out beside it
+    const stickyStyle = surfaceColor
+      ? { backgroundColor: surfaceColor, boxShadow: `-2px 0 0 ${surfaceColor}, 2px 0 0 ${surfaceColor}` }
+      : undefined;
+    const formatPoints = (value) => {
+      if (value === null) return '–';
+      return value > 0 ? `+${value}` : `${value}`;
+    };
 
     return (
-    <div className="stats-chart-container">
-        <div className="chart-wrapper chart-shadow no-bottom-border">
-            <div className="zero-line-indicator"></div>
-            {renderChart()}</div>
-
-        <div className="chart-controls">
-        {supportsBids && (
-          <div className="chart-type-selector">
-              {/* <label>Chart Type:</label> */}
-              <select 
-              value={chartType} 
-              onChange={(e) => setChartType(e.target.value)}
-              className="chart-select"
-              >
-              <option value={CHART_TYPES.POINTS_PROGRESSION}>Points Progression</option>
-              <option value={CHART_TYPES.BID_ACCURACY}>Bid Accuracy</option>
-              <option value={CHART_TYPES.BID_DISTRIBUTION}>Bid Distribution</option>
-              </select>
-          </div>
-        )}
-
-        <div className="player-toggles">
-            <div className="player-toggle-header">
-                {/* <label>
-                    {focusMode ? 
-                        <span className="focus-indicator">Focused on Player</span> : 
-                        'Click a player to focus on their data'}
-                </label> */}
-                
-            </div>
-            <div className="player-toggle-buttons">
-            {playersData.map((player, index) => (
-                <button
+      <div className="round-heatmap-scroll">
+        <table className="round-heatmap">
+          <thead>
+            <tr>
+              <th scope="col" className="round-heatmap-corner" style={stickyStyle}>
+                <span className="round-heatmap-axis">{t('statsChart.round')}</span>
+              </th>
+              {roundData.map((_, roundIndex) => (
+                <th key={roundIndex} scope="col">{roundIndex + 1}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ player, index, points }) => (
+              <tr
                 key={player.id}
-                className={`player-toggle-btn ${selectedPlayers.includes(player.id) ? 'active' : ''} ${focusMode && selectedPlayers[0] === player.id ? 'focused' : ''}`}
-                style={{ 
-                    borderColor: getBorderColorForIndex(index),
-                    backgroundColor: selectedPlayers.includes(player.id) 
-                    ? getColorForIndex(index) 
-                    : 'transparent'
-                }}
-                onClick={() => togglePlayerFocus(player.id)}
-                >
-                {player.name}
-                </button>
+                className={`${isFocused(player.id) ? 'focused' : ''} ${isDimmed(player.id) ? 'dimmed' : ''}`}
+              >
+                <th scope="row" className="round-heatmap-player" style={stickyStyle}>
+                  <button type="button" onClick={() => toggleFocus(player.id)} aria-pressed={isFocused(player.id)}>
+                    <span className="chart-legend-swatch" style={{ backgroundColor: getSeriesColor(index) }} />
+                    <span className="chart-legend-name">{player.name}</span>
+                  </button>
+                </th>
+                {points.map((value, roundIndex) => (
+                  <td
+                    key={roundIndex}
+                    style={cellStyle(value)}
+                    title={`${player.name} · ${t('statsChart.roundNumber', { number: roundIndex + 1 })}: ${formatPoints(value)}`}
+                  >
+                    {formatPoints(value)}
+                  </td>
+                ))}
+              </tr>
             ))}
-            </div>
-            {focusMode && (
-                    <button 
-                        className="show-all-btn"
-                        onClick={() => {
-                            setSelectedPlayers(playersData.map(player => player.id));
-                            setFocusMode(false);
-                        }}
-                    >
-                        Show All Players
-                    </button>
-                )}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const isHeatmap = chartType === CHART_TYPES.POINTS_PER_ROUND;
+
+  return (
+    <div className="stats-chart-container" ref={wrapperRef}>
+      <div className="chart-toolbar">
+        <select
+          value={chartType}
+          onChange={(e) => setChartType(e.target.value)}
+          className="chart-select"
+        >
+          <option value={CHART_TYPES.POINTS_PROGRESSION}>{t('statsChart.pointsProgression')}</option>
+          <option value={CHART_TYPES.POINTS_PER_ROUND}>{t('statsChart.pointsPerRound')}</option>
+          {supportsBids && (
+            <>
+              <option value={CHART_TYPES.BID_ACCURACY}>{t('statsChart.bidAccuracy')}</option>
+              <option value={CHART_TYPES.BID_DISTRIBUTION}>{t('statsChart.bidDistribution')}</option>
+            </>
+          )}
+        </select>
+        {focusedId !== null && (
+          <button type="button" className="show-all-btn" onClick={() => setFocusedId(null)}>
+            {t('statsChart.showAllPlayers')}
+          </button>
+        )}
+      </div>
+
+      {isHeatmap ? renderRoundHeatmap() : (
+        <div className="chart-wrapper">
+          {renderChart()}
         </div>
+      )}
+
+      {/* The grid names players in its own rows, so it needs no separate legend */}
+      {!isHeatmap && (
+        <div className="chart-legend">
+          {playersData.map((player, index) => (
+            <button
+              type="button"
+              key={player.id}
+              className={`chart-legend-item ${isFocused(player.id) ? 'focused' : ''} ${isDimmed(player.id) ? 'dimmed' : ''}`}
+              aria-pressed={isFocused(player.id)}
+              onClick={() => toggleFocus(player.id)}
+            >
+              <span className="chart-legend-swatch" style={{ backgroundColor: getSeriesColor(index) }} />
+              <span className="chart-legend-name">{player.name}</span>
+            </button>
+          ))}
         </div>
+      )}
     </div>
   );
 };

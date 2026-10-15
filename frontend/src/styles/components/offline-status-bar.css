@@ -61,9 +61,11 @@
   transition: background-color 0.2s ease;
 }
 
-.offline-bar-action:hover {
-  background-color: var(--primary);
-  color: var(--text-white);
+@media (hover: hover) {
+  .offline-bar-action:hover {
+    background-color: var(--primary);
+    color: var(--text-white);
+  }
 }
 
 .offline-bar-spin {

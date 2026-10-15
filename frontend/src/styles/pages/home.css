@@ -1,4 +1,4 @@
-﻿/* Home page styles */
+/* Home page styles */
 
 /* ── Header ─────────────────────────────────────────────── */
 .home-header {
@@ -72,7 +72,9 @@
   transition: opacity 0.2s ease;
 }
 
-.active-game-banner:hover { opacity: 0.75; }
+@media (hover: hover) {
+  .active-game-banner:hover { opacity: 0.75; }
+}
 .active-game-banner:active { opacity: 1; }
 
 /* Game names can be long, so keep them on one line */

@@ -23,8 +23,10 @@
   width: 16px;
   height: 16px;
 }
-.table-game-add-player-inline:hover {
-  display: flex;
+@media (hover: hover) {
+  .table-game-add-player-inline:hover {
+    display: flex;
+  }
 }
 .table-game-add-row-inline {
   background: var(--primary) !important;
@@ -82,7 +84,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 200px);
+  height: calc(100dvh - 200px);
   gap: var(--spacing-md);
 }
 
@@ -228,8 +230,10 @@ body[data-fixed-viewport] .scoreboard-game-container {
   color: var(--text);
 }
 
-.add-player-btn:hover {
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .add-player-btn:hover {
+    background: var(--primary-dark);
+  }
 }
 
 .remove-player {
@@ -237,8 +241,10 @@ body[data-fixed-viewport] .scoreboard-game-container {
   color: var(--text-white);
 }
 
-.remove-player:hover {
-  background: var(--danger-dark);
+@media (hover: hover) {
+  .remove-player:hover {
+    background: var(--danger-dark);
+  }
 }
 
 .add-player-btn:disabled,
@@ -261,8 +267,10 @@ body[data-fixed-viewport] .scoreboard-game-container {
   width: 100%;
 }
 
-.table-game-add-row-btn:hover {
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .table-game-add-row-btn:hover {
+    background: var(--primary-dark);
+  }
 }
 
 .table-game-add-row-btn:disabled {
@@ -346,9 +354,11 @@ body[data-fixed-viewport] .scoreboard-game-container {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.table-game-save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) {
+  .table-game-save-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .current-game-name {
@@ -446,18 +456,22 @@ body[data-fixed-viewport] .scoreboard-game-container {
   padding: 0;
 }
 
-.table-game-control-btn:hover:not(.disabled) {
-  background: var(--bg-tertiary);
-  border-color: var(--primary);
+@media (hover: hover) {
+  .table-game-control-btn:hover:not(.disabled) {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+  }
 }
 
 .table-game-control-btn.disabled {
   display: none;
 }
 
-.table-game-move-btn:hover:not(.disabled) {
-  background: var(--primary);
-  color: var(--text);
+@media (hover: hover) {
+  .table-game-move-btn:hover:not(.disabled) {
+    background: var(--primary);
+    color: var(--text);
+  }
 }
 
 .table-game-remove-btn {
@@ -466,9 +480,11 @@ body[data-fixed-viewport] .scoreboard-game-container {
   border-color: var(--danger-color);
 }
 
-.table-game-remove-btn:hover {
-  background: var(--danger-dark) !important;
-  border-color: var(--danger-dark);
+@media (hover: hover) {
+  .table-game-remove-btn:hover {
+    background: var(--danger-dark) !important;
+    border-color: var(--danger-dark);
+  }
 }
 
 .table-game-player-input {
@@ -539,9 +555,11 @@ body[data-fixed-viewport] .scoreboard-game-container {
   height: 32px;
 }
 
-.table-game-add-player:hover,
-.table-game-add-row:hover {
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .table-game-add-player:hover,
+  .table-game-add-row:hover {
+    background: var(--primary-dark);
+  }
 }
 
 .table-game-total {
@@ -614,9 +632,11 @@ body[data-fixed-viewport] .scoreboard-game-container {
   box-shadow: var(--shadow-sm);
 }
 
-.table-game-save-button:hover {
-  background: var(--primary-dark);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .table-game-save-button:hover {
+    background: var(--primary-dark);
+    box-shadow: var(--shadow);
+  }
 }
 
 .table-game-save-button:active {
@@ -639,9 +659,11 @@ body[data-fixed-viewport] .scoreboard-game-container {
   box-shadow: var(--shadow-sm);
 }
 
-.table-game-load-button:hover {
-  background: var(--secondary-dark);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .table-game-load-button:hover {
+    background: var(--secondary-dark);
+    box-shadow: var(--shadow);
+  }
 }
 
 .table-game-load-button:active {
@@ -742,8 +764,10 @@ body[data-fixed-viewport] .scoreboard-game-container {
   transition: all 0.3s ease;
 }
 
-.table-game-tab-btn:hover {
-  border-color: var(--primary);
+@media (hover: hover) {
+  .table-game-tab-btn:hover {
+    border-color: var(--primary);
+  }
 }
 
 .table-game-tab-btn.active {
@@ -861,7 +885,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
 .two-side-scoreboard {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.45rem, 1.2vh, var(--spacing-md));
+  gap: clamp(0.45rem, 1.2svh, var(--spacing-md));
   width: 100%;
   flex: 1 1 auto;
   height: auto;
@@ -941,8 +965,10 @@ body[data-fixed-viewport] .scoreboard-game-container {
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
-.basketball-score-btn:hover:not(:disabled) {
-  background: var(--card-bg-light);
+@media (hover: hover) {
+  .basketball-score-btn:hover:not(:disabled) {
+    background: var(--card-bg-light);
+  }
 }
 
 .basketball-score-btn:active:not(:disabled) {
@@ -978,12 +1004,19 @@ body[data-fixed-viewport] .scoreboard-game-container {
   color: #ff7474;
 }
 
-button.score-side-card:hover:not(:disabled),
 button.score-side-card:focus:not(:disabled),
 button.score-side-card:focus-visible:not(:disabled) {
   transform: none;
   box-shadow: none;
   outline: none;
+}
+
+@media (hover: hover) {
+  button.score-side-card:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+    outline: none;
+  }
 }
 
 .score-side-card:active {

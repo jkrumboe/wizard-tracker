@@ -15,6 +15,7 @@ import "../../styles/components/TableGame.css";
 import "../../styles/pages/gameInProgress.css";
 import "../../styles/components/statsChart.css";
 import "../../styles/components/scorecard.css";
+import RankBadge from "@/components/game/RankBadge";
 
 const MIN_PLAYERS = 2;
 const DEFAULT_SCOREBOARD_GAME_NAME = 'Scoreboard Game';
@@ -1622,14 +1623,10 @@ const ScoreboardGamePage = () => {
                         }
                         
                         // Determine medal class based on rank
-                        let medalClass = '';
-                        if (currentRank === 1) medalClass = 'gold';
-                        else if (currentRank === 2) medalClass = 'silver';
-                        else if (currentRank === 3) medalClass = 'bronze';
                         
                         return (
                           <div key={playerStats.id} className="results-row">
-                              <div className={`rank-col ${medalClass}`}>{currentRank}</div>
+                              <RankBadge rank={currentRank} />
                               <div className="player-col">
                                 <div className="player-info">
                                   <span>{playerStats.name}</span>
@@ -1762,11 +1759,11 @@ const ScoreboardGamePage = () => {
 
                 {(statsSubTab === 'table' || isLandscape) && (
                   <div className="rounds-section">
-                    <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length}>
+                    <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length} style={{ '--player-count': players.length }}>
                       <table className="scorecard-table">
                         <thead>
                           <tr>
-                            <th className="round-header sticky-cell">{isTwoSideScoreboard ? t('tableGame.setHeader') : t('tableGame.roundHeader')}</th>
+                            <th className="round-header sticky-cell" aria-label={isTwoSideScoreboard ? t('tableGame.setHeader') : t('tableGame.roundHeader')} />
                             {players.map((player, idx) => (
                               <th key={idx} className="player-header">
                                 <div className="player-header-name">{player.name}</div>

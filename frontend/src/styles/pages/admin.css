@@ -128,13 +128,15 @@
   transition: opacity var(--admin-speed) var(--admin-ease);
 }
 
-.admin-nav-link:hover {
-  background-color: var(--admin-wash);
-  color: var(--text);
-}
+@media (hover: hover) {
+  .admin-nav-link:hover {
+    background-color: var(--admin-wash);
+    color: var(--text);
+  }
 
-.admin-nav-link:hover .nav-link-icon {
-  opacity: 1;
+  .admin-nav-link:hover .nav-link-icon {
+    opacity: 1;
+  }
 }
 
 .admin-nav-link.active {
@@ -262,8 +264,10 @@
   transition: color var(--admin-speed) var(--admin-ease);
 }
 
-.admin-breadcrumb a:hover {
-  color: var(--primary);
+@media (hover: hover) {
+  .admin-breadcrumb a:hover {
+    color: var(--primary);
+  }
 }
 
 .admin-breadcrumb-current {
@@ -310,9 +314,11 @@
   background-color: var(--admin-hairline);
 }
 
-.admin-scroll::-webkit-scrollbar-thumb:hover,
-.admin-rail-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(148, 163, 184, 0.4);
+@media (hover: hover) {
+  .admin-scroll::-webkit-scrollbar-thumb:hover,
+  .admin-rail-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.4);
+  }
 }
 
 .admin-scroll::-webkit-scrollbar-track,
@@ -380,9 +386,11 @@
   justify-content: center;
 }
 
-.btn-refresh:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+@media (hover: hover) {
+  .btn-refresh:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
 }
 
 .btn-refresh:disabled {
@@ -422,8 +430,10 @@
   color: var(--warning-color);
 }
 
-.admin-alert-warning:hover {
-  background: rgba(251, 191, 36, 0.2);
+@media (hover: hover) {
+  .admin-alert-warning:hover {
+    background: rgba(251, 191, 36, 0.2);
+  }
 }
 
 /* Stats Grid */
@@ -456,9 +466,11 @@
   background: var(--stat-accent, var(--primary));
 }
 
-.admin-stat-card:hover {
-  border-color: var(--stat-accent, var(--primary));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+@media (hover: hover) {
+  .admin-stat-card:hover {
+    border-color: var(--stat-accent, var(--primary));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .stat-card-icon {
@@ -598,9 +610,11 @@
   opacity: 0.8;
 }
 
-.mini-chart-bar-wrapper:hover .mini-chart-bar {
-  opacity: 1;
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .mini-chart-bar-wrapper:hover .mini-chart-bar {
+    opacity: 1;
+    background: var(--primary-dark);
+  }
 }
 
 .mini-chart-dates {
@@ -651,8 +665,10 @@
   transition: background 0.1s ease;
 }
 
-.admin-table tbody tr:hover {
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .admin-table tbody tr:hover {
+    background: var(--primary-hover);
+  }
 }
 
 .admin-table tbody td {
@@ -770,10 +786,12 @@
   transition: all 0.15s ease;
 }
 
-.admin-quick-link:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .admin-quick-link:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-hover);
+  }
 }
 
 .quick-link-badge {
@@ -847,8 +865,10 @@
   transition: background-color 0.15s;
 }
 
-.clickable-row:hover {
-  background-color: var(--primary-hover);
+@media (hover: hover) {
+  .clickable-row:hover {
+    background-color: var(--primary-hover);
+  }
 }
 
 /* ===== Login History Modal ===== */
@@ -869,7 +889,7 @@
   border-radius: 12px;
   width: 90%;
   max-width: 450px;
-  max-height: 80vh;
+  max-height: 80dvh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -900,9 +920,11 @@
   align-items: center;
 }
 
-.modal-close:hover {
-  color: var(--text-color);
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .modal-close:hover {
+    color: var(--text-color);
+    background: var(--primary-hover);
+  }
 }
 
 .login-history-content {
@@ -1160,10 +1182,12 @@
   gap: 1rem;
 }
 
-.admin-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  border-color: var(--primary);
+@media (hover: hover) {
+  .admin-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary);
+  }
 }
 
 .admin-layout .card-icon,
@@ -1218,13 +1242,15 @@
   position: relative;
 }
 
-.admin-layout .suggestion-card:hover,
-.admin-layout .user-card:hover,
-.admin-container .suggestion-card:hover,
-.admin-container .user-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .admin-layout .suggestion-card:hover,
+  .admin-layout .user-card:hover,
+  .admin-container .suggestion-card:hover,
+  .admin-container .user-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
 }
 
 .admin-layout .suggestion-header,
@@ -1622,10 +1648,12 @@
   color: var(--text);
 }
 
-.admin-layout .btn-approve:hover,
-.admin-container .btn-approve:hover {
-  background-color: #059669;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-approve:hover,
+  .admin-container .btn-approve:hover {
+    background-color: #059669;
+    transform: translateY(-2px);
+  }
 }
 
 .admin-layout .btn-reject,
@@ -1634,10 +1662,12 @@
   color: var(--text);
 }
 
-.admin-layout .btn-reject:hover,
-.admin-container .btn-reject:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-reject:hover,
+  .admin-container .btn-reject:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+  }
 }
 
 .admin-layout .btn-edit,
@@ -1648,11 +1678,13 @@
   color: var(--text);
 }
 
-.admin-layout .btn-edit:hover,
-.admin-layout .btn-role:hover,
-.admin-container .btn-edit:hover,
-.admin-container .btn-role:hover {
-  transform: scale(1.01);
+@media (hover: hover) {
+  .admin-layout .btn-edit:hover,
+  .admin-layout .btn-role:hover,
+  .admin-container .btn-edit:hover,
+  .admin-container .btn-role:hover {
+    transform: scale(1.01);
+  }
 }
 
 .admin-layout .btn-role,
@@ -1660,9 +1692,11 @@
   background-color: #f59e0b;
 }
 
-.admin-layout .btn-role:hover,
-.admin-container .btn-role:hover {
-  background-color: #d97706;
+@media (hover: hover) {
+  .admin-layout .btn-role:hover,
+  .admin-container .btn-role:hover {
+    background-color: #d97706;
+  }
 }
 
 .admin-layout .btn-save,
@@ -1671,10 +1705,12 @@
   color: var(--text);
 }
 
-.admin-layout .btn-save:hover,
-.admin-container .btn-save:hover {
-  background-color: #059669;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-save:hover,
+  .admin-container .btn-save:hover {
+    background-color: #059669;
+    transform: translateY(-2px);
+  }
 }
 
 .admin-layout .btn-cancel,
@@ -1683,10 +1719,12 @@
   color: var(--text);
 }
 
-.admin-layout .btn-cancel:hover,
-.admin-container .btn-cancel:hover {
-  /* background-color: var(--text); */
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-cancel:hover,
+  .admin-container .btn-cancel:hover {
+    /* background-color: var(--text); */
+    transform: translateY(-2px);
+  }
 }
 
 /* Password Reset and Delete User Buttons */
@@ -1706,10 +1744,12 @@
   transition: all 0.2s ease;
 }
 
-.admin-layout .btn-password:hover,
-.admin-container .btn-password:hover {
-  background-color: #7c3aed;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-password:hover,
+  .admin-container .btn-password:hover {
+    background-color: #7c3aed;
+    transform: translateY(-2px);
+  }
 }
 
 .admin-layout .btn-delete-user,
@@ -1728,10 +1768,12 @@
   transition: all 0.2s ease;
 }
 
-.admin-layout .btn-delete-user:hover,
-.admin-container .btn-delete-user:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-delete-user:hover,
+  .admin-container .btn-delete-user:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+  }
 }
 
 .admin-layout .btn-delete-confirm,
@@ -1751,10 +1793,12 @@
   transition: all 0.2s ease;
 }
 
-.admin-layout .btn-delete-confirm:hover,
-.admin-container .btn-delete-confirm:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-layout .btn-delete-confirm:hover,
+  .admin-container .btn-delete-confirm:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+  }
 }
 
 /* Modal Styles - Scoped to Admin Layout */
@@ -1779,7 +1823,7 @@
   border-radius: 12px;
   max-width: 500px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
@@ -1812,10 +1856,12 @@
   transition: all 0.2s ease;
 }
 
-.admin-layout .modal-header .close-btn:hover,
-.admin-container .modal-header .close-btn:hover {
-  background-color: var(--border);
-  color: var(--text);
+@media (hover: hover) {
+  .admin-layout .modal-header .close-btn:hover,
+  .admin-container .modal-header .close-btn:hover {
+    background-color: var(--border);
+    color: var(--text);
+  }
 }
 
 .admin-layout .modal-body,
@@ -2568,9 +2614,11 @@
   transition: all 0.2s ease;
 }
 
-.btn-clear:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+@media (hover: hover) {
+  .btn-clear:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
 }
 
 .search-spinner {
@@ -2599,9 +2647,11 @@
   white-space: nowrap;
 }
 
-.btn-search:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+@media (hover: hover) {
+  .btn-search:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .btn-search:disabled {
@@ -2644,9 +2694,11 @@
   margin-bottom: 0;
 }
 
-.search-result-item:hover {
-  background-color: var(--primary);
-  transform: translateX(4px);
+@media (hover: hover) {
+  .search-result-item:hover {
+    background-color: var(--primary);
+    transform: translateX(4px);
+  }
 }
 
 .checkbox-group {
@@ -2686,8 +2738,10 @@
   transition: all 0.2s ease;
 }
 
-.alias-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+@media (hover: hover) {
+  .alias-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .alias-content {
@@ -2761,9 +2815,11 @@
   transition: all 0.2s ease;
 }
 
-.btn-delete:hover {
-  background-color: #dc2626;
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .btn-delete:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+  }
 }
 
 .no-data {
@@ -2903,16 +2959,20 @@
   border-bottom: none;
 }
 
-.search-dropdown-item:hover {
-  background-color: var(--primary);
+@media (hover: hover) {
+  .search-dropdown-item:hover {
+    background-color: var(--primary);
+  }
 }
 
 .search-dropdown-item.already-linked {
   background-color: rgba(251, 146, 60, 0.1);
 }
 
-.search-dropdown-item.already-linked:hover {
-  background-color: rgba(251, 146, 60, 0.2);
+@media (hover: hover) {
+  .search-dropdown-item.already-linked:hover {
+    background-color: rgba(251, 146, 60, 0.2);
+  }
 }
 
 .player-name {
@@ -3003,10 +3063,12 @@
   cursor: help;
 }
 
-.search-result-item.already-linked:hover {
-  background-color: rgba(251, 146, 60, 0.15);
-  border-color: rgba(251, 146, 60, 0.5);
-  transform: translateX(2px);
+@media (hover: hover) {
+  .search-result-item.already-linked:hover {
+    background-color: rgba(251, 146, 60, 0.15);
+    border-color: rgba(251, 146, 60, 0.5);
+    transform: translateX(2px);
+  }
 }
 
 .result-name {
@@ -3121,8 +3183,10 @@
   color: var(--text);
 }
 
-.btn-secondary:hover {
-  background-color: var(--hover-color);
+@media (hover: hover) {
+  .btn-secondary:hover {
+    background-color: var(--hover-color);
+  }
 }
 
 .btn-lg {
@@ -3142,8 +3206,10 @@
   cursor: pointer;
 }
 
-.btn-ghost:hover {
-  text-decoration: underline;
+@media (hover: hover) {
+  .btn-ghost:hover {
+    text-decoration: underline;
+  }
 }
 
 .spinning {
@@ -3237,8 +3303,10 @@
   transition: background-color 0.2s;
 }
 
-.user-item-header:hover {
-  background-color: var(--hover-color);
+@media (hover: hover) {
+  .user-item-header:hover {
+    background-color: var(--hover-color);
+  }
 }
 
 .user-info {
@@ -3472,9 +3540,11 @@
   transition: all 0.2s ease;
 }
 
-.admin-tabs .tab-btn:hover {
-  color: var(--text);
-  background-color: var(--hover-color);
+@media (hover: hover) {
+  .admin-tabs .tab-btn:hover {
+    color: var(--text);
+    background-color: var(--hover-color);
+  }
 }
 
 .admin-tabs .tab-btn.active {
@@ -3532,9 +3602,11 @@
   width: 100%;
 }
 
-.identity-item:hover {
-  border-color: var(--primary);
-  background-color: var(--hover-color);
+@media (hover: hover) {
+  .identity-item:hover {
+    border-color: var(--primary);
+    background-color: var(--hover-color);
+  }
 }
 
 .identity-item.selected {
@@ -3663,10 +3735,12 @@
   transition: all 0.2s ease;
 }
 
-.btn-icon:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background-color: var(--hover-color);
+@media (hover: hover) {
+  .btn-icon:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: var(--hover-color);
+  }
 }
 
 .admin-header {
@@ -3886,9 +3960,11 @@
   transition: all 0.2s ease;
 }
 
-.btn-view:hover {
-  background-color: var(--primary);
-  color: var(--text-white);
+@media (hover: hover) {
+  .btn-view:hover {
+    background-color: var(--primary);
+    color: var(--text-white);
+  }
 }
 
 .admin-container .btn-icon-only {
@@ -3946,8 +4022,10 @@
   transition: border-color 0.2s ease;
 }
 
-.dedupe-option:hover {
-  border-color: var(--primary);
+@media (hover: hover) {
+  .dedupe-option:hover {
+    border-color: var(--primary);
+  }
 }
 
 .dedupe-option input[type="checkbox"] {
@@ -4153,13 +4231,15 @@
               box-shadow var(--admin-speed) var(--admin-ease);
 }
 
-.admin-layout .admin-quick-link:hover,
-.admin-layout .user-card:hover,
-.admin-layout .suggestion-card:hover,
-.admin-layout .alias-card:hover {
-  border-color: rgba(96, 165, 250, 0.45);
-  box-shadow: var(--admin-lift);
-  transform: none;
+@media (hover: hover) {
+  .admin-layout .admin-quick-link:hover,
+  .admin-layout .user-card:hover,
+  .admin-layout .suggestion-card:hover,
+  .admin-layout .alias-card:hover {
+    border-color: rgba(96, 165, 250, 0.45);
+    box-shadow: var(--admin-lift);
+    transform: none;
+  }
 }
 
 /* ---------- Stat cards ---------- */
@@ -4312,8 +4392,10 @@
   transition: background-color var(--admin-speed) var(--admin-ease);
 }
 
-.admin-layout .admin-table tbody tr:hover {
-  background-color: var(--admin-wash);
+@media (hover: hover) {
+  .admin-layout .admin-table tbody tr:hover {
+    background-color: var(--admin-wash);
+  }
 }
 
 /* ---------- Controls ---------- */
@@ -4330,10 +4412,12 @@
 
 /* The global button hover shrinks by 5%, which reads as a jitter in dense
    admin tables. A one pixel lift is calmer and keeps hit areas stable. */
-.admin-layout button:hover:not(:disabled):not(.btn-clear):not(.close-btn):not(.modal-close),
-.admin-layout .btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--admin-lift);
+@media (hover: hover) {
+  .admin-layout button:hover:not(:disabled):not(.btn-clear):not(.close-btn):not(.modal-close),
+  .admin-layout .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--admin-lift);
+  }
 }
 
 .admin-layout button:active:not(:disabled):not(.btn-clear):not(.close-btn):not(.modal-close),
@@ -4343,9 +4427,11 @@
 }
 
 /* Controls centred with a transform keep their own transform on hover */
-.admin-layout .btn-clear:hover:not(:disabled) {
-  transform: translateY(-50%);
-  box-shadow: none;
+@media (hover: hover) {
+  .admin-layout .btn-clear:hover:not(:disabled) {
+    transform: translateY(-50%);
+    box-shadow: none;
+  }
 }
 
 .admin-layout button:focus-visible,
@@ -4378,9 +4464,11 @@
   box-shadow: none;
 }
 
-.admin-layout .btn-refresh:hover:not(:disabled) {
-  color: var(--primary);
-  border-color: rgba(96, 165, 250, 0.45);
+@media (hover: hover) {
+  .admin-layout .btn-refresh:hover:not(:disabled) {
+    color: var(--primary);
+    border-color: rgba(96, 165, 250, 0.45);
+  }
 }
 
 .admin-layout .action-buttons-row {
@@ -4596,8 +4684,10 @@
   text-decoration: none;
 }
 
-.game-editor-back:hover {
-  color: var(--primary);
+@media (hover: hover) {
+  .game-editor-back:hover {
+    color: var(--primary);
+  }
 }
 
 .game-editor .subtitle {

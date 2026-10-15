@@ -35,9 +35,11 @@
   font-size: 14px;
 }
 
-.player-suggestion-item:hover {
-  background-color: var(--primary-hover);
-  color: var(--text);
+@media (hover: hover) {
+  .player-suggestion-item:hover {
+    background-color: var(--primary-hover);
+    color: var(--text);
+  }
 }
 
 /* Scrollbar styling for suggestions list */
@@ -54,6 +56,8 @@
   border-radius: 3px;
 }
 
-.player-suggestions-list::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+@media (hover: hover) {
+  .player-suggestions-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
 }

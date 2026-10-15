@@ -147,7 +147,7 @@
 @media (max-width: 768px) {
   .game-filter-modal {
     width: 95%;
-    max-height: 85vh;
+    max-height: 85dvh;
   }
 
   .filter-group-row {

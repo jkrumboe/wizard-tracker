@@ -7,6 +7,7 @@ import "@/styles/components/components.css"
 import "@/styles/components/players.css" // Support for 2-6 players
 import "@/styles/utils/playerResponsive.css" // Additional responsive styling for 2-6 players
 import "@/styles/components/multi-player-scorecard.css" // Enhanced scorecard styles for multiple players
+import "@/styles/components/bottom-sheet.css" // Modals dock to the bottom edge on phones
 
 // Initialize offline sync system
 import { createSyncManager } from "@/shared/sync/syncManager"

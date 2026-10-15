@@ -1,0 +1,194 @@
+/*
+ * Desktop layout.
+ *
+ * Phones and tablets keep the floating bottom pill. On a wide screen that pill
+ * reads as a mobile app stretched onto a monitor, so from 1024px the same nav
+ * becomes a fixed left sidebar and the content gets the full window height.
+ *
+ * Setting --bottom-nav-height to 0 here releases every reservation the rest of
+ * the stylesheet makes for the bottom bar (shell padding, pinned game screens,
+ * the fixed round controls) without touching those rules individually.
+ *
+ * This file can land before index.css, components.css and the lazy-loaded page
+ * stylesheets in the bundle, so its rules carry a leading `body` (and `html` on
+ * :root) to win on specificity rather than relying on import order.
+ */
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  html:root {
+    --sidebar-width: 232px;
+    --bottom-nav-height: 0px;
+    --content-max-width: 1280px;
+  }
+
+  /* ---------- Sidebar ---------- */
+  body .bottom-navbar {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: var(--sidebar-width);
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-md);
+    background-color: var(--card-bg);
+    border-right: 1px solid var(--border);
+  }
+
+  body .desktop-only {
+    display: flex;
+  }
+
+  body .sidebar-brand {
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0 0.5rem var(--spacing-sm);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  body .sidebar-brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+  }
+
+  body .sidebar-new-game {
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-md);
+    background-color: var(--primary);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: filter 0.15s ease, transform 0.15s ease;
+  }
+
+  @media (hover: hover) {
+    body .sidebar-new-game:hover {
+      filter: brightness(1.08);
+    }
+  }
+
+  body .sidebar-new-game:active {
+    transform: translateY(1px);
+  }
+
+  body .nav-items-pill {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 2px;
+    max-width: none;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: visible;
+  }
+
+  body .bottom-nav-item {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    height: auto;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-md);
+    color: var(--text-light);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  /* Home leads in a vertical list; on mobile it sits in the middle of the pill */
+  body .bottom-nav-item.home-tab {
+    order: -1;
+  }
+
+  @media (hover: hover) {
+    body .bottom-nav-item:hover {
+      background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+      color: var(--text);
+    }
+  }
+
+  body .bottom-nav-item.active {
+    background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+    color: var(--primary);
+  }
+
+  body .bottom-nav-item .nav-icon {
+    display: flex;
+    font-size: 1rem;
+  }
+
+  body .bottom-nav-item span {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  body .bottom-nav-item.active span {
+    font-weight: 600;
+  }
+
+  /* ---------- Content area ---------- */
+  body .main-container {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    max-width: none;
+    padding-top: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    /* Fill the window but keep lines readable on very wide screens */
+    padding-left: max(var(--spacing-xl, 2rem), calc((100vw - var(--sidebar-width) - var(--content-max-width)) / 2));
+    padding-right: max(var(--spacing-xl, 2rem), calc((100vw - var(--sidebar-width) - var(--content-max-width)) / 2));
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  body .main-container::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  body .main-container::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+  }
+
+  /* The admin panel is its own full-height shell with a rail of its own, so it
+     sits flush against the sidebar instead of floating inside the page gutter.
+     The two rails then read as one two-level navigation. */
+  body .main-container:has(.admin-layout) {
+    padding: 0;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  body .admin-layout {
+    width: 100%;
+    height: 100dvh;
+  }
+
+  /* Fixed round controls span the content column, not the whole window */
+  body .game-bottom-section,
+  body .game-in-progress .game-bottom-section,
+  body .game-container .game-bottom-section {
+    left: var(--sidebar-width);
+  }
+}

@@ -135,6 +135,32 @@ class LocalFriendsService {
       throw error;
     }
   }
+
+  /**
+   * Replace the whole local friends list in one transaction, so readers
+   * never see a half-cleared table.
+   * @param {Array} friends
+   * @returns {Promise<void>}
+   */
+  async replaceAllFriends(friends) {
+    const addedAt = new Date().toISOString();
+    try {
+      await db.transaction('rw', db.friends, async () => {
+        await db.friends.clear();
+        await db.friends.bulkPut(friends.map(friend => ({
+          id: friend.id,
+          userId: friend.id,
+          username: friend.username,
+          createdAt: friend.createdAt || addedAt,
+          profilePicture: friend.profilePicture || null,
+          addedAt
+        })));
+      });
+    } catch (error) {
+      console.error('Error replacing friends:', error);
+      throw error;
+    }
+  }
 }
 
 export const localFriendsService = new LocalFriendsService();

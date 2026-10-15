@@ -42,8 +42,10 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.player-item:hover {
-    border-color: var(--primary);
+@media (hover: hover) {
+  .player-item:hover {
+      border-color: var(--primary);
+  }
 }
 
 .player-number {
@@ -196,8 +198,10 @@
   border-radius: var(--radius-md);
 }
 
-.player-list::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+@media (hover: hover) {
+  .player-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+  }
 }
 
 /* Responsive styling for different player counts */

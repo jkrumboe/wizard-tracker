@@ -46,6 +46,7 @@ import { authService } from "@/shared/api/authService"
 import { autoMigrateIfNeeded } from "@/shared/utils/localStorageMigration"
 import "@/styles/base/theme.css"
 import "@/styles/devices/tablet.css"
+import "@/styles/devices/desktop.css"
 import "@/shared/utils/devUpdateHelper"
 
 // Clears any scroll or keyboard pan the previous page left behind, so every

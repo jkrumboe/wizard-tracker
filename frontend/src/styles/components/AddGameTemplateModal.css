@@ -30,7 +30,7 @@
   border-radius: var(--radius-lg);
   max-width: 460px;
   width: 100%;
-  max-height: min(90vh, 90dvh);
+  max-height: 90dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -312,8 +312,10 @@
   flex: 1;
 }
 
-.add-game-modal-actions .modal-btn:hover:not(:disabled) {
-  transform: none;
+@media (hover: hover) {
+  .add-game-modal-actions .modal-btn:hover:not(:disabled) {
+    transform: none;
+  }
 }
 
 .modal-btn.cancel-btn {
@@ -454,9 +456,11 @@
   text-overflow: ellipsis;
 }
 
-.agm-segmented .agm-segment:hover:not(:disabled) {
-  transform: none;
-  color: var(--text);
+@media (hover: hover) {
+  .agm-segmented .agm-segment:hover:not(:disabled) {
+    transform: none;
+    color: var(--text);
+  }
 }
 
 .agm-segmented .agm-segment.is-active {
@@ -622,9 +626,11 @@
   color: var(--primary);
 }
 
-.agm-stepper .agm-stepper-btn:hover:not(:disabled) {
-  transform: none;
-  background: rgba(var(--primary-rgb), 0.12);
+@media (hover: hover) {
+  .agm-stepper .agm-stepper-btn:hover:not(:disabled) {
+    transform: none;
+    background: rgba(var(--primary-rgb), 0.12);
+  }
 }
 
 .agm-stepper .agm-stepper-btn:disabled {
@@ -722,9 +728,11 @@
   color: var(--text-muted);
 }
 
-.agm-pattern-grid .agm-pattern:hover:not(:disabled) {
-  transform: none;
-  border-color: var(--primary);
+@media (hover: hover) {
+  .agm-pattern-grid .agm-pattern:hover:not(:disabled) {
+    transform: none;
+    border-color: var(--primary);
+  }
 }
 
 .agm-pattern-grid .agm-pattern.is-active {
@@ -847,9 +855,11 @@
   font-weight: 600;
 }
 
-.agm-rules-header .agm-ghost-btn:hover:not(:disabled) {
-  transform: none;
-  border-color: var(--primary);
+@media (hover: hover) {
+  .agm-rules-header .agm-ghost-btn:hover:not(:disabled) {
+    transform: none;
+    border-color: var(--primary);
+  }
 }
 
 .agm-error {

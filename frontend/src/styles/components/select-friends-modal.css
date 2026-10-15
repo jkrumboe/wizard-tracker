@@ -1,7 +1,7 @@
 /* Select Friends Modal Styles */
 .select-friends-modal {
   max-width: 500px;
-  max-height: 80vh;
+  max-height: 80dvh;
 }
 
 .select-friends-modal .modal-header h2 {
@@ -29,8 +29,10 @@
   transition: all 0.2s ease;
 }
 
-.selection-control-btn:hover:not(:disabled) {
-  background: var(--primary);
+@media (hover: hover) {
+  .selection-control-btn:hover:not(:disabled) {
+    background: var(--primary);
+  }
 }
 
 .friends-selection-list {
@@ -149,9 +151,11 @@
   flex: 1;
 }
 
-.cancel-button:hover {
-  background: var(--card-bg-alt);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .cancel-button:hover {
+    background: var(--card-bg-alt);
+    transform: translateY(-1px);
+  }
 }
 
 /* Responsive */

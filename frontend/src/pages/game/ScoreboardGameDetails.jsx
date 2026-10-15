@@ -12,6 +12,8 @@ import "@/styles/pages/gameDetails.css"
 import "@/styles/pages/account.css"
 import "@/styles/components/TableGame.css"
 import { ArrowLeftIcon } from "@/components/ui/Icon"
+import RankBadge from "@/components/game/RankBadge"
+import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 
 const GameDetailsSkeleton = () => (
   <div className="game-details-container">
@@ -72,6 +74,7 @@ const ScoreboardGameDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [summaryRef, summaryScrolled] = useIsScrolled()
 
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -356,7 +359,7 @@ const ScoreboardGameDetails = () => {
   }
 
   return (
-    <div className="game-details-container table-game-container">
+    <div className={`game-details-container table-game-container${summaryScrolled ? ' is-scrolled' : ''}`}>
 
       <div className="game-details-header">
         <button onClick={() => navigate(-1)} className="back-link" aria-label="Go back">
@@ -382,7 +385,7 @@ const ScoreboardGameDetails = () => {
         </button>
       </div>
 
-      <div className="game-summary">
+      <div className="game-summary" ref={summaryRef}>
         {(activeTab === 'standings' || isLandscape) && (
           <div className="results-section">
             <div className="results-table">
@@ -403,9 +406,7 @@ const ScoreboardGameDetails = () => {
                   }}
                 >
                   <div className="top-result-row">
-                    <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
-                      {player.rank}
-                    </div>
+                    <RankBadge rank={player.rank} />
                     <div className="player-col">
                       <div className="player-info team-standings-info">
                         {player.name ? (
@@ -568,11 +569,11 @@ const ScoreboardGameDetails = () => {
         {(activeTab === 'table' || isLandscape) && (
           <div className="results-section">
             <div className="rounds-section">
-              <div className={`wizard-scorecard ${players.length > 3 ? 'many-players' : ''}`} data-player-count={players.length}>
+              <div className={`wizard-scorecard ${players.length > 3 ? 'many-players' : ''}`} data-player-count={players.length} style={{ '--player-count': players.length }}>
                 <table className="scorecard-table">
                   <thead>
                     <tr>
-                      <th className="round-header sticky-cell">{t('tableGame.setHeader')}</th>
+                      <th className="round-header sticky-cell" aria-label={t('tableGame.setHeader')} />
                       {players.map((player, idx) => (
                         <th key={idx} className="player-header">
                           <div className="player-header-name">

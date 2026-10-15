@@ -60,9 +60,11 @@
   border-radius: 50%;
 }
 
-.game-history-modal .search-clear-btn:hover {
-  color: var(--text);
-  background: var(--border);
+@media (hover: hover) {
+  .game-history-modal .search-clear-btn:hover {
+    color: var(--text);
+    background: var(--border);
+  }
 }
 
 .game-history-modal .modal-stats {
@@ -105,9 +107,11 @@
   background: #10b981;
 }
 
-.game-history-modal .stat-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
+@media (hover: hover) {
+  .game-history-modal .stat-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+  }
 }
 
 .game-history-modal .stat-item:focus-visible {

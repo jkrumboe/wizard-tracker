@@ -39,9 +39,11 @@
   cursor: pointer;
 }
 
-.avatar-editor-frame.interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+@media (hover: hover) {
+  .avatar-editor-frame.interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
 }
 
 .avatar-editor-frame.interactive:focus-visible {
@@ -79,10 +81,15 @@
   pointer-events: none;
 }
 
-.avatar-editor-frame.interactive:hover .avatar-editor-overlay,
 .avatar-editor-frame.interactive:focus-visible .avatar-editor-overlay,
 .avatar-editor-frame.dragging .avatar-editor-overlay {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .avatar-editor-frame.interactive:hover .avatar-editor-overlay {
+    opacity: 1;
+  }
 }
 
 .avatar-editor-loading {
@@ -122,9 +129,11 @@
   cursor: pointer;
 }
 
-.avatar-editor-badge:hover:not(:disabled) {
-  transform: scale(1.06);
-  border-color: var(--card-bg);
+@media (hover: hover) {
+  .avatar-editor-badge:hover:not(:disabled) {
+    transform: scale(1.06);
+    border-color: var(--card-bg);
+  }
 }
 
 .avatar-editor-status {
@@ -233,10 +242,12 @@
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.avatar-sheet-action:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  border-color: var(--primary);
-  transform: none;
+@media (hover: hover) {
+  .avatar-sheet-action:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    border-color: var(--primary);
+    transform: none;
+  }
 }
 
 .avatar-sheet-action-icon {
@@ -260,9 +271,11 @@
   color: var(--error-color);
 }
 
-.avatar-sheet-action.danger:hover:not(:disabled) {
-  border-color: var(--error-color);
-  background-color: var(--error-bg);
+@media (hover: hover) {
+  .avatar-sheet-action.danger:hover:not(:disabled) {
+    border-color: var(--error-color);
+    background-color: var(--error-bg);
+  }
 }
 
 .avatar-sheet-action-text {
@@ -404,9 +417,11 @@
   cursor: pointer;
 }
 
-.photo-viewer-close:hover {
-  background-color: rgba(255, 255, 255, 0.28);
-  border-color: transparent;
+@media (hover: hover) {
+  .photo-viewer-close:hover {
+    background-color: rgba(255, 255, 255, 0.28);
+    border-color: transparent;
+  }
 }
 
 .photo-viewer-stage {
@@ -419,7 +434,7 @@
 
 .photo-viewer-image {
   max-width: min(90vw, 620px);
-  max-height: 70vh;
+  max-height: 70dvh;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -449,9 +464,11 @@
   cursor: pointer;
 }
 
-.photo-viewer-action:hover {
-  background-color: rgba(255, 255, 255, 0.24);
-  border-color: rgba(255, 255, 255, 0.4);
+@media (hover: hover) {
+  .photo-viewer-action:hover {
+    background-color: rgba(255, 255, 255, 0.24);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
 }
 
 .photo-viewer-action.danger {
@@ -483,7 +500,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  max-height: 46vh;
+  max-height: 46dvh;
   margin: 0 auto;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -627,8 +644,10 @@
     animation: none;
   }
 
-  .avatar-editor-frame.interactive:hover {
-    transform: none;
+  @media (hover: hover) {
+    .avatar-editor-frame.interactive:hover {
+      transform: none;
+    }
   }
 }
 

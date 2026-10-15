@@ -10,7 +10,7 @@
 }
 
 .game-details-container .account-tabs {
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 0; /* the scroll panel below provides the gap (gameDetails.css) */
 }
 
 .account-tab {
@@ -70,35 +70,85 @@
 .game-type-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  transition: all 0.2s ease;
-  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  transition: border-color 0.2s ease;
+  gap: var(--spacing-xs);
 }
 
-.game-type-card:hover {
-  border: 1px solid var(--primary);
+@media (hover: hover) {
+  .game-type-card:hover {
+    border-color: var(--primary);
+  }
 }
 
 .game-type-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-sm);
+  min-width: 0;
 }
 
 .game-type-name {
+  min-width: 0;
+  overflow: hidden;
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
   color: var(--text);
+  text-overflow: ellipsis;
   text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.game-type-elo {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-type-elo svg {
+  color: var(--primary);
 }
 
 .game-type-stats {
   display: flex;
   gap: var(--spacing-md);
+}
+
+.game-type-stats .stat-label {
+  font-size: 0.85rem !important;
+}
+
+.game-type-stats .stat-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ten equal slots that always fit on one row, whatever the card width */
+.game-type-card .results-string {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.game-type-card .result-letter {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  font-size: 0.85rem;
 }
 
 .stat-item {
@@ -460,8 +510,10 @@ html:not([data-theme="dark"]) .games-type-select {
   transition: color 0.15s;
 }
 
-.games-search-clear:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .games-search-clear:hover {
+    color: var(--text);
+  }
 }
 
 .games-date-filters {
@@ -530,9 +582,11 @@ html:not([data-theme="dark"]) .games-date-input {
   flex-shrink: 0;
 }
 
-.games-date-clear:hover {
-  color: var(--text);
-  border-color: var(--text-light);
+@media (hover: hover) {
+  .games-date-clear:hover {
+    color: var(--text);
+    border-color: var(--text-light);
+  }
 }
 
 .games-list-header {
@@ -761,9 +815,11 @@ html:not([data-theme="dark"]) .games-date-input {
   transition: all 0.2s ease;
 }
 
-.language-btn:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
+@media (hover: hover) {
+  .language-btn:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .language-btn.active {
@@ -984,12 +1040,14 @@ html:not([data-theme="dark"]) .settings-tab button {
   opacity: 0;
 }
 
-.settings-row-clickable:disabled:hover {
-  background: transparent;
-}
+@media (hover: hover) {
+  .settings-row-clickable:disabled:hover {
+    background: transparent;
+  }
 
-.settings-row-clickable:hover:not(:disabled), .settings-row-clickable:hover:not(:disabled) {
-  transform: none !important;
+  .settings-row-clickable:hover:not(:disabled), .settings-row-clickable:hover:not(:disabled) {
+    transform: none !important;
+  }
 }
 
 .settings-row-left {
@@ -1153,9 +1211,11 @@ html:not([data-theme="dark"]) .settings-tab button {
   flex-shrink: 0;
 }
 
-.settings-toggle-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--primary);
+@media (hover: hover) {
+  .settings-toggle-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--primary);
+  }
 }
 
 .settings-toggle-btn:disabled {

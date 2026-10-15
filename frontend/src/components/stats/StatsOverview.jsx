@@ -60,37 +60,24 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
             style={{ cursor: onGameTypeClick ? 'pointer' : 'default' }}
           >
             <div className="game-type-header">
-              <div className="game-type-title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 className="game-type-name">{gameType.name}</h3>
-                {currentElo && (
-                  <span 
-                    className="elo-badge" 
-                    style={{ 
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      color: 'var(--text)',
-                      fontSize: '0.9rem',
-                      fontWeight: '600'
-                    }}
-                    title="ELO Rating"
-                  >
-                    <TrendingUp size={14} style={{ color: 'var(--primary)'}} />
-                    {currentElo}
-                  </span>
-                )}
+              <h3 className="game-type-name" title={gameType.name}>{gameType.name}</h3>
+              {currentElo && (
+                <span className="game-type-elo" title={t('profile.eloRating')}>
+                  <TrendingUp size={14} aria-hidden="true" />
+                  {currentElo}
+                </span>
+              )}
+            </div>
+            <div className="game-type-stats">
+              <div className="stat-item">
+                <span className="stat-label">{t('account.winRateLabel')}</span>
+                <span className="stat-value win-rate">
+                  {Math.round((gameType.wins / gameType.matches) * 100)}%
+                </span>
               </div>
-              <div className="game-type-stats">
-                <div className="stat-item">
-                  <span className="stat-label">{t('account.winRateLabel')}</span>
-                  <span className="stat-value win-rate">
-                    {Math.round((gameType.wins / gameType.matches) * 100)}%
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">{t('account.matchesLabel')}</span>
-                  <span className="stat-value">{gameType.matches}</span>
-                </div>
+              <div className="stat-item">
+                <span className="stat-label">{t('account.matchesLabel')}</span>
+                <span className="stat-value">{gameType.matches}</span>
               </div>
             </div>
             

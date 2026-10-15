@@ -4,7 +4,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+  /* Reach the bottom of the screen so the list scrolls on under the floating
+     navigation instead of stopping in a hard edge above it; the negative
+     margin hands back the space .main-container reserves for the nav */
+  height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px));
+  margin-bottom: calc(-1 * var(--bottom-nav-reserve));
   overflow: hidden;
   border-radius: var(--radius-sm);
 }
@@ -17,21 +21,16 @@
   overflow: hidden;
 }
 
+/* Room to scroll the last card clear of the navigation */
 .games-history-section .game-history {
-  padding-bottom: var(--spacing-md);
+  padding-bottom: calc(var(--bottom-nav-reserve) + var(--spacing-md));
 }
 
 .games-filter-bar {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
-}
-
-.games-search-row {
-  display: flex;
-  gap: var(--spacing-xs);
-  align-items: center;
 }
 
 .games-search-wrapper {
@@ -42,35 +41,54 @@
   min-width: 0;
 }
 
-.games-type-select {
+/* Type filter: horizontally scrollable chips on phones. The right edge fades
+   out so a chip running past it reads as "scroll for more", not as cut off;
+   the end padding lets the last chip scroll clear of the fade. */
+.games-type-chips {
+  display: flex;
+  gap: 6px;
+  padding: 2px 24px 2px 2px;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.games-type-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.games-type-chip {
   flex-shrink: 0;
-  width: fit-content;
-  max-width: 80px;
-  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--primary);
-  color: var(--text-white);
-  font-size: 1rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-light);
+  font-size: 0.85rem;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
-  text-align: center;
-  text-align-last: center;
-  min-width: 40px;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: left 8px center;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
-html:not([data-theme="dark"]) .games-type-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+.games-type-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-white);
 }
 
-.games-type-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
+.games-type-chip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .games-type-chip:not(.active):hover {
+    color: var(--text);
+    border-color: var(--primary);
+  }
 }
 
 .games-search-icon {
@@ -115,8 +133,10 @@ html:not([data-theme="dark"]) .games-type-select {
   transition: color 0.15s;
 }
 
-.games-search-clear:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .games-search-clear:hover {
+    color: var(--text);
+  }
 }
 
 .games-list-header {
@@ -164,63 +184,170 @@ html:not([data-theme="dark"]) .games-type-select {
   font-size: 0.9rem;
 }
 
-.games-link-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+/* Header: title + secondary destinations */
+.games-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
 }
 
-.games-link-card {
+.games-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.games-quick-links {
   display: flex;
-  flex-direction: column;
+  gap: 6px;
+}
+
+.games-quick-link {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: var(--card-bg);
-  text-decoration: none;
-  padding: var(--spacing-sm);
-  border-radius: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  transition: all 0.2s ease;
-  text-align: center;
-  width: 100%;
+  background: var(--card-bg);
+  color: var(--primary);
+  text-decoration: none;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-/* Lone last card fills both columns instead of leaving a hole */
-.games-link-card:last-child:nth-child(odd) {
-  grid-column: span 2;
-  aspect-ratio: unset;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  flex-direction: row;
-  gap: var(--spacing-sm);
-  justify-content: center;
+/* Icon-only on phones; label shows from the sm breakpoint */
+.games-quick-link-label {
+  display: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
 }
 
-.games-link-icon-wrap {
+/* New game: one compact row of pills */
+.games-start {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.games-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 2px;
+}
+
+.games-start-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.games-start-pill {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
   color: var(--primary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.games-start-pill svg {
   flex-shrink: 0;
 }
 
-.games-link-label {
-  font-size: 0.82rem;
-  font-weight: 600;
+.games-start-pill span {
   color: var(--text);
-  line-height: 1.2;
 }
 
-@media (min-width: 600px) {
-  .games-link-grid {
-    grid-template-columns: repeat(3, 1fr);
+.games-quick-link:focus-visible,
+.games-start-pill:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .games-quick-link:hover,
+  .games-start-pill:hover {
+    border-color: var(--primary);
   }
 }
 
+@media (min-width: 600px) {
+  .games-quick-link {
+    width: auto;
+    padding: 0 12px;
+  }
+
+  .games-quick-link-label {
+    display: inline;
+  }
+
+  .games-start-pill {
+    font-size: 0.9rem;
+    gap: 8px;
+  }
+}
+
+/* Desktop: wider page, list as a two-column grid */
 @media (min-width: 1024px) {
-  .games-link-grid {
-    grid-template-columns: repeat(4, 1fr);
+  .games-page {
+    padding-top: var(--spacing-lg);
+  }
+
+  .games-title {
+    font-size: 1.75rem;
+  }
+
+  .games-filter-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .games-search-wrapper {
+    flex: 0 1 320px;
+  }
+
+  /* Beside the search box the chips fit, so no fade */
+  .games-type-chips {
+    padding-right: 2px;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .games-start-row {
+    grid-template-columns: repeat(3, minmax(0, 240px));
+  }
+}
+
+/* Two-column list once the section itself is wide enough */
+.games-history-section {
+  container-type: inline-size;
+}
+
+@container (min-width: 760px) {
+  .games-history-section .game-history {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    padding-right: 4px;
   }
 }

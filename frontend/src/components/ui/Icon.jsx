@@ -10,7 +10,7 @@ import React from 'react';
 import {
   Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
   ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
-  ChevronDown, ChevronRight, ChevronUp, Clock, Cloud, Copy, CopyCheck, Database, Dices,
+  ChevronDown, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
   Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Gamepad2, Home, Image,
   ImagePlus, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
   Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanSearch, Search,
@@ -21,7 +21,7 @@ import {
 const ICONS = {
   Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
   ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
-  ChevronDown, ChevronRight, ChevronUp, Clock, Cloud, Copy, CopyCheck, Database, Dices,
+  ChevronDown, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
   Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Gamepad2, Home, Image,
   ImagePlus, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
   Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanSearch, Search,
@@ -78,6 +78,7 @@ export const EyeIcon = (props) => <Icon name="Eye" {...props} />;
 export const EyeOffIcon = (props) => <Icon name="EyeOff" {...props} />;
 export const GamepadIcon = (props) => <Icon name="Gamepad2" {...props} />;
 export const TrophyIcon = (props) => <Icon name="Trophy" {...props} />;
+export const CrownIcon = (props) => <Icon name="Crown" {...props} />;
 export const BarChartIcon = (props) => <Icon name="BarChart3" {...props} />;
 export const UsersIcon = (props) => <Icon name="Users" {...props} />;
 export const CalendarIcon = (props) => <Icon name="Calendar" {...props} />;

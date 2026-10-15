@@ -1,0 +1,54 @@
+/* Labelled number tiles, shared by the stats page and the per-game stats */
+/* One equal column per tile, however many are shown */
+.stats-tiles {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--spacing-xs);
+}
+
+.stats-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.stats-tile-label {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.stats-tile-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  /* Pinned to the bottom so values line up when a label wraps */
+  margin-top: auto;
+}
+
+.stats-tile-unit {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.stats-tile.is-good .stats-tile-value {
+  color: var(--success-color);
+}
+
+.stats-tile.is-bad .stats-tile-value {
+  color: var(--error-color);
+}
+
+.stats-tile.is-warn .stats-tile-value {
+  color: var(--warning-color);
+}

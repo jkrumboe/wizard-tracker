@@ -55,8 +55,10 @@
   box-shadow: none;
 }
 
-.friend-leaderboard-container .friend-page-back-button:hover {
-  transform: translateX(-2px);
+@media (hover: hover) {
+  .friend-leaderboard-container .friend-page-back-button:hover {
+    transform: translateX(-2px);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,8 +104,10 @@
   transition: background-color 0.2s;
 }
 
-.flb-text-button:hover {
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .flb-text-button:hover {
+    background: var(--primary-hover);
+  }
 }
 
 .flb-selection-hint {
@@ -166,8 +170,10 @@
   transition: border-color 0.2s, background-color 0.2s;
 }
 
-.friend-leaderboard-container .friend-item:hover:not(:disabled) {
-  border-color: var(--primary);
+@media (hover: hover) {
+  .friend-leaderboard-container .friend-item:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
 }
 
 .friend-leaderboard-container .friend-item:disabled {
@@ -262,8 +268,10 @@
   transition: background-color 0.2s, opacity 0.2s;
 }
 
-.compare-btn:hover:not(:disabled) {
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .compare-btn:hover:not(:disabled) {
+    background: var(--primary-dark);
+  }
 }
 
 .compare-btn:disabled {
@@ -319,9 +327,11 @@
   transition: border-color 0.2s, background-color 0.2s;
 }
 
-.friend-leaderboard-container .back-btn:hover {
-  border-color: var(--primary);
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .friend-leaderboard-container .back-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-hover);
+  }
 }
 
 .friend-leaderboard-container .game-type-selector {
@@ -505,8 +515,10 @@
   box-shadow: none;
 }
 
-.flb-player-name-btn:hover {
-  color: var(--primary);
+@media (hover: hover) {
+  .flb-player-name-btn:hover {
+    color: var(--primary);
+  }
 }
 
 .flb-player-name {
@@ -836,10 +848,12 @@
   transition: color 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
-.flb-game-open:hover {
-  color: var(--primary);
-  border-color: var(--primary);
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .flb-game-open:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-hover);
+  }
 }
 
 .flb-game-players {
@@ -925,9 +939,11 @@
   transition: border-color 0.2s, background-color 0.2s;
 }
 
-.flb-show-more:hover {
-  border-color: var(--primary);
-  background: var(--primary-hover);
+@media (hover: hover) {
+  .flb-show-more:hover {
+    border-color: var(--primary);
+    background: var(--primary-hover);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -972,8 +988,10 @@
   transition: background-color 0.2s;
 }
 
-.friend-leaderboard-container .retry-button:hover {
-  background: var(--primary-dark);
+@media (hover: hover) {
+  .friend-leaderboard-container .retry-button:hover {
+    background: var(--primary-dark);
+  }
 }
 
 /* ------------------------------------------------------------------ */

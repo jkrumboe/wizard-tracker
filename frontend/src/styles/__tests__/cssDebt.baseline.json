@@ -1,0 +1,167 @@
+{
+  "base/index.css": {
+    "maxWidth": 0,
+    "nonStandard": 0,
+    "important": 1
+  },
+  "components/AddGameTemplateModal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/GameFilterModal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/GameTemplateDetailsModal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/GameTemplateSelector.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/TableGame.css": {
+    "maxWidth": 2,
+    "nonStandard": 3,
+    "important": 8
+  },
+  "components/add-players-choice-modal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/avatar.css": {
+    "maxWidth": 0,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/bottom-sheet.css": {
+    "maxWidth": 1,
+    "nonStandard": 0,
+    "important": 0
+  },
+  "components/chartToggle.css": {
+    "maxWidth": 0,
+    "nonStandard": 0,
+    "important": 2
+  },
+  "components/components.css": {
+    "maxWidth": 4,
+    "nonStandard": 4,
+    "important": 11
+  },
+  "components/modal.css": {
+    "maxWidth": 0,
+    "nonStandard": 0,
+    "important": 3
+  },
+  "components/multi-player-scorecard.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 1
+  },
+  "components/players.css": {
+    "maxWidth": 2,
+    "nonStandard": 2,
+    "important": 3
+  },
+  "components/scorecard.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 10
+  },
+  "components/select-friends-modal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/select-recent-group-modal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "components/start-table-game-modal.css": {
+    "maxWidth": 0,
+    "nonStandard": 0,
+    "important": 1
+  },
+  "components/statsChart.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 1
+  },
+  "devices/tablet.css": {
+    "maxWidth": 1,
+    "nonStandard": 0,
+    "important": 28
+  },
+  "modals/gameHistoryModal.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 3
+  },
+  "pages/account.css": {
+    "maxWidth": 3,
+    "nonStandard": 3,
+    "important": 20
+  },
+  "pages/admin.css": {
+    "maxWidth": 8,
+    "nonStandard": 8,
+    "important": 4
+  },
+  "pages/friend-leaderboard.css": {
+    "maxWidth": 1,
+    "nonStandard": 2,
+    "important": 2
+  },
+  "pages/gameDetails.css": {
+    "maxWidth": 0,
+    "nonStandard": 0,
+    "important": 1
+  },
+  "pages/gameInProgress.css": {
+    "maxWidth": 2,
+    "nonStandard": 2,
+    "important": 37
+  },
+  "pages/leaderboard.css": {
+    "maxWidth": 2,
+    "nonStandard": 2,
+    "important": 2
+  },
+  "pages/login.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 1
+  },
+  "pages/startGame.css": {
+    "maxWidth": 2,
+    "nonStandard": 3,
+    "important": 1
+  },
+  "pages/stats.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "pages/tempGame.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 2
+  },
+  "utils/pageTransition.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  },
+  "utils/playerResponsive.css": {
+    "maxWidth": 1,
+    "nonStandard": 1,
+    "important": 0
+  }
+}

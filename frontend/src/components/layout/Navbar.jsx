@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useUser } from '@/shared/hooks/useUser'
 // import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 // import { useTheme } from '@/hooks/useTheme'
-import { GamepadIcon, HomeIcon, UserIcon } from '@/components/ui/Icon'
+import { GamepadIcon, HomeIcon, PlusIcon, UserIcon } from '@/components/ui/Icon'
 import "@/styles/components/components.css"
 
 const Navbar = () => {
@@ -37,6 +37,15 @@ const Navbar = () => {
   return (
     <>
       <nav className="bottom-navbar">
+        {/* Brand and primary action only show when the bar becomes a desktop sidebar */}
+        <Link to="/" className="sidebar-brand desktop-only">
+          <img src="/icons/logo-192.png" alt="" className="sidebar-brand-mark" />
+          <span>KeepWiz</span>
+        </Link>
+        <Link to="/start" className="sidebar-new-game desktop-only">
+          <PlusIcon size={18} />
+          <span>{t('nav.newGame')}</span>
+        </Link>
         <div className="nav-items-pill">
           <Link to="/games" className={`bottom-nav-item games-tab ${isActive(["/games", "/start", "/leaderboard", "/friend-leaderboard", "/admin"])}`} aria-label={t('nav.games')}>
             <div className="nav-icon">
@@ -44,7 +53,7 @@ const Navbar = () => {
             </div>
             <span>{t('nav.games')}</span>
           </Link>
-          <Link to="/" className={`bottom-nav-item ${isActive("/")}`}>
+          <Link to="/" className={`bottom-nav-item home-tab ${isActive("/")}`}>
             <div className="nav-icon">
               <HomeIcon size={20} />
             </div>

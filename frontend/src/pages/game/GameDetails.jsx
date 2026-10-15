@@ -20,7 +20,9 @@ import "@/styles/components/TableGame.css"
 import "@/styles/pages/account.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, BarChartIcon, ChevronDownIcon, ClockIcon, StarIcon, TrophyIcon } from "@/components/ui/Icon"
+import RankBadge from "@/components/game/RankBadge"
+import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 
 // Skeleton Loading Component
 const GameDetailsSkeleton = () => (
@@ -79,6 +81,7 @@ const GameDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [summaryRef, summaryScrolled] = useIsScrolled()
   const [game, setGame] = useState(null)
   const [playerDetails, setPlayerDetails] = useState({})
   const [loading, setLoading] = useState(true)
@@ -441,13 +444,51 @@ const GameDetails = () => {
   };
 
 
+  // Headline facts for the summary strip shown on wide screens
+  const getHighlights = () => {
+    const rounds = game.round_data || [];
+    const leaders = sortedPlayers.filter(p => p.rank === 1);
+    const runnerUp = sortedPlayers.find(p => p.rank > 1);
+
+    let bestRound = null;
+    rounds.forEach((round, roundIndex) => {
+      (round?.players || []).forEach((p) => {
+        if (typeof p.score === 'number' && (!bestRound || p.score > bestRound.score)) {
+          const mapped = game.players?.find(gp => gp.originalId === p.id);
+          const playerId = String(mapped ? mapped.id : p.id);
+          const name = sortedPlayers.find(sp => sp.id === playerId)?.name || p.name;
+          bestRound = { score: p.score, name, round: roundIndex + 1 };
+        }
+      });
+    });
+
+    const bestBidder = playerStats.reduce((best, s) => {
+      const accuracy = Number(s.bidAccuracy);
+      return !best || accuracy > best.accuracy ? { ...s, accuracy } : best;
+    }, null);
+
+    return {
+      leaders,
+      margin: leaders.length === 1 && runnerUp ? leaders[0].score - runnerUp.score : null,
+      roundCount: rounds.length,
+      bestRound,
+      bestBidder: bestBidder && {
+        name: sortedPlayers.find(sp => sp.id === String(bestBidder.id))?.name,
+        accuracy: Math.round(bestBidder.accuracy),
+        correct: bestBidder.correctBids,
+        total: rounds.length,
+      },
+    };
+  };
+  const highlights = getHighlights();
+
   // const duration = game.duration_seconds
   //   ? `${Math.floor(game.duration_seconds / 3600)}h ${Math.floor((game.duration_seconds % 3600) / 60)}m ${game.duration_seconds % 60}s`
   //   : "N/A";
 
   return (
     
-      <div className="game-details-container">
+      <div className={`game-details-container${summaryScrolled ? ' is-scrolled' : ''}`}>
         
         <div className="game-details-header">
           <button 
@@ -489,7 +530,51 @@ const GameDetails = () => {
           </div>
         )}
 
-        <div className="game-summary">
+        <div className="game-summary" ref={summaryRef}>
+          {/* Only displayed on wide screens; see gameDetails.css */}
+          <div className="game-highlights">
+            <div className="highlight-card">
+              <TrophyIcon size={20} className="highlight-icon" />
+              <div className="highlight-body">
+                <span className="highlight-label">{t('gameDetails.highlightWinner')}</span>
+                <span className="highlight-value">{highlights.leaders.map(p => p.name).join(', ')}</span>
+                <span className="highlight-detail">
+                  {highlights.margin !== null
+                    ? t('gameDetails.highlightWinnerMargin', { score: highlights.leaders[0]?.score, margin: highlights.margin })
+                    : t('gameDetails.highlightWinnerScore', { score: highlights.leaders[0]?.score })}
+                </span>
+              </div>
+            </div>
+            <div className="highlight-card">
+              <ClockIcon size={20} className="highlight-icon" />
+              <div className="highlight-body">
+                <span className="highlight-label">{t('gameDetails.highlightRounds')}</span>
+                <span className="highlight-value">{highlights.roundCount}</span>
+                <span className="highlight-detail">{t('gameDetails.highlightPlayers', { count: sortedPlayers.length })}</span>
+              </div>
+            </div>
+            {highlights.bestRound && (
+              <div className="highlight-card">
+                <StarIcon size={20} className="highlight-icon" />
+                <div className="highlight-body">
+                  <span className="highlight-label">{t('gameDetails.highlightBestRound')}</span>
+                  <span className="highlight-value">{highlights.bestRound.score > 0 ? '+' : ''}{highlights.bestRound.score}</span>
+                  <span className="highlight-detail">{t('gameDetails.highlightBestRoundDetail', { name: highlights.bestRound.name, n: highlights.bestRound.round })}</span>
+                </div>
+              </div>
+            )}
+            {highlights.bestBidder && (
+              <div className="highlight-card">
+                <BarChartIcon size={20} className="highlight-icon" />
+                <div className="highlight-body">
+                  <span className="highlight-label">{t('gameDetails.highlightBidAccuracy')}</span>
+                  <span className="highlight-value">{highlights.bestBidder.accuracy}%</span>
+                  <span className="highlight-detail">{t('gameDetails.highlightBidAccuracyDetail', { name: highlights.bestBidder.name, correct: highlights.bestBidder.correct, total: highlights.bestBidder.total })}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">
               {/* <div className="results-header">
@@ -500,9 +585,7 @@ const GameDetails = () => {
                   {sortedPlayers.map((player) => (
                     <div key={player.id} className="results-row">
                       <div className="top-result-row">
-                        <div className={`rank-col ${player.rank === 1 ? 'gold' : player.rank === 2 ? 'silver' : player.rank === 3 ? 'bronze' : ''}`}>
-                          {player.rank}
-                        </div>
+                        <RankBadge rank={player.rank} />
                         <div className="player-col">
                           <div className="player-info">
                             {player.name ? (
@@ -515,8 +598,16 @@ const GameDetails = () => {
                           </div>
                         </div>
                         <div className="score-col">{player.score}</div>
-                        <button className="adv-stats-btn" onClick={() => togglePlayerStats(player.id)}>
-                          {t('gameDetails.advStats')}
+                        <button
+                          type="button"
+                          className={`adv-stats-btn stats-toggle${compareIds(selectedPlayerId, player.id) ? ' is-open' : ''}`}
+                          onClick={() => togglePlayerStats(player.id)}
+                          aria-expanded={compareIds(selectedPlayerId, player.id)}
+                          aria-label={t('gameDetails.advStats')}
+                          title={t('gameDetails.advStats')}
+                        >
+                          <BarChartIcon size={18} aria-hidden="true" />
+                          <ChevronDownIcon size={16} className="stats-toggle-chevron" aria-hidden="true" />
                         </button>
                     </div>
                     {compareIds(selectedPlayerId, player.id) && (() => {
@@ -574,7 +665,7 @@ const GameDetails = () => {
 
           {(isLandscape || activeTab === 'rounds') && (
             <div className="rounds-section">
-              <div className={`wizard-scorecard ${sortedPlayers.length > 3 ? 'many-players' : ''}`} data-player-count={sortedPlayers.length}>
+              <div className={`wizard-scorecard ${sortedPlayers.length > 3 ? 'many-players' : ''}`} data-player-count={sortedPlayers.length} style={{ '--player-count': sortedPlayers.length }}>
                 <table className="scorecard-table">
                   <thead>
                     <tr>

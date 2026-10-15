@@ -2,8 +2,8 @@
 .game-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Take full viewport height */
-  max-height: calc(100vh - var(--top-nav-height)); /* Account for top and bottom navs */
+  height: 100dvh; /* Take full viewport height */
+  max-height: calc(100dvh - var(--top-nav-height)); /* Account for top and bottom navs */
   position: relative;
   overflow: hidden; /* Hide overflow on container */
 }
@@ -153,8 +153,10 @@
   transition: background-color 0.2s ease;
 }
 
-.game-container .finish-btn:hover {
-  background-color: var(--primary-dark);
+@media (hover: hover) {
+  .game-container .finish-btn:hover {
+    background-color: var(--primary-dark);
+  }
 }
 
 /* Player info styling */
@@ -208,7 +210,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 50vh;
+  height: 50dvh;
 }
 
 .spinner {
@@ -448,17 +450,19 @@
   color: white;
 }
 
-.retry-button:hover {
-  background-color: var(--error-color);
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
+@media (hover: hover) {
+  .retry-button:hover {
+    background-color: var(--error-color);
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
 
-.back-button:hover {
-  background-color: var(--primary-hover, #2563eb);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  .back-button:hover {
+    background-color: var(--primary-hover, #2563eb);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .game-content {
@@ -526,10 +530,12 @@
   box-shadow: 0 0 3px rgba(251, 191, 36, 0.1);
 }
 
-.player-card:hover {
-  background-color: var(--card-bg-alt);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+@media (hover: hover) {
+  .player-card:hover {
+    background-color: var(--card-bg-alt);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
 }
 
 .player-info h4 {
@@ -640,10 +646,12 @@
   color: var(--text);
 }
 
-.ready-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  opacity: 0.9;
+@media (hover: hover) {
+  .ready-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    opacity: 0.9;
+  }
 }
 
 .call-section,
@@ -1004,10 +1012,12 @@
   min-width: 200px;
 }
 
-.randomize-button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+@media (hover: hover) {
+  .randomize-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  }
 }
 
 .randomize-button:disabled {
@@ -1026,7 +1036,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - var(--top-nav-height) - var(--bottom-nav-height));
+  height: calc(100dvh - var(--top-nav-height) - var(--bottom-nav-height));
   padding: var(--spacing-lg);
   background-color: var(--card-bg);
 }
@@ -1143,8 +1153,10 @@
   transition: all 0.2s ease;
 }
 
-.game-container .game-control-btn:hover {
-  background-color: var(--card-bg-hover);
+@media (hover: hover) {
+  .game-container .game-control-btn:hover {
+    background-color: var(--card-bg-hover);
+  }
 }
 
 .game-container .game-control-btn.active {

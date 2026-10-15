@@ -1,152 +1,235 @@
 /* Stats Chart styling */
 .stats-chart-container {
-  width: 100%;
-  background-color: var(--bg-color);
-  border-radius: var(--radius-lg);
-  padding-top: 0;
-}
-
-.chart-controls {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) 0;
+  border-radius: var(--radius-lg);
 }
 
-.chart-type-selector {
+/* ---- Toolbar: chart type + reset, one row above the chart ---- */
+.chart-toolbar {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--spacing-sm);
+  padding: 0 var(--spacing-sm);
 }
 
 .chart-select {
-  background-color: var(--bg-color);
-  border: 1px solid var(--border) !important;
-  color: var(--text);
-  border-radius: var(--radius-md);
-  padding: 0.35rem 0.75rem;
-  margin: 0;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.player-toggles {
-  display: flex;
-  flex-direction: column;
-  /* gap: var(--spacing-sm); */
-}
-
-.player-toggle-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  gap: var(--spacing-sm);
-  margin: var(--spacing-xs);
-}
-
-.show-all-btn {
-  margin-top: var(--spacing-sm);
-  background-color: var(--bg-color);
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--card-bg-light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius-md);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
+  padding: 0.4rem 2rem 0.4rem 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.show-all-btn:hover {
-  background-color: var(--primary-light);
+.chart-select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.show-all-btn {
+  background: none;
+  border: none;
+  box-shadow: none;
   color: var(--primary);
+  padding: 0.25rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.player-toggle-buttons {
+@media (hover: hover) {
+  .show-all-btn:hover:not(:disabled) {
+    transform: none;
+    text-decoration: underline;
+  }
+}
+
+/* ---- Plot ---- */
+.chart-wrapper {
+  position: relative;
+  height: 300px;
+  padding: 0 var(--spacing-xs);
+  background-color: transparent;
+}
+
+/* ---- Player legend (click to highlight a player) ---- */
+.chart-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--spacing-sm);
+  gap: 0.25rem 0.5rem;
+  padding: 0 var(--spacing-sm);
 }
 
-.player-toggle-btn {
-  padding: 0.25rem 0.6rem;
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  background-color: transparent;
+  border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  border: 1px solid;
+  box-shadow: none; /* override the global button shadow */
+  color: var(--text);
   font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--text);
+  transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.player-toggle-btn.active {
-  color: var(--text-white);
-} 
-
-.player-toggle-btn.focused {
-  transform: scale(1.2);
-  z-index: 1;
-} 
-
-.chart-wrapper {
-  background-color: var(--card-bg);
-  border-radius: var(--radius-lg);
-  height: 300px;
-  position: relative;
+.chart-legend-swatch {
+  flex-shrink: 0;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
 }
 
-/* Enhanced chart styling */
-.chart-wrapper canvas {
-  border-radius: var(--radius-md);
+.chart-legend-name {
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Chart title enhancement */
-.chart-title {
+.chart-legend-item.focused {
+  background-color: var(--card-bg-light);
+  border-color: var(--border-light);
+  font-weight: 600;
+}
+
+.chart-legend-item.dimmed {
+  opacity: 0.45;
+}
+
+@media (hover: hover) {
+  /* Replace the global button hover (scale + primary border) with a quiet wash */
+  .chart-legend-item:hover:not(:disabled) {
+    transform: none;
+    background-color: var(--card-bg-light);
+    border-color: var(--border-light);
+  }
+}
+
+.chart-legend-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* ---- Points per round grid (players x rounds) ---- */
+.round-heatmap-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: none;
+  /* Margin, not padding: sticky cells pin inside the padding, letting
+     scrolled cells show to the left of the player names */
+  margin: 0 var(--spacing-sm);
+  scrollbar-width: thin;
+}
+
+.round-heatmap {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px; /* surface gap between cells */
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.round-heatmap th,
+.round-heatmap td {
+  padding: 0;
   text-align: center;
-  font-weight: bold;
-  color: var(--primary);
-  font-size: 1.2rem;
-  margin: var(--spacing-sm) 0;
+  white-space: nowrap;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .chart-controls {
-    flex-direction: column;
-  }
-  
-  .chart-wrapper {
-    height: 250px;
-  }
+.round-heatmap thead th {
+  padding-bottom: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
-/* Dark mode adjustments */
-html[data-theme="dark"] .player-toggle-btn:not(.active) {
+.round-heatmap td {
+  min-width: 2.25rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--card-bg-light); /* neutral for 0 / no entry */
   color: var(--text);
+  font-weight: 600;
+  transition: opacity 0.2s ease;
 }
 
-/* Dark mode adjustments for charts */
-html[data-theme="dark"] .chart-wrapper {
-  background-color: var(--bg-color);
-  border-color: var(--border);
+.round-heatmap-corner {
+  text-align: left !important;
 }
 
-html[data-theme="dark"] .chart-select {
-  background-color: var(--bg-color);
-  color: var(--text-white);
+.round-heatmap-axis {
+  display: block;
+  padding-left: 0.25rem;
 }
 
-html[data-theme="dark"] .show-all-btn {
-  background-color: var(--bg-color);
-  color: var(--text-white);
-  border-color: var(--border);
+/* Player names stay pinned while the rounds scroll */
+.round-heatmap-corner,
+.round-heatmap-player {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--card-bg);
 }
 
-html[data-theme="dark"] .show-all-btn:hover {
-  background-color: var(--primary-dark);
-  color: var(--text-white);
+.round-heatmap-player button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  max-width: 7.5rem;
+  padding: 0 0.5rem 0 0.25rem;
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
 }
 
-html[data-theme="dark"] .focus-indicator {
-  color: var(--primary-light);
+@media (hover: hover) {
+  .round-heatmap-player button:hover:not(:disabled) {
+    transform: none;
+    text-decoration: underline;
+  }
+}
+
+.round-heatmap tr.focused .round-heatmap-player button {
+  font-weight: 700;
+}
+
+.round-heatmap tr.dimmed td,
+.round-heatmap tr.dimmed .round-heatmap-player button {
+  opacity: 0.35;
+}
+
+/* ---- Small screens ---- */
+@media (max-width: 768px) {
+  .chart-wrapper {
+    height: 240px;
+  }
+
+  .chart-legend-item {
+    padding: 0.25rem 0.5rem;
+  }
 }

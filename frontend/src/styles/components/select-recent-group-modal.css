@@ -1,7 +1,7 @@
 /* Select Recent Group Modal Styles */
 .recent-group-modal {
   max-width: 550px;
-  max-height: 85vh;
+  max-height: 85dvh;
 }
 
 .recent-group-modal .modal-header h2 {
@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  max-height: 60vh;
+  max-height: 60dvh;
   overflow-y: auto;
   padding: var(--spacing-sm);
 }
@@ -34,12 +34,14 @@
   color: var(--text-primary);
 }
 
-.group-item:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--text);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transform: translateX(2px);
+@media (hover: hover) {
+  .group-item:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(2px);
+  }
 }
 
 .group-header {
@@ -61,8 +63,10 @@
   opacity: 0.7;
 }
 
-.group-item:hover .group-date {
-  opacity: 0.9;
+@media (hover: hover) {
+  .group-item:hover .group-date {
+    opacity: 0.9;
+  }
 }
 
 .group-player-count {
@@ -73,8 +77,10 @@
   white-space: nowrap;
 }
 
-.group-item:hover .group-player-count {
-  background: rgba(255, 255, 255, 0.2);
+@media (hover: hover) {
+  .group-item:hover .group-player-count {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .group-players {
@@ -106,8 +112,10 @@
   border-style: dashed;
 }
 
-.group-item.all-already-added:hover {
-  opacity: 0.7;
+@media (hover: hover) {
+  .group-item.all-already-added:hover {
+    opacity: 0.7;
+  }
 }
 
 .group-item.selected {
@@ -129,11 +137,11 @@
 @media (max-width: 480px) {
   .recent-group-modal {
     max-width: 95vw;
-    max-height: 90vh;
+    max-height: 90dvh;
   }
 
   .recent-groups-list {
-    max-height: 65vh;
+    max-height: 65dvh;
   }
 
   .group-header {

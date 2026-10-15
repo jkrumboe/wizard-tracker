@@ -175,11 +175,13 @@ export default function ServiceWorkerErrorRecovery() {
             opacity: isRecovering ? 0.6 : 1,
             transition: 'all 0.2s'
           }}
-          onMouseEnter={(e) => {
-            if (!isRecovering) e.target.style.backgroundColor = '#2563eb';
+          // Pointer events filtered to a real mouse: on touch, mouseenter fires on
+          // tap and the hover colour would stay stuck until something else is hit.
+          onPointerEnter={(e) => {
+            if (e.pointerType === 'mouse' && !isRecovering) e.currentTarget.style.backgroundColor = '#2563eb';
           }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#3b82f6';
+          onPointerLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#3b82f6';
           }}
         >
           {isRecovering ? t('serviceWorker.updating') : t('serviceWorker.updateNow')}

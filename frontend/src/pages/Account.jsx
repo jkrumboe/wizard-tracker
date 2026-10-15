@@ -939,15 +939,15 @@ const Account = () => {
                 <div className="game-type-card" style={{ cursor: 'default' }}>
                   <div className="game-type-header">
                     <div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '4px' }}></div>
-                    <div className="game-type-stats">
-                      <div className="stat-item">
-                        <span className="stat-label">{t('account.winRateLabel')}</span>
-                        <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">{t('account.matchesLabel')}</span>
-                        <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
-                      </div>
+                  </div>
+                  <div className="game-type-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">{t('account.winRateLabel')}</span>
+                      <span className="skeleton" style={{ width: '30px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">{t('account.matchesLabel')}</span>
+                      <span className="skeleton" style={{ width: '20px', height: '16px', borderRadius: '4px', display: 'inline-block' }}></span>
                     </div>
                   </div>
                   <div className="game-type-recent-results">

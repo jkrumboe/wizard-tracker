@@ -24,6 +24,14 @@
 .game-details-container > .game-details-header,
 .game-details-container > .account-tabs {
   flex-shrink: 0;
+  transition: border-radius 0.15s ease;
+}
+
+/* Once content scrolls up under the tab bar, square its bottom corners so the
+   two join edge to edge instead of leaving gaps at the rounded corners */
+.game-details-container.is-scrolled > .account-tabs {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .game-details-container > .game-summary {
@@ -31,6 +39,9 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Spacing below the tab bar lives inside the panel (see account.css), so
+     scrolled content runs right up to the tabs instead of an empty strip */
+  padding-top: var(--spacing-sm);
   padding-bottom: var(--spacing-sm);
 }
 
@@ -39,7 +50,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 200px);
+  min-height: calc(100dvh - 200px);
 }
 
 .game-details.loading-state .loading-spinner {
@@ -61,6 +72,8 @@
   position: absolute;
   background-color: transparent;
   left: var(--spacing-md);
+  top: 0;
+  bottom: 0;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -127,9 +140,11 @@
   box-shadow: none;
 }
 
-.badge-controls-container .settings-button:hover {
-  color: var(--text-white);
-  box-shadow: none;
+@media (hover: hover) {
+  .badge-controls-container .settings-button:hover {
+    color: var(--text-white);
+    box-shadow: none;
+  }
 }
 
 .game-controls .settings-button {
@@ -194,10 +209,12 @@
   margin: 0 2px;
 }
 
-.player-link:hover {
-  color: var(--primary-color, #4a90e2);
-  text-decoration: underline;
-  cursor: pointer;
+@media (hover: hover) {
+  .player-link:hover {
+    color: var(--primary-color, #4a90e2);
+    text-decoration: underline;
+    cursor: pointer;
+  }
 }
 
 .player-header .player-link {
@@ -320,13 +337,136 @@
   transition: all 0.2s ease;
 }
 
-.game-details-set-chip:hover {
-  border-color: var(--primary);
-  color: var(--text);
+@media (hover: hover) {
+  .game-details-set-chip:hover {
+    border-color: var(--primary);
+    color: var(--text);
+  }
 }
 
 .game-details-set-chip.active {
   border-color: var(--primary);
   background: rgba(52, 152, 219, 0.22);
   color: var(--text-white);
+}
+
+/*
+ * Desktop layout.
+ *
+ * On a wide screen the three panels side by side leave most of the window
+ * empty below a squeezed chart. Instead: a strip of headline facts across the
+ * top, standings next to a full-size chart, and the scorecard full width
+ * underneath. Scoped with :has() to the Wizard details page, which is the only
+ * one that renders the highlights strip.
+ */
+.game-highlights {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .game-details-container > .game-summary:has(> .game-highlights) {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    grid-template-areas:
+      "highlights highlights"
+      "results chart"
+      "rounds rounds";
+    align-content: start;
+    align-items: start;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-md);
+  }
+
+  .game-highlights {
+    grid-area: highlights;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .highlight-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: var(--spacing-md);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    min-width: 0;
+  }
+
+  .highlight-icon {
+    flex-shrink: 0;
+    box-sizing: content-box;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+
+  .highlight-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .highlight-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-light);
+  }
+
+  .highlight-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .highlight-value,
+  .highlight-detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .highlight-detail {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+
+  .game-summary:has(> .game-highlights) > .results-section {
+    grid-area: results;
+    width: auto;
+    height: auto;
+    align-items: stretch;
+  }
+
+  .game-summary:has(> .game-highlights) > .chart-section {
+    grid-area: chart;
+    min-width: 0;
+    padding: var(--spacing-md);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* tablet.css pins the chart to 220px with !important for landscape phones */
+  .game-summary:has(> .game-highlights) .chart-wrapper {
+    height: 340px !important;
+    max-height: none;
+    background-color: transparent;
+  }
+
+  .game-summary:has(> .game-highlights) .stats-chart-container {
+    background-color: transparent;
+  }
+
+  .game-summary:has(> .game-highlights) > .rounds-section {
+    grid-area: rounds;
+    min-width: 0;
+  }
 }
