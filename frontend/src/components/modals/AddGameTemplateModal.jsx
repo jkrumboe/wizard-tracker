@@ -5,6 +5,7 @@ import { XIcon, MinusIcon, PlusIcon, UsersIcon, TrophyIcon, RefreshIcon, EyeIcon
 import { calculateScore, generateRoundPattern } from '@/shared/utils/scoringFormulas';
 import '@/styles/components/AddGameTemplateModal.css';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
+import { useVisualViewportRect } from '@/shared/hooks/useVisualViewportRect';
 
 const ROUND_PATTERN_OPTIONS = [
   { key: 'pyramid', labelKey: 'templateModal.patternPyramidShort', descKey: 'templateModal.patternPyramid' },
@@ -150,9 +151,15 @@ const AddGameTemplateModal = ({
   // Locks the modal to one template type: 'table' | 'scoreboard' | 'callAndMade'.
   // When omitted, the user can pick between Table and Call & Made.
   templateType = null,
+  // Starting values for a new game type, e.g. from a barcode lookup: { name, description, minPlayers, maxPlayers }
+  prefill = null,
+  // Make the minimum player count mandatory (scanned games need it to set up a game)
+  requirePlayerCounts = false,
 }) => {
   const [gameName, setGameName] = useState('');
   const [gameCategory, setGameCategory] = useState('table');
+  // Scoreboards are table games with two-side scoring, picked in the type selector when not locked
+  const [scoreboardPicked, setScoreboardPicked] = useState(false);
   const [targetNumber, setTargetNumber] = useState('');
   const [lowIsBetter, setLowIsBetter] = useState(false);
   const [description, setDescription] = useState('');
@@ -182,7 +189,7 @@ const AddGameTemplateModal = ({
     return initialData.gameCategory || 'table';
   };
   const lockedType = editMode ? getInitialDataType() : templateType;
-  const isScoreboard = lockedType === 'scoreboard';
+  const isScoreboard = lockedType ? lockedType === 'scoreboard' : scoreboardPicked;
 
   useEffect(() => {
     if (isOpen) {
@@ -212,13 +219,13 @@ const AddGameTemplateModal = ({
         setMaxPlayersInput(initialData.maxPlayers == null ? '' : String(initialData.maxPlayers));
       } else {
         // Clear fields when creating new
-        setGameName('');
+        setGameName(prefill?.name || '');
         setGameCategory(
           templateType === 'callAndMade' ? 'callAndMade' : (templateType ? 'table' : defaultGameCategory)
         );
         setTargetNumber('');
         setLowIsBetter(false);
-        setDescription('');
+        setDescription(prefill?.description || '');
         setDescriptionMarkdown('');
         setBaseCorrect(20);
         setBonusPerTrick(10);
@@ -227,14 +234,15 @@ const AddGameTemplateModal = ({
         setCallAndMadeMaxRounds(20);
         setHasDealerRotation(true);
         setHasForbiddenCall(true);
-        setMinPlayersInput('');
-        setMaxPlayersInput('');
+        setMinPlayersInput(prefill?.minPlayers == null ? '' : String(prefill.minPlayers));
+        setMaxPlayersInput(prefill?.maxPlayers == null ? '' : String(prefill.maxPlayers));
       }
+      setScoreboardPicked(false);
       setError('');
       setActiveTab('settings');
       setShowPreview(false);
     }
-  }, [isOpen, editMode, initialData, defaultGameCategory, templateType]);
+  }, [isOpen, editMode, initialData, defaultGameCategory, templateType, prefill]);
 
   // Auto-show preview when switching to rules tab in edit mode
   useEffect(() => {
@@ -262,6 +270,10 @@ const AddGameTemplateModal = ({
     const parsedMin = minPlayersInput.trim() ? Number.parseInt(minPlayersInput, 10) : null;
     const parsedMax = maxPlayersInput.trim() ? Number.parseInt(maxPlayersInput, 10) : null;
 
+    if (requirePlayerCounts && parsedMin == null) {
+      setError(t('templateModal.minPlayersRequiredError'));
+      return;
+    }
     if (parsedMin != null && (Number.isNaN(parsedMin) || parsedMin < 1)) {
       setError(t('templateModal.minPlayersError'));
       return;
@@ -349,11 +361,17 @@ const AddGameTemplateModal = ({
   const exampleCall = 2;
 
   useModalDismiss(isOpen, onClose);
+  // Keep the dialog in the visible area above the iOS keyboard instead of letting the page pan
+  const viewportRect = useVisualViewportRect(isOpen);
 
   if (!isOpen) return null;
 
   return (
-    <div className="add-game-modal-overlay" onClick={onClose}>
+    <div
+      className="add-game-modal-overlay"
+      style={viewportRect ? { top: viewportRect.top, height: viewportRect.height, bottom: 'auto' } : undefined}
+      onClick={onClose}
+    >
       <div
         className="add-game-modal"
         role="dialog"
@@ -410,10 +428,14 @@ const AddGameTemplateModal = ({
                     <span className="agm-field-label">{t('templateModal.typeLabel')}</span>
                     <Segmented
                       ariaLabel={t('templateModal.typeLabel')}
-                      value={gameCategory}
-                      onChange={setGameCategory}
+                      value={scoreboardPicked ? 'scoreboard' : gameCategory}
+                      onChange={(value) => {
+                        setScoreboardPicked(value === 'scoreboard');
+                        setGameCategory(value === 'callAndMade' ? 'callAndMade' : 'table');
+                      }}
                       options={[
                         { value: 'table', label: t('templateModal.tableCategory') },
+                        { value: 'scoreboard', label: t('templateModal.scoreboardCategory') },
                         { value: 'callAndMade', label: t('templateModal.callAndMadeCategory') },
                       ]}
                     />
@@ -428,7 +450,9 @@ const AddGameTemplateModal = ({
                 </h3>
                 <div className="agm-player-grid">
                   <div className="agm-player-field">
-                    <label htmlFor="min-players-input">{t('templateModal.minShort')}</label>
+                    <label htmlFor="min-players-input">
+                      {t('templateModal.minShort')}{requirePlayerCounts && ' *'}
+                    </label>
                     <NumberStepper
                       id="min-players-input"
                       value={minPlayersInput}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Icon from '@/components/ui/Icon';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
@@ -23,6 +23,7 @@ const isLocalTemplate = (template) => Boolean(template?.id && LocalTableGameTemp
 const GameTypeManageActions = ({ template, children }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useUser();
   const isAdmin = user?.role === 'admin';
 
@@ -42,7 +43,8 @@ const GameTypeManageActions = ({ template, children }) => {
   };
 
   const goToTemplate = (name, replace = true) => {
-    navigate(`/game-types/${encodeURIComponent(name)}/info`, { replace });
+    // Keep the state so back/delete still know the game page sits behind this one
+    navigate(`/game-types/${encodeURIComponent(name)}/info`, { replace, state: location.state });
   };
 
   // --- Local templates ---
@@ -58,7 +60,14 @@ const GameTypeManageActions = ({ template, children }) => {
     setShowDeleteConfirm(false);
     notifyTemplatesChanged();
     // A deleted variant falls back to the shared template of the same name
-    navigate(template.isVariant ? `/game-types/${encodeURIComponent(template.name)}/info` : '/start', { replace: true });
+    if (template.isVariant) {
+      navigate(`/game-types/${encodeURIComponent(template.name)}/info`, { replace: true, state: location.state });
+      return;
+    }
+    // Step back past this page and the deleted game's page, so neither is left
+    // in history for the back button to land on
+    if (location.state?.fromGamePage) navigate(-2);
+    else navigate('/start', { replace: true });
   };
 
   const handleSyncToCloud = async () => {

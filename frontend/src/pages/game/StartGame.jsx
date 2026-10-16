@@ -52,6 +52,8 @@ const StartGame = () => {
   // View state
   const [activeView, setActiveView] = useState('select'); // 'select' or 'setup'
   const [selectedGameType, setSelectedGameType] = useState(null); // null or template object
+  // Setup opened by the barcode scanner, so there's no game page to go back to
+  const [openedFromScan, setOpenedFromScan] = useState(false);
 
   // Player state (local, not from game context)
   const [players, setPlayers] = useState([]);
@@ -294,12 +296,15 @@ const StartGame = () => {
   useEffect(() => {
     if (!templateParam) return undefined;
     let cancelled = false;
+    // Read now: dropping the param below replaces the entry and clears its state
+    const fromScan = !!location.state?.fromScan;
 
     const openTemplateFromParam = async () => {
       const template = await resolveTemplateByName(templateParam);
       if (cancelled) return;
       if (template) {
         setTemplateNotFound('');
+        setOpenedFromScan(fromScan);
         handleSelectTemplate(template);
       } else {
         setTemplateNotFound(templateParam);
@@ -315,8 +320,13 @@ const StartGame = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateParam]);
 
-  // Setup is opened from a game's page (?template=), so go back there
+  // Setup is opened from a game's page (?template=), so go back there.
+  // After a scan that page isn't in history, so swap setup for it instead.
   const handleBack = () => {
+    if (openedFromScan && selectedGameType?.name) {
+      navigate(`/game-types/${encodeURIComponent(selectedGameType.name)}`, { replace: true });
+      return;
+    }
     if (location.key !== 'default') {
       navigate(-1);
       return;

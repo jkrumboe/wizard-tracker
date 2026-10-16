@@ -17,6 +17,7 @@ import { getTemplateGameInfo, safeImageUrl, saveGameInfo } from '@/shared/utils/
 import '@/styles/components/modal.css';
 import '@/styles/components/scan-barcode-modal.css';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
+import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 
 // Templates stored on the server (or built-ins the server knows) can carry shared barcodes
 const isSystemTemplate = (template) => template.type === 'system' || Boolean(template.isBuiltin);
@@ -70,6 +71,8 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
   const [detectedTitle, setDetectedTitle] = useState('');
   const [product, setProduct] = useState(null);
   const [newGameName, setNewGameName] = useState('');
+  // A scanned game the user is setting up as a new game type: { prefill, gameInfo }
+  const [newGameDraft, setNewGameDraft] = useState(null);
 
   const stopScanner = () => {
     cameraSessionRef.current += 1;
@@ -82,7 +85,7 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
   const goToTemplate = (template) => {
     stopScanner();
     onClose();
-    navigate(`/start?template=${encodeURIComponent(template.name)}`);
+    navigate(`/start?template=${encodeURIComponent(template.name)}`, { state: { fromScan: true } });
   };
 
   const handleCode = async (rawCode) => {
@@ -167,6 +170,7 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     setManualError('');
     setScannedCode('');
     setSearch('');
+    setNewGameDraft(null);
     templatesPromiseRef.current = loadAllTemplates();
     return () => { lookupSessionRef.current += 1; };
   }, [isOpen]);
@@ -223,7 +227,8 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
 
   /**
    * Open the scanned game: link it to the game the user already has with that
-   * name, or create a new game type prefilled with the box art.
+   * name, or let the user set up a new game type (type, player counts) prefilled
+   * with whatever the lookup found.
    */
   const openScannedGame = (name, gameInfo, details = {}) => {
     const existing = templates.find((tpl) => squash(tpl.name) === squash(name));
@@ -232,15 +237,32 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    const templateId = LocalTableGameTemplate.saveTemplate(name, {
-      gameCategory: 'table',
-      description: (details.description || '').slice(0, MAX_DESCRIPTION_LENGTH),
-      minPlayers: details.minPlayers ?? null,
-      maxPlayers: details.maxPlayers ?? null,
+    setNewGameDraft({
       gameInfo: gameInfo || null,
+      prefill: {
+        name,
+        description: (details.description || '').slice(0, MAX_DESCRIPTION_LENGTH),
+        minPlayers: details.minPlayers ?? null,
+        maxPlayers: details.maxPlayers ?? null,
+      },
+    });
+  };
+
+  const handleSaveNewGame = (name, settings) => {
+    // The user may rename the game in the form; an existing game with that name gets the barcode instead
+    const existing = templates.find((tpl) => squash(tpl.name) === squash(name));
+    if (existing) {
+      setNewGameDraft(null);
+      void handleLinkTemplate(existing, newGameDraft?.gameInfo);
+      return;
+    }
+    const templateId = LocalTableGameTemplate.saveTemplate(name, {
+      ...settings,
+      gameInfo: newGameDraft?.gameInfo || null,
     });
     linkBarcode(scannedCode, name);
-    globalThis.dispatchEvent(new CustomEvent('templateCreated', { detail: { templateName: name } }));
+    globalThis.dispatchEvent(new CustomEvent('templateCreated', { detail: { templateName: name, settings } }));
+    setNewGameDraft(null);
     goToTemplate(LocalTableGameTemplate.getTemplate(templateId));
   };
 
@@ -286,6 +308,18 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
   useModalDismiss(isOpen, handleClose);
 
   if (!isOpen) return null;
+
+  if (newGameDraft) {
+    return (
+      <AddGameTemplateModal
+        isOpen
+        onClose={() => setNewGameDraft(null)}
+        onSave={handleSaveNewGame}
+        prefill={newGameDraft.prefill}
+        requirePlayerCounts
+      />
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -466,16 +500,13 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="modal-actions">
-          {step === 'unknown' && (
+        {step === 'unknown' && (
+          <div className="modal-actions">
             <button type="button" onClick={handleScanAgain} className="cancel-button">
               {t('scanBarcode.scanAgain')}
             </button>
-          )}
-          <button type="button" onClick={handleClose} className="cancel-button">
-            {t('common.close')}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
