@@ -13,9 +13,14 @@ import GameThumbnail from '@/components/game/GameThumbnail'
 import PlayerSetup from '@/components/game/PlayerSetup'
 import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeftCircleIcon, ArrowLeftIcon, ChevronRightIcon, PlusIcon, ScanBarcodeIcon, SearchIcon, XIcon } from '@/components/ui/Icon'
+import { ClockIcon, PauseIcon, PlusIcon, ScanBarcodeIcon, SearchIcon, XIcon } from '@/components/ui/Icon'
+import BackButton from '@/components/ui/BackButton'
 import { resolveTemplateByName, isScoreboardTemplate } from '@/shared/utils/templateResolver'
 import { useGameTemplates } from '@/shared/hooks/useGameTemplates'
+import { useGameHistory } from '@/shared/hooks/useGameHistory'
+import { gameBelongsToTemplate } from '@/shared/utils/templateGames'
+import { getResumableGames } from '@/shared/utils/resumableGames'
+import { formatLastPlayed } from '@/shared/utils/formatLastPlayed'
 import '@/styles/pages/startGame.css'
 import '@/styles/components/players.css'
 import '@/styles/components/components.css'
@@ -28,7 +33,7 @@ const MIN_PLAYERS_WIZARD = 3;
 const MIN_PLAYERS_TABLE = 2;
 
 const StartGame = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,6 +42,7 @@ const StartGame = () => {
     startGameWithSetup,
   } = useGameStateContext();
   const { templates: allTemplates } = useGameTemplates();
+  const { games: finishedGames } = useGameHistory();
 
   const startType = searchParams.get('type');
   // Set by the barcode scanner to jump straight to a game's setup page
@@ -322,13 +328,6 @@ const StartGame = () => {
     setActiveView('select');
   };
 
-  const handlePageBack = () => {
-    if (globalThis.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate('/games');
-  };
 
   // --- Start game ---
   const handleStartCallAndMadeGame = () => {
@@ -461,6 +460,21 @@ const StartGame = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allTemplates, templateSearch, startType]);
 
+  // Played/paused stats per type for the list rows
+  const templateStats = useMemo(() => {
+    const pausedGames = activeView === 'select' ? getResumableGames({ limit: null }) : []
+    return new Map(visibleTemplates.map((template) => {
+      const played = finishedGames.filter((game) => gameBelongsToTemplate(game, template))
+      const paused = pausedGames.filter((game) => gameBelongsToTemplate(game, template))
+      const lastPlayed = Math.max(
+        ...played.map((game) => new Date(game.created_at).getTime() || 0),
+        ...paused.map((game) => new Date(game.lastPlayed).getTime() || 0),
+        0,
+      )
+      return [template, { playedCount: played.length, pausedCount: paused.length, lastPlayed }]
+    }))
+  }, [visibleTemplates, finishedGames, activeView])
+
   const listTitle = {
     'call-made': t('gamesPage.callAndMadeGames'),
     table: t('gamesPage.tableGames'),
@@ -495,9 +509,7 @@ const StartGame = () => {
     return (
       <div className="game-type-page start-select-page">
         <header className="game-type-header">
-          <button type="button" className="games-quick-link" onClick={handlePageBack} aria-label={t('common.goBack')}>
-            <ArrowLeftIcon size={18} />
-          </button>
+          <BackButton fallback="/games" />
           <h1 className="games-title game-type-title">{listTitle}</h1>
           <nav className="games-quick-links">
             {/* Barcode lookups need an account (BGG API terms) */}
@@ -556,7 +568,9 @@ const StartGame = () => {
 
         {visibleTemplates.length > 0 ? (
           <div className="game-row-list">
-            {visibleTemplates.map((template) => (
+            {visibleTemplates.map((template) => {
+              const { playedCount, pausedCount, lastPlayed } = templateStats.get(template)
+              return (
               <Link
                 key={template._id || template.id || template.name}
                 to={`/game-types/${encodeURIComponent(template.name)}`}
@@ -566,10 +580,30 @@ const StartGame = () => {
                   <span className="game-row-initial" aria-hidden="true">{template.name.charAt(0)}</span>
                   <GameThumbnail template={template} />
                 </span>
-                <span className="game-row-name">{template.name}</span>
-                <ChevronRightIcon size={18} className="game-row-chevron" aria-hidden="true" />
+                <span className="game-row-text">
+                  <span className="game-row-name">{template.name}</span>
+                  <span className="game-row-meta">
+                    <ClockIcon size={12} aria-hidden="true" />
+                    <span className="game-row-meta-text">
+                      {lastPlayed
+                        ? t('gameType.lastPlayed', { when: formatLastPlayed(lastPlayed, i18n.language) })
+                        : t('gameType.notPlayedYet')}
+                    </span>
+                    {pausedCount > 0 && (
+                      <span className="game-row-paused">
+                        <PauseIcon size={11} aria-hidden="true" />
+                        {t('gameType.pausedCount', { count: pausedCount })}
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="game-row-count">
+                  <span className="game-row-count-value">{playedCount}</span>
+                  <span className="game-row-count-label">{t('gameType.gamesLabel', { count: playedCount })}</span>
+                </span>
               </Link>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <p className="empty-message">{t('gameType.noMatches')}</p>
@@ -595,9 +629,7 @@ const StartGame = () => {
     <div className="start-game-page">
       <div className="setup-view">
         <div className="setup-header">
-          <button className="setup-back-button" onClick={handleBack} title={t('common.back')}>
-            <ArrowLeftCircleIcon size={24} />
-          </button>
+          <BackButton onClick={handleBack} />
           <h2>{selectedGameType?.name}</h2>
         </div>
 

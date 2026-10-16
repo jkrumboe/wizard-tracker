@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Icon from "../../components/ui/Icon";
-import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
+import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
 import { LocalScoreboardGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
+import BackButton from "../../components/ui/BackButton";
 import TableGameSettingsModal from "../../components/modals/TableGameSettingsModal";
 import StatsChart from "../../components/game/StatsChart";
 import { AdvancedStats } from "../../components/game";
@@ -1385,9 +1386,7 @@ const ScoreboardGamePage = () => {
       <div className="table-game-container">
         <div className="game-error-state">
           <div className="error">{loadError}</div>
-          <button className="back-btn" onClick={() => navigate('/table-game')}>
-            {t('tableGame.backToGames')}
-          </button>
+          <BackButton to="/games" label={t('tableGame.backToGames')} showLabel />
         </div>
       </div>
     );
@@ -1398,13 +1397,7 @@ const ScoreboardGamePage = () => {
         <div className={`game-in-progress players-${players.length} ${players.length > 3 ? 'many-players' : ''}`}>
           {/* Round Info Header */}
           <div className="round-info">
-            <button 
-              className="back-btn"
-              onClick={handleBackToTemplates}
-              title={t('tableGame.backToGameSelection')}
-            >
-              <ArrowLeftCircleIcon size={28} />
-            </button>
+            <BackButton onClick={handleBackToTemplates} label={t('tableGame.backToGameSelection')} />
             <span className="game-info-header">
               {currentGameName || DEFAULT_SCOREBOARD_GAME_NAME}
               <div className="total-calls">
@@ -1414,11 +1407,11 @@ const ScoreboardGamePage = () => {
               </div>
             </span>
             <button 
-              className="settings-btn"
+              className="settings-btn header-icon-btn"
               onClick={() => setShowGameSettingsModal(true)}
               title={t('tableGame.gameSettings')}
             >
-              <SettingsIcon size={24} />
+              <SettingsIcon size={20} />
             </button>
           </div>
 
@@ -1927,6 +1920,7 @@ const ScoreboardGamePage = () => {
             title={t('tableGame.finishGame')}
             message={t('tableGame.finishGameConfirm')}
             confirmText={t('tableGame.finishGame')}
+            variant="primary"
           />
         </div>
     </div>

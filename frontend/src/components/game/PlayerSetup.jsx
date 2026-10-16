@@ -1,41 +1,14 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TrashIcon, DiceIcon, UsersIcon, PlusIcon } from '@/components/ui/Icon';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { DiceIcon, UsersIcon, PlusIcon } from '@/components/ui/Icon';
+import DeleteIconButton from '@/components/ui/DeleteIconButton';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
-
-// The whole row is the drag handle, so sensors must not start a drag from
-// the controls inside it - the name field, remove button and team select
-const ignoringControls = (Sensor, controls) => class extends Sensor {
-  static activators = Sensor.activators.map(({ eventName, handler }) => ({
-    eventName,
-    handler: (event, ...rest) => !event.nativeEvent.target?.closest?.(controls) && handler(event, ...rest),
-  }));
-};
-
-// Mouse: click-drag anywhere but the field. Touch: long-press anywhere, even
-// the field - a tap still focuses it. Keyboard: space/enter on the focused row.
-const RowMouseSensor = ignoringControls(MouseSensor, 'input, button, select');
-const RowTouchSensor = ignoringControls(TouchSensor, 'button, select');
-const RowKeyboardSensor = ignoringControls(KeyboardSensor, 'input, button, select');
+import { useSortableRow, useSortableRowSensors } from '@/shared/hooks/useSortableRow';
 
 // Sortable Player Item Component
 const SortablePlayerItem = ({
@@ -48,29 +21,15 @@ const SortablePlayerItem = ({
   onTeamChange,
 }) => {
   const { t } = useTranslation();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, style, className } = useSortableRow({
     id: player.id,
   });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.7 : 1,
-    zIndex: isDragging ? 1000 : 1,
-  };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`player-item ${isDragging ? 'dragging' : ''}`}
+      className={`player-item ${className}`}
       {...attributes}
       {...listeners}
     >
@@ -100,17 +59,13 @@ const SortablePlayerItem = ({
         </select>
       )}
 
-      <button
-        className="remove-btn"
+      <DeleteIconButton
+        label={t('startTableGame.removePlayer')}
         onClick={(e) => {
           e.stopPropagation();
           onRemove(player.id);
         }}
-        title={t('startTableGame.removePlayer')}
-        aria-label={t('startTableGame.removePlayer')}
-      >
-        <TrashIcon size={18} aria-hidden="true" />
-      </button>
+      />
     </div>
   );
 };
@@ -131,22 +86,7 @@ const PlayerSetup = ({
   const { t } = useTranslation();
   const playerListRef = useRef(null);
 
-  const sensors = useSensors(
-    useSensor(RowMouseSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    }),
-    useSensor(RowTouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 8,
-      },
-    }),
-    useSensor(RowKeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const sensors = useSortableRowSensors();
 
   const handleDragEnd = (event) => {
     const { active, over } = event;

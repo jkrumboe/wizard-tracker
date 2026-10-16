@@ -6,6 +6,7 @@ import { localFriendsService, userService } from '@/shared/api';
 import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers = [] }) => {
   const { t } = useTranslation();
@@ -93,6 +94,8 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
     setSelectedFriends([]);
   };
 
+  useModalDismiss(isOpen, handleClose);
+
   if (!isOpen) return null;
 
   // Show login required message if user is not logged in
@@ -105,7 +108,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
               <UsersIcon size={20} />
               {t('selectFriends.title')}
             </h2>
-            <button className="close-btn" onClick={handleClose}>
+            <button className="close-btn" onClick={handleClose} aria-label={t('common.close')}>
               <XIcon size={20} />
             </button>
           </div>
@@ -131,7 +134,7 @@ const SelectFriendsModal = ({ isOpen, onClose, onConfirm, alreadySelectedPlayers
             <UsersIcon size={20} />
             {t('selectFriends.title')}
           </h2>
-          <button className="close-btn" onClick={handleClose}>
+          <button className="close-btn" onClick={handleClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>

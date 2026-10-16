@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { XIcon, PauseIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css'; 
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const PauseConfirmationModal = ({ 
   isOpen, 
@@ -11,6 +12,7 @@ const PauseConfirmationModal = ({
   maxRounds
 }) => {
   const { t } = useTranslation();
+  const backdrop = useModalDismiss(isOpen, onClose);
   if (!isOpen) return null;
 
   const handleConfirm = () => {
@@ -18,11 +20,11 @@ const PauseConfirmationModal = ({
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" {...backdrop}>
       <div className="modal-container pause-confirmation-modal">
         <div className="modal-header">
           <h2>{t('settings.pauseGame')}</h2>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>

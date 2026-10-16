@@ -2,66 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { XIcon } from '@/components/ui/Icon';
-import { GripVertical, Minus, Plus, UserPlus } from 'lucide-react';
+import DeleteIconButton from '@/components/ui/DeleteIconButton';
+import { Minus, Plus, UserPlus } from 'lucide-react';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
 import { useVisualViewportRect } from '@/shared/hooks/useVisualViewportRect';
+import { useSortableRow, useSortableRowSensors } from '@/shared/hooks/useSortableRow';
 import '@/styles/modals/gameSettingsModal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const MIN_PLAYERS = 2;
 
-// Sortable seat row, styled like the Wizard settings: drag handle, seat number, editable name
+// Sortable seat row, styled like the Wizard settings: drag the row, seat number, editable name
 const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, disabled }) => {
   const { t } = useTranslation();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, style, className } = useSortableRow({
     id: player.id || `player-${index}`,
     disabled: disabled,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
-    <li ref={setNodeRef} style={style} className={`gs-seat${isDragging ? ' is-dragging' : ''}`}>
-      <button
-        type="button"
-        className="gs-seat-handle"
-        aria-label={t('settings.dragToReorder', { name: player.name })}
-        disabled={disabled}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical size={18} />
-      </button>
-
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`gs-seat ${className}`}
+      {...attributes}
+      {...listeners}
+      aria-label={t('settings.dragToReorder', { name: player.name })}
+    >
       <div className="gs-seat-main">
         <span className="gs-seat-number">{index + 1}</span>
         <input
@@ -76,15 +49,11 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, 
       </div>
 
       {canRemove && (
-        <button
-          type="button"
-          className="gs-seat-remove"
+        <DeleteIconButton
+          label={t('settings.removeNewPlayer', { name: player.name })}
           onClick={() => onRemove(index)}
-          aria-label={t('settings.removeNewPlayer', { name: player.name })}
           disabled={disabled}
-        >
-          <XIcon size={16} />
-        </button>
+        />
       )}
     </li>
   );
@@ -130,11 +99,7 @@ const TableGameSettingsModal = ({
   const [playerToDelete, setPlayerToDelete] = useState(null);
   const viewportRect = useVisualViewportRect(isOpen);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useSortableRowSensors();
 
   useEffect(() => {
     if (isOpen) {
@@ -153,13 +118,8 @@ const TableGameSettingsModal = ({
     }
   }, [isOpen, players, rows, targetNumber, lowIsBetter, allowEmptyAsZero, teamMembers]);
 
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  // Escape closes; a confirmation opened on top closes first
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
 

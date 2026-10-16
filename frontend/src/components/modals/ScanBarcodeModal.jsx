@@ -16,6 +16,7 @@ import {
 import { getTemplateGameInfo, safeImageUrl, saveGameInfo } from '@/shared/utils/gameInfoStore';
 import '@/styles/components/modal.css';
 import '@/styles/components/scan-barcode-modal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 // Templates stored on the server (or built-ins the server knows) can carry shared barcodes
 const isSystemTemplate = (template) => template.type === 'system' || Boolean(template.isBuiltin);
@@ -281,6 +282,8 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     const sorted = [...templates].sort((a, b) => a.name.localeCompare(b.name));
     return query ? sorted.filter((tpl) => tpl.name.toLowerCase().includes(query)) : sorted;
   }, [templates, search]);
+
+  useModalDismiss(isOpen, handleClose);
 
   if (!isOpen) return null;
 

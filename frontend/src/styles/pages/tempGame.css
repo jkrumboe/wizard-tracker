@@ -90,7 +90,7 @@
   min-width: 80px;
   max-width: 100px;
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   border-radius: var(--radius-md);
   padding: 8px 12px;
@@ -144,7 +144,7 @@
   bottom: calc(var(--bottom-nav-height) + 60px);
   z-index: 99;
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   border-radius: var(--radius-md);
   padding: 10px 20px;
@@ -405,7 +405,7 @@
 .copy-link-button {
   padding: var(--spacing-sm) var(--spacing-lg);
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   cursor: pointer;
   font-weight: 500;
@@ -643,7 +643,7 @@
 
 .ready-button.not-ready {
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
 }
 
 @media (hover: hover) {
@@ -1079,7 +1079,7 @@
 
 .game-container .dealer-badge {
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: 0.7rem;
@@ -1087,7 +1087,7 @@
 
 .game-container .host-badge {
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   margin-left: var(--spacing-xs);
@@ -1162,12 +1162,12 @@
 .game-container .game-control-btn.active {
   background-color: var(--primary);
   border-color: var(--primary);
-  color: var(--text-on-primary, var(--text));
+  color: var(--on-primary);
 }
 
 .game-container .nav-btn {
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   border-radius: 50%;
   width: 50px;

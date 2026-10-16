@@ -48,6 +48,9 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-5000}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Optional barcode lookup keys; scans still work (with less info) when empty
+      GAMEUPC_API_KEY: ${GAMEUPC_API_KEY:-}
+      BGG_API_TOKEN: ${BGG_API_TOKEN:-}
     ports:
       - "5000:5000"
     depends_on:

@@ -24,28 +24,6 @@
   gap: var(--spacing-sm);
 }
 
-.setup-back-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xs);
-  min-height: 0;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  color: var(--primary);
-  line-height: 0;
-  cursor: pointer;
-  box-shadow: none;
-}
-
-@media (hover: hover) {
-  .setup-back-button:hover {
-    color: var(--primary);
-    background: var(--primary-hover);
-  }
-}
-
 .setup-header h2 {
   margin: 0;
   font-size: 1.25rem;
@@ -206,8 +184,7 @@
   font-size: 0.78rem;
 }
 
-.team-player-move-btn,
-.team-player-remove-btn {
+.team-player-move-btn {
   border: none;
   border-radius: var(--radius-md);
   min-height: 32px;
@@ -219,20 +196,12 @@
   gap: 6px;
   cursor: pointer;
   font-weight: 600;
-}
-
-.team-player-move-btn {
   background: rgba(96, 165, 250, 0.18);
   color: #9ac5ff;
 }
 
 .team-player-move-btn svg {
   flex-shrink: 0;
-}
-
-.team-player-remove-btn {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fda4af;
 }
 
 .game-settings-section .settings-group {
@@ -244,7 +213,7 @@
   display: block;
   width: 100%;
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   border-radius: var(--radius-lg);
@@ -424,11 +393,9 @@
   outline-offset: 2px;
 }
 
-.start-game-page .player-item.dragging {
+/* The rest of the dragged look is shared in sortable.css */
+.start-game-page .player-item.is-dragging {
   cursor: grabbing;
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 16%, var(--card-bg-alt));
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
 .start-game-page .player-number {
@@ -457,33 +424,6 @@
   outline: none;
   border-color: var(--primary);
   background: var(--input-bg);
-}
-
-.start-game-page .player-item .remove-btn {
-  width: 36px;
-  height: 36px;
-  margin-left: auto;
-  padding: 0;
-  transform: none;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-full);
-  box-shadow: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.start-game-page .player-item .remove-btn:active {
-  background: color-mix(in srgb, var(--error-color) 22%, transparent);
-  color: var(--error-color);
-}
-
-@media (hover: hover) {
-  .start-game-page .player-item .remove-btn:hover {
-    background: color-mix(in srgb, var(--error-color) 16%, transparent);
-    color: var(--error-color);
-  }
 }
 
 /* Add player is the main action; dice and friends are compact squares. */

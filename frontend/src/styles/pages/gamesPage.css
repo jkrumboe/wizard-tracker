@@ -54,6 +54,8 @@
   appearance: none;
   width: 100%;
   height: 40px;
+  /* Reset the global select margin, which padded the filter bar out */
+  margin: 0;
   padding: 0 32px 0 var(--spacing-sm);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);

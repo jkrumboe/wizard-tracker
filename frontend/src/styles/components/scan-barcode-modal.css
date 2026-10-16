@@ -218,7 +218,7 @@
   .scan-template-item:hover {
     background: var(--primary);
     border-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
   }
 }
 

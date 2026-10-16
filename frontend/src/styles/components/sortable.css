@@ -1,0 +1,13 @@
+/* Shared look for a row being dragged in any reorderable list
+   (start game players, Wizard and table game settings seats).
+   The slight lift scale is applied by useSortableRow. */
+.sortable-row.is-dragging {
+  position: relative;
+  z-index: 10;
+  cursor: grabbing;
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 16%, var(--card-bg-alt));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  /* Never ease the transform while dragging, or the row lags behind the finger */
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}

@@ -10,7 +10,7 @@ import "@/styles/components/statsChart.css"
 import "@/styles/pages/gameDetails.css"
 import "@/styles/pages/account.css"
 import "@/styles/components/TableGame.css"
-import { ArrowLeftIcon } from "@/components/ui/Icon"
+import BackButton from "@/components/ui/BackButton"
 import RankBadge from "@/components/game/RankBadge"
 import { GameHighlights } from "@/components/game/GameHighlights"
 import { computeHighlights } from "@/shared/utils/gameHighlights"
@@ -19,9 +19,7 @@ import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 const GameDetailsSkeleton = () => (
   <div className="game-details-container">
     <div className="game-details-header">
-      <button className="back-link" disabled>
-        <ArrowLeftIcon className="back-icon" />
-      </button>
+      <BackButton className="game-details-back" disabled />
 
       <div className="game-title-section">
         <div className="skeleton skeleton-text" style={{ width: '90px', height: '24px' }}></div>
@@ -117,9 +115,7 @@ const TableGameDetails = () => {
     return (
       <div className="game-details-container">
         <div className="error-state">{error}</div>
-        <button onClick={() => navigate(-1)} className="back-link">
-          {t('common.goBack')}
-        </button>
+        <BackButton fallback="/games" showLabel />
       </div>
     )
   }
@@ -128,9 +124,7 @@ const TableGameDetails = () => {
     return (
       <div className="game-details-container">
         <div className="error-state">{t('tableGame.gameNotFound')}</div>
-        <button onClick={() => navigate(-1)} className="back-link">
-          {t('common.goBack')}
-        </button>
+        <BackButton fallback="/games" showLabel />
       </div>
     )
   }
@@ -229,9 +223,7 @@ const TableGameDetails = () => {
     <div className={`game-details-container table-game-container${summaryScrolled ? ' is-scrolled' : ''}`}>
 
       <div className="game-details-header">
-        <button onClick={() => navigate(-1)} className="back-link" aria-label="Go back">
-          <ArrowLeftIcon className="back-icon" />
-        </button>
+        <BackButton className="game-details-back" fallback="/games" />
 
         <div className="game-title-section">
           <div className="game-name">{gameName}</div>

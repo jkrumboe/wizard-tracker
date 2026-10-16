@@ -63,8 +63,8 @@ html[data-keyboard="open"] {
   --primary-tint: #cbdfff;
   --primary-border: #acccff;
   --primary-subtle: #1852af;
-  --primary-contrast: #0b1120;
-  --on-primary: #0b1120;
+  --primary-contrast: #ffffff;
+  --on-primary: #ffffff;
   --focus-ring: rgba(58, 129, 245, 0.32);
   --secondary: #9568e2;
   --accent-seed: #3b82f6;
@@ -122,8 +122,8 @@ html[data-keyboard="open"] {
   --primary-tint: #1d3c6e;
   --primary-border: #2d5493;
   --primary-subtle: #a2c6ff;
-  --primary-contrast: #0b1120;
-  --on-primary: #0b1120;
+  --primary-contrast: #ffffff;
+  --on-primary: #ffffff;
   --focus-ring: rgba(58, 129, 245, 0.42);
   --secondary: #9568e2;
   --accent-seed: #3b82f6;
@@ -330,7 +330,7 @@ textarea {
     .close-button-edit,
     .photo-viewer-close,
     .crop-icon-button,
-    .remove-btn,
+    .delete-icon-btn,
     .remove-player-btn,
     .count-btn,
     .card-actions-menu-btn,
@@ -339,8 +339,7 @@ textarea {
     .cloud-upload-game-button,
     .filter-button,
     .team-builder-edit-btn,
-    .team-player-move-btn,
-    .team-player-remove-btn
+    .team-player-move-btn
   ) {
     position: relative;
   }
@@ -351,7 +350,7 @@ textarea {
     .close-button-edit,
     .photo-viewer-close,
     .crop-icon-button,
-    .remove-btn,
+    .delete-icon-btn,
     .remove-player-btn,
     .count-btn,
     .card-actions-menu-btn,
@@ -360,8 +359,7 @@ textarea {
     .cloud-upload-game-button,
     .filter-button,
     .team-builder-edit-btn,
-    .team-player-move-btn,
-    .team-player-remove-btn
+    .team-player-move-btn
   )::after {
     content: "";
     position: absolute;
@@ -488,13 +486,15 @@ button:disabled,
   }
 }
 
-.btn-error {
+.btn-error,
+.btn-danger {
   background-color: var(--error-color);
   color: var(--text-white);
 }
 
 @media (hover: hover) {
-  .btn-error:hover:not(:disabled) {
+  .btn-error:hover:not(:disabled),
+  .btn-danger:hover:not(:disabled) {
     background-color: var(--danger-dark);
     transform: scale(0.95);
     box-shadow: var(--shadow);

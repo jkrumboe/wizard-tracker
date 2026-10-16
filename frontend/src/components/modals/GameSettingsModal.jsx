@@ -1,29 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, CrownIcon, RotateCcwIcon } from '@/components/ui/Icon';
-import { GripVertical, Minus, Plus, Megaphone, UserPlus } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import DeleteIconButton from '@/components/ui/DeleteIconButton';
+import { Minus, Plus, Megaphone, UserPlus } from 'lucide-react';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
 import { useTranslation } from 'react-i18next';
 import { useVisualViewportRect } from '@/shared/hooks/useVisualViewportRect';
+import { useSortableRow, useSortableRowSensors } from '@/shared/hooks/useSortableRow';
 import '@/styles/modals/gameSettingsModal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const MAX_ROUNDS_LIMIT = 60;
 const DEFAULT_MAX_PLAYERS = 6;
@@ -33,46 +22,41 @@ const mod = (value, n) => ((value % n) + n) % n;
 const createPlayerId = () =>
   globalThis.crypto?.randomUUID?.() ?? `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-// Sortable seat row: drag the handle to reorder, tap the row to pick the dealer
+// Sortable seat row: drag the row to reorder, tap it to pick the dealer
 const SeatRow = ({ player, seat, role, showRoles, isNew, onSelectDealer, onRemove }) => {
   const { t } = useTranslation();
   const {
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: player.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+    style,
+    className: sortableClassName,
+  } = useSortableRow({ id: player.id });
 
   const className = [
     'gs-seat',
+    sortableClassName,
     role === 'dealer' && 'is-dealer',
-    isDragging && 'is-dragging',
   ].filter(Boolean).join(' ');
 
-  return (
-    <li ref={setNodeRef} style={style} className={className}>
-      <button
-        type="button"
-        className="gs-seat-handle"
-        aria-label={t('settings.dragToReorder', { name: player.name })}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical size={18} />
-      </button>
+  // Not a disabled button when there is no dealer to pick: disabled buttons
+  // swallow the pointer events the row needs to start a drag
+  const Main = showRoles ? 'button' : 'div';
 
-      <button
-        type="button"
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={className}
+      {...attributes}
+      {...listeners}
+      aria-label={t('settings.dragToReorder', { name: player.name })}
+    >
+      <Main
+        type={showRoles ? 'button' : undefined}
         className="gs-seat-main"
+        data-drag-surface
         onClick={showRoles ? onSelectDealer : undefined}
-        disabled={!showRoles}
         aria-pressed={showRoles ? role === 'dealer' : undefined}
       >
         <span className="gs-seat-number">{seat + 1}</span>
@@ -90,17 +74,13 @@ const SeatRow = ({ player, seat, role, showRoles, isNew, onSelectDealer, onRemov
             {t('settings.callsFirst')}
           </span>
         )}
-      </button>
+      </Main>
 
       {isNew && (
-        <button
-          type="button"
-          className="gs-seat-remove"
+        <DeleteIconButton
+          label={t('settings.removeNewPlayer', { name: player.name })}
           onClick={onRemove}
-          aria-label={t('settings.removeNewPlayer', { name: player.name })}
-        >
-          <XIcon size={16} />
-        </button>
+        />
       )}
     </li>
   );
@@ -117,11 +97,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
   const [nameError, setNameError] = useState('');
   const viewportRect = useVisualViewportRect(isOpen);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const sensors = useSortableRowSensors();
 
   // Reset local state whenever the modal opens
   useEffect(() => {
@@ -139,13 +115,8 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
     setDealerId(gameState.players[seat]?.id ?? null);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  // Escape closes; a confirmation opened on top closes first
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen || !gameState) return null;
 

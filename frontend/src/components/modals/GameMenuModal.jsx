@@ -5,6 +5,7 @@ import '@/styles/components/modal.css';
 
 
 import { useNavigate } from 'react-router-dom';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const GameMenuModal = ({ 
   isOpen, 
@@ -16,14 +17,15 @@ const GameMenuModal = ({
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const backdrop = useModalDismiss(isOpen, onClose);
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" {...backdrop}>
       <div className="modal-container">
         <div className="modal-header">
           <h2>{t('settings.gameSettings')}</h2>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>
@@ -33,7 +35,7 @@ const GameMenuModal = ({
             {t('loadGameDialog.loadGame')}
           </button>
           <button className="modal-button" onClick={onSaveGame}>
-            Save & Continue
+            {t('saveGame.saveAndContinue')}
           </button>
           <button className="modal-button" onClick={onPauseGame}>
             {t('settings.pauseGame')}

@@ -38,27 +38,8 @@
 
 .friend-leaderboard-header-text {
   flex: 1;
-  padding-right: 32px;
-}
-
-.friend-leaderboard-container .friend-page-back-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  transition: transform 0.2s ease;
-  border-radius: var(--radius-md);
-  box-shadow: none;
-}
-
-@media (hover: hover) {
-  .friend-leaderboard-container .friend-page-back-button:hover {
-    transform: translateX(-2px);
-  }
+  /* Same width as the back button, so the title stays centred */
+  padding-right: 40px;
 }
 
 /* ------------------------------------------------------------------ */

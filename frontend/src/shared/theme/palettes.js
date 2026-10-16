@@ -11,6 +11,7 @@
  */
 
 import {
+  contrastRatio,
   ensureContrast,
   hexToOklch,
   normalizeHex,
@@ -146,7 +147,12 @@ export function deriveAccentTokens(seedHex, theme = 'light') {
   const tint = at(primaryLch, recipe.tintLightness, recipe.tintChroma);
   const border = at(primaryLch, recipe.borderLightness, recipe.borderChroma);
   const subtle = at(primaryLch, recipe.subtleLightness, 0.85);
-  const onPrimary = readableTextOn(primary, '#ffffff', '#0b1120');
+  // White text on the fill unless the accent is too pale to carry it; a raw
+  // contrast comparison picks near-black for mid-tone accents, which looks off.
+  const onPrimary =
+    contrastRatio(primary, '#ffffff') >= ACCENT.minContrastOnSurface
+      ? '#ffffff'
+      : readableTextOn(primary, '#ffffff', '#0b1120');
   const secondary = oklchToHex({
     l: primaryLch.l,
     c: primaryLch.c * ACCENT.secondaryChroma,

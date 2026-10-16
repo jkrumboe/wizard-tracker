@@ -1,0 +1,55 @@
+/* Square icon button for page headers: back (components/ui/BackButton.jsx)
+   and the in-game settings gear beside it. */
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  box-shadow: none;
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.header-icon-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Standalone "Go back" on error screens */
+.header-icon-btn.with-label {
+  width: auto;
+  padding: 0 var(--spacing-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.header-icon-btn.with-label span {
+  color: var(--text);
+}
+
+.header-icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .header-icon-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    transform: none;
+  }
+}
+
+.header-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

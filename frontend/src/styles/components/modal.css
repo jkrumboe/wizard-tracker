@@ -149,6 +149,22 @@
   color: var(--error-color);
 }
 
+.delete-confirmation-message {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Inline error inside a modal, in place of a browser alert() */
+.modal-error {
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid rgba(var(--danger-rgb), 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger-color);
+  font-size: 0.9rem;
+}
+
 .pause-confirmation-modal {
   max-width: 400px;
 }
@@ -297,7 +313,7 @@
   width: 100%;
   justify-content: center;
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   font-size: 1rem;
   font-weight: 500;
@@ -359,7 +375,7 @@
 @media (hover: hover) {
   .order-btn:hover:not(:disabled) {
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     border-color: var(--primary);
   }
 }

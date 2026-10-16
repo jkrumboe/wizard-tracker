@@ -53,7 +53,7 @@
   height: 20px;
   border-radius: 50%;
   border: 2px solid var(--bg-color);
-  color: var(--on-primary, #fff);
+  color: var(--text, #fff);
 }
 
 .player-avatar-marker.dealer {

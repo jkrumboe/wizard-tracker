@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { getLeaderboard } from '@/shared/api/gameService'
-import { ArrowLeftCircleIcon, UsersIcon } from '@/components/ui/Icon'
-import "@/styles/pages/leaderboard.css"
+import Icon, { ChevronDownIcon, ChevronUpIcon, SearchIcon, XIcon } from '@/components/ui/Icon'
+import BackButton from '@/components/ui/BackButton'
+import RankBadge from '@/components/game/RankBadge'
+import '@/styles/pages/gamesPage.css'
+import '@/styles/pages/leaderboard.css'
 
 const Leaderboard = () => {
   const { t } = useTranslation()
@@ -27,14 +30,6 @@ const Leaderboard = () => {
   const [lastRefresh, setLastRefresh] = useState(null)
   const playersPerPage = 10
 
-  const handlePageBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1)
-      return
-    }
-
-    navigate('/games')
-  }
 
   // Handle player click - Navigate to user profile
   const handlePlayerClick = async (player) => {
@@ -232,275 +227,184 @@ const Leaderboard = () => {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="leaderboard-container">
-        <div className="leaderboard-top-header">
+  const sortColumns = [
+    { field: 'name', label: t('leaderboard.playerHeader'), className: 'lb-col-player' },
+    { field: 'wins', label: t('leaderboard.winsHeader'), className: 'lb-col-stat' },
+    { field: 'winRate', label: t('leaderboard.winPercentHeader'), className: 'lb-col-stat' },
+    { field: 'elo', label: t('leaderboard.eloHeader'), className: 'lb-col-stat' },
+  ]
+
+  const header = (
+    <header className="lb-header">
+      <BackButton fallback="/games" />
+      <h1 className="games-title lb-title">{t('leaderboard.title')}</h1>
+      <Link
+        to="/friend-leaderboard"
+        className="games-quick-link"
+        aria-label={t('leaderboard.compareWithFriends')}
+        title={t('leaderboard.compareWithFriends')}
+      >
+        <Icon name="Swords" size={18} strokeWidth={2} aria-hidden="true" />
+        <span className="games-quick-link-label">{t('leaderboard.compareWithFriends')}</span>
+      </Link>
+    </header>
+  )
+
+  const filterBar = (
+    <div className="games-filter-bar lb-filter-bar">
+      <div className="games-search-wrapper">
+        <SearchIcon size={16} className="games-search-icon" />
+        <input
+          type="text"
+          className="games-search-input"
+          placeholder={t('leaderboard.searchPlaceholder')}
+          aria-label={t('leaderboard.searchPlaceholder')}
+          value={loading ? '' : filter}
+          onChange={handleFilterChange}
+          disabled={loading}
+        />
+        {filter && !loading && (
           <button
-            className="leaderboard-page-back-button"
-            onClick={handlePageBack}
-            title={t('common.back')}
-            aria-label={t('common.back')}
+            type="button"
+            className="games-search-clear"
+            onClick={() => { setFilter(''); setCurrentPage(1) }}
+            aria-label="Clear search"
           >
-            <ArrowLeftCircleIcon size={24} />
+            <XIcon size={14} />
           </button>
-
-          <div className="leaderboard-header-text">
-            <h1>{t('leaderboard.title')}</h1>
-          </div>
-        </div>
-        
-        <div style={{ 
-          fontSize: '0.85rem', 
-          color: 'var(--text-secondary)', 
-          textAlign: 'center',
-          marginBottom: '0.5rem' 
-        }}>
-          {t('common.loading')}
-        </div>
-        
-        <Link 
-          to="/friend-leaderboard" 
-          className="friend-leaderboard-link"
-          style={{ pointerEvents: 'none', opacity: 0.7 }}
-        >
-          <UsersIcon size={18} />
-          {t('leaderboard.compareWithFriends')}
-        </Link>
-
-        <div className="filter-container">
-          <input
-            type="text"
-            placeholder={t('leaderboard.searchPlaceholder')}
-            className="search-input"
-            value=""
-            disabled
-          />
-          <select 
-            className="game-type-select"
-            disabled
-            value={selectedGameType}
-          >
-            <option>{selectedGameType}</option>
-          </select>
-        </div>
-
-        <div className="leaderboard-table">
-          <div className="leaderboard-header">
-            <div className="rank-col"/>
-            <div className="player-col">{t('leaderboard.playerHeader')}</div>
-            <div className="wins-col">{t('leaderboard.winsHeader')}</div>
-            <div className="winrate-col">{t('leaderboard.winPercentHeader')}</div>
-            <div className="score-col">{t('leaderboard.eloHeader')}</div>
-          </div>
-
-          <div className="leaderboard-body">
-            {Array.from({ length: playersPerPage }).map((_, index) => (
-              <div key={`skeleton-${index}`} className="leaderboard-row skeleton-row">
-                <div className="rank-col">
-                  <div className="skeleton skeleton-rank"></div>
-                </div>
-                <div className="player-col">
-                  <div className="skeleton skeleton-name" style={{ width: `${60 + Math.random() * 40}%` }}></div>
-                </div>
-                <div className="wins-col">
-                  <div className="skeleton skeleton-stat"></div>
-                </div>
-                <div className="winrate-col">
-                  <div className="skeleton skeleton-stat"></div>
-                </div>
-                <div className="score-col">
-                  <div className="skeleton skeleton-stat"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="pagination-controls">
-          <button disabled>{t('common.previous')}</button>
-          <span>- of -</span>
-          <button disabled>{t('common.next')}</button>
-        </div>
+        )}
       </div>
-    )
-  }
+      <div className="games-type-select-wrapper">
+        <select
+          className="games-type-select"
+          value={selectedGameType}
+          onChange={handleGameTypeChange}
+          disabled={loading}
+        >
+          {(loading ? [selectedGameType] : gameTypes).map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+        <ChevronDownIcon size={16} className="games-type-select-icon" aria-hidden="true" />
+      </div>
+    </div>
+  )
+
+  const tableHead = (
+    <div className="lb-head">
+      <span className="lb-col-rank" />
+      {sortColumns.map(({ field, label, className }) => {
+        const isSorted = sortBy === field
+        const SortIcon = sortOrder === 'asc' ? ChevronUpIcon : ChevronDownIcon
+        return (
+          <button
+            key={field}
+            type="button"
+            className={`lb-sort ${className} ${isSorted ? 'is-sorted' : ''}`}
+            onClick={() => handleSort(field)}
+            disabled={loading}
+            aria-pressed={isSorted}
+          >
+            <span>{label}</span>
+            {isSorted && <SortIcon size={14} aria-hidden="true" />}
+          </button>
+        )
+      })}
+    </div>
+  )
 
   if (error) {
     return (
-      <div className="error-container">
-        <button
-          className="leaderboard-page-back-button"
-          onClick={handlePageBack}
-          title={t('common.back')}
-          aria-label={t('common.back')}
-        >
-          <ArrowLeftCircleIcon size={24} />
-        </button>
-        <h2>{t('leaderboard.errorLoading')}</h2>
-        <p>{error}</p>
-        <button onClick={fetchLeaderboard} className="retry-button">
-          {t('common.retry')}
-        </button>
+      <div className="lb-page">
+        {header}
+        <div className="lb-message" role="alert">
+          <h2>{t('leaderboard.errorLoading')}</h2>
+          <p>{error}</p>
+          <button type="button" onClick={() => fetchLeaderboard()} className="lb-page-button">
+            {t('common.retry')}
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="leaderboard-container">
-      <div className="leaderboard-top-header">
-        <button
-          className="leaderboard-page-back-button"
-          onClick={handlePageBack}
-          title={t('common.back')}
-          aria-label={t('common.back')}
-        >
-          <ArrowLeftCircleIcon size={24} />
-        </button>
+    <div className="lb-page">
+      {header}
+      {filterBar}
 
-        <div className="leaderboard-header-text">
-          <h1>{t('leaderboard.title')}</h1>
-        </div>
-      </div>
-      
-      {lastRefresh && (
-        <div style={{ 
-          fontSize: '0.85rem', 
-          color: 'var(--text-secondary)', 
-          textAlign: 'center',
-          marginBottom: '0.5rem' 
-        }}>
-          {t('leaderboard.lastUpdated', { date: lastRefresh.toLocaleTimeString() })}
-        </div>
-      )}
-      
-      <Link 
-        to="/friend-leaderboard" 
-        className="friend-leaderboard-link"
-      >
-        <UsersIcon size={18} />
-        {t('leaderboard.compareWithFriends')}
-      </Link>
-      
-      {/* <div className="leaderboard-stats">
-        <span>Total Games: {totalGames}</span>
-        <span>Total Players: {players.length}</span>
-      </div> */}
-
-      <div className="filter-container">
-        <input
-          type="text"
-          placeholder={t('leaderboard.searchPlaceholder')}
-          value={filter}
-          onChange={handleFilterChange}
-          className="search-input"
-        />
-        
-        <select 
-          value={selectedGameType} 
-          onChange={handleGameTypeChange}
-          className="game-type-select"
-        >
-          {gameTypes.map(type => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
+      <div className="lb-meta">
+        {loading
+          ? t('common.loading')
+          : lastRefresh && t('leaderboard.lastUpdated', { date: lastRefresh.toLocaleTimeString() })}
       </div>
 
-      {sortedPlayers.length === 0 ? (
-        <div className="no-results">
-          <p>{filter ? t('leaderboard.noPlayersMatchSearch') : t('leaderboard.noPlayersFound')}</p>
-        </div>
+      {!loading && sortedPlayers.length === 0 ? (
+        <p className="lb-empty">
+          {filter ? t('leaderboard.noPlayersMatchSearch') : t('leaderboard.noPlayersFound')}
+        </p>
       ) : (
         <>
-          <div className="leaderboard-table">
-            <div className="leaderboard-header">
-              <div className="rank-col"/>
-              <div
-                className={`player-col ${sortBy === 'name' ? 'sorted' : ''}`}
-                onClick={() => handleSort('name')}
-              >
-                {t('leaderboard.playerHeader')} {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </div>
-              <div
-                className={`wins-col ${sortBy === 'wins' ? 'sorted' : ''}`}
-                onClick={() => handleSort('wins')}
-              >
-                {t('leaderboard.winsHeader')} {sortBy === 'wins' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </div>
-              <div
-                className={`winrate-col ${sortBy === 'winRate' ? 'sorted' : ''}`}
-                onClick={() => handleSort('winRate')}
-              >
-                {t('leaderboard.winPercentHeader')} {sortBy === 'winRate' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </div>
-              {/* <div 
-                className={`games-col ${sortBy === 'totalGames' ? 'sorted' : ''}`}
-                onClick={() => handleSort('totalGames')}
-              >
-                Games {sortBy === 'totalGames' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </div> */}
-              <div 
-                className={`score-col ${sortBy === 'elo' ? 'sorted' : ''}`}
-                onClick={() => handleSort('elo')}
-              >
-                {t('leaderboard.eloHeader')} {sortBy === 'elo' && (sortOrder === 'asc' ? '↑' : '↓')}
-              </div>
-            </div>
-
-            <div className="leaderboard-body">
-              {Array.from({ length: playersPerPage }).map((_, index) => {
-                const player = paginatedPlayers[index];
-                const globalRank = (currentPage - 1) * playersPerPage + index + 1;
-                
-                return player ? (
-                  <div key={player.id} className="leaderboard-row">
-                    <div className={`rank-col ${globalRank === 1 ? 'gold' : globalRank === 2 ? 'silver' : globalRank === 3 ? 'bronze' : ''}`}>
-                      {globalRank}
+          <div className="lb-table">
+            {tableHead}
+            <ol className="lb-list">
+              {loading
+                ? Array.from({ length: playersPerPage }).map((_, index) => (
+                  <li key={`skeleton-${index}`} aria-hidden="true">
+                    <div className="lb-row is-skeleton">
+                      <span className="lb-col-rank"><span className="lb-skeleton lb-skeleton-rank" /></span>
+                      <span className="lb-col-player">
+                        <span className="lb-skeleton lb-skeleton-name" style={{ width: `${50 + ((index * 37) % 40)}%` }} />
+                      </span>
+                      <span className="lb-col-stat"><span className="lb-skeleton lb-skeleton-stat" /></span>
+                      <span className="lb-col-stat"><span className="lb-skeleton lb-skeleton-stat" /></span>
+                      <span className="lb-col-stat"><span className="lb-skeleton lb-skeleton-stat" /></span>
                     </div>
-                    <div 
-                      className="player-col clickable"
-                      onClick={() => handlePlayerClick(player)}
-                      style={{ 
-                        cursor: 'pointer',
-                        opacity: 1
-                      }}
-                      title={t('leaderboard.viewPlayerProfile')}
-                    >
-                      {player.name}
-                    </div>
-                    <div className="wins-col">{player.wins}</div>
-                    <div className="winrate-col">{player.winRate}%</div>
-                    {/* <div className="games-col">{player.totalGames}</div> */}
-                    <div className="score-col">{player.elo || 1000}</div>
-                  </div>
-                ) : (
-                  <div key={`empty-${index}`} className="leaderboard-row empty-row">
-                    <div className="rank-col"></div>
-                    <div className="player-col"></div>
-                    <div className="wins-col"></div>
-                    <div className="winrate-col"></div>
-                    <div className="games-col"></div>
-                    <div className="score-col"></div>
-                  </div>
-                );
-              })}
-            </div>
+                  </li>
+                ))
+                : paginatedPlayers.map((player, index) => {
+                  const globalRank = (currentPage - 1) * playersPerPage + index + 1
+                  return (
+                    <li key={player.id}>
+                      <button
+                        type="button"
+                        className="lb-row"
+                        onClick={() => handlePlayerClick(player)}
+                        title={t('leaderboard.viewPlayerProfile')}
+                      >
+                        <span className="lb-col-rank"><RankBadge rank={globalRank} /></span>
+                        <span className="lb-col-player">{player.name}</span>
+                        <span className="lb-col-stat">{player.wins}</span>
+                        <span className="lb-col-stat lb-winrate">{player.winRate}%</span>
+                        <span className="lb-col-stat lb-elo">{player.elo || 1000}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+            </ol>
           </div>
 
-          <div className="pagination-controls">
-            <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+          <nav className="lb-pagination">
+            <button
+              type="button"
+              className="lb-page-button"
+              onClick={handlePreviousPage}
+              disabled={loading || currentPage === 1}
+            >
               {t('common.previous')}
             </button>
-            <span>
-              {t('leaderboard.pageOf', { current: currentPage, total: totalPages || 1 })}
+            <span className="lb-page-status">
+              {loading ? '- / -' : t('leaderboard.pageOf', { current: currentPage, total: totalPages || 1 })}
             </span>
-            <button onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
+            <button
+              type="button"
+              className="lb-page-button"
+              onClick={handleNextPage}
+              disabled={loading || currentPage === totalPages || totalPages === 0}
+            >
               {t('common.next')}
             </button>
-          </div>
+          </nav>
         </>
       )}
     </div>

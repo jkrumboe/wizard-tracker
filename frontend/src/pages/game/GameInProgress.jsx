@@ -8,6 +8,7 @@ import { useGameStateContext } from "@/shared/hooks/useGameState"
 import SaveGameDialog from "@/components/modals/SaveGameDialog"
 import LoadGameDialog from "@/components/modals/LoadGameDialog"
 import GameMenuModal from "@/components/modals/GameMenuModal"
+import BackButton from "@/components/ui/BackButton"
 import GameSettingsModal from "@/components/modals/GameSettingsModal"
 import PauseConfirmationModal from "@/components/modals/PauseConfirmationModal"
 import { AdvancedStats } from "@/components/game";
@@ -18,7 +19,7 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/components/scorecard.css"
 
-import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, ChevronDownIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, ChevronDownIcon, UsersIcon, SettingsIcon } from "@/components/ui/Icon"
 import SpecialCardToggle from "@/components/game/SpecialCardToggle"
 import { useFixedViewportPage } from "@/shared/hooks/useFixedViewportPage"
 import RankBadge from "@/components/game/RankBadge"
@@ -605,11 +606,6 @@ const GameInProgress = () => {
 
   const { dealer, caller } = getDealerAndCaller();
 
-  // Handle back button click
-  const handleBack = () => {
-    navigate(-1); // Go back to previous page
-  };
-
   // Handle game settings update
   const handleUpdateSettings = (settings) => {
     // Update game state using the context function
@@ -630,13 +626,7 @@ const GameInProgress = () => {
   return (
     <div className={`game-in-progress players-${gameState.players.length} ${gameState.players.length > 3 ? 'many-players' : ''}`}>
       <div className="round-info">
-        <button 
-          className="back-btn"
-          onClick={handleBack}
-          title="Go back"
-        >
-          <ArrowLeftCircleIcon size={28} />
-        </button>
+        <BackButton fallback="/games" />
         <span className="game-info-header">
           {t('gameInProgress.roundOfMax', { current: parseInt(gameState.currentRound, 10), max: gameState.maxRounds ? parseInt(gameState.maxRounds, 10) : parseInt(gameState.maxRounds, 10) })}
           <div className="total-calls">
@@ -654,11 +644,11 @@ const GameInProgress = () => {
           </div> 
         </span>
         <button 
-          className="settings-btn"
+          className="settings-btn header-icon-btn"
           onClick={() => setShowGameSettingsModal(true)}
           title={t('gameInProgress.gameSettings')}
         >
-          <SettingsIcon size={24} />
+          <SettingsIcon size={20} />
         </button>
       </div>
 

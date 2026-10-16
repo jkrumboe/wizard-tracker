@@ -270,7 +270,7 @@ const ImageCropperModal = ({ isOpen, onClose, imageFile, onCropComplete }) => {
       >
         <div className="modal-header">
           <h2>{t('imageCropper.title')}</h2>
-          <button onClick={onClose} className="modal-close-btn" aria-label={t('common.close')}>
+          <button onClick={onClose} className="close-btn" aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>

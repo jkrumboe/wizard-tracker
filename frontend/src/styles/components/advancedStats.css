@@ -92,15 +92,17 @@
   border-radius: 50%;
 }
 
-.bidding-tendency-note,
-.bidding-summary-empty {
+.bidding-tendency-note {
   margin: 0;
   font-size: 0.75rem;
   color: var(--text-muted);
 }
 
-.bidding-summary-empty {
-  text-align: center;
+/* Standings rows stack the expanded stats under the name/score line
+   (shared by game details and the in-progress standings) */
+.results-row:has(.stats-toggle) {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 /* Standings rows with a stats toggle: a narrower rank column and a slightly

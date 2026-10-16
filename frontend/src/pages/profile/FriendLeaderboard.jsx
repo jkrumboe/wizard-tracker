@@ -5,9 +5,9 @@ import { getFriendLeaderboard } from '@/shared/api/gameService'
 import { userService } from '@/shared/api'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
+import BackButton from '@/components/ui/BackButton'
 import {
   ArrowLeftIcon,
-  ArrowLeftCircleIcon,
   ExternalLinkIcon,
   SearchIcon,
   TrophyIcon,
@@ -331,14 +331,6 @@ const FriendLeaderboard = () => {
     navigate(`/user/${playerName}`)
   }
 
-  const handleSelectionPageBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1)
-      return
-    }
-
-    navigate('/account')
-  }
 
   const board = useMemo(
     () => (Array.isArray(leaderboardData?.leaderboard) ? leaderboardData.leaderboard : []),
@@ -477,14 +469,7 @@ const FriendLeaderboard = () => {
     <div className={`friend-leaderboard-container ${showPlayerSelect ? 'is-selecting' : 'is-results'}`}>
       {showPlayerSelect ? (
         <div className="friend-leaderboard-top-header">
-          <button
-            className="friend-page-back-button"
-            onClick={handleSelectionPageBack}
-            title={t('common.back')}
-            aria-label={t('common.back')}
-          >
-            <ArrowLeftCircleIcon size={24} />
-          </button>
+          <BackButton fallback="/account" />
 
           <div className="friend-leaderboard-header-text">
             <h1>{t('leaderboard.friendTitle')}</h1>

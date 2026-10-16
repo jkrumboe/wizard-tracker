@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { XIcon, UsersIcon, ClockIcon, ChevronRightIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
 import '@/styles/components/add-players-choice-modal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const AddPlayersChoiceModal = ({ isOpen, onClose, onSelectFriends, onSelectRecentGroup }) => {
   const { t } = useTranslation();
+
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
 

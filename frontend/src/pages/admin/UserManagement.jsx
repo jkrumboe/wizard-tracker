@@ -301,7 +301,7 @@ const UserManagement = () => {
           <div className="modal-content actions-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{t('adminUsers.manageUser', { username: actionUser.username })}</h3>
-              <button className="close-btn" onClick={handleCloseActionsModal}>
+              <button className="close-btn" onClick={handleCloseActionsModal} aria-label={t('common.close')}>
                 <XIcon size={20} />
               </button>
             </div>
@@ -415,7 +415,7 @@ const UserManagement = () => {
           <div className="modal-content password-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{t('adminUsers.resetPasswordTitle', { username: passwordResetUser?.username })}</h3>
-              <button className="close-btn" onClick={handleClosePasswordModal}>
+              <button className="close-btn" onClick={handleClosePasswordModal} aria-label={t('common.close')}>
                 <XIcon size={20} />
               </button>
             </div>
@@ -466,7 +466,7 @@ const UserManagement = () => {
           <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{t('adminUsers.deleteUserAccount')}</h3>
-              <button className="close-btn" onClick={handleCloseDeleteModal}>
+              <button className="close-btn" onClick={handleCloseDeleteModal} aria-label={t('common.close')}>
                 <XIcon size={20} />
               </button>
             </div>

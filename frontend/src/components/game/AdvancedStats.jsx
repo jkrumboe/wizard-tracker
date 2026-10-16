@@ -60,34 +60,33 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
         />
       </div>
 
-      {totalBids > 0 ? (
-        <div className="bidding-summary">
-          <div className="bidding-summary-header">
-            <span className="bidding-summary-title">{t('statsChart.bidding')}</span>
+      {/* Shown even before any bids so the layout stays the same; the bar is just an empty track */}
+      <div className="bidding-summary">
+        <div className="bidding-summary-header">
+          <span className="bidding-summary-title">{t('statsChart.bidding')}</span>
+          {totalBids > 0 && (
             <span className={`bidding-quality is-${level.tone}`}>{t(`statsChart.${level.key}`)}</span>
-          </div>
-          <div className="bid-split-bar" role="img" aria-label={segments.map((s) => s.label).join(', ')}>
-            {segments.map((segment) => (
-              <span
-                key={segment.key}
-                className={`bid-split-segment is-${segment.key}`}
-                style={{ width: `${percentOf(segment.count)}%` }}
-              />
-            ))}
-          </div>
-          <div className="bid-split-legend">
-            {segments.map((segment) => (
-              <span key={segment.key} className="bid-split-legend-item">
-                <span className={`bid-split-dot is-${segment.key}`} aria-hidden="true" />
-                {segment.label}
-              </span>
-            ))}
-          </div>
-          {tendency && <p className="bidding-tendency-note">{t(`statsChart.${tendency}`)}</p>}
+          )}
         </div>
-      ) : (
-        <p className="bidding-summary-empty">{t('statsChart.playMoreForBidding')}</p>
-      )}
+        <div className="bid-split-bar" role="img" aria-label={segments.map((s) => s.label).join(', ')}>
+          {segments.map((segment) => (
+            <span
+              key={segment.key}
+              className={`bid-split-segment is-${segment.key}`}
+              style={{ width: `${percentOf(segment.count)}%` }}
+            />
+          ))}
+        </div>
+        <div className="bid-split-legend">
+          {segments.map((segment) => (
+            <span key={segment.key} className="bid-split-legend-item">
+              <span className={`bid-split-dot is-${segment.key}`} aria-hidden="true" />
+              {segment.label}
+            </span>
+          ))}
+        </div>
+        {tendency && <p className="bidding-tendency-note">{t(`statsChart.${tendency}`)}</p>}
+      </div>
     </div>
   );
 };

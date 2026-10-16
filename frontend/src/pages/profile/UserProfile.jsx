@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useUser } from '@/shared/hooks/useUser'
 import { getUserPublicProfile } from '@/shared/api/userService'
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api'
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced'
 import StatsOverview from '@/components/stats/StatsOverview'
-import { ArrowLeftIcon, TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
+import { TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
+import BackButton from "@/components/ui/BackButton"
 import AvatarEditor from '@/components/profile/AvatarEditor'
 import defaultAvatar from "@/assets/default-avatar.png"
 import '@/styles/pages/account.css'
@@ -13,7 +14,6 @@ import '@/styles/components/error-container.css'
 import { useTranslation } from 'react-i18next';
 
 const UserProfile = () => {
-  const navigate = useNavigate()
   const { id: userId } = useParams()
   const { user: currentUser } = useUser()
   const { t } = useTranslation()
@@ -177,26 +177,7 @@ const UserProfile = () => {
     return (
       <div className="settings-container">
         <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '16px' }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '0px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '60px',
-              color: 'var(--primary)',
-              borderRadius: 'var(--radius-md)',
-              transition: 'background-color 0.2s',
-              boxShadow: 'none',
-            }}
-            title="Go back"
-          >
-            <ArrowLeftIcon size={24} />
-          </button>
+          <BackButton fallback="/" />
           <div className="settings-option">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
@@ -259,9 +240,7 @@ const UserProfile = () => {
               {t('profile.accountDeletedInfo')}
             </p>
           )}
-          <button onClick={() => navigate(-1)} className="back-button">
-            {t('common.goBack')}
-          </button>
+          <BackButton fallback="/" showLabel />
         </div>
       </div>
     )
@@ -272,9 +251,7 @@ const UserProfile = () => {
       <div className="settings-container">
         <div className="error-container">
           <h2>{t('profile.userNotFound')}</h2>
-          <button onClick={() => navigate(-1)} className="back-button">
-            {t('common.goBack')}
-          </button>
+          <BackButton fallback="/" showLabel />
         </div>
       </div>
     )
@@ -284,28 +261,7 @@ const UserProfile = () => {
     <div className="settings-container">
       
       <div className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 'var(--spacing-sm)', borderBottom: 'none', gap: '16px' }}>
-        <button
-                onClick={() => navigate(-1)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '0px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '60px',
-                  color: 'var(--primary)',
-                  borderRadius: 'var(--radius-md)',
-                  transition: 'background-color 0.2s',
-                  boxShadow: 'none',
-                }}
-                onPointerEnter={(e) => { if (e.pointerType === 'mouse') e.currentTarget.style.backgroundColor = 'var(--card-bg)'; }}
-                onPointerLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                title="Go back"
-              >
-                <ArrowLeftIcon size={24} />
-              </button>
+        <BackButton fallback="/" />
         <div className="settings-option">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-around', width: '100%' }}>

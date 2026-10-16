@@ -8,7 +8,7 @@ This document provides guidance for AI coding agents (GitHub Copilot, Claude, et
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 1.18.4 |
+| **Version** | 1.20.1 |
 | **Frontend** | React 19 + Vite + React Router 7 |
 | **Backend** | Node.js 18+ + Express.js |
 | **Database** | MongoDB 7.x with Mongoose ODM |
@@ -39,8 +39,10 @@ wizard-tracker/
 │       │   ├── contexts/    # React Context providers
 │       │   ├── db/          # IndexedDB/Dexie configuration
 │       │   ├── hooks/       # Custom React hooks
+│       │   ├── i18n/        # i18next setup + locales (en, de)
 │       │   ├── schemas/     # Frontend validation schemas
 │       │   ├── sync/        # Offline sync logic
+│       │   ├── theme/       # Accent palette generation
 │       │   └── utils/       # Utility functions
 │       └── styles/          # CSS stylesheets
 ├── docs/                    # Project documentation (md files)
@@ -55,7 +57,9 @@ wizard-tracker/
 - **Data Fetching**: TanStack React Query for server state
 - **Local Database**: Dexie.js wrapping IndexedDB for offline storage
 - **Routing**: React Router v7 with nested routes
-- **Styling**: CSS Modules and plain CSS (no Tailwind/styled-components)
+- **Styling**: Plain CSS in `src/styles/` (no CSS Modules/Tailwind/styled-components), mobile-first; `src/styles/__tests__/cssDebt.test.js` fails on new `max-width` queries, non-standard breakpoints (only 600/768/1024) or `!important`
+- **i18n**: react-i18next; add every new key to both `en.json` and `de.json`
+- **Imports**: `@` aliases `frontend/src`
 - **PWA**: Custom service worker with caching strategies
 - **Icons**: Lucide React icons
 - **Charts**: Chart.js with react-chartjs-2 and Recharts
@@ -81,6 +85,9 @@ wizard-tracker/
 | `GameTemplate` | Custom game configurations |
 | `SystemGameTemplate` | Built-in game templates |
 | `UserGameTemplate` | User-created templates |
+| `TemplateSuggestion` | User-submitted template suggestions for admin review |
+| `FriendRequest` | Friend requests between users |
+| `Migration` | Tracks which `runMigrations.js` migrations have run |
 
 ## Development Commands
 
@@ -98,12 +105,18 @@ docker compose up          # Start Docker containers
 npm test                   # Run all tests
 npm run test:backend       # Backend tests only
 npm run test:frontend      # Frontend tests only
+cd backend && npm test -- tests/elo.test.js          # Single backend test file
+cd frontend && npx vitest run path/to/file.test.js   # Single frontend test file
 
 # Code Quality
-npm run lint               # Run ESLint
+npm run lint:frontend      # Run ESLint (the backend has no lint script, so root `npm run lint` fails)
 npm run format             # Format with Prettier
-npm run precommit          # Lint + format check + tests
+
+# Versioning
+cd frontend && npm run update-version   # Sync version (from .env VITE_APP_VERSION) across all files
 ```
+
+Git hooks (husky): pre-commit runs the frontend lint when frontend files are staged; pre-push runs frontend lint + tests.
 
 ### VS Code Tasks
 - **Run Tests**: Execute all tests (`Ctrl+Shift+P` → "Tasks: Run Test Task")
@@ -130,7 +143,7 @@ npm run precommit          # Lint + format check + tests
 ```jsx
 // Imports
 import { useState, useEffect } from 'react';
-import { useAuth } from '../shared/contexts/AuthContext';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 // Component
 export function ComponentName({ prop1, prop2 }) {
@@ -153,7 +166,8 @@ export function ComponentName({ prop1, prop2 }) {
 
 | Script | Purpose | How to run |
 |--------|---------|-----------|
-| `runMigrations.js` | Auto-runs DB migrations on server start; also triggered via admin API | Runs automatically |
+| `runMigrations.js` | Auto-runs DB migrations on server start (`SKIP_MIGRATIONS` / `FORCE_MIGRATIONS` env flags); status via `GET /api/users/admin/migrations` | Runs automatically |
+| `dedupe-games.js` | Finds duplicate games (dry run by default) | `npm run games:dedupe` / `npm run games:dedupe:apply` |
 | `calculate-initial-elo.js` | Recalculates ELO ratings for all historical games | `npm run elo:calculate` |
 | `copy-prod-to-dev.js` | Copies production data to dev database | `npm run db:copy-prod` |
 | `diagnose-failed-migrations.js` | Diagnostic tool for failed migration records | `node scripts/diagnose-failed-migrations.js` |
@@ -188,18 +202,20 @@ export function ComponentName({ prop1, prop2 }) {
 
 ### Adding a New Page
 1. Create page component in `frontend/src/pages/`
-2. Add route in `frontend/src/app/` routing configuration
+2. Add route in `frontend/src/app/App.jsx`
 3. Add navigation link if needed in layout components
 
 ### Working with Game Data
 - Game state flows: Frontend → IndexedDB (offline) → Sync → Backend → MongoDB
+- Saved/finished games also live in localStorage via `frontend/src/shared/api/local*Storage.js`
+- IndexedDB schema changes (`shared/db/database.js`) need a new Dexie `version(n)`, never an edit to an existing one
 - Use hooks in `frontend/src/shared/hooks/` for game operations
 - Use contexts in `frontend/src/shared/contexts/` for global game state
 
 ## Testing Requirements
 
 ### Before Committing
-1. Run `npm run lint` - ensure no linting errors
+1. Run `npm run lint:frontend` - ensure no linting errors
 2. Run `npm test` - ensure all tests pass
 3. Run `npm run format:check` - ensure code is formatted
 
@@ -215,19 +231,19 @@ export function ComponentName({ prop1, prop2 }) {
 
 ### Configuration
 - `docker-compose.yml` - Container orchestration
-- `backend/.env` / `frontend/.env` - Environment variables
+- `.env` (root, used by Docker Compose) / `backend/.env` / `frontend/.env` - Environment variables
 - `frontend/vite.config.js` - Vite build configuration
 - `frontend/eslint.config.js` - ESLint rules
 
 ### Entry Points
 - `backend/server.js` - Backend application entry
-- `frontend/src/app/` - Frontend app entry and routing
-- `frontend/public/service-worker.js` - PWA service worker
+- `frontend/src/app/main.jsx` / `App.jsx` - Frontend app entry and routing
+- `frontend/public/service-worker.js` - PWA service worker (built via VitePWA `injectManifest`)
 
-### Key Contexts (Frontend)
-- `AuthContext` - User authentication state
-- `GameContext` - Active game state
-- `SyncContext` - Offline sync status
+### Key Contexts (Frontend, `shared/contexts/`)
+- `UserContext` - User authentication state (consume via `useAuth` / `useUser` hooks)
+- `GameSyncContext` - Offline sync status
+- `ThemeContext` - Light/dark theme and accent color
 
 ## Do's and Don'ts
 
@@ -265,14 +281,19 @@ export function ComponentName({ prop1, prop2 }) {
 ## Environment Variables
 
 ### Backend (`.env`)
-- `MONGODB_URI` - MongoDB connection string
+- `MONGO_URI` - MongoDB connection string
 - `JWT_SECRET` - Secret for JWT signing
+- `JWT_EXPIRES_IN_DAYS` - Token lifetime
 - `REDIS_URL` - Redis connection for caching
 - `PORT` - Server port (default: 5000)
+- `SKIP_MIGRATIONS` / `FORCE_MIGRATIONS` - Control startup migrations
+- `GAMEUPC_API_KEY` / `BGG_API_TOKEN` - Barcode lookup and BoardGameGeek metadata (optional)
 
 ### Frontend (`.env`)
-- `VITE_API_URL` - Backend API base URL
+- `VITE_API_BASE_URL` - Backend API base URL
 - `VITE_APP_VERSION` - Application version
+- `VITE_LOG_LEVEL` - Client log level
+- `VITE_SEO_*` - SEO metadata (see `.env.seo.example`)
 
 ## Contact & Support
 

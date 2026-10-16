@@ -4,6 +4,7 @@ import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { XIcon, MinusIcon, PlusIcon, UsersIcon, TrophyIcon, RefreshIcon, EyeIcon, EditIcon } from '@/components/ui/Icon';
 import { calculateScore, generateRoundPattern } from '@/shared/utils/scoringFormulas';
 import '@/styles/components/AddGameTemplateModal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const ROUND_PATTERN_OPTIONS = [
   { key: 'pyramid', labelKey: 'templateModal.patternPyramidShort', descKey: 'templateModal.patternPyramid' },
@@ -341,13 +342,13 @@ const AddGameTemplateModal = ({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSave();
-    } else if (e.key === 'Escape') {
-      onClose();
     }
   };
 
   const scoringFormula = { baseCorrect, bonusPerTrick, penaltyPerDiff };
   const exampleCall = 2;
+
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -364,7 +365,7 @@ const AddGameTemplateModal = ({
           <h2 id="add-game-modal-title">
             {editMode ? t('templateModal.editGameType') : t('templateModal.newGameType')}
           </h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
+          <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>

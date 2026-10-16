@@ -98,15 +98,6 @@
   font-size: 1.1rem;
 }
 
-.table-game-container .game-error-state .back-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-}
-
 /* GameInProgress-style layout.
    The page is a flex item of the container, so its auto side margins would
    otherwise beat the default stretch and shrink it to its content - making the
@@ -227,7 +218,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
 
 .add-player-btn {
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
 }
 
 @media (hover: hover) {
@@ -256,7 +247,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
 /* Add Row Button in Table View */
 .table-game-add-row-btn {
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   font-size: 0.95rem;
   border-radius: var(--radius-sm);
@@ -309,25 +300,9 @@ body[data-fixed-viewport] .scoreboard-game-container {
   border-radius: var(--radius-md);
 }
 
-.back-to-templates-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
-  background: var(--border);
-  color: var(--text);
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  justify-content: center;
-}
-
 .table-game-add-player-above {
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   font-size: 1rem;
   border-radius: var(--radius-sm);
@@ -470,7 +445,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
 @media (hover: hover) {
   .table-game-move-btn:hover:not(.disabled) {
     background: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
   }
 }
 
@@ -565,7 +540,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
 .table-game-total {
   font-weight: bold;
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   font-size: 1rem;
   min-width: 32px;
   max-width: 48px;
@@ -622,7 +597,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: 1rem;
@@ -710,7 +685,6 @@ body[data-fixed-viewport] .scoreboard-game-container {
     gap: var(--spacing-md);
   }
 
-  .back-to-templates-btn,
   .table-game-add-player-above,
   .table-game-save-btn {
     width: 100%;
@@ -772,7 +746,7 @@ body[data-fixed-viewport] .scoreboard-game-container {
 
 .table-game-tab-btn.active {
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border-color: var(--primary);
 }
 

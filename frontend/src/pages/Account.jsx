@@ -22,6 +22,7 @@ import { createLogger } from '@/shared/utils/logger';
 const PerformanceStatsEnhanced = lazy(() => import('@/pages/profile/PerformanceStatsEnhanced'));
 import StatsOverview from '@/components/stats/StatsOverview';
 import AccentColorPicker from '@/components/settings/AccentColorPicker';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 import '@/styles/pages/account.css';
 
 const logger = createLogger('account');
@@ -70,6 +71,9 @@ const Account = () => {
   const [showAccountDeleteModal, setShowAccountDeleteModal] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [accountDeletionLoading, setAccountDeletionLoading] = useState(false);
+
+  useModalDismiss(showPasswordChangeModal, () => setShowPasswordChangeModal(false), { disabled: passwordChangeLoading });
+  useModalDismiss(showAccountDeleteModal, () => setShowAccountDeleteModal(false), { disabled: accountDeletionLoading });
 
   const getCombinedLocalTableGames = useCallback(() => {
     const tableGames = LocalTableGameStorage.getSavedTableGamesList().map((game) => ({
@@ -1267,8 +1271,8 @@ const Account = () => {
             <div className="modal-container" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{t('passwordModal.title')}</h2>
-                <button className="modal-close-btn" onClick={() => setShowPasswordChangeModal(false)}>
-                  <XIcon size={18} />
+                <button className="close-btn" onClick={() => setShowPasswordChangeModal(false)} aria-label={t('common.close')}>
+                  <XIcon size={20} />
                 </button>
               </div>
               <div className="modal-content">
@@ -1346,8 +1350,8 @@ const Account = () => {
             <div className="modal-container" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2 style={{ color: 'var(--danger-color)' }}>{t('deleteAccountModal.title')}</h2>
-                <button className="modal-close-btn" onClick={() => setShowAccountDeleteModal(false)}>
-                  <XIcon size={18} />
+                <button className="close-btn" onClick={() => setShowAccountDeleteModal(false)} aria-label={t('common.close')}>
+                  <XIcon size={20} />
                 </button>
               </div>
               <div className="modal-content">

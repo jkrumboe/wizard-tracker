@@ -4,6 +4,7 @@ import { XIcon, FilterIcon, PlusIcon } from '@/components/ui/Icon';
 import PlayerNameInput from '@/components/ui/PlayerNameInput';
 import '@/styles/components/modal.css';
 import '@/styles/components/GameFilterModal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} }) => {
   const { t } = useTranslation();
@@ -30,6 +31,8 @@ const GameFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters = {} 
       setPlayerInput('');
     }
   }, [isOpen, initialFilters]);
+
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
 

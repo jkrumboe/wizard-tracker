@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useNavigate, Link } from "react-router-dom"
+import { useParams, Link } from "react-router-dom"
 import { useTranslation } from 'react-i18next'
 
 // Services
@@ -20,7 +20,8 @@ import "@/styles/components/TableGame.css"
 import "@/styles/pages/account.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon, BarChartIcon, ChevronDownIcon } from "@/components/ui/Icon"
+import { BarChartIcon, ChevronDownIcon } from "@/components/ui/Icon"
+import BackButton from "@/components/ui/BackButton"
 import RankBadge from "@/components/game/RankBadge"
 import { GameHighlights } from "@/components/game/GameHighlights"
 import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
@@ -29,9 +30,7 @@ import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 const GameDetailsSkeleton = () => (
   <div className="game-details-container">
     <div className="game-details-header">
-      <button className="back-link" disabled>
-        <ArrowLeftIcon className="back-icon" />
-      </button>
+      <BackButton className="game-details-back" disabled />
       
       <div className="game-title-section">
         <div className="skeleton skeleton-text" style={{ width: '90px', height: '24px' }}></div>
@@ -80,7 +79,6 @@ const GameDetails = () => {
   const compareIds = (id1, id2) => String(id1) === String(id2);
   
   const { id } = useParams()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const [summaryRef, summaryScrolled] = useIsScrolled()
   const [game, setGame] = useState(null)
@@ -493,13 +491,7 @@ const GameDetails = () => {
       <div className={`game-details-container${summaryScrolled ? ' is-scrolled' : ''}`}>
         
         <div className="game-details-header">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="back-link"
-            aria-label={t('common.goBack')}
-          >
-            <ArrowLeftIcon className="back-icon" />
-          </button>
+          <BackButton className="game-details-back" fallback="/games" />
           
           <div className="game-title-section">
             <div className="game-name">{t('gameDetails.gameName')}</div>

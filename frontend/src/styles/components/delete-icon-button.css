@@ -1,0 +1,35 @@
+/* Shared icon-only delete/remove button (components/ui/DeleteIconButton.jsx) */
+.delete-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.delete-icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) {
+  .delete-icon-btn:hover:not(:disabled) {
+    color: var(--error-color);
+    background-color: color-mix(in srgb, var(--error-color) 16%, transparent);
+    transform: none;
+  }
+}
+
+.delete-icon-btn:active:not(:disabled) {
+  color: var(--error-color);
+  background-color: color-mix(in srgb, var(--error-color) 22%, transparent);
+}

@@ -203,7 +203,7 @@
   @media (hover: hover) {
     .game-details:hover {
       background-color: var(--primary);
-      color: var(--text);
+      color: var(--on-primary);
     }
   }
 
@@ -317,7 +317,7 @@
   
   .tag-filter.active {
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     border-color: var(--primary);
   }
   
@@ -389,15 +389,6 @@
     margin-bottom: 0;
   }
   
-  .back-link {
-    display: flex;
-    align-content: center;
-    justify-content: center;
-    color: var(--primary);
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-
   .results-section {
     background-color: transparent;
     border-radius: var(--radius-lg);
@@ -549,7 +540,7 @@
 
 .stats-subtab-btn.active {
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
 }
 
   .results-row:nth-child(even) {
@@ -739,7 +730,7 @@
 
   .edit-button {
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     border: none;
     padding: var(--spacing-xs);
     border-radius: var(--radius-md);
@@ -809,7 +800,7 @@
 
   .profile-edit-header .save-button {
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -985,7 +976,7 @@
     grid-template-columns: 2fr 1fr 1fr 1fr;
     padding: 0.75rem 0.5rem;
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     font-weight: 600;
     border-radius: var(--radius-md) var(--radius-md) 0 0;
     justify-items: center;
@@ -1153,34 +1144,8 @@
     }
   }
   
-  .remove-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
+  .player-item .delete-icon-btn {
     margin-left: auto;
-    background: var(--error-color);
-    border: none;
-    color: var(--text);
-    cursor: pointer;
-    border-radius: var(--radius-full);
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    padding: 0;
-    transform: scale(0.9);
-  }
-
-  @media (hover: hover) {
-    .remove-btn:hover {
-      background: var(--danger-dark);
-      transform: scale(1);
-    }
-  }
-
-  .remove-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   .setting-item {
@@ -1273,7 +1238,7 @@
     display: block;
     width: 100%;
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     padding: var(--spacing-sm) var(--spacing-md);
     border: none;
     border-radius: var(--radius-lg);
@@ -1332,7 +1297,7 @@
     align-items: center;
     justify-content: center;
     background-color: var(--primary);
-    color: var(--text);
+    color: var(--on-primary);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -1463,78 +1428,6 @@
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
   }
 
-  /* Leaderboard Styles */
-  .leaderboard-container {
-    max-width: min(100vw, 960px);
-    width: 100%;
-    border-radius: var(--radius-lg);
-
-  }
-
-  .leaderboard-container h1 {
-    text-align: center;
-    color: var(--primary);
-    margin-bottom: var(--spacing-lg);
-  }
-
-  .leaderboard-table {
-    justify-content: center;
-    align-items: center;
-  }
-
-  .leaderboard-header,
-  .leaderboard-row {
-    display: grid;
-    grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr;
-    padding: var(--spacing-sm) var(--spacing-xs) ;
-    align-items: center;
-  }
-
-  .empty-row {
-    display: grid;
-    grid-template-columns: 0.5fr 2fr 1fr 1fr 1fr;
-    padding: 28px;
-    align-items: center;
-  }
-
-  .leaderboard-header {
-    color: var(--text);
-    font-weight: 600;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-  }
-
-  .leaderboard-row {
-    background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border);
-    transition: background-color 0.2s;
-  }
-
-
-  @media (hover: hover) {
-    .leaderboard-row:hover {
-      background-color: rgba(53, 99, 233, 0.1);
-    }
-  }
-
-  .pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: var(--spacing-md);
-    gap: var(--spacing-sm);
-  }
-
-  .pagination-controls button {
-    background-color: var(--primary);
-    color: var(--text);
-    border: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s, transform 0.1s;
-  }
-
   .rank-col,
   .player-col,
   .elo-col,
@@ -1562,7 +1455,7 @@
     border: none;
     border-radius: 4px;
     padding: 5px 10px;
-    color: var(--text);
+    color: var(--on-primary);
     cursor: pointer;
     font-size: 16px;
     transition: background-color 0.3s ease;
@@ -1734,7 +1627,7 @@
 
 .tab-button.active {
   background-color: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
 }
 
@@ -1825,7 +1718,7 @@
 .resume-btn {
   background-color: var(--primary);
   border: none;
-  color: var(--text);
+  color: var(--on-primary);
 }
 
 .delete-btn {
@@ -2338,7 +2231,7 @@ html[data-keyboard="open"] .game-bottom-section {
   cursor: pointer;
   transition: all 0.2s ease;
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2352,49 +2245,6 @@ html[data-keyboard="open"] .game-bottom-section {
     box-shadow: var(--shadow-sm);
     background: var(--primary-dark);
   }
-}
-
-.saved-game-actions .icon-btn.danger {
-  background: transparent;
-  border-color: var(--error-color);
-  color: var(--error-color);
-}
-
-@media (hover: hover) {
-  .saved-game-actions .icon-btn.danger:hover {
-    background: rgba(239, 68, 68, 0.1);
-    transform: translateY(-1px);
-  }
-}
-
-/* Confirm Dialog Styles (from Settings page) */
-.confirm-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-in-out;
-}
-
-.confirm-dialog {
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  padding: var(--spacing-lg);
-  width: 90%;
-  max-width: 400px;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp 0.3s ease-in-out;
-}
-
-.confirm-dialog h3 {
-  margin-top: 0;
-  color: var(--danger-color);
 }
 
 .confirm-actions {
@@ -2465,16 +2315,6 @@ html[data-keyboard="open"] .game-bottom-section {
   .icon-btn:hover {
     background-color: var(--card-bg-alt);
     color: var(--text);
-  }
-}
-
-.icon-btn.danger {
-  color: var(--error-color);
-}
-
-@media (hover: hover) {
-  .icon-btn.danger:hover {
-    background-color: rgba(239, 68, 68, 0.1);
   }
 }
 
@@ -2615,145 +2455,6 @@ html[data-keyboard="open"] .bottom-navbar {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
-}
-
-/* Dialog Overlay and Modal Styles */
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease;
-}
-
-.dialog-modal {
-  background-color: var(--card-bg);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  width: 95%;
-  margin: var(--spacing-md);
-  max-width: 500px;
-  box-shadow: var(--shadow-lg);
-  animation: slideIn 0.3s ease;
-  border: 1px solid var(--border);
-  max-height: 80dvh;
-  overflow-y: auto;
-}
-
-@media (min-width: 768px) {
-  .dialog-modal {
-    width: 90%;
-    margin: 0;
-  }
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 1px solid var(--border);
-}
-
-.dialog-header h2 {
-  margin: 0;
-  color: var(--primary);
-}
-
-.dialog-close-btn {
-  background: none;
-  border: none;
-  color: var(--text-light);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--radius-full);
-  transition: all 0.2s;
-}
-
-@media (hover: hover) {
-  .dialog-close-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text);
-  }
-}
-
-.dialog-content {
-  margin-bottom: var(--spacing-lg);
-}
-
-.dialog-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  justify-content: flex-end;
-}
-
-.dialog-btn {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-  min-width: 100px;
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .dialog-actions {
-    flex-direction: row;
-  }
-
-  .dialog-btn {
-    width: auto;
-  }
-}
-
-.dialog-btn.primary {
-  background-color: var(--primary);
-  color: var(--text);
-}
-
-@media (hover: hover) {
-  .dialog-btn.primary:hover {
-    background-color: var(--primary-dark);
-  }
-}
-
-.dialog-btn.secondary {
-  background-color: var(--card-bg-alt);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-@media (hover: hover) {
-  .dialog-btn.secondary:hover {
-    background-color: var(--border);
-  }
-}
-
-.dialog-btn.danger {
-  background-color: var(--error-color);
-  color: var(--text);
-}
-
-@media (hover: hover) {
-  .dialog-btn.danger:hover {
-    background-color: var(--error-dark);
-  }
-}
-
-.dialog-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Form Elements in Dialogs */
@@ -2904,7 +2605,7 @@ html[data-keyboard="open"] .bottom-navbar {
   cursor: pointer;
   transition: all 0.2s ease;
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2917,19 +2618,6 @@ html[data-keyboard="open"] .bottom-navbar {
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
     background: var(--primary-dark);
-  }
-}
-
-.saved-game-actions .icon-btn.danger {
-  background: transparent;
-  border: 1px solid var(--error-color);
-  color: var(--error-color);
-}
-
-@media (hover: hover) {
-  .saved-game-actions .icon-btn.danger:hover {
-    background: rgba(239, 68, 68, 0.1);
-    transform: translateY(-1px);
   }
 }
 

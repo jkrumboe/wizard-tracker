@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Icon, { ArrowLeftIcon, PlayIcon, TrashIcon, UsersIcon } from '@/components/ui/Icon';
+import Icon, { PlayIcon, TrashIcon, UsersIcon } from '@/components/ui/Icon';
+import BackButton from '@/components/ui/BackButton';
 import GameHistoryItem from '@/components/game/GameHistoryItem';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
@@ -62,10 +63,6 @@ const GameTypePage = () => {
 
   const infoPath = `/game-types/${encodeURIComponent(template?.name || name)}/info`;
 
-  const handleBack = () => {
-    if (globalThis.history.length > 1) navigate(-1);
-    else navigate('/start');
-  };
 
   const handleResume = (game) => {
     setResumeError('');
@@ -89,9 +86,7 @@ const GameTypePage = () => {
     return (
       <div className="game-type-page">
         <header className="game-type-header">
-          <button type="button" className="games-quick-link" onClick={handleBack} aria-label={t('common.goBack')}>
-            <ArrowLeftIcon size={18} />
-          </button>
+          <BackButton fallback="/start" />
           <h1 className="games-title game-type-title">{name}</h1>
         </header>
         <p className="empty-message">
@@ -105,9 +100,7 @@ const GameTypePage = () => {
   return (
     <div className="game-type-page">
       <header className="game-type-header">
-        <button type="button" className="games-quick-link" onClick={handleBack} aria-label={t('common.goBack')}>
-          <ArrowLeftIcon size={18} />
-        </button>
+        <BackButton fallback="/start" />
         <h1 className="games-title game-type-title">{template.name}</h1>
         <Link to={infoPath} state={{ fromGamePage: true }} className="games-quick-link" aria-label={t('gameType.info')} title={t('gameType.info')}>
           <Icon name="Info" size={18} strokeWidth={2} aria-hidden="true" />

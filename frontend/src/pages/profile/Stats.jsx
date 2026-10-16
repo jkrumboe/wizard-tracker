@@ -1,14 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import PerformanceStatsEnhanced from './PerformanceStatsEnhanced'
 import { useUser } from '@/shared/hooks/useUser'
 import { userService } from '@/shared/api/userService'
-import { ArrowLeftCircleIcon } from '@/components/ui/Icon'
+import BackButton from '@/components/ui/BackButton'
 import "@/styles/components/TableGame.css";
 import { useTranslation } from 'react-i18next';
 
 const Stats = () => {
-  const navigate = useNavigate()
   const { user } = useUser()
   const { t } = useTranslation()
   const [allGames, setAllGames] = useState([])
@@ -116,14 +114,7 @@ const Stats = () => {
   return (
       <div className="stats-container">
         <div className="stats-header">
-          <button
-            className="back-to-templates-btn"
-            onClick={() => navigate('/profile')}
-            title={t('profile.backToProfile')}
-          >
-            <ArrowLeftCircleIcon size={20} />
-            {t('common.goBack')}
-          </button>
+          <BackButton fallback="/account" label={t('profile.backToProfile')} />
         </div>
 
         <PerformanceStatsEnhanced games={allGames} currentPlayer={currentPlayer} gameType="wizard" />

@@ -109,11 +109,6 @@
     "nonStandard": 2,
     "important": 17
   },
-  "pages/leaderboard.css": {
-    "maxWidth": 2,
-    "nonStandard": 2,
-    "important": 2
-  },
   "pages/login.css": {
     "maxWidth": 1,
     "nonStandard": 1,

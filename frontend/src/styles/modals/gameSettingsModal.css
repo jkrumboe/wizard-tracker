@@ -259,16 +259,9 @@
 }
 
 /* Seating list */
-.gs-seat-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
+.gs-seat .delete-icon-btn {
+  align-self: center;
+  margin-right: var(--spacing-xs);
 }
 
 .gs-seats {
@@ -288,32 +281,32 @@
   border-radius: var(--radius-md);
   background: var(--card-bg);
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  /* The whole row drags, like the start game list: hold on touch, click-drag with a mouse */
+  cursor: grab;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-.gs-seat.is-dealer {
+.gs-seat:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .gs-seat:hover {
+    border-color: var(--primary);
+  }
+}
+
+/* While dragged, the dealer row takes the shared sortable.css look */
+.gs-seat.is-dealer:not(.is-dragging) {
   border-color: var(--primary);
   background: rgba(var(--primary-rgb), 0.1);
 }
 
 .gs-seat.is-dragging {
-  z-index: 2;
-  box-shadow: var(--shadow-lg);
-}
-
-.gs-seat-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: grab;
-  touch-action: none;
-}
-
-.gs-seat-handle:active {
   cursor: grabbing;
 }
 
@@ -323,17 +316,13 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: 0.7rem var(--spacing-sm) 0.7rem 0;
+  padding: 0.7rem var(--spacing-sm);
   border: none;
   background: transparent;
   color: var(--text);
   font: inherit;
   text-align: left;
-  cursor: pointer;
-}
-
-.gs-seat-main:disabled {
-  cursor: default;
+  cursor: inherit;
 }
 
 .gs-seat-number {
@@ -411,7 +400,6 @@
 }
 
 .gs-seat-main:has(.gs-seat-name-input) {
-  cursor: default;
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
 }
@@ -534,7 +522,7 @@
 
 .gs-switch:checked::after {
   transform: translateX(18px);
-  background: var(--on-primary);
+  background: var(--text);
 }
 
 .gs-switch:focus-visible {
@@ -567,8 +555,7 @@
 
 @media (hover: hover) {
   .gs-close:hover,
-  .gs-icon-btn:hover,
-  .gs-seat-remove:hover {
+  .gs-icon-btn:hover {
     color: var(--primary);
   }
 

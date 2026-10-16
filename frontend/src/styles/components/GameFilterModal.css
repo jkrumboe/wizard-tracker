@@ -46,7 +46,7 @@
 
 .add-player-btn {
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   border: none;
   border-radius: var(--radius-md);
   padding: var(--spacing-sm);
@@ -69,25 +69,38 @@
   align-items: center;
   gap: var(--spacing-xs);
   background: var(--primary);
-  color: var(--text);
+  color: var(--on-primary);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
+/* Chip dismiss: a quiet ✕ inside the tag, like other chip inputs */
 .remove-player-btn {
-  background: var(--error-color);
-  border: 1px solid  var(--border);
-  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  box-shadow: none;
+  color: inherit;
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 27px;
-  height: 27px;
-  transition: background-color 0.2s ease;
+  width: 22px;
+  height: 22px;
+  opacity: 0.8;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+@media (hover: hover) {
+  .remove-player-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: transparent;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .filter-input,

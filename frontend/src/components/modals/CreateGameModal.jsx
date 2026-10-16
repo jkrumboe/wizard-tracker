@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import '@/styles/components/modal.css';
 import { XIcon} from "@/components/ui/Icon"
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const CreateGameModal = ({ 
   isOpen, 
@@ -11,6 +12,8 @@ const CreateGameModal = ({
   onSettingsChange
 }) => {
   const { t } = useTranslation();
+
+  useModalDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
   
@@ -24,7 +27,7 @@ const CreateGameModal = ({
       <div className="modal-container create-game-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{t('createGame.title')}</h2>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>

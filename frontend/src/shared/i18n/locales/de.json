@@ -704,7 +704,6 @@
     "tendsToUnderbid": "Sagt eher zu niedrig an",
     "mixedErrors": "Fehler in beide Richtungen",
     "bidding": "Ansagen",
-    "playMoreForBidding": "Spiele mehr, um Ansage-Statistiken zu sehen",
     "correctCount": "{{count}} richtig",
     "overCount": "{{count}} zu hoch",
     "underCount": "{{count}} zu niedrig"
@@ -879,8 +878,8 @@
     "moreRounds": "Mehr Runden",
     "seatingAndDealer": "Sitzordnung & Geber",
     "seating": "Sitzordnung",
-    "seatingHint": "Ziehe am Griff, um Plätze zu tauschen. Tippe auf einen Spieler, um ihn in dieser Runde zum Geber zu machen.",
-    "seatingHintNoDealer": "Ziehe am Griff, um Plätze zu tauschen.",
+    "seatingHint": "Halte und ziehe einen Spieler, um Plätze zu tauschen. Tippe auf einen Spieler, um ihn in dieser Runde zum Geber zu machen.",
+    "seatingHintNoDealer": "Halte und ziehe einen Spieler, um Plätze zu tauschen.",
     "callsFirst": "Sagt zuerst an",
     "dragToReorder": "{{name}} verschieben",
     "addPlayer": "Hinzufügen",
@@ -1024,7 +1023,7 @@
   "tableGameSettings": {
     "title": "Spieleinstellungen",
     "players": "Spieler",
-    "playersHint": "Zum Umsortieren am Griff ziehen. Zum Umbenennen auf einen Namen tippen.",
+    "playersHint": "Zum Umsortieren einen Spieler halten und ziehen. Zum Umbenennen auf einen Namen tippen.",
     "scoring": "Wertung",
     "addPlayer": "Spieler hinzufügen",
     "currentScoreEditor": "Aktueller Punktestand Satz {{round}}",
@@ -1651,6 +1650,11 @@
   },
 
   "gameType": {
+    "lastPlayed": "Zuletzt gespielt {{when}}",
+    "pausedCount": "{{count}} pausiert",
+    "gamesLabel_one": "Spiel",
+    "gamesLabel_other": "Spiele",
+    "notPlayedYet": "Noch nicht gespielt",
     "add": "Hinzufügen",
     "searchGames": "Spiele suchen",
     "noMatches": "Keine Spiele passen zu deiner Suche.",

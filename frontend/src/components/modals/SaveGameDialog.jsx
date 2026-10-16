@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { XIcon, SaveIcon, PauseIcon, PlayIcon } from '@/components/ui/Icon';
+import { XIcon, SaveIcon, PauseIcon } from '@/components/ui/Icon';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
+import '@/styles/components/modal.css';
 
 const SaveGameDialog = ({ 
   isOpen, 
@@ -18,12 +20,15 @@ const SaveGameDialog = ({
   const [gameName, setGameName] = useState(gameState?.gameName || '');
   const [saveOption, setSaveOption] = useState(initialOption); // 'save', 'pause', 'leave'
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const backdrop = useModalDismiss(isOpen, onClose, { disabled: loading });
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const customName = gameName.trim() || null;
@@ -46,10 +51,10 @@ const SaveGameDialog = ({
       if (result.success) {
         onClose();
       } else {
-        alert(`Error: ${result.error}`);
+        setError(t('loadGameDialog.genericError', { message: result.error }));
       }
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      setError(t('loadGameDialog.genericError', { message: error.message }));
     } finally {
       setLoading(false);
     }
@@ -62,16 +67,22 @@ const SaveGameDialog = ({
   };
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog-modal">
-        <div className="dialog-header">
-          <h2>{title || t('saveGame.title')}</h2>
-          <button onClick={onClose} className="dialog-close-btn" disabled={loading}>
-            <XIcon size={16} />
+    <div className="modal-overlay" {...backdrop}>
+      <div
+        className="modal-container"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="save-game-title"
+      >
+        <div className="modal-header">
+          <h2 id="save-game-title">{title || t('saveGame.title')}</h2>
+          <button onClick={onClose} className="close-btn" disabled={loading} aria-label={t('common.close')}>
+            <XIcon size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="dialog-content">
+        <form id="save-game-form" onSubmit={handleSubmit} className="modal-content">
+          {error && <div className="modal-error" role="alert">{error}</div>}
           <div className="form-group">
             <label htmlFor="gameName">{t('saveGame.gameNameLabel')}</label>
             <input
@@ -153,28 +164,29 @@ const SaveGameDialog = ({
               </div>
             )}
           </div>
-
-          <div className="dialog-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="dialog-btn secondary"
-              disabled={loading}
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              type="submit"
-              className="dialog-btn primary"
-              disabled={loading}
-            >
-              {loading ? t('saveGame.saving') : 
-               saveOption === 'save' ? t('saveGame.saveGameBtn') :
-               saveOption === 'pause' ? t('saveGame.pauseGameBtn') :
-               t('saveGame.saveAndLeave')}
-            </button>
-          </div>
         </form>
+
+        <div className="modal-actions">
+          <button
+            type="button"
+            onClick={onClose}
+            className="modal-button secondary"
+            disabled={loading}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="submit"
+            form="save-game-form"
+            className="modal-button primary"
+            disabled={loading}
+          >
+            {loading ? t('saveGame.saving') : 
+             saveOption === 'save' ? t('saveGame.saveGameBtn') :
+             saveOption === 'pause' ? t('saveGame.pauseGameBtn') :
+             t('saveGame.saveAndLeave')}
+          </button>
+        </div>
       </div>
     </div>
   );

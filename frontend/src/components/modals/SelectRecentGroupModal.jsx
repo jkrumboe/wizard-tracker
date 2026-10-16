@@ -4,9 +4,11 @@ import { XIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { getRecentLocalGames } from '@/shared/api/gameService';
 import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage';
 import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage';
+import { formatLastPlayed } from '@/shared/utils/formatLastPlayed';
 import '@/styles/components/modal.css';
 import '@/styles/components/select-friends-modal.css';
 import '@/styles/components/select-recent-group-modal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 // How many games per source to scan before collapsing them into unique groups
 const GAMES_PER_SOURCE = 30;
@@ -29,16 +31,6 @@ const isSamePlayer = (a, b) => {
 const getGameName = (game) => {
   if (game._type === 'wizard') return game.gameState?.templateName || game.templateName || 'Wizard';
   return game.gameTypeName || game.gameName || game.name || '';
-};
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-// "today", "yesterday", "3 days ago" - falls back to the date after a month
-const formatLastPlayed = (date, language) => {
-  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / DAY_MS);
-  if (days < 0 || days > 30) return date.toLocaleDateString(language);
-  return new Intl.RelativeTimeFormat(language, { numeric: 'auto' }).format(-days, 'day');
 };
 
 const MAX_AVATARS = 4;
@@ -153,6 +145,8 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupI
 
   const isAlreadySelected = (player) =>
     alreadySelectedPlayers.some(selected => isSamePlayer(selected, player));
+
+  useModalDismiss(isOpen, handleClose);
 
   if (!isOpen) return null;
 

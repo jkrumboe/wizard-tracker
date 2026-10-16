@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftIcon, ExternalLinkIcon } from '@/components/ui/Icon';
+import { ExternalLinkIcon } from '@/components/ui/Icon';
+import BackButton from '@/components/ui/BackButton';
 import GameThumbnail from '@/components/game/GameThumbnail';
 import GameTypeManageActions from '@/components/game/GameTypeManageActions';
 import { useGameTemplates } from '@/shared/hooks/useGameTemplates';
@@ -57,9 +58,7 @@ const GameTypeInfoPage = () => {
     return (
       <div className="game-type-page">
         <header className="game-type-header">
-          <Link to="/start" className="games-quick-link" aria-label={t('common.goBack')}>
-            <ArrowLeftIcon size={18} />
-          </Link>
+          <BackButton to="/start" />
           <h1 className="games-title game-type-title">{name}</h1>
         </header>
         <p className="empty-message">{loading ? t('common.loading') : t('gameType.notFound', { name })}</p>
@@ -103,14 +102,7 @@ const GameTypeInfoPage = () => {
       {({ editButton, moreActions }) => (
         <div className="game-type-page game-type-info-page">
           <header className="game-type-header">
-            <button
-              type="button"
-              className="games-quick-link"
-              onClick={handleBack}
-              aria-label={t('common.goBack')}
-            >
-              <ArrowLeftIcon size={18} />
-            </button>
+            <BackButton onClick={handleBack} />
             <h1 className="games-title game-type-title">{template.name}</h1>
             {editButton}
           </header>

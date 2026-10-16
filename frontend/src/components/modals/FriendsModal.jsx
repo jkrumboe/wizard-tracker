@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { XIcon, UsersIcon, PlusIcon, TrashIcon, SearchIcon, CheckMarkIcon, ClockIcon } from '@/components/ui/Icon';
+import { XIcon, UsersIcon, PlusIcon, SearchIcon, CheckMarkIcon, ClockIcon } from '@/components/ui/Icon';
+import DeleteIconButton from '@/components/ui/DeleteIconButton';
+import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer';
 import defaultAvatar from '@/assets/default-avatar.png';
 import { localFriendsService } from '@/shared/api';
@@ -294,7 +296,7 @@ const FriendsModal = ({ isOpen, onClose }) => {
         <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h2>{t('friends.title')}</h2>
-            <button className="close-btn" onClick={onClose}>
+            <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
               <XIcon size={20} />
             </button>
           </div>
@@ -308,221 +310,212 @@ const FriendsModal = ({ isOpen, onClose }) => {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>
-            {t('friends.title')}
-          </h2>
-          <button className="close-btn" onClick={onClose}>
-            <XIcon size={20} />
-          </button>
-        </div>
+    <>
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-container friends-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>
+              {t('friends.title')}
+            </h2>
+            <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
+              <XIcon size={20} />
+            </button>
+          </div>
 
-        <div className="modal-tabs">
-          <button
-            className={`tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('friends');
-              setSearchQuery('');
-              setError('');
-            }}
-          >
-            {t('friends.yourFriends')}
-            {friends.length > 0 && <span className="tab-badge">{friends.length}</span>}
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'received' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('received');
-              setSearchQuery('');
-              setError('');
-            }}
-          >
-            {t('friends.friendRequests')}
-            {receivedRequests.length > 0 && (
-              <span className="tab-badge highlight">{receivedRequests.length}</span>
-            )}
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'add' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('add');
-              setSearchQuery('');
-              setError('');
-            }}
-          >
-            {t('friends.addFriendTab')}
-          </button>
-        </div>
+          <div className="modal-tabs">
+            <button
+              className={`tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('friends');
+                setSearchQuery('');
+                setError('');
+              }}
+            >
+              {t('friends.yourFriends')}
+              {friends.length > 0 && <span className="tab-badge">{friends.length}</span>}
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'received' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('received');
+                setSearchQuery('');
+                setError('');
+              }}
+            >
+              {t('friends.friendRequests')}
+              {receivedRequests.length > 0 && (
+                <span className="tab-badge highlight">{receivedRequests.length}</span>
+              )}
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'add' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('add');
+                setSearchQuery('');
+                setError('');
+              }}
+            >
+              {t('friends.addFriendTab')}
+            </button>
+          </div>
 
-        <div className="modal-content">
-          {error && <div className="error-message">{error}</div>}
+          <div className="modal-content">
+            {error && <div className="error-message">{error}</div>}
           
-          {hasNewRequest && activeTab !== 'received' && (
-            <div className="new-request-notification" onClick={() => setActiveTab('received')}>
-              <ClockIcon size={18} />
-              <span>{t('friends.newRequestNotice', { count: receivedRequests.length })}</span>
-            </div>
-          )}
-
-          <div className="friends-panel">
-            {/* Search bar */}
-            <div className="search-bar">
-              <SearchIcon size={18} />
-              <input
-                type="text"
-                placeholder={t('friends.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            {activeTab === 'friends' ? (
-              <div className="friends-list">
-                {friends.length === 0 && !hasServerData && isOnline ? (
-                  <div className="loading-message">{t('common.loading')}</div>
-                ) : filteredFriends.length === 0 ? (
-                  <div className="empty-message">
-                    {friends.length === 0
-                      ? t('friends.noFriendsYet')
-                      : t('friends.noFriendsMatch')
-                    }
-                  </div>
-                ) : (
-                  filteredFriends.map(friend => (
-                    <div key={friend.id} className="friend-item">
-                      {renderPersonLink(friend, 'friend')}
-                      <button
-                        className="remove-friend-btn"
-                        onClick={() => handleRemoveFriend(friend)}
-                        title={t('friends.remove')}
-                      >
-                        <TrashIcon size={18} />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : activeTab === 'received' ? (
-              <div className="requests-list">
-                {!hasServerData && isOnline ? (
-                  <div className="loading-message">{t('common.loading')}</div>
-                ) : filteredReceivedRequests.length === 0 ? (
-                  <div className="empty-message">
-                    {receivedRequests.length === 0
-                      ? t('friends.noRequests')
-                      : t('friends.noRequestsMatch')
-                    }
-                  </div>
-                ) : (
-                  filteredReceivedRequests.map(request => (
-                    <div key={request.id} className="request-item">
-                      {renderPersonLink(request.sender, 'request')}
-                      <div className="request-actions">
-                        <button
-                          className="accept-btn"
-                          onClick={() => handleAcceptRequest(request)}
-                          disabled={processingRequestId === request.id}
-                          title={t('friends.accept')}
-                        >
-                          {processingRequestId === request.id ? (
-                            <div className="spinner-small"></div>
-                          ) : (
-                            <CheckMarkIcon size={18} />
-                          )}
-                        </button>
-                        <button
-                          className="reject-btn"
-                          onClick={() => handleRejectRequest(request)}
-                          disabled={processingRequestId === request.id}
-                          title={t('friends.decline')}
-                        >
-                          <XIcon size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : (
-              <div className="users-list">
-                {!isOnline && !usersCache ? (
-                  <div className="empty-message">{t('friends.offlineAddFriends')}</div>
-                ) : error && !usersCache ? (
-                  <div className="empty-message">{error}</div>
-                ) : loadingUsers || !usersCache || (!hasServerData && isOnline) ? (
-                  <div className="loading-message">{t('common.loading')}</div>
-                ) : filteredUsers.length === 0 ? (
-                  <div className="empty-message">
-                    {searchQuery
-                      ? t('friends.noUsersMatch')
-                      : usersCache.length <= 1
-                        ? t('friends.noOtherUsers')
-                        : t('friends.friendsWithEveryone')
-                    }
-                  </div>
-                ) : (
-                  filteredUsers.map(userItem => {
-                    const pendingRequest = getPendingRequestForUser(userItem.id);
-                    const hasPendingRequest = !!pendingRequest;
-                    
-                    return (
-                      <div key={userItem.id} className="user-item">
-                        {renderPersonLink(userItem, 'user')}
-                        <button
-                          className={`add-friend-btn
-                            ${hasPendingRequest ? 'pending' : ''}
-                            ${addingFriendId === userItem.id ? 'loading' : ''}
-                            ${addedFriendIds.has(userItem.id) ? 'added' : ''}
-                          `}
-                          onClick={() => hasPendingRequest 
-                            ? handleCancelRequest(pendingRequest.id)
-                            : handleSendFriendRequest(userItem)
-                          }
-                          title={hasPendingRequest ? t('friends.pending') : t('friends.sendRequest')}
-                          disabled={addingFriendId === userItem.id || addedFriendIds.has(userItem.id) || processingRequestId === pendingRequest?.id}
-                        >
-                          {processingRequestId === pendingRequest?.id ? (
-                            <div className="spinner-small"></div>
-                          ) : addingFriendId === userItem.id ? (
-                            <div className="spinner-small"></div>
-                          ) : addedFriendIds.has(userItem.id) ? (
-                            <CheckMarkIcon size={18} />
-                          ) : hasPendingRequest ? (
-                            <ClockIcon size={18} />
-                          ) : (
-                            <PlusIcon size={18} />
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
+            {hasNewRequest && activeTab !== 'received' && (
+              <div className="new-request-notification" onClick={() => setActiveTab('received')}>
+                <ClockIcon size={18} />
+                <span>{t('friends.newRequestNotice', { count: receivedRequests.length })}</span>
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Confirmation Dialog Overlay */}
-        {friendToRemove && (
-          <div className="confirmation-overlay" onClick={cancelRemoveFriend}>
-            <div className="confirmation-dialog" onClick={(e) => e.stopPropagation()}>
-              <h3>{t('friends.removeTitle')}</h3>
-              <p>{t('friends.removeConfirm', { name: friendToRemove.username })}</p>
-              <div className="confirmation-actions">
-                <button className="cancel-btn" onClick={cancelRemoveFriend}>
-                  {t('common.cancel')}
-                </button>
-                <button className="confirm-btn danger" onClick={confirmRemoveFriend}>
-                  {t('friends.remove')}
-                </button>
+            <div className="friends-panel">
+              {/* Search bar */}
+              <div className="search-bar">
+                <SearchIcon size={18} />
+                <input
+                  type="text"
+                  placeholder={t('friends.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
+
+              {activeTab === 'friends' ? (
+                <div className="friends-list">
+                  {friends.length === 0 && !hasServerData && isOnline ? (
+                    <div className="loading-message">{t('common.loading')}</div>
+                  ) : filteredFriends.length === 0 ? (
+                    <div className="empty-message">
+                      {friends.length === 0
+                        ? t('friends.noFriendsYet')
+                        : t('friends.noFriendsMatch')
+                      }
+                    </div>
+                  ) : (
+                    filteredFriends.map(friend => (
+                      <div key={friend.id} className="friend-item">
+                        {renderPersonLink(friend, 'friend')}
+                        <DeleteIconButton
+                          label={t('friends.remove')}
+                          onClick={() => handleRemoveFriend(friend)}
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : activeTab === 'received' ? (
+                <div className="requests-list">
+                  {!hasServerData && isOnline ? (
+                    <div className="loading-message">{t('common.loading')}</div>
+                  ) : filteredReceivedRequests.length === 0 ? (
+                    <div className="empty-message">
+                      {receivedRequests.length === 0
+                        ? t('friends.noRequests')
+                        : t('friends.noRequestsMatch')
+                      }
+                    </div>
+                  ) : (
+                    filteredReceivedRequests.map(request => (
+                      <div key={request.id} className="request-item">
+                        {renderPersonLink(request.sender, 'request')}
+                        <div className="request-actions">
+                          <button
+                            className="accept-btn"
+                            onClick={() => handleAcceptRequest(request)}
+                            disabled={processingRequestId === request.id}
+                            title={t('friends.accept')}
+                          >
+                            {processingRequestId === request.id ? (
+                              <div className="spinner-small"></div>
+                            ) : (
+                              <CheckMarkIcon size={18} />
+                            )}
+                          </button>
+                          <button
+                            className="reject-btn"
+                            onClick={() => handleRejectRequest(request)}
+                            disabled={processingRequestId === request.id}
+                            title={t('friends.decline')}
+                          >
+                            <XIcon size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <div className="users-list">
+                  {!isOnline && !usersCache ? (
+                    <div className="empty-message">{t('friends.offlineAddFriends')}</div>
+                  ) : error && !usersCache ? (
+                    <div className="empty-message">{error}</div>
+                  ) : loadingUsers || !usersCache || (!hasServerData && isOnline) ? (
+                    <div className="loading-message">{t('common.loading')}</div>
+                  ) : filteredUsers.length === 0 ? (
+                    <div className="empty-message">
+                      {searchQuery
+                        ? t('friends.noUsersMatch')
+                        : usersCache.length <= 1
+                          ? t('friends.noOtherUsers')
+                          : t('friends.friendsWithEveryone')
+                      }
+                    </div>
+                  ) : (
+                    filteredUsers.map(userItem => {
+                      const pendingRequest = getPendingRequestForUser(userItem.id);
+                      const hasPendingRequest = !!pendingRequest;
+                    
+                      return (
+                        <div key={userItem.id} className="user-item">
+                          {renderPersonLink(userItem, 'user')}
+                          <button
+                            className={`add-friend-btn
+                              ${hasPendingRequest ? 'pending' : ''}
+                              ${addingFriendId === userItem.id ? 'loading' : ''}
+                              ${addedFriendIds.has(userItem.id) ? 'added' : ''}
+                            `}
+                            onClick={() => hasPendingRequest 
+                              ? handleCancelRequest(pendingRequest.id)
+                              : handleSendFriendRequest(userItem)
+                            }
+                            title={hasPendingRequest ? t('friends.pending') : t('friends.sendRequest')}
+                            disabled={addingFriendId === userItem.id || addedFriendIds.has(userItem.id) || processingRequestId === pendingRequest?.id}
+                          >
+                            {processingRequestId === pendingRequest?.id ? (
+                              <div className="spinner-small"></div>
+                            ) : addingFriendId === userItem.id ? (
+                              <div className="spinner-small"></div>
+                            ) : addedFriendIds.has(userItem.id) ? (
+                              <CheckMarkIcon size={18} />
+                            ) : hasPendingRequest ? (
+                              <ClockIcon size={18} />
+                            ) : (
+                              <PlusIcon size={18} />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
-    </div>
+
+      {/* Rendered beside the friends modal so it stacks above it */}
+      <DeleteConfirmationModal
+        isOpen={Boolean(friendToRemove)}
+        onClose={cancelRemoveFriend}
+        onConfirm={confirmRemoveFriend}
+        title={t('friends.removeTitle')}
+        message={friendToRemove ? t('friends.removeConfirm', { name: friendToRemove.username }) : ''}
+        confirmText={t('friends.remove')}
+      />
+    </>
   );
 };
 

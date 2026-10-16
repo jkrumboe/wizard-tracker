@@ -704,7 +704,6 @@
     "tendsToUnderbid": "Tends to underbid",
     "mixedErrors": "Misses go both ways",
     "bidding": "Bidding",
-    "playMoreForBidding": "Play more to see bidding stats",
     "correctCount": "{{count}} correct",
     "overCount": "{{count}} over",
     "underCount": "{{count}} under"
@@ -879,8 +878,8 @@
     "moreRounds": "More rounds",
     "seatingAndDealer": "Seating & dealer",
     "seating": "Seating order",
-    "seatingHint": "Drag the handle to change seats. Tap a player to make them dealer this round.",
-    "seatingHintNoDealer": "Drag the handle to change seats.",
+    "seatingHint": "Hold and drag a player to change seats. Tap a player to make them dealer this round.",
+    "seatingHintNoDealer": "Hold and drag a player to change seats.",
     "callsFirst": "Calls first",
     "dragToReorder": "Drag to move {{name}}",
     "addPlayer": "Add",
@@ -1024,7 +1023,7 @@
   "tableGameSettings": {
     "title": "Game Settings",
     "players": "Players",
-    "playersHint": "Drag the handle to change the order. Tap a name to rename.",
+    "playersHint": "Hold and drag a player to change the order. Tap a name to rename.",
     "scoring": "Scoring",
     "addPlayer": "Add Player",
     "currentScoreEditor": "Current Set {{round}} Score",
@@ -1651,6 +1650,11 @@
   },
 
   "gameType": {
+    "lastPlayed": "Last played {{when}}",
+    "pausedCount": "{{count}} paused",
+    "gamesLabel_one": "game",
+    "gamesLabel_other": "games",
+    "notPlayedYet": "Not played yet",
     "add": "Add",
     "searchGames": "Search games",
     "noMatches": "No games match your search.",

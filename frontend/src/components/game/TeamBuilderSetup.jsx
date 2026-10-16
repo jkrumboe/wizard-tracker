@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import Icon, { TrashIcon, DiceIcon, UsersIcon, EditIcon, PlusIcon } from '@/components/ui/Icon';
+import Icon, { DiceIcon, UsersIcon, EditIcon, PlusIcon } from '@/components/ui/Icon';
+import DeleteIconButton from '@/components/ui/DeleteIconButton';
 
 const TeamSection = ({
   teamIndex,
@@ -108,15 +109,10 @@ const TeamSection = ({
               />
             </div>
 
-            <button
-              type="button"
-              className="team-player-remove-btn"
+            <DeleteIconButton
+              label={t('startTableGame.removePlayer')}
               onClick={() => onRemovePlayer(player.id)}
-              title={t('startTableGame.removePlayer')}
-              aria-label={t('startTableGame.removePlayer')}
-            >
-              <TrashIcon size={15} />
-            </button>
+            />
           </article>
         ))}
       </div>

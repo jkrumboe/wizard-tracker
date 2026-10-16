@@ -21,7 +21,6 @@
 @media (max-width: 599px) {
   body :is(
     .modal-overlay,
-    .dialog-overlay,
     .add-game-modal-overlay,
     .game-details-modal-overlay,
     .delete-modal-overlay
@@ -36,7 +35,6 @@
 
   :is(.modal-overlay > .modal-container,
     .modal-overlay > .modal-content,
-    .dialog-overlay > .dialog-modal,
     .add-game-modal-overlay > .add-game-modal,
     .game-details-modal-overlay > .game-details-modal,
     .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *, .friends-modal, .delete-confirmation-modal) {
@@ -56,7 +54,7 @@
   }
 
   /* These boxes pad themselves, so keep that and add the inset on top. */
-  :is(.dialog-overlay > .dialog-modal, .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *) {
+  .delete-modal-overlay > .delete-modal:not(.admin-layout *, .admin-container *) {
     padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
   }
 
@@ -68,8 +66,7 @@
     padding-bottom: 0;
   }
 
-  html[data-keyboard="open"] :is(.dialog-overlay > .dialog-modal,
-    .delete-modal-overlay > .delete-modal) {
+  html[data-keyboard="open"] .delete-modal-overlay > .delete-modal {
     padding-bottom: var(--spacing-lg);
   }
 }

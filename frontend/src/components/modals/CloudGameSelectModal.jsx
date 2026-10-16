@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { XIcon, UsersIcon } from '@/components/ui/Icon';
 import '@/styles/components/modal.css';
+import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
 const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
   const { t } = useTranslation();
@@ -122,6 +123,8 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
     return game.final_scores?.[winnerIds[0]] || 0;
   };
 
+  useModalDismiss(isOpen, onClose);
+
   if (!isOpen) return null;
 
   return (
@@ -131,7 +134,7 @@ const CloudGameSelectModal = ({ isOpen, onClose, onDownload }) => {
           <h2>
             {t('cloudGames.title')}
           </h2>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>
