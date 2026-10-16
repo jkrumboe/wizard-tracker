@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import { useGameStats } from '@/shared/hooks/useGameStats';
 import { useAllUserElo } from '@/shared/hooks/useElo';
+import { useTemplateLookup } from '@/shared/hooks/useGameTemplates';
+import GameThumbnail from '@/components/game/GameThumbnail';
 import '@/styles/pages/account.css';
 
 /**
@@ -22,6 +24,7 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
   const { t } = useTranslation();
   const overviewStats = useGameStats(games, user);
   const { eloByGameType, loading: _eloLoading } = useAllUserElo(identityId || null);
+  const findTemplate = useTemplateLookup();
 
   if (!user) {
     return (
@@ -51,14 +54,19 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
           const normalizedType = normalizeGameType(gameType.name);
           const eloData = eloByGameType?.[normalizedType];
           const currentElo = eloData?.rating;
-          
+          const template = findTemplate(gameType.name) || { name: gameType.name };
+
           return (
           <div 
             key={gameType.name} 
-            className="game-type-card"
+            className="game-type-card game-type-card--with-art"
             onClick={() => onGameTypeClick?.(gameType.name)}
             style={{ cursor: onGameTypeClick ? 'pointer' : 'default' }}
           >
+            <span className="game-type-art" aria-hidden="true">
+              <span className="game-type-initial">{(gameType.name || '?').charAt(0)}</span>
+              <GameThumbnail template={template} />
+            </span>
             <div className="game-type-header">
               <h3 className="game-type-name" title={gameType.name}>{gameType.name}</h3>
               {currentElo && (

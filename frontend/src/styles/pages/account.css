@@ -93,6 +93,54 @@
   min-width: 0;
 }
 
+/* Box art fills the left column beside the name and stats; results span the full width */
+.game-type-card--with-art {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--spacing-sm);
+  row-gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.game-type-card--with-art .game-type-art {
+  grid-row: 1 / span 2;
+}
+
+.game-type-card--with-art .game-type-recent-results {
+  grid-column: 1 / -1;
+}
+
+/* Box art, or the game's initial when there is none */
+.game-type-art {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 14%, var(--card-bg));
+}
+
+.game-type-initial {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+/* Art comes after the initial in the markup, so it covers it */
+.game-type-art .game-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
 .game-type-name {
   min-width: 0;
   overflow: hidden;
