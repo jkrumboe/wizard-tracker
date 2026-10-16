@@ -8,7 +8,7 @@ This document provides guidance for AI coding agents (GitHub Copilot, Claude, et
 
 | Aspect | Details |
 |--------|---------|
-| **Version** | 1.20.1 |
+| **Version** | 1.22.0 |
 | **Frontend** | React 19 + Vite + React Router 7 |
 | **Backend** | Node.js 18+ + Express.js |
 | **Database** | MongoDB 7.x with Mongoose ODM |
