@@ -85,29 +85,25 @@
 .game-in-progress .score-table th.player-header {
   text-align: left;
   padding-left: var(--spacing-sm) !important;
-  /* Undo the scorecard's 70px .player-header lock (players.css) so the name
-     column takes whatever the fixed-width input columns leave over */
-  width: auto !important;
-  min-width: 0 !important;
-  max-width: none !important;
 }
 
+/* Fixed column widths. Phones keep the call/made inputs close together with
+   trimmed row padding; wider screens spread them out. */
 .game-in-progress .score-table td.player-cell {
-  padding: var(--spacing-sm) var(--spacing-xs) var(--spacing-sm) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-sm);
 }
 
-/* Fixed column widths */
 .game-in-progress .score-table td:nth-child(1),
 .game-in-progress .score-table th:nth-child(1) {
-  width: 50%;
+  width: 56%;
 }
 
 .game-in-progress .score-table td:nth-child(2),
 .game-in-progress .score-table th:nth-child(2),
 .game-in-progress .score-table td:nth-child(3),
 .game-in-progress .score-table th:nth-child(3) {
-  width: 17%;
-  padding: var(--spacing-xs) 0;
+  width: 15%;
+  padding: 2px 0;
 }
 
 .game-in-progress .score-table td:nth-child(4),
@@ -116,28 +112,31 @@
   align-content: center;
 }
 
-/* Phones: pull the call/made inputs closer together and trim row padding */
-@media (max-width: 768px) {
+.game-in-progress .score-table .rounds-input {
+  width: 44px;
+}
+
+@media (min-width: 768px) {
+  .game-in-progress .score-table td.player-cell {
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+  }
+
   .game-in-progress .score-table td:nth-child(1),
   .game-in-progress .score-table th:nth-child(1) {
-    width: 56%;
+    width: 50%;
   }
 
   .game-in-progress .score-table td:nth-child(2),
   .game-in-progress .score-table th:nth-child(2),
   .game-in-progress .score-table td:nth-child(3),
   .game-in-progress .score-table th:nth-child(3) {
-    width: 15%;
-    padding: 2px 0;
-  }
-
-  .game-in-progress .score-table td.player-cell {
-    padding-top: var(--spacing-xs);
-    padding-bottom: var(--spacing-xs);
+    width: 17%;
+    padding: var(--spacing-xs) 0;
   }
 
   .game-in-progress .score-table .rounds-input {
-    width: 44px;
+    width: 50px;
   }
 }
 

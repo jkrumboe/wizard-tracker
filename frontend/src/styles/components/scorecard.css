@@ -51,14 +51,6 @@
   padding: 0 !important;
 }
 
-/* Let player columns size themselves (overrides fixed 70px widths in players.css) */
-.wizard-scorecard .scorecard-table .player-header,
-.wizard-scorecard .scorecard-table .player-round-cell {
-  width: auto !important;
-  min-width: 0 !important;
-  max-width: none !important;
-}
-
 .player-header-name {
   display: block;
   width: 100%;

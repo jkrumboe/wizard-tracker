@@ -52,12 +52,12 @@
   "components/players.css": {
     "maxWidth": 2,
     "nonStandard": 2,
-    "important": 3
+    "important": 0
   },
   "components/scorecard.css": {
     "maxWidth": 1,
     "nonStandard": 1,
-    "important": 10
+    "important": 7
   },
   "components/select-friends-modal.css": {
     "maxWidth": 1,

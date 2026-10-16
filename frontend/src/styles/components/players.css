@@ -182,13 +182,6 @@
     max-width: 100%;
   }
   
-  /* Maintain consistent widths even on smaller screens */
-  .player-header, .player-round-cell {
-    width: 70px !important; 
-    min-width: 70px !important;
-    max-width: 70px !important;
-  }
-  
   .player-round-data {
     font-size: 0.85rem; /* Slightly smaller font for more players */
   }
