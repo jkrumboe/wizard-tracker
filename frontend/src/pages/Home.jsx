@@ -2,16 +2,20 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import FriendsModal from '@/components/modals/FriendsModal'
+import ScanBarcodeModal from '@/components/modals/ScanBarcodeModal'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
+import { useUser } from '@/shared/hooks/useUser'
 import { getResumableGames } from '@/shared/utils/resumableGames'
-import { UsersIcon, PlayIcon } from '@/components/ui/Icon'
+import { UsersIcon, PlayIcon, ScanBarcodeIcon } from '@/components/ui/Icon'
 import "@/styles/pages/home.css"
 
 const Home = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { gameState, resumeGame } = useGameStateContext()
+  const { user } = useUser()
   const [showFriendsModal, setShowFriendsModal] = useState(false)
+  const [showScanModal, setShowScanModal] = useState(false)
   const [resumeError, setResumeError] = useState('')
 
   // Paused Call & Made, table and scoreboard games are all candidates, so
@@ -89,29 +93,38 @@ const Home = () => {
           <span>Play</span>
         </button>
 
-        <div className="home-secondary-row">
-          {resumableGame && (
-            <button
-              className="active-game-banner"
-              onClick={() => handleResumeGame(resumableGame)}
-            >
-              <PlayIcon size={16} />
-              <span className="active-game-banner-label">
-                {resumableGame.name || t('home.continueGame')}
-              </span>
-            </button>
-          )}
+        {resumableGame && (
+          <button
+            className="active-game-banner"
+            onClick={() => handleResumeGame(resumableGame)}
+          >
+            <PlayIcon size={16} />
+            <span className="active-game-banner-label">
+              {resumableGame.name || t('home.continueGame')}
+            </span>
+          </button>
+        )}
 
-          <div className="friends-section">
+        <div className="home-secondary-row">
+          {/* Barcode lookups need an account (BGG API terms) */}
+          {user && (
             <button
               className="friends-button"
-              onClick={() => setShowFriendsModal(true)}
-              aria-label={t('home.manageFriends')}
+              onClick={() => setShowScanModal(true)}
+              aria-label={t('home.scanGame')}
             >
-              <UsersIcon size={16} />
-              <span>{t('home.friends')}</span>
+              <ScanBarcodeIcon size={16} />
+              <span className="friends-button-label">{t('home.scanGame')}</span>
             </button>
-          </div>
+          )}
+          <button
+            className="friends-button"
+            onClick={() => setShowFriendsModal(true)}
+            aria-label={t('home.manageFriends')}
+          >
+            <UsersIcon size={16} />
+            <span className="friends-button-label">{t('home.friends')}</span>
+          </button>
         </div>
 
         {resumeError && (
@@ -122,6 +135,11 @@ const Home = () => {
       <FriendsModal
         isOpen={showFriendsModal}
         onClose={() => setShowFriendsModal(false)}
+      />
+
+      <ScanBarcodeModal
+        isOpen={showScanModal && Boolean(user)}
+        onClose={() => setShowScanModal(false)}
       />
     </div>
   )

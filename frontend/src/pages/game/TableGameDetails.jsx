@@ -12,6 +12,8 @@ import "@/styles/pages/account.css"
 import "@/styles/components/TableGame.css"
 import { ArrowLeftIcon } from "@/components/ui/Icon"
 import RankBadge from "@/components/game/RankBadge"
+import { GameHighlights } from "@/components/game/GameHighlights"
+import { computeHighlights } from "@/shared/utils/gameHighlights"
 import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 
 const GameDetailsSkeleton = () => (
@@ -54,6 +56,15 @@ const TableGameDetails = () => {
     }
     return typeof window !== 'undefined' ? globalThis.innerWidth > globalThis.innerHeight : true
   })
+  const [windowWidth, setWindowWidth] = useState(() => (
+    typeof window !== 'undefined' ? globalThis.innerWidth : 1200
+  ))
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(globalThis.innerWidth)
+    globalThis.addEventListener('resize', handleResize)
+    return () => globalThis.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -200,6 +211,20 @@ const TableGameDetails = () => {
     return { playersData, roundData }
   }
 
+  const highlights = computeHighlights({
+    standings: rankedPlayers.map((player) => ({ name: player.name, score: player.totalScore, rank: player.rank })),
+    rounds: Array.from({ length: filledRounds }, (_, roundIndex) => (
+      players.map((player) => ({
+        name: player.name,
+        score: Number.parseInt(player.points?.[roundIndex], 10),
+      }))
+    )),
+    lowIsBetter,
+  })
+
+  // Side-by-side panels on landscape and wide screens, tabs otherwise
+  const showAllPanels = isLandscape || windowWidth > 768
+
   return (
     <div className={`game-details-container table-game-container${summaryScrolled ? ' is-scrolled' : ''}`}>
 
@@ -215,7 +240,7 @@ const TableGameDetails = () => {
 
       </div>
 
-      {hasMultipleRounds && (
+      {hasMultipleRounds && !showAllPanels && (
         <div className="account-tabs">
           <button className={`account-tab ${activeTab === 'standings' ? 'active' : ''}`} onClick={() => setActiveTab('standings')}>
             {t('tableGame.standingsSubTab')}
@@ -230,7 +255,10 @@ const TableGameDetails = () => {
       )}
 
       <div className="game-summary" ref={summaryRef}>
-        {(activeTab === 'standings' || isLandscape) && (
+        {/* Only displayed on wide screens; see gameDetails.css */}
+        {hasMultipleRounds && <GameHighlights highlights={highlights} />}
+
+        {(activeTab === 'standings' || showAllPanels || !hasMultipleRounds) && (
           <div className="results-section">
             <div className="results-table">
               {rankedPlayers.map((player) => (
@@ -256,8 +284,8 @@ const TableGameDetails = () => {
           </div>
         )}
 
-        {hasMultipleRounds && (activeTab === 'chart' || isLandscape) && (
-          <div className="results-section">
+        {hasMultipleRounds && (activeTab === 'chart' || showAllPanels) && (
+          <div className="chart-section">
             <div className="chart-view-container">
               {players[0]?.points?.length > 0 ? (
                 <StatsChart playersData={prepareChartData().playersData} roundData={prepareChartData().roundData} supportsBids={false} />
@@ -268,66 +296,64 @@ const TableGameDetails = () => {
           </div>
         )}
 
-        {hasMultipleRounds && (activeTab === 'table' || isLandscape) && (
-          <div className="results-section">
-            <div className="rounds-section">
-              <div className={`wizard-scorecard ${players.length > 3 ? 'many-players' : ''}`} data-player-count={players.length} style={{ '--player-count': players.length }}>
-                <table className="scorecard-table">
-                  <thead>
-                    <tr>
-                      <th className="round-header sticky-cell" aria-label={t('tableGame.roundHeader')} />
-                      {players.map((player, idx) => (
-                        <th key={idx} className="player-header">
-                          <div className="player-header-name">
-                            {player.name ? (
-                              <Link to={`/user/${player.name}`} className="player-link">
-                                {player.name}
-                              </Link>
-                            ) : (
-                              player.name
-                            )}
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...Array(rows)].map((_, rowIdx) => {
-                      const hasData = players.some((p) => {
-                        const point = p.points?.[rowIdx]
+        {hasMultipleRounds && (activeTab === 'table' || showAllPanels) && (
+          <div className="rounds-section">
+            <div className={`wizard-scorecard ${players.length > 3 ? 'many-players' : ''}`} data-player-count={players.length} style={{ '--player-count': players.length }}>
+              <table className="scorecard-table">
+                <thead>
+                  <tr>
+                    <th className="round-header sticky-cell" aria-label={t('tableGame.roundHeader')} />
+                    {players.map((player, idx) => (
+                      <th key={idx} className="player-header">
+                        <div className="player-header-name">
+                          {player.name ? (
+                            <Link to={`/user/${player.name}`} className="player-link">
+                              {player.name}
+                            </Link>
+                          ) : (
+                            player.name
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...Array(rows)].map((_, rowIdx) => {
+                    const hasData = players.some((p) => {
+                      const point = p.points?.[rowIdx]
+                      return point !== '' && point !== undefined && point !== null
+                    })
+
+                    if (!hasData && rowIdx > 0) {
+                      const hasPreviousData = players.some((p) => {
+                        const point = p.points?.[rowIdx - 1]
                         return point !== '' && point !== undefined && point !== null
                       })
+                      if (!hasPreviousData) return null
+                    }
 
-                      if (!hasData && rowIdx > 0) {
-                        const hasPreviousData = players.some((p) => {
-                          const point = p.points?.[rowIdx - 1]
-                          return point !== '' && point !== undefined && point !== null
-                        })
-                        if (!hasPreviousData) return null
-                      }
+                    if (!hasData) return null
 
-                      if (!hasData) return null
-
-                      return (
-                        <tr key={rowIdx} className="round-row">
-                          <td className="round-number sticky-cell">{rowIdx + 1}</td>
-                          {players.map((player, playerIdx) => (
-                            <td key={playerIdx} className="player-round-cell">
-                              <span className="round-score">{player.points?.[rowIdx] ?? '-'}</span>
-                            </td>
-                          ))}
-                        </tr>
-                      )
-                    })}
-                    <tr className="total-row">
-                      <td className="total-label sticky-cell" aria-label={t('common.total')}></td>
-                      {players.map((player, idx) => (
-                        <td key={idx} className="total-score">{getTotal(player)}</td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                    return (
+                      <tr key={rowIdx} className="round-row">
+                        <td className="round-number sticky-cell">{rowIdx + 1}</td>
+                        {players.map((player, playerIdx) => (
+                          <td key={playerIdx} className="player-round-cell">
+                            <span className="round-score">{player.points?.[rowIdx] ?? '-'}</span>
+                          </td>
+                        ))}
+                      </tr>
+                    )
+                  })}
+                  <tr className="total-row">
+                    <td className="total-label sticky-cell" aria-label={t('common.total')}></td>
+                    {players.map((player, idx) => (
+                      <td key={idx} className="total-score">{getTotal(player)}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         )}

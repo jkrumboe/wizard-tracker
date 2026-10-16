@@ -11,10 +11,10 @@ import {
   Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
   ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
   ChevronDown, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
-  Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Gamepad2, Home, Image,
-  ImagePlus, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
-  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanSearch, Search,
-  Settings, Shield, ShieldCheck, Star, Swords, Table, Target, Trash2, TrendingDown,
+  Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Flashlight, Gamepad2, Home, Image,
+  ImagePlus, Info, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
+  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
+  Settings, Shield, ShieldCheck, Spade, Star, Swords, Table, Target, Trash2, TrendingDown,
   TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
 } from 'lucide-react';
 
@@ -22,10 +22,10 @@ const ICONS = {
   Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
   ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
   ChevronDown, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
-  Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Gamepad2, Home, Image,
-  ImagePlus, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
-  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanSearch, Search,
-  Settings, Shield, ShieldCheck, Star, Swords, Table, Target, Trash2, TrendingDown,
+  Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Flashlight, Gamepad2, Home, Image,
+  ImagePlus, Info, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
+  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
+  Settings, Shield, ShieldCheck, Spade, Star, Swords, Table, Target, Trash2, TrendingDown,
   TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
 };
 
@@ -68,6 +68,8 @@ export const TrashIcon = (props) => <Icon name="Trash2" {...props} />;
 export const Trash2Icon = (props) => <Icon name="Trash2" {...props} />;
 export const KeyIcon = (props) => <Icon name="Key" {...props} />;
 export const SearchIcon = (props) => <Icon name="Search" {...props} />;
+export const ScanBarcodeIcon = (props) => <Icon name="ScanBarcode" {...props} />;
+export const FlashlightIcon = (props) => <Icon name="Flashlight" {...props} />;
 export const MenuIcon = (props) => <Icon name="Menu" {...props} />;
 export const XIcon = (props) => <Icon name="X" {...props} />;
 export const ChevronDownIcon = (props) => <Icon name="ChevronDown" {...props} />;

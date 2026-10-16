@@ -1,0 +1,602 @@
+/* Wizard game settings: a bottom sheet on phones, a centred card from sm up. */
+.modal-content.gs-modal {
+  /* The shared .modal-content rule sets flex: 1, which would stretch the
+     dialog across the overlay's row and override its width. */
+  flex: 0 1 auto;
+  align-self: flex-end;
+  width: 100%;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-lg);
+  animation: gs-sheet-in 0.22s ease-out;
+}
+
+@keyframes gs-sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.gs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+}
+
+.gs-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gs-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--card-bg-light);
+  color: var(--text-light);
+  cursor: pointer;
+}
+
+.gs-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+}
+
+.gs-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-color);
+}
+
+.gs-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  min-height: 28px;
+}
+
+.gs-card h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.gs-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+/* Rounds: one compact row */
+.gs-rounds {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.gs-rounds-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.gs-rounds-sub {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.gs-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.gs-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.gs-step-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.gs-step-btn:active:not(:disabled) {
+  background: rgba(var(--primary-rgb), 0.16);
+}
+
+.gs-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.gs-step-input {
+  width: 2.75rem;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.gs-step-input::-webkit-outer-spin-button,
+.gs-step-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.gs-step-input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.gs-warning {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--warning-color);
+}
+
+.gs-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--danger-color);
+}
+
+.gs-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Add player */
+.gs-add-player {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.gs-add-player input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--spacing-sm);
+  border: 1px dashed var(--border-dark);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.gs-add-player input:focus-visible {
+  outline: none;
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.gs-add-player input[aria-invalid="true"] {
+  border-color: var(--danger-color);
+}
+
+.gs-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 40px;
+  padding: 0 var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.gs-add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Seating list */
+.gs-seat-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.gs-seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.gs-seat {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gs-seat.is-dealer {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.1);
+}
+
+.gs-seat.is-dragging {
+  z-index: 2;
+  box-shadow: var(--shadow-lg);
+}
+
+.gs-seat-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.gs-seat-handle:active {
+  cursor: grabbing;
+}
+
+.gs-seat-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.7rem var(--spacing-sm) 0.7rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gs-seat-main:disabled {
+  cursor: default;
+}
+
+.gs-seat-number {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--card-bg-alt);
+  color: var(--text-light);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.gs-seat.is-dealer .gs-seat-number {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.gs-seat-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.gs-role {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gs-role-dealer {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.gs-role-new {
+  background: var(--card-bg-alt);
+  color: var(--text-light);
+}
+
+.gs-role-caller {
+  background: rgba(var(--success-rgb), 0.15);
+  color: var(--success-color);
+}
+
+/* Table game settings: editable names and labelled setting rows */
+.gs-seat-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--spacing-xs);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+}
+
+.gs-seat-name-input:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--bg-color);
+}
+
+.gs-seat-main:has(.gs-seat-name-input) {
+  cursor: default;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.gs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  min-height: 40px;
+}
+
+.gs-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.gs-row-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.gs-toggle-row {
+  cursor: pointer;
+}
+
+.gs-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.gs-field-input {
+  width: 6.5rem;
+  height: 36px;
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+}
+
+.gs-field-input:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.gs-textarea {
+  width: 100%;
+  height: auto;
+  padding: var(--spacing-sm);
+  text-align: left;
+  resize: vertical;
+}
+
+.gs-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--card-bg);
+}
+
+.gs-segmented button {
+  height: 32px;
+  padding: 0 var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.gs-segmented button.is-active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.gs-switch {
+  flex-shrink: 0;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  margin: 0;
+  border-radius: var(--radius-full);
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.gs-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform 0.15s ease;
+}
+
+.gs-switch:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.gs-switch:checked::after {
+  transform: translateX(18px);
+  background: var(--on-primary);
+}
+
+.gs-switch:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.gs-switch:disabled,
+.gs-segmented button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gs-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md) calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+}
+
+.gs-footer .btn {
+  width: 100%;
+}
+
+.gs-footer .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .gs-close:hover,
+  .gs-icon-btn:hover,
+  .gs-seat-remove:hover {
+    color: var(--primary);
+  }
+
+  .gs-step-btn:hover:not(:disabled) {
+    background: rgba(var(--primary-rgb), 0.1);
+  }
+
+  .gs-seat:not(.is-dealer):hover {
+    border-color: var(--border-dark);
+  }
+}
+
+@media (min-width: 600px) {
+  .modal-content.gs-modal {
+    align-self: center;
+    width: min(460px, calc(100% - 2 * var(--spacing-md)));
+    max-height: 85dvh;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+  }
+
+  .gs-footer {
+    padding-bottom: var(--spacing-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-content.gs-modal {
+    animation: none;
+  }
+}

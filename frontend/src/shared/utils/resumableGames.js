@@ -41,6 +41,7 @@ function getResumableWizardGames() {
           type: 'wizard',
           name: game.name || null,
           players: players.map(player => player?.name || player).filter(Boolean),
+          templateName: internalState.templateConfig?.templateName || null,
           currentRound: internalState.currentRound || null,
           maxRounds: internalState.maxRounds || game.total_rounds || null,
           lastPlayed: game.lastPlayed || game.savedAt || game.created_at || null,

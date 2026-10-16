@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const { app, initializeServer } = require('../server');
 const TemplateSuggestion = require('../models/TemplateSuggestion');
 const SystemGameTemplate = require('../models/SystemGameTemplate');
+const UserGameTemplate = require('../models/UserGameTemplate');
 const User = require('../models/User');
 
 let mongoConnected = false;
@@ -22,7 +23,7 @@ beforeAll(async () => {
     return;
   }
 
-  const username = `template-user-${Date.now()}`;
+  const username = `tpl-${Date.now()}`; // max 20 chars
   const registerResponse = await request(app)
     .post('/api/users/register')
     .send({
@@ -203,5 +204,94 @@ describe('Built-in system template change suggestions', () => {
         await SystemGameTemplate.findByIdAndDelete(createdTemplateId);
       }
     }
+  });
+});
+describe('System template barcodes', () => {
+  let template;
+
+  beforeEach(async () => {
+    if (!mongoConnected) return;
+    await User.findByIdAndUpdate(userId, { role: 'admin' });
+    template = await SystemGameTemplate.create({ name: `Barcode Test ${Date.now()}` });
+  });
+
+  afterEach(async () => {
+    if (!mongoConnected) return;
+    await User.findByIdAndUpdate(userId, { role: 'user' });
+    if (template) await SystemGameTemplate.findByIdAndDelete(template._id);
+  });
+
+  test('PUT /api/game-templates/system/:id saves barcodes and GET /public returns them', async () => {
+    if (!mongoConnected) {
+      console.warn('⚠️ Skipping test - MongoDB not connected');
+      return;
+    }
+
+    const updateResponse = await request(app)
+      .put(`/api/game-templates/system/${template._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ barcodes: [' 4001234567890 ', '4001234567890', '12345670'] })
+      .expect(200);
+
+    expect(updateResponse.body.template.barcodes).toEqual(['4001234567890', '12345670']);
+
+    const publicResponse = await request(app)
+      .get('/api/game-templates/public')
+      .expect(200);
+
+    const publicTemplate = publicResponse.body.templates.find(
+      (t) => String(t._id) === String(template._id)
+    );
+    expect(publicTemplate.barcodes).toEqual(['4001234567890', '12345670']);
+  });
+
+  test('PUT /api/game-templates/system/:id rejects invalid barcodes', async () => {
+    if (!mongoConnected) {
+      console.warn('⚠️ Skipping test - MongoDB not connected');
+      return;
+    }
+
+    await request(app)
+      .put(`/api/game-templates/system/${template._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ barcodes: ['not-a-barcode'] })
+      .expect(400);
+
+    const unchanged = await SystemGameTemplate.findById(template._id).lean();
+    expect(unchanged.barcodes).toEqual([]);
+  });
+});
+
+describe('Template game info (box art)', () => {
+  const createdIds = [];
+
+  afterAll(async () => {
+    if (!mongoConnected) return;
+    await UserGameTemplate.deleteMany({ _id: { $in: createdIds } });
+  });
+
+  test('POST /api/game-templates keeps BGG images and drops other image hosts', async () => {
+    if (!mongoConnected) {
+      console.warn('⚠️ Skipping test - MongoDB not connected');
+      return;
+    }
+
+    const thumb = 'https://cf.geekdo-images.com/a__thumb/img/x.jpg';
+    const response = await request(app)
+      .post('/api/game-templates')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: `Box Art ${Date.now()}`,
+        gameInfo: { bggId: 13, thumbnailUrl: thumb, imageUrl: 'https://evil.example/x.png', playingTime: 60 },
+      })
+      .expect(201);
+
+    createdIds.push(response.body.template._id);
+    expect(response.body.template.gameInfo).toMatchObject({
+      bggId: 13,
+      thumbnailUrl: thumb,
+      imageUrl: null,
+      playingTime: 60,
+    });
   });
 });

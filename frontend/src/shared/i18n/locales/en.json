@@ -82,6 +82,8 @@
   },
 
   "gamesPage": {
+    "allTypes": "All games",
+    "typeFilter": "Game type",
     "subtitle": "Pick where you want to go",
     "scoreboardGames": "Scoreboard Games",
     "scoreboardDescription": "Track team scores for games like volleyball, ping pong, or basketball.",
@@ -106,7 +108,8 @@
     "noGamesFound": "No games found",
     "activeGameLabel": "Game in progress",
     "activeGameProgress": "Round {{current}} of {{max}}",
-    "continueGame": "Continue"
+    "continueGame": "Continue",
+    "scanGame": "Scan game"
   },
 
   "auth": {
@@ -378,6 +381,7 @@
     "noRoundData": "No round data available for chart visualization",
     "gameNotFound": "Game not found",
     "loadGameFailed": "Failed to load game details: {{error}}",
+    "highlightLeader": "Leading",
     "highlightWinner": "Winner",
     "highlightWinnerScore": "{{score}} points",
     "highlightWinnerMargin": "{{score}} points · {{margin}} ahead",
@@ -867,6 +871,26 @@
 
   "settings": {
     "gameSettings": "Game Settings",
+    "rounds": "Rounds",
+    "totalRounds": "Total rounds",
+    "roundProgress": "Round {{current}} of {{max}}",
+    "resetToStandard": "Standard ({{count}})",
+    "fewerRounds": "Fewer rounds",
+    "moreRounds": "More rounds",
+    "seatingAndDealer": "Seating & dealer",
+    "seating": "Seating order",
+    "seatingHint": "Drag the handle to change seats. Tap a player to make them dealer this round.",
+    "seatingHintNoDealer": "Drag the handle to change seats.",
+    "callsFirst": "Calls first",
+    "dragToReorder": "Drag to move {{name}}",
+    "addPlayer": "Add",
+    "addPlayerPlaceholder": "New player name",
+    "newPlayer": "New",
+    "removeNewPlayer": "Remove {{name}}",
+    "duplicatePlayerName": "A player with this name is already in the game.",
+    "maxPlayersReached": "Maximum of {{count}} players reached.",
+    "lateJoinHint": "New players score 0 for the {{count}} rounds already played.",
+    "deckLimitWarning": "With {{count}} players the deck only covers {{max}} rounds.",
     "maxRounds": "Max Rounds",
     "currentRoundHint": "Currently on round {{current}}. Max rounds: {{max}}",
     "dealer": "Dealer",
@@ -905,6 +929,7 @@
   },
 
   "addPlayers": {
+    "title": "Add players",
     "friends": "Friends",
     "friendsDesc": "Add players from your friends list",
     "selectFriends": "Select from your friends",
@@ -914,6 +939,8 @@
   },
 
   "selectRecentGroup": {
+    "gamesTogether_one": "{{count}} game together",
+    "gamesTogether_other": "{{count}} games together",
     "title": "Recent Play Groups",
     "loading": "Loading recent groups...",
     "noGroups": "No recent games found. Play a game first to use this feature.",
@@ -997,6 +1024,8 @@
   "tableGameSettings": {
     "title": "Game Settings",
     "players": "Players",
+    "playersHint": "Drag the handle to change the order. Tap a name to rename.",
+    "scoring": "Scoring",
     "addPlayer": "Add Player",
     "currentScoreEditor": "Current Set {{round}} Score",
     "teamMembers": "Team Members",
@@ -1004,6 +1033,8 @@
     "scoringPreference": "Scoring Preference:",
     "highScore": "High Score",
     "lowScore": "Low Score",
+    "allowEmptyAsZero": "Advance without entering all scores",
+    "allowEmptyAsZeroHint": "Empty inputs count as 0 points.",
     "saveChanges": "Save Changes"
   },
 
@@ -1109,6 +1140,12 @@
   },
 
   "templateDetails": {
+    "players": "Players",
+    "playingTime": "Playing time",
+    "minutes": "{{count}} min",
+    "minAge": "Age",
+    "yearPublished": "Published",
+    "viewOnBgg": "View on BoardGameGeek",
     "gameSettings": "Game Settings",
     "targetNumber": "Target Number",
     "scoringTarget": "Scoring Target",
@@ -1579,5 +1616,59 @@
     "applied": "Applied",
     "successMessage": "ELO ratings have been successfully recalculated. Players can now see their updated rankings on the leaderboard.",
     "recalculateConfirm": "This will recalculate ELO ratings for {{gameType}}. This operation cannot be undone. Continue?"
+  },
+
+  "scanBarcode": {
+    "candidatesTitle": "Which of these games is it?",
+    "inYourGames": "in your games",
+    "addNewGameLabel": "Add as a new game",
+    "newGamePlaceholder": "Game name",
+    "addNewGame": "Add game",
+    "orLinkExisting": "…or link it to a game you already have:",
+    "lookingUp": "Looking up barcode {{code}}…",
+    "title": "Scan game box",
+    "unknownTitle": "Which game is this?",
+    "hint": "Point the camera at the barcode on the game box.",
+    "manualLabel": "Or enter the barcode number",
+    "manualSubmit": "Go",
+    "invalidCode": "Enter the 8–14 digit number below the barcode.",
+    "unknownDescription": "Barcode {{code}} isn't linked to a game yet. Pick the game once and future scans will open it directly.",
+    "searchPlaceholder": "Search games",
+    "detectedTitle": "Detected product: {{title}}",
+    "noTemplates": "No games found.",
+    "shareWithEveryone": "Save this barcode for all users",
+    "scanAgain": "Scan again",
+    "retry": "Try again",
+    "flashlight": "Toggle flashlight",
+    "templateNotFound": "The game \"{{name}}\" could not be found.",
+    "errors": {
+      "insecure": "The camera only works over a secure (HTTPS) connection.",
+      "unsupported": "This browser can't access the camera. Enter the barcode number instead.",
+      "denied": "Camera access was blocked. Allow camera access in your browser settings, or enter the barcode number.",
+      "noCamera": "No camera was found on this device.",
+      "unknown": "The camera could not be started."
+    }
+  },
+
+  "gameType": {
+    "add": "Add",
+    "searchGames": "Search games",
+    "noMatches": "No games match your search.",
+    "startNewGame": "Start new game",
+    "continue": "Continue",
+    "history": "Played games",
+    "noGamesYet": "No finished games yet. Start one above!",
+    "info": "Info",
+    "notFound": "The game \"{{name}}\" could not be found.",
+    "allGames": "All games",
+    "type": "Type",
+    "rules": "Rules",
+    "noRules": "No rules yet. Use Edit to add them.",
+    "manage": "Manage",
+    "edit": "Edit",
+    "customize": "Customize",
+    "suggest": "Suggest for everyone",
+    "resetToDefault": "Reset to default",
+    "resetConfirm": "Remove your changes and go back to the shared version of this game?"
   }
 }

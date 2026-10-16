@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import PropTypes from 'prop-types';
 import { ArrowLeftIcon, ArrowRightIcon, ArrowLeftCircleIcon, BarChartIcon, GamepadIcon, SettingsIcon } from "../../components/ui/Icon";
-import { SkipForward } from 'lucide-react';
 import { LocalTableGameStorage, LocalScoreboardGameStorage } from "../../shared/api";
 import { getTableGameById } from "../../shared/api/tableGameService";
 import DeleteConfirmationModal from "../../components/modals/DeleteConfirmationModal";
@@ -19,6 +18,8 @@ import "../../styles/pages/gameInProgress.css";
 import "../../styles/components/statsChart.css";
 import "../../styles/components/scorecard.css";
 import RankBadge from "@/components/game/RankBadge";
+import { PlayerAvatar } from "@/components/common/PlayerAvatar";
+import { usePlayerAvatars, getPlayerAvatar } from "@/shared/hooks/usePlayerAvatars";
 
 const MIN_PLAYERS = 2;
 
@@ -65,7 +66,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   // Game settings
   const [targetNumber, setTargetNumber] = useState(null);
   const [lowIsBetter, setLowIsBetter] = useState(false);
-  const [allowEmptyAsZero, setAllowEmptyAsZero] = useState(false);
+  const [allowEmptyAsZero, setAllowEmptyAsZero] = useState(true);
   const [scoreEntryMode, setScoreEntryMode] = useState(null);
   const [setTargets, setSetTargets] = useState({});
   const [pointHistoryBySet, setPointHistoryBySet] = useState({});
@@ -96,6 +97,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
   };
   
   const [players, setPlayers] = useState(getDefaultPlayers());
+  const playerAvatars = usePlayerAvatars(players);
   const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
   const [currentGameName, setCurrentGameName] = useState(
     isDedicatedScoreboardPage ? 'Volleyball' : ""
@@ -304,7 +306,9 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             // This prevents altered local variants from overriding games created with system templates
             setTargetNumber(gameData.targetNumber || null);
             setLowIsBetter(gameData.lowIsBetter || false);
-            setAllowEmptyAsZero(gameData.allowEmptyAsZero || false);
+            // On unless the player switched it off. Older saves stored allowEmptyAsZero: false
+            // only because that was the old default, so that field is deliberately ignored.
+            setAllowEmptyAsZero(gameData.requireAllScores !== true);
             setScoreEntryMode(forceScoreEntryMode || gameData.scoreEntryMode || (gameData.gameType === 'scoreboard' ? 'twoSideGesture' : null));
             setSetTargets(gameData.setTargets || {});
             setPointHistoryBySet(gameData.pointHistoryBySet || {});
@@ -434,7 +438,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             timestamp: new Date().toISOString(),
             targetNumber: targetNumberRef.current,
             lowIsBetter: lowIsBetterRef.current,
-            allowEmptyAsZero: allowEmptyAsZeroRef.current,
+            requireAllScores: !allowEmptyAsZeroRef.current,
             scoreEntryMode: scoreEntryModeRef.current,
             setTargets: setTargetsRef.current,
             pointHistoryBySet: pointHistoryBySetRef.current,
@@ -457,7 +461,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               name: name,
               targetNumber: gameData.targetNumber,
               lowIsBetter: gameData.lowIsBetter,
-              allowEmptyAsZero: gameData.allowEmptyAsZero,
+              requireAllScores: gameData.requireAllScores,
               scoreEntryMode: gameData.scoreEntryMode,
               setTargets: gameData.setTargets,
               pointHistoryBySet: gameData.pointHistoryBySet,
@@ -518,7 +522,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
-            allowEmptyAsZero: currentAllowEmptyAsZero,
+            requireAllScores: !currentAllowEmptyAsZero,
             scoreEntryMode: currentScoreEntryMode,
             setTargets: currentSetTargets,
             pointHistoryBySet: currentPointHistoryBySet,
@@ -541,7 +545,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               name: name,
               targetNumber: currentTargetNumber,
               lowIsBetter: currentLowIsBetter,
-              allowEmptyAsZero: currentAllowEmptyAsZero,
+              requireAllScores: !currentAllowEmptyAsZero,
               scoreEntryMode: currentScoreEntryMode,
               setTargets: currentSetTargets,
               pointHistoryBySet: currentPointHistoryBySet,
@@ -594,7 +598,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             timestamp: new Date().toISOString(),
             targetNumber: currentTargetNumber,
             lowIsBetter: currentLowIsBetter,
-            allowEmptyAsZero: currentAllowEmptyAsZero,
+            requireAllScores: !currentAllowEmptyAsZero,
             scoreEntryMode: currentScoreEntryMode,
             setTargets: currentSetTargets,
             pointHistoryBySet: currentPointHistoryBySet,
@@ -617,7 +621,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               name: name,
               targetNumber: currentTargetNumber,
               lowIsBetter: currentLowIsBetter,
-              allowEmptyAsZero: currentAllowEmptyAsZero,
+              requireAllScores: !currentAllowEmptyAsZero,
               scoreEntryMode: currentScoreEntryMode,
               setTargets: currentSetTargets,
               pointHistoryBySet: currentPointHistoryBySet,
@@ -648,12 +652,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
       });
     };
   }, []);
-
-  const handleNameChange = (idx, value) => {
-    setPlayers(prev => prev.map((player, i) => (
-      i === idx ? { ...player, name: value } : player
-    )));
-  };
 
   const handlePointChange = (playerIdx, rowIdx, value) => {
     setPlayers(prev => prev.map((player, i) => {
@@ -1585,14 +1583,16 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                             <tr key={idx} className="player-row">
                               <td className="player-cell">
                                 <div className="player-name-container">
-                                  <input
-                                    value={player.name}
-                                    onChange={(e) => handleNameChange(idx, e.target.value)}
-                                    className="player-name-input"
-                                    placeholder={`${t('common.player')} ${idx + 1}`}
-                                    type="text"
-                                    disabled={gameFinished}
+                                  <PlayerAvatar
+                                    name={player.name || `${t('common.player')} ${idx + 1}`}
+                                    src={getPlayerAvatar(playerAvatars, player)}
+                                    size={30}
                                   />
+                                  <div className="player-name-stack">
+                                    <span className="player-name">
+                                      {player.name || `${t('common.player')} ${idx + 1}`}
+                                    </span>
+                                  </div>
                                 </div>
                               </td>
                               <td>
@@ -1906,16 +1906,6 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
                   {getSetTarget() === 15 ? t('tableGame.setTargetTo25') : t('tableGame.setTargetTo15')}
                 </button>
               )}
-              {!gameFinished && !isTwoSideScoreboard && (
-                <button
-                  type="button"
-                  className={`game-control-btn${allowEmptyAsZero ? ' active' : ''}`}
-                  onClick={() => setAllowEmptyAsZero(v => !v)}
-                  title={t('tableGame.allowEmptyAsZeroHint')}
-                >
-                  <SkipForward size={22} />
-                </button>
-              )}
               {!targetNumber && !gameFinished && isCurrentRoundEmptyOrComplete() && (
                 <button
                   type="button"
@@ -1971,6 +1961,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
             currentRound={currentRound}
             targetNumber={targetNumber}
             lowIsBetter={lowIsBetter}
+            allowEmptyAsZero={allowEmptyAsZero}
             scoreEntryMode={scoreEntryMode}
             teamMembers={teamMembers}
             currentRoundScores={players.map((_, idx) => getLiveScore(idx))}
@@ -1982,6 +1973,7 @@ const TableGame = ({ forceScoreEntryMode = null }) => {
               if (settings.rows) setRows(settings.rows);
               if (settings.targetNumber !== undefined) setTargetNumber(settings.targetNumber);
               if (settings.lowIsBetter !== undefined) setLowIsBetter(settings.lowIsBetter);
+              if (settings.allowEmptyAsZero !== undefined) setAllowEmptyAsZero(settings.allowEmptyAsZero);
               setShowGameSettingsModal(false);
             }}
             gameFinished={gameFinished}

@@ -20,8 +20,9 @@ import "@/styles/components/TableGame.css"
 import "@/styles/pages/account.css"
 import "@/styles/pages/gameDetails.css"
 // Icon imports
-import { ArrowLeftIcon, BarChartIcon, ChevronDownIcon, ClockIcon, StarIcon, TrophyIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, BarChartIcon, ChevronDownIcon } from "@/components/ui/Icon"
 import RankBadge from "@/components/game/RankBadge"
+import { GameHighlights } from "@/components/game/GameHighlights"
 import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 
 // Skeleton Loading Component
@@ -471,6 +472,7 @@ const GameDetails = () => {
       leaders,
       margin: leaders.length === 1 && runnerUp ? leaders[0].score - runnerUp.score : null,
       roundCount: rounds.length,
+      playerCount: sortedPlayers.length,
       bestRound,
       bestBidder: bestBidder && {
         name: sortedPlayers.find(sp => sp.id === String(bestBidder.id))?.name,
@@ -532,48 +534,7 @@ const GameDetails = () => {
 
         <div className="game-summary" ref={summaryRef}>
           {/* Only displayed on wide screens; see gameDetails.css */}
-          <div className="game-highlights">
-            <div className="highlight-card">
-              <TrophyIcon size={20} className="highlight-icon" />
-              <div className="highlight-body">
-                <span className="highlight-label">{t('gameDetails.highlightWinner')}</span>
-                <span className="highlight-value">{highlights.leaders.map(p => p.name).join(', ')}</span>
-                <span className="highlight-detail">
-                  {highlights.margin !== null
-                    ? t('gameDetails.highlightWinnerMargin', { score: highlights.leaders[0]?.score, margin: highlights.margin })
-                    : t('gameDetails.highlightWinnerScore', { score: highlights.leaders[0]?.score })}
-                </span>
-              </div>
-            </div>
-            <div className="highlight-card">
-              <ClockIcon size={20} className="highlight-icon" />
-              <div className="highlight-body">
-                <span className="highlight-label">{t('gameDetails.highlightRounds')}</span>
-                <span className="highlight-value">{highlights.roundCount}</span>
-                <span className="highlight-detail">{t('gameDetails.highlightPlayers', { count: sortedPlayers.length })}</span>
-              </div>
-            </div>
-            {highlights.bestRound && (
-              <div className="highlight-card">
-                <StarIcon size={20} className="highlight-icon" />
-                <div className="highlight-body">
-                  <span className="highlight-label">{t('gameDetails.highlightBestRound')}</span>
-                  <span className="highlight-value">{highlights.bestRound.score > 0 ? '+' : ''}{highlights.bestRound.score}</span>
-                  <span className="highlight-detail">{t('gameDetails.highlightBestRoundDetail', { name: highlights.bestRound.name, n: highlights.bestRound.round })}</span>
-                </div>
-              </div>
-            )}
-            {highlights.bestBidder && (
-              <div className="highlight-card">
-                <BarChartIcon size={20} className="highlight-icon" />
-                <div className="highlight-body">
-                  <span className="highlight-label">{t('gameDetails.highlightBidAccuracy')}</span>
-                  <span className="highlight-value">{highlights.bestBidder.accuracy}%</span>
-                  <span className="highlight-detail">{t('gameDetails.highlightBidAccuracyDetail', { name: highlights.bestBidder.name, correct: highlights.bestBidder.correct, total: highlights.bestBidder.total })}</span>
-                </div>
-              </div>
-            )}
-          </div>
+          <GameHighlights highlights={highlights} />
 
           {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
             <div className="results-section">

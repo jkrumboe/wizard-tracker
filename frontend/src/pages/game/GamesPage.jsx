@@ -3,17 +3,16 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUser } from '@/shared/hooks/useUser';
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
-import Icon, { CheckMarkIcon, SearchIcon, XIcon } from '@/components/ui/Icon';
+import { useGameHistory } from '@/shared/hooks/useGameHistory';
+import { useTemplateLookup } from '@/shared/hooks/useGameTemplates';
+import Icon, { CheckMarkIcon, ChevronDownIcon, SearchIcon, XIcon } from '@/components/ui/Icon';
 import GameHistoryItem from '@/components/game/GameHistoryItem';
 import GameFilterModal from '@/components/modals/GameFilterModal';
-import { getRecentLocalGames, getUserCloudGamesList, getRecentPublicGames, createGame } from '@/shared/api/gameService';
-import { getUserCloudTableGamesList } from '@/shared/api/tableGameService';
+import { createGame } from '@/shared/api/gameService';
 import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage';
 import { LocalGameStorage } from '@/shared/api/localGameStorage';
 import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage';
 import { filterGames, getDefaultFilters } from '@/shared/utils/gameFilters';
-import { dedupeGames } from '@/shared/utils/gameDedup';
-import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import '@/styles/pages/gamesPage.css';
 
 // Custom icon for scoreboard games showing two team squares
@@ -65,11 +64,10 @@ const GamesPage = () => {
   const { user } = useUser();
   const { isOnline } = useOnlineStatus();
 
-  const [allGames, setAllGames] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { games: allGames, loading, syncStatuses: gameSyncStatuses } = useGameHistory();
+  const findTemplate = useTemplateLookup();
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState(getDefaultFilters());
-  const [gameSyncStatuses, setGameSyncStatuses] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
@@ -91,238 +89,6 @@ const GamesPage = () => {
   }, [allGames, filters, searchQuery, typeFilter]);
 
   const handleApplyFilters = (newFilters) => setFilters(newFilters);
-
-  const fetchLocalGames = async () => {
-    try {
-      const localGames = await getRecentLocalGames(100);
-      const formattedLocalGames = Array.isArray(localGames) ? localGames.map(game => ({
-        ...game,
-        created_at: game.created_at || new Date().toISOString(),
-        isLocal: true
-      })) : [];
-
-      const tableGames = LocalTableGameStorage.getSavedTableGamesList();
-      const formattedTableGames = tableGames
-        .filter(game => game.gameFinished)
-        .map(game => {
-          const fullGame = LocalTableGameStorage.getTableGameById(game.id);
-          const gameData = fullGame?.gameData?.gameData || fullGame?.gameData || fullGame;
-          const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || null;
-          const isScoreboardGame =
-            scoreEntryMode === 'twoSideGesture'
-            || game.id?.startsWith?.('scoreboard_game_')
-            || game.gameTypeName === 'Volleyball'
-            || game.name === 'Volleyball';
-
-          let winnerName = 'Not determined';
-          if (gameData?.players && Array.isArray(gameData.players)) {
-            const playersWithScores = gameData.players.map(player => {
-              const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-              return { ...player, total };
-            });
-            if (playersWithScores.length > 0) {
-              const lowIsBetter = gameData.lowIsBetter || false;
-              const winner = playersWithScores.reduce((best, current) => {
-                if (!best) return current;
-                return lowIsBetter ? (current.total < best.total ? current : best) : (current.total > best.total ? current : best);
-              }, null);
-              winnerName = winner?.name || 'Not determined';
-            }
-          }
-
-          return {
-            ...game,
-            created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
-            gameType: isScoreboardGame ? 'scoreboard' : 'table',
-            scoreEntryMode,
-            winner_name: winnerName,
-            isUploaded: LocalTableGameStorage.isGameUploaded(game.id),
-            isLocal: true
-          };
-        });
-
-      const scoreboardGames = LocalScoreboardGameStorage.getSavedTableGamesList()
-        .filter(game => game.gameFinished)
-        .map(game => {
-          const fullGame = LocalScoreboardGameStorage.getTableGameById(game.id);
-          const gameData = fullGame?.gameData?.gameData || fullGame?.gameData || fullGame;
-          const scoreEntryMode = gameData?.scoreEntryMode || game?.scoreEntryMode || 'twoSideGesture';
-          let winnerName = 'Not determined';
-          if (gameData?.players && Array.isArray(gameData.players)) {
-            const playersWithScores = gameData.players.map(player => {
-              const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-              return { ...player, total };
-            });
-            if (playersWithScores.length > 0) {
-              const lowIsBetter = gameData.lowIsBetter || false;
-              const winner = playersWithScores.reduce((best, current) => {
-                if (!best) return current;
-                return lowIsBetter ? (current.total < best.total ? current : best) : (current.total > best.total ? current : best);
-              }, null);
-              winnerName = winner?.name || 'Not determined';
-            }
-          }
-          return {
-            ...game,
-            created_at: game.lastPlayed || game.savedAt || new Date().toISOString(),
-            gameType: 'scoreboard',
-            scoreEntryMode,
-            winner_name: winnerName,
-            isUploaded: LocalScoreboardGameStorage.isGameUploaded(game.id),
-            isLocal: true,
-            storageType: 'scoreboard'
-          };
-        });
-
-      return dedupeGames([...formattedLocalGames, ...formattedTableGames, ...scoreboardGames]).sort((a, b) =>
-        new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
-      );
-    } catch (error) {
-      console.error('Error fetching local games:', error);
-      return [];
-    }
-  };
-
-  const fetchCloudGames = async () => {
-    const [wizardGames, tableGames] = await Promise.all([
-      getUserCloudGamesList(),
-      getUserCloudTableGamesList()
-    ]);
-
-    const formattedWizardGames = wizardGames.map(game => ({
-      id: game.cloudId,
-      cloudId: game.cloudId,
-      localId: game.localId,
-      players: game.players,
-      winner_id: game.winner_id,
-      final_scores: game.final_scores,
-      created_at: game.created_at,
-      total_rounds: game.total_rounds,
-      isPaused: game.isPaused,
-      gameFinished: game.gameFinished,
-      isUploaded: true,
-      isCloud: true,
-      gameType: 'wizard'
-    }));
-
-    const formattedTableGames = tableGames
-      .filter(game => game.gameFinished)
-      .map(game => {
-        const rawGameDataOuter = game.rawData?.gameData;
-        const rawGameData = rawGameDataOuter?.gameData || rawGameDataOuter;
-        const scoreEntryMode = rawGameData?.scoreEntryMode || game.scoreEntryMode || null;
-        const isScoreboardGame =
-          scoreEntryMode === 'twoSideGesture'
-          || game.cloudId?.startsWith?.('scoreboard_game_')
-          || game.gameTypeName === 'Volleyball'
-          || game.name === 'Volleyball';
-
-        let winnerName = 'Not determined';
-        if (game.players && Array.isArray(game.players)) {
-          const playersWithScores = game.players.map(player => {
-            const total = player.points?.reduce((sum, val) => sum + (Number.parseInt(val, 10) || 0), 0) || 0;
-            return { ...player, total };
-          });
-          if (playersWithScores.length > 0) {
-            const lowIsBetter = rawGameData?.lowIsBetter || false;
-            const winner = playersWithScores.reduce((best, current) => {
-              if (!best) return current;
-              return lowIsBetter ? (current.total < best.total ? current : best) : (current.total > best.total ? current : best);
-            }, null);
-            winnerName = winner?.name || 'Not determined';
-          }
-        }
-
-        return {
-          id: game.cloudId,
-          cloudId: game.cloudId,
-          localId: game.localId,
-          name: game.name || game.gameTypeName || 'Table Game',
-          players: game.players?.map(p => p.name || p) || [],
-          created_at: game.created_at,
-          totalRounds: game.totalRounds,
-          gameFinished: game.gameFinished,
-          isUploaded: true,
-          isCloud: true,
-          gameType: isScoreboardGame ? 'scoreboard' : 'table',
-          scoreEntryMode,
-          gameData: rawGameData,
-          winner_name: winnerName
-        };
-      });
-
-    return [...formattedWizardGames, ...formattedTableGames].sort((a, b) =>
-      new Date(b.created_at) - new Date(a.created_at)
-    );
-  };
-
-  useEffect(() => {
-    const fetchGames = async () => {
-      setLoading(true);
-      try {
-        if (user && isOnline) {
-          try {
-            const cloudGames = await fetchCloudGames();
-
-            // Local wizard, table and scoreboard games (already includes every local storage)
-            const allLocalGames = await fetchLocalGames();
-
-            // Cloud entries come first so the cloud id stays the one used for navigation;
-            // local copies of the same game are folded into them by dedupeGames().
-            const mergedGames = dedupeGames([...cloudGames, ...allLocalGames]);
-
-            mergedGames.sort((a, b) =>
-              new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
-            );
-            setAllGames(mergedGames);
-            setGameSyncStatuses({});
-          } catch (error) {
-            console.debug('Failed to fetch cloud games, falling back to local:', error.message);
-            const localGames = await fetchLocalGames();
-            setAllGames(localGames);
-            if (localGames.length > 0) {
-              try {
-                const wizardGameIds = localGames.filter(game => game.gameType !== 'table' && game.id).map(game => game.id);
-                if (wizardGameIds.length > 0) {
-                  const syncStatuses = await batchCheckGamesSyncStatus(wizardGameIds);
-                  setGameSyncStatuses(syncStatuses);
-                }
-              } catch (syncError) {
-                console.debug('Error batch checking sync status:', syncError.message);
-              }
-            }
-          }
-        } else if (isOnline) {
-          try {
-            const [publicGames, localGames] = await Promise.all([
-              getRecentPublicGames(100).catch(() => []),
-              fetchLocalGames()
-            ]);
-            const formattedPublicGames = publicGames.map(game => ({ ...game, isCloud: true, isUploaded: true }));
-            // Local games first so their local id stays usable offline, public copies fold into them
-            const merged = dedupeGames([...localGames, ...formattedPublicGames]);
-            setAllGames(merged.sort((a, b) =>
-              new Date(b.created_at || b.lastPlayed || b.savedAt) - new Date(a.created_at || a.lastPlayed || a.savedAt)
-            ));
-          } catch (error) {
-            console.debug('Failed to fetch games for unauthenticated user, falling back to local:', error.message);
-            const localGames = await fetchLocalGames();
-            setAllGames(localGames);
-          }
-        } else {
-          const localGames = await fetchLocalGames();
-          setAllGames(localGames);
-        }
-      } catch (error) {
-        console.error('Error fetching games:', error);
-        setAllGames([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGames();
-  }, [user, isOnline]);
 
   // Auto-upload local games (all types) scored while not logged in
   useEffect(() => {
@@ -397,8 +163,8 @@ const GamesPage = () => {
     quickLinks.push({ to: '/admin', label: t('nav.adminPanel'), icon: 'ShieldCheck' });
   }
 
-  const typeChips = [
-    { value: 'all',        label: t('common.all') },
+  const typeOptions = [
+    { value: 'all',        label: t('gamesPage.allTypes') },
     { value: 'wizard',     label: 'Wizard' },
     { value: 'table',      label: t('gamesPage.tableGames') },
     { value: 'scoreboard', label: t('gamesPage.scoreboardGames') },
@@ -459,18 +225,18 @@ const GamesPage = () => {
               </button>
             )}
           </div>
-          <div className="games-type-chips" role="group">
-            {typeChips.map((chip) => (
-              <button
-                key={chip.value}
-                type="button"
-                className={`games-type-chip${typeFilter === chip.value ? ' active' : ''}`}
-                aria-pressed={typeFilter === chip.value}
-                onClick={() => setTypeFilter(chip.value)}
-              >
-                {chip.label}
-              </button>
-            ))}
+          <div className="games-type-select-wrapper">
+            <select
+              className="games-type-select"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              aria-label={t('gamesPage.typeFilter')}
+            >
+              {typeOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <ChevronDownIcon size={16} className="games-type-select-icon" aria-hidden="true" />
           </div>
         </div>
 
@@ -484,6 +250,7 @@ const GamesPage = () => {
           <div className="game-history">
             {filteredGames.map(game => (
               <GameHistoryItem
+                findTemplate={findTemplate}
                 key={game.id}
                 game={{
                   ...game,

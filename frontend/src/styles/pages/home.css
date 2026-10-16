@@ -44,13 +44,13 @@
   width: 100%;
 }
 
-/* ── Secondary row: banner + friends side-by-side ────────── */
+/* ── Secondary row: equal-width utility buttons ──────────── */
 .home-secondary-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--spacing-sm);
-  width: 80%;
+  width: 90%;
 }
 
 /* ── Active game banner ──────────────────────────────────── */
@@ -68,7 +68,8 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  flex: 1;
+  width: 90%;
+  min-width: 0;
   transition: opacity 0.2s ease;
 }
 
@@ -87,24 +88,20 @@
 
 /* ── Resume failure notice ───────────────────────────────── */
 .home-resume-error {
-  width: 80%;
+  width: 90%;
   margin: 0;
   color: var(--danger-color, #ef4444);
   font-size: 0.85rem;
   text-align: center;
 }
 
-/* ── Friends button ──────────────────────────────────────── */
-.friends-section {
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
+/* ── Scan / friends buttons ──────────────────────────────── */
 .friends-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-xs);
+  min-width: 0;
   color: var(--text);
   border: 2px solid var(--primary);
   border-radius: var(--radius-md);
@@ -112,6 +109,12 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: opacity 0.2s ease;
+}
+
+.friends-button-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Shared utilities used in other pages ────────────────── */

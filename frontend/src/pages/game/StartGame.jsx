@@ -1,23 +1,26 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useState, useEffect, useMemo } from "react"
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
 import { userService, LocalTableGameStorage, LocalScoreboardGameStorage, LocalTableGameTemplate } from "@/shared/api"
 import { secureArrayShuffle, generateSecureId } from "@/shared/utils/secureRandom"
 import { SelectFriendsModal, AddPlayersChoiceModal, SelectRecentGroupModal } from '@/components/modals'
-import WizardGameHistoryModal from '@/components/modals/WizardGameHistoryModal'
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal'
-import GameTemplateSelector from '@/components/game/GameTemplateSelector'
+import ScanBarcodeModal from '@/components/modals/ScanBarcodeModal'
+import GameThumbnail from '@/components/game/GameThumbnail'
 import PlayerSetup from '@/components/game/PlayerSetup'
 import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeftCircleIcon, PlusIcon } from '@/components/ui/Icon'
+import { ArrowLeftCircleIcon, ArrowLeftIcon, ChevronRightIcon, PlusIcon, ScanBarcodeIcon, SearchIcon, XIcon } from '@/components/ui/Icon'
+import { resolveTemplateByName, isScoreboardTemplate } from '@/shared/utils/templateResolver'
+import { useGameTemplates } from '@/shared/hooks/useGameTemplates'
 import '@/styles/pages/startGame.css'
 import '@/styles/components/players.css'
 import '@/styles/components/components.css'
-import '@/styles/components/GameTemplateSelector.css'
+import '@/styles/pages/gamesPage.css'
+import '@/styles/pages/gameType.css'
 
 const MAX_PLAYERS_WIZARD = 8;
 const MAX_PLAYERS_TABLE = 10;
@@ -27,16 +30,17 @@ const MIN_PLAYERS_TABLE = 2;
 const StartGame = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useUser();
   const {
     startGameWithSetup,
-    resumeGame,
   } = useGameStateContext();
+  const { templates: allTemplates } = useGameTemplates();
 
   const startType = searchParams.get('type');
-  const selectorGameCategory = startType === 'call-made' ? 'callAndMade' : (startType === 'scoreboard' || startType === 'table' ? 'table' : undefined);
-  const selectorTableMode = startType === 'scoreboard' ? 'scoreboard' : (startType === 'table' ? 'table' : 'all');
+  // Set by the barcode scanner to jump straight to a game's setup page
+  const templateParam = searchParams.get('template');
   const addTemplateType = { 'call-made': 'callAndMade', scoreboard: 'scoreboard', table: 'table' }[startType] || null;
 
   // View state
@@ -65,14 +69,16 @@ const StartGame = () => {
   const [showSelectRecentGroupModal, setShowSelectRecentGroupModal] = useState(false);
   const [selectedRecentGroup, setSelectedRecentGroup] = useState(null);
 
-  // Wizard game history modal
-  const [showWizardHistoryModal, setShowWizardHistoryModal] = useState(false);
-  const [resumeErrorMessage, setResumeErrorMessage] = useState('');
+  // Game list search
+  const [templateSearch, setTemplateSearch] = useState('');
 
   // Add game type modal
   const [showAddGameModal, setShowAddGameModal] = useState(false);
 
-  // Details modal and edit system template modal are now handled by GameTemplateSelector
+  // Barcode scanner
+  const [showScanModal, setShowScanModal] = useState(false);
+  const [templateNotFound, setTemplateNotFound] = useState('');
+
 
   // Initialize player list with logged-in user
   useEffect(() => {
@@ -255,6 +261,8 @@ const StartGame = () => {
       return appendUniquePlayers(working, newPlayers, maxPlayers);
     });
     setSelectedRecentGroup(group);
+    // Picking a group is the confirmation, so there is nothing left to do in the sheet
+    setShowSelectRecentGroupModal(false);
   };
 
   useEffect(() => {
@@ -275,9 +283,43 @@ const StartGame = () => {
     }
   };
 
+  // Open the setup page for ?template=<name>, then drop the param so scanning
+  // the same game again (or going back) behaves like a fresh selection
+  useEffect(() => {
+    if (!templateParam) return undefined;
+    let cancelled = false;
+
+    const openTemplateFromParam = async () => {
+      const template = await resolveTemplateByName(templateParam);
+      if (cancelled) return;
+      if (template) {
+        setTemplateNotFound('');
+        handleSelectTemplate(template);
+      } else {
+        setTemplateNotFound(templateParam);
+      }
+      setSearchParams((params) => {
+        params.delete('template');
+        return params;
+      }, { replace: true });
+    };
+
+    void openTemplateFromParam();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateParam]);
+
+  // Setup is opened from a game's page (?template=), so go back there
   const handleBack = () => {
+    if (location.key !== 'default') {
+      navigate(-1);
+      return;
+    }
+    if (selectedGameType?.name) {
+      navigate(`/game-types/${encodeURIComponent(selectedGameType.name)}`, { replace: true });
+      return;
+    }
     setActiveView('select');
-    // Keep players and selectedGameType so user can switch back
   };
 
   const handlePageBack = () => {
@@ -302,6 +344,8 @@ const StartGame = () => {
       roundPattern: selectedGameType.roundPattern || 'pyramid',
       hasDealerRotation: selectedGameType.hasDealerRotation !== false,
       hasForbiddenCall: selectedGameType.hasForbiddenCall !== false,
+      // Lets the game's page list it under the template it was started from
+      templateName: selectedGameType.name,
       },
     });
 
@@ -395,12 +439,7 @@ const StartGame = () => {
     }
   };
 
-  // --- Template selector callbacks ---
-  const handleTemplateSelectorSelect = (templateName, settings = {}) => {
-    const template = { name: templateName, ...settings };
-    handleSelectTemplate(template);
-  };
-
+  // --- Template list ---
   const handleCreateNewTemplate = (gameName, settings = {}) => {
     if (gameName?.trim()) {
       LocalTableGameTemplate.saveTemplate(gameName.trim(), settings);
@@ -408,21 +447,25 @@ const StartGame = () => {
     }
   };
 
-  const handleLoadTableGame = (gameData) => {
-    if (gameData?.gameId) {
-      if (
-        gameData.scoreEntryMode === 'twoSideGesture'
-        || gameData.gameType === 'scoreboard'
-        || gameData.gameName === 'Volleyball'
-        || gameData.gameName === 'Basketball'
-        || gameData.gameId?.startsWith('scoreboard_game')
-      ) {
-        navigate(`/scoreboard/${gameData.gameId}`);
-        return;
-      }
-      navigate(`/table/${gameData.gameId}`);
-    }
-  };
+  // The "New game" pills on the Games page open this list for one type (?type=)
+  const visibleTemplates = useMemo(() => {
+    const query = templateSearch.trim().toLowerCase();
+    return allTemplates
+      .filter((tpl) => {
+        if (startType === 'call-made') return tpl.gameCategory === 'callAndMade';
+        if (startType === 'scoreboard') return isScoreboardTemplate(tpl);
+        if (startType === 'table') return tpl.gameCategory !== 'callAndMade' && !isScoreboardTemplate(tpl);
+        return true;
+      })
+      .filter((tpl) => !query || tpl.name.toLowerCase().includes(query))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allTemplates, templateSearch, startType]);
+
+  const listTitle = {
+    'call-made': t('gamesPage.callAndMadeGames'),
+    table: t('gamesPage.tableGames'),
+    scoreboard: t('gamesPage.scoreboardGames'),
+  }[startType] || t('gameTemplates.templatesSection');
 
   // --- Derived values ---
   const maxPlayers = getMaxPlayersForSelection();
@@ -445,103 +488,104 @@ const StartGame = () => {
     setMaxRoundsLocal(validValue);
   };
 
-  // --- Wizard saved games helpers ---
-  const handleSelectWizardGame = (game) => {
-    // Navigate to the appropriate page based on game status
-    if (game.isPaused || game.gameState?.isPaused) {
-      // For paused games, resume and navigate to GameInProgress
-      const result = resumeGame(game.id);
-      const resumedPlayers = result?.gameState?.players;
-      if (result.success && Array.isArray(resumedPlayers) && resumedPlayers.length > 0) {
-        setResumeErrorMessage('');
-        navigate(`/game/current`);
-        return true;
-      } else {
-        console.error('Failed to resume game:', result.error);
-        const message = t('gameHistory.resumeFailedCorrupted', {
-          defaultValue: 'Could not resume this paused game. The save appears to be corrupted.'
-        });
-        setResumeErrorMessage(message);
-        globalThis.dispatchEvent(new CustomEvent('show-toast', {
-          detail: {
-            message,
-            type: 'error',
-            duration: 6000
-          }
-        }));
-        return false;
-      }
-    } else {
-      // For finished games, navigate to GameDetails to view
-      setResumeErrorMessage('');
-      navigate(`/game/${game.id}`);
-      return true;
-    }
-  };
-
   // --- RENDER ---
 
-  // Game type selection view
+  // Game type selection view: one row per game (box art + name)
   if (activeView === 'select') {
     return (
-      <div className="start-game-page">
-        <div className="game-type-selection">
-          <div className="start-select-header">
-            <button className="start-select-back-button" onClick={handlePageBack} title={t('common.back')}>
-              <ArrowLeftCircleIcon size={30} />
+      <div className="game-type-page start-select-page">
+        <header className="game-type-header">
+          <button type="button" className="games-quick-link" onClick={handlePageBack} aria-label={t('common.goBack')}>
+            <ArrowLeftIcon size={18} />
+          </button>
+          <h1 className="games-title game-type-title">{listTitle}</h1>
+          <nav className="games-quick-links">
+            {/* Barcode lookups need an account (BGG API terms) */}
+            {user && (
+              <button
+                type="button"
+                className="games-quick-link"
+                onClick={() => setShowScanModal(true)}
+                aria-label={t('home.scanGame')}
+                title={t('home.scanGame')}
+              >
+                <ScanBarcodeIcon size={18} aria-hidden="true" />
+                <span className="games-quick-link-label">{t('home.scanGame')}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              className="games-quick-link"
+              onClick={() => setShowAddGameModal(true)}
+              aria-label={t('gameTemplates.addNewGameType')}
+              title={t('gameTemplates.addNewGameType')}
+            >
+              <PlusIcon size={18} aria-hidden="true" />
+              <span className="games-quick-link-label">{t('gameType.add')}</span>
             </button>
-            <h3 className="template-section-title start-select-title">{t('gameTemplates.templatesSection')}</h3>
+          </nav>
+        </header>
+
+        {templateNotFound && (
+          <div className="error-message" role="alert">
+            {t('scanBarcode.templateNotFound', { name: templateNotFound })}
           </div>
+        )}
 
-          {/* Add New Game Type stays at the top so it's reachable with long template lists */}
-          <div className="template-selector-actions start-create-actions">
-            <button className="create-new-btn" onClick={() => setShowAddGameModal(true)}>
-              <PlusIcon size={20} />
-              {t('gameTemplates.addNewGameType')}
-            </button>
+        <div className="games-filter-bar">
+          <div className="games-search-wrapper">
+            <SearchIcon size={16} className="games-search-icon" />
+            <input
+              type="text"
+              className="games-search-input"
+              placeholder={t('gameType.searchGames')}
+              value={templateSearch}
+              onChange={(e) => setTemplateSearch(e.target.value)}
+            />
+            {templateSearch && (
+              <button
+                className="games-search-clear"
+                onClick={() => setTemplateSearch('')}
+                aria-label={t('common.clear')}
+              >
+                <XIcon size={14} />
+              </button>
+            )}
           </div>
-
-          {resumeErrorMessage && (
-            <div className="error-message" role="alert">
-              {resumeErrorMessage}
-            </div>
-          )}
-
-          {/* All game templates in one unified list */}
-          <GameTemplateSelector
-            onSelectTemplate={handleTemplateSelectorSelect}
-            onCreateNew={handleCreateNewTemplate}
-            onLoadGame={handleLoadTableGame}
-            onLoadWizardGames={() => {
-              setResumeErrorMessage('');
-              setShowWizardHistoryModal(true);
-            }}
-            embedded
-            gameCategory={selectorGameCategory}
-            tableTemplateMode={selectorTableMode}
-            hideSystemSectionTitle
-            hideCreateButton
-            alwaysShowSavedGamesModal
-            savedGamesInitialStatus="paused"
-          />
-
-          <AddGameTemplateModal
-            isOpen={showAddGameModal}
-            onClose={() => setShowAddGameModal(false)}
-            onSave={handleCreateNewTemplate}
-            templateType={addTemplateType}
-          />
-
-          <WizardGameHistoryModal
-            isOpen={showWizardHistoryModal}
-            onClose={() => {
-              setShowWizardHistoryModal(false);
-              setResumeErrorMessage('');
-            }}
-            onSelectGame={handleSelectWizardGame}
-            initialStatusFilter="paused"
-          />
         </div>
+
+        {visibleTemplates.length > 0 ? (
+          <div className="game-row-list">
+            {visibleTemplates.map((template) => (
+              <Link
+                key={template._id || template.id || template.name}
+                to={`/game-types/${encodeURIComponent(template.name)}`}
+                className="game-row"
+              >
+                <span className="game-row-art">
+                  <span className="game-row-initial" aria-hidden="true">{template.name.charAt(0)}</span>
+                  <GameThumbnail template={template} />
+                </span>
+                <span className="game-row-name">{template.name}</span>
+                <ChevronRightIcon size={18} className="game-row-chevron" aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="empty-message">{t('gameType.noMatches')}</p>
+        )}
+
+        <AddGameTemplateModal
+          isOpen={showAddGameModal}
+          onClose={() => setShowAddGameModal(false)}
+          onSave={handleCreateNewTemplate}
+          templateType={addTemplateType}
+        />
+
+        <ScanBarcodeModal
+          isOpen={showScanModal && Boolean(user)}
+          onClose={() => setShowScanModal(false)}
+        />
       </div>
     );
   }
@@ -653,7 +697,7 @@ const StartGame = () => {
         {/* Start button */}
         <div className="start-game-actions">
           <button
-            className="start-game-btn"
+            className="setup-start-btn"
             disabled={!canStart}
             onClick={handleStartGame}
           >

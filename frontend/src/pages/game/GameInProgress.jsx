@@ -18,9 +18,15 @@ import "@/styles/pages/gameInProgress.css"
 import "@/styles/components/statsChart.css"
 import "@/styles/components/scorecard.css"
 
-import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, ChevronDownIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon, BombIcon, CloudIcon } from "@/components/ui/Icon"
+import { ArrowLeftIcon, ArrowRightIcon, BarChartIcon, ChevronDownIcon, UsersIcon, ArrowLeftCircleIcon, SettingsIcon } from "@/components/ui/Icon"
+import SpecialCardToggle from "@/components/game/SpecialCardToggle"
 import { useFixedViewportPage } from "@/shared/hooks/useFixedViewportPage"
 import RankBadge from "@/components/game/RankBadge"
+import Icon from "@/components/ui/Icon"
+import { PlayerAvatar } from "@/components/common/PlayerAvatar"
+import { usePlayerAvatars, getPlayerAvatar } from "@/shared/hooks/usePlayerAvatars"
+import { GameHighlights } from "@/components/game/GameHighlights"
+import { computeHighlights } from "@/shared/utils/gameHighlights"
 
 const GameInProgress = () => {
   useFixedViewportPage() // Only the round list scrolls; the shell stays put
@@ -51,11 +57,12 @@ const GameInProgress = () => {
   const [showGameSettingsModal, setShowGameSettingsModal] = useState(false)
   const [showPauseModal, setShowPauseModal] = useState(false)
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
-  const [statsSubTab, setStatsSubTab] = useState('chart') // 'chart' or 'details'
+  const [statsSubTab, setStatsSubTab] = useState('details') // 'details', 'chart' or 'table'
   const [isRecovering, setIsRecovering] = useState(false) // Track recovery state
   const [isLandscape, setIsLandscape] = useState(globalThis.matchMedia('(orientation: landscape)').matches)
   const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
   const [increaseCallMax, setIncreaseCallMax] = useState(false) // For Wolke - allows one more call than round max
+  const playerAvatars = usePlayerAvatars(gameState.players)
   
   // Auto-pause when leaving the game screen or closing the tab.
   // Without this the game only lives under its auto-save placeholder, which the
@@ -463,6 +470,37 @@ const GameInProgress = () => {
 
   const detailedStats = calculateDetailedGameStats();
 
+  // Headline facts for the stats view on wide screens, from completed rounds only
+  const getHighlights = () => {
+    const completedRounds = gameState.roundData.slice(0, isRoundComplete ? currentRoundIndex + 1 : currentRoundIndex);
+    const sortedStats = [...detailedStats].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+    let rank = 1;
+    const standings = sortedStats.map((stats, index) => {
+      if (index > 0 && (sortedStats[index - 1].totalPoints || 0) !== (stats.totalPoints || 0)) rank = index + 1;
+      return { name: stats.name, score: stats.totalPoints || 0, rank };
+    });
+
+    const highlights = computeHighlights({
+      standings,
+      rounds: completedRounds.map(round => round.players.map(p => ({ name: p.name, score: p.score }))),
+    });
+
+    const bestBidder = detailedStats.reduce((best, stats) => {
+      const accuracy = Number(stats.bidAccuracy);
+      return !best || accuracy > best.accuracy ? { ...stats, accuracy } : best;
+    }, null);
+
+    return {
+      ...highlights,
+      bestBidder: bestBidder && completedRounds.length > 0 && {
+        name: bestBidder.name,
+        accuracy: Math.round(bestBidder.accuracy),
+        correct: bestBidder.correctBids,
+        total: completedRounds.length,
+      },
+    };
+  };
+
   // Helper function to compare IDs regardless of type (string vs number)
   const compareIds = (id1, id2) => String(id1) === String(id2);
 
@@ -653,11 +691,36 @@ const GameInProgress = () => {
               {currentRound?.players.map((player) => (
                 <tr key={player.id} className={`player-row ${player.id === dealer?.id ? 'dealer' : ''} ${player.id === caller?.id ? 'caller' : ''}`}>
                   <td className="player-cell">
-                    <div className="player-name-container">
-                      <span className="player-name">{player.name}</span>
-                      {player.id === dealer?.id && <span className="role-badge dealer-badge">{t('gameInProgress.dealerBadge')}</span>}
-                      {player.id === caller?.id && <span className="role-badge caller-badge">{t('gameInProgress.callerBadge')}</span>}
-                    </div>
+                    {(() => {
+                      const isDealer = player.id === dealer?.id;
+                      const isCaller = player.id === caller?.id;
+                      return (
+                        <div className="player-name-container">
+                          <PlayerAvatar
+                            name={player.name}
+                            src={getPlayerAvatar(playerAvatars, player)}
+                            size={32}
+                            className={isDealer ? 'is-dealer' : isCaller ? 'is-caller' : ''}
+                          >
+                            {isDealer && (
+                              <span className="player-avatar-marker dealer" aria-hidden="true">
+                                <Icon name="Spade" size={12} strokeWidth={2.5} fill="currentColor" />
+                              </span>
+                            )}
+                            {isCaller && (
+                              <span className="player-avatar-marker caller" aria-hidden="true">
+                                <Icon name="Megaphone" size={11} strokeWidth={2.75} />
+                              </span>
+                            )}
+                          </PlayerAvatar>
+                          <div className="player-name-stack">
+                            <span className="player-name">{player.name}</span>
+                            {isDealer && <span className="role-badge dealer-badge">{t('gameInProgress.dealerBadge')}</span>}
+                            {isCaller && <span className="role-badge caller-badge">{t('gameInProgress.callerBadge')}</span>}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td>
                     {(() => {
@@ -761,16 +824,16 @@ const GameInProgress = () => {
           <div className="game-stats-container">
             <div className="stats-subtabs">
               <button 
+                className={`stats-subtab-btn ${statsSubTab === 'details' ? 'active' : ''}`}
+                onClick={() => setStatsSubTab('details')}
+              >
+                {t('tableGame.standingsSubTab')}
+              </button>
+              <button 
                 className={`stats-subtab-btn ${statsSubTab === 'chart' ? 'active' : ''}`}
                 onClick={() => setStatsSubTab('chart')}
               >
                 {t('gameInProgress.chartsSubTab')}
-              </button>
-              <button 
-                className={`stats-subtab-btn ${statsSubTab === 'details' ? 'active' : ''}`}
-                onClick={() => setStatsSubTab('details')}
-              >
-                {t('gameInProgress.playerDetailsSubTab')}
               </button>
               <button 
                 className={`stats-subtab-btn ${statsSubTab === 'table' ? 'active' : ''}`}
@@ -779,18 +842,11 @@ const GameInProgress = () => {
                 {t('gameInProgress.tableSubTab')}
               </button>
             </div>
+
+            {/* Only displayed on wide screens; see gameHighlights.css */}
+            <GameHighlights highlights={getHighlights()} inProgress />
             
-            {/* Show both views in landscape, otherwise show based on selected tab */}
-            {(statsSubTab === 'chart' || isLandscape) && (
-              <div className="stats-chart-container">
-                <StatsChart 
-                  playersData={detailedStats} 
-                  roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
-                  supportsBids={true}
-                />
-              </div>
-            )}
-            
+            {/* Show all views in landscape, otherwise show based on selected tab */}
             {(statsSubTab === 'details' || isLandscape) && (
               <div className="results-table">
                 {(() => {
@@ -842,6 +898,16 @@ const GameInProgress = () => {
               </div>
             )}
 
+            {(statsSubTab === 'chart' || isLandscape) && (
+              <div className="stats-chart-container">
+                <StatsChart 
+                  playersData={detailedStats} 
+                  roundData={gameState.roundData.slice(0, currentRoundIndex + 1)} 
+                  supportsBids={true}
+                />
+              </div>
+            )}
+            
             {(statsSubTab === 'table' || isLandscape) && (
               <div className="rounds-section">
                 <div className={`wizard-scorecard ${detailedStats.length > 3 ? 'many-players' : ''}`} data-player-count={detailedStats.length} style={{ '--player-count': detailedStats.length }}>
@@ -909,48 +975,18 @@ const GameInProgress = () => {
       {/* Trick Count Reducer and Call Max Increaser - Only show when game tab is active */}
       {activeTab === 'game' && (
         <div className="trick-reducer-container">
-          <button 
-            className={`trick-reducer-label bomb ${reduceTrickCount ? 'active' : ''}`}
-            onClick={(e) => {
-              if (!reduceTrickCount) {
-                // First time activating - trigger animation
-                e.currentTarget.classList.remove('activated');
-                setTimeout(() => setReduceTrickCount(true), 10);
-              } else {
-                // Deactivating
-                setReduceTrickCount(false);
-              }
-            }}
-            onAnimationEnd={(e) => {
-              // Mark as activated after first animation
-              e.currentTarget.classList.add('activated');
-            }}
-          >
-            <span className="trick-reducer-text">
-              {t('gameInProgress.bombLabel')}<BombIcon size={18} />
-            </span>
-          </button>
-          <button 
-            className={`trick-reducer-label cloud ${increaseCallMax ? 'active' : ''}`}
-            onClick={(e) => {
-              if (!increaseCallMax) {
-                // First time activating - trigger animation
-                e.currentTarget.classList.remove('activated');
-                setTimeout(() => setIncreaseCallMax(true), 10);
-              } else {
-                // Deactivating
-                setIncreaseCallMax(false);
-              }
-            }}
-            onAnimationEnd={(e) => {
-              // Mark as activated after first animation
-              e.currentTarget.classList.add('activated');
-            }}
-          >
-            <span className="trick-reducer-text">
-              {t('gameInProgress.cloudLabel')}<CloudIcon size={18} />
-            </span>
-          </button>
+          <SpecialCardToggle
+            variant="bomb"
+            active={reduceTrickCount}
+            label={t('gameInProgress.bombLabel')}
+            onToggle={setReduceTrickCount}
+          />
+          <SpecialCardToggle
+            variant="cloud"
+            active={increaseCallMax}
+            label={t('gameInProgress.cloudLabel')}
+            onToggle={setIncreaseCallMax}
+          />
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { XIcon } from '@/components/ui/Icon';
-import { GripVertical } from 'lucide-react';
+import { XIcon, CrownIcon, RotateCcwIcon } from '@/components/ui/Icon';
+import { GripVertical, Minus, Plus, Megaphone, UserPlus } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -22,9 +22,20 @@ import {
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
 import { useTranslation } from 'react-i18next';
+import { useVisualViewportRect } from '@/shared/hooks/useVisualViewportRect';
+import '@/styles/modals/gameSettingsModal.css';
 
-// Sortable Player Item Component
-const SortablePlayerItem = ({ player, index }) => {
+const MAX_ROUNDS_LIMIT = 60;
+const DEFAULT_MAX_PLAYERS = 6;
+
+const mod = (value, n) => ((value % n) + n) % n;
+
+const createPlayerId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+// Sortable seat row: drag the handle to reorder, tap the row to pick the dealer
+const SeatRow = ({ player, seat, role, showRoles, isNew, onSelectDealer, onRemove }) => {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -32,223 +43,365 @@ const SortablePlayerItem = ({ player, index }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
-    id: player.id,
-  });
+  } = useSortable({ id: player.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.7 : 1,
   };
 
+  const className = [
+    'gs-seat',
+    role === 'dealer' && 'is-dealer',
+    isDragging && 'is-dragging',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div 
-      ref={setNodeRef}
-      style={style}
-      className={`player-order-item ${isDragging ? 'dragging' : ''}`}
-      {...attributes}
-    >
-      <div
-        className="drag-handle"
+    <li ref={setNodeRef} style={style} className={className}>
+      <button
+        type="button"
+        className="gs-seat-handle"
+        aria-label={t('settings.dragToReorder', { name: player.name })}
+        {...attributes}
         {...listeners}
-        style={{ cursor: 'grab', gap: '0.5rem', display: 'flex', alignItems: 'center' }}
       >
-        <GripVertical size={16} />
-        <div className='player-number'>
-          {index + 1}
-        </div>
-      </div>
-      
-      <div className="player-name-display">{player.name}</div>
-    </div>
+        <GripVertical size={18} />
+      </button>
+
+      <button
+        type="button"
+        className="gs-seat-main"
+        onClick={showRoles ? onSelectDealer : undefined}
+        disabled={!showRoles}
+        aria-pressed={showRoles ? role === 'dealer' : undefined}
+      >
+        <span className="gs-seat-number">{seat + 1}</span>
+        <span className="gs-seat-name">{player.name}</span>
+        {isNew && <span className="gs-role gs-role-new">{t('settings.newPlayer')}</span>}
+        {showRoles && role === 'dealer' && (
+          <span className="gs-role gs-role-dealer">
+            <CrownIcon size={14} />
+            {t('settings.dealer')}
+          </span>
+        )}
+        {showRoles && role === 'caller' && (
+          <span className="gs-role gs-role-caller">
+            <Megaphone size={14} />
+            {t('settings.callsFirst')}
+          </span>
+        )}
+      </button>
+
+      {isNew && (
+        <button
+          type="button"
+          className="gs-seat-remove"
+          onClick={onRemove}
+          aria-label={t('settings.removeNewPlayer', { name: player.name })}
+        >
+          <XIcon size={16} />
+        </button>
+      )}
+    </li>
   );
 };
 
 const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => {
   const { t } = useTranslation();
-  const [dealerIndex, setDealerIndex] = useState(0);
   const [maxRounds, setMaxRounds] = useState(1);
-  const [playerOrder, setPlayerOrder] = useState([]);
+  const [roundsInput, setRoundsInput] = useState('1');
+  const [newPlayers, setNewPlayers] = useState([]);
+  const [order, setOrder] = useState([]); // player ids in seat order
+  const [dealerId, setDealerId] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [nameError, setNameError] = useState('');
+  const viewportRect = useVisualViewportRect(isOpen);
 
-  // @dnd-kit sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  // Reset local state whenever the modal opens
   useEffect(() => {
-    if (gameState) {
-      // Use startingDealerIndex from gameState or calculate from current round
-      const currentDealerIndex = gameState.startingDealerIndex !== undefined 
-        ? gameState.startingDealerIndex 
-        : gameState.players.findIndex(p => p.isDealer);
-      setDealerIndex(currentDealerIndex >= 0 ? currentDealerIndex : 0);
-      
-      // Set max rounds
-      setMaxRounds(parseInt(gameState.maxRounds, 10) || 1);
-      
-      // Set player order
-      setPlayerOrder(gameState.players.map((p, idx) => idx));
-    }
-  }, [gameState, isOpen]);
+    if (!isOpen || !gameState) return;
+    const initialMax = Number.parseInt(gameState.maxRounds, 10) || 1;
+    setMaxRounds(initialMax);
+    setRoundsInput(String(initialMax));
+    setNewPlayers([]);
+    setNewName('');
+    setNameError('');
+    setOrder(gameState.players.map((p) => p.id));
+    const n = gameState.players.length;
+    const round = (Number.parseInt(gameState.currentRound, 10) || 1) - 1;
+    const seat = n > 0 ? mod((gameState.startingDealerIndex || 0) + round, n) : 0;
+    setDealerId(gameState.players[seat]?.id ?? null);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !gameState) return null;
 
-  const handleDealerChange = (newDealerIndex) => {
-    setDealerIndex(newDealerIndex);
+  const existingPlayers = gameState.players;
+  const allPlayers = [...existingPlayers, ...newPlayers];
+  const newIds = new Set(newPlayers.map((p) => p.id));
+  const orderedPlayers = order.map((id) => allPlayers.find((p) => p.id === id)).filter(Boolean);
+  const playerCount = orderedPlayers.length;
+
+  const currentRound = Number.parseInt(gameState.currentRound, 10) || 1;
+  const roundIndex = currentRound - 1;
+  const showRoles = gameState.templateConfig?.hasDealerRotation !== false;
+  const maxPlayers = gameState.templateConfig?.maxPlayers ?? DEFAULT_MAX_PLAYERS;
+  const templateRounds = Number.parseInt(gameState.templateConfig?.maxRounds, 10);
+  // Without a template override, the 60-card deck caps the rounds
+  const deckRounds = playerCount > 0 ? Math.floor(MAX_ROUNDS_LIMIT / playerCount) : MAX_ROUNDS_LIMIT;
+  const standardRounds = Math.min(MAX_ROUNDS_LIMIT, templateRounds || deckRounds);
+  const minRounds = Math.max(1, currentRound);
+  const exceedsDeck = !templateRounds && maxRounds > deckRounds;
+
+  const dealerSeat = Math.max(0, orderedPlayers.findIndex((p) => p.id === dealerId));
+  const callerSeat = playerCount > 0 ? (dealerSeat + 1) % playerCount : 0;
+  const roleForSeat = (seat) => {
+    if (seat === dealerSeat) return 'dealer';
+    if (seat === callerSeat) return 'caller';
+    return null;
   };
 
-  const handleMaxRoundsChange = (newMaxRounds) => {
-    // Minimum 1 round, reasonable maximum based on player count
-    const currentRound = parseInt(gameState.currentRound, 10) || 1;
-    if (newMaxRounds >= currentRound && newMaxRounds <= 60) {
-      setMaxRounds(newMaxRounds);
-    }
+  const initialDealerSeat = existingPlayers.length > 0
+    ? mod((gameState.startingDealerIndex || 0) + roundIndex, existingPlayers.length)
+    : 0;
+  const isDirty =
+    newPlayers.length > 0 ||
+    maxRounds !== (Number.parseInt(gameState.maxRounds, 10) || 1) ||
+    order.some((id, seat) => id !== existingPlayers[seat]?.id) ||
+    (showRoles && dealerSeat !== initialDealerSeat);
+
+  const commitRounds = (value) => {
+    const clamped = Math.min(MAX_ROUNDS_LIMIT, Math.max(minRounds, value));
+    setMaxRounds(clamped);
+    setRoundsInput(String(clamped));
   };
 
-  // @dnd-kit drag end handler
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+  const handleRoundsInputBlur = () => {
+    const parsed = Number.parseInt(roundsInput, 10);
+    commitRounds(Number.isNaN(parsed) ? maxRounds : parsed);
+  };
 
-    if (active.id !== over?.id) {
-      const oldIndex = playerOrder.findIndex((idx) => gameState.players[idx].id === active.id);
-      const newIndex = playerOrder.findIndex((idx) => gameState.players[idx].id === over.id);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = [...playerOrder];
-        const [removed] = newOrder.splice(oldIndex, 1);
-        newOrder.splice(newIndex, 0, removed);
-        setPlayerOrder(newOrder);
-      }
+  const handleDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const from = order.indexOf(active.id);
+    const to = order.indexOf(over.id);
+    if (from === -1 || to === -1) return;
+    const next = [...order];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setOrder(next);
+  };
+
+  const handleAddPlayer = (e) => {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    if (allPlayers.some((p) => p.name?.trim().toLowerCase() === name.toLowerCase())) {
+      setNameError(t('settings.duplicatePlayerName'));
+      return;
     }
+    const player = { id: createPlayerId(), name };
+    setNewPlayers((prev) => [...prev, player]);
+    setOrder((prev) => [...prev, player.id]);
+    setNewName('');
+    setNameError('');
+  };
+
+  const handleRemoveNewPlayer = (id) => {
+    setNewPlayers((prev) => prev.filter((p) => p.id !== id));
+    setOrder((prev) => prev.filter((pid) => pid !== id));
+    if (dealerId === id) setDealerId(order.find((pid) => pid !== id) ?? null);
   };
 
   const handleSave = () => {
-    // Calculate new caller index (one after dealer)
-    const newCallerIndex = (dealerIndex + 1) % gameState.players.length;
-    
+    const indexById = new Map(allPlayers.map((p, idx) => [p.id, idx]));
     onUpdateSettings({
-      dealerIndex,
-      callerIndex: newCallerIndex,
       maxRounds,
-      playerOrder
+      newPlayers,
+      playerOrder: order.map((id) => indexById.get(id)),
+      // Store the round-1 dealer so rotation lands on the chosen dealer this round
+      startingDealerIndex: playerCount > 0 ? mod(dealerSeat - roundIndex, playerCount) : 0,
     });
     onClose();
   };
 
-  const orderedPlayers = playerOrder.map(idx => gameState.players[idx]);
+  const canAddPlayer = playerCount < maxPlayers;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content game-settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{t('settings.gameSettings')}</h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
-            <XIcon size={24} />
+    <div
+      className="modal-overlay gs-overlay"
+      style={viewportRect ? { top: viewportRect.top, height: viewportRect.height, bottom: 'auto' } : undefined}
+      onClick={onClose}
+    >
+      <div
+        className="modal-content gs-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gs-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="gs-header">
+          <h2 id="gs-title">{t('settings.gameSettings')}</h2>
+          <button type="button" className="gs-close" onClick={onClose} aria-label={t('common.close')}>
+            <XIcon size={20} />
           </button>
         </div>
 
-        <div className="modal-body">
-          {/* Max Rounds Setting */}
-          <div className="setting-section">
-            <h3>{t('settings.maxRounds')}</h3>
-            <div className="setting-control">
-              <button 
-                className="round-control-btn"
-                onClick={() => handleMaxRoundsChange(maxRounds - 1)}
-                disabled={maxRounds <= parseInt(gameState.currentRound, 10)}
+        <div className="gs-body">
+          {/* Rounds */}
+          <section className="gs-card gs-rounds" aria-labelledby="gs-rounds-title">
+            <div className="gs-rounds-text">
+              <h3 id="gs-rounds-title">{t('settings.rounds')}</h3>
+              <span className="gs-rounds-sub">
+                {t('settings.roundProgress', { current: currentRound, max: maxRounds })}
+              </span>
+            </div>
+
+            {maxRounds !== standardRounds && standardRounds >= minRounds && (
+              <button
+                type="button"
+                className="gs-icon-btn"
+                onClick={() => commitRounds(standardRounds)}
+                aria-label={t('settings.resetToStandard', { count: standardRounds })}
+                title={t('settings.resetToStandard', { count: standardRounds })}
               >
-                -
+                <RotateCcwIcon size={16} />
+              </button>
+            )}
+
+            <div className="gs-stepper">
+              <button
+                type="button"
+                className="gs-step-btn"
+                onClick={() => commitRounds(maxRounds - 1)}
+                disabled={maxRounds <= minRounds}
+                aria-label={t('settings.fewerRounds')}
+              >
+                <Minus size={16} />
               </button>
               <input
                 type="number"
-                value={maxRounds}
-                onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value, 10))}
-                min={gameState.currentRound}
-                max="60"
-                className="round-input"
+                inputMode="numeric"
+                className="gs-step-input"
+                value={roundsInput}
+                min={minRounds}
+                max={MAX_ROUNDS_LIMIT}
+                onChange={(e) => setRoundsInput(e.target.value)}
+                onBlur={handleRoundsInputBlur}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                aria-label={t('settings.totalRounds')}
               />
-              <button 
-                className="round-control-btn"
-                onClick={() => handleMaxRoundsChange(maxRounds + 1)}
-                disabled={maxRounds >= 60}
+              <button
+                type="button"
+                className="gs-step-btn"
+                onClick={() => commitRounds(maxRounds + 1)}
+                disabled={maxRounds >= MAX_ROUNDS_LIMIT}
+                aria-label={t('settings.moreRounds')}
               >
-                +
+                <Plus size={16} />
               </button>
             </div>
-            <p className="setting-hint">
-              {t('settings.currentRoundHint', { current: gameState.currentRound, max: maxRounds })}
-            </p>
-          </div>
 
-          {/* Dealer Selection */}
-          <div className="setting-section">
-            <h3>{t('settings.dealer')}</h3>
-            <div className="dealer-selection">
-              {gameState.players.map((player, index) => (
-                <label key={player.id} className="dealer-option">
-                  <input
-                    type="radio"
-                    name="dealer"
-                    checked={dealerIndex === index}
-                    onChange={() => handleDealerChange(index)}
-                  />
-                  <span>{player.name}</span>
-                  {dealerIndex === index && <span className="badge">{t('settings.dealer')}</span>}
-                  {(dealerIndex + 1) % gameState.players.length === index && (
-                    <span className="badge caller-badge">{t('settings.caller')}</span>
-                  )}
-                </label>
-              ))}
+            {exceedsDeck && (
+              <p className="gs-warning">
+                {t('settings.deckLimitWarning', { count: playerCount, max: deckRounds })}
+              </p>
+            )}
+          </section>
+
+          {/* Players, seating & dealer */}
+          <section className="gs-card" aria-labelledby="gs-seating-title">
+            <div className="gs-card-head">
+              <h3 id="gs-seating-title">
+                {showRoles ? t('settings.seatingAndDealer') : t('settings.seating')}
+              </h3>
+              <span className="gs-count">{playerCount} / {maxPlayers}</span>
             </div>
-          </div>
+            <p className="gs-hint">
+              {showRoles ? t('settings.seatingHint') : t('settings.seatingHintNoDealer')}
+            </p>
 
-          {/* Player Order */}
-          <div className="setting-section">
-            <h3>{t('settings.playerOrder')}</h3>
-            <DndContext 
+            <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
               modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             >
-              <SortableContext 
-                items={orderedPlayers.map(p => p.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="player-order-list">
-                  {orderedPlayers.map((player, index) => (
-                    <SortablePlayerItem
+              <SortableContext items={order} strategy={verticalListSortingStrategy}>
+                <ol className="gs-seats">
+                  {orderedPlayers.map((player, seat) => (
+                    <SeatRow
                       key={player.id}
                       player={player}
-                      index={index}
+                      seat={seat}
+                      showRoles={showRoles}
+                      isNew={newIds.has(player.id)}
+                      role={roleForSeat(seat)}
+                      onSelectDealer={() => setDealerId(player.id)}
+                      onRemove={() => handleRemoveNewPlayer(player.id)}
                     />
                   ))}
-                </div>
+                </ol>
               </SortableContext>
             </DndContext>
-          </div>
+
+            {canAddPlayer ? (
+              <form className="gs-add-player" onSubmit={handleAddPlayer}>
+                <input
+                  type="text"
+                  value={newName}
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="words"
+                  onFocus={(e) => {
+                    // Once the keyboard has settled, bring the field into view
+                    // inside the sheet's own scroll area
+                    const field = e.currentTarget;
+                    setTimeout(() => field.scrollIntoView({ block: 'nearest' }), 300);
+                  }}
+                  onChange={(e) => { setNewName(e.target.value); setNameError(''); }}
+                  placeholder={t('settings.addPlayerPlaceholder')}
+                  aria-label={t('settings.addPlayerPlaceholder')}
+                  aria-invalid={nameError ? 'true' : undefined}
+                  maxLength={40}
+                />
+                <button type="submit" className="gs-add-btn" disabled={!newName.trim()}>
+                  <UserPlus size={16} />
+                  {t('settings.addPlayer')}
+                </button>
+              </form>
+            ) : (
+              <p className="gs-hint">{t('settings.maxPlayersReached', { count: maxPlayers })}</p>
+            )}
+            {nameError && <p className="gs-error" role="alert">{nameError}</p>}
+            {newPlayers.length > 0 && currentRound > 1 && (
+              <p className="gs-hint">
+                {t('settings.lateJoinHint', { count: currentRound - 1 })}
+              </p>
+            )}
+          </section>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
+        <div className="gs-footer">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
             {t('common.cancel')}
           </button>
-          <button className="btn btn-primary" onClick={handleSave}>
-            {t('common.confirm')}
+          <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!isDirty}>
+            {t('common.save')}
           </button>
         </div>
       </div>

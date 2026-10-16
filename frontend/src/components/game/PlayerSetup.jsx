@@ -1,12 +1,11 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { GripVertical } from 'lucide-react';
-import { XIcon, DiceIcon, UsersIcon, PlusIcon } from '@/components/ui/Icon';
+import { TrashIcon, DiceIcon, UsersIcon, PlusIcon } from '@/components/ui/Icon';
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -22,6 +21,21 @@ import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
+
+// The whole row is the drag handle, so sensors must not start a drag from
+// the controls inside it - the name field, remove button and team select
+const ignoringControls = (Sensor, controls) => class extends Sensor {
+  static activators = Sensor.activators.map(({ eventName, handler }) => ({
+    eventName,
+    handler: (event, ...rest) => !event.nativeEvent.target?.closest?.(controls) && handler(event, ...rest),
+  }));
+};
+
+// Mouse: click-drag anywhere but the field. Touch: long-press anywhere, even
+// the field - a tap still focuses it. Keyboard: space/enter on the focused row.
+const RowMouseSensor = ignoringControls(MouseSensor, 'input, button, select');
+const RowTouchSensor = ignoringControls(TouchSensor, 'button, select');
+const RowKeyboardSensor = ignoringControls(KeyboardSensor, 'input, button, select');
 
 // Sortable Player Item Component
 const SortablePlayerItem = ({
@@ -58,17 +72,11 @@ const SortablePlayerItem = ({
       style={style}
       className={`player-item ${isDragging ? 'dragging' : ''}`}
       {...attributes}
+      {...listeners}
     >
-      <div
-        className="drag-handle"
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'grab' }}
-        {...listeners}
-      >
-        <GripVertical size={16} />
-        <span className="player-number">
-          {index + 1}
-        </span>
-      </div>
+      <span className="player-number">
+        {index + 1}
+      </span>
 
       <input
         type="text"
@@ -99,8 +107,9 @@ const SortablePlayerItem = ({
           onRemove(player.id);
         }}
         title={t('startTableGame.removePlayer')}
+        aria-label={t('startTableGame.removePlayer')}
       >
-        <XIcon size={16} />
+        <TrashIcon size={18} aria-hidden="true" />
       </button>
     </div>
   );
@@ -123,18 +132,18 @@ const PlayerSetup = ({
   const playerListRef = useRef(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(RowMouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 6,
       },
     }),
-    useSensor(TouchSensor, {
+    useSensor(RowTouchSensor, {
       activationConstraint: {
-        delay: 150,
-        tolerance: 5,
+        delay: 250,
+        tolerance: 8,
       },
     }),
-    useSensor(KeyboardSensor, {
+    useSensor(RowKeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
@@ -165,6 +174,13 @@ const PlayerSetup = ({
 
   return (
     <div className="setup-section">
+      <div className="setup-section-header">
+        <span className="setup-section-title">{t('common.players')}</span>
+        <span className="player-count-chip">
+          {maxPlayers < 100 ? `${players.length} / ${maxPlayers}` : players.length}
+        </span>
+      </div>
+
       <div className="selected-players-wrapper">
         <div className="selected-players" ref={playerListRef}>
           <DndContext
@@ -204,21 +220,23 @@ const PlayerSetup = ({
           title={t('game.randomizeOrder')}
           aria-label={t('game.randomizeOrder')}
         >
-          <DiceIcon size={25} />
+          <DiceIcon size={20} />
         </button>
         <button
           className="addPlayer"
           onClick={handleAddPlayer}
           disabled={players.length >= maxPlayers}
         >
-          +
+          <PlusIcon size={18} aria-hidden="true" />
+          <span>{t('startTableGame.addPlayer')}</span>
         </button>
         <button
           className="add-friends-btn"
           onClick={onAddFriends}
           title={t('game.addFriendsToGame')}
+          aria-label={t('game.addFriendsToGame')}
         >
-          <UsersIcon size={25} />
+          <UsersIcon size={20} aria-hidden="true" />
         </button>
       </div>
     </div>

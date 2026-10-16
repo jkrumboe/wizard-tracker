@@ -3,8 +3,20 @@ import { useState, useEffect } from "react";
 import { getPlayerById } from "@/shared/api/playerService";
 import { TrophyIcon, UsersIcon } from "@/components/ui/Icon";
 import { useTranslation } from 'react-i18next';
+import GameThumbnail from "@/components/game/GameThumbnail";
+import { getGameTemplateName } from "@/shared/utils/templateGames";
+import "@/styles/components/history-card.css";
 
-const GameHistoryItem = ({ game }) => {
+const namesOf = (list) => list.map(player => (typeof player === 'object' ? player?.name : player)).filter(Boolean);
+
+/**
+ * One finished game: box art, game name, winner, players and when it was played.
+ * The whole card opens the game's details.
+ * @param {Object} props
+ * @param {Object} props.game - Game in any stored format (v3, legacy, cloud, table)
+ * @param {(name: string) => Object|null} [props.findTemplate] - Template lookup for box art
+ */
+const GameHistoryItem = ({ game, findTemplate }) => {
   const [playerDetails, setPlayerDetails] = useState({});
   const { t } = useTranslation();
   
@@ -185,56 +197,53 @@ const GameHistoryItem = ({ game }) => {
     return `${winnerNames.slice(0, -1).join(', ')} & ${winnerNames[winnerNames.length - 1]}`;
   };
 
+  // Player names across the stored formats (falls back to looked-up players by id)
+  const getPlayerNames = () => {
+    if (isTableGame) return Array.isArray(game.players) ? namesOf(game.players) : [];
+    if (game.gameData?.players) return namesOf(game.gameData.players);
+    if (game.isCloud && Array.isArray(game.players)) return namesOf(game.players);
+    if (isV3Format && game.players) return namesOf(game.players);
+    if (game.gameState?.players) return namesOf(game.gameState.players);
+    if (game.is_local && Array.isArray(game.players)) return namesOf(game.players);
+    if (Array.isArray(player_ids)) return player_ids.map(playerId => playerDetails[playerId]?.name).filter(Boolean);
+    return [];
+  };
+
+  const templateName = isTableGame
+    ? (game.name || game.gameTypeName)
+    : getGameTemplateName({ ...game, gameType: 'wizard' });
+  const template = findTemplate?.(templateName) || { name: templateName || t('common.wizard') };
+  const displayName = isTableGame ? game.name : (game.game_name || templateName || t('common.wizard'));
+  const playerNames = getPlayerNames();
+  const detailsPath = isTableGame ? (isScoreboardGame ? `/scoreboard-game/${id}` : `/table-game/${id}`) : `/game/${id}`;
+
   return (
-    <div className="game-card">
-      {/* <div className="game-rounds"></div> */}
-        <div className="game-info">
-          <div className="game-name">
-            {isTableGame ? game.name : (game.game_name || t('common.wizard'))}
-            
-          </div>
-          <div className="game-winner">
-            {getWinnerDisplay()}
-          </div>
-        </div>
-        <div className="game-players">
-            <UsersIcon size={12} />{" "}
-            {isTableGame
-              ? Array.isArray(game.players) ? game.players.join(", ") : t('common.noPlayers')
-              : game.gameData && game.gameData.players
-                ? game.gameData.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
-                : game.isCloud && game.players && Array.isArray(game.players)
-                  ? game.players.map(player => typeof player === 'object' ? player.name : player).filter(Boolean).join(", ") || t('common.noPlayers')
-                  : isV3Format && game.players
-                    ? game.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
-                    : game.gameState && game.gameState.players 
-                      ? game.gameState.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
-                      : game.is_local && game.players
-                        ? Array.isArray(game.players) && typeof game.players[0] === 'string' 
-                          ? game.players.join(", ") 
-                          : game.players.map(player => player.name || t('common.unknownPlayer')).join(", ")
-                        : Array.isArray(player_ids)
-                          ? player_ids
-                              .map(
-                                (playerId) =>
-                                  playerDetails[playerId]?.name || t('common.unknownPlayer')
-                              )
-                              .join(", ")
-                          : t('common.noPlayers')}
-        </div>
-        <div className="actions-game-history">
-          <div className="bottom-actions-game-history">
-            <div className="game-rounds">
-              {t(isScoreboardGame ? 'gameHistory.setsCount' : 'gameHistory.roundsCount', { count: total_rounds })}
-            </div>
-            <div className="game-date"> {formattedDate}
-            </div>
-          </div>
-          <Link to={isTableGame ? (isScoreboardGame ? `/scoreboard-game/${id}` : `/table-game/${id}`) : `/game/${id}`} className="game-details">
-            {t('gameHistory.viewDetails')}
-          </Link>
-        </div>
-    </div>
+    <Link to={detailsPath} className="history-card" aria-label={`${displayName}, ${t('gameHistory.viewDetails')}`}>
+      <span className="history-card-art" aria-hidden="true">
+        <span className="history-card-initial">{(displayName || '?').charAt(0)}</span>
+        <GameThumbnail template={template} />
+      </span>
+
+      <span className="history-card-body">
+        <span className="history-card-top">
+          <span className="history-card-name">{displayName}</span>
+          <span className="history-card-date">{formattedDate}</span>
+        </span>
+        <span className="history-card-winner">
+          <TrophyIcon size={14} aria-hidden="true" />
+          <span>{getWinnerDisplay()}</span>
+        </span>
+        <span className="history-card-meta">
+          <UsersIcon size={13} aria-hidden="true" />
+          <span className="history-card-players">
+            {playerNames.length > 0 ? playerNames.join(', ') : t('common.noPlayers')}
+          </span>
+          <span className="history-card-rounds">
+            {t(isScoreboardGame ? 'gameHistory.setsCount' : 'gameHistory.roundsCount', { count: total_rounds })}
+          </span>
+        </span>
+      </span>
+    </Link>
   );
 };
 

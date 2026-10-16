@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="kw-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8ff7"/>
+      <stop offset="0.55" stop-color="#2f6be0"/>
+      <stop offset="1" stop-color="#5b3fd6"/>
+    </linearGradient>
+    <radialGradient id="kw-glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="kw-star" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8ff7"/>
+      <stop offset="1" stop-color="#5b3fd6"/>
+    </linearGradient>
+    <filter id="kw-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0b1340" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Full-bleed tile so the icon also works as a maskable icon -->
+  <rect width="512" height="512" rx="112" fill="url(#kw-bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#kw-glow)"/>
+
+  <!-- Back card -->
+  <rect x="166" y="150" width="150" height="212" rx="22" fill="#ffffff" fill-opacity="0.32"
+        transform="rotate(-14 241 256)"/>
+
+  <!-- Front card -->
+  <g filter="url(#kw-shadow)" transform="rotate(8 271 262)">
+    <rect x="196" y="156" width="150" height="212" rx="22" fill="#ffffff"/>
+    <!-- Sparkle star -->
+    <path transform="translate(271 262)" fill="url(#kw-star)"
+          d="M0,-56 C7,-16 16,-7 56,0 C16,7 7,16 0,56 C-7,16 -16,7 -56,0 C-16,-7 -7,-16 0,-56Z"/>
+  </g>
+
+  <!-- Accent sparkles -->
+  <path transform="translate(368 146)" fill="#ffffff"
+        d="M0,-24 C3,-7 7,-3 24,0 C7,3 3,7 0,24 C-3,7 -7,3 -24,0 C-7,-3 -3,-7 0,-24Z"/>
+  <path transform="translate(150 378)" fill="#ffffff" fill-opacity="0.85"
+        d="M0,-15 C2,-4 4,-2 15,0 C4,2 2,4 0,15 C-2,4 -4,2 -15,0 C-4,-2 -2,-4 0,-15Z"/>
+</svg>

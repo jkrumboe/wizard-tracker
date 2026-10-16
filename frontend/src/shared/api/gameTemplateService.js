@@ -400,8 +400,44 @@ export const suggestSystemTemplateChanges = async (id, changes, note) => {
   }
 };
 
+/**
+ * Look up what product a game box barcode (EAN/UPC) belongs to
+ * @param {string} code
+ * @returns {Promise<{title: string, names: string[], gameInfo: Object|null, details: Object|null,
+ *   verified: boolean, candidates: Array<{name: string, gameInfo: Object|null}>}|null>}
+ *   Display title, clean game names for exact matching, box art/BGG metadata, (when the
+ *   server has a BGG token) description and player counts, whether the match is verified and
+ *   the games it could be otherwise; null if unknown/unavailable
+ */
+export const lookupBarcodeProduct = async (code) => {
+  try {
+    // Lookups are for logged-in users only (BGG API terms)
+    const token = localStorage.getItem('auth_token');
+    if (!token) return null;
+
+    const response = await fetch(`${ENDPOINTS.templates}/barcode/${encodeURIComponent(code)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data.title) return null;
+    return {
+      title: data.title,
+      names: data.names || [],
+      gameInfo: data.gameInfo || null,
+      details: data.details || null,
+      verified: Boolean(data.verified),
+      candidates: data.candidates || [],
+    };
+  } catch (error) {
+    console.warn('Barcode product lookup failed:', error);
+    return null;
+  }
+};
+
 export default {
   getTemplates,
+  lookupBarcodeProduct,
   getSystemTemplates,
   getUserTemplates,
   createTemplate,

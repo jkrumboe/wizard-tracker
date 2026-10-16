@@ -39,7 +39,7 @@ const Navbar = () => {
       <nav className="bottom-navbar">
         {/* Brand and primary action only show when the bar becomes a desktop sidebar */}
         <Link to="/" className="sidebar-brand desktop-only">
-          <img src="/icons/logo-192.png" alt="" className="sidebar-brand-mark" />
+          <img src="/icons/logo.svg" alt="" className="sidebar-brand-mark" />
           <span>KeepWiz</span>
         </Link>
         <Link to="/start" className="sidebar-new-game desktop-only">
@@ -47,7 +47,7 @@ const Navbar = () => {
           <span>{t('nav.newGame')}</span>
         </Link>
         <div className="nav-items-pill">
-          <Link to="/games" className={`bottom-nav-item games-tab ${isActive(["/games", "/start", "/leaderboard", "/friend-leaderboard", "/admin"])}`} aria-label={t('nav.games')}>
+          <Link to="/games" className={`bottom-nav-item games-tab ${isActive(["/games", "/start", "/game-types", "/leaderboard", "/friend-leaderboard", "/admin"])}`} aria-label={t('nav.games')}>
             <div className="nav-icon">
               <GamepadIcon size={20} />
             </div>

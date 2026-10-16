@@ -381,7 +381,7 @@
         grid-template-columns: 1fr 1fr;
         gap: var(--spacing-md);
         grid-template-areas: 
-            "chart details";
+            "details chart";
         width: 100%;
         height: auto;
         margin: 0;

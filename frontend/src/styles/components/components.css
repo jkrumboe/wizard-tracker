@@ -519,30 +519,36 @@
     font-variant-numeric: tabular-nums;
   }
 
+/* Segmented control, matching .account-tabs (account.css) */
 .stats-subtabs {
   display: flex;
-  justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 4px;
   margin: var(--spacing-sm) 0;
-
 }
 
 .stats-subtab-btn {
-  background-color: var(--card-bg-light);
-  border: 1px solid var(--border);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-md);
-  color: var(--text);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: 0.8rem;
-  cursor: pointer;
+  box-shadow: none;
+  color: var(--text-light);
+  padding: var(--spacing-sm);
+  font-size: 0.95rem;
   font-weight: 500;
+  cursor: pointer;
   transition: all 0.2s ease;
-  width: 100%;
 }
 
 .stats-subtab-btn.active {
-  background-color: var(--primary);
-  border-color: var(--primary);
+  background: var(--primary);
   color: var(--text);
 }
 

@@ -356,13 +356,9 @@
  * On a wide screen the three panels side by side leave most of the window
  * empty below a squeezed chart. Instead: a strip of headline facts across the
  * top, standings next to a full-size chart, and the scorecard full width
- * underneath. Scoped with :has() to the Wizard details page, which is the only
- * one that renders the highlights strip.
+ * underneath. Scoped with :has() to the details pages that render the
+ * highlights strip (Wizard and table games).
  */
-.game-highlights {
-  display: none;
-}
-
 @media (min-width: 1024px) {
   .game-details-container > .game-summary:has(> .game-highlights) {
     display: grid;
@@ -377,65 +373,8 @@
     padding-top: var(--spacing-md);
   }
 
-  .game-highlights {
+  .game-summary:has(> .game-highlights) > .game-highlights {
     grid-area: highlights;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: var(--spacing-md);
-  }
-
-  .highlight-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: var(--spacing-md);
-    background-color: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    min-width: 0;
-  }
-
-  .highlight-icon {
-    flex-shrink: 0;
-    box-sizing: content-box;
-    padding: 8px;
-    border-radius: var(--radius-md);
-    color: var(--primary);
-    background-color: color-mix(in srgb, var(--primary) 14%, transparent);
-  }
-
-  .highlight-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .highlight-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-light);
-  }
-
-  .highlight-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    line-height: 1.2;
-    color: var(--text);
-  }
-
-  .highlight-value,
-  .highlight-detail {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .highlight-detail {
-    font-size: 0.8rem;
-    color: var(--text-light);
   }
 
   .game-summary:has(> .game-highlights) > .results-section {

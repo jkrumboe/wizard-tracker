@@ -82,6 +82,8 @@
   },
 
   "gamesPage": {
+    "allTypes": "Alle Spiele",
+    "typeFilter": "Spieltyp",
     "subtitle": "Wähle, wohin du gehen möchtest",
     "scoreboardGames": "Scoreboard-Spiele",
     "scoreboardDescription": "Verfolge Teamstände für Spiele wie Volleyball, Tischtennis oder Basketball.",
@@ -106,7 +108,8 @@
     "noGamesFound": "Keine Spiele gefunden",
     "activeGameLabel": "Spiel läuft",
     "activeGameProgress": "Runde {{current}} von {{max}}",
-    "continueGame": "Weiterspielen"
+    "continueGame": "Weiterspielen",
+    "scanGame": "Spiel scannen"
   },
 
   "auth": {
@@ -378,6 +381,7 @@
     "noRoundData": "Keine Rundendaten für die Diagrammdarstellung verfügbar",
     "gameNotFound": "Spiel nicht gefunden",
     "loadGameFailed": "Spieldetails konnten nicht geladen werden: {{error}}",
+    "highlightLeader": "In Führung",
     "highlightWinner": "Sieger",
     "highlightWinnerScore": "{{score}} Punkte",
     "highlightWinnerMargin": "{{score}} Punkte · {{margin}} vorn",
@@ -867,6 +871,26 @@
 
   "settings": {
     "gameSettings": "Spieleinstellungen",
+    "rounds": "Runden",
+    "totalRounds": "Runden gesamt",
+    "roundProgress": "Runde {{current}} von {{max}}",
+    "resetToStandard": "Standard ({{count}})",
+    "fewerRounds": "Weniger Runden",
+    "moreRounds": "Mehr Runden",
+    "seatingAndDealer": "Sitzordnung & Geber",
+    "seating": "Sitzordnung",
+    "seatingHint": "Ziehe am Griff, um Plätze zu tauschen. Tippe auf einen Spieler, um ihn in dieser Runde zum Geber zu machen.",
+    "seatingHintNoDealer": "Ziehe am Griff, um Plätze zu tauschen.",
+    "callsFirst": "Sagt zuerst an",
+    "dragToReorder": "{{name}} verschieben",
+    "addPlayer": "Hinzufügen",
+    "addPlayerPlaceholder": "Name des neuen Spielers",
+    "newPlayer": "Neu",
+    "removeNewPlayer": "{{name}} entfernen",
+    "duplicatePlayerName": "Ein Spieler mit diesem Namen ist bereits im Spiel.",
+    "maxPlayersReached": "Maximal {{count}} Spieler erreicht.",
+    "lateJoinHint": "Neue Spieler erhalten 0 Punkte für die {{count}} bereits gespielten Runden.",
+    "deckLimitWarning": "Mit {{count}} Spielern reicht das Deck nur für {{max}} Runden.",
     "maxRounds": "Max. Runden",
     "currentRoundHint": "Aktuell in Runde {{current}}. Max. Runden: {{max}}",
     "dealer": "Geber",
@@ -905,6 +929,7 @@
   },
 
   "addPlayers": {
+    "title": "Spieler hinzufügen",
     "friends": "Freunde",
     "friendsDesc": "Spieler aus deiner Freundesliste hinzufügen",
     "selectFriends": "Aus deinen Freunden auswählen",
@@ -914,6 +939,8 @@
   },
 
   "selectRecentGroup": {
+    "gamesTogether_one": "{{count}} Spiel zusammen",
+    "gamesTogether_other": "{{count}} Spiele zusammen",
     "title": "Letzte Spielgruppen",
     "loading": "Letzte Gruppen werden geladen...",
     "noGroups": "Keine letzten Spiele gefunden. Spiele zuerst eine Partie, um diese Funktion zu nutzen.",
@@ -997,6 +1024,8 @@
   "tableGameSettings": {
     "title": "Spieleinstellungen",
     "players": "Spieler",
+    "playersHint": "Zum Umsortieren am Griff ziehen. Zum Umbenennen auf einen Namen tippen.",
+    "scoring": "Wertung",
     "addPlayer": "Spieler hinzufügen",
     "currentScoreEditor": "Aktueller Punktestand Satz {{round}}",
     "teamMembers": "Teammitglieder",
@@ -1004,6 +1033,8 @@
     "scoringPreference": "Wertungspräferenz",
     "highScore": "Hoch",
     "lowScore": "Niedrig",
+    "allowEmptyAsZero": "Weiter ohne alle Punkte einzugeben",
+    "allowEmptyAsZeroHint": "Leere Felder zählen als 0 Punkte.",
     "saveChanges": "Änderungen speichern"
   },
 
@@ -1109,6 +1140,12 @@
   },
 
   "templateDetails": {
+    "players": "Spieler",
+    "playingTime": "Spieldauer",
+    "minutes": "{{count}} Min.",
+    "minAge": "Alter",
+    "yearPublished": "Erschienen",
+    "viewOnBgg": "Auf BoardGameGeek ansehen",
     "gameSettings": "Spieleinstellungen",
     "targetNumber": "Zielpunktzahl",
     "scoringTarget": "Wertungsziel",
@@ -1579,5 +1616,59 @@
     "applied": "Angewendet",
     "successMessage": "ELO-Bewertungen wurden erfolgreich neu berechnet. Spieler können ihre aktualisierten Ranglisten auf der Bestenliste sehen.",
     "recalculateConfirm": "Dies wird die ELO-Bewertungen für {{gameType}} neu berechnen. Diese Operation kann nicht rückgängig gemacht werden. Fortfahren?"
+  },
+
+  "scanBarcode": {
+    "candidatesTitle": "Welches dieser Spiele ist es?",
+    "inYourGames": "in deinen Spielen",
+    "addNewGameLabel": "Als neues Spiel hinzufügen",
+    "newGamePlaceholder": "Spielname",
+    "addNewGame": "Spiel hinzufügen",
+    "orLinkExisting": "…oder mit einem vorhandenen Spiel verknüpfen:",
+    "lookingUp": "Barcode {{code}} wird nachgeschlagen…",
+    "title": "Spielschachtel scannen",
+    "unknownTitle": "Welches Spiel ist das?",
+    "hint": "Richte die Kamera auf den Barcode der Spielschachtel.",
+    "manualLabel": "Oder Barcode-Nummer eingeben",
+    "manualSubmit": "Los",
+    "invalidCode": "Gib die 8–14-stellige Nummer unter dem Barcode ein.",
+    "unknownDescription": "Der Barcode {{code}} ist noch keinem Spiel zugeordnet. Wähle das Spiel einmal aus, danach öffnen weitere Scans es direkt.",
+    "searchPlaceholder": "Spiele suchen",
+    "detectedTitle": "Erkanntes Produkt: {{title}}",
+    "noTemplates": "Keine Spiele gefunden.",
+    "shareWithEveryone": "Barcode für alle Nutzer speichern",
+    "scanAgain": "Erneut scannen",
+    "retry": "Erneut versuchen",
+    "flashlight": "Taschenlampe umschalten",
+    "templateNotFound": "Das Spiel „{{name}}“ wurde nicht gefunden.",
+    "errors": {
+      "insecure": "Die Kamera funktioniert nur über eine sichere (HTTPS-)Verbindung.",
+      "unsupported": "Dieser Browser kann nicht auf die Kamera zugreifen. Gib stattdessen die Barcode-Nummer ein.",
+      "denied": "Der Kamerazugriff wurde blockiert. Erlaube den Zugriff in den Browsereinstellungen oder gib die Barcode-Nummer ein.",
+      "noCamera": "Auf diesem Gerät wurde keine Kamera gefunden.",
+      "unknown": "Die Kamera konnte nicht gestartet werden."
+    }
+  },
+
+  "gameType": {
+    "add": "Hinzufügen",
+    "searchGames": "Spiele suchen",
+    "noMatches": "Keine Spiele passen zu deiner Suche.",
+    "startNewGame": "Neues Spiel starten",
+    "continue": "Fortsetzen",
+    "history": "Gespielte Partien",
+    "noGamesYet": "Noch keine beendeten Partien. Starte oben eine!",
+    "info": "Info",
+    "notFound": "Das Spiel „{{name}}“ wurde nicht gefunden.",
+    "allGames": "Alle Spiele",
+    "type": "Typ",
+    "rules": "Regeln",
+    "noRules": "Noch keine Regeln. Füge sie über Bearbeiten hinzu.",
+    "manage": "Verwalten",
+    "edit": "Bearbeiten",
+    "customize": "Anpassen",
+    "suggest": "Für alle vorschlagen",
+    "resetToDefault": "Auf Standard zurücksetzen",
+    "resetConfirm": "Deine Änderungen entfernen und zur gemeinsamen Version dieses Spiels zurückkehren?"
   }
 }

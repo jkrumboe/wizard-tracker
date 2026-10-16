@@ -11,6 +11,11 @@ const systemGameTemplateSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // EAN/UPC barcodes printed on the physical game box (used for scan-to-start)
+  barcodes: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true
@@ -21,6 +26,7 @@ systemGameTemplateSchema.plugin(templateFieldsPlugin);
 // name must be unique for system templates
 systemGameTemplateSchema.index({ name: 1 }, { unique: true });
 systemGameTemplateSchema.index({ isActive: 1 });
+systemGameTemplateSchema.index({ barcodes: 1 });
 
 const SystemGameTemplate = mongoose.model('SystemGameTemplate', systemGameTemplateSchema);
 

@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import Icon, { TrashIcon, DiceIcon, UsersIcon, EditIcon } from '@/components/ui/Icon';
+import Icon, { TrashIcon, DiceIcon, UsersIcon, EditIcon, PlusIcon } from '@/components/ui/Icon';
 
 const TeamSection = ({
   teamIndex,
@@ -178,7 +178,7 @@ const TeamBuilderSetup = ({
           title={t('game.randomizeOrder')}
           aria-label={t('game.randomizeOrder')}
         >
-          <DiceIcon size={25} />
+          <DiceIcon size={20} />
         </button>
 
         <button
@@ -188,15 +188,17 @@ const TeamBuilderSetup = ({
           title={t('startTableGame.addPlayer')}
           aria-label={t('startTableGame.addPlayer')}
         >
-          +
+          <PlusIcon size={18} aria-hidden="true" />
+          <span>{t('startTableGame.addPlayer')}</span>
         </button>
 
         <button
           className="add-friends-btn"
           onClick={onAddFriends}
           title={t('game.addFriendsToGame')}
+          aria-label={t('game.addFriendsToGame')}
         >
-          <UsersIcon size={25} />
+          <UsersIcon size={20} aria-hidden="true" />
         </button>
       </div>
     </div>

@@ -1,0 +1,658 @@
+/* ============================================
+   GAME TYPE PAGES
+   Game list (/start), one game's page (/game-types/:name)
+   and its info page. Builds on the Games page style (gamesPage.css).
+   ============================================ */
+
+/* Box art from barcode scans (see GameThumbnail) */
+.game-thumbnail {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--border);
+}
+
+/* ── Game list: one row per game (box art + name) ─────────── */
+.game-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--spacing-md);
+}
+
+.game-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 6px var(--spacing-sm) 6px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+
+.game-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.game-row-art {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 14%, var(--card-bg));
+}
+
+/* Box art covers the initial underneath (both absolutely placed, art comes later) */
+.game-row-art .game-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* Games without box art show their initial */
+.game-row-initial {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.game-row-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-row-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .game-row:hover {
+    border-color: var(--primary);
+  }
+}
+
+/* ── Game page / info page ────────────────────────────────── */
+.game-type-page {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.game-type-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.game-type-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.game-type-header .games-quick-link {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.game-type-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  min-height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--text-white);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.game-type-start:active {
+  transform: scale(0.99);
+}
+
+.game-type-start:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .game-type-start:hover {
+    opacity: 0.9;
+  }
+}
+
+.game-type-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Paused games */
+.game-type-paused-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.game-type-paused {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  transition: border-color 0.15s;
+}
+
+.game-type-paused-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Flush end segment of the card, split off by a thin divider */
+.game-type-paused-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  flex-shrink: 0;
+  /* Global button padding would squeeze the icon to a dot inside 44px */
+  padding: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.game-type-paused-delete:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.game-type-paused-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.game-type-paused-players {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.game-type-paused-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.game-type-paused-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  .game-type-paused:hover {
+    border-color: var(--primary);
+  }
+
+  .game-type-paused-delete:hover {
+    color: var(--error-color);
+    background-color: color-mix(in srgb, var(--error-color) 10%, transparent);
+  }
+}
+
+.game-type-history .game-history {
+  overflow: visible;
+}
+
+/* Info page.
+   html/body don't scroll, so like the Games page this one is sized to the
+   screen and scrolls its own body under the fixed header. It reaches the
+   bottom edge (the negative margin hands back the nav reservation) so content
+   scrolls on beneath the floating navigation. */
+.game-type-info-page {
+  height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px));
+  margin-bottom: calc(-1 * var(--bottom-nav-reserve));
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.game-type-info-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  /* Room to scroll the last lines clear of the navigation */
+  padding-bottom: calc(var(--bottom-nav-reserve) + var(--spacing-lg));
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.game-type-info-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.game-type-hero-frame {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 220px;
+  padding: var(--spacing-sm) 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--card-bg);
+  isolation: isolate;
+}
+
+/* Blurred, dimmed copy of the box art fills the space beside it */
+.game-type-hero-frame::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  z-index: -1;
+  background: var(--hero-art) center / cover no-repeat;
+  filter: blur(24px) saturate(1.2);
+  opacity: 0.45;
+}
+
+.game-type-hero {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Edit sits in the header; keep its label even on phones */
+.game-type-edit-button {
+  flex-shrink: 0;
+  width: auto;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.game-type-edit-button .games-quick-link-label {
+  display: inline;
+}
+
+/* Own-game actions under the art: one row, buttons share the width */
+.game-type-info-more .game-type-manage {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  flex-wrap: nowrap;
+}
+
+.game-type-info-more .game-type-pill {
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+.game-type-info-more .game-type-pill svg {
+  flex-shrink: 0;
+}
+
+.game-type-info-more .game-type-pill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Desktop: details in a sticky side column, rules get the reading width */
+@media (min-width: 1024px) {
+  .game-type-info-scroll {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--spacing-lg);
+  }
+
+  .game-type-info-aside {
+    position: sticky;
+    top: 0;
+  }
+
+  .game-type-hero-frame {
+    height: 280px;
+  }
+
+}
+
+.game-type-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.game-type-fact {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.game-type-fact dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.game-type-fact dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.game-type-bgg-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.game-type-rules {
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+
+.game-type-rules .empty-message {
+  margin: 0;
+}
+
+.game-type-plain-rules {
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* Manage actions */
+.game-type-manage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.game-type-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.game-type-pill svg {
+  color: var(--primary);
+}
+
+.game-type-pill.danger svg {
+  color: var(--error-color);
+}
+
+.game-type-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .game-type-pill:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
+
+  .game-type-pill.danger:hover:not(:disabled) {
+    border-color: var(--error-color);
+  }
+}
+
+/* ── Rules text ───────────────────────────────────────────
+   Reads like a rulebook: comfortable line length, sections split by
+   hairlines, accent-coloured sub-headings and list markers, tips and
+   notes (blockquotes) as soft callouts. */
+.game-type-rules .game-rules-text,
+.game-type-plain-rules {
+  max-width: 70ch;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.game-type-rules .game-rules-text > :first-child {
+  margin-top: 0;
+}
+
+.game-type-rules .game-rules-text > :last-child {
+  margin-bottom: 0;
+}
+
+.game-type-rules .game-rules-text h1,
+.game-type-rules .game-rules-text h2,
+.game-type-rules .game-rules-text h3,
+.game-type-rules .game-rules-text h4 {
+  color: var(--text);
+  line-height: 1.3;
+  /* Drop the global h2 underline bar and its padding */
+  padding: 0;
+  border: none;
+}
+
+.game-type-rules .game-rules-text h2::after {
+  content: none;
+}
+
+.game-type-rules .game-rules-text h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.5rem;
+}
+
+/* Each section starts below a hairline */
+.game-type-rules .game-rules-text h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.game-type-rules .game-rules-text > h2:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.game-type-rules .game-rules-text h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.35rem;
+  color: var(--primary);
+}
+
+.game-type-rules .game-rules-text h4 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 1rem 0 0.25rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.game-type-rules .game-rules-text p {
+  margin: 0 0 0.75rem;
+}
+
+.game-type-rules .game-rules-text strong,
+.game-type-rules .game-rules-text b {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.game-type-rules .game-rules-text a {
+  color: var(--primary);
+  text-underline-offset: 2px;
+}
+
+.game-type-rules .game-rules-text ul,
+.game-type-rules .game-rules-text ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.35rem;
+}
+
+.game-type-rules .game-rules-text ul {
+  list-style-type: disc;
+}
+
+.game-type-rules .game-rules-text ol {
+  list-style-type: decimal;
+}
+
+.game-type-rules .game-rules-text li {
+  margin: 0.3rem 0;
+  padding-left: 0.2rem;
+}
+
+.game-type-rules .game-rules-text li::marker {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.game-type-rules .game-rules-text li > ul,
+.game-type-rules .game-rules-text li > ol {
+  margin: 0.25rem 0 0;
+}
+
+/* Tips, examples and notes */
+.game-type-rules .game-rules-text blockquote {
+  margin: 1rem 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--text);
+  font-style: normal;
+}
+
+.game-type-rules .game-rules-text blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.game-type-rules .game-rules-text hr {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.game-type-rules .game-rules-text code {
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-sm);
+  background: var(--border);
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.85em;
+}
+
+.game-type-rules .game-rules-text pre {
+  margin: 0 0 0.75rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--border);
+  overflow-x: auto;
+}
+
+.game-type-rules .game-rules-text pre code {
+  padding: 0;
+  background: none;
+}
+
+/* Score tables: scroll sideways on narrow screens instead of squashing */
+.game-type-rules .game-rules-text table {
+  display: block;
+  max-width: 100%;
+  margin: 0 0 1rem;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.game-type-rules .game-rules-text th,
+.game-type-rules .game-rules-text td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.game-type-rules .game-rules-text th {
+  background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+  font-weight: 700;
+}

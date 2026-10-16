@@ -1,138 +1,89 @@
 /* Add Players Choice Modal Styles */
 .add-players-choice-modal {
-  max-width: 600px;
-  max-height: auto;
-  display: flex;
-  flex-direction: column;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  position: relative;
+  max-width: 420px;
 }
 
 .add-players-choice-modal .modal-header {
-  justify-content: right;
-  border: none;
-  padding: 0 0 var(--spacing-md) 0;
+  border-bottom: none;
+  padding: var(--spacing-md) var(--spacing-md) 0;
 }
 
-.add-players-choice-modal .close-btn {
-  background: var(--card-bg);
+.add-players-choice-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
 }
 
-.choice-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.choice-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-xl);
-  width: 100%;
-  max-width: 550px;
-}
-
-.choice-button {
+.add-players-choice-modal .choice-content {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.choice-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.1s ease;
+}
+
+.choice-icon {
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-md);
-  padding: 3rem 2rem;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-xl);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  color: var(--text-primary);
-  font-size: inherit;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--primary);
 }
 
-.choice-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.choice-button svg {
-  color: currentColor;
-  opacity: 0.9;
-  transition: all 0.3s ease;
+.choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .choice-label {
-  font-weight: 700;
-  font-size: 1.3rem;
-  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .choice-description {
-  font-size: 0.95rem;
-  opacity: 0.75;
-  text-align: center;
-  line-height: 1.5;
-  transition: opacity 0.3s ease;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.choice-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
 }
 
 @media (hover: hover) {
-  .choice-button:hover::before {
-    left: 100%;
-  }
-
-  .choice-button:hover svg {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
-  .choice-button:hover .choice-description {
-    opacity: 1;
-  }
-
-  .choice-button:hover {
+  .choice-option:hover {
     border-color: var(--primary);
   }
 }
 
-.choice-button:active {
-  transform: scale(0.97);
+.choice-option:active {
+  transform: scale(0.98);
 }
 
-/* Responsive for mobile */
-@media (max-width: 600px) {
-  .add-players-choice-modal {
-    max-width: 95vw;
-  }
-
-  .choice-buttons {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-
-  .choice-button {
-    padding: 2.5rem 1.5rem;
-  }
-
-  .choice-label {
-    font-size: 1.1rem;
-  }
-
-  .choice-description {
-    font-size: 0.9rem;
-  }
-
-  .add-players-choice-modal .modal-header h2 {
-    font-size: 1.4rem;
-  }
+.choice-option:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

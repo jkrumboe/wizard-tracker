@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { XIcon, UsersIcon } from '@/components/ui/Icon';
+import { XIcon, CheckMarkIcon } from '@/components/ui/Icon';
 import { getRecentLocalGames } from '@/shared/api/gameService';
 import { LocalTableGameStorage } from '@/shared/api/localTableGameStorage';
 import { LocalScoreboardGameStorage } from '@/shared/api/localScoreboardGameStorage';
@@ -24,6 +24,24 @@ const isSamePlayer = (a, b) => {
   if (a.userId && b.userId) return a.userId === b.userId;
   return (a.name || '').trim().toLowerCase() === (b.name || '').trim().toLowerCase();
 };
+
+// Name of the game a group last played, for the card title
+const getGameName = (game) => {
+  if (game._type === 'wizard') return game.gameState?.templateName || game.templateName || 'Wizard';
+  return game.gameTypeName || game.gameName || game.name || '';
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// "today", "yesterday", "3 days ago" - falls back to the date after a month
+const formatLastPlayed = (date, language) => {
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / DAY_MS);
+  if (days < 0 || days > 30) return date.toLocaleDateString(language);
+  return new Intl.RelativeTimeFormat(language, { numeric: 'auto' }).format(-days, 'day');
+};
+
+const MAX_AVATARS = 4;
 
 // Extract the players of a game, independent of which game type it came from
 const extractPlayers = (game) => {
@@ -49,7 +67,7 @@ const extractPlayers = (game) => {
 };
 
 const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupId, alreadySelectedPlayers = [] }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [recentGroups, setRecentGroups] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -96,12 +114,16 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupI
         if (!existing) {
           groupsByKey.set(groupKey, {
             groupId: groupKey,
-            date: getGameDate(game).toLocaleDateString(),
+            lastPlayedAt: getGameDate(game),
+            gameName: getGameName(game),
+            gamesPlayed: 1,
             playerCount: players.length,
             players,
           });
           return;
         }
+
+        existing.gamesPlayed += 1;
 
         // Keep the group from the most recent game but fill in user ids that
         // only an older game of another type knows about
@@ -138,11 +160,8 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupI
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-container select-friends-modal recent-group-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>
-            <UsersIcon size={20} />
-            {t('selectRecentGroup.title', { defaultValue: 'Recent Play Groups' })}
-          </h2>
-          <button className="close-btn" onClick={handleClose}>
+          <h2>{t('selectRecentGroup.title', { defaultValue: 'Recent Play Groups' })}</h2>
+          <button className="close-btn" onClick={handleClose} aria-label={t('common.close')}>
             <XIcon size={20} />
           </button>
         </div>
@@ -161,44 +180,64 @@ const SelectRecentGroupModal = ({ isOpen, onClose, onSelectGroup, selectedGroupI
           ) : (
             <>
               <div className="recent-groups-list">
-                {recentGroups.map((group) => (
-                  <button
-                    key={group.groupId}
-                    className={`group-item${selectedGroupId === group.groupId ? ' selected' : ''}${group.players.every(isAlreadySelected) && selectedGroupId !== group.groupId ? ' all-already-added' : ''}`}
-                    onClick={() => handleSelectGroup(group)}
-                    title={t('selectRecentGroup.selectThisGroup', { defaultValue: 'Select this group' })}
-                  >
-                    <div className="group-header">
-                      <div className="group-info">
-                        <span className="group-date">
-                          {t('selectRecentGroup.lastPlayed', {
-                            defaultValue: 'Last played {{date}}',
-                            date: group.date,
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="group-players">
-                      {group.players.map((player, pidx) => (
-                        <div
-                          key={`player-${pidx}`}
-                          className={`group-player ${isAlreadySelected(player) ? 'already-added' : ''}`}
-                        >
-                          <span className="player-name">{player.name}</span>
+                {recentGroups.map((group) => {
+                  const isSelected = selectedGroupId === group.groupId;
+                  const allAdded = !isSelected && group.players.every(isAlreadySelected);
+                  const extraPlayers = group.players.length - MAX_AVATARS;
+                  return (
+                    <button
+                      key={group.groupId}
+                      className={`group-item${isSelected ? ' selected' : ''}${allAdded ? ' all-already-added' : ''}`}
+                      onClick={() => handleSelectGroup(group)}
+                      title={t('selectRecentGroup.selectThisGroup', { defaultValue: 'Select this group' })}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="group-header">
+                        <div className="group-avatars" aria-hidden="true">
+                          {group.players.slice(0, MAX_AVATARS).map((player, pidx) => (
+                            <span key={`avatar-${pidx}`} className="group-avatar">
+                              {player.name.trim().charAt(0).toUpperCase()}
+                            </span>
+                          ))}
+                          {extraPlayers > 0 && (
+                            <span className="group-avatar group-avatar-more">+{extraPlayers}</span>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </button>
-                ))}
+                        <div className="group-info">
+                          <span className="group-title">
+                            {group.gameName || t('common.players')}
+                          </span>
+                          <span className="group-meta">
+                            {formatLastPlayed(group.lastPlayedAt, i18n.language)}
+                            {' · '}
+                            {t('selectRecentGroup.gamesTogether', {
+                              count: group.gamesPlayed,
+                              defaultValue: '{{count}} games together',
+                            })}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <span className="group-check" aria-hidden="true">
+                            <CheckMarkIcon size={16} />
+                          </span>
+                        )}
+                      </div>
+                      <div className="group-players">
+                        {group.players.map((player, pidx) => (
+                          <span
+                            key={`player-${pidx}`}
+                            className={`group-player${isAlreadySelected(player) ? ' already-added' : ''}`}
+                          >
+                            {player.name}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}
-        </div>
-
-        <div className="modal-actions">
-          <button type="button" onClick={handleClose} className="cancel-button">
-            {t('common.close', { defaultValue: 'Close' })}
-          </button>
         </div>
       </div>
     </div>

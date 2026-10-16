@@ -15,8 +15,8 @@
  * loaded with their component and can arrive later in the cascade. The
  * overlay selectors carry a `body` prefix and the box selectors name their
  * overlay, so both outrank the single-class rules in those files without
- * !important. Admin modals and the friends modal are excluded and stay
- * centred dialogs.
+ * !important. Admin modals, the friends modal and delete confirmations
+ * are excluded and stay centred dialogs.
  */
 @media (max-width: 599px) {
   body :is(
@@ -25,7 +25,7 @@
     .add-game-modal-overlay,
     .game-details-modal-overlay,
     .delete-modal-overlay
-  ):not(.admin-layout *, .admin-container *, :has(> .friends-modal)) {
+  ):not(.admin-layout *, .admin-container *, :has(> .friends-modal), :has(> .delete-confirmation-modal)) {
     top: 0;
     bottom: auto;
     height: var(--app-height, 100dvh);
@@ -39,7 +39,7 @@
     .dialog-overlay > .dialog-modal,
     .add-game-modal-overlay > .add-game-modal,
     .game-details-modal-overlay > .game-details-modal,
-    .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *, .friends-modal) {
+    .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *, .friends-modal, .delete-confirmation-modal) {
     width: 100%;
     max-width: 100%;
     max-height: calc(100% - env(safe-area-inset-top, 0px) - var(--spacing-lg));
@@ -48,6 +48,11 @@
     border-bottom: none;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     animation: sheetSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* A footer docked to the bottom edge has no corners to round. */
+  .modal-overlay > .modal-container:not(.admin-layout *, .admin-container *, .friends-modal, .delete-confirmation-modal) > :is(.modal-actions, .modal-footer) {
+    border-radius: 0;
   }
 
   /* These boxes pad themselves, so keep that and add the inset on top. */

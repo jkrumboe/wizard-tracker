@@ -5,6 +5,7 @@ import GameHistoryItem from '@/components/game/GameHistoryItem'
 import StatCard from '@/components/ui/StatCard'
 import GameFilterModal from '@/components/modals/GameFilterModal'
 import { useUser } from '@/shared/hooks/useUser'
+import { useTemplateLookup } from '@/shared/hooks/useGameTemplates'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
 import { StatIcon, EditIcon, CalendarIcon, FilterIcon } from "@/components/ui/Icon"
 import { filterGames, getDefaultFilters, hasActiveFilters } from '@/shared/utils/gameFilters'
@@ -20,6 +21,7 @@ const Profile = () => {
   const navigate = useNavigate()
   const { user } = useUser()
   const { t } = useTranslation()
+  const findTemplate = useTemplateLookup()
   // Support viewing other profiles by userId
   const isOwnProfile = !paramId || paramId === user?.id
   
@@ -449,7 +451,7 @@ return (
             <div className="games-list">
               {filteredGames.length > 0 ? (
                 filteredGames.map(game => (
-                  <GameHistoryItem key={game.id} game={game} />
+                  <GameHistoryItem key={game.id} game={game} findTemplate={findTemplate} />
                 ))
               ) : allGames.length > 0 ? (
                 <div className="empty-message">{t('profile.noGamesMatchFilters')}</div>

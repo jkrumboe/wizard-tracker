@@ -42,6 +42,8 @@ export class LocalTableGameTemplate {
         // Player count limits
         minPlayers: settings.minPlayers ?? null,
         maxPlayers: settings.maxPlayers ?? null,
+        // Box art and BoardGameGeek metadata from a barcode scan
+        gameInfo: settings.gameInfo || null,
       };
 
       const existingTemplates = this.getAllTemplates();
@@ -108,6 +110,9 @@ export class LocalTableGameTemplate {
         }
         if (settings.maxPlayers !== undefined) {
           templates[templateId].maxPlayers = settings.maxPlayers;
+        }
+        if (settings.gameInfo !== undefined) {
+          templates[templateId].gameInfo = settings.gameInfo;
         }
         
         localStorage.setItem(LOCAL_TABLE_GAME_TEMPLATES_KEY, JSON.stringify(templates));
@@ -275,7 +280,8 @@ export class LocalTableGameTemplate {
         hasDealerRotation: template.hasDealerRotation !== false,
         hasForbiddenCall: template.hasForbiddenCall !== false,
         description: template.description || '',
-        descriptionMarkdown: template.descriptionMarkdown || ''
+        descriptionMarkdown: template.descriptionMarkdown || '',
+        gameInfo: template.gameInfo || null,
       };
 
       // If already synced, update; otherwise create
@@ -349,6 +355,7 @@ export class LocalTableGameTemplate {
             hasForbiddenCall: cloudTemplate.hasForbiddenCall !== undefined ? cloudTemplate.hasForbiddenCall : (existingLocalTemplate.hasForbiddenCall !== false),
             description: cloudTemplate.description || existingLocalTemplate.description,
             descriptionMarkdown: cloudTemplate.descriptionMarkdown || existingLocalTemplate.descriptionMarkdown,
+            gameInfo: cloudTemplate.gameInfo || existingLocalTemplate.gameInfo || null,
             usageCount: cloudTemplate.usageCount || existingLocalTemplate.usageCount,
             approvedAsSystemTemplate: cloudTemplate.approvedAsSystemTemplate || false,
             systemTemplateId: cloudTemplate.systemTemplateId || null,
@@ -373,6 +380,7 @@ export class LocalTableGameTemplate {
             hasForbiddenCall: cloudTemplate.hasForbiddenCall !== false,
             description: cloudTemplate.description || '',
             descriptionMarkdown: cloudTemplate.descriptionMarkdown || '',
+            gameInfo: cloudTemplate.gameInfo || null,
             usageCount: cloudTemplate.usageCount || 0,
             approvedAsSystemTemplate: cloudTemplate.approvedAsSystemTemplate || false,
             systemTemplateId: cloudTemplate.systemTemplateId || null,

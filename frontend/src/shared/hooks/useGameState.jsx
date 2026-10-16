@@ -304,45 +304,52 @@ export function GameStateProvider({ children }) {
     });
   }, [])
 
-  // Update game settings (dealer, caller, player order, max rounds)
+  // Update game settings (players joining, player order, starting dealer, max rounds).
+  // `newPlayers` are appended after the existing players; `playerOrder` holds indices
+  // into that combined list; `startingDealerIndex` is the round-1 dealer's seat in
+  // the *new* order.
   const updateGameSettings = useCallback((settings) => {
     setGameState((prevState) => {
-      let updatedPlayers = prevState.players.map((player, index) => ({
-        ...player,
-        isDealer: index === settings.dealerIndex,
-        isCaller: index === settings.callerIndex
+      const roundIndex = (Number(prevState.currentRound) || 1) - 1;
+      const newPlayers = (settings.newPlayers || []).map((player) => ({
+        id: player.id || (Date.now().toString() + getSecureRandomInt(0, 999).toString()),
+        name: player.name,
+        isVerified: false
+      }));
+      const allPlayers = [...prevState.players, ...newPlayers];
+
+      const order = settings.playerOrder || allPlayers.map((_, idx) => idx);
+      const playerCount = order.length;
+      const startingDealerIndex = settings.startingDealerIndex ?? prevState.startingDealerIndex ?? 0;
+      const dealerSeat = playerCount > 0 ? (startingDealerIndex + roundIndex) % playerCount : 0;
+
+      const updatedPlayers = order.map((idx, seat) => ({
+        ...allPlayers[idx],
+        isDealer: seat === dealerSeat,
+        isCaller: seat === (dealerSeat + 1) % playerCount
       }));
 
-      // Reorder players if needed
-      if (settings.playerOrder) {
-        updatedPlayers = settings.playerOrder.map(idx => updatedPlayers[idx]);
-        
-        // Also update the players in roundData to match the new order
-        let updatedRoundData = prevState.roundData.map(round => ({
-          ...round,
-          players: settings.playerOrder.map(idx => round.players[idx])
+      // Players who join mid-game sit out the rounds already played with 0 points
+      let updatedRoundData = prevState.roundData.map((round, idx) => {
+        const joined = newPlayers.map((player) => ({
+          id: player.id,
+          name: player.name,
+          call: null,
+          made: null,
+          score: idx < roundIndex ? 0 : null,
+          totalScore: 0
         }));
-        
-        // Trim roundData if maxRounds was reduced (prevent corruption)
-        if (settings.maxRounds < updatedRoundData.length) {
-          console.warn(`🔧 Trimming roundData from ${updatedRoundData.length} to ${settings.maxRounds} rounds`);
-          updatedRoundData = updatedRoundData.slice(0, settings.maxRounds);
-        }
-
+        const roundPlayers = [...round.players, ...joined];
         return {
-          ...prevState,
-          players: updatedPlayers,
-          maxRounds: settings.maxRounds,
-          roundData: updatedRoundData,
-          startingDealerIndex: settings.dealerIndex
+          ...round,
+          players: order.map(i => roundPlayers[i])
         };
-      }
+      });
 
       // Trim roundData if maxRounds was reduced (prevent corruption)
-      let updatedRoundData = prevState.roundData;
-      if (settings.maxRounds < prevState.roundData.length) {
-        console.warn(`🔧 Trimming roundData from ${prevState.roundData.length} to ${settings.maxRounds} rounds`);
-        updatedRoundData = prevState.roundData.slice(0, settings.maxRounds);
+      if (settings.maxRounds < updatedRoundData.length) {
+        console.warn(`🔧 Trimming roundData from ${updatedRoundData.length} to ${settings.maxRounds} rounds`);
+        updatedRoundData = updatedRoundData.slice(0, settings.maxRounds);
       }
 
       return {
@@ -350,7 +357,7 @@ export function GameStateProvider({ children }) {
         players: updatedPlayers,
         maxRounds: settings.maxRounds,
         roundData: updatedRoundData,
-        startingDealerIndex: settings.dealerIndex
+        startingDealerIndex
       };
     });
   }, [])

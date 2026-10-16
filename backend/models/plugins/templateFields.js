@@ -71,6 +71,18 @@ function templateFieldsPlugin(schema, options = {}) {
       default: '',
       maxlength: [descriptionMaxLength, `Description cannot exceed ${descriptionMaxLength} characters`],
     },
+    // Box art and BoardGameGeek metadata, filled from barcode scans (see utils/gameInfo.js)
+    gameInfo: {
+      type: new mongoose.Schema({
+        bggId: { type: Number, default: null },
+        imageUrl: { type: String, default: null },
+        thumbnailUrl: { type: String, default: null },
+        playingTime: { type: Number, default: null },
+        minAge: { type: Number, default: null },
+        yearPublished: { type: Number, default: null },
+      }, { _id: false }),
+      default: null,
+    },
   };
 
   if (includeUsageCount) {

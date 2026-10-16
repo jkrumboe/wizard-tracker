@@ -1,11 +1,17 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import { VitePWA } from "vite-plugin-pwa"
+import basicSsl from "@vitejs/plugin-basic-ssl"
 import fs from 'fs'
+import process from "node:process"
 
 // Read version from package.json
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 const APP_VERSION = packageJson.version
+
+// `npm run dev:mobile`: serve over HTTPS on the LAN so phones can use the camera
+// (getUserMedia only works on HTTPS or localhost). Uses a self-signed certificate.
+const DEV_MOBILE = process.env.DEV_MOBILE === 'true'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,6 +19,9 @@ export default defineConfig({
   define: {
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC'),
     __APP_VERSION__: JSON.stringify(APP_VERSION),
+    // On a phone, localhost is the phone itself and an HTTPS page can't call an
+    // HTTP API, so send API calls through the dev server's /api proxy instead
+    ...(DEV_MOBILE && { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('') }),
   },
   build: {
     // Enable minification
@@ -41,10 +50,11 @@ export default defineConfig({
     sourcemap: false,
   },
   server: {
-    host: "localhost",
+    host: DEV_MOBILE ? true : "localhost",
     port: 3000, 
     strictPort: true,
-    hmr: {
+    // Mobile mode serves HTTPS, so let HMR follow the page (wss on the LAN address)
+    hmr: DEV_MOBILE ? true : {
       protocol: "ws",
       host: "localhost",
     },
@@ -57,7 +67,13 @@ export default defineConfig({
     }
   },
   plugins: [
+    DEV_MOBILE && basicSsl(),
     react(),
+    // The startup splash in index.html plays its full intro after an update
+    {
+      name: 'inject-app-version-html',
+      transformIndexHtml: (html) => html.replaceAll('__KW_APP_VERSION__', APP_VERSION),
+    },
     VitePWA({
       registerType: "prompt",
       strategies: 'injectManifest',

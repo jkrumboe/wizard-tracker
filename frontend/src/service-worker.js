@@ -1,7 +1,7 @@
 // Service Worker for KeepWiz PWA
 const CACHE_NAME = "keep-wiz-v1.20.1"
 const SW_VERSION = "1.11.0" // Separate version for easier tracking
-const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png"]
+const urlsToCache = ["/", "/index.html", "/manifest.json", "/icons/logo-192.png", "/icons/logo-512.png", "/icons/logo.svg"]
 
 const logPrefix = '[KeepWiz][serviceWorker:legacy]';
 const swLogger = {

@@ -14,25 +14,10 @@
     "nonStandard": 1,
     "important": 0
   },
-  "components/GameTemplateDetailsModal.css": {
-    "maxWidth": 1,
-    "nonStandard": 1,
-    "important": 0
-  },
-  "components/GameTemplateSelector.css": {
-    "maxWidth": 1,
-    "nonStandard": 1,
-    "important": 0
-  },
   "components/TableGame.css": {
     "maxWidth": 2,
     "nonStandard": 3,
     "important": 8
-  },
-  "components/add-players-choice-modal.css": {
-    "maxWidth": 1,
-    "nonStandard": 1,
-    "important": 0
   },
   "components/avatar.css": {
     "maxWidth": 0,
@@ -75,11 +60,6 @@
     "important": 10
   },
   "components/select-friends-modal.css": {
-    "maxWidth": 1,
-    "nonStandard": 1,
-    "important": 0
-  },
-  "components/select-recent-group-modal.css": {
     "maxWidth": 1,
     "nonStandard": 1,
     "important": 0
@@ -127,7 +107,7 @@
   "pages/gameInProgress.css": {
     "maxWidth": 2,
     "nonStandard": 2,
-    "important": 37
+    "important": 17
   },
   "pages/leaderboard.css": {
     "maxWidth": 2,

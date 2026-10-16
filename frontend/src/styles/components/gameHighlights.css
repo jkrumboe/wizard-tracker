@@ -1,0 +1,67 @@
+/* Headline facts strip shown above game stats on wide screens.
+   Used by the game details pages and the in-progress stats view. */
+.game-highlights {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .game-highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .highlight-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: var(--spacing-md);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    min-width: 0;
+  }
+
+  .highlight-icon {
+    flex-shrink: 0;
+    box-sizing: content-box;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+
+  .highlight-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .highlight-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-light);
+  }
+
+  .highlight-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .highlight-value,
+  .highlight-detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .highlight-detail {
+    font-size: 0.8rem;
+    color: var(--text-light);
+  }
+}

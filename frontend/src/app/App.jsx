@@ -13,6 +13,8 @@ import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRe
 const Account = lazy(() => import("@/pages/Account"))
 const GamesPage = lazy(() => import("@/pages/game/GamesPage"))
 const StartGame = lazy(() => import("@/pages/game/StartGame"))
+const GameTypePage = lazy(() => import("@/pages/game/GameTypePage"))
+const GameTypeInfoPage = lazy(() => import("@/pages/game/GameTypeInfoPage"))
 const GameDetails = lazy(() => import("@/pages/game/GameDetails"))
 const GameInProgress = lazy(() => import("@/pages/game/GameInProgress"))
 const TableGame = lazy(() => import("@/pages/game/TableGame"))
@@ -191,6 +193,8 @@ function App() {
                     <Route path="/new-game" element={<Navigate to="/start" replace />} />
                     <Route path="/games" element={<GamesPage />} />
                     <Route path="/start" element={<StartGame />} />
+                    <Route path="/game-types/:name" element={<GameTypePage />} />
+                    <Route path="/game-types/:name/info" element={<GameTypeInfoPage />} />
                     <Route path="/table" element={<Navigate to="/start" replace />} />
                     <Route path="/table/:id" element={<TableGame />} />
                     <Route path="/scoreboard/:id" element={<ScoreboardGame />} />

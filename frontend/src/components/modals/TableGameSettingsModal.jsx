@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { XIcon, PlusIcon } from '@/components/ui/Icon';
-import { GripVertical } from 'lucide-react';
+import { XIcon } from '@/components/ui/Icon';
+import { GripVertical, Minus, Plus, UserPlus } from 'lucide-react';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import {
   DndContext,
@@ -24,11 +24,14 @@ import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
+import { useVisualViewportRect } from '@/shared/hooks/useVisualViewportRect';
+import '@/styles/modals/gameSettingsModal.css';
 
 const MIN_PLAYERS = 2;
 
-// Sortable Player Item Component
+// Sortable seat row, styled like the Wizard settings: drag handle, seat number, editable name
 const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, disabled }) => {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -36,7 +39,7 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, 
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: player.id || `player-${index}`,
     disabled: disabled,
   });
@@ -44,44 +47,46 @@ const SortablePlayerItem = ({ player, index, onNameChange, onRemove, canRemove, 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.7 : 1,
   };
 
   return (
-    <div 
-      ref={setNodeRef}
-      style={style}
-      className={`player-order-item ${isDragging ? 'dragging' : ''}`}
-      {...attributes}
-    >
-      <div
-        className="drag-handle"
-        {...listeners}
-        style={{ cursor: disabled ? 'default' : 'grab', gap: '0.5rem', display: 'flex', alignItems: 'center' }}
-      >
-        <GripVertical size={16} />
-        <div className='player-number'>
-          {player.originalIndex + 1}
-        </div>
-      </div>
-      
-      <input
-        type="text"
-        className="player-name-input"
-        value={player.name}
-        onChange={(e) => onNameChange(index, e.target.value)}
+    <li ref={setNodeRef} style={style} className={`gs-seat${isDragging ? ' is-dragging' : ''}`}>
+      <button
+        type="button"
+        className="gs-seat-handle"
+        aria-label={t('settings.dragToReorder', { name: player.name })}
         disabled={disabled}
-      />
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={18} />
+      </button>
+
+      <div className="gs-seat-main">
+        <span className="gs-seat-number">{index + 1}</span>
+        <input
+          type="text"
+          className="gs-seat-name-input"
+          value={player.name}
+          onChange={(e) => onNameChange(index, e.target.value)}
+          aria-label={`${t('common.player')} ${index + 1}`}
+          maxLength={40}
+          disabled={disabled}
+        />
+      </div>
+
       {canRemove && (
         <button
-          className="remove-player-btn"
+          type="button"
+          className="gs-seat-remove"
           onClick={() => onRemove(index)}
+          aria-label={t('settings.removeNewPlayer', { name: player.name })}
           disabled={disabled}
         >
           <XIcon size={16} />
         </button>
       )}
-    </div>
+    </li>
   );
 };
 
@@ -94,14 +99,15 @@ SortablePlayerItem.propTypes = {
   disabled: PropTypes.bool
 };
 
-const TableGameSettingsModal = ({ 
-  isOpen, 
-  onClose, 
-  players, 
+const TableGameSettingsModal = ({
+  isOpen,
+  onClose,
+  players,
   rows,
   currentRound,
   targetNumber,
   lowIsBetter,
+  allowEmptyAsZero,
   scoreEntryMode,
   teamMembers,
   currentRoundScores,
@@ -109,48 +115,51 @@ const TableGameSettingsModal = ({
   onAdjustRoundScore,
   onUpdateTeamMembers,
   onUpdateSettings,
-  gameFinished 
+  gameFinished
 }) => {
   const { t } = useTranslation();
   const [localPlayers, setLocalPlayers] = useState([]);
   const [localRows, setLocalRows] = useState(10);
   const [localTargetNumber, setLocalTargetNumber] = useState(null);
   const [localLowIsBetter, setLocalLowIsBetter] = useState(false);
+  const [localAllowEmptyAsZero, setLocalAllowEmptyAsZero] = useState(true);
   const [localTeamMembers, setLocalTeamMembers] = useState([[], []]);
+  const [newName, setNewName] = useState('');
+  const [nameError, setNameError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState(null);
+  const viewportRect = useVisualViewportRect(isOpen);
 
-  // @dnd-kit sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   useEffect(() => {
     if (isOpen) {
-      setLocalPlayers(players.map((p, idx) => ({ 
-        ...p, 
+      setLocalPlayers(players.map((p, idx) => ({
+        ...p,
         id: p.id || `player-${idx}`,
-        originalIndex: idx 
+        originalIndex: idx
       })));
       setLocalRows(rows);
       setLocalTargetNumber(targetNumber);
       setLocalLowIsBetter(lowIsBetter);
+      setLocalAllowEmptyAsZero(allowEmptyAsZero !== false);
       setLocalTeamMembers(Array.isArray(teamMembers) ? teamMembers : [[], []]);
+      setNewName('');
+      setNameError('');
     }
-  }, [isOpen, players, rows, targetNumber, lowIsBetter, teamMembers]);
+  }, [isOpen, players, rows, targetNumber, lowIsBetter, allowEmptyAsZero, teamMembers]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -161,42 +170,46 @@ const TableGameSettingsModal = ({
       players: localPlayers,
       rows: localRows,
       targetNumber: localTargetNumber,
-      lowIsBetter: localLowIsBetter
+      lowIsBetter: localLowIsBetter,
+      allowEmptyAsZero: localAllowEmptyAsZero
     });
   };
 
-  const handlePlayerNameChange = (index, newName) => {
+  const handlePlayerNameChange = (index, newPlayerName) => {
     const updated = [...localPlayers];
-    updated[index].name = newName;
+    updated[index] = { ...updated[index], name: newPlayerName };
     setLocalPlayers(updated);
   };
 
-  // @dnd-kit drag end handler
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id) {
-      const oldIndex = localPlayers.findIndex(player => (player.id || `player-${localPlayers.indexOf(player)}`) === active.id);
-      const newIndex = localPlayers.findIndex(player => (player.id || `player-${localPlayers.indexOf(player)}`) === over?.id);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newPlayers = [...localPlayers];
-        const [removed] = newPlayers.splice(oldIndex, 1);
-        newPlayers.splice(newIndex, 0, removed);
-        setLocalPlayers(newPlayers);
-      }
-    }
+  const handleDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const ids = localPlayers.map((p, idx) => p.id || `player-${idx}`);
+    const from = ids.indexOf(active.id);
+    const to = ids.indexOf(over.id);
+    if (from === -1 || to === -1) return;
+    const next = [...localPlayers];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setLocalPlayers(next);
   };
 
-  const handleAddPlayer = () => {
+  const handleAddPlayer = (e) => {
+    e.preventDefault();
     if (isTwoSideScoreboard) return;
-    const newPlayer = {
+    const name = newName.trim();
+    if (!name) return;
+    if (localPlayers.some((p) => p.name?.trim().toLowerCase() === name.toLowerCase())) {
+      setNameError(t('settings.duplicatePlayerName'));
+      return;
+    }
+    setLocalPlayers([...localPlayers, {
       id: `player-${Date.now()}`,
-      name: `Player ${localPlayers.length + 1}`,
+      name,
       points: [],
       originalIndex: localPlayers.length
-    };
-    setLocalPlayers([...localPlayers, newPlayer]);
+    }]);
+    setNewName('');
+    setNameError('');
   };
 
   const handleRemovePlayer = (index) => {
@@ -209,8 +222,7 @@ const TableGameSettingsModal = ({
 
   const confirmDeletePlayer = () => {
     if (playerToDelete !== null) {
-      const updated = localPlayers.filter((_, idx) => idx !== playerToDelete);
-      setLocalPlayers(updated);
+      setLocalPlayers(localPlayers.filter((_, idx) => idx !== playerToDelete));
     }
     setShowDeleteConfirm(false);
     setPlayerToDelete(null);
@@ -222,30 +234,45 @@ const TableGameSettingsModal = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content game-settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{t('tableGameSettings.title')}</h2>
-          <button className="modal-close-btn" onClick={onClose}>
-            <XIcon size={24} />
+    <div
+      className="modal-overlay gs-overlay"
+      style={viewportRect ? { top: viewportRect.top, height: viewportRect.height, bottom: 'auto' } : undefined}
+      onClick={onClose}
+    >
+      <div
+        className="modal-content gs-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tgs-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="gs-header">
+          <h2 id="tgs-title">{t('tableGameSettings.title')}</h2>
+          <button type="button" className="gs-close" onClick={onClose} aria-label={t('common.close')}>
+            <XIcon size={20} />
           </button>
         </div>
 
-        <div className="modal-body">
-          {/* Player Order - Moved to Top */}
-          <div className="settings-section">
-            <h3>{t('tableGameSettings.players')}</h3>
-            <DndContext 
+        <div className="gs-body">
+          {/* Players & order */}
+          <section className="gs-card" aria-labelledby="tgs-players-title">
+            <div className="gs-card-head">
+              <h3 id="tgs-players-title">{t('tableGameSettings.players')}</h3>
+              <span className="gs-count">{localPlayers.length}</span>
+            </div>
+            <p className="gs-hint">{t('tableGameSettings.playersHint')}</p>
+
+            <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
               modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             >
-              <SortableContext 
-                items={localPlayers.map(p => p.id || `player-${localPlayers.indexOf(p)}`)}
+              <SortableContext
+                items={localPlayers.map((p, idx) => p.id || `player-${idx}`)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="player-order-list">
+                <ol className="gs-seats">
                   {localPlayers.map((player, index) => (
                     <SortablePlayerItem
                       key={player.id || index}
@@ -257,152 +284,186 @@ const TableGameSettingsModal = ({
                       disabled={gameFinished}
                     />
                   ))}
-                </div>
+                </ol>
               </SortableContext>
             </DndContext>
-            <button
-              className="add-player-modal-btn"
-              onClick={handleAddPlayer}
-              disabled={gameFinished || isTwoSideScoreboard}
-            >
-              <PlusIcon size={16} />
-              {t('tableGameSettings.addPlayer')}
-            </button>
-          </div>
 
-          {/* Game Settings - Styled like StartTableGameModal */}
-          <div className="settings-section game-settings-info">
-            <h3>{t('tableGameSettings.title')}</h3>
-            <div className="settings-details">
-              <div className="add-section">
-                <label htmlFor="target-number-input">{t('tableGameSettings.targetNumberLabel')}:</label>
+            {!isTwoSideScoreboard && !gameFinished && (
+              <form className="gs-add-player" onSubmit={handleAddPlayer}>
                 <input
-                  id="target-number-input"
-                  type="number"
-                  className="game-name-input"
-                  value={localTargetNumber || ''}
-                  onChange={(e) => setLocalTargetNumber(e.target.value ? Number.parseInt(e.target.value, 10) : null)}
-                  placeholder="200"
+                  type="text"
+                  value={newName}
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="words"
+                  onFocus={(e) => {
+                    const field = e.currentTarget;
+                    setTimeout(() => field.scrollIntoView({ block: 'nearest' }), 300);
+                  }}
+                  onChange={(e) => { setNewName(e.target.value); setNameError(''); }}
+                  placeholder={t('settings.addPlayerPlaceholder')}
+                  aria-label={t('settings.addPlayerPlaceholder')}
+                  aria-invalid={nameError ? 'true' : undefined}
+                  maxLength={40}
+                />
+                <button type="submit" className="gs-add-btn" disabled={!newName.trim()}>
+                  <UserPlus size={16} />
+                  {t('settings.addPlayer')}
+                </button>
+              </form>
+            )}
+            {nameError && <p className="gs-error" role="alert">{nameError}</p>}
+          </section>
+
+          {/* Scoring */}
+          <section className="gs-card" aria-labelledby="tgs-scoring-title">
+            <h3 id="tgs-scoring-title">{t('tableGameSettings.scoring')}</h3>
+
+            <div className="gs-row">
+              <label htmlFor="tgs-target" className="gs-row-label">
+                {t('tableGameSettings.targetNumberLabel')}
+              </label>
+              <input
+                id="tgs-target"
+                type="number"
+                inputMode="numeric"
+                className="gs-field-input"
+                value={localTargetNumber || ''}
+                onChange={(e) => setLocalTargetNumber(e.target.value ? Number.parseInt(e.target.value, 10) : null)}
+                placeholder="200"
+                disabled={gameFinished}
+              />
+            </div>
+
+            <div className="gs-row">
+              <span className="gs-row-label" id="tgs-pref-label">
+                {t('tableGameSettings.scoringPreference').replace(/:\s*$/, '')}
+              </span>
+              <div className="gs-segmented" role="radiogroup" aria-labelledby="tgs-pref-label">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!localLowIsBetter}
+                  className={!localLowIsBetter ? 'is-active' : ''}
+                  onClick={() => setLocalLowIsBetter(false)}
+                  disabled={gameFinished}
+                >
+                  {t('tableGameSettings.highScore')}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={localLowIsBetter}
+                  className={localLowIsBetter ? 'is-active' : ''}
+                  onClick={() => setLocalLowIsBetter(true)}
+                  disabled={gameFinished}
+                >
+                  {t('tableGameSettings.lowScore')}
+                </button>
+              </div>
+            </div>
+
+            {!isTwoSideScoreboard && (
+              <label className="gs-row gs-toggle-row" htmlFor="tgs-allow-empty">
+                <span className="gs-row-text">
+                  <span className="gs-row-label">{t('tableGameSettings.allowEmptyAsZero')}</span>
+                  <span className="gs-hint">{t('tableGameSettings.allowEmptyAsZeroHint')}</span>
+                </span>
+                <input
+                  id="tgs-allow-empty"
+                  type="checkbox"
+                  role="switch"
+                  className="gs-switch"
+                  checked={localAllowEmptyAsZero}
+                  onChange={(e) => setLocalAllowEmptyAsZero(e.target.checked)}
                   disabled={gameFinished}
                 />
-              </div>
-              <div className="add-section">
-                <label>{t('tableGameSettings.scoringPreference')}:</label>
-                 <div className="scoring-prefernce-type" style={{ display: 'flex'}}>
-                  <label htmlFor="high-score-radio" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <input
-                      id="high-score-radio"
-                      type="radio"
-                      name="scoring-preference"
-                      checked={localLowIsBetter === false}
-                      onChange={() => setLocalLowIsBetter(false)}
-                      disabled={gameFinished}
-                    />
-                    <span>{t('tableGameSettings.highScore')}</span>
-                  </label>
-                 <label htmlFor="low-score-radio" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <input
-                      id="low-score-radio"
-                      type="radio"
-                      name="scoring-preference"
-                      checked={localLowIsBetter}
-                      onChange={() => setLocalLowIsBetter(true)}
-                      disabled={gameFinished}
-                    />
-                    <span>{t('tableGameSettings.lowScore')}</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
+              </label>
+            )}
+          </section>
 
           {isTwoSideScoreboard && Array.isArray(currentRoundScores) && (
-            <div className="settings-section game-settings-info">
-              <h3>{t('tableGameSettings.currentScoreEditor', { round: currentRound })}</h3>
-              <div className="settings-details">
-                {localPlayers.map((player, index) => (
-                  <div className="add-section" key={player.id || index}>
-                    <label>{player.name || `${t('common.player')} ${index + 1}`}</label>
-                    <div className="score-editor-row">
-                      <button
-                        type="button"
-                        className="score-adjust-btn"
-                        onClick={() => onAdjustRoundScore(index, -1)}
-                        disabled={gameFinished}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        className="game-name-input score-editor-input"
-                        value={currentRoundScores[index] ?? 0}
-                        onChange={(e) => onUpdateRoundScore(index, e.target.value)}
-                        disabled={gameFinished}
-                      />
-                      <button
-                        type="button"
-                        className="score-adjust-btn"
-                        onClick={() => onAdjustRoundScore(index, 1)}
-                        disabled={gameFinished}
-                      >
-                        +
-                      </button>
-                    </div>
+            <section className="gs-card" aria-labelledby="tgs-score-title">
+              <h3 id="tgs-score-title">{t('tableGameSettings.currentScoreEditor', { round: currentRound })}</h3>
+              {localPlayers.map((player, index) => (
+                <div className="gs-row" key={player.id || index}>
+                  <span className="gs-row-label">{player.name || `${t('common.player')} ${index + 1}`}</span>
+                  <div className="gs-stepper">
+                    <button
+                      type="button"
+                      className="gs-step-btn"
+                      onClick={() => onAdjustRoundScore(index, -1)}
+                      disabled={gameFinished}
+                      aria-label="-1"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      className="gs-step-input"
+                      value={currentRoundScores[index] ?? 0}
+                      onChange={(e) => onUpdateRoundScore(index, e.target.value)}
+                      disabled={gameFinished}
+                    />
+                    <button
+                      type="button"
+                      className="gs-step-btn"
+                      onClick={() => onAdjustRoundScore(index, 1)}
+                      disabled={gameFinished}
+                      aria-label="+1"
+                    >
+                      <Plus size={16} />
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              ))}
+            </section>
           )}
 
           {isTwoSideScoreboard && (
-            <div className="settings-section game-settings-info">
-              <h3>{t('tableGameSettings.teamMembers')}</h3>
-              <div className="settings-details">
-                {[0, 1].map((teamIndex) => (
-                  <div className="add-section" key={teamIndex}>
-                    <label>{localPlayers[teamIndex]?.name || `Team ${teamIndex + 1}`}</label>
-                    <textarea
-                      className="game-markdown-input"
-                      value={(localTeamMembers[teamIndex] || []).map((member) => member.name).join('\n')}
-                      onChange={(e) => {
-                        const lines = e.target.value
-                          .split('\n')
-                          .map((name) => name.trim())
-                          .filter(Boolean);
-                        const updated = [...localTeamMembers];
-                        updated[teamIndex] = lines.map((name, idx) => ({
-                          id: `${teamIndex}-${idx}-${Date.now()}`,
-                          name,
-                        }));
-                        setLocalTeamMembers(updated);
-                        onUpdateTeamMembers?.(updated);
-                      }}
-                      rows={4}
-                      disabled={gameFinished}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <section className="gs-card" aria-labelledby="tgs-teams-title">
+              <h3 id="tgs-teams-title">{t('tableGameSettings.teamMembers')}</h3>
+              {[0, 1].map((teamIndex) => (
+                <label className="gs-field" key={teamIndex}>
+                  <span className="gs-row-label">{localPlayers[teamIndex]?.name || `Team ${teamIndex + 1}`}</span>
+                  <textarea
+                    className="gs-field-input gs-textarea"
+                    value={(localTeamMembers[teamIndex] || []).map((member) => member.name).join('\n')}
+                    onChange={(e) => {
+                      const lines = e.target.value
+                        .split('\n')
+                        .map((name) => name.trim())
+                        .filter(Boolean);
+                      const updated = [...localTeamMembers];
+                      updated[teamIndex] = lines.map((name, idx) => ({
+                        id: `${teamIndex}-${idx}-${Date.now()}`,
+                        name,
+                      }));
+                      setLocalTeamMembers(updated);
+                      onUpdateTeamMembers?.(updated);
+                    }}
+                    rows={4}
+                    disabled={gameFinished}
+                  />
+                </label>
+              ))}
+            </section>
           )}
         </div>
 
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
+        <div className="gs-footer">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
             {t('common.cancel')}
           </button>
-          <button 
-            className="btn-primary" 
-            onClick={handleSave}
-            disabled={gameFinished}
-          >
-            {t('tableGameSettings.saveChanges')}
+          <button type="button" className="btn btn-primary" onClick={handleSave} disabled={gameFinished}>
+            {t('common.save')}
           </button>
         </div>
       </div>
 
-      {/* Delete Player Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={showDeleteConfirm}
         onClose={cancelDeletePlayer}
@@ -427,6 +488,7 @@ TableGameSettingsModal.propTypes = {
   currentRound: PropTypes.number.isRequired,
   targetNumber: PropTypes.number,
   lowIsBetter: PropTypes.bool.isRequired,
+  allowEmptyAsZero: PropTypes.bool,
   scoreEntryMode: PropTypes.string,
   teamMembers: PropTypes.array,
   currentRoundScores: PropTypes.array,

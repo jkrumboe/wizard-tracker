@@ -1,0 +1,382 @@
+/* Special card toggles (Bombe / Wolke) shown below the Wizard scoreboard */
+
+.special-card-toggle {
+  --sct-accent: 100, 116, 139;
+  --sct-chip-bg: rgba(var(--sct-accent), 0.14);
+  --sct-chip-fg: rgb(var(--sct-accent));
+  --sct-puff: linear-gradient(180deg, #f1f5f9, #fde4cf);
+  --sct-puff-shadow: rgba(15, 23, 42, 0.18);
+
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 128px;
+  min-height: 44px;
+  padding: 6px 18px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.15s ease;
+}
+
+.special-card-toggle.bomb {
+  --sct-accent: 239, 68, 68;
+}
+
+.special-card-toggle.cloud {
+  --sct-accent: 56, 189, 248;
+}
+
+[data-theme="dark"] .special-card-toggle {
+  --sct-puff: linear-gradient(180deg, #ffffff, #ffd9b8);
+  --sct-puff-shadow: rgba(251, 146, 60, 0.3);
+}
+
+/* Only real pointers: on touch, :hover sticks after a tap until you tap elsewhere */
+@media (hover: hover) {
+  .special-card-toggle:not(.active):hover {
+    border-color: rgba(var(--sct-accent), 0.55);
+  }
+
+  /* Keep the rainbow / fire border instead of the global primary hover border */
+  .special-card-toggle.active:hover {
+    border-color: transparent;
+  }
+}
+
+.special-card-toggle:active {
+  transform: scale(0.96);
+}
+
+.special-card-toggle:focus-visible {
+  outline: 2px solid rgb(var(--sct-accent));
+  outline-offset: 2px;
+}
+
+.sct-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sct-chip-bg);
+  color: var(--sct-chip-fg);
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.sct-label {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Active: Bombe ---------- */
+
+/* Fiery edge, same padding-box/border-box trick as the Wolke rainbow */
+.special-card-toggle.bomb.active {
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(249, 115, 22, 0.1)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    linear-gradient(90deg, #dc2626, #f97316, #facc15, #f97316, #dc2626) border-box;
+  box-shadow: 0 6px 16px -8px rgba(239, 68, 68, 0.55);
+  animation: sct-bomb-hit 0.55s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.special-card-toggle.bomb.active .sct-icon {
+  background: linear-gradient(145deg, #f97316, #dc2626);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+  animation: sct-fuse 2s ease-in-out 0.6s infinite;
+}
+
+@keyframes sct-bomb-hit {
+  0% { transform: scale(1); }
+  15% { transform: scale(0.93); }
+  30% { transform: scale(1.06); }
+  45% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+  100% { transform: none; }
+}
+
+@keyframes sct-fuse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+  50% { box-shadow: 0 0 8px 1px rgba(249, 115, 22, 0.45); }
+}
+
+/* ---------- Active: Wolke ---------- */
+
+/* Rainbow edge: tinted fill on padding-box over a rainbow border-box */
+.special-card-toggle.cloud.active {
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(167, 139, 250, 0.14)) padding-box,
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    linear-gradient(90deg, #ef4444, #fb923c, #facc15, #34d399, #60a5fa, #a78bfa) border-box;
+  box-shadow: 0 6px 16px -8px rgba(56, 189, 248, 0.55);
+  animation: sct-cloud-condense 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.special-card-toggle.cloud.active .sct-icon {
+  background: linear-gradient(160deg, #ffffff, #bae6fd);
+  color: #0284c7;
+  box-shadow: 0 2px 8px -2px rgba(56, 189, 248, 0.7);
+}
+
+@keyframes sct-cloud-condense {
+  0% { transform: scale(1); filter: blur(0); }
+  20% { transform: scale(0.97); filter: blur(0.8px); }
+  55% { transform: scale(1.03); filter: blur(0); }
+  80% { transform: scale(0.99); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- Effect layer ---------- */
+
+.sct-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.sct-fx > span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+/* Bombe: flash, shockwaves, sparks, embers, smoke */
+
+/* Fireball: yellow core into orange and deep red, like the card art */
+.sct-fireball {
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fef9c3 0%,
+    #fde047 18%,
+    #fb923c 42%,
+    rgba(220, 38, 38, 0.75) 62%,
+    rgba(127, 29, 29, 0) 74%
+  );
+  filter: blur(1px);
+  animation: sct-fireball 0.6s ease-out;
+}
+
+@keyframes sct-fireball {
+  0% { opacity: 0; transform: scale(0.2); }
+  20% { opacity: 0.95; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.9); }
+}
+
+.sct-shockwave {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  border: 2px solid rgba(251, 146, 60, 0.75);
+  animation: sct-shockwave 0.55s cubic-bezier(0.1, 0.7, 0.3, 1) 0.06s;
+}
+
+@keyframes sct-shockwave {
+  0% { opacity: 0.85; transform: scale(0.3); }
+  100% { opacity: 0; transform: scale(3.2); border-width: 0.5px; }
+}
+
+.sct-spark {
+  width: 12px;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #f97316 30%, #fde68a 75%, #fff);
+  transform-origin: 0 50%;
+  animation: sct-spark 0.6s cubic-bezier(0.15, 0.8, 0.3, 1);
+}
+
+@keyframes sct-spark {
+  0% { opacity: 1; transform: rotate(var(--angle)) translateX(6px) scaleX(0.4); }
+  45% { opacity: 1; transform: rotate(var(--angle)) translateX(calc(var(--dist) * 0.75)) scaleX(1.2); }
+  100% { opacity: 0; transform: rotate(var(--angle)) translateX(var(--dist)) scaleX(0.2); }
+}
+
+.sct-ember {
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 6px 1px rgba(249, 115, 22, 0.9);
+  animation: sct-ember 0.9s cubic-bezier(0.2, 0.6, 0.4, 1);
+}
+
+@keyframes sct-ember {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  55% { opacity: 0.9; transform: translate(var(--x), var(--y)) scale(0.9); }
+  100% { opacity: 0; transform: translate(calc(var(--x) * 1.1), calc(var(--y) + 14px)) scale(0.4); }
+}
+
+.sct-smoke {
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(148, 163, 184, 0.4), rgba(100, 116, 139, 0) 70%);
+  animation: sct-smoke 0.9s ease-out;
+}
+
+@keyframes sct-smoke {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(var(--x), calc(var(--y) - 20px)) scale(1.8); }
+}
+
+/* Wolke: soft haze plus cartoon cloud puffs that billow out and drift away */
+
+.sct-haze {
+  width: 150px;
+  height: 70px;
+  margin: -35px 0 0 -75px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(224, 242, 254, 0.4), rgba(186, 230, 253, 0.12) 45%, transparent 70%);
+  filter: blur(6px);
+  animation: sct-haze 1.3s ease-out;
+}
+
+@keyframes sct-haze {
+  0% { opacity: 0; transform: scale(0.3); }
+  35% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.35) translateY(-10px); }
+}
+
+/* Rainbow arch over the button, drawn left to right; its feet fade into the puffs */
+.sct-rainbow {
+  width: 108px;
+  height: 54px;
+  margin: -60px 0 0 -54px;
+  background: radial-gradient(
+    circle at 50% 100%,
+    transparent 34px,
+    #a78bfa 35px,
+    #60a5fa 38px,
+    #34d399 41px,
+    #facc15 44px,
+    #fb923c 47px,
+    #ef4444 50px,
+    transparent 53px
+  );
+  filter: blur(0.6px);
+  -webkit-mask-image: linear-gradient(to top, transparent, #000 45%);
+  mask-image: linear-gradient(to top, transparent, #000 45%);
+  animation: sct-rainbow 1.5s ease-out 0.15s;
+}
+
+@keyframes sct-rainbow {
+  0% { opacity: 0.75; clip-path: inset(0 100% 0 0); transform: translateY(4px); }
+  40% { opacity: 0.75; clip-path: inset(0 0 0 0); transform: translateY(0); }
+  70% { opacity: 0.65; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 0); transform: translateY(-8px); }
+}
+
+/* A puff is a rounded base with two bumps on top, drawn with ::before/::after */
+.sct-puff {
+  width: var(--size);
+  height: calc(var(--size) * 0.42);
+  margin: calc(var(--size) * -0.21) 0 0 calc(var(--size) / -2);
+  border-radius: 999px;
+  background: var(--sct-puff);
+  filter: drop-shadow(0 3px 6px var(--sct-puff-shadow));
+  animation: sct-puff 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sct-puff::before,
+.sct-puff::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
+}
+
+.sct-puff::before {
+  width: calc(var(--size) * 0.42);
+  height: calc(var(--size) * 0.42);
+  top: calc(var(--size) * -0.2);
+  left: calc(var(--size) * 0.14);
+}
+
+.sct-puff::after {
+  width: calc(var(--size) * 0.56);
+  height: calc(var(--size) * 0.56);
+  top: calc(var(--size) * -0.3);
+  right: calc(var(--size) * 0.12);
+}
+
+@keyframes sct-puff {
+  0% {
+    opacity: 0;
+    transform: translate(0, 6px) scale(0.15);
+  }
+  30% {
+    opacity: 0.85;
+    transform: translate(calc(var(--x) * 0.85), calc(var(--y) * 0.85)) scale(1);
+  }
+  60% {
+    opacity: 0.7;
+    transform: translate(var(--x), calc(var(--y) - 6px)) scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--x) * 1.1), calc(var(--y) - 16px)) scale(1.15);
+    filter: drop-shadow(0 3px 6px var(--sct-puff-shadow)) blur(4px);
+  }
+}
+
+.sct-mist {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  box-shadow: 0 0 6px 2px rgba(125, 211, 252, 0.7);
+  animation: sct-mist 1.2s ease-out;
+}
+
+@keyframes sct-mist {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  35% { opacity: 1; transform: translate(calc(var(--x) * 0.7), calc(var(--y) * 0.7)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--x), calc(var(--y) - 16px)) scale(0.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .special-card-toggle.active,
+  .special-card-toggle.active .sct-icon {
+    animation: none;
+  }
+
+  .sct-fx {
+    display: none;
+  }
+}

@@ -1371,3 +1371,39 @@ button.score-side-card:focus-visible:not(:disabled) {
   padding: var(--spacing-md);
   text-align: center;
 }
+
+/* Round entry table: three columns (player, points, total).
+   Scoped under .game-in-progress so it outranks the four-column Wizard layout. */
+.table-game-container .game-in-progress .score-table td:nth-child(1),
+.table-game-container .game-in-progress .score-table th:nth-child(1) {
+  width: 52%;
+}
+
+.table-game-container .game-in-progress .score-table td:nth-child(2),
+.table-game-container .game-in-progress .score-table th:nth-child(2),
+.table-game-container .game-in-progress .score-table td:nth-child(3),
+.table-game-container .game-in-progress .score-table th:nth-child(3) {
+  width: 24%;
+}
+
+.table-game-container .game-in-progress .score-table .rounds-input {
+  max-width: 64px;
+}
+
+/* Phones: keep the points input close to the names instead of floating mid-row */
+@media (max-width: 768px) {
+  .table-game-container .game-in-progress .score-table td:nth-child(1),
+  .table-game-container .game-in-progress .score-table th:nth-child(1) {
+    width: 56%;
+  }
+
+  .table-game-container .game-in-progress .score-table td:nth-child(2),
+  .table-game-container .game-in-progress .score-table th:nth-child(2) {
+    width: 20%;
+  }
+
+  .table-game-container .game-in-progress .score-table td:nth-child(3),
+  .table-game-container .game-in-progress .score-table th:nth-child(3) {
+    width: 24%;
+  }
+}

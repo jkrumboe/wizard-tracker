@@ -6,6 +6,7 @@ const TemplateSuggestion = require('../models/TemplateSuggestion');
 const auth = require('../middleware/auth');
 const catchAsync = require('../utils/catchAsync');
 const { getBuiltinSystemTemplateById } = require('../utils/builtinSystemTemplates');
+const { sanitizeGameInfo, pickGameUpcBggItem, listGameUpcCandidates, parseBggThing } = require('../utils/gameInfo');
 
 const router = express.Router();
 
@@ -18,6 +19,15 @@ const getScoringFormula = (template) => {
 };
 
 // Middleware to check admin role
+const BARCODE_PATTERN = /^\d{8,14}$/;
+
+// Normalize a barcode list: trim, dedupe, and reject anything that isn't an EAN/UPC
+const normalizeBarcodes = (barcodes) => {
+  if (!Array.isArray(barcodes)) return null;
+  const cleaned = [...new Set(barcodes.map((code) => String(code).trim()))];
+  return cleaned.every((code) => BARCODE_PATTERN.test(code)) ? cleaned : null;
+};
+
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
@@ -28,12 +38,132 @@ const requireAdmin = (req, res, next) => {
 // GET /api/game-templates/public - Get public system templates (no auth required)
 router.get('/public', catchAsync(async (req, res) => {
   const systemTemplates = await SystemGameTemplate.find({ isActive: true })
-    .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+    .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown barcodes gameInfo createdBy createdAt updatedAt')
     .sort({ name: 1 });
 
   res.json({ 
     templates: systemTemplates.map(t => ({ ...t.toObject(), type: 'system', isPublic: true }))
   });
+}));
+
+// Product info by barcode, cached so repeat scans don't burn the lookup quotas
+const BARCODE_LOOKUP_TTL_MS = 24 * 60 * 60 * 1000;
+const barcodeLookupCache = new Map();
+
+// GameUPC's public demo key works on its test API; set GAMEUPC_API_KEY
+// (request one from the GameUPC author) to use the production API instead
+const GAMEUPC_BASE_URL = process.env.GAMEUPC_API_KEY
+  ? 'https://api.gameupc.com/v1'
+  : 'https://api.gameupc.com/test';
+const GAMEUPC_API_KEY = process.env.GAMEUPC_API_KEY || 'test_test_test_test_test';
+
+// BGG's XML API requires a registered application token; without it scans still get box art
+const BGG_API_TOKEN = process.env.BGG_API_TOKEN || '';
+
+// Each source resolves to { title, names, gameInfo, verified, candidates } or null (not found),
+// or throws (unavailable/rate limited). `names` are clean game names that can be matched exactly
+// against template names; `candidates` are the games the barcode could be when it isn't verified.
+const BARCODE_SOURCES = [
+  // GameUPC: crowdsourced board game barcodes linked to BoardGameGeek, covers European boxes
+  async (code) => {
+    const response = await fetch(`${GAMEUPC_BASE_URL}/upc/${encodeURIComponent(code)}`, {
+      headers: { Accept: 'application/json', 'x-api-key': GAMEUPC_API_KEY },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`GameUPC responded ${response.status}`);
+    const data = await response.json();
+    // Only trust BGG matches once the community verified them; otherwise they're just search hits
+    const verified = data?.bgg_info_status === 'verified';
+    const bggNames = verified
+      ? (data.bgg_info || []).map((item) => item.name)
+      : [];
+    const names = [...new Set([data?.name, ...bggNames].filter(Boolean))];
+    if (!names.length) return null;
+    const bggItem = pickGameUpcBggItem(data);
+    const gameInfo = bggItem ? sanitizeGameInfo({
+      bggId: bggItem.id,
+      imageUrl: bggItem.image_url,
+      thumbnailUrl: bggItem.thumbnail_url,
+      yearPublished: bggItem.published,
+    }) : null;
+    return { title: names[0], names, gameInfo, verified, candidates: listGameUpcCandidates(data) };
+  },
+  // UPCitemdb free trial: no key needed, ~100 lookups/day per IP, broad but noisy titles
+  async (code) => {
+    const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error(`UPCitemdb responded ${response.status}`);
+    const data = await response.json();
+    const title = data?.items?.[0]?.title;
+    return title ? { title, names: [], gameInfo: null, verified: false, candidates: [] } : null;
+  },
+];
+
+/**
+ * Fetch description, player counts and play time for a BGG game (needs BGG_API_TOKEN).
+ * @param {number} bggId
+ * @returns {Promise<Object|null>} Parsed details, or null when unavailable
+ */
+const fetchBggDetails = async (bggId) => {
+  if (!BGG_API_TOKEN || !bggId) return null;
+  try {
+    const response = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${encodeURIComponent(bggId)}`, {
+      headers: { Authorization: `Bearer ${BGG_API_TOKEN}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error(`BGG responded ${response.status}`);
+    return parseBggThing(await response.text());
+  } catch (error) {
+    console.warn('BGG details lookup failed:', error.message);
+    return null;
+  }
+};
+
+// GET /api/game-templates/barcode/:code - Look up product info for a barcode.
+// Requires login: BGG's API terms don't allow passing its data on to anonymous third parties.
+router.get('/barcode/:code', auth, catchAsync(async (req, res) => {
+  const code = String(req.params.code).trim();
+  if (!BARCODE_PATTERN.test(code)) {
+    return res.status(400).json({ error: 'Barcode must be an 8-14 digit code' });
+  }
+
+  const cached = barcodeLookupCache.get(code);
+  if (cached && cached.expires > Date.now()) {
+    return res.json({ code, ...cached.result });
+  }
+
+  let result = null;
+  let allSourcesAnswered = true;
+  for (const lookup of BARCODE_SOURCES) {
+    try {
+      result = await lookup(code);
+    } catch (error) {
+      console.warn('Barcode lookup failed:', error.message);
+      allSourcesAnswered = false;
+    }
+    if (result) break;
+  }
+
+  result = result || { title: null, names: [], gameInfo: null, verified: false, candidates: [] };
+  const bggDetails = await fetchBggDetails(result.gameInfo?.bggId);
+  if (bggDetails) {
+    // Missing BGG fields shouldn't wipe what GameUPC already provided
+    const knownDetails = Object.fromEntries(Object.entries(bggDetails).filter(([, value]) => value != null));
+    result.gameInfo = sanitizeGameInfo({ ...result.gameInfo, ...knownDetails });
+    result.details = {
+      description: bggDetails.description,
+      minPlayers: bggDetails.minPlayers,
+      maxPlayers: bggDetails.maxPlayers,
+    };
+  }
+  // Only remember a miss when every source actually answered
+  if (result.title || allSourcesAnswered) {
+    barcodeLookupCache.set(code, { result, expires: Date.now() + BARCODE_LOOKUP_TTL_MS });
+  }
+  res.json({ code, ...result });
 }));
 
 // GET /api/game-templates - Get all accessible templates (system + user's own)
@@ -43,10 +173,10 @@ router.get('/', auth, catchAsync(async (req, res) => {
   // Get system templates and user's own templates in parallel
   const [systemTemplates, userTemplates] = await Promise.all([
     SystemGameTemplate.find({ isActive: true })
-      .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown createdBy createdAt updatedAt')
+      .select('_id name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown barcodes gameInfo createdBy createdAt updatedAt')
       .sort({ name: 1 }),
     UserGameTemplate.find({ userId, approvedAsSystemTemplate: false })
-      .select('_id localId name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
+      .select('_id localId name targetNumber lowIsBetter gameCategory scoringFormula roundPattern maxRounds minPlayers maxPlayers hasDealerRotation hasForbiddenCall usageCount description descriptionMarkdown gameInfo approvedAsSystemTemplate systemTemplateId createdAt updatedAt')
       .sort({ name: 1 })
   ]);
 
@@ -76,6 +206,7 @@ router.post('/', auth, catchAsync(async (req, res) => {
       hasForbiddenCall,
       minPlayers,
       maxPlayers,
+      gameInfo,
     } = req.body;
     const userId = req.user._id;
 
@@ -126,7 +257,8 @@ router.post('/', auth, catchAsync(async (req, res) => {
       minPlayers: minPlayers ?? null,
       maxPlayers: maxPlayers ?? null,
       description: description || '',
-      descriptionMarkdown: descriptionMarkdown || ''
+      descriptionMarkdown: descriptionMarkdown || '',
+      gameInfo: sanitizeGameInfo(gameInfo),
     });
 
     await template.save();
@@ -155,6 +287,7 @@ router.put('/:id', auth, catchAsync(async (req, res) => {
       hasForbiddenCall,
       minPlayers,
       maxPlayers,
+      gameInfo,
     } = req.body;
     const userId = req.user._id;
 
@@ -178,6 +311,7 @@ router.put('/:id', auth, catchAsync(async (req, res) => {
     if (maxPlayers !== undefined) template.maxPlayers = maxPlayers;
     if (description !== undefined) template.description = description;
     if (descriptionMarkdown !== undefined) template.descriptionMarkdown = descriptionMarkdown;
+    if (gameInfo !== undefined) template.gameInfo = sanitizeGameInfo(gameInfo);
 
     await template.save();
 
@@ -252,6 +386,7 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
       maxPlayers: userTemplate.maxPlayers ?? null,
       description: userTemplate.description,
       descriptionMarkdown: descriptionMarkdown || userTemplate.descriptionMarkdown || '',
+      gameInfo: sanitizeGameInfo(userTemplate.gameInfo),
       suggestionNote: suggestionNote || '',
       status: 'pending'
     });
@@ -281,7 +416,17 @@ router.put('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
       descriptionMarkdown,
       minPlayers,
       maxPlayers,
+      barcodes,
+      gameInfo,
     } = req.body;
+
+    let normalizedBarcodes;
+    if (barcodes !== undefined) {
+      normalizedBarcodes = normalizeBarcodes(barcodes);
+      if (!normalizedBarcodes) {
+        return res.status(400).json({ error: 'Barcodes must be an array of 8-14 digit codes' });
+      }
+    }
 
     const isMongoId = mongoose.Types.ObjectId.isValid(id);
     let systemTemplate = null;
@@ -321,6 +466,8 @@ router.put('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
     if (descriptionMarkdown !== undefined) systemTemplate.descriptionMarkdown = descriptionMarkdown;
     if (minPlayers !== undefined) systemTemplate.minPlayers = minPlayers ?? null;
     if (maxPlayers !== undefined) systemTemplate.maxPlayers = maxPlayers ?? null;
+    if (normalizedBarcodes !== undefined) systemTemplate.barcodes = normalizedBarcodes;
+    if (gameInfo !== undefined) systemTemplate.gameInfo = sanitizeGameInfo(gameInfo);
 
     await systemTemplate.save();
 
@@ -345,6 +492,7 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
       suggestionNote,
       minPlayers,
       maxPlayers,
+      gameInfo,
     } = req.body;
     const userId = req.user._id;
 
@@ -398,6 +546,7 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
       maxPlayers: maxPlayers !== undefined ? maxPlayers : (systemTemplate.maxPlayers ?? null),
       description: description !== undefined ? description : systemTemplate.description,
       descriptionMarkdown: descriptionMarkdown !== undefined ? descriptionMarkdown : systemTemplate.descriptionMarkdown,
+      gameInfo: gameInfo !== undefined ? sanitizeGameInfo(gameInfo) : sanitizeGameInfo(systemTemplate.gameInfo),
       suggestionNote: suggestionNote || '',
       status: 'pending'
     });
@@ -480,6 +629,7 @@ router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(asy
       systemTemplate.maxPlayers = suggestion.maxPlayers ?? null;
       systemTemplate.description = suggestion.description;
       systemTemplate.descriptionMarkdown = suggestion.descriptionMarkdown;
+      systemTemplate.gameInfo = sanitizeGameInfo(suggestion.gameInfo);
       await systemTemplate.save();
     } else {
       // Create new system template
@@ -497,6 +647,7 @@ router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(asy
         maxPlayers: suggestion.maxPlayers ?? null,
         description: suggestion.description,
         descriptionMarkdown: suggestion.descriptionMarkdown || '',
+        gameInfo: sanitizeGameInfo(suggestion.gameInfo),
         createdBy: suggestion.userId,
         isActive: true
       });
