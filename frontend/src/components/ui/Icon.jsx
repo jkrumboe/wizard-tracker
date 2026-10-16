@@ -10,10 +10,10 @@ import React from 'react';
 import {
   Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
   ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
-  ChevronDown, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
+  ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
   Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Flashlight, Gamepad2, Home, Image,
   ImagePlus, Info, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
-  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
+  Minus, PackagePlus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
   Settings, Shield, ShieldCheck, Spade, Star, Swords, Table, Target, Trash2, TrendingDown,
   TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
 } from 'lucide-react';
@@ -21,10 +21,10 @@ import {
 const ICONS = {
   Activity, AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowLeftCircle, ArrowLeftRight,
   ArrowRight, ArrowUp, BarChart2, BarChart3, Bomb, Calendar, Camera, Check, CheckCircle2,
-  ChevronDown, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
+  ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, Crown, Cloud, Copy, CopyCheck, Database, Dices,
   Download, Edit, ExternalLink, Eye, EyeOff, File, FileText, Filter, Flashlight, Gamepad2, Home, Image,
   ImagePlus, Info, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
-  Minus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
+  Minus, PackagePlus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
   Settings, Shield, ShieldCheck, Spade, Star, Swords, Table, Target, Trash2, TrendingDown,
   TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
 };
@@ -73,6 +73,7 @@ export const FlashlightIcon = (props) => <Icon name="Flashlight" {...props} />;
 export const MenuIcon = (props) => <Icon name="Menu" {...props} />;
 export const XIcon = (props) => <Icon name="X" {...props} />;
 export const ChevronDownIcon = (props) => <Icon name="ChevronDown" {...props} />;
+export const CheckIcon = (props) => <Icon name="Check" {...props} />;
 export const ChevronUpIcon = (props) => <Icon name="ChevronUp" {...props} />;
 export const ChevronRightIcon = (props) => <Icon name="ChevronRight" {...props} />;
 export const LogOutIcon = (props) => <Icon name="LogOut" {...props} />;

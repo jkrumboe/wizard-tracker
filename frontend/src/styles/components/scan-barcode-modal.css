@@ -321,3 +321,31 @@
     border-color: var(--primary);
   }
 }
+
+.scan-create-new {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Scan button beside a name search field */
+.scan-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--primary);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .scan-icon-btn:hover {
+    border-color: var(--primary);
+  }
+}

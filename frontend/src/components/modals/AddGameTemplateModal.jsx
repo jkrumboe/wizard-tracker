@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { XIcon, MinusIcon, PlusIcon, UsersIcon, TrophyIcon, RefreshIcon, EyeIcon, EditIcon } from '@/components/ui/Icon';
@@ -130,6 +130,34 @@ const ToggleRow = ({ label, hint, checked, onChange }) => (
   </label>
 );
 
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Games an edition can belong to: same scoring family as the locked type
+const isCompatibleBase = (template, lockedType) => {
+  if (!template?.name) return false;
+  if (!lockedType) return true;
+  const category = template.gameCategory || 'table';
+  return lockedType === 'callAndMade' ? category === 'callAndMade' : category === 'table';
+};
+
+/**
+ * The existing game a typed name starts with, e.g. "Wizard Jubiläumsedition"
+ * starts with "Wizard". Names already written as "<game>: <edition>" are left alone.
+ * @returns {{ base: Object, editionName: string }|null}
+ */
+const findBaseGame = (name, games) => {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed.includes(':')) return null;
+  let best = null;
+  for (const game of games) {
+    const match = new RegExp(`^${escapeRegExp(game.name.trim())}[\\s\\-–—]+(.+)$`, 'iu').exec(trimmed);
+    if (match && (!best || game.name.length > best.base.name.length)) {
+      best = { base: game, editionName: match[1].trim() };
+    }
+  }
+  return best;
+};
+
 const ScoreValue = ({ value }) => (
   <span className={`agm-score ${value < 0 ? 'is-negative' : 'is-positive'}`}>
     {value > 0 ? `+${value}` : value}
@@ -155,6 +183,8 @@ const AddGameTemplateModal = ({
   prefill = null,
   // Make the minimum player count mandatory (scanned games need it to set up a game)
   requirePlayerCounts = false,
+  // The user's games; when given, a new game can be saved as an edition of one of them
+  existingGames = null,
 }) => {
   const [gameName, setGameName] = useState('');
   const [gameCategory, setGameCategory] = useState('table');
@@ -176,6 +206,12 @@ const AddGameTemplateModal = ({
   const [minPlayersInput, setMinPlayersInput] = useState('');
   const [maxPlayersInput, setMaxPlayersInput] = useState('');
 
+  // Saved as "<base game>: <edition name>", which lists it under the base game
+  const [isEdition, setIsEdition] = useState(false);
+  const [baseGameName, setBaseGameName] = useState('');
+  // The base game the user answered "separate game" for, so the question isn't asked again
+  const [dismissedBase, setDismissedBase] = useState(null);
+
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('settings'); // 'settings' or 'rules'
   const [showPreview, setShowPreview] = useState(false);
@@ -190,6 +226,36 @@ const AddGameTemplateModal = ({
   };
   const lockedType = editMode ? getInitialDataType() : templateType;
   const isScoreboard = lockedType ? lockedType === 'scoreboard' : scoreboardPicked;
+
+  const baseGames = useMemo(() => (
+    editMode || !existingGames
+      ? []
+      : existingGames
+        .filter((game) => isCompatibleBase(game, lockedType))
+        .sort((a, b) => a.name.localeCompare(b.name))
+  ), [editMode, existingGames, lockedType]);
+  const detectedBase = useMemo(() => findBaseGame(gameName, baseGames), [gameName, baseGames]);
+  const showEditionPrompt = !isEdition && detectedBase && detectedBase.base.name !== dismissedBase;
+  const baseGame = isEdition ? baseGames.find((game) => game.name === baseGameName) : null;
+
+  const handleEditionChange = (checked) => {
+    setIsEdition(checked);
+    setError('');
+    if (!checked) {
+      if (baseGameName && gameName.trim()) setGameName(`${baseGameName} ${gameName.trim()}`);
+      return;
+    }
+    const base = detectedBase?.base || baseGames[0];
+    setBaseGameName(base?.name || '');
+    if (detectedBase) setGameName(detectedBase.editionName);
+  };
+
+  // An edition is scored like its game, so it takes the game's type
+  useEffect(() => {
+    if (!baseGame || lockedType) return;
+    setGameCategory(baseGame.gameCategory || 'table');
+    setScoreboardPicked(baseGame.scoreEntryMode === 'twoSideGesture');
+  }, [baseGame, lockedType]);
 
   useEffect(() => {
     if (isOpen) {
@@ -238,6 +304,9 @@ const AddGameTemplateModal = ({
         setMaxPlayersInput(prefill?.maxPlayers == null ? '' : String(prefill.maxPlayers));
       }
       setScoreboardPicked(false);
+      setIsEdition(false);
+      setBaseGameName('');
+      setDismissedBase(null);
       setError('');
       setActiveTab('settings');
       setShowPreview(false);
@@ -252,12 +321,17 @@ const AddGameTemplateModal = ({
   }, [activeTab, editMode]);
 
   const handleSave = () => {
-    const trimmedName = gameName.trim();
+    const typedName = gameName.trim();
 
-    if (!trimmedName) {
-      setError(t('templateModal.enterGameNameError'));
+    if (!typedName) {
+      setError(t(isEdition ? 'templateModal.enterEditionNameError' : 'templateModal.enterGameNameError'));
       return;
     }
+    if (isEdition && !baseGameName) {
+      setError(t('templateModal.pickBaseGameError'));
+      return;
+    }
+    const trimmedName = isEdition ? `${baseGameName}: ${typedName}` : typedName;
 
     // Parse target number if provided (table games only)
     const target = gameCategory === 'table' && targetNumber.trim() ? Number.parseInt(targetNumber, 10) : null;
@@ -360,6 +434,10 @@ const AddGameTemplateModal = ({
   const scoringFormula = { baseCorrect, bonusPerTrick, penaltyPerDiff };
   const exampleCall = 2;
 
+  let editionAwarePlaceholder = t('templateModal.gameNamePlaceholder');
+  if (isEdition) editionAwarePlaceholder = t('templateModal.editionNamePlaceholder');
+  else if (isScoreboard) editionAwarePlaceholder = t('templateModal.scoreboardNamePlaceholder');
+
   useModalDismiss(isOpen, onClose);
   // Keep the dialog in the visible area above the iOS keyboard instead of letting the page pan
   const viewportRect = useVisualViewportRect(isOpen);
@@ -404,8 +482,40 @@ const AddGameTemplateModal = ({
           {activeTab === 'settings' && (
             <>
               <section className="agm-card">
+                {baseGames.length > 0 && (
+                  <label className={`agm-edition-check ${isEdition ? 'is-checked' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isEdition}
+                      onChange={(e) => handleEditionChange(e.target.checked)}
+                    />
+                    <span className="agm-toggle-text">
+                      <span className="agm-toggle-label">{t('templateModal.isEditionLabel')}</span>
+                      <span className="agm-hint">{t('templateModal.isEditionHint')}</span>
+                    </span>
+                  </label>
+                )}
+
+                {isEdition && (
+                  <div className="agm-field">
+                    <label htmlFor="base-game-select" className="agm-field-label">
+                      {t('templateModal.editionOfLabel')}
+                    </label>
+                    <select
+                      id="base-game-select"
+                      className="agm-input"
+                      value={baseGameName}
+                      onChange={(e) => { setBaseGameName(e.target.value); setError(''); }}
+                    >
+                      {baseGames.map((game) => (
+                        <option key={game.name} value={game.name}>{game.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <label htmlFor="game-name-input" className="agm-field-label">
-                  {t('templateModal.nameLabel')}
+                  {isEdition ? t('templateModal.editionNameLabel') : t('templateModal.nameLabel')}
                 </label>
                 <input
                   id="game-name-input"
@@ -416,14 +526,38 @@ const AddGameTemplateModal = ({
                     setError('');
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder={isScoreboard
-                    ? t('templateModal.scoreboardNamePlaceholder')
-                    : t('templateModal.gameNamePlaceholder')}
+                  placeholder={editionAwarePlaceholder}
                   className="agm-input"
                   autoFocus
                 />
 
-                {!lockedType && (
+                {isEdition && gameName.trim() && (
+                  <p className="agm-hint">
+                    {t('templateModal.editionSavedAs', { name: `${baseGameName}: ${gameName.trim()}` })}
+                  </p>
+                )}
+
+                {showEditionPrompt && (
+                  <div className="agm-edition-prompt" role="status">
+                    <p>
+                      {t('templateModal.editionPrompt', { game: detectedBase.base.name, name: gameName.trim() })}
+                    </p>
+                    <div className="agm-edition-prompt-actions">
+                      <button type="button" className="agm-edition-yes" onClick={() => handleEditionChange(true)}>
+                        {t('templateModal.editionPromptYes')}
+                      </button>
+                      <button
+                        type="button"
+                        className="agm-edition-no"
+                        onClick={() => setDismissedBase(detectedBase.base.name)}
+                      >
+                        {t('templateModal.editionPromptNo')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!lockedType && !isEdition && (
                   <div className="agm-field">
                     <span className="agm-field-label">{t('templateModal.typeLabel')}</span>
                     <Segmented

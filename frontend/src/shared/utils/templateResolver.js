@@ -1,6 +1,8 @@
 import gameTemplateService from '@/shared/api/gameTemplateService';
+import { queryClient, queryKeys } from '@/shared/api/queryClient';
 import { LocalTableGameTemplate } from '@/shared/api';
 import { BUILTIN_SYSTEM_TEMPLATES } from '@/shared/constants/gameTemplates';
+import { groupEditionTemplates, findEditionBySourceName } from '@/shared/utils/gameEditions';
 
 /**
  * Merge server system templates with built-ins by name, keeping builtin defaults
@@ -28,6 +30,8 @@ export const mergeSystemTemplates = (builtins, serverTemplates) => {
       hasForbiddenCall: serverTemplate.hasForbiddenCall !== undefined ? serverTemplate.hasForbiddenCall : builtin.hasForbiddenCall,
       barcodes: [...new Set([...(builtin.barcodes || []), ...(serverTemplate.barcodes || [])])],
       gameInfo: serverTemplate.gameInfo || builtin.gameInfo || null,
+      editions: serverTemplate.editions?.length ? serverTemplate.editions : builtin.editions,
+      defaultEdition: serverTemplate.defaultEdition || builtin.defaultEdition,
     };
   });
 
@@ -42,7 +46,11 @@ export const mergeSystemTemplates = (builtins, serverTemplates) => {
  */
 export const loadSystemTemplates = async () => {
   try {
-    const serverTemplates = await gameTemplateService.getSystemTemplates();
+    // Cached and de-duplicated: every page using useGameTemplates loads these on mount
+    const serverTemplates = await queryClient.fetchQuery({
+      queryKey: queryKeys.systemTemplates,
+      queryFn: gameTemplateService.getSystemTemplates,
+    });
     return mergeSystemTemplates(BUILTIN_SYSTEM_TEMPLATES, serverTemplates);
   } catch (error) {
     console.warn('Using built-in system templates (offline):', error);
@@ -76,7 +84,8 @@ export const isLocalVariant = (localTemplate, systemTemplate) => {
  * Load every template the user can start, one per name: system templates plus
  * local user templates. A local customised copy of a system template replaces
  * it (marked `isVariant`, with the original as `systemTemplate`); an unchanged
- * local copy is skipped.
+ * local copy is skipped. "<game>: <edition>" templates are listed as editions of
+ * their game (see gameEditions.groupEditionTemplates).
  * @returns {Promise<Array>}
  */
 export const loadAllTemplates = async () => {
@@ -97,16 +106,18 @@ export const loadAllTemplates = async () => {
           // Keep shared box art and barcodes the local copy doesn't have
           gameInfo: local.gameInfo || system.gameInfo || null,
           barcodes: system.barcodes,
+          editions: local.editions || system.editions,
+          defaultEdition: local.defaultEdition || system.defaultEdition,
           isVariant: true,
           systemTemplate: system,
         });
       }
     });
 
-  return [
+  return groupEditionTemplates([
     ...systemTemplates.map((system) => variantsByName.get(system.name) || system),
     ...localOnly,
-  ];
+  ]);
 };
 
 /**
@@ -122,13 +133,28 @@ export const isScoreboardTemplate = (template) => {
 };
 
 /**
- * Find a startable template by name (case-insensitive).
+ * Find a startable game by name (case-insensitive). An edition's name
+ * ("Wizard: Jubiläumsedition") resolves to its game plus that edition.
  * @param {string} name
- * @returns {Promise<Object|null>}
+ * @returns {Promise<{ template: Object, edition: Object|null }|null>}
  */
-export const resolveTemplateByName = async (name) => {
+export const resolveTemplateEdition = async (name) => {
   const normalized = (name || '').trim().toLowerCase();
   if (!normalized) return null;
   const templates = await loadAllTemplates();
-  return templates.find((t) => (t.name || '').trim().toLowerCase() === normalized) || null;
+  const template = templates.find((t) => (t.name || '').trim().toLowerCase() === normalized);
+  if (template) return { template, edition: null };
+
+  for (const base of templates) {
+    const source = (base.editionSources || []).find((t) => (t.name || '').trim().toLowerCase() === normalized);
+    if (source) return { template: base, edition: findEditionBySourceName(base, source.name) };
+  }
+  return null;
 };
+
+/**
+ * Find a startable template by name (case-insensitive); edition names resolve to their game.
+ * @param {string} name
+ * @returns {Promise<Object|null>}
+ */
+export const resolveTemplateByName = async (name) => (await resolveTemplateEdition(name))?.template || null;

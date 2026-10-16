@@ -874,3 +874,76 @@
     transition: none;
   }
 }
+
+/* "This is an edition of another game" */
+.agm-edition-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  cursor: pointer;
+}
+
+.agm-edition-check.is-checked {
+  border-style: solid;
+  border-color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+.agm-edition-check input {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Asked when the typed name starts with one of the user's games */
+.agm-edition-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: 0.75rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: var(--primary-subtle);
+}
+
+.agm-edition-prompt p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.agm-edition-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.agm-edition-yes,
+.agm-edition-no {
+  flex: 1 1 auto;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.agm-edition-yes {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+.agm-edition-no {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}

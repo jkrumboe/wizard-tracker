@@ -28,7 +28,7 @@ export function GameStateProvider({ children }) {
     autoUploadStatus: null, // 'uploading', 'success', 'warning', null
     autoUploadMessage: null, // Message to show user
     // Template configuration for Call & Made games
-    templateConfig: null, // { scoringFormula, roundPattern, maxRounds, hasDealerRotation, hasForbiddenCall, templateName }
+    templateConfig: null, // { scoringFormula, roundPattern, maxRounds, hasDealerRotation, hasForbiddenCall, templateName, edition, specialCards }
   })
 
   // Mirror of the live state so unmount/unload handlers can persist the game
@@ -304,7 +304,7 @@ export function GameStateProvider({ children }) {
     });
   }, [])
 
-  // Update game settings (players joining, player order, starting dealer, max rounds).
+  // Update game settings (players joining, player order, starting dealer, max rounds, edition).
   // `newPlayers` are appended after the existing players; `playerOrder` holds indices
   // into that combined list; `startingDealerIndex` is the round-1 dealer's seat in
   // the *new* order.
@@ -357,7 +357,11 @@ export function GameStateProvider({ children }) {
         players: updatedPlayers,
         maxRounds: settings.maxRounds,
         roundData: updatedRoundData,
-        startingDealerIndex
+        startingDealerIndex,
+        // Switching edition only swaps the special cards; the game stays under its template
+        templateConfig: settings.editionConfig
+          ? { ...prevState.templateConfig, ...settings.editionConfig }
+          : prevState.templateConfig
       };
     });
   }, [])

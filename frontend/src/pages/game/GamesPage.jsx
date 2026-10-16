@@ -165,7 +165,7 @@ const GamesPage = () => {
 
   const typeOptions = [
     { value: 'all',        label: t('gamesPage.allTypes') },
-    { value: 'wizard',     label: 'Wizard' },
+    { value: 'wizard',     label: t('gamesPage.callAndMadeGames') },
     { value: 'table',      label: t('gamesPage.tableGames') },
     { value: 'scoreboard', label: t('gamesPage.scoreboardGames') },
   ];

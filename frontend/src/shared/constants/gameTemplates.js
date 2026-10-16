@@ -1,5 +1,18 @@
 import { WIZARD_FORMULA } from '../utils/scoringFormulas';
 
+const WIZARD_20_SPECIAL_CARDS = ['bomb', 'cloud', 'dragon', 'fairy', 'juggler', 'werewolf'];
+const WIZARD_25_SPECIAL_CARDS = [...WIZARD_20_SPECIAL_CARDS, 'shapeshifter'];
+const WIZARD_30_SPECIAL_CARDS = [...WIZARD_25_SPECIAL_CARDS, 'vampire', 'witch'];
+
+// Editions of Wizard. All are played and listed as "Wizard"; the edition only
+// decides which special cards are in the deck (see constants/specialCards.js).
+export const WIZARD_EDITIONS = [
+  { id: 'classic', nameKey: 'editions.wizard.classic', specialCards: [] },
+  { id: 'anniversary20', nameKey: 'editions.wizard.anniversary20', specialCards: WIZARD_20_SPECIAL_CARDS },
+  { id: 'anniversary25', nameKey: 'editions.wizard.anniversary25', specialCards: WIZARD_25_SPECIAL_CARDS },
+  { id: 'anniversary30', nameKey: 'editions.wizard.anniversary30', specialCards: WIZARD_30_SPECIAL_CARDS },
+];
+
 export const WIZARD_TEMPLATE = {
   id: '__wizard__',
   name: 'Wizard',
@@ -13,6 +26,8 @@ export const WIZARD_TEMPLATE = {
   minPlayers: 3,
   maxPlayers: 6,
   description: 'The classic Wizard card game',
+  editions: WIZARD_EDITIONS,
+  defaultEdition: 'classic',
 };
 
 // Built-in system templates that are always available offline.

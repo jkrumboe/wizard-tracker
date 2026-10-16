@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Icon from '@/components/ui/Icon';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import FindGameInfoModal from '@/components/modals/FindGameInfoModal';
+import { getTemplateGameInfo } from '@/shared/utils/gameInfoStore';
 import { LocalTableGameTemplate } from '@/shared/api';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { useUser } from '@/shared/hooks/useUser';
@@ -30,12 +32,15 @@ const GameTypeManageActions = ({ template, children }) => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [editingSystemTemplate, setEditingSystemTemplate] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showFindInfo, setShowFindInfo] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const isLocal = isLocalTemplate(template);
   const isSystem = !isLocal;
   const canEditSystem = isSystem && (isAdmin || (user && template.createdBy === user.id));
   const canSync = isLocal && !template.isSynced && !template.cloudId && Boolean(user);
+  // Games added without a scan can look their box art up by name (lookups need an account)
+  const canFindInfo = Boolean(user) && !getTemplateGameInfo(template);
 
   const closeEdit = () => {
     setEditingTemplate(null);
@@ -162,8 +167,14 @@ const GameTypeManageActions = ({ template, children }) => {
   );
 
   // Suggest and delete need a local template, sync implies one
-  const moreActions = isLocal ? (
+  const moreActions = isLocal || canFindInfo ? (
     <div className="game-type-manage">
+      {canFindInfo && (
+        <button type="button" className="game-type-pill" onClick={() => setShowFindInfo(true)}>
+          <Icon name="ImagePlus" size={16} aria-hidden="true" />
+          <span>{t('gameType.findBoxArt')}</span>
+        </button>
+      )}
       {canSync && (
         <button type="button" className="game-type-pill" onClick={() => void handleSyncToCloud()} disabled={busy}>
           <Icon name="Cloud" size={16} aria-hidden="true" />
@@ -205,6 +216,12 @@ const GameTypeManageActions = ({ template, children }) => {
         initialData={editingSystemTemplate || editingTemplate}
         isSystemTemplate={Boolean(editingSystemTemplate)}
         isAdmin={isAdmin}
+      />
+
+      <FindGameInfoModal
+        isOpen={showFindInfo}
+        onClose={() => setShowFindInfo(false)}
+        template={template}
       />
 
       <DeleteConfirmationModal

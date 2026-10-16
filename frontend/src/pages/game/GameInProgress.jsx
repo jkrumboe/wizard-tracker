@@ -28,6 +28,7 @@ import { PlayerAvatar } from "@/components/common/PlayerAvatar"
 import { usePlayerAvatars, getPlayerAvatar } from "@/shared/hooks/usePlayerAvatars"
 import { GameHighlights } from "@/components/game/GameHighlights"
 import { computeHighlights } from "@/shared/utils/gameHighlights"
+import { getTrackedSpecialCards } from "@/shared/utils/gameEditions"
 
 const GameInProgress = () => {
   useFixedViewportPage() // Only the round list scrolls; the shell stays put
@@ -61,8 +62,12 @@ const GameInProgress = () => {
   const [statsSubTab, setStatsSubTab] = useState('details') // 'details', 'chart' or 'table'
   const [isRecovering, setIsRecovering] = useState(false) // Track recovery state
   const [isLandscape, setIsLandscape] = useState(globalThis.matchMedia('(orientation: landscape)').matches)
-  const [reduceTrickCount, setReduceTrickCount] = useState(false) // For cards where current trick doesn't count
-  const [increaseCallMax, setIncreaseCallMax] = useState(false) // For Wolke - allows one more call than round max
+  const [bombPlayed, setBombPlayed] = useState(false)
+  const [cloudPlayed, setCloudPlayed] = useState(false)
+  // Only the special cards in this edition's deck get a switch
+  const trackedSpecialCards = getTrackedSpecialCards(gameState.templateConfig)
+  const reduceTrickCount = bombPlayed && trackedSpecialCards.includes('bomb') // Bombe: one trick doesn't count
+  const increaseCallMax = cloudPlayed && trackedSpecialCards.includes('cloud') // Wolke: allows one more call than round max
   const playerAvatars = usePlayerAvatars(gameState.players)
   
   // Auto-pause when leaving the game screen or closing the tab.
@@ -96,8 +101,8 @@ const GameInProgress = () => {
   
   // Reset trick count reducer when round changes
   useEffect(() => {
-    setReduceTrickCount(false)
-    setIncreaseCallMax(false)
+    setBombPlayed(false)
+    setCloudPlayed(false)
   }, [gameState.currentRound])
   
   // When Wolke is disabled, clamp any calls that exceed the normal round max
@@ -963,20 +968,24 @@ const GameInProgress = () => {
       )}
 
       {/* Trick Count Reducer and Call Max Increaser - Only show when game tab is active */}
-      {activeTab === 'game' && (
+      {activeTab === 'game' && trackedSpecialCards.length > 0 && (
         <div className="trick-reducer-container">
-          <SpecialCardToggle
-            variant="bomb"
-            active={reduceTrickCount}
-            label={t('gameInProgress.bombLabel')}
-            onToggle={setReduceTrickCount}
-          />
-          <SpecialCardToggle
-            variant="cloud"
-            active={increaseCallMax}
-            label={t('gameInProgress.cloudLabel')}
-            onToggle={setIncreaseCallMax}
-          />
+          {trackedSpecialCards.includes('bomb') && (
+            <SpecialCardToggle
+              variant="bomb"
+              active={reduceTrickCount}
+              label={t('gameInProgress.bombLabel')}
+              onToggle={setBombPlayed}
+            />
+          )}
+          {trackedSpecialCards.includes('cloud') && (
+            <SpecialCardToggle
+              variant="cloud"
+              active={increaseCallMax}
+              label={t('gameInProgress.cloudLabel')}
+              onToggle={setCloudPlayed}
+            />
+          )}
         </div>
       )}
 

@@ -8,43 +8,39 @@ import { useUser } from '@/shared/hooks/useUser';
 import { loadAllTemplates } from '@/shared/utils/templateResolver';
 import { startBarcodeScanner, supportsTorch, setTorch } from '@/shared/utils/barcodeScanner';
 import {
-  findTemplateByBarcode,
+  findStartForBarcode,
   isValidBarcode,
   linkBarcode,
   normalizeBarcode,
 } from '@/shared/utils/barcodeTemplateMap';
-import { getTemplateGameInfo, safeImageUrl, saveGameInfo } from '@/shared/utils/gameInfoStore';
+import { getTemplateGameInfo, safeImageUrl } from '@/shared/utils/gameInfoStore';
+import { attachGameInfo, isSystemTemplate, MAX_DESCRIPTION_LENGTH } from '@/shared/utils/attachGameInfo';
 import '@/styles/components/modal.css';
 import '@/styles/components/scan-barcode-modal.css';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
-
-// Templates stored on the server (or built-ins the server knows) can carry shared barcodes
-const isSystemTemplate = (template) => template.type === 'system' || Boolean(template.isBuiltin);
+import GameMatchPicker, { GameCandidate } from '@/components/game/GameMatchPicker';
 
 // Lowercase and drop spaces/punctuation so "FLIP-7" and "Flip 7" compare equal
 const squash = (text) => String(text).toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 
-// BGG descriptions can be long; the template details view only needs the gist
-const MAX_DESCRIPTION_LENGTH = 2000;
+// Templates plus the "<game>: <edition>" templates folded into them, for name
+// lookups: picking an edition opens its game with that edition preselected
+const withEditions = (templates) => templates.flatMap((tpl) => [tpl, ...(tpl.editionSources || [])]);
 
-/**
- * Attach box art from a barcode lookup to a template that has none yet: on the
- * template itself for local templates (so it syncs), and on this device for all.
- */
-const attachGameInfo = (template, gameInfo) => {
-  if (!gameInfo || getTemplateGameInfo(template)) return;
-  saveGameInfo(template.name, gameInfo);
-  if (template.id && LocalTableGameTemplate.getTemplate(template.id)) {
-    LocalTableGameTemplate.updateTemplate(template.id, template.name, { gameInfo });
-  }
-};
+const MAX_LOCAL_MATCHES = 5;
 
 /**
  * Scan a game box barcode and jump to that game's setup page.
  * Unknown barcodes can be linked to a game once and are recognized from then on.
+ *
+ * In 'search' mode (adding a game type) the game is looked up by name instead:
+ * the user's own games and online matches are listed, and picking one works like
+ * a scan result (existing game opens, a new one is set up prefilled). Creating a
+ * game from scratch still offers the online matches for its name, so it can get
+ * box art and info without a scan.
  */
-const ScanBarcodeModal = ({ isOpen, onClose }) => {
+const ScanBarcodeModal = ({ isOpen, onClose, mode = 'scan', templateType = null }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useUser();
@@ -58,7 +54,9 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
   // Bumped when the modal closes or scanning restarts so stale lookups don't navigate
   const lookupSessionRef = useRef(0);
 
-  const [step, setStep] = useState('scan'); // 'scan' | 'lookup' | 'unknown'
+  const isSearchMode = mode === 'search';
+  // 'scan' | 'lookup' | 'unknown' | 'search' | 'match' (online matches for a game created from scratch)
+  const [step, setStep] = useState(isSearchMode ? 'search' : 'scan');
   const [scanError, setScanError] = useState(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
@@ -73,6 +71,10 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
   const [newGameName, setNewGameName] = useState('');
   // A scanned game the user is setting up as a new game type: { prefill, gameInfo }
   const [newGameDraft, setNewGameDraft] = useState(null);
+  // Name lookup ('search' mode)
+  const [gameQuery, setGameQuery] = useState('');
+  // The name of a game being created from scratch, while its online matches are shown
+  const [matchName, setMatchName] = useState('');
 
   const stopScanner = () => {
     cameraSessionRef.current += 1;
@@ -82,10 +84,11 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     setTorchOn(false);
   };
 
-  const goToTemplate = (template) => {
+  // `startName` may be an edition's name, so setup opens its game with that edition
+  const goToTemplate = (template, startName = template.name) => {
     stopScanner();
     onClose();
-    navigate(`/start?template=${encodeURIComponent(template.name)}`, { state: { fromScan: true } });
+    navigate(`/start?template=${encodeURIComponent(startName)}`, { state: { fromScan: true } });
   };
 
   const handleCode = async (rawCode) => {
@@ -95,15 +98,16 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
 
     const lookupSession = lookupSessionRef.current;
     const allTemplates = await templatesPromiseRef.current;
-    const match = findTemplateByBarcode(code, allTemplates);
-    if (match) {
+    const start = findStartForBarcode(code, allTemplates);
+    if (start) {
+      const match = start.template;
       // Games linked before box art existed pick it up in the background (lookups are cached)
       if (!getTemplateGameInfo(match)) {
         void gameTemplateService.lookupBarcodeProduct(code)
           .then((found) => attachGameInfo(match, found?.gameInfo))
           .catch((error) => console.warn('Could not attach box art:', error));
       }
-      goToTemplate(match);
+      goToTemplate(match, start.startName);
       return;
     }
     setTemplates(allTemplates);
@@ -120,7 +124,7 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     // Unverified GameUPC results are only guesses, so those show the candidates instead.
     const isSure = found?.verified || !found?.candidates?.length;
     const productNames = new Set([...(found?.names || []), found?.title].filter(Boolean).map(squash));
-    const exact = isSure && allTemplates.find((tpl) => tpl.name && productNames.has(squash(tpl.name)));
+    const exact = isSure && withEditions(allTemplates).find((tpl) => tpl.name && productNames.has(squash(tpl.name)));
     if (exact) {
       linkBarcode(code, exact.name);
       attachGameInfo(exact, found.gameInfo);
@@ -165,15 +169,19 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
   // Reset and load templates whenever the modal opens
   useEffect(() => {
     if (!isOpen) return undefined;
-    setStep('scan');
+    setStep(isSearchMode ? 'search' : 'scan');
     setManualCode('');
     setManualError('');
     setScannedCode('');
     setSearch('');
     setNewGameDraft(null);
+    setGameQuery('');
+    setMatchName('');
     templatesPromiseRef.current = loadAllTemplates();
+    // The name lookup lists your games as you type, so it needs them right away
+    if (isSearchMode) void templatesPromiseRef.current.then(setTemplates);
     return () => { lookupSessionRef.current += 1; };
-  }, [isOpen]);
+  }, [isOpen, isSearchMode]);
 
   // Run the camera while the scan step is shown. This runs after the <video> is
   // mounted, so "scan again" (coming back from another step) gets a live picture.
@@ -206,16 +214,16 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     void handleCode(manualCode);
   };
 
-  const handleLinkTemplate = async (template, gameInfo = product?.gameInfo) => {
-    linkBarcode(scannedCode, template.name);
-    attachGameInfo(template, gameInfo);
+  const handleLinkTemplate = async (template, gameInfo = product?.gameInfo, details = product?.details || {}) => {
+    // Name lookups have no barcode to remember, only box art
+    if (scannedCode) linkBarcode(scannedCode, template.name);
+    attachGameInfo(template, gameInfo, details);
 
-    if (isAdmin && shareWithEveryone && isSystemTemplate(template)) {
+    if (scannedCode && isAdmin && shareWithEveryone && isSystemTemplate(template)) {
       try {
+        // Box art is already shared by attachGameInfo
         const barcodes = [...new Set([...(template.barcodes || []), scannedCode])];
-        const update = { barcodes };
-        if (!template.gameInfo && gameInfo) update.gameInfo = gameInfo;
-        await gameTemplateService.updateSystemTemplate(template._id, update);
+        await gameTemplateService.updateSystemTemplate(template._id, { barcodes });
       } catch (error) {
         // The device link is saved either way, so the scan still works here
         console.warn('Could not share barcode with everyone:', error);
@@ -231,9 +239,9 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
    * with whatever the lookup found.
    */
   const openScannedGame = (name, gameInfo, details = {}) => {
-    const existing = templates.find((tpl) => squash(tpl.name) === squash(name));
+    const existing = withEditions(templates).find((tpl) => squash(tpl.name) === squash(name));
     if (existing) {
-      void handleLinkTemplate(existing, gameInfo);
+      void handleLinkTemplate(existing, gameInfo, details);
       return;
     }
 
@@ -250,7 +258,7 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
 
   const handleSaveNewGame = (name, settings) => {
     // The user may rename the game in the form; an existing game with that name gets the barcode instead
-    const existing = templates.find((tpl) => squash(tpl.name) === squash(name));
+    const existing = withEditions(templates).find((tpl) => squash(tpl.name) === squash(name));
     if (existing) {
       setNewGameDraft(null);
       void handleLinkTemplate(existing, newGameDraft?.gameInfo);
@@ -260,7 +268,7 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
       ...settings,
       gameInfo: newGameDraft?.gameInfo || null,
     });
-    linkBarcode(scannedCode, name);
+    if (scannedCode) linkBarcode(scannedCode, name);
     globalThis.dispatchEvent(new CustomEvent('templateCreated', { detail: { templateName: name, settings } }));
     setNewGameDraft(null);
     goToTemplate(LocalTableGameTemplate.getTemplate(templateId));
@@ -281,6 +289,28 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     );
   };
 
+  // Nothing matched (or the user wants their own version): first offer the online
+  // matches for the typed name so the new game can still get box art and info
+  const handleCreateFromScratch = () => {
+    const name = gameQuery.trim();
+    if (!name) return;
+    if (!user) {
+      openScannedGame(name, null);
+      return;
+    }
+    setMatchName(name);
+    setStep('match');
+  };
+
+  // The game keeps the name the user typed (it may be their own edition); the match adds art and info
+  const handlePickMatch = (match) => openScannedGame(matchName, match.gameInfo, match.details || {});
+  const handleSkipMatch = () => openScannedGame(matchName, null);
+
+  const handleBackToSearch = () => {
+    setMatchName('');
+    setStep('search');
+  };
+
   const handleScanAgain = () => {
     lookupSessionRef.current += 1;
     setScannedCode('');
@@ -297,13 +327,25 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
 
   // When the match isn't verified, offer the games the barcode could be
   const candidates = product && !product.verified ? product.candidates || [] : [];
-  const templateNames = useMemo(() => new Set(templates.map((tpl) => squash(tpl.name))), [templates]);
+  const templateNames = useMemo(() => new Set(withEditions(templates).map((tpl) => squash(tpl.name))), [templates]);
 
   const filteredTemplates = useMemo(() => {
     const query = search.trim().toLowerCase();
     const sorted = [...templates].sort((a, b) => a.name.localeCompare(b.name));
     return query ? sorted.filter((tpl) => tpl.name.toLowerCase().includes(query)) : sorted;
   }, [templates, search]);
+
+  // Your games matching the typed name, names starting with it first
+  const localMatches = useMemo(() => {
+    const query = squash(gameQuery);
+    if (!query) return [];
+    return templates
+      .filter((tpl) => tpl.name && squash(tpl.name).includes(query))
+      .sort((a, b) => Number(!squash(a.name).startsWith(query)) - Number(!squash(b.name).startsWith(query))
+        || a.name.localeCompare(b.name))
+      .slice(0, MAX_LOCAL_MATCHES);
+  }, [templates, gameQuery]);
+  const hasExactLocalMatch = localMatches.some((tpl) => squash(tpl.name) === squash(gameQuery));
 
   useModalDismiss(isOpen, handleClose);
 
@@ -313,21 +355,33 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
     return (
       <AddGameTemplateModal
         isOpen
-        onClose={() => setNewGameDraft(null)}
+        onClose={() => {
+          setNewGameDraft(null);
+          // The match step would skip straight back to this form when nothing matched
+          if (step === 'match') handleBackToSearch();
+        }}
         onSave={handleSaveNewGame}
         prefill={newGameDraft.prefill}
-        requirePlayerCounts
+        templateType={templateType}
+        requirePlayerCounts={!isSearchMode}
+        existingGames={templates}
       />
     );
   }
+
+  const title = {
+    scan: t('scanBarcode.title'),
+    search: t('scanBarcode.findGameTitle'),
+    match: t('scanBarcode.matchTitle'),
+  }[step] || t('scanBarcode.unknownTitle');
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-container scan-barcode-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>
-            <ScanBarcodeIcon size={20} />
-            {step === 'scan' ? t('scanBarcode.title') : t('scanBarcode.unknownTitle')}
+            {isSearchMode ? <PlusIcon size={20} /> : <ScanBarcodeIcon size={20} />}
+            {title}
           </h2>
           <button className="close-btn" onClick={handleClose} aria-label={t('common.close')}>
             <XIcon size={20} />
@@ -386,6 +440,78 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
             </>
           )}
 
+          {step === 'search' && (
+            <div className="scan-unknown">
+              <p>{t('scanBarcode.findGameDescription')}</p>
+              <form
+                className="scan-search"
+                role="search"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // Enter opens your game with that exact name, otherwise starts a new one
+                  const exact = localMatches.find((tpl) => squash(tpl.name) === squash(gameQuery));
+                  if (exact) goToTemplate(exact);
+                  else handleCreateFromScratch();
+                }}
+              >
+                <SearchIcon size={16} />
+                <input
+                  type="search"
+                  autoComplete="off"
+                  autoFocus
+                  aria-label={t('scanBarcode.findGamePlaceholder')}
+                  placeholder={t('scanBarcode.findGamePlaceholder')}
+                  value={gameQuery}
+                  onChange={(e) => setGameQuery(e.target.value)}
+                />
+              </form>
+
+              {localMatches.length > 0 && (
+                <div className="scan-candidates">
+                  <p className="scan-candidates-title">{t('scanBarcode.yourGames')}</p>
+                  <div className="scan-template-list">
+                    {localMatches.map((template) => (
+                      <button
+                        key={template._id || template.id || template.name}
+                        type="button"
+                        className="scan-template-item"
+                        onClick={() => goToTemplate(template)}
+                      >
+                        {template.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {user && (
+                <GameMatchPicker
+                  query={gameQuery}
+                  title={t('scanBarcode.onlineResults')}
+                  isInYourGames={(name) => templateNames.has(squash(name))}
+                  onPick={(result) => openScannedGame(result.name, result.gameInfo, result.details || {})}
+                  // No online matches is fine here: your games and "create" are still listed
+                  onNoMatch={() => {}}
+                />
+              )}
+
+              {gameQuery.trim() && !hasExactLocalMatch && (
+                <button type="button" className="scan-template-item scan-create-new" onClick={handleCreateFromScratch}>
+                  <PlusIcon size={16} />
+                  {t('scanBarcode.createNamed', { name: gameQuery.trim() })}
+                </button>
+              )}
+            </div>
+          )}
+
+          {step === 'match' && (
+            <div className="scan-unknown">
+              <p>{t('scanBarcode.matchDescription', { name: matchName })}</p>
+              {/* Without a match there is nothing to pick, so go straight to the new game form */}
+              <GameMatchPicker query={matchName} onPick={handlePickMatch} onNoMatch={handleSkipMatch} />
+            </div>
+          )}
+
           {step === 'lookup' && (
             <p className="loading-message" role="status">
               {t('scanBarcode.lookingUp', { code: scannedCode })}
@@ -401,33 +527,14 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
                 <div className="scan-candidates">
                   <p className="scan-candidates-title">{t('scanBarcode.candidatesTitle')}</p>
                   <div className="scan-candidate-list">
-                    {candidates.map((candidate) => {
-                      const thumbnail = safeImageUrl(candidate.gameInfo?.thumbnailUrl);
-                      const inYourGames = templateNames.has(squash(candidate.name));
-                      return (
-                        <button
-                          key={candidate.gameInfo?.bggId || candidate.name}
-                          type="button"
-                          className="scan-candidate"
-                          onClick={() => handlePickCandidate(candidate)}
-                        >
-                          {thumbnail ? (
-                            <img src={thumbnail} alt="" loading="lazy" referrerPolicy="no-referrer" />
-                          ) : (
-                            <span className="scan-candidate-placeholder" aria-hidden="true" />
-                          )}
-                          <span className="scan-candidate-text">
-                            <span className="scan-candidate-name">{candidate.name}</span>
-                            <span className="scan-candidate-meta">
-                              {[
-                                candidate.gameInfo?.yearPublished,
-                                inYourGames && t('scanBarcode.inYourGames'),
-                              ].filter(Boolean).join(' · ')}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
+                    {candidates.map((candidate) => (
+                      <GameCandidate
+                        key={candidate.gameInfo?.bggId || candidate.name}
+                        candidate={candidate}
+                        inYourGames={templateNames.has(squash(candidate.name))}
+                        onPick={() => handlePickCandidate(candidate)}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -499,6 +606,17 @@ const ScanBarcodeModal = ({ isOpen, onClose }) => {
             </div>
           )}
         </div>
+
+        {step === 'match' && (
+          <div className="modal-actions">
+            <button type="button" onClick={handleBackToSearch} className="cancel-button">
+              {t('common.back')}
+            </button>
+            <button type="button" onClick={handleSkipMatch} className="cancel-button">
+              {t('scanBarcode.skipMatch')}
+            </button>
+          </div>
+        )}
 
         {step === 'unknown' && (
           <div className="modal-actions">

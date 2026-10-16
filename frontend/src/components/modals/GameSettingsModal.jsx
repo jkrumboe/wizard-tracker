@@ -11,6 +11,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useVisualViewportRect } from '@/shared/hooks/useVisualViewportRect';
 import { useSortableRow, useSortableRowSensors } from '@/shared/hooks/useSortableRow';
+import EditionPicker from '@/components/game/EditionPicker';
+import { getTemplateEditions, findEdition, buildEditionConfig } from '@/shared/utils/gameEditions';
 import '@/styles/modals/gameSettingsModal.css';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 
@@ -95,6 +97,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
   const [dealerId, setDealerId] = useState(null);
   const [newName, setNewName] = useState('');
   const [nameError, setNameError] = useState('');
+  const [editionId, setEditionId] = useState(null);
   const viewportRect = useVisualViewportRect(isOpen);
 
   const sensors = useSortableRowSensors();
@@ -108,6 +111,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
     setNewPlayers([]);
     setNewName('');
     setNameError('');
+    setEditionId(gameState.templateConfig?.edition ?? null);
     setOrder(gameState.players.map((p) => p.id));
     const n = gameState.players.length;
     const round = (Number.parseInt(gameState.currentRound, 10) || 1) - 1;
@@ -136,6 +140,9 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
   const standardRounds = Math.min(MAX_ROUNDS_LIMIT, templateRounds || deckRounds);
   const minRounds = Math.max(1, currentRound);
   const exceedsDeck = !templateRounds && maxRounds > deckRounds;
+  // Games started before templates were recorded are Wizard games
+  const editions = getTemplateEditions(gameState.templateConfig?.templateName || 'Wizard');
+  const editionChanged = editionId !== (gameState.templateConfig?.edition ?? null);
 
   const dealerSeat = Math.max(0, orderedPlayers.findIndex((p) => p.id === dealerId));
   const callerSeat = playerCount > 0 ? (dealerSeat + 1) % playerCount : 0;
@@ -150,6 +157,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
     : 0;
   const isDirty =
     newPlayers.length > 0 ||
+    editionChanged ||
     maxRounds !== (Number.parseInt(gameState.maxRounds, 10) || 1) ||
     order.some((id, seat) => id !== existingPlayers[seat]?.id) ||
     (showRoles && dealerSeat !== initialDealerSeat);
@@ -205,6 +213,7 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
       playerOrder: order.map((id) => indexById.get(id)),
       // Store the round-1 dealer so rotation lands on the chosen dealer this round
       startingDealerIndex: playerCount > 0 ? mod(dealerSeat - roundIndex, playerCount) : 0,
+      editionConfig: editionChanged ? buildEditionConfig(findEdition(editions, editionId)) : null,
     });
     onClose();
   };
@@ -292,6 +301,20 @@ const GameSettingsModal = ({ isOpen, onClose, gameState, onUpdateSettings }) => 
               </p>
             )}
           </section>
+
+          {/* Edition: decides which special card switches the game shows */}
+          {editions.length > 0 && (
+            <section className="gs-card" aria-labelledby="gs-edition-title">
+              <h3 id="gs-edition-title">{t('editions.label')}</h3>
+              <p className="gs-hint">{t('editions.hint')}</p>
+              <EditionPicker
+                editions={editions}
+                value={editionId}
+                onChange={(edition) => setEditionId(edition.id)}
+                name="gs-edition"
+              />
+            </section>
+          )}
 
           {/* Players, seating & dealer */}
           <section className="gs-card" aria-labelledby="gs-seating-title">

@@ -295,3 +295,79 @@ describe('Template game info (box art)', () => {
     });
   });
 });
+
+describe('Sharing scanned box art on system games', () => {
+  const thumb = 'https://cf.geekdo-images.com/b__thumb/img/y.jpg';
+  let template;
+
+  beforeEach(async () => {
+    if (!mongoConnected) return;
+    template = await SystemGameTemplate.create({ name: `Shared Art ${Date.now()}` });
+  });
+
+  afterEach(async () => {
+    if (!mongoConnected) return;
+    if (template) await SystemGameTemplate.findByIdAndDelete(template._id);
+  });
+
+  test('POST /system/:id/game-info lets any user fill in missing box art for everyone', async () => {
+    if (!mongoConnected) {
+      console.warn('⚠️ Skipping test - MongoDB not connected');
+      return;
+    }
+
+    const response = await request(app)
+      .post(`/api/game-templates/system/${template._id}/game-info`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gameInfo: { bggId: 42, thumbnailUrl: thumb, imageUrl: 'https://evil.example/x.png' } })
+      .expect(200);
+
+    expect(response.body.updated).toBe(true);
+    const publicResponse = await request(app).get('/api/game-templates/public').expect(200);
+    const publicTemplate = publicResponse.body.templates.find((t) => String(t._id) === String(template._id));
+    expect(publicTemplate.gameInfo).toMatchObject({ bggId: 42, thumbnailUrl: thumb, imageUrl: null });
+  });
+
+  test('POST /system/:id/game-info does not replace box art that is already there', async () => {
+    if (!mongoConnected) {
+      console.warn('⚠️ Skipping test - MongoDB not connected');
+      return;
+    }
+
+    await SystemGameTemplate.findByIdAndUpdate(template._id, { gameInfo: { bggId: 1, thumbnailUrl: thumb } });
+
+    const response = await request(app)
+      .post(`/api/game-templates/system/${template._id}/game-info`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gameInfo: { bggId: 99, thumbnailUrl: 'https://cf.geekdo-images.com/other.jpg' } })
+      .expect(200);
+
+    expect(response.body.updated).toBe(false);
+    const stored = await SystemGameTemplate.findById(template._id).lean();
+    expect(stored.gameInfo.bggId).toBe(1);
+  });
+
+  test('POST /system/:id/game-info rejects empty info and unknown games', async () => {
+    if (!mongoConnected) {
+      console.warn('⚠️ Skipping test - MongoDB not connected');
+      return;
+    }
+
+    await request(app)
+      .post(`/api/game-templates/system/${template._id}/game-info`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gameInfo: { imageUrl: 'https://evil.example/x.png' } })
+      .expect(400);
+
+    await request(app)
+      .post(`/api/game-templates/system/${new mongoose.Types.ObjectId()}/game-info`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ gameInfo: { bggId: 5 } })
+      .expect(404);
+
+    await request(app)
+      .post(`/api/game-templates/system/${template._id}/game-info`)
+      .send({ gameInfo: { bggId: 5 } })
+      .expect(401);
+  });
+});

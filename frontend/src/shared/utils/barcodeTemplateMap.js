@@ -92,20 +92,38 @@ export const getBarcodesForTemplate = (templateName) => (
     .map(([code]) => code)
 );
 
+// A template and the "<game>: <edition>" templates folded into it
+const withEditionSources = (template) => [template, ...(template.editionSources || [])];
+
 /**
  * Find the template for a scanned barcode. Device links win over shared
- * template barcodes so a user can override a wrong shared mapping.
+ * template barcodes so a user can override a wrong shared mapping. A barcode
+ * of an edition ("Wizard: Jubiläumsedition") finds the game it belongs to.
  * @param {string} code
  * @param {Array} templates - Startable templates (see templateResolver.loadAllTemplates)
  * @returns {Object|null}
  */
-export const findTemplateByBarcode = (code, templates) => {
+export const findTemplateByBarcode = (code, templates) => findStartForBarcode(code, templates)?.template || null;
+
+/**
+ * Like findTemplateByBarcode, plus the name to start it with: the edition's
+ * name when the barcode belongs to an edition, so setup preselects it.
+ * @param {string} code
+ * @param {Array} templates
+ * @returns {{ template: Object, startName: string }|null}
+ */
+export const findStartForBarcode = (code, templates) => {
   const linkedName = getTemplateNameForBarcode(code);
   if (linkedName) {
-    const linked = templates.find((t) => t.name === linkedName);
-    if (linked) return linked;
+    const linked = templates.find((t) => withEditionSources(t).some((source) => source.name === linkedName));
+    if (linked) return { template: linked, startName: linkedName };
   }
 
   const variants = new Set(barcodeVariants(code));
-  return templates.find((t) => (t.barcodes || []).some((b) => variants.has(normalizeBarcode(b)))) || null;
+  for (const template of templates) {
+    const source = withEditionSources(template)
+      .find((t) => (t.barcodes || []).some((b) => variants.has(normalizeBarcode(b))));
+    if (source) return { template, startName: source.name };
+  }
+  return null;
 };

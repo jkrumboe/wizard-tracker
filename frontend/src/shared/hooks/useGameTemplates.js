@@ -1,6 +1,29 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { LocalTableGameTemplate } from '@/shared/api';
+import gameTemplateService from '@/shared/api/gameTemplateService';
 import { loadAllTemplates } from '@/shared/utils/templateResolver';
+import { getTemplateGameInfo } from '@/shared/utils/gameInfoStore';
+
+// System games whose box art this session already offered to the server
+const sharedGameInfo = new Set();
+
+/**
+ * Share box art this device saved from scans before it was shared with everyone,
+ * for system games the server has none for yet. Once per game per session.
+ * @param {Array} templates
+ */
+const shareLocalSystemGameInfo = async (templates) => {
+  // Sharing needs a login; try again once the user has one
+  if (!localStorage.getItem('auth_token')) return;
+  const pending = templates
+    .map((tpl) => (tpl.type === 'system' || tpl.isBuiltin ? tpl : tpl.systemTemplate))
+    .filter((system) => system && !system.gameInfo && !sharedGameInfo.has(system.name));
+  await Promise.all(pending.map((system) => {
+    sharedGameInfo.add(system.name);
+    const local = getTemplateGameInfo({ name: system.name });
+    return local ? gameTemplateService.shareSystemGameInfo(system._id, local) : null;
+  }));
+};
 
 // Fired whenever templates are created, edited or deleted so open pages refresh
 export const TEMPLATE_EVENTS = ['templateCreated', 'templateUpdated', 'templatesChanged'];
@@ -23,7 +46,9 @@ export function useGameTemplates() {
 
   const reload = useCallback(async () => {
     try {
-      setTemplates(await loadAllTemplates());
+      const loaded = await loadAllTemplates();
+      setTemplates(loaded);
+      void shareLocalSystemGameInfo(loaded).catch((error) => console.warn('Could not share box art:', error));
     } catch (error) {
       console.error('Error loading game templates:', error);
     } finally {

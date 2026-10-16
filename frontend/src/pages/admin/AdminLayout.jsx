@@ -543,7 +543,7 @@ const AdminLayout = () => {
 
         {/* The single scrolling region of the admin area */}
         <div className="admin-scroll">
-          {isRootPath ? renderDashboard() : <Outlet />}
+          {isRootPath ? renderDashboard() : <Outlet context={{ setPendingSuggestions }} />}
         </div>
       </div>
     </div>

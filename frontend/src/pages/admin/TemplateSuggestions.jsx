@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +38,8 @@ const TemplateSuggestions = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Keeps the nav badge in AdminLayout in step after approve/reject
+  const { setPendingSuggestions } = useOutletContext() || {};
 
   useEffect(() => {
     loadSuggestions();
@@ -46,7 +49,9 @@ const TemplateSuggestions = () => {
     try {
       setLoading(true);
       const data = await gameTemplateService.getAdminSuggestions();
-      setSuggestions(data.suggestions || []);
+      const pending = data.suggestions || [];
+      setSuggestions(pending);
+      setPendingSuggestions?.(pending.length);
       setError('');
     } catch (err) {
       console.error('Error loading suggestions:', err);

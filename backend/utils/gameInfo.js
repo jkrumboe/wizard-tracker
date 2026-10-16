@@ -121,9 +121,83 @@ function parseBggThing(xml) {
   };
 }
 
+// Each <item id="…">…</item> of a BGG XML API2 response (items don't nest)
+const splitBggItems = (xml) => [...xml.matchAll(/<item\b([^>]*)>([\s\S]*?)<\/item>/g)]
+  .map(([, attrs, body]) => ({
+    id: sanitizeInt(attrs.match(/\bid="(\d+)"/)?.[1], 10_000_000),
+    type: attrs.match(/\btype="([^"]*)"/)?.[1] || null,
+    body,
+  }))
+  .filter((item) => item.id);
+
+const readTagText = (xml, tag) => {
+  const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
+  return match ? decodeEntities(match[1]).trim() : null;
+};
+
+/**
+ * Parse a BGG XML API2 /search response.
+ * @param {string} xml
+ * @returns {Array<{bggId: number, name: string, yearPublished: number|null}>} Base games only
+ */
+function parseBggSearch(xml) {
+  return splitBggItems(xml)
+    .filter((item) => !item.type || item.type === 'boardgame')
+    .map((item) => {
+      const name = item.body.match(/<name\b[^>]*\bvalue="([^"]*)"/)?.[1];
+      return {
+        bggId: item.id,
+        name: name ? decodeEntities(name).trim() : '',
+        yearPublished: sanitizeInt(readValue(item.body, 'yearpublished'), 3000),
+      };
+    })
+    .filter((hit) => hit.name);
+}
+
+/**
+ * Parse a BGG XML API2 /thing response that may hold several games.
+ * @param {string} xml
+ * @returns {Map<number, Object>} parseBggThing fields plus imageUrl/thumbnailUrl, by BGG id
+ */
+function parseBggThings(xml) {
+  return new Map(splitBggItems(xml).map((item) => [item.id, {
+    ...parseBggThing(item.body),
+    imageUrl: readTagText(item.body, 'image'),
+    thumbnailUrl: readTagText(item.body, 'thumbnail'),
+  }]));
+}
+
+const squashName = (text) => String(text).toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+
+/**
+ * Order BGG search hits by how well their name matches the query (exact, prefix,
+ * contains), then shorter names (base game before spin-offs), then newer games.
+ * BGG lists one hit per matching name, so keep each game's best hit only.
+ * @param {Array<{bggId, name, yearPublished}>} hits
+ * @param {string} query
+ * @returns {Array<{bggId, name, yearPublished}>}
+ */
+function rankGameSearchResults(hits, query) {
+  const target = squashName(query);
+  const rank = (name) => {
+    const squashed = squashName(name);
+    if (squashed === target) return 0;
+    if (squashed.startsWith(target)) return 1;
+    return squashed.includes(target) ? 2 : 3;
+  };
+  const sorted = [...hits].sort((a, b) => rank(a.name) - rank(b.name)
+    || a.name.length - b.name.length
+    || (b.yearPublished || 0) - (a.yearPublished || 0));
+  const seen = new Set();
+  return sorted.filter((hit) => !seen.has(hit.bggId) && seen.add(hit.bggId));
+}
+
 module.exports = {
   sanitizeGameInfo,
   pickGameUpcBggItem,
   listGameUpcCandidates,
   parseBggThing,
+  parseBggThings,
+  parseBggSearch,
+  rankGameSearchResults,
 };

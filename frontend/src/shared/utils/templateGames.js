@@ -17,10 +17,17 @@ const getCallAndMadeTemplateName = (game) =>
   || game.templateConfig?.templateName
   || null;
 
+// The template's own name plus its folded "<game>: <edition>" templates
+const templateNames = (template) => new Set([
+  normalize(template.name),
+  ...(template.editionSources || []).map((source) => normalize(source.name)),
+]);
+
 /**
- * Whether a game (history entry or resumable entry) was played with a template.
- * Table and scoreboard games store the template name as their name; Call & Made
- * games are typed "wizard" and carry the template name in their config.
+ * Whether a game (history entry or resumable entry) was played with a template
+ * or one of its editions. Table and scoreboard games store the template name as
+ * their name; Call & Made games are typed "wizard" and carry the template name
+ * in their config.
  * @param {Object} game - Game with `gameType` or `type` of wizard/table/scoreboard
  * @param {Object} template
  * @returns {boolean}
@@ -28,16 +35,16 @@ const getCallAndMadeTemplateName = (game) =>
 export function gameBelongsToTemplate(game, template) {
   if (!game || !template?.name) return false;
   const type = game.gameType || game.type;
-  const templateName = normalize(template.name);
+  const names = templateNames(template);
 
   if (type === 'wizard' || (!type && template.gameCategory === 'callAndMade')) {
     if (template.gameCategory !== 'callAndMade') return false;
     const recorded = getCallAndMadeTemplateName(game);
-    return recorded ? normalize(recorded) === templateName : templateName === WIZARD_TEMPLATE_NAME;
+    return recorded ? names.has(normalize(recorded)) : normalize(template.name) === WIZARD_TEMPLATE_NAME;
   }
 
   if (template.gameCategory === 'callAndMade') return false;
-  return normalize(game.name || game.gameTypeName) === templateName;
+  return names.has(normalize(game.name || game.gameTypeName));
 }
 
 /**

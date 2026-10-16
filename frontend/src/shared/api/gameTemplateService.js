@@ -3,12 +3,14 @@
 // system templates, and suggestion workflow
 
 import { API_BASE_URL } from './config';
+import { queryClient, queryKeys } from './queryClient';
 
 const ENDPOINTS = {
   templates: `${API_BASE_URL}/api/game-templates`,
   suggest: (id) => `${API_BASE_URL}/api/game-templates/${id}/suggest`,
   suggestChange: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/suggest-change`,
   updateSystemTemplate: (id) => `${API_BASE_URL}/api/game-templates/system/${id}`,
+  systemGameInfo: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/game-info`,
   adminSuggestions: `${API_BASE_URL}/api/game-templates/admin/suggestions`,
   approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
   rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
@@ -50,30 +52,29 @@ export const getTemplates = async () => {
 
 /**
  * Get only system templates (public, type='system')
- * No authentication required
+ * No authentication required. Throws on failure so the error isn't cached
+ * as an empty list (see templateResolver.loadSystemTemplates).
  * @returns {Promise<Array>} Array of system template objects
  */
 export const getSystemTemplates = async () => {
-  try {
-    const response = await fetch(`${ENDPOINTS.templates}/public`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+  const response = await fetch(`${ENDPOINTS.templates}/public`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch system templates');
-    }
-
-    const data = await response.json();
-    return data.templates || [];
-  } catch (error) {
-    console.error('Error fetching system templates:', error);
-    // Return empty array if error occurs
-    return [];
+  if (!response.ok) {
+    throw new Error('Failed to fetch system templates');
   }
+
+  const data = await response.json();
+  return data.templates || [];
 };
+
+// System templates changed on the server; the next load fetches them fresh
+const invalidateSystemTemplates = () =>
+  queryClient.invalidateQueries({ queryKey: queryKeys.systemTemplates });
 
 /**
  * Get only user's own templates (type='user')
@@ -291,6 +292,7 @@ export const approveSuggestion = async (id) => {
       throw new Error(error.error || 'Failed to approve suggestion');
     }
 
+    void invalidateSystemTemplates();
     return await response.json();
   } catch (error) {
     console.error('Error approving suggestion:', error);
@@ -358,10 +360,41 @@ export const updateSystemTemplate = async (id, data) => {
       throw new Error(error.error || 'Failed to update system template');
     }
 
+    void invalidateSystemTemplates();
     return await response.json();
   } catch (error) {
     console.error('Error updating system template:', error);
     throw error;
+  }
+};
+
+/**
+ * Share box art from a scan on a system game with everyone. The server only
+ * takes it when the game has none yet.
+ * @param {string} id - System template ID (Mongo or built-in)
+ * @param {Object} gameInfo
+ * @returns {Promise<Object|null>} { updated, gameInfo }, or null when logged out or it failed
+ */
+export const shareSystemGameInfo = async (id, gameInfo) => {
+  try {
+    const token = localStorage.getItem('auth_token');
+    if (!token || !id || !gameInfo) return null;
+
+    const response = await fetch(ENDPOINTS.systemGameInfo(id), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ gameInfo }),
+    });
+    if (!response.ok) return null;
+    const result = await response.json();
+    if (result?.updated) void invalidateSystemTemplates();
+    return result;
+  } catch (error) {
+    console.warn('Could not share box art:', error);
+    return null;
   }
 };
 
@@ -435,9 +468,35 @@ export const lookupBarcodeProduct = async (code) => {
   }
 };
 
+/**
+ * Find games on BoardGameGeek by name
+ * @param {string} query - At least 2 characters
+ * @returns {Promise<Array<{name: string, gameInfo: Object|null,
+ *   details: {description: string, minPlayers: number|null, maxPlayers: number|null}}>|null>}
+ *   Best matches first; null when logged out, offline or the search is unavailable
+ */
+export const searchGames = async (query) => {
+  try {
+    // Lookups are for logged-in users only (BGG API terms)
+    const token = localStorage.getItem('auth_token');
+    if (!token) return null;
+
+    const response = await fetch(`${ENDPOINTS.templates}/search?q=${encodeURIComponent(query)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.results || [];
+  } catch (error) {
+    console.warn('Game search failed:', error);
+    return null;
+  }
+};
+
 export default {
   getTemplates,
   lookupBarcodeProduct,
+  searchGames,
   getSystemTemplates,
   getUserTemplates,
   createTemplate,
@@ -445,6 +504,7 @@ export default {
   deleteTemplate,
   suggestTemplate,
   updateSystemTemplate,
+  shareSystemGameInfo,
   suggestSystemTemplateChanges,
   getAdminSuggestions,
   approveSuggestion,

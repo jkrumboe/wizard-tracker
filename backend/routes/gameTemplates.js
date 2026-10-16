@@ -6,7 +6,15 @@ const TemplateSuggestion = require('../models/TemplateSuggestion');
 const auth = require('../middleware/auth');
 const catchAsync = require('../utils/catchAsync');
 const { getBuiltinSystemTemplateById } = require('../utils/builtinSystemTemplates');
-const { sanitizeGameInfo, pickGameUpcBggItem, listGameUpcCandidates, parseBggThing } = require('../utils/gameInfo');
+const {
+  sanitizeGameInfo,
+  pickGameUpcBggItem,
+  listGameUpcCandidates,
+  parseBggThing,
+  parseBggThings,
+  parseBggSearch,
+  rankGameSearchResults,
+} = require('../utils/gameInfo');
 
 const router = express.Router();
 
@@ -107,15 +115,19 @@ const BARCODE_SOURCES = [
  * @param {number} bggId
  * @returns {Promise<Object|null>} Parsed details, or null when unavailable
  */
+const fetchBggXml = async (path) => {
+  const response = await fetch(`https://boardgamegeek.com/xmlapi2/${path}`, {
+    headers: { Authorization: `Bearer ${BGG_API_TOKEN}` },
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) throw new Error(`BGG responded ${response.status}`);
+  return response.text();
+};
+
 const fetchBggDetails = async (bggId) => {
   if (!BGG_API_TOKEN || !bggId) return null;
   try {
-    const response = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${encodeURIComponent(bggId)}`, {
-      headers: { Authorization: `Bearer ${BGG_API_TOKEN}` },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) throw new Error(`BGG responded ${response.status}`);
-    return parseBggThing(await response.text());
+    return parseBggThing(await fetchBggXml(`thing?id=${encodeURIComponent(bggId)}`));
   } catch (error) {
     console.warn('BGG details lookup failed:', error.message);
     return null;
@@ -164,6 +176,65 @@ router.get('/barcode/:code', auth, catchAsync(async (req, res) => {
     barcodeLookupCache.set(code, { result, expires: Date.now() + BARCODE_LOOKUP_TTL_MS });
   }
   res.json({ code, ...result });
+}));
+
+// Game name searches, cached like barcode lookups since people retype the same names
+const GAME_SEARCH_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_GAME_SEARCH_RESULTS = 8;
+const gameSearchCache = new Map();
+
+// GET /api/game-templates/search?q=<name> - Find games on BoardGameGeek by name, with box art,
+// description and player counts. Requires login (BGG API terms) and BGG_API_TOKEN; without
+// the token there are no results.
+router.get('/search', auth, catchAsync(async (req, res) => {
+  const query = String(req.query.q || '').trim();
+  if (query.length < 2 || query.length > 100) {
+    return res.status(400).json({ error: 'Search must be 2-100 characters' });
+  }
+  if (!BGG_API_TOKEN) return res.json({ results: [] });
+
+  const cacheKey = query.toLowerCase();
+  const cached = gameSearchCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    return res.json({ results: cached.results });
+  }
+
+  let results;
+  try {
+    const hits = rankGameSearchResults(
+      parseBggSearch(await fetchBggXml(`search?query=${encodeURIComponent(query)}&type=boardgame`)),
+      query,
+    ).slice(0, MAX_GAME_SEARCH_RESULTS);
+    // One /thing call for all hits gets their box art, description and player counts
+    const things = hits.length
+      ? parseBggThings(await fetchBggXml(`thing?id=${hits.map((hit) => hit.bggId).join(',')}`))
+      : new Map();
+    results = hits.map((hit) => {
+      const thing = things.get(hit.bggId) || {};
+      return {
+        name: hit.name,
+        gameInfo: sanitizeGameInfo({
+          bggId: hit.bggId,
+          imageUrl: thing.imageUrl,
+          thumbnailUrl: thing.thumbnailUrl,
+          playingTime: thing.playingTime,
+          minAge: thing.minAge,
+          yearPublished: hit.yearPublished ?? thing.yearPublished,
+        }),
+        details: {
+          description: thing.description || '',
+          minPlayers: thing.minPlayers ?? null,
+          maxPlayers: thing.maxPlayers ?? null,
+        },
+      };
+    });
+  } catch (error) {
+    console.warn('BGG game search failed:', error.message);
+    return res.status(502).json({ error: 'Game search is unavailable right now' });
+  }
+
+  gameSearchCache.set(cacheKey, { results, expires: Date.now() + GAME_SEARCH_TTL_MS });
+  res.json({ results });
 }));
 
 // GET /api/game-templates - Get all accessible templates (system + user's own)
@@ -399,6 +470,65 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
     });
 }));
 
+/**
+ * A system template by Mongo id or built-in id. Built-ins the server hasn't
+ * stored yet come back as an unsaved document.
+ * @param {string} id
+ * @param {string} userId - Recorded as creator when a built-in is first stored
+ * @returns {Promise<Object|null>}
+ */
+const findSystemTemplate = async (id, userId) => {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    const stored = await SystemGameTemplate.findById(id);
+    if (stored) return stored;
+  }
+  const builtin = getBuiltinSystemTemplateById(id);
+  if (!builtin) return null;
+  return await SystemGameTemplate.findOne({ name: builtin.name })
+    || new SystemGameTemplate({ ...builtin, createdBy: userId, isActive: true });
+};
+
+/**
+ * Box art and details for one BGG game, straight from BGG.
+ * @param {number} bggId
+ * @returns {Promise<Object|null>} Null without a BGG token or when BGG doesn't answer
+ */
+const fetchBggGameInfo = async (bggId) => {
+  if (!BGG_API_TOKEN || !bggId) return null;
+  try {
+    const things = parseBggThings(await fetchBggXml(`thing?id=${encodeURIComponent(bggId)}`));
+    const thing = things.get(bggId);
+    return thing ? sanitizeGameInfo({ ...thing, bggId }) : null;
+  } catch (error) {
+    console.warn('BGG game info lookup failed:', error.message);
+    return null;
+  }
+};
+
+// POST /api/game-templates/system/:id/game-info - Share box art from a scan with everyone.
+// Any logged-in user may fill it in once, for a system game that has none yet; after that
+// only admins change it (PUT /system/:id). With a BGG token the info is re-read from BGG
+// by bggId, so clients can't pick the picture.
+router.post('/system/:id/game-info', auth, catchAsync(async (req, res) => {
+  const submitted = sanitizeGameInfo(req.body?.gameInfo);
+  if (!submitted?.bggId && !submitted?.thumbnailUrl && !submitted?.imageUrl) {
+    return res.status(400).json({ error: 'gameInfo needs a bggId or an image' });
+  }
+
+  const systemTemplate = await findSystemTemplate(req.params.id, req.user._id);
+  if (!systemTemplate) {
+    return res.status(404).json({ error: 'System template not found' });
+  }
+  if (systemTemplate.gameInfo?.bggId || systemTemplate.gameInfo?.thumbnailUrl || systemTemplate.gameInfo?.imageUrl) {
+    return res.json({ updated: false, gameInfo: systemTemplate.gameInfo });
+  }
+
+  const verified = await fetchBggGameInfo(submitted.bggId);
+  systemTemplate.gameInfo = verified ? { ...submitted, ...verified } : submitted;
+  await systemTemplate.save();
+  res.json({ updated: true, gameInfo: systemTemplate.gameInfo });
+}));
+
 // PUT /api/game-templates/system/:id - Directly update a system template (admin only)
 router.put('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
     const { id } = req.params;
@@ -428,27 +558,7 @@ router.put('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
       }
     }
 
-    const isMongoId = mongoose.Types.ObjectId.isValid(id);
-    let systemTemplate = null;
-
-    if (isMongoId) {
-      systemTemplate = await SystemGameTemplate.findById(id);
-    }
-
-    if (!systemTemplate) {
-      const builtin = getBuiltinSystemTemplateById(id);
-      if (builtin) {
-        systemTemplate = await SystemGameTemplate.findOne({ name: builtin.name });
-        if (!systemTemplate) {
-          systemTemplate = new SystemGameTemplate({
-            ...builtin,
-            createdBy: req.user._id,
-            isActive: true,
-          });
-        }
-      }
-    }
-
+    const systemTemplate = await findSystemTemplate(id, req.user._id);
     if (!systemTemplate) {
       return res.status(404).json({ error: 'System template not found' });
     }

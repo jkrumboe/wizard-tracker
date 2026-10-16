@@ -4,23 +4,24 @@ import { useState, useEffect, useMemo } from "react"
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { useGameStateContext } from "@/shared/hooks/useGameState"
 import { useUser } from "@/shared/hooks/useUser"
-import { userService, LocalTableGameStorage, LocalScoreboardGameStorage, LocalTableGameTemplate } from "@/shared/api"
+import { userService, LocalTableGameStorage, LocalScoreboardGameStorage } from "@/shared/api"
 import { secureArrayShuffle, generateSecureId } from "@/shared/utils/secureRandom"
 import { SelectFriendsModal, AddPlayersChoiceModal, SelectRecentGroupModal } from '@/components/modals'
-import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal'
 import ScanBarcodeModal from '@/components/modals/ScanBarcodeModal'
 import GameThumbnail from '@/components/game/GameThumbnail'
 import PlayerSetup from '@/components/game/PlayerSetup'
 import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
+import EditionPicker from '@/components/game/EditionPicker'
 import { useTranslation } from 'react-i18next'
 import { ClockIcon, PauseIcon, PlusIcon, ScanBarcodeIcon, SearchIcon, XIcon } from '@/components/ui/Icon'
 import BackButton from '@/components/ui/BackButton'
-import { resolveTemplateByName, isScoreboardTemplate } from '@/shared/utils/templateResolver'
+import { resolveTemplateEdition, isScoreboardTemplate } from '@/shared/utils/templateResolver'
 import { useGameTemplates } from '@/shared/hooks/useGameTemplates'
 import { useGameHistory } from '@/shared/hooks/useGameHistory'
 import { gameBelongsToTemplate } from '@/shared/utils/templateGames'
 import { getResumableGames } from '@/shared/utils/resumableGames'
 import { formatLastPlayed } from '@/shared/utils/formatLastPlayed'
+import { getTemplateEditions, getPreferredEdition, findEdition, buildEditionConfig, rememberEdition } from '@/shared/utils/gameEditions'
 import '@/styles/pages/startGame.css'
 import '@/styles/components/players.css'
 import '@/styles/components/components.css'
@@ -47,6 +48,8 @@ const StartGame = () => {
   const startType = searchParams.get('type');
   // Set by the barcode scanner to jump straight to a game's setup page
   const templateParam = searchParams.get('template');
+  // Edition picked on the game's page
+  const editionParam = searchParams.get('edition');
   const addTemplateType = { 'call-made': 'callAndMade', scoreboard: 'scoreboard', table: 'table' }[startType] || null;
 
   // View state
@@ -62,6 +65,8 @@ const StartGame = () => {
   // Wizard settings
   const [maxRounds, setMaxRoundsLocal] = useState(20);
   const [totalCards, setTotalCards] = useState(60);
+  // Edition of the selected game (null when it has none), e.g. Wizard Classic
+  const [edition, setEdition] = useState(null);
 
   const [_friends, setFriends] = useState([]);
 
@@ -282,8 +287,9 @@ const StartGame = () => {
   }, [isTwoSideScoreboard]);
 
   // --- Game type selection ---
-  const handleSelectTemplate = (template) => {
+  const handleSelectTemplate = (template, preselectedEdition = null) => {
     setSelectedGameType(template);
+    setEdition(preselectedEdition || getPreferredEdition(template));
     setActiveView('setup');
     // Initialize maxRounds from template if it's a Call & Made game
     if (template.gameCategory === 'callAndMade' && template.maxRounds) {
@@ -300,17 +306,20 @@ const StartGame = () => {
     const fromScan = !!location.state?.fromScan;
 
     const openTemplateFromParam = async () => {
-      const template = await resolveTemplateByName(templateParam);
+      // An edition's name ("Wizard: Jubiläumsedition") opens its game with that edition
+      const resolved = await resolveTemplateEdition(templateParam);
       if (cancelled) return;
-      if (template) {
+      if (resolved) {
         setTemplateNotFound('');
         setOpenedFromScan(fromScan);
-        handleSelectTemplate(template);
+        const picked = editionParam && findEdition(getTemplateEditions(resolved.template), editionParam);
+        handleSelectTemplate(resolved.template, picked || resolved.edition);
       } else {
         setTemplateNotFound(templateParam);
       }
       setSearchParams((params) => {
         params.delete('template');
+        params.delete('edition');
         return params;
       }, { replace: true });
     };
@@ -355,6 +364,8 @@ const StartGame = () => {
       hasForbiddenCall: selectedGameType.hasForbiddenCall !== false,
       // Lets the game's page list it under the template it was started from
       templateName: selectedGameType.name,
+      // Edition id and its special cards; every edition is still listed under templateName
+      ...buildEditionConfig(edition),
       },
     });
 
@@ -363,13 +374,15 @@ const StartGame = () => {
       return;
     }
 
+    if (edition) rememberEdition(selectedGameType.name, edition.id);
+
     navigate('/game/current');
   };
 
   const handleStartTableGame = () => {
     if (!selectedGameType) return;
 
-    const template = selectedGameType;
+    const template = playedTemplate;
     const normalizedTemplateName = (template.name || '').trim().toLowerCase();
     const scoreboardMode = template.scoreEntryMode === 'twoSideGesture'
       || normalizedTemplateName === 'volleyball'
@@ -449,13 +462,6 @@ const StartGame = () => {
   };
 
   // --- Template list ---
-  const handleCreateNewTemplate = (gameName, settings = {}) => {
-    if (gameName?.trim()) {
-      LocalTableGameTemplate.saveTemplate(gameName.trim(), settings);
-      globalThis.dispatchEvent(new CustomEvent('templateCreated', { detail: { templateName: gameName.trim(), settings } }));
-    }
-  };
-
   // The "New game" pills on the Games page open this list for one type (?type=)
   const visibleTemplates = useMemo(() => {
     const query = templateSearch.trim().toLowerCase();
@@ -492,6 +498,12 @@ const StartGame = () => {
   }[startType] || t('gameTemplates.templatesSection');
 
   // --- Derived values ---
+  const selectedEditions = getTemplateEditions(selectedGameType);
+  // An edition saved as its own game ("Catan: Seafarers") brings its own scoring
+  // settings, but the game is still listed under the main game's name
+  const playedTemplate = edition?.sourceTemplate && selectedGameType
+    ? { ...selectedGameType, targetNumber: edition.sourceTemplate.targetNumber, lowIsBetter: edition.sourceTemplate.lowIsBetter }
+    : selectedGameType;
   const maxPlayers = getMaxPlayersForSelection();
   const minPlayers = selectedGameType?.minPlayers
     ?? (isTwoSideScoreboard ? 2 : (isCallAndMade ? MIN_PLAYERS_WIZARD : MIN_PLAYERS_TABLE));
@@ -619,10 +631,11 @@ const StartGame = () => {
           <p className="empty-message">{t('gameType.noMatches')}</p>
         )}
 
-        <AddGameTemplateModal
+        {/* Adding a game first looks it up by name, then continues like a scan */}
+        <ScanBarcodeModal
+          mode="search"
           isOpen={showAddGameModal}
           onClose={() => setShowAddGameModal(false)}
-          onSave={handleCreateNewTemplate}
           templateType={addTemplateType}
         />
 
@@ -672,6 +685,19 @@ const StartGame = () => {
           />
         )}
 
+        {/* Edition (e.g. Wizard Classic vs. anniversary editions with special cards) */}
+        {selectedEditions.length > 0 && (
+          <div className="game-settings-section">
+            <span className="edition-section-label">{t('editions.label')}</span>
+            <EditionPicker
+              editions={selectedEditions}
+              value={edition?.id ?? null}
+              onChange={setEdition}
+              showCards={isCallAndMade}
+            />
+          </div>
+        )}
+
         {/* Call & Made game settings */}
         {isCallAndMade && (
           <div className="game-settings-section">
@@ -719,17 +745,17 @@ const StartGame = () => {
         {!isCallAndMade && selectedGameType && (
           <div className="game-settings-section">
             <div className="table-settings-display">
-              {selectedGameType.targetNumber && (
+              {playedTemplate.targetNumber && (
                 <div className="setting-item">
                   <span>{t('startTableGame.target')}: </span>
-                  <p>{selectedGameType.targetNumber}</p>
+                  <p>{playedTemplate.targetNumber}</p>
                 </div>
               )}
 
-              {selectedGameType.lowIsBetter !== undefined && (
+              {playedTemplate.lowIsBetter !== undefined && (
                 <div className="setting-item">
                   <span>{t('startTableGame.goal')}: </span>
-                  <p>{selectedGameType.lowIsBetter ? t('startTableGame.lowScore') : t('startTableGame.highScore')}</p>
+                  <p>{playedTemplate.lowIsBetter ? t('startTableGame.lowScore') : t('startTableGame.highScore')}</p>
                 </div>
               )}
             </div>

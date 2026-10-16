@@ -3,6 +3,9 @@ const {
   pickGameUpcBggItem,
   listGameUpcCandidates,
   parseBggThing,
+  parseBggThings,
+  parseBggSearch,
+  rankGameSearchResults,
 } = require('../utils/gameInfo');
 
 const BGG_IMAGE = 'https://cf.geekdo-images.com/abc__thumb/img/x.jpg';
@@ -115,5 +118,48 @@ describe('parseBggThing', () => {
       minAge: null,
       yearPublished: null,
     });
+  });
+});
+
+describe('parseBggSearch', () => {
+  test('reads base games with names and years, skipping expansions', () => {
+    const xml = `<items total="3">
+      <item type="boardgame" id="13"><name type="primary" value="Catan"/><yearpublished value="1995"/></item>
+      <item type="boardgameexpansion" id="926"><name type="primary" value="Catan: Seafarers"/></item>
+      <item type="boardgame" id="27710"><name type="alternate" value="Catan &amp;amp; Friends"/></item>
+    </items>`;
+    expect(parseBggSearch(xml)).toEqual([
+      { bggId: 13, name: 'Catan', yearPublished: 1995 },
+      { bggId: 27710, name: 'Catan & Friends', yearPublished: null },
+    ]);
+  });
+});
+
+describe('parseBggThings', () => {
+  test('reads each game with its images', () => {
+    const xml = `<items>
+      <item type="boardgame" id="13">
+        <thumbnail>${BGG_IMAGE}</thumbnail>
+        <image>${BGG_IMAGE}</image>
+        <minplayers value="3" /><maxplayers value="4" />
+      </item>
+      <item type="boardgame" id="1465"><minplayers value="3" /></item>
+    </items>`;
+    const things = parseBggThings(xml);
+    expect(things.get(13)).toMatchObject({ thumbnailUrl: BGG_IMAGE, imageUrl: BGG_IMAGE, minPlayers: 3, maxPlayers: 4 });
+    expect(things.get(1465)).toMatchObject({ thumbnailUrl: null, minPlayers: 3, maxPlayers: null });
+  });
+});
+
+describe('rankGameSearchResults', () => {
+  test('puts exact, then prefix matches first and keeps one hit per game', () => {
+    const hits = [
+      { bggId: 3, name: 'Star Wars: Catan', yearPublished: 2014 },
+      { bggId: 2, name: 'Catan Junior', yearPublished: 2007 },
+      { bggId: 1, name: 'Die Siedler von Catan', yearPublished: 1995 },
+      { bggId: 1, name: 'CATAN', yearPublished: 1995 },
+    ];
+    expect(rankGameSearchResults(hits, 'catan').map((hit) => hit.name))
+      .toEqual(['CATAN', 'Catan Junior', 'Star Wars: Catan']);
   });
 });

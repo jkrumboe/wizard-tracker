@@ -1,0 +1,588 @@
+/* Edition picker: one selectable card per edition of a game */
+
+.edition-section-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.edition-picker {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xs);
+}
+
+.edition-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.edition-option.checked {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.12);
+}
+
+.edition-option:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Visually hidden; the whole card is the click target */
+.edition-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.edition-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.edition-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.edition-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edition-card.tracked {
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+.edition-card.bomb {
+  background: rgba(239, 68, 68, 0.14);
+  color: rgb(220, 38, 38);
+}
+
+.edition-card.cloud {
+  background: rgba(56, 189, 248, 0.16);
+  color: rgb(2, 132, 199);
+}
+
+[data-theme="dark"] .edition-card.bomb {
+  color: rgb(252, 165, 165);
+}
+
+[data-theme="dark"] .edition-card.cloud {
+  color: rgb(125, 211, 252);
+}
+
+@media (hover: hover) {
+  .edition-option:not(.checked):hover {
+    border-color: var(--primary-border);
+  }
+}
+
+@media (min-width: 768px) {
+  .edition-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Edition selector on a game's page: current edition plus a + to add one */
+
+.edition-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edition-switcher-row {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.edition-select,
+.edition-add-btn {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.edition-select {
+  flex: 1;
+  min-width: 0;
+  gap: var(--spacing-sm);
+  padding: 4px var(--spacing-sm) 4px 4px;
+  text-align: left;
+}
+
+.edition-select-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edition-select-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.edition-add-btn {
+  justify-content: center;
+  width: 48px;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--primary);
+}
+
+.edition-select:focus-visible,
+.edition-add-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Box art thumbnail; the initial shows until (or instead of) the image */
+.edition-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: rgba(var(--primary-rgb), 0.14);
+}
+
+.edition-art-initial {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.edition-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.edition-card-icon.bomb {
+  flex-shrink: 0;
+  color: rgb(220, 38, 38);
+}
+
+.edition-card-icon.cloud {
+  flex-shrink: 0;
+  color: rgb(2, 132, 199);
+}
+
+[data-theme="dark"] .edition-card-icon.bomb {
+  color: rgb(252, 165, 165);
+}
+
+[data-theme="dark"] .edition-card-icon.cloud {
+  color: rgb(125, 211, 252);
+}
+
+/* Edition list in the selector modal */
+
+.edition-modal {
+  max-width: 500px;
+  max-height: 90dvh;
+}
+
+.edition-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.edition-choice {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.edition-choice.checked {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.12);
+}
+
+.edition-choice-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.edition-choice-main .edition-art {
+  width: 56px;
+  height: 56px;
+}
+
+.edition-choice-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.edition-choice-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.edition-choice-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.edition-choice-check {
+  flex-shrink: 0;
+  margin-right: var(--spacing-xs);
+  color: var(--primary);
+}
+
+.edition-choice-art-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.edition-choice-main:focus-visible,
+.edition-choice-art-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.edition-editor-add {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.edition-editor-add input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.edition-editor-add-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edition-editor-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Scanning the box of a new edition: fills in its name and box art */
+.edition-scan-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edition-scan-btn:hover {
+  border-color: var(--primary);
+}
+
+.edition-scan-notice {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.edition-scan-result {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.edition-scan-result img {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+/* Edition name under the game name on an edition's info page */
+.game-type-title-edition {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+/* Special cards of an edition on its info page */
+
+.edition-cards-head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.edition-cards-head .games-section-label {
+  flex: 1;
+}
+
+.edition-text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edition-cards-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.edition-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.edition-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.edition-card-item.bomb {
+  border-left: 3px solid rgb(239, 68, 68);
+}
+
+.edition-card-item.cloud {
+  border-left: 3px solid rgb(56, 189, 248);
+}
+
+.edition-card-item-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.edition-card-switch {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(var(--primary-rgb), 0.16);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.edition-card-item-rule {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.edition-card-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.edition-card-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-light);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.edition-card-toggle.active {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.16);
+  color: var(--text);
+}
+
+.edition-card-toggle.bomb.active {
+  border-color: rgb(239, 68, 68);
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.edition-card-toggle.cloud.active {
+  border-color: rgb(56, 189, 248);
+  background: rgba(56, 189, 248, 0.16);
+}
+
+@media (hover: hover) {
+  .edition-select:hover,
+  .edition-add-btn:hover,
+  .edition-choice:not(.checked):hover,
+  .edition-card-toggle:not(.active):hover {
+    border-color: var(--primary-border);
+    color: var(--text);
+  }
+
+  .edition-text-btn:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+  }
+
+  .edition-choice-art-btn:hover {
+    color: var(--primary);
+  }
+}
+
+/* "Add an edition" on the page of a game that has none yet */
+.edition-add-first {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px dashed var(--primary-border);
+  border-radius: var(--radius-md);
+  background: rgba(var(--primary-rgb), 0.06);
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.edition-add-first-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: rgba(var(--primary-rgb), 0.16);
+  color: var(--primary);
+}
+
+.edition-add-first-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.edition-add-first-title {
+  font-weight: 600;
+}
+
+.edition-add-first-hint {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.edition-add-first:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .edition-add-first:hover {
+    border-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.12);
+  }
+}

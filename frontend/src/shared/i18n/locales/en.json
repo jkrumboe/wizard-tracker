@@ -330,6 +330,58 @@
     "gameName": "Game Name"
   },
 
+  "editions": {
+    "label": "Edition",
+    "sectionLabel": "Editions",
+    "chooseTitle": "Choose edition",
+    "standard": "Standard",
+    "removeEdition": "Remove {{name}}",
+    "newEditionPlaceholder": "New edition name",
+    "addEdition": "Add",
+    "specialCardsTitle": "Special cards",
+    "editCards": "Edit cards",
+    "doneEditing": "Done",
+    "reset": "Reset",
+    "noSpecialCardsInfo": "This edition is played without special cards.",
+    "hasSwitch": "Switch in game",
+    "addFirstHint": "Other versions of the game, e.g. an anniversary or deluxe edition",
+    "addEditionOf": "Add an edition of {{game}}",
+    "addEditionLong": "Add an edition",
+    "scanEdition": "Scan the box",
+    "scanNoEditionName": "The box was found, but its name has no edition. Type the edition name.",
+    "scanArtAdded": "Box art from the scan is added with this edition.",
+    "hint": "Special cards that change the scoring get a switch during the game.",
+    "noSpecialCards": "No special cards",
+    "wizard": {
+      "classic": "Classic",
+      "anniversary20": "20th Anniversary Edition",
+      "anniversary25": "25th Anniversary Edition",
+      "anniversary30": "30th Anniversary Edition"
+    },
+    "cards": {
+      "bomb": "Bomb",
+      "cloud": "Cloud",
+      "dragon": "Dragon",
+      "fairy": "Fairy",
+      "juggler": "Juggler",
+      "werewolf": "Werewolf",
+      "shapeshifter": "Shapeshifter",
+      "vampire": "Vampire",
+      "witch": "Witch"
+    },
+    "cardRules": {
+      "bomb": "Nobody wins the trick with the Bomb, so the round has one trick fewer.",
+      "cloud": "Whoever wins the trick with the Cloud must change their call by one, up or down.",
+      "dragon": "Beats every card, even a Wizard – unless the Fairy is in the same trick.",
+      "fairy": "Loses like a Jester, but wins the trick if the Dragon is in it.",
+      "juggler": "After its trick, every player passes one card to their neighbour.",
+      "werewolf": "Its holder swaps it for the trump card and picks the trump suit before the calls.",
+      "shapeshifter": "Played as either a Wizard or a Jester – its holder decides.",
+      "vampire": "Copies the trump card.",
+      "witch": "Lets you swap a card from your hand with a card in the trick."
+    }
+  },
+
   "gameInProgress": {
     "loadingGameState": "Loading game state...",
     "gameSessionLost": "Game Session Lost",
@@ -708,6 +760,7 @@
     "overCount": "{{count}} over",
     "underCount": "{{count}} under"
   },
+
   "leaderboard": {
     "title": "Leaderboard",
     "compareWithFriends": "Compare with Friends",
@@ -1062,7 +1115,6 @@
     "callAndMadeSection": "Call & Made Games"
   },
 
-
   "templateModal": {
     "editGameType": "Edit Game Type",
     "createNewGame": "Create New Game",
@@ -1137,7 +1189,18 @@
     "dealerRotationHint": "The dealer moves to the next player every round.",
     "forbiddenCallHint": "Total calls can't equal the cards dealt.",
     "decrease": "Decrease",
-    "increase": "Increase"
+    "increase": "Increase",
+    "isEditionLabel": "This is an edition of a game I already have",
+    "isEditionHint": "e.g. an anniversary or travel edition. It is listed and played under that game.",
+    "editionOfLabel": "Edition of",
+    "editionNameLabel": "Edition name",
+    "editionNamePlaceholder": "e.g. Anniversary Edition",
+    "editionSavedAs": "Saved as “{{name}}”",
+    "editionPrompt": "“{{game}}” is already one of your games. Is “{{name}}” a different edition of it?",
+    "editionPromptYes": "Yes, it's an edition",
+    "editionPromptNo": "No, separate game",
+    "enterEditionNameError": "Please enter a name for the edition",
+    "pickBaseGameError": "Please choose which game this is an edition of"
   },
 
   "templateDetails": {
@@ -1642,6 +1705,23 @@
     "retry": "Try again",
     "flashlight": "Toggle flashlight",
     "templateNotFound": "The game \"{{name}}\" could not be found.",
+    "findGameTitle": "Add a game",
+    "findGameDescription": "Type the game name to see if it already exists.",
+    "findGamePlaceholder": "Game name",
+    "yourGames": "Your games",
+    "onlineResults": "Found online",
+    "searchingOnline": "Searching online…",
+    "createNamed": "Create \"{{name}}\" from scratch",
+    "matchTitle": "Is it one of these?",
+    "matchDescription": "These games match \"{{name}}\". Pick one to add its box art and info, or skip.",
+    "skipMatch": "Skip",
+    "onlineUnavailable": "Online lookup is not available right now.",
+    "noOnlineMatch": "No games found online with that name.",
+    "findInfoTitle": "Find box art",
+    "findInfoDescription": "Look up \"{{name}}\" online and pick the matching game to add its box art and info.",
+    "scanBox": "Scan the box",
+    "noArtForBarcode": "No box art is known for this barcode yet. Search by name instead.",
+    "unknownBarcode": "Barcode {{code}} is not known. Search by name instead.",
     "errors": {
       "insecure": "The camera only works over a secure (HTTPS) connection.",
       "unsupported": "This browser can't access the camera. Enter the barcode number instead.",
@@ -1674,6 +1754,7 @@
     "edit": "Edit",
     "customize": "Customize",
     "suggest": "Suggest for everyone",
+    "findBoxArt": "Find box art",
     "resetToDefault": "Reset to default",
     "resetConfirm": "Remove your changes and go back to the shared version of this game?"
   }

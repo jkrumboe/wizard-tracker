@@ -330,6 +330,58 @@
     "gameName": "Spielname"
   },
 
+  "editions": {
+    "label": "Edition",
+    "sectionLabel": "Editionen",
+    "chooseTitle": "Edition wählen",
+    "standard": "Standard",
+    "removeEdition": "{{name}} entfernen",
+    "newEditionPlaceholder": "Name der neuen Edition",
+    "addEdition": "Hinzufügen",
+    "specialCardsTitle": "Sonderkarten",
+    "editCards": "Karten bearbeiten",
+    "doneEditing": "Fertig",
+    "reset": "Zurücksetzen",
+    "noSpecialCardsInfo": "Diese Edition wird ohne Sonderkarten gespielt.",
+    "hasSwitch": "Schalter im Spiel",
+    "addFirstHint": "Andere Versionen des Spiels, z. B. Jubiläums- oder Deluxe-Edition",
+    "addEditionOf": "Edition von {{game}} hinzufügen",
+    "addEditionLong": "Edition hinzufügen",
+    "scanEdition": "Schachtel scannen",
+    "scanNoEditionName": "Die Schachtel wurde gefunden, ihr Name enthält aber keine Edition. Gib den Namen der Edition ein.",
+    "scanArtAdded": "Das Schachtelbild aus dem Scan wird mit dieser Edition gespeichert.",
+    "hint": "Sonderkarten, die die Wertung ändern, bekommen im Spiel einen Schalter.",
+    "noSpecialCards": "Keine Sonderkarten",
+    "wizard": {
+      "classic": "Klassisch",
+      "anniversary20": "20 Jahre Jubiläumsedition",
+      "anniversary25": "25 Jahre Jubiläumsedition",
+      "anniversary30": "30 Jahre Jubiläumsedition"
+    },
+    "cards": {
+      "bomb": "Bombe",
+      "cloud": "Wolke",
+      "dragon": "Drache",
+      "fairy": "Fee",
+      "juggler": "Jongleur",
+      "werewolf": "Werwolf",
+      "shapeshifter": "Gestaltwandler",
+      "vampire": "Vampir",
+      "witch": "Hexe"
+    },
+    "cardRules": {
+      "bomb": "Den Stich mit der Bombe gewinnt niemand – die Runde hat einen Stich weniger.",
+      "cloud": "Wer den Stich mit der Wolke gewinnt, muss seine Ansage um eins erhöhen oder senken.",
+      "dragon": "Schlägt jede Karte, sogar Zauberer – außer die Fee liegt im selben Stich.",
+      "fairy": "Verliert wie ein Narr, gewinnt aber den Stich, wenn der Drache darin liegt.",
+      "juggler": "Nach seinem Stich gibt jeder Spieler eine Karte an seinen Nachbarn weiter.",
+      "werewolf": "Wer ihn hat, tauscht ihn gegen die Trumpfkarte und bestimmt vor den Ansagen die Trumpffarbe.",
+      "shapeshifter": "Wird wahlweise als Zauberer oder Narr gespielt – wer ihn ausspielt, entscheidet.",
+      "vampire": "Kopiert die Trumpfkarte.",
+      "witch": "Erlaubt, eine Handkarte gegen eine Karte im Stich zu tauschen."
+    }
+  },
+
   "gameInProgress": {
     "loadingGameState": "Spielstand wird geladen...",
     "gameSessionLost": "Spielsitzung verloren",
@@ -708,6 +760,7 @@
     "overCount": "{{count}} zu hoch",
     "underCount": "{{count}} zu niedrig"
   },
+
   "leaderboard": {
     "title": "Rangliste",
     "compareWithFriends": "Mit Freunden vergleichen",
@@ -1062,7 +1115,6 @@
     "callAndMadeSection": "Ansage & Stich Spiele"
   },
 
-
   "templateModal": {
     "editGameType": "Spieltyp bearbeiten",
     "createNewGame": "Neues Spiel erstellen",
@@ -1137,7 +1189,18 @@
     "dealerRotationHint": "Der Geber wechselt jede Runde zum nächsten Spieler.",
     "forbiddenCallHint": "Die Summe der Ansagen darf nicht der Kartenanzahl entsprechen.",
     "decrease": "Verringern",
-    "increase": "Erhöhen"
+    "increase": "Erhöhen",
+    "isEditionLabel": "Das ist eine Edition eines Spiels, das ich schon habe",
+    "isEditionHint": "z.B. eine Jubiläums- oder Reiseedition. Sie wird unter diesem Spiel gelistet und gespielt.",
+    "editionOfLabel": "Edition von",
+    "editionNameLabel": "Name der Edition",
+    "editionNamePlaceholder": "z.B. Jubiläumsedition",
+    "editionSavedAs": "Wird gespeichert als „{{name}}“",
+    "editionPrompt": "„{{game}}“ ist bereits eines deiner Spiele. Ist „{{name}}“ eine andere Edition davon?",
+    "editionPromptYes": "Ja, eine Edition",
+    "editionPromptNo": "Nein, eigenes Spiel",
+    "enterEditionNameError": "Bitte gib einen Namen für die Edition ein",
+    "pickBaseGameError": "Bitte wähle, zu welchem Spiel diese Edition gehört"
   },
 
   "templateDetails": {
@@ -1642,6 +1705,23 @@
     "retry": "Erneut versuchen",
     "flashlight": "Taschenlampe umschalten",
     "templateNotFound": "Das Spiel „{{name}}“ wurde nicht gefunden.",
+    "findGameTitle": "Spiel hinzufügen",
+    "findGameDescription": "Gib den Namen des Spiels ein, um zu prüfen, ob es schon existiert.",
+    "findGamePlaceholder": "Spielname",
+    "yourGames": "Deine Spiele",
+    "onlineResults": "Online gefunden",
+    "searchingOnline": "Suche online…",
+    "createNamed": "„{{name}}“ neu anlegen",
+    "matchTitle": "Ist es eines davon?",
+    "matchDescription": "Diese Spiele passen zu „{{name}}“. Wähle eins, um Schachtelbild und Infos zu übernehmen, oder überspringe.",
+    "skipMatch": "Überspringen",
+    "onlineUnavailable": "Die Online-Suche ist gerade nicht verfügbar.",
+    "noOnlineMatch": "Online wurde kein Spiel mit diesem Namen gefunden.",
+    "findInfoTitle": "Schachtelbild finden",
+    "findInfoDescription": "Suche „{{name}}“ online und wähle das passende Spiel, um Schachtelbild und Infos zu übernehmen.",
+    "scanBox": "Schachtel scannen",
+    "noArtForBarcode": "Zu diesem Barcode ist noch kein Schachtelbild bekannt. Suche stattdessen nach dem Namen.",
+    "unknownBarcode": "Barcode {{code}} ist unbekannt. Suche stattdessen nach dem Namen.",
     "errors": {
       "insecure": "Die Kamera funktioniert nur über eine sichere (HTTPS-)Verbindung.",
       "unsupported": "Dieser Browser kann nicht auf die Kamera zugreifen. Gib stattdessen die Barcode-Nummer ein.",
@@ -1674,6 +1754,7 @@
     "edit": "Bearbeiten",
     "customize": "Anpassen",
     "suggest": "Für alle vorschlagen",
+    "findBoxArt": "Schachtelbild finden",
     "resetToDefault": "Auf Standard zurücksetzen",
     "resetConfirm": "Deine Änderungen entfernen und zur gemeinsamen Version dieses Spiels zurückkehren?"
   }
