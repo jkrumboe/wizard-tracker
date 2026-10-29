@@ -145,6 +145,10 @@
     "statsTab": "Stats",
     "gamesTab": "Games",
     "settingsTab": "Settings",
+    "settingsAppearance": "Appearance",
+    "settingsAccount": "Account",
+    "settingsUpdates": "Updates",
+    "settingsDangerZone": "Danger Zone",
     "winRateLabel": "Win%:",
     "matchesLabel": "Matches:",
     "loginToViewStats": "Please <loginLink>login</loginLink> to view detailed statistics",
@@ -1862,5 +1866,144 @@
     "changeBoxArtDescription": "Look up \"{{name}}\" online and pick new box art. It replaces the current art for everyone.",
     "boxArtSuggested": "Thanks! Your box art suggestion was sent to the admins.",
     "boxArtSuggestFailed": "The box art could not be saved."
+  },
+
+  "legal": {
+    "settingsTitle": "Legal & Privacy",
+    "analyticsToggle": "Usage Analytics",
+    "analyticsHint": "Off unless you allow it. Uses Google Analytics to see which features are used. You can withdraw consent at any time.",
+    "footerNote": "© {{year}} KeepWiz · Unofficial fan project, not affiliated with AMIGO Spiele or BoardGameGeek. Game names are trademarks of their owners.",
+    "lastUpdated": "Last updated: {{date}}",
+    "questions": "Questions about this page?",
+    "openIssue": "Open an issue on GitHub",
+    "privacy": {
+      "title": "Privacy Policy",
+      "sections": [
+        {
+          "title": "Overview",
+          "paragraphs": [
+            "KeepWiz works offline-first. You can track games without an account, and everything then stays on your device. Data only reaches our server when you create an account or upload games.",
+            "We do not sell your data and do not show ads."
+          ]
+        },
+        {
+          "title": "Data stored on your device",
+          "paragraphs": [
+            "Games, player names, settings (theme, language, accent colour) and the sync queue are kept in your browser's local storage and IndexedDB. When you sign in, a login token is stored there too. You can remove all of it with \"Clear all Data\" in Settings or by clearing your browser data."
+          ]
+        },
+        {
+          "title": "Data stored when you have an account",
+          "paragraphs": [
+            "Legal basis: providing the service you signed up for (Art. 6(1)(b) GDPR)."
+          ],
+          "items": [
+            "Username and a securely hashed password (we never see your password in plain text)",
+            "Optional profile picture",
+            "Games you upload or sync, including the player names entered in them",
+            "Friends and friend requests, game templates and suggestions you submit",
+            "Timestamps of your logins, used for security"
+          ]
+        },
+        {
+          "title": "Server and security",
+          "paragraphs": [
+            "When your device talks to our server, your IP address is processed briefly to protect the service against abuse (rate limiting). It is not used to build profiles. Legal basis: legitimate interest in a secure service (Art. 6(1)(f) GDPR)."
+          ]
+        },
+        {
+          "title": "Usage analytics",
+          "paragraphs": [
+            "Only if you agree, we use Google Analytics (via Google Tag Manager) by Google Ireland Ltd. to understand how the app is used, for example which pages are opened. Google may set cookies and process data on servers outside the EU (including the USA). Legal basis: your consent (Art. 6(1)(a) GDPR, § 25(1) TDDDG).",
+            "Until you agree, no Google scripts are loaded. You can withdraw your consent at any time under Settings → Legal & Privacy → Usage Analytics; tracking stops right away."
+          ]
+        },
+        {
+          "title": "BoardGameGeek",
+          "paragraphs": [
+            "Game information and box art are provided by BoardGameGeek. Box art images load directly from BoardGameGeek's servers, which therefore see your IP address. Lookups made by our server do not include any of your personal data."
+          ]
+        },
+        {
+          "title": "Deleting your account",
+          "paragraphs": [
+            "You can delete your account in Settings. Your password and profile picture are removed, you are removed from all friend lists, and your username is replaced with an anonymous placeholder. Games you played stay available to the other players in them, linked to the anonymised account. The original username is kept internally so these shared games stay consistent."
+          ]
+        },
+        {
+          "title": "Your rights",
+          "paragraphs": [
+            "Under the GDPR you have the right to access, correct, delete and export your data, to restrict or object to processing, and to complain to a data protection authority. To exercise these rights, contact us: {{contact}}"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Use",
+      "sections": [
+        {
+          "title": "The service",
+          "paragraphs": [
+            "KeepWiz is a free, hobby-run score tracker for card and board games. It is provided as is, without any warranty, and may change or be discontinued at any time."
+          ]
+        },
+        {
+          "title": "Your account",
+          "items": [
+            "Keep your password secret. You are responsible for activity on your account.",
+            "Choose a username and profile picture that are not offensive and do not impersonate others.",
+            "Only upload content you have the right to share."
+          ]
+        },
+        {
+          "title": "Fair use",
+          "paragraphs": [
+            "Do not misuse the service, for example by attacking or overloading the server, scraping data, or manipulating leaderboards and ELO ratings. We may remove content or suspend accounts that break these rules."
+          ]
+        },
+        {
+          "title": "Your data",
+          "paragraphs": [
+            "Your games are yours. Data stored only on your device can be lost if you clear your browser data, so sign in and sync if you want a backup. See the Privacy Policy for details."
+          ]
+        },
+        {
+          "title": "Liability",
+          "paragraphs": [
+            "We are liable without limitation for intent and gross negligence. Otherwise, to the extent permitted by law, we are not liable for lost scores, data or damage arising from using the app."
+          ]
+        },
+        {
+          "title": "Trademarks",
+          "paragraphs": [
+            "KeepWiz is an unofficial fan project and not affiliated with or endorsed by AMIGO Spiele + Freizeit GmbH, BoardGameGeek or any game publisher. All game names, logos and box art are the property of their respective owners."
+          ]
+        }
+      ]
+    },
+    "imprint": {
+      "title": "Imprint",
+      "operatorHeading": "Responsible for this app",
+      "contactHeading": "Contact"
+    },
+    "licenses": {
+      "title": "Licenses & Credits",
+      "appLicenseHeading": "KeepWiz",
+      "appLicenseText": "KeepWiz is open source under the MIT License.",
+      "viewLicense": "View license",
+      "sourceCode": "Source code",
+      "thirdPartyHeading": "Open-source software",
+      "thirdPartyText": "KeepWiz is built with these libraries. Thanks to their authors.",
+      "dataHeading": "Game data",
+      "bggText": "Game information and box art are provided by BoardGameGeek."
+    }
+  },
+
+  "consent": {
+    "title": "Help improve KeepWiz?",
+    "text": "With your permission we use Google Analytics to see which features are used. Nothing is loaded until you agree, and you can change this anytime in Settings.",
+    "learnMore": "Privacy Policy",
+    "accept": "Allow",
+    "decline": "Decline"
   }
 }

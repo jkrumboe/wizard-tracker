@@ -145,6 +145,10 @@
     "statsTab": "Statistiken",
     "gamesTab": "Spiele",
     "settingsTab": "Einstellungen",
+    "settingsAppearance": "Darstellung",
+    "settingsAccount": "Konto",
+    "settingsUpdates": "Updates",
+    "settingsDangerZone": "Gefahrenzone",
     "winRateLabel": "Siegrate:",
     "matchesLabel": "Spiele:",
     "loginToViewStats": "Bitte <loginLink>anmelden</loginLink>, um detaillierte Statistiken zu sehen",
@@ -1862,5 +1866,144 @@
     "changeBoxArtDescription": "Suche „{{name}}“ online und wähle ein neues Schachtelbild. Es ersetzt das aktuelle Bild für alle.",
     "boxArtSuggested": "Danke! Dein Schachtelbild-Vorschlag wurde an die Admins geschickt.",
     "boxArtSuggestFailed": "Das Schachtelbild konnte nicht gespeichert werden."
+  },
+
+  "legal": {
+    "settingsTitle": "Rechtliches & Datenschutz",
+    "analyticsToggle": "Nutzungsstatistik",
+    "analyticsHint": "Nur aktiv, wenn du zustimmst. Nutzt Google Analytics, um zu sehen, welche Funktionen genutzt werden. Du kannst die Einwilligung jederzeit widerrufen.",
+    "footerNote": "© {{year}} KeepWiz · Inoffizielles Fanprojekt, nicht verbunden mit AMIGO Spiele oder BoardGameGeek. Spielnamen sind Marken ihrer Inhaber.",
+    "lastUpdated": "Zuletzt aktualisiert: {{date}}",
+    "questions": "Fragen zu dieser Seite?",
+    "openIssue": "Issue auf GitHub erstellen",
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "sections": [
+        {
+          "title": "Überblick",
+          "paragraphs": [
+            "KeepWiz funktioniert offline. Du kannst Spiele ohne Konto erfassen; dann bleibt alles auf deinem Gerät. Daten erreichen unseren Server nur, wenn du ein Konto erstellst oder Spiele hochlädst.",
+            "Wir verkaufen keine Daten und zeigen keine Werbung."
+          ]
+        },
+        {
+          "title": "Daten auf deinem Gerät",
+          "paragraphs": [
+            "Spiele, Spielernamen, Einstellungen (Design, Sprache, Akzentfarbe) und die Synchronisierungs-Warteschlange werden im lokalen Speicher und in der IndexedDB deines Browsers gespeichert. Wenn du angemeldet bist, liegt dort auch ein Login-Token. Mit „Alle Daten löschen“ in den Einstellungen oder durch Löschen der Browserdaten entfernst du alles."
+          ]
+        },
+        {
+          "title": "Daten bei einem Konto",
+          "paragraphs": [
+            "Rechtsgrundlage: Bereitstellung des Dienstes, für den du dich angemeldet hast (Art. 6 Abs. 1 lit. b DSGVO)."
+          ],
+          "items": [
+            "Benutzername und ein sicher gehashtes Passwort (wir sehen dein Passwort nie im Klartext)",
+            "Optionales Profilbild",
+            "Spiele, die du hochlädst oder synchronisierst, einschließlich der darin eingetragenen Spielernamen",
+            "Freunde und Freundschaftsanfragen, Spielvorlagen und eingereichte Vorschläge",
+            "Zeitpunkte deiner Anmeldungen, zur Sicherheit"
+          ]
+        },
+        {
+          "title": "Server und Sicherheit",
+          "paragraphs": [
+            "Wenn dein Gerät mit unserem Server kommuniziert, wird deine IP-Adresse kurzzeitig verarbeitet, um den Dienst vor Missbrauch zu schützen (Rate Limiting). Sie wird nicht zur Profilbildung genutzt. Rechtsgrundlage: berechtigtes Interesse an einem sicheren Dienst (Art. 6 Abs. 1 lit. f DSGVO)."
+          ]
+        },
+        {
+          "title": "Nutzungsstatistik",
+          "paragraphs": [
+            "Nur wenn du zustimmst, nutzen wir Google Analytics (über den Google Tag Manager) der Google Ireland Ltd., um zu verstehen, wie die App genutzt wird, z. B. welche Seiten aufgerufen werden. Google kann Cookies setzen und Daten auf Servern außerhalb der EU (auch in den USA) verarbeiten. Rechtsgrundlage: deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG).",
+            "Bis du zustimmst, werden keine Google-Skripte geladen. Du kannst deine Einwilligung jederzeit unter Einstellungen → Rechtliches & Datenschutz → Nutzungsstatistik widerrufen; das Tracking endet sofort."
+          ]
+        },
+        {
+          "title": "BoardGameGeek",
+          "paragraphs": [
+            "Spielinformationen und Schachtelbilder stammen von BoardGameGeek. Schachtelbilder werden direkt von den Servern von BoardGameGeek geladen, die dabei deine IP-Adresse sehen. Anfragen unseres Servers enthalten keine personenbezogenen Daten von dir."
+          ]
+        },
+        {
+          "title": "Konto löschen",
+          "paragraphs": [
+            "Du kannst dein Konto in den Einstellungen löschen. Passwort und Profilbild werden entfernt, du wirst aus allen Freundeslisten entfernt und dein Benutzername wird durch einen anonymen Platzhalter ersetzt. Gespielte Partien bleiben für die anderen Mitspieler erhalten und sind mit dem anonymisierten Konto verknüpft. Der ursprüngliche Benutzername wird intern gespeichert, damit diese gemeinsamen Spiele stimmig bleiben."
+          ]
+        },
+        {
+          "title": "Deine Rechte",
+          "paragraphs": [
+            "Nach der DSGVO hast du das Recht auf Auskunft, Berichtigung, Löschung und Datenübertragbarkeit, auf Einschränkung der Verarbeitung, auf Widerspruch sowie auf Beschwerde bei einer Datenschutzaufsichtsbehörde. Kontakt: {{contact}}"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "sections": [
+        {
+          "title": "Der Dienst",
+          "paragraphs": [
+            "KeepWiz ist ein kostenloser, privat betriebener Punktezähler für Karten- und Brettspiele. Er wird ohne Gewähr bereitgestellt und kann jederzeit geändert oder eingestellt werden."
+          ]
+        },
+        {
+          "title": "Dein Konto",
+          "items": [
+            "Halte dein Passwort geheim. Du bist für Aktivitäten in deinem Konto verantwortlich.",
+            "Wähle Benutzernamen und Profilbilder, die nicht beleidigend sind und niemanden imitieren.",
+            "Lade nur Inhalte hoch, die du teilen darfst."
+          ]
+        },
+        {
+          "title": "Faire Nutzung",
+          "paragraphs": [
+            "Missbrauche den Dienst nicht, z. B. durch Angriffe oder Überlastung des Servers, automatisiertes Auslesen von Daten oder Manipulation von Bestenlisten und ELO-Wertungen. Wir können Inhalte entfernen oder Konten sperren, die gegen diese Regeln verstoßen."
+          ]
+        },
+        {
+          "title": "Deine Daten",
+          "paragraphs": [
+            "Deine Spiele gehören dir. Daten, die nur auf deinem Gerät liegen, können beim Löschen der Browserdaten verloren gehen. Melde dich an und synchronisiere, wenn du eine Sicherung möchtest. Details findest du in der Datenschutzerklärung."
+          ]
+        },
+        {
+          "title": "Haftung",
+          "paragraphs": [
+            "Wir haften unbeschränkt bei Vorsatz und grober Fahrlässigkeit. Im Übrigen haften wir, soweit gesetzlich zulässig, nicht für verlorene Spielstände, Daten oder Schäden aus der Nutzung der App."
+          ]
+        },
+        {
+          "title": "Marken",
+          "paragraphs": [
+            "KeepWiz ist ein inoffizielles Fanprojekt und weder mit AMIGO Spiele + Freizeit GmbH, BoardGameGeek noch einem anderen Spieleverlag verbunden oder von ihnen unterstützt. Alle Spielnamen, Logos und Schachtelbilder sind Eigentum ihrer jeweiligen Inhaber."
+          ]
+        }
+      ]
+    },
+    "imprint": {
+      "title": "Impressum",
+      "operatorHeading": "Verantwortlich für diese App",
+      "contactHeading": "Kontakt"
+    },
+    "licenses": {
+      "title": "Lizenzen & Danksagungen",
+      "appLicenseHeading": "KeepWiz",
+      "appLicenseText": "KeepWiz ist Open Source unter der MIT-Lizenz.",
+      "viewLicense": "Lizenz ansehen",
+      "sourceCode": "Quellcode",
+      "thirdPartyHeading": "Open-Source-Software",
+      "thirdPartyText": "KeepWiz basiert auf diesen Bibliotheken. Danke an ihre Autorinnen und Autoren.",
+      "dataHeading": "Spieldaten",
+      "bggText": "Spielinformationen und Schachtelbilder werden von BoardGameGeek bereitgestellt."
+    }
+  },
+
+  "consent": {
+    "title": "KeepWiz verbessern helfen?",
+    "text": "Mit deiner Erlaubnis nutzen wir Google Analytics, um zu sehen, welche Funktionen genutzt werden. Bis du zustimmst, wird nichts geladen. Du kannst das jederzeit in den Einstellungen ändern.",
+    "learnMore": "Datenschutzerklärung",
+    "accept": "Erlauben",
+    "decline": "Ablehnen"
   }
 }

@@ -1,0 +1,127 @@
+/* ── Legal pages (/legal/:doc) ── */
+.legal-page {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-md) 0 var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.legal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.legal-header .games-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.legal-updated,
+.legal-contact {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.legal-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  font-size: 0.95rem;
+}
+
+.legal-section h2 {
+  margin: 0 0 var(--spacing-xs);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.legal-section h2:not(:first-child) {
+  margin-top: var(--spacing-md);
+}
+
+.legal-section p,
+.legal-section ul {
+  margin: 0 0 var(--spacing-sm);
+  overflow-wrap: anywhere;
+}
+
+.legal-section > :last-child {
+  margin-bottom: 0;
+}
+
+.legal-section ul {
+  padding-left: 1.2rem;
+}
+
+.legal-section li + li {
+  margin-top: 4px;
+}
+
+.legal-address {
+  font-style: normal;
+  margin-bottom: var(--spacing-sm);
+}
+
+.legal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.legal-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (hover: hover) {
+  .legal-link:hover {
+    text-decoration: underline;
+  }
+}
+
+.legal-section .legal-deps {
+  list-style: none;
+  padding: 0;
+}
+
+.legal-deps li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-section .legal-deps li + li {
+  margin-top: 0;
+}
+
+.legal-deps li:last-child {
+  border-bottom: none;
+}
+
+.legal-dep-license {
+  flex-shrink: 0;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .legal-section {
+    padding: var(--spacing-lg);
+  }
+}

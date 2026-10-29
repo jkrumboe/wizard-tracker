@@ -6,6 +6,7 @@ import Home from "@/pages/Home"
 import { Navbar } from "@/components/layout"
 import { AuthProtectedRoute, UpdateNotification, SeoRouteMeta, OfflineStatusBar } from "@/components/common"
 import AdminProtectedRoute from "@/components/common/AdminProtectedRoute"
+import ConsentBanner from "@/components/common/ConsentBanner"
 import ServiceWorkerErrorRecovery from "@/components/common/ServiceWorkerErrorRecovery"
 
 // Lazy load heavy pages for better initial load performance
@@ -15,6 +16,7 @@ const GamesPage = lazy(() => import("@/pages/game/GamesPage"))
 const StartGame = lazy(() => import("@/pages/game/StartGame"))
 const GameTypePage = lazy(() => import("@/pages/game/GameTypePage"))
 const GameTypeInfoPage = lazy(() => import("@/pages/game/GameTypeInfoPage"))
+const LegalPage = lazy(() => import("@/pages/legal/LegalPage"))
 const GameDetails = lazy(() => import("@/pages/game/GameDetails"))
 const GameInProgress = lazy(() => import("@/pages/game/GameInProgress"))
 const TableGame = lazy(() => import("@/pages/game/TableGame"))
@@ -166,6 +168,7 @@ function App() {
                 <Navbar />
                 <div className="main-container">
                 <OfflineStatusBar />
+                <ConsentBanner />
                 <LazyLoadErrorBoundary>
                   <Suspense fallback={
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: 'var(--text-muted)' }}>
@@ -207,6 +210,7 @@ function App() {
                         <Login />
                     }/>
                     <Route path="/account" element={<Account />} />
+                    <Route path="/legal/:doc" element={<LegalPage />} />
                     <Route path="/admin" element={
                       <AdminProtectedRoute>
                         <AdminLayout />

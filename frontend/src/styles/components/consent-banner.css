@@ -1,0 +1,64 @@
+/* ── Analytics consent banner: floats above the bottom navigation ── */
+.consent-banner {
+  position: fixed;
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  bottom: calc(var(--bottom-nav-reserve) + var(--spacing-sm));
+  z-index: 150;
+  margin: 0 auto;
+  max-width: 520px;
+  padding: var(--spacing-md);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+}
+
+.consent-banner-title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.consent-banner-text {
+  margin: 0 0 var(--spacing-md);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-light);
+}
+
+.consent-banner-link {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.consent-banner-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+/* Both choices look the same so neither is nudged */
+.consent-banner-btn {
+  min-height: var(--tap-min);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consent-banner-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .consent-banner-btn:hover {
+    background: var(--primary);
+    color: var(--text-white);
+  }
+}

@@ -8,7 +8,9 @@ import { useUser } from '@/shared/hooks/useUser';
 
 import { LocalGameStorage, LocalTableGameStorage, LocalScoreboardGameStorage } from '@/shared/api';
 import { migrateLocalStorageGames, getMigrationStatus, hasGamesNeedingMigration } from '@/shared/utils/localStorageMigration';
-import { TrashIcon, RefreshIcon, LogOutIcon, KeyIcon, XIcon, CheckMarkIcon, ChevronRightIcon } from '@/components/ui/Icon';
+import { TrashIcon, RefreshIcon, LogOutIcon, KeyIcon, XIcon, CheckMarkIcon, ChevronRightIcon, ActivityIcon, ShieldCheckIcon, FileTextIcon, UserIcon, ListIcon } from '@/components/ui/Icon';
+import { hasImprint } from '@/shared/constants/legal';
+import { isAnalyticsEnabled, setAnalyticsEnabled, ANALYTICS_CONSENT_EVENT } from '@/shared/utils/analyticsConsent';
 import { supportedLanguages } from '@/shared/i18n/i18n';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 
@@ -19,6 +21,7 @@ import avatarService from '@/shared/api/avatarService';
 import defaultAvatar from "@/assets/default-avatar.png";
 import { batchCheckGamesSyncStatus } from '@/shared/utils/syncChecker';
 import { createLogger } from '@/shared/utils/logger';
+import { getGameTypeKey, getStatsGameTypes, filterGamesByType } from '@/shared/utils/gameTypes';
 const PerformanceStatsEnhanced = lazy(() => import('@/pages/profile/PerformanceStatsEnhanced'));
 import StatsOverview from '@/components/stats/StatsOverview';
 import AccentColorPicker from '@/components/settings/AccentColorPicker';
@@ -52,6 +55,7 @@ const Account = () => {
     const saved = localStorage.getItem('autoUpdate');
     return saved !== null ? saved === 'true' : true; // Default to true
   });
+  const [analyticsEnabled, setAnalyticsEnabledState] = useState(isAnalyticsEnabled);
   const [migrating, setMigrating] = useState(false);
   const [migrationStatus, setMigrationStatus] = useState(null);
   const [needsMigration, setNeedsMigration] = useState(false);
@@ -515,6 +519,19 @@ const Account = () => {
 
 
 
+  const handleAnalyticsChange = (e) => {
+    const enabled = e.target.checked;
+    setAnalyticsEnabled(enabled);
+    setAnalyticsEnabledState(enabled);
+  };
+
+  // The consent banner can answer while this page is open
+  useEffect(() => {
+    const sync = (e) => setAnalyticsEnabledState(e.detail.enabled);
+    globalThis.addEventListener(ANALYTICS_CONSENT_EVENT, sync);
+    return () => globalThis.removeEventListener(ANALYTICS_CONSENT_EVENT, sync);
+  }, []);
+
   const handleAutoUpdateChange = (e) => {
     const newValue = e.target.checked;
     setAutoUpdate(newValue);
@@ -774,66 +791,31 @@ const Account = () => {
 
   // Handler for game type card clicks
   const handleGameTypeClick = useCallback((gameTypeName) => {
-    setStatsGameType(gameTypeName.toLowerCase() === 'wizard' ? 'wizard' : gameTypeName);
+    setStatsGameType(getGameTypeKey(gameTypeName));
     setActiveTab('stats');
   }, []);
 
-  // Get all games for stats tab
-  const allGamesForStats = useMemo(() => {
-    // If user is logged in, use cloud games (which include identity consolidation)
-    // Otherwise use local games
-    const gamesSource = user && cloudGames.length > 0 
-      ? cloudGames 
-      : [...Object.values(savedGames), ...savedTableGames];
-    
-    if (!gamesSource || gamesSource.length === 0) return [];
-    
-    // Filter by game type
-    const wizardGames = gamesSource.filter(g => g.gameType !== 'table' && g.gameType !== 'scoreboard');
-    const tableGames = gamesSource.filter(g => g.gameType === 'table' || g.gameType === 'scoreboard');
-    
-    if (statsGameType === 'wizard') {
-      return wizardGames;
-    } else {
-      // Filter by specific table game type
-      return tableGames.filter(game => 
-        (game.gameTypeName || game.name) === statsGameType
-      );
-    }
-  }, [savedGames, savedTableGames, cloudGames, user, statsGameType]);
+  // If user is logged in, use cloud games (which include identity consolidation)
+  // Otherwise use local games
+  const gamesForStatsSource = useMemo(() => (
+    user && cloudGames.length > 0
+      ? cloudGames
+      : [...Object.values(savedGames), ...savedTableGames]
+  ), [savedGames, savedTableGames, cloudGames, user]);
 
-  // Get available game types for stats selector
-  const availableGameTypes = useMemo(() => {
-    // Use cloud games if user is logged in, otherwise local games
-    const gamesSource = user && cloudGames.length > 0 
-      ? cloudGames 
-      : [...Object.values(savedGames), ...savedTableGames];
-    
-    const types = [];
-    
-    // Check for wizard games
-    const wizardGames = gamesSource.filter(g => g.gameType !== 'table' && g.gameType !== 'scoreboard');
-    if (wizardGames.length > 0) {
-      types.push({ value: 'wizard', label: 'Wizard' });
-    }
-    
-    // Add table game types
-    const tableGameTypes = new Set();
-    gamesSource
-      .filter(g => g.gameType === 'table' || g.gameType === 'scoreboard')
-      .forEach(game => {
-        const gameType = game.gameTypeName || game.name;
-        if (gameType) {
-          tableGameTypes.add(gameType);
-        }
-      });
-    
-    tableGameTypes.forEach(type => {
-      types.push({ value: type, label: type });
-    });
-    
-    return types;
-  }, [savedGames, savedTableGames, cloudGames, user]);
+  // Game types for the stats selector - spellings of one game share one entry
+  const availableGameTypes = useMemo(
+    () => getStatsGameTypes(gamesForStatsSource),
+    [gamesForStatsSource]
+  );
+
+  // Games of the selected type for the stats tab
+  const allGamesForStats = useMemo(
+    () => filterGamesByType(gamesForStatsSource, statsGameType),
+    [gamesForStatsSource, statsGameType]
+  );
+
+  const statsGameTypeLabel = availableGameTypes.find(type => type.value === statsGameType)?.label || statsGameType;
 
   // Auto-select first available game type if 'all' or invalid selection
   React.useEffect(() => {
@@ -1019,7 +1001,7 @@ const Account = () => {
                 ) : (
                   <div className="settings-section">
                     <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                      {t('account.noGamesForType', { type: statsGameType === 'all' ? t('common.all') : statsGameType })}
+                      {t('account.noGamesForType', { type: statsGameType === 'all' ? t('common.all') : statsGameTypeLabel })}
                     </p>
                   </div>
                 )}
@@ -1038,8 +1020,9 @@ const Account = () => {
         {activeTab === 'settings' && (
           <div className="tab-content settings-tab">
 
-            {/* Appearance & Language */}
+            {/* Appearance */}
             <div className="settings-group">
+              <h3 className="settings-group-title">{t('account.settingsAppearance')}</h3>
               <div className="settings-group-content">
                 <div className="settings-row">
                   <div className="settings-row-left">
@@ -1080,18 +1063,13 @@ const Account = () => {
                     </button>
                   </>
                 )}
-              </div>
-            </div>
-
-            {/* Accent color */}
-            <div className="settings-group">
-              <div className="settings-group-content">
                 <AccentColorPicker />
               </div>
             </div>
 
             {/* Language */}
             <div className="settings-group">
+              <h3 className="settings-group-title">{t('common.language')}</h3>
               <div className="settings-group-content">
                 {supportedLanguages.map((lang) => (
                   <button
@@ -1111,8 +1089,28 @@ const Account = () => {
               </div>
             </div>
 
+            {/* Account */}
+            {user && (
+              <div className="settings-group">
+                <h3 className="settings-group-title">{t('account.settingsAccount')}</h3>
+                <div className="settings-group-content">
+                  <button 
+                    className="settings-row settings-row-clickable" 
+                    onClick={() => setShowPasswordChangeModal(true)}
+                  >
+                    <div className="settings-row-left">
+                      <KeyIcon size={18} className="settings-row-icon" />
+                      <span>{t('account.changePassword')}</span>
+                    </div>
+                    <ChevronRightIcon size={18} className="settings-row-chevron" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Updates */}
             <div className="settings-group">
+              <h3 className="settings-group-title">{t('account.settingsUpdates')}</h3>
               <div className="settings-group-content">
                 <div className="settings-row">
                   <div className="settings-row-left">
@@ -1152,42 +1150,9 @@ const Account = () => {
               </div>
             </div>
 
-            {/* Account */}
-            {user && (
-              <div className="settings-group">
-                <div className="settings-group-content">
-                  <button 
-                    className="settings-row settings-row-clickable" 
-                    onClick={() => setShowPasswordChangeModal(true)}
-                  >
-                    <div className="settings-row-left">
-                      <KeyIcon size={18} className="settings-row-icon" />
-                      <span>{t('account.changePassword')}</span>
-                    </div>
-                    <ChevronRightIcon size={18} className="settings-row-chevron" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* App Information */}
-            <div className="settings-group">
-              <div className="settings-group-content">
-                <div className="settings-row">
-                  <span className="settings-row-label">{t('account.versionLabel')}</span>
-                  <span className="settings-row-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
-                </div>
-                <div className="settings-row">
-                  <span className="settings-row-label">{t('account.buildDateLabel')}</span>
-                  <span className="settings-row-value">
-                    {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* Data Management */}
             <div className="settings-group">
+              <h3 className="settings-group-title">{t('account.dataManagement')}</h3>
               <div className="settings-group-content">
                 <div className="settings-row">
                   <span className="settings-row-label">{t('account.storageFormat')}</span>
@@ -1227,8 +1192,81 @@ const Account = () => {
               </div>
             </div>
 
+            {/* Legal & Privacy */}
+            <div className="settings-group">
+              <h3 className="settings-group-title">{t('legal.settingsTitle')}</h3>
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <div className="settings-row-left">
+                    <ActivityIcon size={18} className="settings-row-icon" />
+                    <span>{t('legal.analyticsToggle')}</span>
+                  </div>
+                  <label className="settings-switch">
+                    <input
+                      type="checkbox"
+                      checked={analyticsEnabled}
+                      onChange={handleAnalyticsChange}
+                      aria-describedby="settings-analytics-hint"
+                    />
+                    <span className="settings-switch-slider"></span>
+                  </label>
+                </div>
+                <div className="settings-row settings-row-muted" id="settings-analytics-hint">
+                  <span>{t('legal.analyticsHint')}</span>
+                </div>
+                <Link to="/legal/privacy" className="settings-row settings-row-clickable">
+                  <div className="settings-row-left">
+                    <ShieldCheckIcon size={18} className="settings-row-icon" />
+                    <span>{t('legal.privacy.title')}</span>
+                  </div>
+                  <ChevronRightIcon size={18} className="settings-row-chevron" />
+                </Link>
+                <Link to="/legal/terms" className="settings-row settings-row-clickable">
+                  <div className="settings-row-left">
+                    <FileTextIcon size={18} className="settings-row-icon" />
+                    <span>{t('legal.terms.title')}</span>
+                  </div>
+                  <ChevronRightIcon size={18} className="settings-row-chevron" />
+                </Link>
+                {hasImprint() && (
+                  <Link to="/legal/imprint" className="settings-row settings-row-clickable">
+                    <div className="settings-row-left">
+                      <UserIcon size={18} className="settings-row-icon" />
+                      <span>{t('legal.imprint.title')}</span>
+                    </div>
+                    <ChevronRightIcon size={18} className="settings-row-chevron" />
+                  </Link>
+                )}
+                <Link to="/legal/licenses" className="settings-row settings-row-clickable">
+                  <div className="settings-row-left">
+                    <ListIcon size={18} className="settings-row-icon" />
+                    <span>{t('legal.licenses.title')}</span>
+                  </div>
+                  <ChevronRightIcon size={18} className="settings-row-chevron" />
+                </Link>
+              </div>
+            </div>
+
+            {/* App Information */}
+            <div className="settings-group">
+              <h3 className="settings-group-title">{t('account.appInformation')}</h3>
+              <div className="settings-group-content">
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.versionLabel')}</span>
+                  <span className="settings-row-value">{import.meta.env.VITE_APP_VERSION || '1.10.13'}</span>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-row-label">{t('account.buildDateLabel')}</span>
+                  <span className="settings-row-value">
+                    {formatDate(import.meta.env.VITE_BUILD_DATE || new Date().toISOString())}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Danger Zone */}
             <div className="settings-group settings-group-danger">
+              <h3 className="settings-group-title">{t('account.settingsDangerZone')}</h3>
               <div className="settings-group-content">
                 <button 
                   className="settings-row settings-row-clickable settings-row-danger"
@@ -1254,6 +1292,10 @@ const Account = () => {
                 )}
               </div>
             </div>
+
+            <p className="settings-legal-note">
+              {t('legal.footerNote', { year: new Date().getFullYear() })}
+            </p>
           </div>
         )}
 

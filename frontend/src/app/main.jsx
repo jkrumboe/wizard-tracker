@@ -16,6 +16,10 @@ import { startUploadQueue } from "@/shared/sync/uploadQueueRunner"
 import { syncApiClient } from "@/shared/api"
 import { wasServiceWorkerForceUpdated, clearServiceWorkerUpdateFlag, forceServiceWorkerUpdate } from "@/shared/utils/swCleanup"
 import { appLogger, getLogLevel, setLogLevel } from "@/shared/utils/logger"
+import { initAnalytics } from "@/shared/utils/analyticsConsent"
+
+// Google Analytics loads only for users who opted in
+initAnalytics();
 
 // Handle service worker precache errors
 if (wasServiceWorkerForceUpdated()) {

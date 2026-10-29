@@ -975,6 +975,20 @@ html:not([data-theme="dark"]) .settings-tab button {
   border-bottom: 1px solid var(--border);
 }
 
+a.settings-row {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Footer note under the Legal group */
+.settings-legal-note {
+  margin: var(--spacing-xs) var(--spacing-xs) 0;
+  color: var(--text-light);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
 /* Language rows */
 .settings-lang-row {
   font-family: inherit;
