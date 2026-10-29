@@ -73,3 +73,7 @@ jspm_packages/
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+# Strava prototype tokens and raw ride data (personal GPS)
+scripts/strava/.tokens.json
+scripts/strava/data/
