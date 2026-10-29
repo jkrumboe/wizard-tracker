@@ -19,7 +19,7 @@ describe('sanitizeGameInfo', () => {
       playingTime: 45,
       minAge: 10,
       yearPublished: '1984',
-    })).toEqual({
+    })).toMatchObject({
       bggId: 1465,
       imageUrl: BGG_IMAGE,
       thumbnailUrl: BGG_IMAGE,
@@ -27,6 +27,26 @@ describe('sanitizeGameInfo', () => {
       minAge: 10,
       yearPublished: 1984,
     });
+  });
+
+  test('keeps player counts, scores and designers within range', () => {
+    expect(sanitizeGameInfo({
+      minPlayers: 3,
+      maxPlayers: 6,
+      bestPlayers: [5, 4, 4, 0, 'x'],
+      weight: 1.6974,
+      rating: '7.01203',
+      designers: ['Ken Fisher', '', 42, 'A', 'B', 'C'],
+    })).toMatchObject({
+      minPlayers: 3,
+      maxPlayers: 6,
+      bestPlayers: [4, 5],
+      weight: 1.7,
+      rating: 7,
+      designers: ['Ken Fisher', 'A', 'B'],
+    });
+    expect(sanitizeGameInfo({ bggId: 1, weight: 0, rating: 11, bestPlayers: [], designers: [] }))
+      .toMatchObject({ weight: null, rating: null, bestPlayers: null, designers: null });
   });
 
   test('drops images from other hosts and non-https or script URLs', () => {
@@ -99,7 +119,7 @@ describe('parseBggThing', () => {
       <playingtime value="45" />
       <minage value="10" />
     </item></items>`;
-    expect(parseBggThing(xml)).toEqual({
+    expect(parseBggThing(xml)).toMatchObject({
       description: 'Bid & win tricks.\n\n3–6 players — fun',
       minPlayers: 3,
       maxPlayers: 6,
@@ -109,14 +129,58 @@ describe('parseBggThing', () => {
     });
   });
 
+  test('reads best player counts from the poll votes, plus stats and designers', () => {
+    const results = (count, best, recommended, notRecommended) => `
+      <results numplayers="${count}">
+        <result value="Best" numvotes="${best}" />
+        <result value="Recommended" numvotes="${recommended}" />
+        <result value="Not Recommended" numvotes="${notRecommended}" />
+      </results>`;
+    const xml = `<items><item type="boardgame" id="1465">
+      <poll name="suggested_numplayers" title="User Suggested Number of Players" totalvotes="206">
+        ${results(3, 31, 101, 47)}${results(4, 142, 53, 1)}${results(5, 111, 75, 3)}
+        ${results(6, 49, 104, 25)}${results('6+', 300, 6, 1)}
+      </poll>
+      <minplaytime value="30" /><maxplaytime value="60" />
+      <link type="boardgamedesigner" id="618" value="Ken Fisher" />
+      <link type="boardgamedesigner" id="3" value="(Uncredited)" />
+      <link type="boardgameartist" id="11883" value="Franz Vohwinkel" />
+      <statistics page="1"><ratings>
+        <average value="7.01203" /><bayesaverage value="6.73976" />
+        <averageweight value="1.6974" />
+      </ratings></statistics>
+    </item></items>`;
+    expect(parseBggThing(xml)).toMatchObject({
+      bestPlayers: [4, 5],
+      minPlayTime: 30,
+      maxPlayTime: 60,
+      rating: 7,
+      weight: 1.7,
+      designers: ['Ken Fisher'],
+    });
+  });
+
+  test('ignores best votes too thin to count', () => {
+    const xml = `<poll name="suggested_numplayers"><results numplayers="2">
+      <result value="Best" numvotes="2" /><result value="Recommended" numvotes="0" />
+      <result value="Not Recommended" numvotes="0" /></results></poll>`;
+    expect(parseBggThing(xml).bestPlayers).toBeNull();
+  });
+
   test('handles missing fields', () => {
     expect(parseBggThing('<items></items>')).toEqual({
       description: '',
       minPlayers: null,
       maxPlayers: null,
+      bestPlayers: null,
       playingTime: null,
+      minPlayTime: null,
+      maxPlayTime: null,
       minAge: null,
       yearPublished: null,
+      weight: null,
+      rating: null,
+      designers: null,
     });
   });
 });

@@ -8,6 +8,7 @@ import { attachGameInfo } from '@/shared/utils/attachGameInfo';
 import { linkBarcode } from '@/shared/utils/barcodeTemplateMap';
 import { notifyTemplatesChanged } from '@/shared/hooks/useGameTemplates';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
+import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/components/modal.css';
 import '@/styles/components/scan-barcode-modal.css';
 
@@ -18,9 +19,15 @@ import '@/styles/components/scan-barcode-modal.css';
  * a readable "<game> <edition>" since their template name is only a storage key.
  * `barcodeName` is the game a scanned barcode gets linked to, so later scans open
  * it; null when there is no startable game of that name (built-in editions).
+ * `onPickInfo(gameInfo, details)` takes the picked info instead of attaching it
+ * (e.g. to suggest other box art to the admins), with `title` and `description`
+ * to match.
  */
-const FindGameInfoModal = ({ isOpen, onClose, template, displayName, initialQuery, barcodeName }) => {
+const FindGameInfoModal = ({
+  isOpen, onClose, template, displayName, initialQuery, barcodeName, onPickInfo, title, description,
+}) => {
   const { t } = useTranslation();
+  const { user } = useUser();
   const [query, setQuery] = useState('');
   const [step, setStep] = useState('search'); // 'search' | 'scan' | 'lookup' | 'candidates'
   const [notice, setNotice] = useState('');
@@ -43,8 +50,21 @@ const FindGameInfoModal = ({ isOpen, onClose, template, displayName, initialQuer
   }, [isOpen, initialQuery, template?.name]);
 
   const attach = (gameInfo, details) => {
-    attachGameInfo(template, gameInfo, details || {});
-    notifyTemplatesChanged();
+    if (onPickInfo) {
+      onPickInfo(gameInfo, details || {});
+    } else {
+      // Art for a shared game is reviewed by an admin first; this device shows it right away
+      const suggestion = attachGameInfo(template, gameInfo, details || {}, { suggest: user?.role !== 'admin' });
+      notifyTemplatesChanged();
+      suggestion
+        ?.then(() => alert(t('gameType.boxArtSuggested')))
+        .catch((error) => {
+          console.error('Error suggesting box art:', error);
+          alert(`${t('gameType.boxArtSuggestFailed')}
+
+${error.message}`);
+        });
+    }
     onClose();
   };
 
@@ -98,7 +118,7 @@ const FindGameInfoModal = ({ isOpen, onClose, template, displayName, initialQuer
         <div className="modal-header">
           <h2>
             <ImagePlusIcon size={20} />
-            {t('scanBarcode.findInfoTitle')}
+            {title ?? t('scanBarcode.findInfoTitle')}
           </h2>
           <button className="close-btn" onClick={handleClose} aria-label={t('common.close')}>
             <XIcon size={20} />
@@ -108,7 +128,7 @@ const FindGameInfoModal = ({ isOpen, onClose, template, displayName, initialQuer
         <div className="modal-content">
           {step === 'search' && (
             <div className="scan-unknown">
-              <p>{t('scanBarcode.findInfoDescription', { name: displayName ?? template.name })}</p>
+              <p>{description ?? t('scanBarcode.findInfoDescription', { name: displayName ?? template.name })}</p>
               <div className="scan-search">
                 <SearchIcon size={16} />
                 <input

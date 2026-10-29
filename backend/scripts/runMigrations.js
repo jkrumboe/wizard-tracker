@@ -19,6 +19,10 @@ const TableGame = require('../models/TableGame');
 const WizardGame = require('../models/WizardGame');
 const User = require('../models/User');
 const Game = require('../models/Game');
+const SystemGameTemplate = require('../models/SystemGameTemplate');
+const UserGameTemplate = require('../models/UserGameTemplate');
+const { BGG_API_TOKEN, MAX_THING_IDS, fetchBggThingXml } = require('../utils/bggClient');
+const { parseBggThings, sanitizeGameInfo } = require('../utils/gameInfo');
 
 const CURRENT_VERSION = '1.0.0';
 
@@ -74,6 +78,12 @@ const migrations = [
     version: '1.0.0',
     description: 'Drop the share fields and their indexes left behind by the removed game sharing feature',
     run: removeGameSharing
+  },
+  {
+    name: '009_refresh_bgg_game_info',
+    version: '1.0.0',
+    description: 'Re-read BoardGameGeek info for templates with a bggId to add player counts, best player counts, play time range, weight, rating and designers',
+    run: refreshBggGameInfo
   },
   {
     name: '010_recalculate_elo_margin_and_wins',
@@ -585,6 +595,45 @@ async function removeGameSharing() {
   console.log(`  Cleared share fields on ${stats.wizardGamesCleaned} wizard games and ${stats.gamesCleaned} legacy games`);
   console.log(`  Dropped ${stats.indexesDropped} shareId index(es)`);
 
+  return stats;
+}
+
+/**
+ * Migration 009: Refresh BGG game info
+ * Templates saved before gameInfo carried player counts, weight etc. only have
+ * box art, year, time and age. Re-read them from BGG, keeping stored values BGG
+ * doesn't return. A BGG error fails the migration so the next start retries it.
+ */
+async function refreshBggGameInfo() {
+  const stats = { templatesChecked: 0, templatesUpdated: 0, skipped: null };
+  if (!BGG_API_TOKEN) {
+    stats.skipped = 'BGG_API_TOKEN not set';
+    console.log('  BGG_API_TOKEN not set, nothing to refresh');
+    return stats;
+  }
+
+  for (const Model of [SystemGameTemplate, UserGameTemplate]) {
+    const templates = await Model.find({ 'gameInfo.bggId': { $ne: null } });
+    stats.templatesChecked += templates.length;
+    const bggIds = [...new Set(templates.map((template) => template.gameInfo.bggId))];
+
+    const things = new Map();
+    for (let start = 0; start < bggIds.length; start += MAX_THING_IDS) {
+      const batch = bggIds.slice(start, start + MAX_THING_IDS);
+      for (const [id, thing] of parseBggThings(await fetchBggThingXml(batch))) things.set(id, thing);
+    }
+
+    for (const template of templates) {
+      const thing = things.get(template.gameInfo.bggId);
+      if (!thing) continue;
+      const known = Object.fromEntries(Object.entries(thing).filter(([, value]) => value != null));
+      template.gameInfo = sanitizeGameInfo({ ...template.gameInfo.toObject(), ...known });
+      await template.save();
+      stats.templatesUpdated++;
+    }
+  }
+
+  console.log(`  Refreshed BGG info on ${stats.templatesUpdated} of ${stats.templatesChecked} templates`);
   return stats;
 }
 

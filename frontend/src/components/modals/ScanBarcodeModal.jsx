@@ -13,8 +13,8 @@ import {
   linkBarcode,
   normalizeBarcode,
 } from '@/shared/utils/barcodeTemplateMap';
-import { getTemplateGameInfo, safeImageUrl } from '@/shared/utils/gameInfoStore';
-import { attachGameInfo, isSystemTemplate, MAX_DESCRIPTION_LENGTH } from '@/shared/utils/attachGameInfo';
+import { markGameInfoChecked, safeImageUrl } from '@/shared/utils/gameInfoStore';
+import { attachGameInfo, isSystemTemplate, MAX_DESCRIPTION_LENGTH, needsGameInfo } from '@/shared/utils/attachGameInfo';
 import '@/styles/components/modal.css';
 import '@/styles/components/scan-barcode-modal.css';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
@@ -101,11 +101,15 @@ const ScanBarcodeModal = ({ isOpen, onClose, mode = 'scan', templateType = null 
     const start = findStartForBarcode(code, allTemplates);
     if (start) {
       const match = start.template;
-      // Games linked before box art existed pick it up in the background (lookups are cached)
-      if (!getTemplateGameInfo(match)) {
-        void gameTemplateService.lookupBarcodeProduct(code)
-          .then((found) => attachGameInfo(match, found?.gameInfo))
-          .catch((error) => console.warn('Could not attach box art:', error));
+      // Games linked before box art existed, or while the lookup couldn't reach BGG,
+      // get the missing info first so setup shows it (lookups are cached)
+      if (needsGameInfo(match)) {
+        setStep('lookup');
+        const found = await gameTemplateService.lookupBarcodeProduct(code);
+        if (lookupSession !== lookupSessionRef.current) return;
+        attachGameInfo(match, found?.gameInfo, found?.details || {});
+        // Only a lookup that reached BGG (or knows it can't) settles it; failures retry next scan
+        if (found && found.detailsStatus !== 'failed') markGameInfoChecked(match.name);
       }
       goToTemplate(match, start.startName);
       return;

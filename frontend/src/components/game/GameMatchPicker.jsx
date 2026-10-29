@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { safeImageUrl } from '@/shared/utils/gameInfoStore';
+import PoweredByBgg from '@/components/ui/PoweredByBgg';
 
 // Wait for a pause in typing before asking BGG
 const SEARCH_DEBOUNCE_MS = 400;
@@ -90,6 +91,7 @@ const GameMatchPicker = ({ query, onPick, onNoMatch, isInYourGames, title }) => 
           />
         ))}
       </div>
+      <PoweredByBgg />
     </div>
   );
 };

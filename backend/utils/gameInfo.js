@@ -22,11 +22,38 @@ const sanitizeInt = (value, max) => {
   return Number.isInteger(number) && number > 0 && number <= max ? number : null;
 };
 
+// BGG reports 0 for "no votes yet", so anything below the scale's minimum is unknown
+const sanitizeScore = (value, min, max) => {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= min && number <= max ? Math.round(number * 10) / 10 : null;
+};
+
+const sanitizePlayerCounts = (value) => {
+  if (!Array.isArray(value)) return null;
+  const counts = [...new Set(value.map((count) => sanitizeInt(count, 100)).filter(Boolean))].sort((a, b) => a - b);
+  return counts.length ? counts : null;
+};
+
+const MAX_DESIGNERS = 3;
+const MAX_NAME_LENGTH = 100;
+
+const sanitizeNames = (value) => {
+  if (!Array.isArray(value)) return null;
+  const names = value
+    .filter((name) => typeof name === 'string')
+    .map((name) => name.trim())
+    .filter((name) => name && name.length <= MAX_NAME_LENGTH)
+    .slice(0, MAX_DESIGNERS);
+  return names.length ? names : null;
+};
+
 /**
  * Validate client-supplied game info. Returns null when nothing usable is left,
  * so templates without box art stay clean.
  * @param {Object} input
- * @returns {{bggId, imageUrl, thumbnailUrl, playingTime, minAge, yearPublished}|null}
+ * @returns {{bggId, imageUrl, thumbnailUrl, minPlayers, maxPlayers, bestPlayers, playingTime,
+ *   minPlayTime, maxPlayTime, minAge, yearPublished, weight, rating, designers}|null}
  */
 function sanitizeGameInfo(input) {
   if (!input || typeof input !== 'object') return null;
@@ -34,9 +61,17 @@ function sanitizeGameInfo(input) {
     bggId: sanitizeInt(input.bggId, 10_000_000),
     imageUrl: sanitizeImageUrl(input.imageUrl),
     thumbnailUrl: sanitizeImageUrl(input.thumbnailUrl),
+    minPlayers: sanitizeInt(input.minPlayers, 100),
+    maxPlayers: sanitizeInt(input.maxPlayers, 100),
+    bestPlayers: sanitizePlayerCounts(input.bestPlayers),
     playingTime: sanitizeInt(input.playingTime, 10_000),
+    minPlayTime: sanitizeInt(input.minPlayTime, 10_000),
+    maxPlayTime: sanitizeInt(input.maxPlayTime, 10_000),
     minAge: sanitizeInt(input.minAge, 99),
     yearPublished: sanitizeInt(input.yearPublished, 3000),
+    weight: sanitizeScore(input.weight, 1, 5),
+    rating: sanitizeScore(input.rating, 1, 10),
+    designers: sanitizeNames(input.designers),
   };
   return Object.values(info).some((value) => value !== null) ? info : null;
 }
@@ -101,10 +136,39 @@ const readValue = (xml, tag) => {
   return match ? match[1] : null;
 };
 
+// Fewer "Best" votes than this for a player count is too thin to call it best
+const MIN_BEST_VOTES = 5;
+
 /**
- * Parse the fields we use from a BGG XML API2 /thing response.
+ * Player counts the BGG community voted "Best" for: those where Best got the
+ * most votes. Read from the vote counts rather than BGG's English summary text.
  * @param {string} xml
- * @returns {{description, minPlayers, maxPlayers, playingTime, minAge, yearPublished}}
+ * @returns {number[]|null}
+ */
+const parseBestPlayers = (xml) => {
+  const poll = xml.match(/<poll\s+name="suggested_numplayers"[^>]*>([\s\S]*?)<\/poll>/)?.[1];
+  if (!poll) return null;
+  // "6+" style open-ended counts are skipped by the digits-only match
+  const best = [...poll.matchAll(/<results\s+numplayers="(\d+)">([\s\S]*?)<\/results>/g)]
+    .filter(([, , body]) => {
+      const votes = (label) => Number(body.match(new RegExp(String.raw`value="${label}"\s+numvotes="(\d+)"`))?.[1] || 0);
+      const bestVotes = votes('Best');
+      return bestVotes >= MIN_BEST_VOTES && bestVotes >= votes('Recommended') && bestVotes >= votes('Not Recommended');
+    })
+    .map(([, count]) => Number(count));
+  return sanitizePlayerCounts(best);
+};
+
+const readLinks = (xml, type) => [...xml.matchAll(new RegExp(String.raw`<link\s+type="${type}"[^>]*\bvalue="([^"]*)"`, 'g'))]
+  .map(([, value]) => decodeEntities(value).trim())
+  .filter((value) => value && value !== '(Uncredited)');
+
+/**
+ * Parse the fields we use from a BGG XML API2 /thing response. Weight and
+ * rating are only there when it was requested with `stats=1`.
+ * @param {string} xml
+ * @returns {{description, minPlayers, maxPlayers, bestPlayers, playingTime, minPlayTime,
+ *   maxPlayTime, minAge, yearPublished, weight, rating, designers}}
  */
 function parseBggThing(xml) {
   const descriptionMatch = xml.match(/<description>([\s\S]*?)<\/description>/);
@@ -115,9 +179,15 @@ function parseBggThing(xml) {
     description,
     minPlayers: sanitizeInt(readValue(xml, 'minplayers'), 100),
     maxPlayers: sanitizeInt(readValue(xml, 'maxplayers'), 100),
+    bestPlayers: parseBestPlayers(xml),
     playingTime: sanitizeInt(readValue(xml, 'playingtime'), 10_000),
+    minPlayTime: sanitizeInt(readValue(xml, 'minplaytime'), 10_000),
+    maxPlayTime: sanitizeInt(readValue(xml, 'maxplaytime'), 10_000),
     minAge: sanitizeInt(readValue(xml, 'minage'), 99),
     yearPublished: sanitizeInt(readValue(xml, 'yearpublished'), 3000),
+    weight: sanitizeScore(readValue(xml, 'averageweight'), 1, 5),
+    rating: sanitizeScore(readValue(xml, 'average'), 1, 10),
+    designers: sanitizeNames(readLinks(xml, 'boardgamedesigner')),
   };
 }
 

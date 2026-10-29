@@ -6,6 +6,7 @@ import AddGameTemplateModal from '@/components/modals/AddGameTemplateModal';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import FindGameInfoModal from '@/components/modals/FindGameInfoModal';
 import { getTemplateGameInfo } from '@/shared/utils/gameInfoStore';
+import { isSystemTemplate } from '@/shared/utils/attachGameInfo';
 import { LocalTableGameTemplate } from '@/shared/api';
 import gameTemplateService from '@/shared/api/gameTemplateService';
 import { useUser } from '@/shared/hooks/useUser';
@@ -18,8 +19,9 @@ const isLocalTemplate = (template) => Boolean(template?.id && LocalTableGameTemp
  * info page. System templates can be edited by admins, suggested changes by
  * creators, or copied into a local variant by anyone.
  *
- * `children({ editButton, moreActions })` lets the page place the Edit button
- * apart from the rarer actions (moreActions is null when there are none).
+ * `children({ editButton, changeArtButton, moreActions })` lets the page place the
+ * Edit button and the box art button apart from the rarer actions (each is null
+ * when there is nothing to show).
  * Without children everything renders as one row.
  */
 const GameTypeManageActions = ({ template, children }) => {
@@ -33,6 +35,7 @@ const GameTypeManageActions = ({ template, children }) => {
   const [editingSystemTemplate, setEditingSystemTemplate] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFindInfo, setShowFindInfo] = useState(false);
+  const [showChangeArt, setShowChangeArt] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const isLocal = isLocalTemplate(template);
@@ -41,6 +44,9 @@ const GameTypeManageActions = ({ template, children }) => {
   const canSync = isLocal && !template.isSynced && !template.cloudId && Boolean(user);
   // Games added without a scan can look their box art up by name (lookups need an account)
   const canFindInfo = Boolean(user) && !getTemplateGameInfo(template);
+  // Shared box art is replaced by admins directly; everyone else suggests other art for review
+  const sharedTemplate = isSystemTemplate(template) ? template : template.systemTemplate;
+  const canChangeArt = Boolean(user && sharedTemplate?.gameInfo);
 
   const closeEdit = () => {
     setEditingTemplate(null);
@@ -99,6 +105,25 @@ const GameTypeManageActions = ({ template, children }) => {
       alert(error?.message
         ? `${t('gameTemplates.suggestionFailed')}\n\n${error.message}`
         : t('gameTemplates.suggestionFailed'));
+    }
+  };
+
+  const handleChangeArt = async (gameInfo) => {
+    try {
+      if (isAdmin) {
+        await gameTemplateService.updateSystemTemplate(sharedTemplate._id, { gameInfo });
+        notifyTemplatesChanged();
+      } else {
+        await gameTemplateService.suggestSystemBoxArt(sharedTemplate._id, gameInfo);
+        alert(t('gameType.boxArtSuggested'));
+      }
+    } catch (error) {
+      console.error('Error changing box art:', error);
+      alert(error?.message
+        ? `${t('gameType.boxArtSuggestFailed')}
+
+${error.message}`
+        : t('gameType.boxArtSuggestFailed'));
     }
   };
 
@@ -166,6 +191,20 @@ const GameTypeManageActions = ({ template, children }) => {
     </button>
   );
 
+  // Icon-only so it can sit on top of the box art
+  const changeArtLabel = isAdmin ? t('gameType.changeBoxArt') : t('gameType.suggestBoxArt');
+  const changeArtButton = canChangeArt ? (
+    <button
+      type="button"
+      className="game-type-hero-art-button"
+      onClick={() => setShowChangeArt(true)}
+      aria-label={changeArtLabel}
+      title={changeArtLabel}
+    >
+      <Icon name="ImagePlus" size={18} aria-hidden="true" />
+    </button>
+  ) : null;
+
   // Suggest and delete need a local template, sync implies one
   const moreActions = isLocal || canFindInfo ? (
     <div className="game-type-manage">
@@ -198,9 +237,10 @@ const GameTypeManageActions = ({ template, children }) => {
 
   return (
     <>
-      {children ? children({ editButton, moreActions }) : (
+      {children ? children({ editButton, changeArtButton, moreActions }) : (
         <div className="game-type-manage">
           {editButton}
+          {changeArtButton}
           {moreActions}
         </div>
       )}
@@ -223,6 +263,20 @@ const GameTypeManageActions = ({ template, children }) => {
         onClose={() => setShowFindInfo(false)}
         template={template}
       />
+
+      {canChangeArt && (
+        <FindGameInfoModal
+          isOpen={showChangeArt}
+          onClose={() => setShowChangeArt(false)}
+          template={sharedTemplate}
+          barcodeName={template.name}
+          onPickInfo={(gameInfo) => { void handleChangeArt(gameInfo); }}
+          title={isAdmin ? t('gameType.changeBoxArt') : t('gameType.suggestBoxArt')}
+          description={isAdmin
+            ? t('gameType.changeBoxArtDescription', { name: template.name })
+            : t('gameType.suggestBoxArtDescription', { name: template.name })}
+        />
+      )}
 
       <DeleteConfirmationModal
         isOpen={showDeleteConfirm}

@@ -7,6 +7,15 @@ const auth = require('../middleware/auth');
 const catchAsync = require('../utils/catchAsync');
 const { getBuiltinSystemTemplateById } = require('../utils/builtinSystemTemplates');
 const {
+  SuggestionReviewError,
+  approveSuggestion,
+  findSystemTemplate,
+  listSuggestions,
+  rejectSuggestion,
+  snapshotTemplate,
+} = require('../utils/templateSuggestionService');
+const { BGG_API_TOKEN, fetchBggXml, fetchBggThingXml } = require('../utils/bggClient');
+const {
   sanitizeGameInfo,
   pickGameUpcBggItem,
   listGameUpcCandidates,
@@ -65,9 +74,6 @@ const GAMEUPC_BASE_URL = process.env.GAMEUPC_API_KEY
   : 'https://api.gameupc.com/test';
 const GAMEUPC_API_KEY = process.env.GAMEUPC_API_KEY || 'test_test_test_test_test';
 
-// BGG's XML API requires a registered application token; without it scans still get box art
-const BGG_API_TOKEN = process.env.BGG_API_TOKEN || '';
-
 // Each source resolves to { title, names, gameInfo, verified, candidates } or null (not found),
 // or throws (unavailable/rate limited). `names` are clean game names that can be matched exactly
 // against template names; `candidates` are the games the barcode could be when it isn't verified.
@@ -111,23 +117,15 @@ const BARCODE_SOURCES = [
 ];
 
 /**
- * Fetch description, player counts and play time for a BGG game (needs BGG_API_TOKEN).
+ * Fetch description, player counts, play time and stats for a BGG game (needs BGG_API_TOKEN).
+ * Without a token scans still get box art.
  * @param {number} bggId
  * @returns {Promise<Object|null>} Parsed details, or null when unavailable
  */
-const fetchBggXml = async (path) => {
-  const response = await fetch(`https://boardgamegeek.com/xmlapi2/${path}`, {
-    headers: { Authorization: `Bearer ${BGG_API_TOKEN}` },
-    signal: AbortSignal.timeout(5000),
-  });
-  if (!response.ok) throw new Error(`BGG responded ${response.status}`);
-  return response.text();
-};
-
 const fetchBggDetails = async (bggId) => {
   if (!BGG_API_TOKEN || !bggId) return null;
   try {
-    return parseBggThing(await fetchBggXml(`thing?id=${encodeURIComponent(bggId)}`));
+    return parseBggThing(await fetchBggThingXml([bggId]));
   } catch (error) {
     console.warn('BGG details lookup failed:', error.message);
     return null;
@@ -171,8 +169,12 @@ router.get('/barcode/:code', auth, catchAsync(async (req, res) => {
       maxPlayers: bggDetails.maxPlayers,
     };
   }
-  // Only remember a miss when every source actually answered
-  if (result.title || allSourcesAnswered) {
+  // 'unavailable' when there's no BGG game or token; clients then stop asking for a while
+  if (bggDetails) result.detailsStatus = 'ok';
+  else result.detailsStatus = BGG_API_TOKEN && result.gameInfo?.bggId ? 'failed' : 'unavailable';
+  // Only remember a miss when every source actually answered, and don't keep
+  // a result whose BGG details failed to load, so the next scan can fill them in
+  if ((result.title || allSourcesAnswered) && result.detailsStatus !== 'failed') {
     barcodeLookupCache.set(code, { result, expires: Date.now() + BARCODE_LOOKUP_TTL_MS });
   }
   res.json({ code, ...result });
@@ -207,18 +209,15 @@ router.get('/search', auth, catchAsync(async (req, res) => {
     ).slice(0, MAX_GAME_SEARCH_RESULTS);
     // One /thing call for all hits gets their box art, description and player counts
     const things = hits.length
-      ? parseBggThings(await fetchBggXml(`thing?id=${hits.map((hit) => hit.bggId).join(',')}`))
+      ? parseBggThings(await fetchBggThingXml(hits.map((hit) => hit.bggId)))
       : new Map();
     results = hits.map((hit) => {
       const thing = things.get(hit.bggId) || {};
       return {
         name: hit.name,
         gameInfo: sanitizeGameInfo({
+          ...thing,
           bggId: hit.bggId,
-          imageUrl: thing.imageUrl,
-          thumbnailUrl: thing.thumbnailUrl,
-          playingTime: thing.playingTime,
-          minAge: thing.minAge,
           yearPublished: hit.yearPublished ?? thing.yearPublished,
         }),
         details: {
@@ -471,24 +470,6 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
 }));
 
 /**
- * A system template by Mongo id or built-in id. Built-ins the server hasn't
- * stored yet come back as an unsaved document.
- * @param {string} id
- * @param {string} userId - Recorded as creator when a built-in is first stored
- * @returns {Promise<Object|null>}
- */
-const findSystemTemplate = async (id, userId) => {
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    const stored = await SystemGameTemplate.findById(id);
-    if (stored) return stored;
-  }
-  const builtin = getBuiltinSystemTemplateById(id);
-  if (!builtin) return null;
-  return await SystemGameTemplate.findOne({ name: builtin.name })
-    || new SystemGameTemplate({ ...builtin, createdBy: userId, isActive: true });
-};
-
-/**
  * Box art and details for one BGG game, straight from BGG.
  * @param {number} bggId
  * @returns {Promise<Object|null>} Null without a BGG token or when BGG doesn't answer
@@ -496,7 +477,7 @@ const findSystemTemplate = async (id, userId) => {
 const fetchBggGameInfo = async (bggId) => {
   if (!BGG_API_TOKEN || !bggId) return null;
   try {
-    const things = parseBggThings(await fetchBggXml(`thing?id=${encodeURIComponent(bggId)}`));
+    const things = parseBggThings(await fetchBggThingXml([bggId]));
     const thing = things.get(bggId);
     return thing ? sanitizeGameInfo({ ...thing, bggId }) : null;
   } catch (error) {
@@ -505,10 +486,16 @@ const fetchBggGameInfo = async (bggId) => {
   }
 };
 
+// A barcode lookup (GameUPC) only knows these; everything else comes from BGG itself
+const LOOKUP_GAME_INFO_FIELDS = new Set(['bggId', 'imageUrl', 'thumbnailUrl', 'yearPublished']);
+const hasBggDetails = (info) => Object.entries(info)
+  .some(([key, value]) => !LOOKUP_GAME_INFO_FIELDS.has(key) && value != null);
+
 // POST /api/game-templates/system/:id/game-info - Share box art from a scan with everyone.
 // Any logged-in user may fill it in once, for a system game that has none yet; after that
 // only admins change it (PUT /system/:id). With a BGG token the info is re-read from BGG
-// by bggId, so clients can't pick the picture.
+// by bggId, so clients can't pick the picture. Art shared before BGG details could be
+// fetched gets them filled in from BGG (same game only), keeping the art.
 router.post('/system/:id/game-info', auth, catchAsync(async (req, res) => {
   const submitted = sanitizeGameInfo(req.body?.gameInfo);
   if (!submitted?.bggId && !submitted?.thumbnailUrl && !submitted?.imageUrl) {
@@ -519,14 +506,64 @@ router.post('/system/:id/game-info', auth, catchAsync(async (req, res) => {
   if (!systemTemplate) {
     return res.status(404).json({ error: 'System template not found' });
   }
-  if (systemTemplate.gameInfo?.bggId || systemTemplate.gameInfo?.thumbnailUrl || systemTemplate.gameInfo?.imageUrl) {
-    return res.json({ updated: false, gameInfo: systemTemplate.gameInfo });
+  const existing = systemTemplate.gameInfo?.toObject?.() || systemTemplate.gameInfo;
+  if (existing?.bggId || existing?.thumbnailUrl || existing?.imageUrl) {
+    const sameGame = !existing.bggId || existing.bggId === submitted.bggId;
+    // Details only ever come from BGG here, never from the client
+    const verified = sameGame && !hasBggDetails(existing) ? await fetchBggGameInfo(submitted.bggId) : null;
+    if (!verified) return res.json({ updated: false, gameInfo: systemTemplate.gameInfo });
+    const known = Object.fromEntries(Object.entries(existing).filter(([, value]) => value != null));
+    systemTemplate.gameInfo = { ...verified, ...known };
+    await systemTemplate.save();
+    return res.json({ updated: true, gameInfo: systemTemplate.gameInfo });
   }
 
   const verified = await fetchBggGameInfo(submitted.bggId);
   systemTemplate.gameInfo = verified ? { ...submitted, ...verified } : submitted;
   await systemTemplate.save();
   res.json({ updated: true, gameInfo: systemTemplate.gameInfo });
+}));
+
+// POST /api/game-templates/system/:id/suggest-box-art - Suggest replacing a system game's
+// box art. Admins review it like other suggestions; a user's newer pick replaces their
+// pending one. With a BGG token the info is re-read from BGG by bggId.
+router.post('/system/:id/suggest-box-art', auth, catchAsync(async (req, res) => {
+  const submitted = sanitizeGameInfo(req.body?.gameInfo);
+  if (!submitted?.bggId && !submitted?.thumbnailUrl && !submitted?.imageUrl) {
+    return res.status(400).json({ error: 'gameInfo needs a bggId or an image' });
+  }
+
+  const systemTemplate = await findSystemTemplate(req.params.id, req.user._id);
+  if (!systemTemplate) {
+    return res.status(404).json({ error: 'System template not found' });
+  }
+  if (submitted.bggId && submitted.bggId === systemTemplate.gameInfo?.bggId) {
+    return res.status(400).json({ error: 'This game already has that box art' });
+  }
+
+  const verified = await fetchBggGameInfo(submitted.bggId);
+  const gameInfo = verified ? { ...submitted, ...verified } : submitted;
+  const builtinTemplateId = getBuiltinSystemTemplateById(req.params.id) ? req.params.id : null;
+  const target = builtinTemplateId
+    ? { builtinTemplateId }
+    : { systemTemplateId: systemTemplate._id };
+
+  const existing = await TemplateSuggestion.findOne({
+    userId: req.user._id, status: 'pending', suggestionType: 'boxArt', ...target,
+  });
+  const suggestion = existing || new TemplateSuggestion({
+    userId: req.user._id,
+    suggestionType: 'boxArt',
+    name: systemTemplate.name,
+    ...target,
+  });
+  suggestion.gameInfo = gameInfo;
+  suggestion.suggestionNote = typeof req.body?.suggestionNote === 'string'
+    ? req.body.suggestionNote.slice(0, 500)
+    : '';
+  await suggestion.save();
+
+  res.status(existing ? 200 : 201).json({ message: 'Box art suggestion submitted', suggestion });
 }));
 
 // PUT /api/game-templates/system/:id - Directly update a system template (admin only)
@@ -607,9 +644,10 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
     const userId = req.user._id;
 
     const isMongoId = mongoose.Types.ObjectId.isValid(id);
+    // A built-in that was stored by an earlier approval is read from the store
     const systemTemplate = isMongoId
       ? await SystemGameTemplate.findById(id)
-      : getBuiltinSystemTemplateById(id);
+      : getBuiltinSystemTemplateById(id) && await findSystemTemplate(id, userId);
 
     if (!systemTemplate) {
       return res.status(404).json({ error: 'System template not found' });
@@ -657,6 +695,7 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
       description: description !== undefined ? description : systemTemplate.description,
       descriptionMarkdown: descriptionMarkdown !== undefined ? descriptionMarkdown : systemTemplate.descriptionMarkdown,
       gameInfo: gameInfo !== undefined ? sanitizeGameInfo(gameInfo) : sanitizeGameInfo(systemTemplate.gameInfo),
+      baseline: snapshotTemplate(systemTemplate),
       suggestionNote: suggestionNote || '',
       status: 'pending'
     });
@@ -669,143 +708,51 @@ router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
     });
 }));
 
-// GET /api/game-templates/admin/suggestions - Get all pending template suggestions (admin only)
+// Review errors carry a status and, for duplicate names, the clashing template
+const sendReviewError = (res, error) => {
+  if (!(error instanceof SuggestionReviewError)) throw error;
+  const body = { error: error.message };
+  if (error.code) body.code = error.code;
+  if (error.duplicateOf) body.duplicateOf = error.duplicateOf;
+  return res.status(error.status).json(body);
+};
+
+// GET /api/game-templates/admin/suggestions?status=pending|approved|rejected|all
+// The review queue (pending, oldest first) or the review history
 router.get('/admin/suggestions', auth, requireAdmin, catchAsync(async (req, res) => {
-    const userId = req.user._id;
-    const suggestions = await TemplateSuggestion.find({
-      status: 'pending'
-    })
-      .populate('userId', 'username')
-      .populate('systemTemplateId', 'name targetNumber lowIsBetter description gameCategory maxRounds hasDealerRotation hasForbiddenCall minPlayers maxPlayers')
-      .sort({ createdAt: -1 });
-
-    const hydratedSuggestions = suggestions.map((suggestion) => {
-      const suggestionObject = suggestion.toObject();
-
-      if (suggestionObject.suggestionType === 'change') {
-        suggestionObject.originalTemplate = suggestionObject.systemTemplateId || getBuiltinSystemTemplateById(suggestionObject.builtinTemplateId);
-      }
-
-      return suggestionObject;
-    });
-
-    res.json({ suggestions: hydratedSuggestions });
+    const status = typeof req.query.status === 'string' ? req.query.status : 'pending';
+    res.json(await listSuggestions({ status }));
 }));
 
 // POST /api/game-templates/admin/suggestions/:id/approve - Approve a suggestion (admin only)
+// Body: { reviewNote?, allowDuplicate? }
 router.post('/admin/suggestions/:id/approve', auth, requireAdmin, catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user._id;
-    
-    const suggestion = await TemplateSuggestion.findOne({
-      _id: id,
-      status: 'pending'
-    });
-
-    if (!suggestion) {
-      return res.status(404).json({ error: 'Suggestion not found' });
-    }
-
-    let systemTemplate;
-
-    if (suggestion.suggestionType === 'change') {
-      if (suggestion.systemTemplateId) {
-        systemTemplate = await SystemGameTemplate.findById(suggestion.systemTemplateId);
-      } else if (suggestion.builtinTemplateId) {
-        const builtinTemplate = getBuiltinSystemTemplateById(suggestion.builtinTemplateId);
-
-        if (builtinTemplate) {
-          systemTemplate = await SystemGameTemplate.findOne({ name: builtinTemplate.name });
-        }
-      }
-
-      if (!systemTemplate) {
-        systemTemplate = new SystemGameTemplate({
-          createdBy: suggestion.userId,
-          isActive: true
-        });
-      }
-
-      systemTemplate.name = suggestion.name;
-      systemTemplate.targetNumber = suggestion.targetNumber;
-      systemTemplate.lowIsBetter = suggestion.lowIsBetter;
-      systemTemplate.gameCategory = suggestion.gameCategory || 'table';
-      systemTemplate.scoringFormula = getScoringFormula(suggestion);
-      systemTemplate.roundPattern = suggestion.roundPattern || null;
-      systemTemplate.maxRounds = suggestion.maxRounds || null;
-      systemTemplate.hasDealerRotation = suggestion.hasDealerRotation !== false;
-      systemTemplate.hasForbiddenCall = suggestion.hasForbiddenCall !== false;
-      systemTemplate.minPlayers = suggestion.minPlayers ?? null;
-      systemTemplate.maxPlayers = suggestion.maxPlayers ?? null;
-      systemTemplate.description = suggestion.description;
-      systemTemplate.descriptionMarkdown = suggestion.descriptionMarkdown;
-      systemTemplate.gameInfo = sanitizeGameInfo(suggestion.gameInfo);
-      await systemTemplate.save();
-    } else {
-      // Create new system template
-      systemTemplate = new SystemGameTemplate({
-        name: suggestion.name,
-        targetNumber: suggestion.targetNumber,
-        lowIsBetter: suggestion.lowIsBetter,
-        gameCategory: suggestion.gameCategory || 'table',
-        scoringFormula: getScoringFormula(suggestion),
-        roundPattern: suggestion.roundPattern || null,
-        maxRounds: suggestion.maxRounds || null,
-        hasDealerRotation: suggestion.hasDealerRotation !== false,
-        hasForbiddenCall: suggestion.hasForbiddenCall !== false,
-        minPlayers: suggestion.minPlayers ?? null,
-        maxPlayers: suggestion.maxPlayers ?? null,
-        description: suggestion.description,
-        descriptionMarkdown: suggestion.descriptionMarkdown || '',
-        gameInfo: sanitizeGameInfo(suggestion.gameInfo),
-        createdBy: suggestion.userId,
-        isActive: true
+    try {
+      const { suggestion, template, appliedFields } = await approveSuggestion(req.params.id, req.user, {
+        reviewNote: req.body?.reviewNote,
+        allowDuplicate: req.body?.allowDuplicate === true,
       });
-      await systemTemplate.save();
-
-      // Mark the user's template as approved if it exists
-      if (suggestion.userTemplateId) {
-        await UserGameTemplate.findByIdAndUpdate(suggestion.userTemplateId, {
-          approvedAsSystemTemplate: true,
-          systemTemplateId: systemTemplate._id
-        });
-      }
+      res.json({
+        message: suggestion.suggestionType !== 'new'
+          ? 'Template changes approved and system template updated'
+          : 'Template suggestion approved and added to system templates',
+        template,
+        appliedFields,
+      });
+    } catch (error) {
+      sendReviewError(res, error);
     }
-
-    // Update suggestion status
-    suggestion.status = 'approved';
-    suggestion.reviewedAt = new Date();
-    await suggestion.save();
-
-    res.json({
-      message: suggestion.suggestionType === 'change' 
-        ? 'Template changes approved and system template updated'
-        : 'Template suggestion approved and added to system templates',
-      template: systemTemplate
-    });
 }));
 
 // DELETE /api/game-templates/admin/suggestions/:id - Reject a suggestion (admin only)
+// Body: { reviewNote? }. It is kept as rejected for the history.
 router.delete('/admin/suggestions/:id', auth, requireAdmin, catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const { reviewNote } = req.body;
-    
-    const suggestion = await TemplateSuggestion.findOne({
-      _id: id,
-      status: 'pending'
-    });
-
-    if (!suggestion) {
-      return res.status(404).json({ error: 'Suggestion not found' });
+    try {
+      await rejectSuggestion(req.params.id, req.user, req.body?.reviewNote);
+      res.json({ message: 'Template suggestion rejected' });
+    } catch (error) {
+      sendReviewError(res, error);
     }
-
-    // Update suggestion status instead of deleting
-    suggestion.status = 'rejected';
-    suggestion.reviewedAt = new Date();
-    suggestion.reviewNote = reviewNote || '';
-    await suggestion.save();
-
-    res.json({ message: 'Template suggestion rejected' });
 }));
 
 module.exports = router;

@@ -54,7 +54,54 @@ export const saveGameInfo = (templateName, gameInfo) => {
  */
 export const getTemplateGameInfo = (template) => {
   if (!template) return null;
-  return template.gameInfo || readStore()[template.name] || null;
+  const saved = readStore()[template.name] || null;
+  const own = template.gameInfo;
+  if (!own || !saved) return own || saved;
+  // Details this device filled in for the same game complete what the template carries
+  if (own.bggId && saved.bggId && own.bggId !== saved.bggId) return own;
+  const known = Object.fromEntries(Object.entries(own).filter(([, value]) => value != null));
+  return { ...saved, ...known };
+};
+
+const CHECKED_KEY = 'wizardTracker_gameInfoChecked';
+// How long a game whose BGG details couldn't be had isn't looked up again
+const CHECK_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const readChecked = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CHECKED_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+/**
+ * Remember that a lookup answered for this game, so scans don't keep asking
+ * for details that BGG (or the server) doesn't have.
+ * @param {string} templateName
+ */
+export const markGameInfoChecked = (templateName) => {
+  if (!templateName) return;
+  try {
+    const checked = readChecked();
+    const now = Date.now();
+    // Drop expired entries so the store doesn't grow forever
+    const kept = Object.fromEntries(Object.entries(checked).filter(([, at]) => now - at < CHECK_TTL_MS));
+    kept[templateName] = now;
+    localStorage.setItem(CHECKED_KEY, JSON.stringify(kept));
+  } catch (error) {
+    console.warn('Could not save game info check:', error);
+  }
+};
+
+/**
+ * @param {string} templateName
+ * @returns {boolean} Whether a lookup answered for this game within the last week
+ */
+export const wasGameInfoCheckedRecently = (templateName) => {
+  const at = readChecked()[templateName];
+  return typeof at === 'number' && Date.now() - at < CHECK_TTL_MS;
 };
 
 /**

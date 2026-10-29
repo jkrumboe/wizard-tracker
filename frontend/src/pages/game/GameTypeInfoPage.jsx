@@ -1,8 +1,9 @@
-import { useMemo, useReducer } from 'react';
+import { useMemo, useReducer, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ExternalLinkIcon } from '@/components/ui/Icon';
+import { BarChartIcon, ClockIcon, ExternalLinkIcon, StarIcon, UserCheckIcon, UsersIcon } from '@/components/ui/Icon';
 import BackButton from '@/components/ui/BackButton';
+import PoweredByBgg from '@/components/ui/PoweredByBgg';
 import GameThumbnail from '@/components/game/GameThumbnail';
 import GameTypeManageActions from '@/components/game/GameTypeManageActions';
 import EditionCards from '@/components/game/EditionCards';
@@ -23,7 +24,7 @@ const formatPlayerRange = (min, max) => {
   return max ? `1–${max}` : null;
 };
 
-const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegExp =(text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // Rules often open with "# <game name>", which only repeats the page title
 const stripTitleHeading = (markdown, title) => {
@@ -48,6 +49,8 @@ const GameTypeInfoPage = () => {
   const editionParam = searchParams.get('edition');
   // Card edits only change storage; re-render to show them right away
   const [, refresh] = useReducer((n) => n + 1, 0);
+  // Phones show details and rules as tabs; desktop shows both side by side
+  const [tab, setTab] = useState('info');
 
   const template = useMemo(
     () => templates.find((tpl) => normalize(tpl.name) === normalize(name)) || null,
@@ -93,7 +96,15 @@ const GameTypeInfoPage = () => {
   const source = edition?.sourceTemplate || null;
   const gameInfo = (source && getTemplateGameInfo(source)) || getTemplateGameInfo(template);
   const isCallAndMade = template.gameCategory === 'callAndMade';
-  const playerRange = formatPlayerRange(template.minPlayers, template.maxPlayers);
+  const playerRange = formatPlayerRange(
+    template.minPlayers ?? gameInfo?.minPlayers,
+    template.maxPlayers ?? gameInfo?.maxPlayers,
+  );
+  const { minPlayTime, maxPlayTime } = gameInfo || {};
+  let playTime = gameInfo?.playingTime && t('templateDetails.minutes', { count: gameInfo.playingTime });
+  if (minPlayTime && maxPlayTime && minPlayTime !== maxPlayTime) {
+    playTime = t('templateDetails.minutesRange', { min: minPlayTime, max: maxPlayTime });
+  }
   const sourceMarkdown = stripTitleHeading(source?.descriptionMarkdown?.trim(), source?.name);
   const markdownRules = sourceMarkdown || stripTitleHeading(template.descriptionMarkdown?.trim(), template.name);
   const plainRules = (!sourceMarkdown && source?.description?.trim()) || template.description?.trim();
@@ -102,20 +113,31 @@ const GameTypeInfoPage = () => {
   if (isCallAndMade) typeLabel = t('gamesPage.callAndMadeGames');
   else if (isScoreboardTemplate(template)) typeLabel = t('gamesPage.scoreboardGames');
 
+  // What's on the box, always in this order: who, how long, how old, how hard
+  const boxFacts = [
+    playerRange && { label: t('templateDetails.players'), value: playerRange, Icon: UsersIcon },
+    playTime && { label: t('templateDetails.playingTime'), value: playTime, Icon: ClockIcon },
+    gameInfo?.minAge && { label: t('templateDetails.minAge'), value: `${gameInfo.minAge}+`, Icon: UserCheckIcon },
+    gameInfo?.weight && {
+      label: t('templateDetails.complexity'),
+      value: `${gameInfo.weight.toFixed(1)}/5`,
+      Icon: BarChartIcon,
+    },
+  ].filter(Boolean);
+
+  // How the game is scored here, then where it comes from
   const facts = [
     { label: t('gameType.type'), value: typeLabel },
+    isCallAndMade && template.maxRounds && { label: t('common.rounds'), value: template.maxRounds },
     template.targetNumber && { label: t('templateDetails.targetNumber'), value: template.targetNumber },
     !isCallAndMade && {
       label: t('templateDetails.scoringTarget'),
       value: template.lowIsBetter ? t('templateDetails.lowScores') : t('templateDetails.highScores'),
     },
-    isCallAndMade && template.maxRounds && { label: t('common.rounds'), value: template.maxRounds },
-    playerRange && { label: t('templateDetails.players'), value: playerRange },
-    gameInfo?.playingTime && {
-      label: t('templateDetails.playingTime'),
-      value: t('templateDetails.minutes', { count: gameInfo.playingTime }),
+    gameInfo?.designers?.length > 0 && {
+      label: t('templateDetails.designer', { count: gameInfo.designers.length }),
+      value: gameInfo.designers.join(', '),
     },
-    gameInfo?.minAge && { label: t('templateDetails.minAge'), value: `${gameInfo.minAge}+` },
     gameInfo?.yearPublished && { label: t('templateDetails.yearPublished'), value: gameInfo.yearPublished },
   ].filter(Boolean);
 
@@ -126,8 +148,8 @@ const GameTypeInfoPage = () => {
   return (
     // Editing an edition saved as its own game edits (or deletes) that game
     <GameTypeManageActions template={source || template}>
-      {({ editButton, moreActions }) => (
-        <div className="game-type-page game-type-info-page">
+      {({ editButton, changeArtButton, moreActions }) => (
+        <div className="game-type-page game-type-info-page" data-tab={tab}>
           <header className="game-type-header">
             <BackButton onClick={handleBack} />
             <h1 className="games-title game-type-title">
@@ -146,41 +168,82 @@ const GameTypeInfoPage = () => {
             {editButton}
           </header>
 
+          <div className="stats-subtabs game-type-info-tabs" role="tablist">
+            {['info', 'rules'].map((key) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                className={`stats-subtab-btn ${tab === key ? 'active' : ''}`}
+                onClick={() => setTab(key)}
+              >
+                {t(`gameType.${key}`)}
+              </button>
+            ))}
+          </div>
+
           <div className="game-type-info-scroll">
             <aside className="game-type-info-aside">
               {heroUrl && (
                 <div className="game-type-hero-frame" style={heroStyle}>
                   <GameThumbnail template={template} size="image" className="game-type-hero" />
+                  {changeArtButton}
                 </div>
               )}
 
               {/* Box art lookup, plus sync / suggest / delete for your own (local) games */}
-              {moreActions && (
+              {(moreActions || (!heroUrl && changeArtButton)) && (
                 <section className="game-type-info-more" aria-label={t('gameType.manage')}>
+                  {!heroUrl && changeArtButton}
                   {moreActions}
                 </section>
               )}
 
               <section className="game-type-section" aria-label={t('templateDetails.gameSettings')}>
                 <span className="games-section-label">{t('templateDetails.gameSettings')}</span>
-                <dl className="game-type-facts">
-                  {facts.map((fact) => (
-                    <div key={fact.label} className="game-type-fact">
-                      <dt>{fact.label}</dt>
-                      <dd>{fact.value}</dd>
-                    </div>
-                  ))}
-                </dl>
+                <div className="game-type-facts-card">
+                  {boxFacts.length > 0 && (
+                    <dl className="game-type-stats">
+                      {boxFacts.map(({ label, value, Icon }) => (
+                        <div key={label} className="game-type-stat">
+                          <dt>
+                            <Icon size={14} aria-hidden="true" />
+                            {label}
+                          </dt>
+                          <dd>{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                  <dl className="game-type-facts">
+                    {facts.map((fact) => (
+                      <div key={fact.label} className="game-type-fact">
+                        <dt>{fact.label}</dt>
+                        <dd>{fact.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
                 {gameInfo?.bggId && (
-                  <a
-                    className="game-type-bgg-link"
-                    href={`https://boardgamegeek.com/boardgame/${encodeURIComponent(gameInfo.bggId)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t('templateDetails.viewOnBgg')}
-                    <ExternalLinkIcon size={14} />
-                  </a>
+                  <div className="game-type-bgg-row">
+                    {gameInfo.rating && (
+                      <span className="game-type-bgg-rating" title={t('templateDetails.bggRating')}>
+                        <StarIcon size={14} aria-hidden="true" />
+                        {gameInfo.rating.toFixed(1)}
+                      </span>
+                    )}
+                    <a
+                      className="game-type-bgg-link"
+                      href={`https://boardgamegeek.com/boardgame/${encodeURIComponent(gameInfo.bggId)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t('templateDetails.viewOnBgg')}
+                      <ExternalLinkIcon size={14} />
+                    </a>
+                    <PoweredByBgg />
+                  </div>
                 )}
               </section>
 

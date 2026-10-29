@@ -1,0 +1,16 @@
+/* "Powered by BGG" attribution required by BoardGameGeek's XML API terms */
+.powered-by-bgg {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  /* The logo's text is dark navy, so keep a light backing for dark themes */
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+.powered-by-bgg img {
+  display: block;
+  height: 32px;
+  width: auto;
+}

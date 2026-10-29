@@ -26,6 +26,8 @@ export const mergeSystemTemplates = (builtins, serverTemplates) => {
       scoringFormula: serverTemplate.scoringFormula || builtin.scoringFormula,
       roundPattern: serverTemplate.roundPattern || builtin.roundPattern,
       maxRounds: serverTemplate.maxRounds || builtin.maxRounds,
+      minPlayers: serverTemplate.minPlayers ?? builtin.minPlayers,
+      maxPlayers: serverTemplate.maxPlayers ?? builtin.maxPlayers,
       hasDealerRotation: serverTemplate.hasDealerRotation !== undefined ? serverTemplate.hasDealerRotation : builtin.hasDealerRotation,
       hasForbiddenCall: serverTemplate.hasForbiddenCall !== undefined ? serverTemplate.hasForbiddenCall : builtin.hasForbiddenCall,
       barcodes: [...new Set([...(builtin.barcodes || []), ...(serverTemplate.barcodes || [])])],

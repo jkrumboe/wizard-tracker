@@ -18,6 +18,7 @@
     "wizard": "Wizard",
     "table": "Table",
     "goBack": "Go back",
+    "poweredByBgg": "Powered by BoardGameGeek",
     "returnHome": "Return Home",
     "noPlayers": "No players",
     "unknownPlayer": "Unknown Player",
@@ -1217,7 +1218,12 @@
     "lowScores": "Low Scores",
     "highScores": "High Scores",
     "description": "Description",
-    "noDetails": "No additional details available for this game."
+    "noDetails": "No additional details available for this game.",
+    "minutesRange": "{{min}}–{{max}} min",
+    "complexity": "Complexity",
+    "designer_one": "Designer",
+    "designer_other": "Designers",
+    "bggRating": "BoardGameGeek rating"
   },
 
   "serviceWorker": {
@@ -1757,6 +1763,12 @@
     "suggest": "Suggest for everyone",
     "findBoxArt": "Find box art",
     "resetToDefault": "Reset to default",
-    "resetConfirm": "Remove your changes and go back to the shared version of this game?"
+    "resetConfirm": "Remove your changes and go back to the shared version of this game?",
+    "suggestBoxArt": "Suggest other box art",
+    "changeBoxArt": "Change box art",
+    "suggestBoxArtDescription": "Look up \"{{name}}\" online and pick the box art that fits better. An admin reviews it before everyone sees it.",
+    "changeBoxArtDescription": "Look up \"{{name}}\" online and pick new box art. It replaces the current art for everyone.",
+    "boxArtSuggested": "Thanks! Your box art suggestion was sent to the admins.",
+    "boxArtSuggestFailed": "The box art could not be saved."
   }
 }

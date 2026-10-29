@@ -18,6 +18,7 @@
     "wizard": "Wizard",
     "table": "Tisch",
     "goBack": "Zurück",
+    "poweredByBgg": "Powered by BoardGameGeek",
     "returnHome": "Zurück zur Startseite",
     "noPlayers": "Keine Spieler",
     "unknownPlayer": "Unbekannter Spieler",
@@ -1217,7 +1218,12 @@
     "lowScores": "Niedrig",
     "highScores": "Hoch",
     "description": "Beschreibung",
-    "noDetails": "Keine weiteren Details für dieses Spiel verfügbar."
+    "noDetails": "Keine weiteren Details für dieses Spiel verfügbar.",
+    "minutesRange": "{{min}}–{{max}} Min.",
+    "complexity": "Komplexität",
+    "designer_one": "Autor",
+    "designer_other": "Autoren",
+    "bggRating": "BoardGameGeek-Bewertung"
   },
 
   "serviceWorker": {
@@ -1757,6 +1763,12 @@
     "suggest": "Für alle vorschlagen",
     "findBoxArt": "Schachtelbild finden",
     "resetToDefault": "Auf Standard zurücksetzen",
-    "resetConfirm": "Deine Änderungen entfernen und zur gemeinsamen Version dieses Spiels zurückkehren?"
+    "resetConfirm": "Deine Änderungen entfernen und zur gemeinsamen Version dieses Spiels zurückkehren?",
+    "suggestBoxArt": "Anderes Schachtelbild vorschlagen",
+    "changeBoxArt": "Schachtelbild ändern",
+    "suggestBoxArtDescription": "Suche „{{name}}“ online und wähle ein passenderes Schachtelbild. Ein Admin prüft es, bevor alle es sehen.",
+    "changeBoxArtDescription": "Suche „{{name}}“ online und wähle ein neues Schachtelbild. Es ersetzt das aktuelle Bild für alle.",
+    "boxArtSuggested": "Danke! Dein Schachtelbild-Vorschlag wurde an die Admins geschickt.",
+    "boxArtSuggestFailed": "Das Schachtelbild konnte nicht gespeichert werden."
   }
 }

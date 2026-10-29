@@ -25,7 +25,8 @@ const templateSuggestionSchema = new mongoose.Schema({
   },
   suggestionType: {
     type: String,
-    enum: ['new', 'change'],
+    // 'boxArt' only proposes new gameInfo (box art) for a system template
+    enum: ['new', 'change', 'boxArt'],
     default: 'new'
   },
   suggestionNote: {
@@ -38,13 +39,25 @@ const templateSuggestionSchema = new mongoose.Schema({
     default: 'pending',
     index: true
   },
+  // Change requests: the template's fields when the request was made, so
+  // approval applies only what the user changed (see templateSuggestionService)
+  baseline: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   reviewedAt: {
     type: Date,
     default: null
   },
+  reviewedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   reviewNote: {
     type: String,
-    default: ''
+    default: '',
+    maxlength: 500
   }
 }, {
   timestamps: true

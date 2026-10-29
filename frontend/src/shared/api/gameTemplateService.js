@@ -11,6 +11,7 @@ const ENDPOINTS = {
   suggestChange: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/suggest-change`,
   updateSystemTemplate: (id) => `${API_BASE_URL}/api/game-templates/system/${id}`,
   systemGameInfo: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/game-info`,
+  suggestBoxArt: (id) => `${API_BASE_URL}/api/game-templates/system/${id}/suggest-box-art`,
   adminSuggestions: `${API_BASE_URL}/api/game-templates/admin/suggestions`,
   approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
   rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
@@ -236,17 +237,18 @@ export const suggestTemplate = async (id, note = '') => {
 };
 
 /**
- * Get all pending template suggestions (admin only)
- * @returns {Promise<Array>} Array of suggestion objects with user info
+ * Template suggestions for review (admin only)
+ * @param {'pending'|'approved'|'rejected'|'all'} [status='pending'] - The queue, or the review history
+ * @returns {Promise<{suggestions: Array, counts: {pending: number, approved: number, rejected: number}}>}
  */
-export const getAdminSuggestions = async () => {
+export const getAdminSuggestions = async (status = 'pending') => {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(ENDPOINTS.adminSuggestions, {
+    const response = await fetch(`${ENDPOINTS.adminSuggestions}?status=${encodeURIComponent(status)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -255,7 +257,7 @@ export const getAdminSuggestions = async () => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.error || 'Failed to fetch suggestions');
     }
 
@@ -267,12 +269,15 @@ export const getAdminSuggestions = async () => {
 };
 
 /**
- * Approve a template suggestion (admin only)
- * Converts suggested template to system template
+ * Approve a template suggestion (admin only) and apply it to the system templates
  * @param {string} id - Suggestion ID
- * @returns {Promise<Object>} Approved system template
+ * @param {Object} [options]
+ * @param {string} [options.reviewNote] - Kept with the suggestion for the history
+ * @param {boolean} [options.allowDuplicate] - Add a new template even if one has that name
+ * @returns {Promise<Object>} The system template and the fields that were applied
+ * @throws {Error} With `code: 'DUPLICATE_NAME'` and `duplicateOf` when the name is taken
  */
-export const approveSuggestion = async (id) => {
+export const approveSuggestion = async (id, { reviewNote = '', allowDuplicate = false } = {}) => {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -285,11 +290,16 @@ export const approveSuggestion = async (id) => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ reviewNote, allowDuplicate }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to approve suggestion');
+      const error = await response.json().catch(() => ({}));
+      const err = new Error(error.error || 'Failed to approve suggestion');
+      err.status = response.status;
+      err.code = error.code;
+      err.duplicateOf = error.duplicateOf;
+      throw err;
     }
 
     void invalidateSystemTemplates();
@@ -301,12 +311,12 @@ export const approveSuggestion = async (id) => {
 };
 
 /**
- * Reject a template suggestion (admin only)
- * Deletes the suggested template
+ * Reject a template suggestion (admin only). It stays in the review history.
  * @param {string} id - Suggestion ID
+ * @param {string} [reviewNote] - Why it was rejected
  * @returns {Promise<Object>} Success message
  */
-export const rejectSuggestion = async (id) => {
+export const rejectSuggestion = async (id, reviewNote = '') => {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -319,11 +329,14 @@ export const rejectSuggestion = async (id) => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ reviewNote }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to reject suggestion');
+      const error = await response.json().catch(() => ({}));
+      const err = new Error(error.error || 'Failed to reject suggestion');
+      err.status = response.status;
+      throw err;
     }
 
     return await response.json();
@@ -399,6 +412,37 @@ export const shareSystemGameInfo = async (id, gameInfo) => {
 };
 
 /**
+ * Suggest other box art for a system game. An admin approves it before anyone
+ * sees it; a newer pick replaces the user's pending one.
+ * @param {string} id - System template ID (Mongo or built-in)
+ * @param {Object} gameInfo
+ * @param {string} [note]
+ * @returns {Promise<Object>} Created or updated suggestion
+ */
+export const suggestSystemBoxArt = async (id, gameInfo, note = '') => {
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(ENDPOINTS.suggestBoxArt(id), {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ gameInfo, suggestionNote: note }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `Failed to suggest box art (HTTP ${response.status})`);
+  }
+
+  return (await response.json()).suggestion;
+};
+
+/**
  * Suggest changes to a system template
  * @param {string} id - System template ID
  * @param {Object} changes - Proposed changes
@@ -437,10 +481,12 @@ export const suggestSystemTemplateChanges = async (id, changes, note) => {
  * Look up what product a game box barcode (EAN/UPC) belongs to
  * @param {string} code
  * @returns {Promise<{title: string, names: string[], gameInfo: Object|null, details: Object|null,
- *   verified: boolean, candidates: Array<{name: string, gameInfo: Object|null}>}|null>}
+ *   verified: boolean, candidates: Array<{name: string, gameInfo: Object|null}>,
+ *   detailsStatus: 'ok'|'unavailable'|'failed'|null}|null>}
  *   Display title, clean game names for exact matching, box art/BGG metadata, (when the
- *   server has a BGG token) description and player counts, whether the match is verified and
- *   the games it could be otherwise; null if unknown/unavailable
+ *   server has a BGG token) description and player counts, whether the match is verified,
+ *   the games it could be otherwise, and whether the BGG details could be fetched;
+ *   null if unknown/unavailable
  */
 export const lookupBarcodeProduct = async (code) => {
   try {
@@ -461,6 +507,7 @@ export const lookupBarcodeProduct = async (code) => {
       details: data.details || null,
       verified: Boolean(data.verified),
       candidates: data.candidates || [],
+      detailsStatus: data.detailsStatus || null,
     };
   } catch (error) {
     console.warn('Barcode product lookup failed:', error);
@@ -505,6 +552,7 @@ export default {
   suggestTemplate,
   updateSystemTemplate,
   shareSystemGameInfo,
+  suggestSystemBoxArt,
   suggestSystemTemplateChanges,
   getAdminSuggestions,
   approveSuggestion,

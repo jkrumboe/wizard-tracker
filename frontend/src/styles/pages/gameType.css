@@ -477,6 +477,35 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
+/* Change / suggest box art: a small round button over the art's corner */
+.game-type-hero-art-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.game-type-hero-art-button:hover,
+.game-type-hero-art-button:focus-visible {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.game-type-hero-frame .game-type-hero-art-button {
+  position: absolute;
+  right: var(--spacing-sm);
+  bottom: var(--spacing-sm);
+}
+
 /* Edit sits in the header; keep its label even on phones */
 .game-type-edit-button {
   flex-shrink: 0;
@@ -513,15 +542,42 @@
   white-space: nowrap;
 }
 
+/* Phones: details and rules are tabs, so the rules get the whole screen */
+.game-type-info-tabs {
+  flex-shrink: 0;
+  margin: 0 0 var(--spacing-sm);
+}
+
+.game-type-info-page[data-tab="rules"] .game-type-info-aside,
+.game-type-info-page[data-tab="info"] .game-type-info-rules,
+.game-type-info-rules > .games-section-label {
+  display: none;
+}
+
 /* Desktop: details in a side column, rules get the reading width.
    Each column scrolls on its own. */
 @media (min-width: 1024px) {
+  .game-type-info-tabs {
+    display: none;
+  }
+
+  .game-type-info-page[data-tab] .game-type-info-aside,
+  .game-type-info-page[data-tab] .game-type-info-rules {
+    display: flex;
+  }
+
+  .game-type-info-rules > .games-section-label {
+    display: block;
+  }
+
   .game-type-info-scroll {
     display: grid;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
     gap: var(--spacing-lg);
     overflow: hidden;
+    /* No bottom nav here, so leave a clear gap below the rules card */
+    padding-bottom: var(--spacing-xl);
   }
 
   .game-type-info-aside {
@@ -541,36 +597,122 @@
   }
 }
 
-.game-type-facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 6px;
-  margin: 0;
-}
-
-.game-type-fact {
-  padding: var(--spacing-xs) var(--spacing-sm);
+/* One card: box facts as a strip on top, scoring settings as rows below */
+.game-type-facts-card {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--card-bg);
+  overflow: hidden;
+}
+
+.game-type-stats {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.game-type-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  text-align: center;
+}
+
+.game-type-stat + .game-type-stat {
+  border-left: 1px solid var(--border);
+}
+
+.game-type-stat dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  /* Long labels ("Playing time", "Komplexität") wrap rather than get cut */
+  overflow-wrap: anywhere;
+}
+
+.game-type-stat dt svg {
+  flex-shrink: 0;
+}
+
+.game-type-stat dd {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.game-type-facts {
+  margin: 0;
+  padding: 0 var(--spacing-md);
+}
+
+.game-type-fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+}
+
+.game-type-fact + .game-type-fact {
+  border-top: 1px solid var(--border);
 }
 
 .game-type-fact dt {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
 .game-type-fact dd {
   margin: 0;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
+  text-align: right;
+}
+
+.game-type-bgg-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.game-type-bgg-row .powered-by-bgg {
+  margin-left: auto;
+}
+
+.game-type-bgg-row .powered-by-bgg img {
+  height: 24px;
+}
+
+.game-type-bgg-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.game-type-bgg-rating svg {
+  color: var(--primary);
 }
 
 .game-type-bgg-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  align-self: flex-start;
   color: var(--primary);
   font-size: 0.9rem;
 }
