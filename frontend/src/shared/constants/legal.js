@@ -7,10 +7,10 @@
  * files change.
  */
 export const LEGAL_OPERATOR = {
-  name: '',
+  name: 'Justin Krumböhmer',
   // One line per entry, e.g. ['Musterstraße 1', '12345 Musterstadt', 'Germany']
-  address: [],
-  email: '',
+  address: ['Hafenstraße 7', '48153 Münster', 'Germany'],
+  email: 'justinkrumbhmer@yahoo.com',
 };
 
 export const LEGAL_LAST_UPDATED = '2026-10-28';
