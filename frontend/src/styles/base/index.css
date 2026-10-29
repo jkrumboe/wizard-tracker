@@ -108,6 +108,17 @@ html[data-keyboard="open"] {
   --medal-gold: #a8800f;
   --medal-silver: #75808f;
   --medal-bronze: #9c6638;
+
+  /*
+   * Shadows — soft, layered and tinted with the slate ink rather than pure
+   * black, so raised surfaces separate from the canvas without a grey halo.
+   * Declared here (not in the shared :root below) so the dark theme overrides
+   * them: `[data-theme="dark"]` and `:root` tie on specificity, so a later
+   * :root block would silently win in both themes.
+   */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.12);
 }
 
 /* Dark theme */
@@ -196,11 +207,6 @@ html[data-keyboard="open"] {
   --font-size-lg: 18px;
   --font-size-xl: 20px;
   --font-size-xxl: 24px;
-  
-  /* Shadow for light theme */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.20);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.25);
 }
 
 body {

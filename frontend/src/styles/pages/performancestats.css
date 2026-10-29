@@ -58,6 +58,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  box-shadow: none;
 }
 
 .stats-tab.is-active {
