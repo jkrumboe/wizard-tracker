@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import gameTemplateService from '@/shared/api/gameTemplateService';
@@ -7,8 +7,9 @@ import { AdminAvatar, AdminLoading } from '@/components/admin/AdminUI';
 import { useUser } from '@/shared/hooks/useUser';
 import '@/styles/pages/admin.css';
 
-// Grouped by what an admin is working on. On phones the groups collapse into
-// one horizontally scrolling strip; from 1024px they form the side rail.
+// Grouped by what an admin is working on. On phones a switcher button shows
+// the current section and opens all sections as a grid; from 1024px they form
+// the side rail.
 const NAV_GROUPS = [
   {
     key: 'navGroupOverview',
@@ -39,12 +40,19 @@ const NAV_GROUPS = [
   },
 ];
 
+const NAV_ITEMS = NAV_GROUPS.flatMap(group => group.items);
+
 const AdminLayout = () => {
   const { t } = useTranslation();
   const { user } = useUser();
   const location = useLocation();
-  const navRef = useRef(null);
   const [pendingSuggestions, setPendingSuggestions] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Sub pages (e.g. /admin/games/:type/:id/edit) belong to their section
+  const current = NAV_ITEMS.find(item => (item.end
+    ? location.pathname.replace(/\/$/, '') === item.path
+    : location.pathname.startsWith(item.path))) || NAV_ITEMS[0];
 
   useEffect(() => {
     gameTemplateService.getAdminSuggestions('pending')
@@ -52,15 +60,47 @@ const AdminLayout = () => {
       .catch(() => {});
   }, []);
 
-  // Keep the active chip visible in the scrolling strip on small screens
+  // The section menu closes on navigation and on Escape
   useEffect(() => {
-    const active = navRef.current?.querySelector('.adm-nav-link.active');
-    active?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    setMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
+
+  const showBadgeOnSwitcher = !menuOpen && pendingSuggestions > 0 && !current.hasBadge;
 
   return (
     <div className="admin-layout">
-      <aside className="adm-rail">
+      <aside className={`adm-rail${menuOpen ? ' is-open' : ''}`}>
+        <button
+          type="button"
+          className="adm-switcher"
+          onClick={() => setMenuOpen(open => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="admin-sections"
+        >
+          <span className="adm-switcher-icon">
+            <Icon name={current.icon} size={18} />
+          </span>
+          <span className="adm-switcher-text">
+            <span>{t('admin.adminPanel')}</span>
+            <strong>{t(`admin.${current.key}`)}</strong>
+          </span>
+          {(current.hasBadge || showBadgeOnSwitcher) && pendingSuggestions > 0 && (
+            <span className="adm-nav-badge" aria-label={t('admin.pendingCount', { count: pendingSuggestions })}>
+              {pendingSuggestions}
+            </span>
+          )}
+          <Icon name={menuOpen ? 'ChevronUp' : 'ChevronDown'} size={18} className="adm-switcher-chevron" />
+        </button>
+
         <Link to="/admin" className="adm-rail-brand">
           <span className="adm-rail-mark">
             <Icon name="ShieldCheck" size={18} />
@@ -71,7 +111,7 @@ const AdminLayout = () => {
           </span>
         </Link>
 
-        <nav ref={navRef} className="adm-nav" aria-label={t('admin.adminPanel')}>
+        <nav id="admin-sections" className="adm-nav" aria-label={t('admin.adminPanel')}>
           {NAV_GROUPS.map(group => (
             <div key={group.key} className="adm-nav-group">
               <span className="adm-nav-group-label">{t(`admin.${group.key}`)}</span>
