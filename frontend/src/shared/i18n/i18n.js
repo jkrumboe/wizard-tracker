@@ -33,6 +33,15 @@ i18n
     },
   });
 
+// Keep <html lang> in step so search engines and screen readers see the real language
+const syncDocumentLanguage = (lng) => {
+  if (typeof document !== 'undefined' && lng) {
+    document.documentElement.lang = lng.split('-')[0];
+  }
+};
+syncDocumentLanguage(i18n.resolvedLanguage || i18n.language);
+i18n.on('languageChanged', syncDocumentLanguage);
+
 export default i18n;
 
 /**

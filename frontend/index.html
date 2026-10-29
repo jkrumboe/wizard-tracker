@@ -1,28 +1,14 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-TPXHXJXP');</script>
-    <!-- End Google Tag Manager -->
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-25L8GWKF1W"></script>
-    <script>
-      globalThis.dataLayer = globalThis.dataLayer || [];
-      function gtag(){globalThis.dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-25L8GWKF1W');
-    </script>
+    <!-- Google Analytics / Tag Manager load only after consent:
+         see src/shared/utils/analyticsConsent.js -->
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/logo.svg?v=4" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/logo-192.png?v=4" />
     <link rel="apple-touch-icon" href="/icons/logo-192.png?v=4" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icons/logo-512.png?v=4" />
-    <link rel="manifest" href="/manifest.json?v=2">
+    <link rel="manifest" href="/manifest.json?v=3">
     <!-- No user-scalable=no: blocking pinch-zoom fails WCAG 1.4.4. Double-tap
          zoom is suppressed with touch-action: manipulation in CSS instead. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
@@ -37,14 +23,71 @@
     <meta property="og:title" content="KeepWiz - Wizard Score Tracker and Card Game Scorekeeper" />
     <meta property="og:description" content="Track Wizard and other card game scores online. Keep rounds, bids, tricks, and stats in one fast scorekeeper app." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://wizard.jkrumboe.dev" />
-    <meta property="og:image" content="https://wizard.jkrumboe.dev/icons/logo-512.png" />
+    <meta property="og:url" content="https://wizard.jkrumboe.dev/" />
+    <meta property="og:image" content="https://wizard.jkrumboe.dev/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="KeepWiz: the free Wizard score tracker and card game scorekeeper" />
     <meta property="og:site_name" content="KeepWiz" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="de_DE" />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="KeepWiz - Wizard Score Tracker and Card Game Scorekeeper" />
+    <meta name="twitter:description" content="Track Wizard and other card game scores online. Keep rounds, bids, tricks, and stats in one fast scorekeeper app." />
+    <meta name="twitter:image" content="https://wizard.jkrumboe.dev/og-image.png" />
+    <meta name="twitter:image:alt" content="KeepWiz: the free Wizard score tracker and card game scorekeeper" />
+
+    <!-- Structured data: lets search engines show KeepWiz as a free web app -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://wizard.jkrumboe.dev/#website",
+            "url": "https://wizard.jkrumboe.dev/",
+            "name": "KeepWiz",
+            "alternateName": "Wizard Tracker",
+            "inLanguage": ["en", "de"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://wizard.jkrumboe.dev/#app",
+            "name": "KeepWiz",
+            "alternateName": "KeepWiz Wizard Score Tracker",
+            "url": "https://wizard.jkrumboe.dev/",
+            "description": "Free score tracker for the Wizard card game and other card and table games. Records bids, tricks, rounds and stats, works offline and syncs when you sign in.",
+            "applicationCategory": "GameApplication",
+            "applicationSubCategory": "Score tracker",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript. Installable as a PWA.",
+            "inLanguage": ["en", "de"],
+            "isAccessibleForFree": true,
+            "image": "https://wizard.jkrumboe.dev/icons/logo-512.png",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "featureList": [
+              "Wizard score sheet with bids and tricks per round",
+              "Classic and anniversary editions of Wizard",
+              "Score tracking for Dutch, Flip 7 and custom table games",
+              "Live two-side scoreboards for volleyball and basketball",
+              "Player stats, ELO ratings and leaderboards",
+              "Works offline as an installable app"
+            ],
+            "isPartOf": { "@id": "https://wizard.jkrumboe.dev/#website" }
+          }
+        ]
+      }
+    </script>
+
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6fa">
     <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0b1120">
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Wizard Tracker" />
+    <meta name="apple-mobile-web-app-title" content="KeepWiz" />
+    <meta name="application-name" content="KeepWiz" />
     
     <!-- iOS Startup Images for PWA splash screens -->
     <!-- iPhone X, XS, 11 Pro, 12 mini, 13 mini -->
@@ -465,10 +508,6 @@
     </script>
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TPXHXJXP"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <!-- Initial PWA loading screen -->
     <div id="pwa-loading" class="pwa-loading" role="status" aria-label="Loading KeepWiz">
       <div class="kw-aura"></div>
@@ -518,6 +557,17 @@
         <div class="kw-progress"></div>
       </div>
     </div>
+
+    <!-- Shown to visitors and crawlers that don't run JavaScript. The build
+         (scripts/prerender-seo.js) replaces the contents of <main> per route. -->
+    <noscript>
+      <main data-seo-fallback style="max-width: 40rem; margin: 0 auto; padding: 2rem 16px; line-height: 1.5;">
+        <h1>KeepWiz: Wizard score tracker and card game scorekeeper</h1>
+        <p>KeepWiz is a free score sheet for the Wizard card game. Enter each player's bid and tricks every round and KeepWiz adds up the scores, keeps your game history and builds player stats and leaderboards.</p>
+        <p>It also keeps score for Dutch, Flip 7, your own table games and live volleyball or basketball scoreboards. It works offline and can be installed on your phone.</p>
+        <p>Please enable JavaScript to use KeepWiz.</p>
+      </main>
+    </noscript>
 
     <div id="root" class="app-content"></div>
     <script type="module" src="/src/app/main.jsx"></script>

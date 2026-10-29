@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   SEO_VALUES,
-  SEO_ROUTE_META,
-  SEO_NOINDEX_PATTERNS,
+  resolveSeoMeta,
+  getCanonicalUrl,
 } from '@/shared/constants/seo';
+
+const OG_LOCALES = { en: 'en_US', de: 'de_DE' };
 
 function upsertMetaTag(selector, attributes) {
   let element = document.querySelector(selector);
@@ -33,25 +36,12 @@ function upsertCanonical(url) {
 
 export default function SeoRouteMeta() {
   const location = useLocation();
+  const { i18n } = useTranslation();
+  const language = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
 
   useEffect(() => {
-    const matchedRoute = SEO_ROUTE_META.find(({ pattern }) =>
-      pattern.test(location.pathname)
-    );
-
-    const shouldNoindex = SEO_NOINDEX_PATTERNS.some((pattern) =>
-      pattern.test(location.pathname)
-    );
-
-    const title = matchedRoute?.title || SEO_VALUES.defaultTitle;
-    const description =
-      matchedRoute?.description || SEO_VALUES.defaultDescription;
-    const keywords = matchedRoute?.keywords || SEO_VALUES.defaultKeywords;
-    const robots = shouldNoindex
-      ? 'noindex,nofollow'
-      : matchedRoute?.robots || 'index,follow';
-
-    const canonicalUrl = `${SEO_VALUES.siteUrl}${location.pathname}`;
+    const { title, description, keywords, robots } = resolveSeoMeta(location.pathname);
+    const canonicalUrl = getCanonicalUrl(location.pathname);
 
     document.title = title;
 
@@ -84,9 +74,17 @@ export default function SeoRouteMeta() {
       property: 'og:image',
       content: SEO_VALUES.socialImageUrl,
     });
+    upsertMetaTag('meta[property="og:image:alt"]', {
+      property: 'og:image:alt',
+      content: SEO_VALUES.socialImageAlt,
+    });
+    upsertMetaTag('meta[property="og:locale"]', {
+      property: 'og:locale',
+      content: OG_LOCALES[language] || OG_LOCALES.en,
+    });
     upsertMetaTag('meta[name="twitter:card"]', {
       name: 'twitter:card',
-      content: 'summary_large_image',
+      content: SEO_VALUES.twitterCard,
     });
     upsertMetaTag('meta[name="twitter:title"]', {
       name: 'twitter:title',
@@ -107,7 +105,7 @@ export default function SeoRouteMeta() {
         content: SEO_VALUES.twitterHandle,
       });
     }
-  }, [location.pathname]);
+  }, [location.pathname, language]);
 
   return null;
 }

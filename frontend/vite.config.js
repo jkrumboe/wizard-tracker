@@ -40,7 +40,7 @@ export default defineConfig({
           'chartjs-vendor': ['chart.js', 'react-chartjs-2'],
           'recharts-vendor': ['recharts'],
           'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities', '@dnd-kit/modifiers'],
-          'utils': ['axios', 'dexie', 'uuid', 'jwt-decode'],
+          'utils': ['axios', 'dexie', 'uuid'],
         },
       },
     },
@@ -86,6 +86,8 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // Only crawlers and link previews fetch the share image
+        globIgnores: ['og-image.png'],
         injectionPoint: 'self.__WB_MANIFEST',
         maximumFileSizeToCacheInBytes: 3145728,
       },
@@ -147,8 +149,8 @@ export default defineConfig({
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: {
         name: "KeepWiz",
-        short_name: "WizTracker",
-        description: "Track your Wizard card game stats and performance",
+        short_name: "KeepWiz",
+        description: "Free score tracker for Wizard and other card and table games. Bids, tricks, rounds, stats and leaderboards, offline.",
         theme_color: "#111827",
         background_color: "#111827",
         start_url: "/",

@@ -1,0 +1,183 @@
+<!doctype html>
+<!--
+  Source for public/og-image.png, the 1200x630 social share card.
+  After editing, re-render it with headless Chrome (from frontend/):
+
+    chrome --headless=new --hide-scrollbars --force-device-scale-factor=1 \
+      --window-size=1200,630 --screenshot=public/og-image.png scripts/og-image.html
+
+  Uses the default Wizard Blue accent; keep the copy short so it reads at
+  thumbnail size.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>KeepWiz share image</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: #f1f5f9;
+    background:
+      radial-gradient(circle at 78% 30%, rgba(58, 129, 245, 0.42) 0%, transparent 46%),
+      radial-gradient(circle at 8% 100%, rgba(125, 174, 255, 0.18) 0%, transparent 40%),
+      #0b1120;
+  }
+  .sparkle { position: absolute; fill: #7daeff; }
+
+  .left {
+    position: absolute;
+    left: 72px;
+    top: 0;
+    bottom: 0;
+    width: 560px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand svg { width: 104px; height: 104px; filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45)); }
+  .wordmark { font-size: 84px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .wordmark span { color: #7daeff; }
+  .headline {
+    margin-top: 38px;
+    font-size: 46px;
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+  }
+  .sub {
+    margin-top: 18px;
+    font-size: 25px;
+    line-height: 1.4;
+    color: #cbd5e1;
+  }
+  .pills { margin-top: 32px; display: flex; gap: 12px; }
+  .pill {
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #dbe7ff;
+    background: rgba(58, 129, 245, 0.18);
+    border: 1px solid rgba(125, 174, 255, 0.38);
+  }
+
+  /* Score sheet mock */
+  .sheet {
+    position: absolute;
+    right: 64px;
+    top: 128px;
+    width: 452px;
+    padding: 26px 28px 22px;
+    border-radius: 28px;
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    transform: rotate(3deg);
+  }
+  .sheet-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .sheet-title { font-size: 25px; font-weight: 800; }
+  .sheet-round {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e66d8;
+    background: #e8f0ff;
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  table { width: 100%; margin-top: 18px; border-collapse: collapse; font-size: 21px; }
+  th {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    text-align: right;
+    padding: 0 0 10px;
+  }
+  th:first-child, td:first-child { text-align: left; }
+  td { padding: 12px 0; border-top: 1px solid #eaeef4; text-align: right; font-variant-numeric: tabular-nums; }
+  td.name { font-weight: 600; }
+  td.plus { color: #15803d; font-weight: 700; }
+  td.minus { color: #dc2626; font-weight: 700; }
+  td.total { font-weight: 800; }
+  tr.lead td { background: #f2f7ff; }
+  tr.lead td:first-child { border-radius: 12px 0 0 12px; padding-left: 10px; }
+  tr.lead td:last-child { border-radius: 0 12px 12px 0; padding-right: 10px; }
+  .star { color: #3a81f5; margin-left: 6px; }
+
+  .url {
+    position: absolute;
+    left: 72px;
+    bottom: 40px;
+    font-size: 21px;
+    font-weight: 600;
+    color: #94a3b8;
+    letter-spacing: 0.01em;
+  }
+</style>
+</head>
+<body>
+  <svg class="sparkle" style="left: 1090px; top: 44px; width: 40px;" viewBox="-24 -24 48 48"><path d="M0,-24 C3,-7 7,-3 24,0 C7,3 3,7 0,24 C-3,7 -7,3 -24,0 C-7,-3 -3,-7 0,-24Z" /></svg>
+  <svg class="sparkle" style="left: 640px; top: 520px; width: 26px; opacity: 0.6;" viewBox="-24 -24 48 48"><path d="M0,-24 C3,-7 7,-3 24,0 C7,3 3,7 0,24 C-3,7 -7,3 -24,0 C-7,-3 -3,-7 0,-24Z" /></svg>
+
+  <div class="left">
+    <div class="brand">
+      <!-- Same mark as the startup splash in index.html -->
+      <svg viewBox="0 0 512 512" aria-hidden="true">
+        <defs>
+          <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7daeff" />
+            <stop offset="0.5" stop-color="#3a81f5" />
+            <stop offset="1" stop-color="#1e66d8" />
+          </linearGradient>
+          <linearGradient id="star" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3a81f5" />
+            <stop offset="1" stop-color="#1e66d8" />
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="112" fill="url(#tile)" />
+        <rect x="166" y="150" width="150" height="212" rx="22" fill="#fff" fill-opacity="0.32" transform="rotate(-14 241 256)" />
+        <g transform="rotate(8 271 262)">
+          <rect x="196" y="156" width="150" height="212" rx="22" fill="#fff" />
+          <path transform="translate(271 262)" fill="url(#star)" d="M0,-56 C7,-16 16,-7 56,0 C16,7 7,16 0,56 C-7,16 -16,7 -56,0 C-16,-7 -7,-16 0,-56Z" />
+        </g>
+        <path transform="translate(368 146)" fill="#fff" d="M0,-24 C3,-7 7,-3 24,0 C7,3 3,7 0,24 C-3,7 -7,3 -24,0 C-7,-3 -3,-7 0,-24Z" />
+        <path transform="translate(150 378)" fill="#fff" fill-opacity="0.85" d="M0,-15 C2,-4 4,-2 15,0 C4,2 2,4 0,15 C-2,4 -4,2 -15,0 C-4,-2 -2,-4 0,-15Z" />
+      </svg>
+      <div class="wordmark">Keep<span>Wiz</span></div>
+    </div>
+    <h1 class="headline">The free Wizard<br />score tracker</h1>
+    <p class="sub">Bids, tricks and totals for every round.<br />Plus Dutch, Flip 7 and your own games.</p>
+    <div class="pills">
+      <span class="pill">Free</span>
+      <span class="pill">Works offline</span>
+      <span class="pill">Stats &amp; leaderboards</span>
+    </div>
+  </div>
+
+  <!-- Round 7 scored with the real Wizard rules: hit = 20 + 10 per trick, miss = -10 per trick off -->
+  <div class="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title">Wizard</div>
+      <div class="sheet-round">Round 7 of 15</div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Player</th><th>Bid</th><th>Won</th><th>Round</th><th>Total</th></tr>
+      </thead>
+      <tbody>
+        <tr class="lead"><td class="name">Clara<span class="star">✦</span></td><td>3</td><td>3</td><td class="plus">+50</td><td class="total">210</td></tr>
+        <tr><td class="name">Anna</td><td>2</td><td>2</td><td class="plus">+40</td><td class="total">180</td></tr>
+        <tr><td class="name">David</td><td>1</td><td>2</td><td class="minus">−10</td><td class="total">120</td></tr>
+        <tr><td class="name">Ben</td><td>1</td><td>0</td><td class="minus">−10</td><td class="total">90</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="url">wizard.jkrumboe.dev</div>
+</body>
+</html>
