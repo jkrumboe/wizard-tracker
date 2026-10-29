@@ -15,7 +15,8 @@ import {
   ImagePlus, Info, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
   Minus, PackagePlus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
   Settings, Shield, ShieldCheck, Spade, Star, Swords, Table, Target, Trash2, TrendingDown,
-  TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
+  TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut,
+  Calculator, History, Inbox, Link2, MessageSquare, Radio, XCircle
 } from 'lucide-react';
 
 const ICONS = {
@@ -26,7 +27,8 @@ const ICONS = {
   ImagePlus, Info, Key, LayoutDashboard, LineChart, Link, List, LogIn, LogOut, Megaphone, Menu,
   Minus, PackagePlus, Pause, Play, Plus, RefreshCw, RotateCcw, RotateCw, Save, ScanBarcode, ScanSearch, Search,
   Settings, Shield, ShieldCheck, Spade, Star, Swords, Table, Target, Trash2, TrendingDown,
-  TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut
+  TrendingUp, Trophy, Upload, User, UserCheck, UserPlus, Users, Wand2, X, ZoomIn, ZoomOut,
+  Calculator, History, Inbox, Link2, MessageSquare, Radio, XCircle
 };
 
 /**

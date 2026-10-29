@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
-import userService from '@/shared/api/userService';
-import { PlayIcon, EyeIcon, CheckCircleIcon, XCircleIcon, AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, RefreshCwIcon, UsersIcon, GamepadIcon, LinkIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import userService from '@/shared/api/userService';
+import Icon from '@/components/ui/Icon';
+import {
+  AdminEmpty,
+  AdminExplainer,
+  AdminNotice,
+  AdminPageHeader,
+  AdminPill,
+  AdminSection,
+  AdminStat,
+  AdminStats,
+} from '@/components/admin/AdminUI';
+import {
+  useAdminConfirm,
+} from '@/components/admin/adminUtils';
 import '@/styles/pages/admin.css';
 
 const GameLinkageManagement = () => {
   const { t } = useTranslation();
+  const [confirm, confirmDialog] = useAdminConfirm();
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -15,10 +29,7 @@ const GameLinkageManagement = () => {
   const [showAllDetails, setShowAllDetails] = useState(false);
 
   const toggleUserExpanded = (userId) => {
-    setExpandedUsers(prev => ({
-      ...prev,
-      [userId]: !prev[userId]
-    }));
+    setExpandedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));
   };
 
   const handlePreview = async () => {
@@ -28,20 +39,22 @@ const GameLinkageManagement = () => {
     setResults(null);
 
     try {
-      const response = await userService.previewLinkAllGames();
-      setPreviewData(response);
+      setPreviewData(await userService.previewLinkAllGames());
     } catch (err) {
       console.error('Error previewing linkage:', err);
-      setError(err.message || 'Failed to preview game linkage');
+      setError(err.message || t('adminGameLinkage.previewFailed'));
     } finally {
       setPreviewLoading(false);
     }
   };
 
   const handleLinkAllGames = async () => {
-    if (!window.confirm(t('adminGameLinkage.linkConfirm'))) {
-      return;
-    }
+    const ok = await confirm({
+      title: t('adminGameLinkage.linkAllTitle'),
+      message: t('adminGameLinkage.linkConfirm'),
+      confirmLabel: t('adminGameLinkage.linkAllNow'),
+    });
+    if (!ok) return;
 
     setLoading(true);
     setError(null);
@@ -50,338 +63,201 @@ const GameLinkageManagement = () => {
     try {
       const response = await userService.linkAllUserGames();
       setResults(response.results);
-      setPreviewData(null); // Clear preview after successful execution
+      setPreviewData(null);
     } catch (err) {
       console.error('Error linking games:', err);
-      setError(err.message || 'Failed to link games');
+      setError(err.message || t('adminGameLinkage.linkFailed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const renderStatusIcon = (success, hasGames) => {
-    if (success && hasGames) {
-      return <CheckCircleIcon size={18} className="status-icon success" />;
-    } else if (success) {
-      return <span className="status-icon neutral">—</span>;
-    } else {
-      return <XCircleIcon size={18} className="status-icon error" />;
-    }
-  };
+  const busy = loading || previewLoading;
 
   return (
-    <div className="admin-container">
-      <div className="admin-header">
-        <h1>{t('adminGameLinkage.title')}</h1>
-        <p>{t('adminGameLinkage.description')}</p>
-      </div>
+    <div className="adm-page">
+      <AdminPageHeader title={t('adminGameLinkage.title')} subtitle={t('adminGameLinkage.description')} />
 
-      {/* How It Works Section */}
-      <div className="admin-section info-card">
-        <div className="info-card-header">
-          <h3>{t('adminGameLinkage.howItWorks')}</h3>
-        </div>
-        <div className="info-card-content">
-          <div className="info-columns">
-            <div className="info-column">
-              <h4>{t('adminGameLinkage.matchingProcess')}</h4>
-              <ul>
-                <li><strong>{t('adminGameLinkage.caseInsensitive')}</strong> {t('adminGameLinkage.caseInsensitiveDesc')}</li>
-                <li><strong>{t('adminGameLinkage.identitiesIncluded')}</strong> {t('adminGameLinkage.identitiesIncludedDesc')}</li>
-                <li><strong>{t('adminGameLinkage.allGameTypes')}</strong> {t('adminGameLinkage.allGameTypesDesc')}</li>
-              </ul>
-            </div>
-            <div className="info-column">
-              <h4>{t('adminGameLinkage.whatGetsUpdated')}</h4>
-              <ul>
-                <li>{t('adminGameLinkage.onlyUserId')}</li>
-                <li>{t('adminGameLinkage.dataUnchanged')}</li>
-                <li>{t('adminGameLinkage.alreadyLinkedSkipped')}</li>
-              </ul>
-            </div>
+      <AdminExplainer title={t('adminGameLinkage.howItWorks')}>
+        <div className="adm-explainer-columns">
+          <div>
+            <h3>{t('adminGameLinkage.matchingProcess')}</h3>
+            <ul className="adm-bullets">
+              <li><strong>{t('adminGameLinkage.caseInsensitive')}</strong> {t('adminGameLinkage.caseInsensitiveDesc')}</li>
+              <li><strong>{t('adminGameLinkage.identitiesIncluded')}</strong> {t('adminGameLinkage.identitiesIncludedDesc')}</li>
+              <li><strong>{t('adminGameLinkage.allGameTypes')}</strong> {t('adminGameLinkage.allGameTypesDesc')}</li>
+            </ul>
+          </div>
+          <div>
+            <h3>{t('adminGameLinkage.whatGetsUpdated')}</h3>
+            <ul className="adm-bullets">
+              <li>{t('adminGameLinkage.onlyUserId')}</li>
+              <li>{t('adminGameLinkage.dataUnchanged')}</li>
+              <li>{t('adminGameLinkage.alreadyLinkedSkipped')}</li>
+            </ul>
+          </div>
+          <div>
+            <h3>{t('adminGameLinkage.whenToUse')}</h3>
+            <ul className="adm-bullets">
+              <li><strong>{t('adminGameLinkage.useCase1')}</strong> {t('adminGameLinkage.useCase1Desc')}</li>
+              <li><strong>{t('adminGameLinkage.useCase2')}</strong> {t('adminGameLinkage.useCase2Desc')}</li>
+              <li><strong>{t('adminGameLinkage.useCase3')}</strong> {t('adminGameLinkage.useCase3Desc')}</li>
+            </ul>
           </div>
         </div>
-      </div>
+        <p className="adm-muted">
+          <strong>{t('adminGameLinkage.safeOperation')}</strong> {t('adminGameLinkage.safeOperationDesc')}
+        </p>
+      </AdminExplainer>
 
-      {/* Actions Section */}
-      <div className="admin-section">
-        <div className="section-header">
-          <h2>{t('adminGameLinkage.linkAllTitle')}</h2>
-          <p>{t('adminGameLinkage.linkAllDesc')}</p>
-        </div>
-
-        <div className="action-buttons-row">
-          <button
-            className="btn btn-secondary btn-with-icon"
-            onClick={handlePreview}
-            disabled={loading || previewLoading}
-          >
-            {previewLoading ? (
-              <>
-                <RefreshCwIcon size={18} className="spinning" />
-                {t('adminGameLinkage.analyzing')}
-              </>
-            ) : (
-              <>
-                <EyeIcon size={18} />
-                {t('adminGameLinkage.previewChanges')}
-              </>
-            )}
+      <AdminSection icon="Link" title={t('adminGameLinkage.linkAllTitle')} description={t('adminGameLinkage.linkAllDesc')}>
+        <div className="adm-actions">
+          <button type="button" className="adm-btn adm-btn--secondary" onClick={handlePreview} disabled={busy}>
+            <Icon name={previewLoading ? 'RefreshCw' : 'Eye'} size={16} className={previewLoading ? 'adm-spin' : ''} />
+            {previewLoading ? t('adminGameLinkage.analyzing') : t('adminGameLinkage.previewChanges')}
           </button>
-          <button
-            className="btn btn-primary btn-with-icon"
-            onClick={handleLinkAllGames}
-            disabled={loading || previewLoading}
-          >
-            {loading ? (
-              <>
-                <RefreshCwIcon size={18} className="spinning" />
-                {t('adminGameLinkage.linkingProgress')}
-              </>
-            ) : (
-              <>
-                <PlayIcon size={18} />
-                {t('adminGameLinkage.linkAllNow')}
-              </>
-            )}
+          <button type="button" className="adm-btn adm-btn--primary" onClick={handleLinkAllGames} disabled={busy}>
+            <Icon name={loading ? 'RefreshCw' : 'Play'} size={16} className={loading ? 'adm-spin' : ''} />
+            {loading ? t('adminGameLinkage.linkingProgress') : t('adminGameLinkage.linkAllNow')}
           </button>
         </div>
 
-        {error && (
-          <div className="alert alert-error">
-            <AlertTriangleIcon size={18} />
-            <span>{error}</span>
-          </div>
-        )}
-      </div>
+        {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      </AdminSection>
 
-      {/* Preview Results */}
       {previewData && (
-        <div className="admin-section results-section preview-section">
-          <div className="section-header">
-            <h2>
-              <EyeIcon size={20} />
-              {t('adminGameLinkage.previewTitle')}
-            </h2>
-            <p>{t('adminGameLinkage.dryRunNote')}</p>
-          </div>
+        <AdminSection
+          icon="Eye"
+          title={t('adminGameLinkage.previewTitle')}
+          description={t('adminGameLinkage.dryRunNote')}
+          actions={<AdminPill tone="accent">{t('adminElo.noChangesApplied')}</AdminPill>}
+        >
+          <AdminStats>
+            <AdminStat icon="Users" label={t('adminGameLinkage.totalUsers')} value={previewData.totalUsers} />
+            <AdminStat icon="Users" tone="accent" label={t('adminGameLinkage.usersWithLinkable')} value={previewData.usersWithGames} />
+            <AdminStat icon="Gamepad2" tone="success" label={t('adminGameLinkage.gamesToLink')} value={previewData.totalGamesToLink} />
+          </AdminStats>
 
-          <div className="stats-grid">
-            <div className="stat-box">
-              <UsersIcon size={24} className="stat-icon" />
-              <div className="stat-value">{previewData.totalUsers}</div>
-              <div className="stat-label">{t('adminGameLinkage.totalUsers')}</div>
-            </div>
-            <div className="stat-box highlight">
-              <UsersIcon size={24} className="stat-icon" />
-              <div className="stat-value">{previewData.usersWithGames}</div>
-              <div className="stat-label">{t('adminGameLinkage.usersWithLinkable')}</div>
-            </div>
-            <div className="stat-box success">
-              <GamepadIcon size={24} className="stat-icon" />
-              <div className="stat-value">{previewData.totalGamesToLink}</div>
-              <div className="stat-label">{t('adminGameLinkage.gamesToLink')}</div>
-            </div>
-          </div>
-
-          {previewData.userDetails && previewData.userDetails.length > 0 && (
-            <div className="details-section">
-              <div className="details-header">
-                <h4>{t('adminGameLinkage.usersWithGames', { count: previewData.userDetails.length })}</h4>
-                <button 
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => setShowAllDetails(!showAllDetails)}
-                >
+          {previewData.userDetails?.length > 0 && (
+            <div className="adm-review-block">
+              <div className="adm-block-head">
+                <h3>{t('adminGameLinkage.usersWithGames', { count: previewData.userDetails.length })}</h3>
+                <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setShowAllDetails(!showAllDetails)}>
                   {showAllDetails ? t('adminGameLinkage.collapseAll') : t('adminGameLinkage.expandAll')}
                 </button>
               </div>
-              <div className="user-list">
-                {previewData.userDetails.map((user, idx) => (
-                  <div key={idx} className="user-item">
-                    <div 
-                      className="user-item-header"
-                      onClick={() => toggleUserExpanded(user.userId)}
-                    >
-                      <div className="user-info">
-                        <LinkIcon size={16} className="link-icon" />
-                        <span className="username">{user.username}</span>
-                        <span className="game-count badge">
-                          {t('adminGameLinkage.gamesCount', { count: user.gamesToLink })}
+              <ul className="adm-list">
+                {previewData.userDetails.map(user => {
+                  const open = showAllDetails || expandedUsers[user.userId];
+                  return (
+                    <li key={user.userId} className={open ? 'is-open' : undefined}>
+                      <button type="button" className="adm-list-row" onClick={() => toggleUserExpanded(user.userId)} aria-expanded={Boolean(open)}>
+                        <Icon name="Link" size={16} className="adm-muted" />
+                        <span className="adm-list-main">
+                          <strong>{user.username}</strong>
+                          {user.identities?.length > 1 && (
+                            <span>{t('adminGameLinkage.identitiesCount', { count: user.identities.length })}</span>
+                          )}
                         </span>
-                        {user.identities && user.identities.length > 1 && (
-                          <span className="aliases-badge">
-                            {t('adminGameLinkage.identitiesCount', { count: user.identities.length })}
-                          </span>
-                        )}
-                      </div>
-                      {expandedUsers[user.userId] || showAllDetails ? (
-                        <ChevronUpIcon size={18} />
-                      ) : (
-                        <ChevronDownIcon size={18} />
-                      )}
-                    </div>
-                    {(expandedUsers[user.userId] || showAllDetails) && user.gameBreakdown && (
-                      <div className="user-item-details">
-                        <div className="breakdown-grid">
-                          {user.gameBreakdown.games > 0 && (
-                            <div className="breakdown-item">
-                              <span className="breakdown-label">{t('adminGameLinkage.regularGames')}</span>
-                              <span className="breakdown-value">{user.gameBreakdown.games}</span>
-                            </div>
-                          )}
-                          {user.gameBreakdown.wizardGames > 0 && (
-                            <div className="breakdown-item">
-                              <span className="breakdown-label">{t('adminGameLinkage.wizardGames')}</span>
-                              <span className="breakdown-value">{user.gameBreakdown.wizardGames}</span>
-                            </div>
-                          )}
-                          {user.gameBreakdown.tableGames > 0 && (
-                            <div className="breakdown-item">
-                              <span className="breakdown-label">{t('adminGameLinkage.tableGames')}</span>
-                              <span className="breakdown-value">{user.gameBreakdown.tableGames}</span>
+                        <AdminPill tone="success">{t('adminGameLinkage.gamesCount', { count: user.gamesToLink })}</AdminPill>
+                        <Icon name={open ? 'ChevronUp' : 'ChevronDown'} size={16} className="adm-list-chevron" />
+                      </button>
+                      {open && user.gameBreakdown && (
+                        <div className="adm-list-detail">
+                          <dl className="adm-spec">
+                            {user.gameBreakdown.games > 0 && (
+                              <div><dt>{t('adminGameLinkage.regularGames')}</dt><dd>{user.gameBreakdown.games}</dd></div>
+                            )}
+                            {user.gameBreakdown.wizardGames > 0 && (
+                              <div><dt>{t('adminGameLinkage.wizardGames')}</dt><dd>{user.gameBreakdown.wizardGames}</dd></div>
+                            )}
+                            {user.gameBreakdown.tableGames > 0 && (
+                              <div><dt>{t('adminGameLinkage.tableGames')}</dt><dd>{user.gameBreakdown.tableGames}</dd></div>
+                            )}
+                          </dl>
+                          {user.identities?.length > 0 && (
+                            <div className="adm-chips">
+                              <span className="adm-muted">{t('adminGameLinkage.identitiesLabel')}</span>
+                              {user.identities.map((identity, index) => (
+                                <span key={identity._id || index} className="adm-chip">{identity.displayName || identity.name}</span>
+                              ))}
                             </div>
                           )}
                         </div>
-                        {user.identities && user.identities.length > 0 && (
-                          <div className="aliases-list">
-                            <span className="aliases-label">{t('adminGameLinkage.identitiesLabel')}</span>
-                            {user.identities.map((identity, i) => (
-                              <span key={i} className="alias-tag">{identity.displayName || identity.name}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
 
-          {previewData.totalGamesToLink === 0 && (
-            <div className="empty-state">
-              <CheckCircleIcon size={48} className="empty-icon success" />
-              <h4>{t('adminGameLinkage.allLinked')}</h4>
-              <p>{t('adminGameLinkage.allLinkedDesc')}</p>
-            </div>
-          )}
-
-          {previewData.totalGamesToLink > 0 && (
-            <div className="preview-action">
-              <button
-                className="btn btn-primary btn-lg btn-with-icon"
-                onClick={handleLinkAllGames}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCwIcon size={18} className="spinning" />
-                    {t('adminGameLinkage.linkingProgress')}
-                  </>
-                ) : (
-                  <>
-                    <PlayIcon size={18} />
-                    {t('adminGameLinkage.applyChanges', { count: previewData.totalGamesToLink })}
-                  </>
-                )}
+          {previewData.totalGamesToLink === 0 ? (
+            <AdminEmpty icon="CheckCircle2" tone="success" title={t('adminGameLinkage.allLinked')}>
+              {t('adminGameLinkage.allLinkedDesc')}
+            </AdminEmpty>
+          ) : (
+            <div className="adm-actions adm-actions--end">
+              <button type="button" className="adm-btn adm-btn--primary" onClick={handleLinkAllGames} disabled={loading}>
+                <Icon name={loading ? 'RefreshCw' : 'Play'} size={16} className={loading ? 'adm-spin' : ''} />
+                {loading
+                  ? t('adminGameLinkage.linkingProgress')
+                  : t('adminGameLinkage.applyChanges', { count: previewData.totalGamesToLink })}
               </button>
             </div>
           )}
-        </div>
+        </AdminSection>
       )}
 
-      {/* Execution Results */}
       {results && (
-        <div className="admin-section results-section execution-section">
-          <div className="section-header success-header">
-            <h2>
-              <CheckCircleIcon size={20} />
-              {t('adminGameLinkage.claimingComplete')}
-            </h2>
-          </div>
+        <AdminSection icon="CheckCircle2" title={t('adminGameLinkage.claimingComplete')} tone="success">
+          <AdminStats>
+            <AdminStat label={t('adminGameLinkage.totalUsers')} value={results.totalUsers} />
+            <AdminStat label={t('adminGameLinkage.processed')} value={results.processed} />
+            <AdminStat label={t('adminGameLinkage.successful')} value={results.successful} tone="success" />
+            <AdminStat label={t('adminGameLinkage.identitiesClaimed')} value={results.totalIdentitiesClaimed || 0} tone="accent" />
+            {results.failed > 0 && <AdminStat label={t('adminGameLinkage.failed')} value={results.failed} tone="danger" />}
+          </AdminStats>
 
-          <div className="stats-grid">
-            <div className="stat-box">
-              <div className="stat-value">{results.totalUsers}</div>
-              <div className="stat-label">{t('adminGameLinkage.totalUsers')}</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-value">{results.processed}</div>
-              <div className="stat-label">{t('adminGameLinkage.processed')}</div>
-            </div>
-            <div className="stat-box success">
-              <div className="stat-value">{results.successful}</div>
-              <div className="stat-label">{t('adminGameLinkage.successful')}</div>
-            </div>
-            <div className="stat-box highlight">
-              <div className="stat-value">{results.totalIdentitiesClaimed || 0}</div>
-              <div className="stat-label">{t('adminGameLinkage.identitiesClaimed')}</div>
-            </div>
-            {results.failed > 0 && (
-              <div className="stat-box error">
-                <div className="stat-value">{results.failed}</div>
-                <div className="stat-label">{t('adminGameLinkage.failed')}</div>
-              </div>
-            )}
-          </div>
-
-          {results.details && results.details.length > 0 && (
-            <div className="details-section">
-              <h4>{t('adminGameLinkage.changesMade')}</h4>
-              <div className="details-list">
-                {results.details.map((detail, idx) => (
-                  <div key={idx} className={`detail-item ${detail.success ? 'success' : 'error'}`}>
-                    {renderStatusIcon(detail.success, (detail.identitiesClaimed || 0) > 0 || detail.identityCreated)}
-                    <div className="detail-content">
-                      <div className="detail-username">{detail.username}</div>
-                      {detail.success ? (
-                        <div className="detail-games">
-                          {t('adminGameLinkage.identitiesClaimedCount', { count: detail.identitiesClaimed || 0 })}{detail.identityCreated ? ', ' + t('adminGameLinkage.newIdentityCreated') : ''}
-                        </div>
-                      ) : (
-                        <div className="detail-error">
-                          {detail.error || 'Failed'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {results.details?.length > 0 && (
+            <div className="adm-review-block">
+              <h3>{t('adminGameLinkage.changesMade')}</h3>
+              <ul className="adm-list">
+                {results.details.map((detail, index) => {
+                  const claimed = (detail.identitiesClaimed || 0) > 0 || detail.identityCreated;
+                  return (
+                    <li key={detail.userId || index}>
+                      <div className="adm-list-row is-static">
+                        <Icon
+                          name={!detail.success ? 'XCircle' : claimed ? 'CheckCircle2' : 'Minus'}
+                          size={18}
+                          className={!detail.success ? 'adm-text-danger' : claimed ? 'adm-text-success' : 'adm-muted'}
+                        />
+                        <span className="adm-list-main">
+                          <strong>{detail.username}</strong>
+                          <span className={detail.success ? undefined : 'adm-text-danger'}>
+                            {detail.success
+                              ? `${t('adminGameLinkage.identitiesClaimedCount', { count: detail.identitiesClaimed || 0 })}${detail.identityCreated ? `, ${t('adminGameLinkage.newIdentityCreated')}` : ''}`
+                              : detail.error || t('adminGameLinkage.failed')}
+                          </span>
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
 
           {(results.totalIdentitiesClaimed || 0) === 0 && (
-            <div className="empty-state">
-              <CheckCircleIcon size={48} className="empty-icon" />
-              <h4>{t('adminGameLinkage.noNewIdentities')}</h4>
-              <p>{t('adminGameLinkage.noNewIdentitiesDesc')}</p>
-            </div>
+            <AdminEmpty icon="CheckCircle2" title={t('adminGameLinkage.noNewIdentities')}>
+              {t('adminGameLinkage.noNewIdentitiesDesc')}
+            </AdminEmpty>
           )}
-        </div>
+        </AdminSection>
       )}
 
-      {/* When to Use Section */}
-      <div className="admin-section info-section">
-        <h3>{t('adminGameLinkage.whenToUse')}</h3>
-        <div className="use-cases">
-          <div className="use-case">
-            <strong>{t('adminGameLinkage.useCase1')}</strong>
-            <span>{t('adminGameLinkage.useCase1Desc')}</span>
-          </div>
-          <div className="use-case">
-            <strong>{t('adminGameLinkage.useCase2')}</strong>
-            <span>{t('adminGameLinkage.useCase2Desc')}</span>
-          </div>
-          <div className="use-case">
-            <strong>{t('adminGameLinkage.useCase3')}</strong>
-            <span>{t('adminGameLinkage.useCase3Desc')}</span>
-          </div>
-        </div>
-
-        <div className="info-box">
-          <strong>{t('adminGameLinkage.safeOperation')}</strong> {t('adminGameLinkage.safeOperationDesc')}
-        </div>
-      </div>
+      {confirmDialog}
     </div>
   );
 };

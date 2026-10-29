@@ -1324,7 +1324,14 @@
     "tblGames": "Spiele",
     "tblWins": "Siege",
     "tblWinRate": "Siegrate",
-    "tblLastGame": "Letztes Spiel"
+    "tblLastGame": "Letztes Spiel",
+    "gamesSplit": "{{wizard}} Wizard · {{table}} Tisch",
+    "lastDays": "Letzte {{count}} Tage",
+    "noData": "Noch keine Daten",
+    "playerRecord": "{{games}} Spiele · {{wins}} Siege",
+    "queueEmpty": "Keine offenen Vorschläge",
+    "queueEmptyHint": "Zum Prüfverlauf",
+    "reviewNow": "Jetzt prüfen"
   },
 
   "adminUsers": {
@@ -1377,7 +1384,11 @@
     "passwordMinLength": "Passwort muss mindestens 6 Zeichen lang sein",
     "passwordsMismatch": "Passwörter stimmen nicht überein",
     "passwordReset": "Passwort erfolgreich zurückgesetzt für {{username}}!",
-    "userAnonymized": "Benutzer \"{{username}}\" erfolgreich anonymisiert! Spiele und Vorlagen wurden mit dem anonymisierten Benutzernamen beibehalten."
+    "userAnonymized": "Benutzer \"{{username}}\" erfolgreich anonymisiert! Spiele und Vorlagen wurden mit dem anonymisierten Benutzernamen beibehalten.",
+    "adminRoleHint": "Admins können alle Benutzer, Spiele und Vorlagen ändern.",
+    "joined": "Seit {{date}}",
+    "loadFailed": "Benutzer konnten nicht geladen werden",
+    "seen": "zuletzt {{when}}"
   },
 
   "adminTemplates": {
@@ -1386,7 +1397,6 @@
     "changeRequest": "Änderungsanfrage",
     "newTemplate": "Neue Vorlage",
     "submittedBy": "Eingereicht von:",
-    "changesRequested": "Angeforderte Änderungen:",
     "templateName": "Vorlagenname",
     "targetNumber": "Zielpunktzahl",
     "scoring": "Wertung",
@@ -1409,11 +1419,82 @@
     "approvedSuccess": "Vorlage genehmigt und zu Systemvorlagen hinzugefügt!",
     "approveFailed": "Vorschlag konnte nicht genehmigt werden: {{error}}",
     "rejectReason": "Grund für Ablehnung (optional):",
-    "rejectedSuccess": "Vorlagenvorschlag abgelehnt",
+    "rejectedSuccess": "„{{name}}“ wurde abgelehnt",
     "rejectFailed": "Vorschlag konnte nicht abgelehnt werden: {{error}}",
     "oldLabel": "- Alt:",
     "newLabel": "+ Neu:",
-    "empty": "(leer)"
+    "empty": "(leer)",
+    "boxArtSuggestion": "Schachtelbild",
+    "boxArtChange": "Schachtelbild-Änderung:",
+    "currentBoxArt": "Aktuell",
+    "suggestedBoxArt": "Vorgeschlagen",
+    "noBoxArt": "Kein Schachtelbild",
+    "viewOnBgg": "Auf BoardGameGeek ansehen",
+    "approveBoxArt": "Schachtelbild genehmigen",
+    "approveBoxArtConfirm": "Das Schachtelbild dieses Spiels für alle durch den Vorschlag ersetzen?",
+    "boxArtApproved": "Schachtelbild für alle aktualisiert!",
+    "subtitle": "Prüfe, was Spieler für die gemeinsame Spieleliste vorschlagen",
+    "loadFailed": "Vorschläge konnten nicht geladen werden",
+    "statusFilter": "Prüfstatus",
+    "typeFilter": "Art des Vorschlags",
+    "typeAll": "Alle",
+    "status_pending": "Offen",
+    "status_approved": "Angenommen",
+    "status_rejected": "Abgelehnt",
+    "queueLabel": "Vorschläge",
+    "needsAttention": "Genauer prüfen",
+    "selectHint": "Wähle einen Vorschlag zum Prüfen",
+    "noSuggestionsBody": "Neue Vorschläge von Spielern erscheinen hier.",
+    "noHistory": "Noch nichts hier",
+    "backToQueue": "Alle Vorschläge",
+    "forTemplate": "Für {{name}}",
+    "siblingsBody_one": "Für dieses Spiel gibt es noch {{count}} weiteren offenen Vorschlag. Wenn du diesen zuerst prüfst, kann der andere veraltet sein.",
+    "siblingsBody_other": "Für dieses Spiel gibt es noch {{count}} weitere offene Vorschläge. Wenn du diesen zuerst prüfst, können die anderen veraltet sein.",
+    "changesRequested_one": "{{count}} Änderung",
+    "changesRequested_other": "{{count}} Änderungen",
+    "conflictTitle": "Seit dem Vorschlag geändert",
+    "conflictBody": "{{fields}} wurde am Spiel geändert, nachdem dieser Vorschlag gemacht wurde. Annehmen ersetzt den neueren Wert.",
+    "changedSinceBody": "{{fields}} wurde seit dem Vorschlag am Spiel geändert. Das bleibt erhalten; übernommen werden nur die Felder unten.",
+    "legacyChangeBody": "Das ist eine ältere Anfrage. Annehmen übernimmt alle Felder außer dem Schachtelbild.",
+    "currentlyValue": "Aktuell: {{value}}",
+    "noFieldChanges": "Nichts zu ändern",
+    "noFieldChangesBody": "Diese Anfrage entspricht dem aktuellen Stand des Spiels.",
+    "duplicateTitle": "Ein Spiel mit diesem Namen existiert",
+    "duplicateBody": "„{{name}}“ ist bereits in der Spieleliste. Annehmen legt einen zweiten Eintrag an.",
+    "duplicateConfirm": "„{{name}}“ ist bereits in der Spieleliste. Trotzdem als eigenes Spiel hinzufügen?",
+    "addAnyway": "Trotzdem hinzufügen",
+    "templateSetup": "Einstellungen",
+    "category": "Spieltyp",
+    "categoryTable": "Punktetabelle",
+    "categoryCallAndMade": "Ansagen & Stiche",
+    "scoringFormula": "Punkteformel",
+    "formulaSummary": "{{base}} für richtige Ansage, {{bonus}} pro Stich, {{penalty}} pro Abweichung",
+    "roundPattern": "Runden",
+    "pattern_pyramid": "Pyramide",
+    "pattern_ascending": "Aufsteigend",
+    "pattern_fixed": "Fest",
+    "maxRounds": "Max. Runden",
+    "dealerRotation": "Geber wechselt",
+    "forbiddenCall": "Verbotene Ansage",
+    "gameRules": "Regeln",
+    "boxArt": "Schachtelbild",
+    "reviewNoteLabel": "Notiz für den Verlauf (optional)",
+    "reviewNotePlaceholder": "Begründung, falls nötig",
+    "approve": "Annehmen",
+    "approveChanges": "Änderungen übernehmen",
+    "approveConfirmTitle": "Vorschlag annehmen?",
+    "approveConfirm_new": "„{{name}}“ für alle zur Spieleliste hinzufügen?",
+    "approveConfirm_change": "Diese Änderungen an „{{name}}“ für alle übernehmen?",
+    "approveConfirm_boxArt": "Das Schachtelbild von „{{name}}“ für alle ersetzen?",
+    "approved_new": "„{{name}}“ wurde zur Spieleliste hinzugefügt",
+    "approved_change": "Änderungen an „{{name}}“ wurden übernommen",
+    "approved_boxArt": "Schachtelbild von „{{name}}“ wurde aktualisiert",
+    "rejectConfirmTitle": "Vorschlag ablehnen?",
+    "rejectConfirm": "„{{name}}“ ohne Notiz ablehnen?",
+    "rejectConfirmWithNote": "„{{name}}“ ablehnen? Deine Notiz bleibt im Verlauf.",
+    "reviewedBy_approved": "Angenommen von {{name}} am {{date}}",
+    "reviewedBy_rejected": "Abgelehnt von {{name}} am {{date}}",
+    "reviewedBy_pending": "Wartet auf Prüfung"
   },
 
   "adminPlayerLinking": {
@@ -1465,7 +1546,11 @@
     "linkFailed": "Identität konnte nicht verknüpft werden: {{error}}",
     "unlinkConfirm": "Verknüpfung zwischen \"{{identity}}\" und Benutzer \"{{username}}\" aufheben?",
     "unlinkSuccess": "\"{{identity}}\" erfolgreich vom Benutzer getrennt.",
-    "unlinkFailed": "Identität konnte nicht getrennt werden: {{error}}"
+    "unlinkFailed": "Identität konnte nicht getrennt werden: {{error}}",
+    "chooseUser": "Benutzer wählen",
+    "loadFailed": "Daten konnten nicht geladen werden: {{error}}",
+    "loading": "Spieleridentitäten werden geladen...",
+    "selectBothRequired": "Wähle zuerst eine Gastidentität und einen Benutzer"
   },
 
   "adminGameLinkage": {
@@ -1525,7 +1610,9 @@
     "useCase3Desc": "Wenn die automatische Verknüpfung bei der Registrierung fehlgeschlagen ist",
     "safeOperation": "Sichere Operation:",
     "safeOperationDesc": "Diese Operation fügt nur userId-Referenzen zu Spielen hinzu. Spieldaten, Punktzahlen oder Spielernamen werden nicht verändert. Bereits korrekt verknüpfte Spiele werden automatisch übersprungen.",
-    "linkConfirm": "Dies wird alle identifizierten Spiele mit ihren jeweiligen Benutzerkonten verknüpfen. Fortfahren?"
+    "linkConfirm": "Dies wird alle identifizierten Spiele mit ihren jeweiligen Benutzerkonten verknüpfen. Fortfahren?",
+    "linkFailed": "Spiele konnten nicht verknüpft werden",
+    "previewFailed": "Vorschau der Spielverknüpfung fehlgeschlagen"
   },
 
   "adminGames": {
@@ -1596,7 +1683,9 @@
     "confirmRemoveWarning": "{{count}} doppelte Spiele werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.",
     "confirmRemoveKeeps": "Von jedem Spiel bleibt eine Kopie erhalten - zuerst eine geteilte, sonst die mit den meisten verknüpften Spielern, sonst der früheste Upload.",
     "confirmRemoveElo": "Die ELO-Wertungen werden danach neu berechnet, das kann einen Moment dauern.",
-    "confirmRemoveAction": "Duplikate entfernen"
+    "confirmRemoveAction": "Duplikate entfernen",
+    "actions": "Aktionen",
+    "pagination": "Seiten"
   },
 
   "adminGameEditor": {
@@ -1686,7 +1775,9 @@
     "recalculationComplete": "Neuberechnung abgeschlossen",
     "applied": "Angewendet",
     "successMessage": "ELO-Bewertungen wurden erfolgreich neu berechnet. Spieler können ihre aktualisierten Ranglisten auf der Bestenliste sehen.",
-    "recalculateConfirm": "Dies wird die ELO-Bewertungen für {{gameType}} neu berechnen. Diese Operation kann nicht rückgängig gemacht werden. Fortfahren?"
+    "recalculateConfirm": "Dies wird die ELO-Bewertungen für {{gameType}} neu berechnen. Diese Operation kann nicht rückgängig gemacht werden. Fortfahren?",
+    "previewFailed": "Vorschau der ELO-Neuberechnung fehlgeschlagen",
+    "recalculateFailed": "ELO-Neuberechnung fehlgeschlagen"
   },
 
   "scanBarcode": {

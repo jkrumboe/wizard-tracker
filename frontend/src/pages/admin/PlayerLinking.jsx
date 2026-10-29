@@ -1,12 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
-import userService from '@/shared/api/userService';
-import { UserIcon, Link2Icon, Trash2Icon, SearchIcon, XIcon, CheckCircleIcon, AlertCircleIcon, UsersIcon, GamepadIcon, RefreshCwIcon } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import userService from '@/shared/api/userService';
+import Icon from '@/components/ui/Icon';
+import {
+  AdminEmpty,
+  AdminExplainer,
+  AdminLoading,
+  AdminNotice,
+  AdminPageHeader,
+  AdminSearch,
+  AdminSection,
+  AdminTabs,
+} from '@/components/admin/AdminUI';
+import {
+  formatDate,
+  useAdminConfirm,
+} from '@/components/admin/adminUtils';
 import '@/styles/pages/admin.css';
 
+const matches = (value, query) => (value || '').toLowerCase().includes(query.trim().toLowerCase());
+
 const PlayerLinking = () => {
-  const { t } = useTranslation();
-  // Data state
+  const { t, i18n } = useTranslation();
+  const [confirm, confirmDialog] = useAdminConfirm();
+
   const [guestIdentities, setGuestIdentities] = useState([]);
   const [linkedIdentities, setLinkedIdentities] = useState([]);
   const [users, setUsers] = useState([]);
@@ -14,77 +31,68 @@ const PlayerLinking = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Link form state
   const [selectedIdentity, setSelectedIdentity] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isLinking, setIsLinking] = useState(false);
-  const [isUnlinking, setIsUnlinking] = useState(false);
+  const [unlinkingId, setUnlinkingId] = useState(null);
 
-  // Filter/search state
   const [identitySearch, setIdentitySearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [linkedFilter, setLinkedFilter] = useState('');
-  const [tab, setTab] = useState('unlinked'); // 'unlinked' or 'linked'
-  
-  // Refs
+  const [tab, setTab] = useState('unlinked');
+
   const userDropdownRef = useRef(null);
+  const formRef = useRef(null);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const [guestData, usersData] = await Promise.all([
+        userService.getGuestIdentities(),
+        userService.getAllUsers()
+      ]);
+
+      const userArray = Array.isArray(usersData)
+        ? usersData
+        : usersData?.users || Object.values(usersData || {}).find(Array.isArray) || [];
+      const identities = guestData.identities || [];
+
+      setGuestIdentities(identities.filter(identity => !identity.linkedToUser));
+      setLinkedIdentities(identities.filter(identity => identity.linkedToUser));
+      setUsers(userArray.filter(user => user.role !== 'guest' && !user.isDeleted));
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError(t('adminPlayerLinking.loadFailed', { error: err.message }));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
     loadData();
-  }, []);
-  
-  // Close user dropdown when clicking outside
+  }, [loadData]);
+
   useEffect(() => {
+    if (!showUserDropdown) return undefined;
     const handleClickOutside = (event) => {
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
         setShowUserDropdown(false);
       }
     };
-    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      const [guestData, usersData] = await Promise.all([
-        userService.getGuestIdentities(),
-        userService.getAllUsers()
-      ]);
-      
-      // Handle both response formats
-      let userArray = [];
-      if (Array.isArray(usersData)) {
-        userArray = usersData;
-      } else if (usersData && usersData.users) {
-        userArray = usersData.users;
-      } else if (usersData) {
-        userArray = Object.values(usersData).find(val => Array.isArray(val)) || [];
-      }
-      
-      // Separate linked and unlinked identities
-      const unlinked = (guestData.identities || []).filter(i => !i.linkedToUser);
-      const linked = (guestData.identities || []).filter(i => i.linkedToUser);
-      
-      setGuestIdentities(unlinked);
-      setLinkedIdentities(linked);
-      setUsers(userArray.filter(u => u.role !== 'guest')); // Only show real users
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError(`Failed to load data: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [showUserDropdown]);
 
   const handleSelectIdentity = (identity) => {
     setSelectedIdentity(identity);
     setSelectedUser(null);
     setUserSearch('');
+    setSuccess('');
+    // On phones the form sits below the list
+    requestAnimationFrame(() => formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' }));
   };
 
   const handleSelectUser = (user) => {
@@ -97,8 +105,6 @@ const PlayerLinking = () => {
     setSelectedIdentity(null);
     setSelectedUser(null);
     setUserSearch('');
-    setSuccess('');
-    setError('');
   };
 
   const handleLink = async () => {
@@ -107,25 +113,20 @@ const PlayerLinking = () => {
       return;
     }
 
-    const confirmMsg = t('adminPlayerLinking.linkConfirm', { identity: selectedIdentity.displayName, username: selectedUser.username });
-    if (!confirm(confirmMsg)) {
-      return;
-    }
+    const ok = await confirm({
+      title: t('adminPlayerLinking.linkIdentity'),
+      message: t('adminPlayerLinking.linkConfirm', { identity: selectedIdentity.displayName, username: selectedUser.username }),
+      confirmLabel: t('adminPlayerLinking.linkIdentity'),
+      icon: 'Link2',
+    });
+    if (!ok) return;
 
     try {
       setIsLinking(true);
       setError('');
       setSuccess('');
-
-      await userService.linkGuestIdentity(
-        selectedIdentity._id,
-        selectedUser._id || selectedUser.id
-      );
-
-      setSuccess(
-        t('adminPlayerLinking.linkSuccess', { identity: selectedIdentity.displayName, username: selectedUser.username })
-      );
-
+      await userService.linkGuestIdentity(selectedIdentity._id, selectedUser._id || selectedUser.id);
+      setSuccess(t('adminPlayerLinking.linkSuccess', { identity: selectedIdentity.displayName, username: selectedUser.username }));
       clearSelection();
       await loadData();
     } catch (err) {
@@ -137,374 +138,254 @@ const PlayerLinking = () => {
   };
 
   const handleUnlink = async (identity) => {
-    const confirmMsg = t('adminPlayerLinking.unlinkConfirm', { identity: identity.displayName, username: identity.linkedToUser?.username || '' });
-    if (!confirm(confirmMsg)) {
-      return;
-    }
+    const ok = await confirm({
+      title: t('adminPlayerLinking.unlinkIdentity'),
+      message: t('adminPlayerLinking.unlinkConfirm', { identity: identity.displayName, username: identity.linkedToUser?.username || '' }),
+      confirmLabel: t('adminPlayerLinking.unlink'),
+      tone: 'danger',
+    });
+    if (!ok) return;
 
     try {
-      setIsUnlinking(true);
+      setUnlinkingId(identity._id);
       setError('');
       setSuccess('');
-
-      // Pass both guestIdentityId and userId to the API
       await userService.unlinkGuestIdentity(identity._id, identity.linkedToUser?._id);
-
-      setSuccess(
-        t('adminPlayerLinking.unlinkSuccess', { identity: identity.displayName })
-      );
-
+      setSuccess(t('adminPlayerLinking.unlinkSuccess', { identity: identity.displayName }));
       await loadData();
     } catch (err) {
       console.error('Error unlinking identity:', err);
       setError(t('adminPlayerLinking.unlinkFailed', { error: err.message }));
     } finally {
-      setIsUnlinking(false);
+      setUnlinkingId(null);
     }
   };
 
-  // Filter identities based on search
-  const filteredGuestIdentities = guestIdentities.filter(identity =>
-    identity.displayName.toLowerCase().includes(identitySearch.toLowerCase())
+  const filteredGuestIdentities = useMemo(
+    () => guestIdentities.filter(identity => matches(identity.displayName, identitySearch)),
+    [guestIdentities, identitySearch]
   );
 
-  const filteredLinkedIdentities = linkedIdentities.filter(identity =>
-    identity.displayName.toLowerCase().includes(linkedFilter.toLowerCase()) ||
-    (identity.linkedToUser?.username || '').toLowerCase().includes(linkedFilter.toLowerCase())
+  const filteredLinkedIdentities = useMemo(
+    () => linkedIdentities.filter(identity =>
+      matches(identity.displayName, linkedFilter) || matches(identity.linkedToUser?.username, linkedFilter)
+    ),
+    [linkedIdentities, linkedFilter]
   );
 
-  // Filter users based on search
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(userSearch.toLowerCase())
+  const filteredUsers = useMemo(
+    () => users.filter(user => matches(user.username, userSearch)),
+    [users, userSearch]
   );
 
-  if (loading) {
-    return <div className="admin-container">{t('adminPlayerLinking.loading')}</div>;
+  if (loading && guestIdentities.length === 0 && linkedIdentities.length === 0) {
+    return (
+      <div className="adm-page">
+        <AdminPageHeader title={t('adminPlayerLinking.title')} subtitle={t('adminPlayerLinking.description')} />
+        <AdminLoading label={t('adminPlayerLinking.loading')} />
+      </div>
+    );
   }
 
   return (
-    <div className="admin-container">
-      <div className="admin-header">
-        <h1>{t('adminPlayerLinking.title')}</h1>
-        <p>{t('adminPlayerLinking.description')}</p>
-        <button onClick={loadData} className="btn-icon" title={t('adminPlayerLinking.refreshData')}>
-          <RefreshCwIcon size={16} />
-        </button>
-      </div>
+    <div className="adm-page adm-page--wide">
+      <AdminPageHeader
+        title={t('adminPlayerLinking.title')}
+        subtitle={t('adminPlayerLinking.description')}
+        actions={(
+          <button type="button" className="adm-icon-btn" onClick={loadData} disabled={loading} title={t('adminPlayerLinking.refreshData')} aria-label={t('adminPlayerLinking.refreshData')}>
+            <Icon name="RefreshCw" size={16} className={loading ? 'adm-spin' : ''} />
+          </button>
+        )}
+      />
 
-      {/* How It Works Info Card */}
-      <div className="admin-section info-card">
-        <div className="info-card-header">
-          <h3>{t('adminPlayerLinking.howItWorks')}</h3>
-        </div>
-        <div className="info-card-content">
-          <div className="info-columns">
-            <div className="info-column">
-              <h4>{t('adminPlayerLinking.whenToUse')}</h4>
-              <ul>
-                <li>{t('adminPlayerLinking.useCase1')}</li>
-                <li>{t('adminPlayerLinking.useCase2')}</li>
-                <li>{t('adminPlayerLinking.useCase3')}</li>
-              </ul>
-            </div>
-            <div className="info-column">
-              <h4>{t('adminPlayerLinking.whatHappens')}</h4>
-              <ul>
-                <li><strong>{t('adminPlayerLinking.result1')}</strong> {t('adminPlayerLinking.result1Desc')}</li>
-                <li><strong>{t('adminPlayerLinking.result2')}</strong> {t('adminPlayerLinking.result2Desc')}</li>
-                <li><strong>{t('adminPlayerLinking.result3')}</strong> {t('adminPlayerLinking.result3Desc')}</li>
-              </ul>
-            </div>
+      <AdminExplainer title={t('adminPlayerLinking.howItWorks')}>
+        <div className="adm-explainer-columns">
+          <div>
+            <h3>{t('adminPlayerLinking.whenToUse')}</h3>
+            <ul className="adm-bullets">
+              <li>{t('adminPlayerLinking.useCase1')}</li>
+              <li>{t('adminPlayerLinking.useCase2')}</li>
+              <li>{t('adminPlayerLinking.useCase3')}</li>
+            </ul>
+          </div>
+          <div>
+            <h3>{t('adminPlayerLinking.whatHappens')}</h3>
+            <ul className="adm-bullets">
+              <li><strong>{t('adminPlayerLinking.result1')}</strong> {t('adminPlayerLinking.result1Desc')}</li>
+              <li><strong>{t('adminPlayerLinking.result2')}</strong> {t('adminPlayerLinking.result2Desc')}</li>
+              <li><strong>{t('adminPlayerLinking.result3')}</strong> {t('adminPlayerLinking.result3Desc')}</li>
+            </ul>
           </div>
         </div>
-      </div>
+      </AdminExplainer>
 
-      {error && (
-        <div className="alert alert-error">
-          <AlertCircleIcon size={18} />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <AdminNotice tone="error" onDismiss={() => setError('')}>{error}</AdminNotice>}
+      {success && <AdminNotice tone="success" onDismiss={() => setSuccess('')}>{success}</AdminNotice>}
 
-      {success && (
-        <div className="alert alert-success">
-          <CheckCircleIcon size={18} />
-          <span>{success}</span>
-        </div>
-      )}
+      <AdminTabs
+        value={tab}
+        onChange={setTab}
+        label={t('adminPlayerLinking.title')}
+        options={[
+          { value: 'unlinked', label: t('adminPlayerLinking.unlinkedTitle'), icon: 'Users', count: guestIdentities.length },
+          { value: 'linked', label: t('adminPlayerLinking.linkedTitle'), icon: 'Link2', count: linkedIdentities.length },
+        ]}
+      />
 
-      {/* Tab Navigation */}
-      <div className="admin-tabs">
-        <button
-          className={`tab-btn ${tab === 'unlinked' ? 'active' : ''}`}
-          onClick={() => setTab('unlinked')}
-        >
-          <UsersIcon size={16} />
-          {t('adminPlayerLinking.unlinkedTab', { count: guestIdentities.length })}
-        </button>
-        <button
-          className={`tab-btn ${tab === 'linked' ? 'active' : ''}`}
-          onClick={() => setTab('linked')}
-        >
-          <Link2Icon size={16} />
-          {t('adminPlayerLinking.linkedTab', { count: linkedIdentities.length })}
-        </button>
-      </div>
-
-      {/* Unlinked Identities Tab */}
       {tab === 'unlinked' && (
-        <div className="admin-section">
-          <div className="section-header">
-            <h2>{t('adminPlayerLinking.unlinkedTitle')}</h2>
-            <p>
-              {t('adminPlayerLinking.unlinkedDesc')}
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="search-box">
-            <SearchIcon size={16} />
-            <input
-              type="text"
-              placeholder={t('adminPlayerLinking.searchGuest')}
-              value={identitySearch}
-              onChange={(e) => setIdentitySearch(e.target.value)}
-              className="search-input"
-            />
-            {identitySearch && (
-              <button onClick={() => setIdentitySearch('')} className="btn-clear">
-                <XIcon size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Two-column layout: identities list and linking form */}
-          <div className="linking-layout">
-            {/* Identity List */}
-            <div className="identity-list-panel">
-              <h3>{t('adminPlayerLinking.guestIdentities', { count: filteredGuestIdentities.length })}</h3>
-              {filteredGuestIdentities.length === 0 ? (
-                <div className="no-data">
-                  <p>{identitySearch ? t('adminPlayerLinking.noMatchingIdentities') : t('adminPlayerLinking.noUnlinkedIdentities')}</p>
-                </div>
-              ) : (
-                <div className="identity-list">
-                  {filteredGuestIdentities.map((identity) => (
+        <div className="adm-linking">
+          <AdminSection
+            icon="Users"
+            title={t('adminPlayerLinking.guestIdentities', { count: filteredGuestIdentities.length })}
+            description={t('adminPlayerLinking.unlinkedDesc')}
+          >
+            <AdminSearch value={identitySearch} onChange={setIdentitySearch} placeholder={t('adminPlayerLinking.searchGuest')} />
+            {filteredGuestIdentities.length === 0 ? (
+              <AdminEmpty icon="UserCheck">
+                {identitySearch ? t('adminPlayerLinking.noMatchingIdentities') : t('adminPlayerLinking.noUnlinkedIdentities')}
+              </AdminEmpty>
+            ) : (
+              <ul className="adm-list adm-list--scroll">
+                {filteredGuestIdentities.map(identity => (
+                  <li key={identity._id}>
                     <button
-                      key={identity._id}
-                      className={`identity-item ${selectedIdentity?._id === identity._id ? 'selected' : ''}`}
+                      type="button"
+                      className={`adm-list-row${selectedIdentity?._id === identity._id ? ' is-selected' : ''}`}
                       onClick={() => handleSelectIdentity(identity)}
+                      aria-pressed={selectedIdentity?._id === identity._id}
                     >
-                      <div className="identity-info">
-                        <span className="identity-name">{identity.displayName}</span>
-                        <span className="identity-meta">
-                          <GamepadIcon size={12} />
+                      <Icon name="User" size={16} className="adm-muted" />
+                      <span className="adm-list-main">
+                        <strong>{identity.displayName}</strong>
+                        <span>
                           {t('adminPlayerLinking.gamesCount', { count: identity.gameCount || 0 })}
+                          {identity.lastSeen && ` · ${t('adminPlayerLinking.lastSeen', { date: formatDate(identity.lastSeen, i18n.language) })}`}
                         </span>
-                      </div>
-                      {identity.lastSeen && (
-                        <span className="identity-date">
-                          {t('adminPlayerLinking.lastSeen', { date: new Date(identity.lastSeen).toLocaleDateString() })}
-                        </span>
-                      )}
+                      </span>
+                      <Icon name="ChevronRight" size={16} className="adm-list-chevron" />
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AdminSection>
 
-            {/* Linking Form */}
-            <div className="linking-form-panel">
-              <h3>{t('adminPlayerLinking.linkToUser')}</h3>
-              
+          <div ref={formRef} className="adm-linking-form">
+            <AdminSection icon="Link2" title={t('adminPlayerLinking.linkToUser')}>
               {selectedIdentity ? (
-                <div className="linking-form">
-                  <div className="selected-identity">
-                    <strong>{t('adminPlayerLinking.selectedIdentity')}</strong>
-                    <span className="identity-badge">
-                      <UserIcon size={14} />
-                      {selectedIdentity.displayName}
+                <>
+                  <div className="adm-link-preview">
+                    <span className="adm-chip adm-chip--strong">
+                      <Icon name="User" size={14} /> {selectedIdentity.displayName}
                     </span>
-                    <button onClick={clearSelection} className="btn-clear" title={t('adminPlayerLinking.clearSelection')}>
-                      <XIcon size={14} />
+                    <Icon name="Link2" size={18} className="adm-muted" />
+                    <span className={`adm-chip${selectedUser ? ' adm-chip--accent' : ''}`}>
+                      <Icon name="UserCheck" size={14} /> {selectedUser?.username || t('adminPlayerLinking.chooseUser')}
+                    </span>
+                    <button type="button" className="adm-icon-btn adm-icon-btn--plain" onClick={clearSelection} title={t('adminPlayerLinking.clearSelection')} aria-label={t('adminPlayerLinking.clearSelection')}>
+                      <Icon name="X" size={16} />
                     </button>
                   </div>
 
-                  {/* User Selection */}
-                  <div className="form-group">
-                    <label htmlFor="user-search">{t('adminPlayerLinking.selectUserToLink')}</label>
-                    <div className="search-container" ref={userDropdownRef}>
-                      <div className="search-input-group">
+                  <div className="adm-field">
+                    <label htmlFor="link-user-search">{t('adminPlayerLinking.selectUserToLink')}</label>
+                    <div className="adm-combobox" ref={userDropdownRef}>
+                      <div className="adm-combobox-field">
                         <input
-                          id="user-search"
+                          id="link-user-search"
                           type="text"
+                          className="adm-input"
                           value={userSearch}
-                          onChange={(e) => {
-                            setUserSearch(e.target.value);
+                          onChange={(event) => {
+                            setUserSearch(event.target.value);
                             setShowUserDropdown(true);
-                            if (!e.target.value) {
-                              setSelectedUser(null);
-                            }
+                            if (!event.target.value) setSelectedUser(null);
                           }}
                           onFocus={() => setShowUserDropdown(true)}
                           placeholder={t('adminPlayerLinking.searchUser')}
-                          className="form-input"
                           autoComplete="off"
                         />
-                        {userSearch && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setUserSearch('');
-                              setSelectedUser(null);
-                            }}
-                            className="btn-clear"
-                          >
-                            <XIcon size={16} />
-                          </button>
-                        )}
                       </div>
-                      
                       {showUserDropdown && (
-                        <div className="search-dropdown">
+                        <div className="adm-combobox-menu">
                           {filteredUsers.length > 0 ? (
-                            <div className="search-dropdown-list">
-                              {filteredUsers.map((user) => (
+                            <div className="adm-combobox-list">
+                              {filteredUsers.map(user => (
                                 <button
                                   key={user._id || user.id}
                                   type="button"
-                                  className={`search-dropdown-item ${selectedUser?._id === user._id ? 'selected' : ''}`}
+                                  className={`adm-combobox-option${selectedUser && (selectedUser._id || selectedUser.id) === (user._id || user.id) ? ' is-selected' : ''}`}
                                   onClick={() => handleSelectUser(user)}
                                 >
-                                  <UserIcon size={14} />
+                                  <Icon name="User" size={14} />
                                   <span>{user.username}</span>
-                                  {user.email && <span className="user-email">{user.email}</span>}
                                 </button>
                               ))}
                             </div>
                           ) : (
-                            <div className="search-dropdown-empty">
-                              {t('adminPlayerLinking.noUsersFound')}
-                            </div>
+                            <p className="adm-combobox-empty">{t('adminPlayerLinking.noUsersFound')}</p>
                           )}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {selectedUser && (
-                    <div className="link-preview">
-                      <div className="link-arrow">
-                        <span className="identity-badge">
-                          {selectedIdentity.displayName}
-                        </span>
-                        <Link2Icon size={20} />
-                        <span className="user-badge">
-                          <UserIcon size={14} />
-                          {selectedUser.username}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleLink}
-                    disabled={!selectedUser || isLinking}
-                    className="btn-primary btn-full"
-                  >
-                    <Link2Icon size={16} />
+                  <button type="button" onClick={handleLink} disabled={!selectedUser || isLinking} className="adm-btn adm-btn--primary adm-btn--block">
+                    <Icon name={isLinking ? 'RefreshCw' : 'Link2'} size={16} className={isLinking ? 'adm-spin' : ''} />
                     {isLinking ? t('adminPlayerLinking.linking') : t('adminPlayerLinking.linkIdentity')}
                   </button>
-                </div>
+                </>
               ) : (
-                <div className="no-selection">
-                  <UsersIcon size={32} />
-                  <p>{t('adminPlayerLinking.selectIdentityHint')}</p>
-                </div>
+                <AdminEmpty icon="Users">{t('adminPlayerLinking.selectIdentityHint')}</AdminEmpty>
               )}
-            </div>
+            </AdminSection>
           </div>
         </div>
       )}
 
-      {/* Linked Identities Tab */}
       {tab === 'linked' && (
-        <div className="admin-section">
-          <div className="section-header">
-            <h2>{t('adminPlayerLinking.linkedTitle')}</h2>
-            <p>
-              {t('adminPlayerLinking.linkedDesc')}
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="search-box">
-            <SearchIcon size={16} />
-            <input
-              type="text"
-              placeholder={t('adminPlayerLinking.searchLinked')}
-              value={linkedFilter}
-              onChange={(e) => setLinkedFilter(e.target.value)}
-              className="search-input"
-            />
-            {linkedFilter && (
-              <button onClick={() => setLinkedFilter('')} className="btn-clear">
-                <XIcon size={16} />
-              </button>
-            )}
-          </div>
-
+        <AdminSection icon="Link2" title={t('adminPlayerLinking.linkedTitle')} description={t('adminPlayerLinking.linkedDesc')}>
+          <AdminSearch value={linkedFilter} onChange={setLinkedFilter} placeholder={t('adminPlayerLinking.searchLinked')} />
           {filteredLinkedIdentities.length === 0 ? (
-            <div className="no-data">
-              <p>{linkedFilter ? t('adminPlayerLinking.noMatchingLinked') : t('adminPlayerLinking.noLinkedYet')}</p>
-            </div>
+            <AdminEmpty icon="Link2">
+              {linkedFilter ? t('adminPlayerLinking.noMatchingLinked') : t('adminPlayerLinking.noLinkedYet')}
+            </AdminEmpty>
           ) : (
-            <div className="aliases-list">
-              {filteredLinkedIdentities.map((identity) => (
-                <div key={identity._id} className="alias-card">
-                  <div className="alias-content">
-                    <div className="alias-header">
-                      <div className="alias-link">
-                        <span className="alias-name">{identity.displayName}</span>
-                        <Link2Icon size={16} />
-                        <span className="user-name">
-                          <UserIcon size={14} />
-                          {identity.linkedToUser?.username || t('adminPlayerLinking.unknownUser')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="alias-meta">
+            <ul className="adm-list">
+              {filteredLinkedIdentities.map(identity => (
+                <li key={identity._id}>
+                  <div className="adm-list-row is-static">
+                    <span className="adm-list-main">
+                      <strong className="adm-link-pair">
+                        <span>{identity.displayName}</span>
+                        <Icon name="ArrowRight" size={14} className="adm-muted" />
+                        <span>{identity.linkedToUser?.username || t('adminPlayerLinking.unknownUser')}</span>
+                      </strong>
                       <span>
-                        <GamepadIcon size={12} />
                         {t('adminPlayerLinking.gamesCount', { count: identity.gameCount || 0 })}
+                        {identity.linkedAt && ` · ${t('adminPlayerLinking.linkedDate', { date: formatDate(identity.linkedAt, i18n.language) })}`}
                       </span>
-                      {identity.linkedAt && (
-                        <>
-                          <span>-</span>
-                          <span>{t('adminPlayerLinking.linkedDate', { date: new Date(identity.linkedAt).toLocaleDateString() })}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="alias-actions">
+                    </span>
                     <button
-                      className="btn-delete"
+                      type="button"
+                      className="adm-btn adm-btn--danger-soft adm-btn--sm"
                       onClick={() => handleUnlink(identity)}
-                      disabled={isUnlinking}
+                      disabled={unlinkingId !== null}
                       title={t('adminPlayerLinking.unlinkIdentity')}
                     >
-                      <Trash2Icon size={16} />
-                      {t('adminPlayerLinking.unlink')}
+                      <Icon name={unlinkingId === identity._id ? 'RefreshCw' : 'Trash2'} size={14} className={unlinkingId === identity._id ? 'adm-spin' : ''} />
+                      <span>{t('adminPlayerLinking.unlink')}</span>
                     </button>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
+        </AdminSection>
       )}
+
+      {confirmDialog}
     </div>
   );
 };

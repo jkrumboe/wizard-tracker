@@ -8,8 +8,25 @@ import {
   adminDeleteTableGame,
   adminScanDuplicateGames,
   adminRemoveDuplicateGames,
-} from '@/shared/api/gameService';
+  } from '@/shared/api/gameService';
 import Icon from '@/components/ui/Icon';
+import {
+  AdminDialog,
+  AdminEmpty,
+  AdminLoading,
+  AdminNotice,
+  AdminPageHeader,
+  AdminSearch,
+  AdminSection,
+  AdminStat,
+  AdminStats,
+  AdminTabs,
+  AdminToggle,
+} from '@/components/admin/AdminUI';
+import {
+  formatDate,
+  formatDateTime,
+} from '@/components/admin/adminUtils';
 import '@/styles/pages/admin.css';
 
 const PAGE_SIZE = 25;
@@ -18,23 +35,7 @@ const WIZARD_PAGE_SIZE = 200;
 const MAX_WIZARD_PAGES = 50;
 
 function TypePill({ type }) {
-  return <span className={`game-type-pill type-${type}`}>{type}</span>;
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function formatDateTime(dateStr) {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString(undefined, {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+  return <span className={`adm-type adm-type--${type}`}>{type}</span>;
 }
 
 function getPlayerNames(game) {
@@ -88,7 +89,7 @@ async function fetchAllWizardGames() {
 }
 
 const GameManagement = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [allGames, setAllGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -171,19 +172,6 @@ const GameManagement = () => {
     setDeleteError('');
   }, []);
 
-  // Escape closes whichever modal is open
-  useEffect(() => {
-    if (!deleteTarget && !confirmRemove) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key !== 'Escape') return;
-      if (deleteLoading || removeLoading) return;
-      closeDeleteModal();
-      setConfirmRemove(false);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [deleteTarget, confirmRemove, deleteLoading, removeLoading, closeDeleteModal]);
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
@@ -258,175 +246,179 @@ const GameManagement = () => {
   };
 
   const toggleOption = (key) => setDedupeOptions(prev => ({ ...prev, [key]: !prev[key] }));
+  const dedupeBusy = scanLoading || removeLoading;
 
   const renderDuplicateCopy = (copy, role) => (
-    <div key={copy.id} className={`dedupe-copy dedupe-copy-${role}`}>
-      <span className={`dedupe-role dedupe-role-${role}`}>
+    <div key={copy.id} className={`adm-dupe adm-dupe--${role}`}>
+      <span className="adm-dupe-role">
         {t(role === 'keep' ? 'adminGames.keepLabel' : 'adminGames.removeLabel')}
       </span>
-      <div className="dedupe-copy-body">
-        <div className="dedupe-copy-title">
-          {copy.name || copy.players.join(', ') || t('adminGames.unnamedGame')}
-        </div>
-        <div className="dedupe-copy-meta">
+      <div className="adm-dupe-body">
+        <strong>{copy.name || copy.players.join(', ') || t('adminGames.unnamedGame')}</strong>
+        <span className="adm-dupe-meta">
           {copy.name && copy.players.length > 0 && <span>{copy.players.join(', ')}</span>}
           <span>{t('adminGames.roundsShort', { count: copy.rounds })}</span>
-          <span>{formatDateTime(copy.playedAt)}</span>
-        </div>
-        <div className="dedupe-copy-ids">
+          <span>{formatDateTime(copy.playedAt, i18n.language)}</span>
+        </span>
+        <span className="adm-dupe-ids">
           <code>{copy.id}</code>
           {copy.localId && <code>{copy.localId}</code>}
-        </div>
+        </span>
       </div>
     </div>
   );
 
   return (
-    <div className="admin-container">
-      <div className="admin-section-header">
-        <div>
-          <h1>{t('adminGames.title')}</h1>
-          <p className="subtitle">
-            {loading ? t('adminGames.loading') : t('adminGames.gamesFound', { count: filteredGames.length })}
-          </p>
-        </div>
-        <button
-          className="btn-refresh"
-          onClick={loadGames}
-          disabled={loading}
-          title={t('adminGames.refresh')}
-          aria-label={t('adminGames.refresh')}
-        >
-          <Icon name="RefreshCw" size={16} className={loading ? 'spin' : ''} />
-        </button>
-      </div>
+    <div className="adm-page">
+      <AdminPageHeader
+        title={t('adminGames.title')}
+        subtitle={loading ? t('adminGames.loading') : t('adminGames.gamesFound', { count: filteredGames.length })}
+        actions={(
+          <button type="button" className="adm-icon-btn" onClick={loadGames} disabled={loading} title={t('adminGames.refresh')} aria-label={t('adminGames.refresh')}>
+            <Icon name="RefreshCw" size={16} className={loading ? 'adm-spin' : ''} />
+          </button>
+        )}
+      />
 
-      {/* Duplicate detection */}
-      <section className="admin-section dedupe-section">
-        <div className="section-header">
-          <h2><Icon name="CopyCheck" size={20} /> {t('adminGames.duplicatesTitle')}</h2>
-          <p>{t('adminGames.duplicatesDesc')}</p>
-        </div>
-
-        <div className="dedupe-options">
-          <label className="dedupe-option">
-            <input
-              type="checkbox"
-              checked={dedupeOptions.includeDate}
-              onChange={() => toggleOption('includeDate')}
-              disabled={scanLoading || removeLoading}
-            />
-            <span>
-              {t('adminGames.optionMatchDate')}
-              <small>{t('adminGames.optionMatchDateHint')}</small>
-            </span>
-          </label>
-          <label className="dedupe-option">
-            <input
-              type="checkbox"
-              checked={dedupeOptions.sameUserOnly}
-              onChange={() => toggleOption('sameUserOnly')}
-              disabled={scanLoading || removeLoading}
-            />
-            <span>
-              {t('adminGames.optionSameUser')}
-              <small>{t('adminGames.optionSameUserHint')}</small>
-            </span>
-          </label>
-          <label className="dedupe-option">
-            <input
-              type="checkbox"
-              checked={dedupeOptions.recalculateElo}
-              onChange={() => toggleOption('recalculateElo')}
-              disabled={scanLoading || removeLoading}
-            />
-            <span>
-              {t('adminGames.optionRecalcElo')}
-              <small>{t('adminGames.optionRecalcEloHint')}</small>
-            </span>
-          </label>
+      <AdminSection icon="Gamepad2" title={t('adminGames.allGamesTitle')}>
+        <div className="adm-toolbar">
+          <AdminSearch value={search} onChange={setSearch} placeholder={t('adminGames.searchPlaceholder')} />
+          <AdminTabs
+            value={typeFilter}
+            onChange={setTypeFilter}
+            label={t('adminGames.typeFilter')}
+            options={[
+              { value: 'all', label: t('adminGames.allTypes') },
+              { value: 'wizard', label: t('adminGames.wizard') },
+              { value: 'table', label: t('adminGames.table') },
+            ]}
+          />
         </div>
 
-        <div className="action-buttons-row">
-          <button
-            className="btn btn-secondary btn-with-icon"
-            onClick={handleScan}
-            disabled={scanLoading || removeLoading}
-          >
-            <Icon name={scanLoading ? 'RefreshCw' : 'ScanSearch'} size={18} className={scanLoading ? 'spinning' : ''} />
+        {error && <AdminNotice tone="error">{error}</AdminNotice>}
+
+        {loading ? (
+          <AdminLoading label={t('adminGames.loadingGames')} />
+        ) : filteredGames.length === 0 ? (
+          <AdminEmpty icon="Gamepad2">{t('adminGames.noGames')}</AdminEmpty>
+        ) : (
+          <>
+            {/* Rows stack into cards on phones (see .adm-table--stack) */}
+            <table className="adm-table adm-table--stack">
+              <thead>
+                <tr>
+                  <th>{t('adminGames.colGame')}</th>
+                  <th>{t('adminGames.colRounds')}</th>
+                  <th>{t('adminGames.colPlayers')}</th>
+                  <th>{t('adminGames.colStatus')}</th>
+                  <th>{t('adminGames.colDate')}</th>
+                  <th><span className="sr-only">{t('adminGames.actions')}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map(game => (
+                  <tr key={game._id}>
+                    <td className="adm-table-primary">
+                      <div className="adm-game-cell">
+                        <TypePill type={game.type} />
+                        <strong>{game.name || game.players}</strong>
+                      </div>
+                      {game.name && <span className="adm-muted">{game.players}</span>}
+                      <code className="adm-id">{game._id}</code>
+                    </td>
+                    <td data-label={t('adminGames.colRounds')}>{game.rounds}</td>
+                    <td data-label={t('adminGames.colPlayers')}>{game.playerCount}</td>
+                    <td data-label={t('adminGames.colStatus')}>
+                      <span className={`adm-status ${game.finished ? 'is-done' : 'is-open'}`}>
+                        {game.finished ? t('adminGames.finished') : t('adminGames.inProgress')}
+                      </span>
+                    </td>
+                    <td data-label={t('adminGames.colDate')}>{formatDate(game.createdAt, i18n.language)}</td>
+                    <td className="adm-table-actions">
+                      <Link to={game.viewPath} target="_blank" rel="noopener noreferrer" className="adm-icon-btn" title={t('adminGames.viewGame')} aria-label={t('adminGames.viewGame')}>
+                        <Icon name="ExternalLink" size={15} />
+                      </Link>
+                      <Link to={`/admin/games/${game.type}/${game._id}/edit`} className="adm-icon-btn" title={t('adminGames.editGame')} aria-label={t('adminGames.editGame')}>
+                        <Icon name="Edit" size={15} />
+                      </Link>
+                      <button type="button" className="adm-icon-btn adm-icon-btn--danger" onClick={() => setDeleteTarget(game)} title={t('adminGames.deleteGame')} aria-label={t('adminGames.deleteGame')}>
+                        <Icon name="Trash2" size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {totalPages > 1 && (
+              <nav className="adm-pagination" aria-label={t('adminGames.pagination')}>
+                <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setPage(current => Math.max(1, current - 1))} disabled={currentPage === 1}>
+                  <Icon name="ChevronLeft" size={16} /> {t('adminGames.previous')}
+                </button>
+                <span>{t('adminGames.pageOf', { page: currentPage, total: totalPages })}</span>
+                <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setPage(current => Math.min(totalPages, current + 1))} disabled={currentPage === totalPages}>
+                  {t('adminGames.next')} <Icon name="ChevronRight" size={16} />
+                </button>
+              </nav>
+            )}
+          </>
+        )}
+      </AdminSection>
+
+      {/* Duplicate detection is a maintenance tool, so it follows the list */}
+      <AdminSection icon="CopyCheck" title={t('adminGames.duplicatesTitle')} description={t('adminGames.duplicatesDesc')} tone="accent">
+        <div className="adm-toggles">
+          <AdminToggle checked={dedupeOptions.includeDate} onChange={() => toggleOption('includeDate')} disabled={dedupeBusy} label={t('adminGames.optionMatchDate')} hint={t('adminGames.optionMatchDateHint')} />
+          <AdminToggle checked={dedupeOptions.sameUserOnly} onChange={() => toggleOption('sameUserOnly')} disabled={dedupeBusy} label={t('adminGames.optionSameUser')} hint={t('adminGames.optionSameUserHint')} />
+          <AdminToggle checked={dedupeOptions.recalculateElo} onChange={() => toggleOption('recalculateElo')} disabled={dedupeBusy} label={t('adminGames.optionRecalcElo')} hint={t('adminGames.optionRecalcEloHint')} />
+        </div>
+
+        <div className="adm-actions">
+          <button type="button" className="adm-btn adm-btn--secondary" onClick={handleScan} disabled={dedupeBusy}>
+            <Icon name={scanLoading ? 'RefreshCw' : 'ScanSearch'} size={16} className={scanLoading ? 'adm-spin' : ''} />
             {scanLoading ? t('adminGames.scanning') : t('adminGames.scanButton')}
           </button>
-          <button
-            className="btn btn-primary btn-with-icon"
-            onClick={() => setConfirmRemove(true)}
-            disabled={scanLoading || removeLoading || duplicateIds.length === 0}
-          >
-            <Icon name={removeLoading ? 'RefreshCw' : 'Trash2'} size={18} className={removeLoading ? 'spinning' : ''} />
-            {removeLoading
-              ? t('adminGames.removing')
-              : t('adminGames.removeButton', { count: duplicateIds.length })}
+          <button type="button" className="adm-btn adm-btn--danger" onClick={() => setConfirmRemove(true)} disabled={dedupeBusy || duplicateIds.length === 0}>
+            <Icon name={removeLoading ? 'RefreshCw' : 'Trash2'} size={16} className={removeLoading ? 'adm-spin' : ''} />
+            {removeLoading ? t('adminGames.removing') : t('adminGames.removeButton', { count: duplicateIds.length })}
           </button>
         </div>
 
-        {dedupeError && (
-          <div className="alert alert-error">
-            <Icon name="AlertTriangle" size={18} />
-            <span>{dedupeError}</span>
-          </div>
-        )}
+        {dedupeError && <AdminNotice tone="error">{dedupeError}</AdminNotice>}
 
         {removeResult && (
-          <div className="alert alert-success">
-            <Icon name="CheckCircle2" size={18} />
-            <span>
-              {t('adminGames.removeSuccess', {
-                count: removeResult.removed.total,
-                wizard: removeResult.removed.wizard,
-                table: removeResult.removed.table,
-              })}
-              {removeResult.eloRecalculated
-                ? ` ${t('adminGames.eloRecalculated', { count: removeResult.eloRecalculated.gamesProcessed })}`
-                : ''}
-            </span>
-          </div>
+          <AdminNotice tone="success">
+            {t('adminGames.removeSuccess', {
+              count: removeResult.removed.total,
+              wizard: removeResult.removed.wizard,
+              table: removeResult.removed.table,
+            })}
+            {removeResult.eloRecalculated
+              ? ` ${t('adminGames.eloRecalculated', { count: removeResult.eloRecalculated.gamesProcessed })}`
+              : ''}
+          </AdminNotice>
         )}
 
         {scan && (
-          <div className="dedupe-results">
-            <div className="stats-grid">
-              <div className="stat-box">
-                <div className="stat-label">{t('adminGames.statScanned')}</div>
-                <div className="stat-value">{scan.wizard.scanned + scan.table.scanned}</div>
-              </div>
-              <div className={`stat-box${scan.totalDuplicates > 0 ? ' error' : ' success'}`}>
-                <div className="stat-label">{t('adminGames.statDuplicates')}</div>
-                <div className="stat-value">{scan.totalDuplicates}</div>
-              </div>
-              <div className="stat-box">
-                <div className="stat-label">{t('adminGames.statGroups')}</div>
-                <div className="stat-value">{scan.totalGroups}</div>
-              </div>
-              <div className="stat-box">
-                <div className="stat-label">{t('adminGames.statNotComparable')}</div>
-                <div className="stat-value">{scan.wizard.skipped + scan.table.skipped}</div>
-              </div>
-            </div>
+          <>
+            <AdminStats>
+              <AdminStat label={t('adminGames.statScanned')} value={scan.wizard.scanned + scan.table.scanned} />
+              <AdminStat label={t('adminGames.statDuplicates')} value={scan.totalDuplicates} tone={scan.totalDuplicates > 0 ? 'danger' : 'success'} />
+              <AdminStat label={t('adminGames.statGroups')} value={scan.totalGroups} />
+              <AdminStat label={t('adminGames.statNotComparable')} value={scan.wizard.skipped + scan.table.skipped} />
+            </AdminStats>
 
             {scan.totalDuplicates === 0 ? (
-              <div className="empty-state">
-                <Icon name="CheckCircle2" size={32} className="empty-icon success" />
-                <h4>{t('adminGames.noDuplicatesTitle')}</h4>
-                <p>{t('adminGames.noDuplicatesDesc')}</p>
-              </div>
+              <AdminEmpty icon="CheckCircle2" tone="success" title={t('adminGames.noDuplicatesTitle')}>
+                {t('adminGames.noDuplicatesDesc')}
+              </AdminEmpty>
             ) : (
-              <div className="dedupe-groups">
+              <div className="adm-dupe-groups">
                 {duplicateGroups.map((group, index) => (
-                  <div key={group.keep.id} className="dedupe-group">
-                    <div className="dedupe-group-header">
+                  <div key={group.keep.id} className="adm-dupe-group">
+                    <div className="adm-dupe-group-head">
                       <TypePill type={group.keep.type} />
-                      <span className="dedupe-group-title">
-                        {t('adminGames.groupLabel', { index: index + 1, count: group.remove.length + 1 })}
-                      </span>
+                      <span>{t('adminGames.groupLabel', { index: index + 1, count: group.remove.length + 1 })}</span>
                     </div>
                     {renderDuplicateCopy(group.keep, 'keep')}
                     {group.remove.map(copy => renderDuplicateCopy(copy, 'remove'))}
@@ -434,245 +426,63 @@ const GameManagement = () => {
                 ))}
               </div>
             )}
-          </div>
-        )}
-      </section>
-
-      {/* Game list */}
-      <section className="admin-section">
-        <div className="section-header">
-          <h2><Icon name="Gamepad2" size={20} /> {t('adminGames.allGamesTitle')}</h2>
-        </div>
-
-        <div className="admin-filters">
-          <div className="search-box">
-            <div className="search-input-group">
-              <input
-                type="text"
-                className="form-input"
-                placeholder={t('adminGames.searchPlaceholder')}
-                value={search}
-                onChange={event => setSearch(event.target.value)}
-                aria-label={t('adminGames.searchPlaceholder')}
-              />
-              {search ? (
-                <button
-                  className="btn-clear"
-                  onClick={() => setSearch('')}
-                  aria-label={t('adminGames.clearSearch')}
-                >
-                  <Icon name="X" size={14} />
-                </button>
-              ) : (
-                <Icon name="Search" size={16} className="search-icon-static" />
-              )}
-            </div>
-          </div>
-          <div className="filter-group">
-            <label htmlFor="game-type-filter">{t('adminGames.typeFilter')}</label>
-            <select
-              id="game-type-filter"
-              className="filter-select"
-              value={typeFilter}
-              onChange={event => setTypeFilter(event.target.value)}
-            >
-              <option value="all">{t('adminGames.allTypes')}</option>
-              <option value="wizard">{t('adminGames.wizard')}</option>
-              <option value="table">{t('adminGames.table')}</option>
-            </select>
-          </div>
-        </div>
-
-        {error && (
-          <div className="alert alert-error">
-            <Icon name="AlertTriangle" size={18} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="loading">{t('adminGames.loadingGames')}</div>
-        ) : filteredGames.length === 0 ? (
-          <div className="no-data">{t('adminGames.noGames')}</div>
-        ) : (
-          <>
-            <div className="admin-table-wrapper">
-              <table className="admin-table games-table">
-                <thead>
-                  <tr>
-                    <th>{t('adminGames.colType')}</th>
-                    <th>{t('adminGames.colGame')}</th>
-                    <th>{t('adminGames.colRounds')}</th>
-                    <th>{t('adminGames.colPlayers')}</th>
-                    <th>{t('adminGames.colStatus')}</th>
-                    <th>{t('adminGames.colDate')}</th>
-                    <th className="col-actions" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginated.map(game => (
-                    <tr key={game._id}>
-                      <td><TypePill type={game.type} /></td>
-                      <td>
-                        <div className="game-cell-title">{game.name || game.players}</div>
-                        {game.name && <div className="game-cell-players">{game.players}</div>}
-                        <code className="game-cell-id">{game._id}</code>
-                      </td>
-                      <td>{game.rounds}</td>
-                      <td>{game.playerCount}</td>
-                      <td>
-                        <span className={`status-pill ${game.finished ? 'status-finished' : 'status-progress'}`}>
-                          {game.finished ? t('adminGames.finished') : t('adminGames.inProgress')}
-                        </span>
-                      </td>
-                      <td className="cell-date">{formatDate(game.createdAt)}</td>
-                      <td>
-                        <div className="row-actions">
-                          <Link
-                            to={game.viewPath}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-view"
-                            title={t('adminGames.viewGame')}
-                          >
-                            {t('adminGames.view')}
-                          </Link>
-                          <Link
-                            to={`/admin/games/${game.type}/${game._id}/edit`}
-                            className="btn-view btn-icon-only"
-                            title={t('adminGames.editGame')}
-                            aria-label={t('adminGames.editGame')}
-                          >
-                            <Icon name="Edit" size={13} />
-                          </Link>
-                          <button
-                            className="btn-reject btn-icon-only"
-                            onClick={() => setDeleteTarget(game)}
-                            title={t('adminGames.deleteGame')}
-                            aria-label={t('adminGames.deleteGame')}
-                          >
-                            <Icon name="Trash2" size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="admin-pagination">
-                <button
-                  className="btn-cancel"
-                  onClick={() => setPage(current => Math.max(1, current - 1))}
-                  disabled={currentPage === 1}
-                >
-                  {t('adminGames.previous')}
-                </button>
-                <span className="admin-pagination-info">
-                  {t('adminGames.pageOf', { page: currentPage, total: totalPages })}
-                </span>
-                <button
-                  className="btn-cancel"
-                  onClick={() => setPage(current => Math.min(totalPages, current + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  {t('adminGames.next')}
-                </button>
-              </div>
-            )}
           </>
         )}
-      </section>
+      </AdminSection>
 
-      {/* Delete confirmation */}
       {deleteTarget && (
-        <div className="modal-overlay" onClick={closeDeleteModal}>
-          <div
-            className="modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-game-title"
-            onClick={event => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h3 id="delete-game-title">
-                <Icon name="Trash2" size={18} /> {t('adminGames.deleteTitle')}
-              </h3>
-              <button className="close-btn" onClick={closeDeleteModal} aria-label={t('adminGames.cancel')}>
-                <Icon name="X" size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="danger-text">{t('adminGames.deleteWarning')}</p>
-              <div className="modal-detail-box">
-                <div><strong>{t('adminGames.colType')}:</strong> <TypePill type={deleteTarget.type} /></div>
-                <div><strong>{t('adminGames.colPlayers')}:</strong> {deleteTarget.players}</div>
-                {deleteTarget.name && <div><strong>{t('adminGames.nameLabel')}:</strong> {deleteTarget.name}</div>}
-                <code className="game-cell-id">{deleteTarget._id}</code>
-              </div>
-              {deleteError && (
-                <div className="alert alert-error">
-                  <Icon name="AlertTriangle" size={16} />
-                  <span>{deleteError}</span>
-                </div>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={closeDeleteModal} disabled={deleteLoading}>
+        <AdminDialog
+          title={t('adminGames.deleteTitle')}
+          icon="Trash2"
+          tone="danger"
+          size="sm"
+          onClose={closeDeleteModal}
+          busy={deleteLoading}
+          footer={(
+            <>
+              <button type="button" className="adm-btn adm-btn--ghost" onClick={closeDeleteModal} disabled={deleteLoading}>
                 {t('adminGames.cancel')}
               </button>
-              <button className="btn-reject" onClick={handleDelete} disabled={deleteLoading}>
+              <button type="button" className="adm-btn adm-btn--danger" onClick={handleDelete} disabled={deleteLoading}>
                 {deleteLoading ? t('adminGames.deleting') : t('adminGames.delete')}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          )}
+        >
+          <p className="adm-dialog-text">{t('adminGames.deleteWarning')}</p>
+          <dl className="adm-spec">
+            <div><dt>{t('adminGames.colType')}</dt><dd><TypePill type={deleteTarget.type} /></dd></div>
+            <div><dt>{t('adminGames.colPlayers')}</dt><dd>{deleteTarget.players}</dd></div>
+            {deleteTarget.name && <div><dt>{t('adminGames.nameLabel')}</dt><dd>{deleteTarget.name}</dd></div>}
+          </dl>
+          <code className="adm-id">{deleteTarget._id}</code>
+          {deleteError && <AdminNotice tone="error">{deleteError}</AdminNotice>}
+        </AdminDialog>
       )}
 
-      {/* Duplicate removal confirmation */}
       {confirmRemove && (
-        <div className="modal-overlay" onClick={() => !removeLoading && setConfirmRemove(false)}>
-          <div
-            className="modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="remove-duplicates-title"
-            onClick={event => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h3 id="remove-duplicates-title">
-                <Icon name="CopyCheck" size={18} /> {t('adminGames.confirmRemoveTitle')}
-              </h3>
-              <button
-                className="close-btn"
-                onClick={() => setConfirmRemove(false)}
-                disabled={removeLoading}
-                aria-label={t('adminGames.cancel')}
-              >
-                <Icon name="X" size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="danger-text">
-                {t('adminGames.confirmRemoveWarning', { count: duplicateIds.length })}
-              </p>
-              <p className="info-text">{t('adminGames.confirmRemoveKeeps')}</p>
-              {dedupeOptions.recalculateElo && (
-                <p className="info-text">{t('adminGames.confirmRemoveElo')}</p>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setConfirmRemove(false)} disabled={removeLoading}>
+        <AdminDialog
+          title={t('adminGames.confirmRemoveTitle')}
+          icon="CopyCheck"
+          tone="danger"
+          size="sm"
+          onClose={() => setConfirmRemove(false)}
+          busy={removeLoading}
+          footer={(
+            <>
+              <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setConfirmRemove(false)} disabled={removeLoading}>
                 {t('adminGames.cancel')}
               </button>
-              <button className="btn-reject" onClick={handleRemoveDuplicates} disabled={removeLoading}>
+              <button type="button" className="adm-btn adm-btn--danger" onClick={handleRemoveDuplicates} disabled={removeLoading}>
                 {removeLoading ? t('adminGames.removing') : t('adminGames.confirmRemoveAction')}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          )}
+        >
+          <p className="adm-dialog-text"><strong>{t('adminGames.confirmRemoveWarning', { count: duplicateIds.length })}</strong></p>
+          <p className="adm-dialog-text">{t('adminGames.confirmRemoveKeeps')}</p>
+          {dedupeOptions.recalculateElo && <p className="adm-dialog-text">{t('adminGames.confirmRemoveElo')}</p>}
+        </AdminDialog>
       )}
     </div>
   );

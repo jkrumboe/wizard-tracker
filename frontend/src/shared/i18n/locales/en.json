@@ -1324,7 +1324,14 @@
     "tblGames": "Games",
     "tblWins": "Wins",
     "tblWinRate": "Win %",
-    "tblLastGame": "Last Game"
+    "tblLastGame": "Last Game",
+    "gamesSplit": "{{wizard}} Wizard · {{table}} table",
+    "lastDays": "Last {{count}} days",
+    "noData": "No data yet",
+    "playerRecord": "{{games}} games · {{wins}} wins",
+    "queueEmpty": "No suggestions waiting",
+    "queueEmptyHint": "Open the review history",
+    "reviewNow": "Review them now"
   },
 
   "adminUsers": {
@@ -1377,7 +1384,11 @@
     "passwordMinLength": "Password must be at least 6 characters long",
     "passwordsMismatch": "Passwords do not match",
     "passwordReset": "Password reset successfully for {{username}}!",
-    "userAnonymized": "User \"{{username}}\" anonymized successfully! Their games and templates have been preserved with the anonymized username."
+    "userAnonymized": "User \"{{username}}\" anonymized successfully! Their games and templates have been preserved with the anonymized username.",
+    "adminRoleHint": "Admins can change every user, game and template.",
+    "joined": "Joined {{date}}",
+    "loadFailed": "Failed to load users",
+    "seen": "seen {{when}}"
   },
 
   "adminTemplates": {
@@ -1386,7 +1397,6 @@
     "changeRequest": "Change Request",
     "newTemplate": "New Template",
     "submittedBy": "Submitted by:",
-    "changesRequested": "Changes Requested:",
     "templateName": "Template Name",
     "targetNumber": "Target Number",
     "scoring": "Scoring",
@@ -1409,11 +1419,82 @@
     "approvedSuccess": "Template approved and added to system templates!",
     "approveFailed": "Failed to approve suggestion: {{error}}",
     "rejectReason": "Reason for rejection (optional):",
-    "rejectedSuccess": "Template suggestion rejected",
+    "rejectedSuccess": "\"{{name}}\" was rejected",
     "rejectFailed": "Failed to reject suggestion: {{error}}",
     "oldLabel": "- Old:",
     "newLabel": "+ New:",
-    "empty": "(empty)"
+    "empty": "(empty)",
+    "boxArtSuggestion": "Box Art",
+    "boxArtChange": "Box art change:",
+    "currentBoxArt": "Current",
+    "suggestedBoxArt": "Suggested",
+    "noBoxArt": "No box art",
+    "viewOnBgg": "View on BoardGameGeek",
+    "approveBoxArt": "Approve box art",
+    "approveBoxArtConfirm": "Replace this game's box art for everyone with the suggested one?",
+    "boxArtApproved": "Box art updated for everyone!",
+    "subtitle": "Review what players suggest for the shared game list",
+    "loadFailed": "Failed to load suggestions",
+    "statusFilter": "Review status",
+    "typeFilter": "Suggestion type",
+    "typeAll": "All",
+    "status_pending": "To review",
+    "status_approved": "Approved",
+    "status_rejected": "Rejected",
+    "queueLabel": "Suggestions",
+    "needsAttention": "Needs a closer look",
+    "selectHint": "Pick a suggestion to review it",
+    "noSuggestionsBody": "New suggestions from players show up here.",
+    "noHistory": "Nothing here yet",
+    "backToQueue": "All suggestions",
+    "forTemplate": "For {{name}}",
+    "siblingsBody_one": "There is {{count}} more open suggestion for this game. Reviewing this one first can make the other one outdated.",
+    "siblingsBody_other": "There are {{count}} more open suggestions for this game. Reviewing this one first can make the others outdated.",
+    "changesRequested_one": "{{count}} change",
+    "changesRequested_other": "{{count}} changes",
+    "conflictTitle": "Changed since this was suggested",
+    "conflictBody": "{{fields}} changed on the game after this suggestion was made. Approving replaces the newer value.",
+    "changedSinceBody": "{{fields}} changed on the game since this was suggested. Those changes are kept; only the fields below are applied.",
+    "legacyChangeBody": "This is an older request. Approving applies every field except the box art.",
+    "currentlyValue": "Currently: {{value}}",
+    "noFieldChanges": "Nothing to change",
+    "noFieldChangesBody": "This request matches the game as it is now.",
+    "duplicateTitle": "A game with this name exists",
+    "duplicateBody": "\"{{name}}\" is already in the game list. Approving adds a second entry.",
+    "duplicateConfirm": "\"{{name}}\" is already in the game list. Add this one as a separate game anyway?",
+    "addAnyway": "Add anyway",
+    "templateSetup": "Setup",
+    "category": "Game type",
+    "categoryTable": "Score table",
+    "categoryCallAndMade": "Call & made",
+    "scoringFormula": "Scoring formula",
+    "formulaSummary": "{{base}} for a correct call, {{bonus}} per trick, {{penalty}} per miss",
+    "roundPattern": "Rounds",
+    "pattern_pyramid": "Pyramid",
+    "pattern_ascending": "Ascending",
+    "pattern_fixed": "Fixed",
+    "maxRounds": "Max rounds",
+    "dealerRotation": "Dealer rotates",
+    "forbiddenCall": "Forbidden call",
+    "gameRules": "Rules",
+    "boxArt": "Box art",
+    "reviewNoteLabel": "Note for the history (optional)",
+    "reviewNotePlaceholder": "Reason, if any",
+    "approve": "Approve",
+    "approveChanges": "Apply changes",
+    "approveConfirmTitle": "Approve suggestion?",
+    "approveConfirm_new": "Add \"{{name}}\" to the game list for everyone?",
+    "approveConfirm_change": "Apply these changes to \"{{name}}\" for everyone?",
+    "approveConfirm_boxArt": "Replace the box art of \"{{name}}\" for everyone?",
+    "approved_new": "\"{{name}}\" was added to the game list",
+    "approved_change": "Changes to \"{{name}}\" were applied",
+    "approved_boxArt": "Box art of \"{{name}}\" was updated",
+    "rejectConfirmTitle": "Reject suggestion?",
+    "rejectConfirm": "Reject \"{{name}}\" without a note?",
+    "rejectConfirmWithNote": "Reject \"{{name}}\"? Your note is kept in the history.",
+    "reviewedBy_approved": "Approved by {{name}} on {{date}}",
+    "reviewedBy_rejected": "Rejected by {{name}} on {{date}}",
+    "reviewedBy_pending": "Waiting for review"
   },
 
   "adminPlayerLinking": {
@@ -1465,7 +1546,11 @@
     "linkFailed": "Failed to link identity: {{error}}",
     "unlinkConfirm": "Remove link between \"{{identity}}\" and user \"{{username}}\"?",
     "unlinkSuccess": "Successfully unlinked \"{{identity}}\" from user.",
-    "unlinkFailed": "Failed to unlink identity: {{error}}"
+    "unlinkFailed": "Failed to unlink identity: {{error}}",
+    "chooseUser": "Choose a user",
+    "loadFailed": "Failed to load data: {{error}}",
+    "loading": "Loading player identities...",
+    "selectBothRequired": "Select a guest identity and a user first"
   },
 
   "adminGameLinkage": {
@@ -1525,7 +1610,9 @@
     "useCase3Desc": "If automatic linking failed during registration",
     "safeOperation": "Safe Operation:",
     "safeOperationDesc": "This operation only adds userId references to games. It does not modify game data, scores, or player names. Games that are already correctly linked will be automatically skipped.",
-    "linkConfirm": "This will link all identified games to their respective user accounts. Continue?"
+    "linkConfirm": "This will link all identified games to their respective user accounts. Continue?",
+    "linkFailed": "Failed to link games",
+    "previewFailed": "Failed to preview game linkage"
   },
 
   "adminGames": {
@@ -1596,7 +1683,9 @@
     "confirmRemoveWarning": "This permanently deletes {{count}} duplicate games. This cannot be undone.",
     "confirmRemoveKeeps": "One copy of every game is kept - a shared copy first, otherwise the one with the most linked players, otherwise the earliest upload.",
     "confirmRemoveElo": "ELO ratings are recalculated afterwards, which may take a moment.",
-    "confirmRemoveAction": "Remove duplicates"
+    "confirmRemoveAction": "Remove duplicates",
+    "actions": "Actions",
+    "pagination": "Pages"
   },
 
   "adminGameEditor": {
@@ -1686,7 +1775,9 @@
     "recalculationComplete": "Recalculation Complete",
     "applied": "Applied",
     "successMessage": "ELO ratings have been successfully recalculated. Players can now see their updated rankings on the leaderboard.",
-    "recalculateConfirm": "This will recalculate ELO ratings for {{gameType}}. This operation cannot be undone. Continue?"
+    "recalculateConfirm": "This will recalculate ELO ratings for {{gameType}}. This operation cannot be undone. Continue?",
+    "previewFailed": "Failed to preview the ELO recalculation",
+    "recalculateFailed": "Failed to recalculate ELO ratings"
   },
 
   "scanBarcode": {

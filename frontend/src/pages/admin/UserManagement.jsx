@@ -1,514 +1,400 @@
-import React, { useState, useEffect } from 'react';
-import userService from '@/shared/api/userService';
-import { Trash2Icon, KeyIcon, XIcon } from '@/components/ui/Icon';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import userService from '@/shared/api/userService';
+import Icon from '@/components/ui/Icon';
+import {
+  AdminAvatar,
+  AdminDialog,
+  AdminEmpty,
+  AdminLoading,
+  AdminNotice,
+  AdminPageHeader,
+  AdminPill,
+  AdminSearch,
+  AdminTabs,
+} from '@/components/admin/AdminUI';
+import {
+  formatDate,
+  formatRelativeTime,
+} from '@/components/admin/adminUtils';
 import '@/styles/pages/admin.css';
 
-const UserManagement = () => {
-  const { t } = useTranslation();
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [editingUser, setEditingUser] = useState(null);
-  const [newUsername, setNewUsername] = useState('');
-  const [editingRole, setEditingRole] = useState(null);
-  const [newRole, setNewRole] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [showActionsModal, setShowActionsModal] = useState(false);
-  const [actionUser, setActionUser] = useState(null);
-  
-  // Password reset modal state
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordResetUser, setPasswordResetUser] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
+const MIN_PASSWORD_LENGTH = 6;
+
+const userIdOf = (user) => user._id || user.id;
+
+/**
+ * Everything an admin can do to one account, as views of one dialog:
+ * overview, rename, change role, reset password, delete.
+ */
+function ManageUserDialog({ user, onClose, onDone }) {
+  const { t, i18n } = useTranslation();
+  const [view, setView] = useState('overview');
+  const [username, setUsername] = useState(user.username);
+  const [role, setRole] = useState(user.role || 'user');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  // Delete confirmation modal state
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteUser, setDeleteUser] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  const id = userIdOf(user);
 
-  useEffect(() => {
-    let filtered = [...users];
-    
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(user => 
-        user.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Apply role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(user => (user.role || 'user') === roleFilter);
-    }
-    
-    setFilteredUsers(filtered);
-  }, [users, searchTerm, roleFilter]);
-
-  const loadUsers = async () => {
+  const run = async (action, successMessage) => {
+    setBusy(true);
+    setError('');
     try {
-      setLoading(true);
-      console.log('Calling userService.getAllUsers()...');
-      const data = await userService.getAllUsers();
-      console.log('Received users:', data);
-      console.log('Type of data:', typeof data);
-      console.log('Is data an array?', Array.isArray(data));
-      console.log('data.users:', data.users);
-      console.log('Keys in data:', Object.keys(data));
-      
-      // Handle both array directly or object with users property
-      const usersArray = Array.isArray(data) ? data : (data.users || []);
-      console.log('Final users array:', usersArray);
-      
-      setUsers(usersArray);
-      setError('');
+      await action();
+      onDone(successMessage);
     } catch (err) {
-      console.error('Error loading users:', err);
-      setError('Failed to load users');
-    } finally {
-      setLoading(false);
+      console.error('Admin user action failed:', err);
+      setError(err.message);
+      setBusy(false);
     }
   };
 
-  const handleStartEdit = (user) => {
-    setEditingUser(user._id || user.id);
-    setNewUsername(user.username);
+  const show = (next) => {
+    setError('');
+    setView(next);
   };
 
-  const handleCancelEdit = () => {
-    setEditingUser(null);
-    setNewUsername('');
-  };
+  const passwordProblem = password && password.length < MIN_PASSWORD_LENGTH
+    ? t('adminUsers.passwordMinLength')
+    : confirmPassword && password !== confirmPassword
+      ? t('adminUsers.passwordsMismatch')
+      : '';
 
-  const handleStartRoleEdit = (user) => {
-    setEditingRole(user._id || user.id);
-    setNewRole(user.role || 'user');
-  };
-
-  const handleCancelRoleEdit = () => {
-    setEditingRole(null);
-    setNewRole('');
-  };
-
-  const handleOpenActionsModal = (user, e) => {
-    e.stopPropagation();
-    setActionUser(user);
-    setShowActionsModal(true);
-  };
-
-  const handleCloseActionsModal = () => {
-    setShowActionsModal(false);
-    setActionUser(null);
-  };
-
-  const handleSaveRole = async (userId) => {
-    if (!newRole) {
-      alert(t('adminUsers.roleCannotBeEmpty'));
-      return;
-    }
-
-    if (!confirm(t('adminUsers.confirmRoleChange', { role: newRole }))) {
-      return;
-    }
-
-    try {
-      await userService.updateUserRole(userId, newRole);
-      alert(t('adminUsers.roleUpdated'));
-      setEditingRole(null);
-      setNewRole('');
-      loadUsers();
-    } catch (err) {
-      console.error('Error updating role:', err);
-      alert(t('adminUsers.roleUpdateFailed', { error: err.message }));
-    }
-  };
-
-  const handleSaveUsername = async (userId) => {
-    if (!newUsername.trim()) {
-      alert(t('adminUsers.usernameCannotBeEmpty'));
-      return;
-    }
-
-    if (!confirm(t('adminUsers.confirmUsernameChange'))) {
-      return;
-    }
-
-    try {
-      await userService.updateUsername(userId, newUsername.trim());
-      alert(t('adminUsers.usernameUpdated'));
-      setEditingUser(null);
-      setNewUsername('');
-      loadUsers();
-    } catch (err) {
-      console.error('Error updating username:', err);
-      alert(t('adminUsers.usernameUpdateFailed', { error: err.message }));
-    }
-  };
-
-  const handleOpenPasswordModal = (user) => {
-    setPasswordResetUser(user);
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowPasswordModal(true);
-  };
-
-  const handleClosePasswordModal = () => {
-    setShowPasswordModal(false);
-    setPasswordResetUser(null);
-    setNewPassword('');
-    setConfirmPassword('');
-  };
-
-  const handleResetPassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      alert(t('adminUsers.passwordMinLength'));
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      alert(t('adminUsers.passwordsMismatch'));
-      return;
-    }
-
-    try {
-      await userService.resetUserPassword(passwordResetUser._id || passwordResetUser.id, newPassword);
-      alert(t('adminUsers.passwordReset', { username: passwordResetUser.username }));
-      handleClosePasswordModal();
-    } catch (err) {
-      console.error('Error resetting password:', err);
-      alert(t('adminUsers.passwordResetFailed', { error: err.message }));
-    }
-  };
-
-  const handleOpenDeleteModal = (user) => {
-    setDeleteUser(user);
-    setShowDeleteModal(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setShowDeleteModal(false);
-    setDeleteUser(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteUser) return;
-
-    try {
-      await userService.deleteUser(deleteUser._id || deleteUser.id);
-      alert(t('adminUsers.userAnonymized', { username: deleteUser.username }));
-      handleCloseDeleteModal();
-      loadUsers();
-    } catch (err) {
-      console.error('Error deleting user:', err);
-      alert(t('adminUsers.deleteUserFailed', { error: err.message }));
-    }
-  };
-
-  if (loading) {
-    return <div className="admin-container"><div className="loading">{t('adminUsers.loadingUsers')}</div></div>;
-  }
-
-  if (error) {
-    return <div className="admin-container"><div className="error">{error}</div></div>;
-  }
-
-  return (
-    <div className="admin-container">
-      {/* <div className="admin-header">
-        <h1>User Management</h1>
-        <p className="subtitle">Manage usernames and user information</p>
-      </div> */}
-
-      <div className="admin-filters">
-        <div className="search-box">
-          <label htmlFor="user-search" className="sr-only">{t('adminUsers.searchPlaceholder')}</label>
+  const views = {
+    overview: {
+      title: t('adminUsers.manageUser', { username: user.username }),
+      icon: 'User',
+      body: (
+        <>
+          {user.isDeleted && (
+            <AdminNotice tone="warning" title={t('adminUsers.accountDeletedWarning')}>
+              {t('adminUsers.deletedDate', { date: formatDate(user.deletedAt, i18n.language) })}
+            </AdminNotice>
+          )}
+          <dl className="adm-spec">
+            <div>
+              <dt>{t('adminUsers.usernameLabel')}</dt>
+              <dd>{user.username}</dd>
+            </div>
+            <div>
+              <dt>{t('adminUsers.roleLabel')}</dt>
+              <dd><AdminPill tone={user.role === 'admin' ? 'accent' : 'neutral'}>{user.role || 'user'}</AdminPill></dd>
+            </div>
+            <div>
+              <dt>{t('adminUsers.registeredLabel')}</dt>
+              <dd>{formatDate(user.createdAt, i18n.language)}</dd>
+            </div>
+            <div>
+              <dt>{t('adminUsers.lastLoginLabel')}</dt>
+              <dd>{user.lastLogin ? formatRelativeTime(user.lastLogin, i18n.language) : '—'}</dd>
+            </div>
+          </dl>
+          {user.isDeleted ? (
+            <p className="adm-muted">{t('adminUsers.accountDeletedNoActions')}</p>
+          ) : (
+            <div className="adm-action-list">
+              <button type="button" className="adm-action" onClick={() => show('username')}>
+                <Icon name="Edit" size={18} />
+                <span>{t('adminUsers.editUsername')}</span>
+                <Icon name="ChevronRight" size={16} />
+              </button>
+              <button type="button" className="adm-action" onClick={() => show('role')}>
+                <Icon name="Shield" size={18} />
+                <span>{t('adminUsers.changeRole')}</span>
+                <Icon name="ChevronRight" size={16} />
+              </button>
+              <button type="button" className="adm-action" onClick={() => show('password')}>
+                <Icon name="Key" size={18} />
+                <span>{t('adminUsers.resetPassword')}</span>
+                <Icon name="ChevronRight" size={16} />
+              </button>
+              <button type="button" className="adm-action adm-action--danger" onClick={() => show('delete')}>
+                <Icon name="Trash2" size={18} />
+                <span>{t('adminUsers.deleteUser')}</span>
+                <Icon name="ChevronRight" size={16} />
+              </button>
+            </div>
+          )}
+        </>
+      ),
+    },
+    username: {
+      title: t('adminUsers.editUsername'),
+      icon: 'Edit',
+      body: (
+        <div className="adm-field">
+          <label htmlFor="edit-username">{t('adminUsers.username')}</label>
           <input
-            id="user-search"
-            type="text"
-            placeholder={t('adminUsers.searchPlaceholder')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            id="edit-username"
+            className="adm-input"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            maxLength={20}
+            disabled={busy}
           />
         </div>
-        <div className="filter-group">
-          <label htmlFor="role-filter">{t('adminUsers.roleFilter')}</label>
-          <select
-            id="role-filter"
-            value={roleFilter} 
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">{t('adminUsers.allRoles')}</option>
+      ),
+      submit: {
+        label: t('adminUsers.saveUsername'),
+        disabled: !username.trim() || username.trim() === user.username,
+        action: () => run(
+          () => userService.updateUsername(id, username.trim()),
+          t('adminUsers.usernameUpdated')
+        ),
+      },
+    },
+    role: {
+      title: t('adminUsers.changeRole'),
+      icon: 'Shield',
+      body: (
+        <div className="adm-field">
+          <label htmlFor="edit-role">{t('adminUsers.role')}</label>
+          <select id="edit-role" className="adm-input" value={role} onChange={(event) => setRole(event.target.value)} disabled={busy}>
             <option value="user">{t('adminUsers.user')}</option>
             <option value="admin">{t('adminUsers.adminRole')}</option>
           </select>
+          {role === 'admin' && role !== user.role && <p className="adm-field-hint">{t('adminUsers.adminRoleHint')}</p>}
         </div>
-        <div className="results-count">
-          {t('adminUsers.showingUsers', { filtered: filteredUsers.length, total: users.length })}
-        </div>
-      </div>
-
-      {filteredUsers.length === 0 ? (
-        <div className="no-users">
-          <p>{t('adminUsers.noUsersFound')}{(searchTerm || roleFilter !== 'all') && (' ' + t('adminUsers.matchingFilters'))}</p>
-        </div>
-      ) : (
-        <div className="users-list">
-          {filteredUsers.map((user) => {
-            const userId = user._id || user.id;
-            
-            return (
-            <div 
-              key={userId} 
-              className={`user-card ${user.isDeleted ? 'deleted-user' : ''}`}
-              onClick={(e) => handleOpenActionsModal(user, e)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="user-content">
-                <div className="user-details">
-                  <div className="detail-item">
-                    <span className="username">{user.username}</span>
-                    {user.isDeleted && <span className="deleted-badge">{t('adminUsers.deleted')}</span>}
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-text">{new Date(user.createdAt).toLocaleDateString()}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className={`role-badge role-${user.role || 'user'}`}>
-                      {(user.role || 'user').toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Actions Modal */}
-      {showActionsModal && actionUser && (
-        <div className="modal-overlay" onClick={handleCloseActionsModal}>
-          <div className="modal-content actions-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t('adminUsers.manageUser', { username: actionUser.username })}</h3>
-              <button className="close-btn" onClick={handleCloseActionsModal} aria-label={t('common.close')}>
-                <XIcon size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {editingUser === (actionUser._id || actionUser.id) ? (
-                <div className="form-group">
-                  <label htmlFor="edit-username">{t('adminUsers.username')}</label>
-                  <input
-                    id="edit-username"
-                    type="text"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    className="form-input"
-                    autoFocus
-                  />
-                </div>
-              ) : editingRole === (actionUser._id || actionUser.id) ? (
-                <div className="form-group">
-                  <label htmlFor="edit-role">{t('adminUsers.role')}</label>
-                  <select
-                    id="edit-role"
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value)}
-                    className="form-input"
-                    autoFocus
-                  >
-                    <option value="user">{t('adminUsers.user')}</option>
-                    <option value="admin">{t('adminUsers.adminRole')}</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="user-info-modal">
-                  {actionUser.isDeleted && (
-                    <div className="deleted-warning">
-                      <p>{t('adminUsers.accountDeletedWarning')}</p>
-                      <p>{t('adminUsers.deletedDate', { date: new Date(actionUser.deletedAt).toLocaleDateString() })}</p>
-                    </div>
-                  )}
-                  <div className="info-item-modal">
-                    <span className="info-label-modal">{t('adminUsers.usernameLabel')}</span>
-                    <span className="info-value-modal">{actionUser.username}</span>
-                  </div>
-                  <div className="info-item-modal">
-                    <span className="info-label-modal">{t('adminUsers.registeredLabel')}</span>
-                    <span className="info-value-modal">{new Date(actionUser.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  {actionUser.lastLogin && (
-                    <div className="info-item-modal">
-                      <span className="info-label-modal">{t('adminUsers.lastLoginLabel')}</span>
-                      <span className="info-value-modal">{new Date(actionUser.lastLogin).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  <div className="info-item-modal">
-                    <span className="info-label-modal">{t('adminUsers.roleLabel')}</span>
-                    <span className={`role-badge role-${actionUser.role || 'user'}`}>
-                      {(actionUser.role || 'user').toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="modal-actions">
-              {editingUser === (actionUser._id || actionUser.id) ? (
-                <>
-                  <button className="btn-cancel" onClick={() => { handleCancelEdit(); handleCloseActionsModal(); }}>
-                    {t('common.cancel')}
-                  </button>
-                  <button className="btn-save" onClick={() => { handleSaveUsername(actionUser._id || actionUser.id); handleCloseActionsModal(); }}>
-                    {t('adminUsers.saveUsername')}
-                  </button>
-                </>
-              ) : editingRole === (actionUser._id || actionUser.id) ? (
-                <>
-                  <button className="btn-cancel" onClick={() => { handleCancelRoleEdit(); handleCloseActionsModal(); }}>
-                    {t('common.cancel')}
-                  </button>
-                  <button className="btn-save" onClick={() => { handleSaveRole(actionUser._id || actionUser.id); handleCloseActionsModal(); }}>
-                    {t('adminUsers.saveRole')}
-                  </button>
-                </>
-              ) : actionUser.isDeleted ? (
-                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)' }}>
-                  <p>{t('adminUsers.accountDeletedNoActions')}</p>
-                </div>
-              ) : (
-                <>
-                  <button className="btn-edit" onClick={() => { handleStartEdit(actionUser); }}>
-                    {t('adminUsers.editUsername')}
-                  </button>
-                  <button className="btn-role" onClick={() => { handleStartRoleEdit(actionUser); }}>
-                    {t('adminUsers.changeRole')}
-                  </button>
-                  <button className="btn-password" onClick={() => { handleOpenPasswordModal(actionUser); handleCloseActionsModal(); }}>
-                    <KeyIcon size={16} />
-                    {t('adminUsers.resetPassword')}
-                  </button>
-                  <button className="btn-delete-user" onClick={() => { handleOpenDeleteModal(actionUser); handleCloseActionsModal(); }}>
-                    <Trash2Icon size={16} />
-                    {t('adminUsers.deleteUser')}
-                  </button>
-                </>
-              )}
-            </div>
+      ),
+      submit: {
+        label: t('adminUsers.saveRole'),
+        disabled: role === (user.role || 'user'),
+        action: () => run(() => userService.updateUserRole(id, role), t('adminUsers.roleUpdated')),
+      },
+    },
+    password: {
+      title: t('adminUsers.resetPasswordTitle', { username: user.username }),
+      icon: 'Key',
+      body: (
+        <>
+          <div className="adm-field">
+            <label htmlFor="new-password">{t('adminUsers.newPassword')}</label>
+            <input
+              id="new-password"
+              type="password"
+              className="adm-input"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={t('adminUsers.newPasswordPlaceholder')}
+              autoComplete="new-password"
+              disabled={busy}
+            />
           </div>
-        </div>
-      )}
-
-      {/* Password Reset Modal */}
-      {showPasswordModal && (
-        <div className="modal-overlay" onClick={handleClosePasswordModal}>
-          <div className="modal-content password-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t('adminUsers.resetPasswordTitle', { username: passwordResetUser?.username })}</h3>
-              <button className="close-btn" onClick={handleClosePasswordModal} aria-label={t('common.close')}>
-                <XIcon size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label htmlFor="new-password">{t('adminUsers.newPassword')}</label>
-                <input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t('adminUsers.newPasswordPlaceholder')}
-                  className="form-input"
-                  autoFocus
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="confirm-password">{t('adminUsers.confirmPassword')}</label>
-                <input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={t('adminUsers.confirmPasswordPlaceholder')}
-                  className="form-input"
-                />
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={handleClosePasswordModal}>
-                {t('common.cancel')}
-              </button>
-              <button 
-                className="btn-save" 
-                onClick={handleResetPassword}
-                disabled={!newPassword || !confirmPassword}
-              >
-                {t('adminUsers.resetPassword')}
-              </button>
-            </div>
+          <div className="adm-field">
+            <label htmlFor="confirm-password">{t('adminUsers.confirmPassword')}</label>
+            <input
+              id="confirm-password"
+              type="password"
+              className="adm-input"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder={t('adminUsers.confirmPasswordPlaceholder')}
+              autoComplete="new-password"
+              disabled={busy}
+            />
           </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={handleCloseDeleteModal}>
-          <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t('adminUsers.deleteUserAccount')}</h3>
-              <button className="close-btn" onClick={handleCloseDeleteModal} aria-label={t('common.close')}>
-                <XIcon size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="warning-text">
-                {t('adminUsers.deleteConfirm', { username: deleteUser?.username })}
-              </p>
-              <p className="info-text">
-                {t('adminUsers.anonymizeWarning')}
-              </p>
-              <ul className="delete-info-list">
+          {passwordProblem && <p className="adm-field-error">{passwordProblem}</p>}
+        </>
+      ),
+      submit: {
+        label: t('adminUsers.resetPassword'),
+        disabled: !password || !confirmPassword || Boolean(passwordProblem),
+        action: () => run(
+          () => userService.resetUserPassword(id, password),
+          t('adminUsers.passwordReset', { username: user.username })
+        ),
+      },
+    },
+    delete: {
+      title: t('adminUsers.deleteUserAccount'),
+      icon: 'Trash2',
+      tone: 'danger',
+      body: (
+        <>
+          <p className="adm-dialog-text"><strong>{t('adminUsers.deleteConfirm', { username: user.username })}</strong></p>
+          <div className="adm-split-list">
+            <div>
+              <h3>{t('adminUsers.anonymizeWarning')}</h3>
+              <ul>
                 <li>{t('adminUsers.removeProfile')}</li>
                 <li>{t('adminUsers.removeFriendConnections')}</li>
                 <li>{t('adminUsers.unlinkIdentities')}</li>
               </ul>
-              <p className="info-text" style={{ marginTop: '1rem' }}>
-                {t('adminUsers.preserveWarning')}
-              </p>
-              <ul className="delete-info-list">
+            </div>
+            <div>
+              <h3>{t('adminUsers.preserveWarning')}</h3>
+              <ul>
                 <li>{t('adminUsers.preserveGames')}</li>
                 <li>{t('adminUsers.preserveTemplates')}</li>
                 <li>{t('adminUsers.preserveHistory')}</li>
               </ul>
-              <p className="danger-text">
-                {t('adminUsers.cannotBeUndone')}
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={handleCloseDeleteModal}>
-                {t('common.cancel')}
-              </button>
-              <button 
-                className="btn-delete-confirm" 
-                onClick={handleConfirmDelete}
-              >
-                <Trash2Icon size={16} />
-                {t('adminUsers.deleteUser')}
-              </button>
             </div>
           </div>
+          <AdminNotice tone="error">{t('adminUsers.cannotBeUndone')}</AdminNotice>
+        </>
+      ),
+      submit: {
+        label: t('adminUsers.deleteUser'),
+        danger: true,
+        action: () => run(
+          () => userService.deleteUser(id),
+          t('adminUsers.userAnonymized', { username: user.username })
+        ),
+      },
+    },
+  };
+
+  const current = views[view];
+
+  return (
+    <AdminDialog
+      title={current.title}
+      icon={current.icon}
+      tone={current.tone}
+      onClose={onClose}
+      busy={busy}
+      footer={current.submit ? (
+        <>
+          <button type="button" className="adm-btn adm-btn--ghost" onClick={() => show('overview')} disabled={busy}>
+            {t('common.back')}
+          </button>
+          <button
+            type="button"
+            className={`adm-btn ${current.submit.danger ? 'adm-btn--danger' : 'adm-btn--primary'}`}
+            onClick={current.submit.action}
+            disabled={busy || current.submit.disabled}
+          >
+            {busy && <Icon name="RefreshCw" size={16} className="adm-spin" />}
+            {current.submit.label}
+          </button>
+        </>
+      ) : null}
+    >
+      {current.body}
+      {error && <AdminNotice tone="error">{error}</AdminNotice>}
+    </AdminDialog>
+  );
+}
+
+const UserManagement = () => {
+  const { t, i18n } = useTranslation();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [managing, setManaging] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await userService.getAllUsers();
+      setUsers(Array.isArray(data) ? data : (data.users || []));
+    } catch (err) {
+      console.error('Error loading users:', err);
+      setError(err.message || t('adminUsers.loadFailed'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const roleCounts = useMemo(() => users.reduce((acc, user) => {
+    const role = user.role || 'user';
+    acc[role] = (acc[role] || 0) + 1;
+    return acc;
+  }, {}), [users]);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return users.filter(user => {
+      if (roleFilter !== 'all' && (user.role || 'user') !== roleFilter) return false;
+      return !query || user.username.toLowerCase().includes(query);
+    });
+  }, [users, search, roleFilter]);
+
+  const handleDone = (message) => {
+    setManaging(null);
+    setNotice(message);
+    load();
+  };
+
+  return (
+    <div className="adm-page">
+      <AdminPageHeader
+        title={t('admin.userManagement')}
+        subtitle={t('adminUsers.showingUsers', { filtered: filtered.length, total: users.length })}
+        actions={(
+          <button type="button" className="adm-icon-btn" onClick={load} disabled={loading} aria-label={t('admin.refresh')} title={t('admin.refresh')}>
+            <Icon name="RefreshCw" size={16} className={loading ? 'adm-spin' : ''} />
+          </button>
+        )}
+      />
+
+      {notice && <AdminNotice tone="success" onDismiss={() => setNotice('')}>{notice}</AdminNotice>}
+
+      <div className="adm-toolbar">
+        <AdminSearch value={search} onChange={setSearch} placeholder={t('adminUsers.searchPlaceholder')} id="user-search" />
+        <AdminTabs
+          value={roleFilter}
+          onChange={setRoleFilter}
+          label={t('adminUsers.roleFilter')}
+          options={[
+            { value: 'all', label: t('adminUsers.allRoles'), count: users.length },
+            { value: 'user', label: t('adminUsers.user'), count: roleCounts.user || 0 },
+            { value: 'admin', label: t('adminUsers.adminRole'), count: roleCounts.admin || 0 },
+          ]}
+        />
+      </div>
+
+      {loading && users.length === 0 ? (
+        <AdminLoading label={t('adminUsers.loadingUsers')} />
+      ) : error ? (
+        <AdminNotice tone="error">
+          {error}{' '}
+          <button type="button" className="adm-link-btn" onClick={load}>{t('admin.retry')}</button>
+        </AdminNotice>
+      ) : filtered.length === 0 ? (
+        <div className="adm-card">
+          <AdminEmpty icon="Users">
+            {t('adminUsers.noUsersFound')}{(search || roleFilter !== 'all') && ` ${t('adminUsers.matchingFilters')}`}
+          </AdminEmpty>
         </div>
+      ) : (
+        <ul className="adm-list adm-list--cards">
+          {filtered.map(user => (
+            <li key={userIdOf(user)}>
+              <button
+                type="button"
+                className={`adm-list-row${user.isDeleted ? ' is-muted' : ''}`}
+                onClick={() => setManaging(user)}
+              >
+                <AdminAvatar name={user.username} />
+                <span className="adm-list-main">
+                  <strong>{user.username}</strong>
+                  <span>
+                    {t('adminUsers.joined', { date: formatDate(user.createdAt, i18n.language) })}
+                    {user.lastLogin && ` · ${t('adminUsers.seen', { when: formatRelativeTime(user.lastLogin, i18n.language) })}`}
+                  </span>
+                </span>
+                {user.isDeleted && <AdminPill tone="danger">{t('adminUsers.deleted')}</AdminPill>}
+                {(user.role || 'user') === 'admin' && <AdminPill tone="accent">{t('adminUsers.adminRole')}</AdminPill>}
+                <Icon name="ChevronRight" size={16} className="adm-list-chevron" />
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
+
+      {managing && <ManageUserDialog user={managing} onClose={() => setManaging(null)} onDone={handleDone} />}
     </div>
   );
 };

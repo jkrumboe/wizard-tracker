@@ -24,6 +24,7 @@ const ScoreboardGameDetails = lazy(() => import("@/pages/game/ScoreboardGameDeta
 
 // Lazy load admin pages - only accessible to admins
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"))
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"))
 const TemplateSuggestions = lazy(() => import("@/pages/admin/TemplateSuggestions"))
 const UserManagement = lazy(() => import("@/pages/admin/UserManagement"))
 const GameManagement = lazy(() => import("@/pages/admin/GameManagement"))
@@ -211,6 +212,7 @@ function App() {
                         <AdminLayout />
                       </AdminProtectedRoute>
                     }>
+                      <Route index element={<AdminDashboard />} />
                       <Route path="template-suggestions" element={<TemplateSuggestions />} />
                       <Route path="users" element={<UserManagement />} />
                       <Route path="games" element={<GameManagement />} />

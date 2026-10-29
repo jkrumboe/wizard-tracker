@@ -5,23 +5,26 @@ import {
   adminGetGameForEdit,
   adminUpdateGame,
   adminSearchIdentities,
-} from '@/shared/api/gameService';
-import { WIZARD_FORMULA, calculateScore } from '@/shared/utils/scoringFormulas';
+  } from '@/shared/api/gameService';
+import { WIZARD_FORMULA,
+  calculateScore } from '@/shared/utils/scoringFormulas';
 import Icon from '@/components/ui/Icon';
+import {
+  AdminDialog,
+  AdminLoading,
+  AdminNotice,
+  AdminPageHeader,
+  AdminSection,
+  AdminToggle,
+} from '@/components/admin/AdminUI';
+import {
+  formatDateTime,
+} from '@/components/admin/adminUtils';
 import '@/styles/pages/admin.css';
 
 const SEARCH_DEBOUNCE_MS = 250;
 
 const normalise = (value) => String(value || '').trim().toLowerCase();
-
-function formatDateTime(dateStr) {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString(undefined, {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-}
 
 const toInputValue = (value) => (value === null || value === undefined ? '' : String(value));
 
@@ -148,19 +151,19 @@ function PlayerNameField({ player, index, onChange, disabled }) {
   const inputId = `player-name-${index}`;
 
   return (
-    <div className="game-editor-player">
-      <label htmlFor={inputId} className="game-editor-player-label">
+    <div className="adm-field adm-editor-player">
+      <label htmlFor={inputId} className="adm-editor-player-label">
         {t('adminGameEditor.playerLabel', { index: index + 1 })}
         {player.originalName && nameChanged && (
-          <span className="game-editor-was">{t('adminGameEditor.was', { name: player.originalName })}</span>
+          <span className="adm-editor-was">{t('adminGameEditor.was', { name: player.originalName })}</span>
         )}
       </label>
-      <div className="search-container" ref={containerRef}>
-        <div className="search-input-group">
+      <div className="adm-combobox" ref={containerRef}>
+        <div className="adm-combobox-field">
           <input
             id={inputId}
             type="text"
-            className="form-input"
+            className="adm-input"
             value={player.name}
             maxLength={50}
             autoComplete="off"
@@ -174,7 +177,7 @@ function PlayerNameField({ player, index, onChange, disabled }) {
           {nameChanged && (
             <button
               type="button"
-              className="btn-clear"
+              className="adm-icon-btn adm-icon-btn--plain adm-combobox-reset"
               onClick={() => onChange({ name: player.originalName, selectedIdentity: null })}
               title={t('adminGameEditor.resetName')}
               aria-label={t('adminGameEditor.resetName')}
@@ -185,13 +188,13 @@ function PlayerNameField({ player, index, onChange, disabled }) {
           )}
         </div>
         {open && query && results.length > 0 && (
-          <div className="search-dropdown">
-            <div className="search-dropdown-list">
+          <div className="adm-combobox-menu">
+            <div className="adm-combobox-list">
               {results.map(identity => (
                 <button
                   key={identity._id}
                   type="button"
-                  className={`search-dropdown-item${player.selectedIdentity?._id === identity._id ? ' selected' : ''}`}
+                  className={`adm-combobox-option${player.selectedIdentity?._id === identity._id ? ' is-selected' : ''}`}
                   onClick={() => {
                     onChange({ name: identity.displayName, selectedIdentity: identity });
                     setOpen(false);
@@ -200,7 +203,7 @@ function PlayerNameField({ player, index, onChange, disabled }) {
                   <Icon name={identity.type === 'user' ? 'UserCheck' : 'User'} size={14} />
                   <span>{identity.displayName}</span>
                   {identity.userId?.username && identity.type === 'user' && (
-                    <span className="user-email">@{identity.userId.username}</span>
+                    <span className="adm-muted">@{identity.userId.username}</span>
                   )}
                 </button>
               ))}
@@ -209,7 +212,7 @@ function PlayerNameField({ player, index, onChange, disabled }) {
         )}
       </div>
       {status && (
-        <div className={`game-editor-link-status tone-${status.tone}`}>
+        <div className={`adm-editor-status adm-editor-status--${status.tone}`}>
           <Icon name={status.icon} size={13} />
           <span>{status.text}</span>
         </div>
@@ -219,7 +222,7 @@ function PlayerNameField({ player, index, onChange, disabled }) {
 }
 
 const GameEditor = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { type, id } = useParams();
   const isWizard = type === 'wizard';
 
@@ -336,15 +339,6 @@ const GameEditor = () => {
     if (!saving) setConfirmOpen(false);
   }, [saving]);
 
-  useEffect(() => {
-    if (!confirmOpen) return undefined;
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') closeConfirm();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [confirmOpen, closeConfirm]);
-
   const handleSave = async () => {
     setSaving(true);
     setSaveError('');
@@ -379,93 +373,72 @@ const GameEditor = () => {
 
   if (type !== 'wizard' && type !== 'table') {
     return (
-      <div className="admin-container">
-        <div className="alert alert-error">
-          <Icon name="AlertTriangle" size={18} />
-          <span>{t('adminGameEditor.unknownType')}</span>
-        </div>
+      <div className="adm-page">
+        <AdminNotice tone="error">{t('adminGameEditor.unknownType')}</AdminNotice>
       </div>
     );
   }
 
   return (
-    <div className="admin-container game-editor">
-      <div className="admin-section-header">
-        <div>
-          <Link to="/admin/games" className="game-editor-back">
-            <Icon name="ArrowLeft" size={14} /> {t('adminGameEditor.back')}
+    <div className="adm-page adm-page--wide">
+      <AdminPageHeader
+        title={t('adminGameEditor.title')}
+        back={{ to: '/admin/games', label: t('adminGameEditor.back') }}
+        subtitle={data ? (
+          <span className="adm-inline-meta">
+            <span className={`adm-type adm-type--${type}`}>{type}</span>
+            <span>{formatDateTime(data.gameData?.created_at || data.game?.createdAt, i18n.language)}</span>
+            <code className="adm-id">{id}</code>
+          </span>
+        ) : null}
+        actions={data ? (
+          <Link to={viewPath} target="_blank" rel="noopener noreferrer" className="adm-btn adm-btn--ghost adm-btn--sm">
+            <Icon name="ExternalLink" size={15} /> {t('adminGames.view')}
           </Link>
-          <h1>{t('adminGameEditor.title')}</h1>
-          {data && (
-            <p className="subtitle">
-              <span className={`game-type-pill type-${type}`}>{type}</span>{' '}
-              {formatDateTime(data.gameData?.created_at || data.game?.createdAt)}
-              {' · '}
-              <code className="game-cell-id">{id}</code>
-            </p>
-          )}
-        </div>
-        {data && (
-          <Link to={viewPath} target="_blank" rel="noopener noreferrer" className="btn-view">
-            {t('adminGames.view')}
-          </Link>
-        )}
-      </div>
+        ) : null}
+      />
 
-      {loading && <div className="loading">{t('adminGameEditor.loading')}</div>}
+      {loading && <AdminLoading label={t('adminGameEditor.loading')} />}
 
-      {error && (
-        <div className="alert alert-error">
-          <Icon name="AlertTriangle" size={18} />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <AdminNotice tone="error">{error}</AdminNotice>}
 
       {result && (
-        <div className="alert alert-success game-editor-result">
-          <Icon name="CheckCircle2" size={18} />
-          <div>
-            <strong>{t('adminGameEditor.saved')}</strong>
-            {result.changes?.length > 0 && (
-              <ul>
-                {result.changes.map(change => (
-                  <li key={change.index}>
-                    {change.createdIdentity
-                      ? t('adminGameEditor.resultCreated', { from: change.fromName, to: change.toName })
-                      : t('adminGameEditor.resultMoved', { from: change.fromName, to: change.toIdentityName })}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {result.retiredIdentities?.length > 0 && (
-              <div>
-                {t('adminGameEditor.resultRetired', {
-                  names: result.retiredIdentities.map(identity => identity.displayName).join(', '),
-                })}
-              </div>
-            )}
-            {result.eloRecalculated && (
-              <div>{t('adminGames.eloRecalculated', { count: result.eloRecalculated.gamesProcessed })}</div>
-            )}
-          </div>
-        </div>
+        <AdminNotice tone="success" title={t('adminGameEditor.saved')} onDismiss={() => setResult(null)}>
+          {result.changes?.length > 0 && (
+            <ul className="adm-bullets">
+              {result.changes.map(change => (
+                <li key={change.index}>
+                  {change.createdIdentity
+                    ? t('adminGameEditor.resultCreated', { from: change.fromName, to: change.toName })
+                    : t('adminGameEditor.resultMoved', { from: change.fromName, to: change.toIdentityName })}
+                </li>
+              ))}
+            </ul>
+          )}
+          {result.retiredIdentities?.length > 0 && (
+            <p>
+              {t('adminGameEditor.resultRetired', {
+                names: result.retiredIdentities.map(identity => identity.displayName).join(', '),
+              })}
+            </p>
+          )}
+          {result.eloRecalculated && (
+            <p>{t('adminGames.eloRecalculated', { count: result.eloRecalculated.gamesProcessed })}</p>
+          )}
+        </AdminNotice>
       )}
 
       {data && !loading && (
         <>
-          <section className="admin-section">
-            <div className="section-header">
-              <h2><Icon name="Users" size={20} /> {t('adminGameEditor.playersTitle')}</h2>
-              <p>{t('adminGameEditor.playersDesc')}</p>
-            </div>
+          <AdminSection icon="Users" title={t('adminGameEditor.playersTitle')} description={t('adminGameEditor.playersDesc')}>
 
             {!isWizard && (
-              <div className="form-group game-editor-name">
+              <div className="adm-field adm-editor-name">
                 <label htmlFor="table-game-name">{t('adminGames.nameLabel')}</label>
                 <input
                   id="table-game-name"
                   type="text"
-                  className="form-input"
+                  className="adm-input"
                   value={tableName}
                   maxLength={100}
                   onChange={event => setTableName(event.target.value)}
@@ -474,7 +447,7 @@ const GameEditor = () => {
               </div>
             )}
 
-            <div className="game-editor-players">
+            <div className="adm-editor-players">
               {players.map((player, index) => (
                 <PlayerNameField
                   key={player.key}
@@ -485,16 +458,12 @@ const GameEditor = () => {
                 />
               ))}
             </div>
-          </section>
+          </AdminSection>
 
-          <section className="admin-section">
-            <div className="section-header">
-              <h2><Icon name="Table" size={20} /> {t('adminGameEditor.scoresTitle')}</h2>
-              <p>{isWizard ? t('adminGameEditor.scoresDescWizard') : t('adminGameEditor.scoresDescTable')}</p>
-            </div>
-
-            <div className="admin-table-wrapper">
-              <table className="admin-table game-editor-grid">
+          <AdminSection icon="Table" title={t('adminGameEditor.scoresTitle')} description={isWizard ? t('adminGameEditor.scoresDescWizard') : t('adminGameEditor.scoresDescTable')}>
+            {/* The score grid is wide by nature; it scrolls sideways inside the card */}
+            <div className="adm-scroll-x">
+              <table className="adm-table adm-editor-grid">
                 <thead>
                   <tr>
                     <th>{isWizard ? t('adminGameEditor.round') : t('adminGameEditor.row')}</th>
@@ -505,7 +474,7 @@ const GameEditor = () => {
                     ))}
                   </tr>
                   {isWizard && (
-                    <tr className="game-editor-subhead">
+                    <tr className="adm-editor-subhead">
                       <th />
                       {players.map(player => (
                         <th key={player.key}>
@@ -521,14 +490,14 @@ const GameEditor = () => {
                   {isWizard
                     ? rounds.map((round, roundIndex) => (
                       <tr key={roundIndex}>
-                        <td className="game-editor-rownum">{roundIndex + 1}</td>
+                        <td className="adm-editor-rownum">{roundIndex + 1}</td>
                         {players.map(player => {
                           const cell = round.players.find(candidate => String(candidate.id) === player.key);
                           if (!cell) return <td key={player.key}>—</td>;
                           const label = t('adminGameEditor.cellLabel', { player: player.name, round: roundIndex + 1 });
                           return (
                             <td key={player.key}>
-                              <div className="game-editor-cell">
+                              <div className="adm-editor-cell">
                                 <input
                                   type="number" min="0" inputMode="numeric"
                                   value={cell.call}
@@ -559,10 +528,10 @@ const GameEditor = () => {
                     ))
                     : Array.from({ length: rowCount }, (_, rowIndex) => (
                       <tr key={rowIndex}>
-                        <td className="game-editor-rownum">{rowIndex + 1}</td>
+                        <td className="adm-editor-rownum">{rowIndex + 1}</td>
                         {players.map((player, playerIndex) => (
                           <td key={player.key}>
-                            <div className="game-editor-cell">
+                            <div className="adm-editor-cell">
                               <input
                                 type="number" inputMode="decimal"
                                 className="score-input"
@@ -589,46 +558,40 @@ const GameEditor = () => {
                 </tfoot>
               </table>
             </div>
-          </section>
+          </AdminSection>
 
-          <section className="admin-section">
-            <div className="dedupe-options">
-              <label className="dedupe-option">
-                <input
-                  type="checkbox"
-                  checked={options.recalculateElo}
-                  onChange={() => setOptions(prev => ({ ...prev, recalculateElo: !prev.recalculateElo }))}
-                  disabled={saving}
-                />
-                <span>
-                  {t('adminGames.optionRecalcElo')}
-                  <small>{t('adminGameEditor.optionRecalcEloHint')}</small>
-                </span>
-              </label>
-              <label className="dedupe-option">
-                <input
-                  type="checkbox"
-                  checked={options.cleanupOrphans}
-                  onChange={() => setOptions(prev => ({ ...prev, cleanupOrphans: !prev.cleanupOrphans }))}
-                  disabled={saving}
-                />
-                <span>
-                  {t('adminGameEditor.optionCleanup')}
-                  <small>{t('adminGameEditor.optionCleanupHint')}</small>
-                </span>
-              </label>
+          <AdminSection className="adm-editor-save">
+            <div className="adm-toggles">
+              <AdminToggle
+                checked={options.recalculateElo}
+                onChange={() => setOptions(prev => ({ ...prev, recalculateElo: !prev.recalculateElo }))}
+                disabled={saving}
+                label={t('adminGames.optionRecalcElo')}
+                hint={t('adminGameEditor.optionRecalcEloHint')}
+              />
+              <AdminToggle
+                checked={options.cleanupOrphans}
+                onChange={() => setOptions(prev => ({ ...prev, cleanupOrphans: !prev.cleanupOrphans }))}
+                disabled={saving}
+                label={t('adminGameEditor.optionCleanup')}
+                hint={t('adminGameEditor.optionCleanupHint')}
+              />
             </div>
 
-            <div className="action-buttons-row">
+            {invalidName && <p className="adm-field-error">{t('adminGameEditor.nameRequired')}</p>}
+
+            <div className="adm-actions adm-actions--end">
               <button
-                className="btn btn-secondary"
+                type="button"
+                className="adm-btn adm-btn--ghost"
                 onClick={() => { applyData(data); setSaveError(''); }}
                 disabled={saving || !hasChanges}
               >
                 {t('adminGameEditor.discard')}
               </button>
               <button
-                className="btn btn-primary btn-with-icon"
+                type="button"
+                className="adm-btn adm-btn--primary"
                 onClick={() => setConfirmOpen(true)}
                 disabled={saving || !hasChanges || invalidName}
               >
@@ -636,58 +599,44 @@ const GameEditor = () => {
                 {t('adminGameEditor.save')}
               </button>
             </div>
-            {invalidName && <p className="danger-text">{t('adminGameEditor.nameRequired')}</p>}
-          </section>
+          </AdminSection>
         </>
       )}
 
       {confirmOpen && (
-        <div className="modal-overlay" onClick={closeConfirm}>
-          <div
-            className="modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirm-edit-title"
-            onClick={event => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h3 id="confirm-edit-title">
-                <Icon name="Save" size={18} /> {t('adminGameEditor.confirmTitle')}
-              </h3>
-              <button className="close-btn" onClick={closeConfirm} disabled={saving} aria-label={t('adminGames.cancel')}>
-                <Icon name="X" size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="modal-detail-box">
-                {playerChanges.map(player => (
-                  <div key={player.key}>
-                    <strong>{player.originalName || '—'}</strong> → <strong>{player.name.trim()}</strong>
-                  </div>
-                ))}
-                {roundsChanged && <div>{t('adminGameEditor.confirmScores')}</div>}
-                {pointsChanged && <div>{t('adminGameEditor.confirmScores')}</div>}
-                {nameChanged && <div>{t('adminGameEditor.confirmName', { name: tableName.trim() })}</div>}
-              </div>
-              {playerChanges.length > 0 && <p className="info-text">{t('adminGameEditor.confirmRelink')}</p>}
-              {options.recalculateElo && <p className="info-text">{t('adminGames.confirmRemoveElo')}</p>}
-              {saveError && (
-                <div className="alert alert-error">
-                  <Icon name="AlertTriangle" size={16} />
-                  <span>{saveError}</span>
-                </div>
-              )}
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={closeConfirm} disabled={saving}>
+        <AdminDialog
+          title={t('adminGameEditor.confirmTitle')}
+          icon="Save"
+          size="sm"
+          onClose={closeConfirm}
+          busy={saving}
+          footer={(
+            <>
+              <button type="button" className="adm-btn adm-btn--ghost" onClick={closeConfirm} disabled={saving}>
                 {t('adminGames.cancel')}
               </button>
-              <button className="btn-approve" onClick={handleSave} disabled={saving}>
+              <button type="button" className="adm-btn adm-btn--primary" onClick={handleSave} disabled={saving}>
+                {saving && <Icon name="RefreshCw" size={16} className="adm-spin" />}
                 {saving ? t('adminGameEditor.saving') : t('adminGameEditor.confirmAction')}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          )}
+        >
+          <ul className="adm-change-list">
+            {playerChanges.map(player => (
+              <li key={player.key}>
+                <span>{player.originalName || '—'}</span>
+                <Icon name="ArrowRight" size={14} />
+                <strong>{player.name.trim()}</strong>
+              </li>
+            ))}
+            {(roundsChanged || pointsChanged) && <li>{t('adminGameEditor.confirmScores')}</li>}
+            {nameChanged && <li>{t('adminGameEditor.confirmName', { name: tableName.trim() })}</li>}
+          </ul>
+          {playerChanges.length > 0 && <p className="adm-dialog-text">{t('adminGameEditor.confirmRelink')}</p>}
+          {options.recalculateElo && <p className="adm-dialog-text">{t('adminGames.confirmRemoveElo')}</p>}
+          {saveError && <AdminNotice tone="error">{saveError}</AdminNotice>}
+        </AdminDialog>
       )}
     </div>
   );

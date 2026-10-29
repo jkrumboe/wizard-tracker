@@ -89,11 +89,6 @@
     "nonStandard": 3,
     "important": 20
   },
-  "pages/admin.css": {
-    "maxWidth": 8,
-    "nonStandard": 8,
-    "important": 4
-  },
   "pages/gameDetails.css": {
     "maxWidth": 0,
     "nonStandard": 0,

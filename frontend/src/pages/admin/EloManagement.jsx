@@ -1,11 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import eloService from '@/shared/api/eloService';
-import { PlayIcon, EyeIcon, CheckCircleIcon, AlertTriangleIcon, RefreshCwIcon, TrophyIcon, CalculatorIcon, ActivityIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import eloService from '@/shared/api/eloService';
+import Icon from '@/components/ui/Icon';
+import {
+  AdminExplainer,
+  AdminNotice,
+  AdminPageHeader,
+  AdminPill,
+  AdminSection,
+  AdminStat,
+  AdminStats,
+  AdminTabs,
+} from '@/components/admin/AdminUI';
+import {
+  useAdminConfirm,
+} from '@/components/admin/adminUtils';
 import '@/styles/pages/admin.css';
+
+const formatNumber = (num) => (num === undefined || num === null ? '0' : num.toLocaleString());
+
+function RunResult({ data, applied }) {
+  const { t } = useTranslation();
+  return (
+    <AdminSection
+      icon={applied ? 'CheckCircle2' : 'Eye'}
+      title={applied ? t('adminElo.recalculationComplete') : t('adminElo.previewResults')}
+      tone={applied ? 'success' : undefined}
+      actions={applied
+        ? <AdminPill tone="success">{t('adminElo.applied')}</AdminPill>
+        : <AdminPill tone="accent">{t('adminElo.noChangesApplied')}</AdminPill>}
+    >
+      <AdminStats>
+        <AdminStat label={t('adminElo.gamesProcessed')} value={formatNumber(data.gamesProcessed)} tone={applied ? 'success' : undefined} />
+        <AdminStat label={t('adminElo.playersUpdated')} value={formatNumber(data.playersUpdated)} tone={applied ? 'success' : undefined} />
+        {data.gameType && <AdminStat label={t('adminElo.gameType')} value={data.gameType} />}
+      </AdminStats>
+
+      {!applied && data.breakdown && (
+        <div className="adm-review-block">
+          <h3>{t('adminElo.breakdownByType')}</h3>
+          <dl className="adm-spec">
+            {Object.entries(data.breakdown).map(([type, count]) => (
+              <div key={type}>
+                <dt>{type}</dt>
+                <dd>{t('adminElo.gamesCount', { count: formatNumber(count) })}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {applied && <AdminNotice tone="success">{t('adminElo.successMessage')}</AdminNotice>}
+    </AdminSection>
+  );
+}
 
 const EloManagement = () => {
   const { t } = useTranslation();
+  const [confirm, confirmDialog] = useAdminConfirm();
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -14,19 +66,11 @@ const EloManagement = () => {
   const [config, setConfig] = useState(null);
   const [selectedGameType, setSelectedGameType] = useState('');
 
-  // Load ELO config on mount
   useEffect(() => {
-    loadConfig();
+    eloService.getConfig()
+      .then(setConfig)
+      .catch(err => console.error('Error loading ELO config:', err));
   }, []);
-
-  const loadConfig = async () => {
-    try {
-      const configData = await eloService.getConfig();
-      setConfig(configData);
-    } catch (err) {
-      console.error('Error loading ELO config:', err);
-    }
-  };
 
   const getToken = () => localStorage.getItem('auth_token');
 
@@ -37,15 +81,14 @@ const EloManagement = () => {
     setResults(null);
 
     try {
-      const token = getToken();
-      const response = await eloService.recalculateAll(token, { 
-        dryRun: true, 
-        gameType: selectedGameType || null 
+      const response = await eloService.recalculateAll(getToken(), {
+        dryRun: true,
+        gameType: selectedGameType || null
       });
       setPreviewData(response);
     } catch (err) {
       console.error('Error previewing ELO recalculation:', err);
-      setError(err.message || 'Failed to preview ELO recalculation');
+      setError(err.message || t('adminElo.previewFailed'));
     } finally {
       setPreviewLoading(false);
     }
@@ -53,236 +96,104 @@ const EloManagement = () => {
 
   const handleRecalculate = async () => {
     const gameTypeText = selectedGameType || t('adminElo.allGameTypes');
-    if (!window.confirm(t('adminElo.recalculateConfirm', { gameType: gameTypeText }))) {
-      return;
-    }
+    const ok = await confirm({
+      title: t('adminElo.recalculateTitle'),
+      message: t('adminElo.recalculateConfirm', { gameType: gameTypeText }),
+      confirmLabel: t('adminElo.recalculateNow'),
+      tone: 'danger',
+    });
+    if (!ok) return;
 
     setLoading(true);
     setError(null);
     setResults(null);
 
     try {
-      const token = getToken();
-      const response = await eloService.recalculateAll(token, { 
-        dryRun: false, 
-        gameType: selectedGameType || null 
+      const response = await eloService.recalculateAll(getToken(), {
+        dryRun: false,
+        gameType: selectedGameType || null
       });
       setResults(response);
       setPreviewData(null);
     } catch (err) {
       console.error('Error recalculating ELO:', err);
-      setError(err.message || 'Failed to recalculate ELO ratings');
+      setError(err.message || t('adminElo.recalculateFailed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const formatNumber = (num) => {
-    if (num === undefined || num === null) return '0';
-    return num.toLocaleString();
-  };
+  const busy = loading || previewLoading;
 
   return (
-    <div className="admin-container">
-      <div className="admin-header">
-        <h1>{t('adminElo.title')}</h1>
-        <p>{t('adminElo.description')}</p>
-      </div>
+    <div className="adm-page">
+      <AdminPageHeader title={t('adminElo.title')} subtitle={t('adminElo.description')} />
 
-      {/* Info Section */}
-      <div className="admin-section info-card">
-        <div className="info-card-header">
-          <h3>{t('adminElo.howItWorks')}</h3>
-        </div>
-        <div className="info-card-content">
-          <div className="info-columns">
-            <div className="info-column">
-              <h4>{t('adminElo.process')}</h4>
-              <ul>
-                <li>{t('adminElo.resetRatings', { rating: config?.defaultRating || 1200 })}</li>
-                <li>{t('adminElo.chronologicalOrder')}</li>
-                <li>{t('adminElo.calculatesChanges')}</li>
-                <li>{t('adminElo.updatesStats')}</li>
-              </ul>
-            </div>
-            <div className="info-column">
-              <h4>{t('adminElo.whenToUse')}</h4>
-              <ul>
-                <li>{t('adminElo.useCase1')}</li>
-                <li>{t('adminElo.useCase2')}</li>
-                <li>{t('adminElo.useCase3')}</li>
-                <li>{t('adminElo.useCase4')}</li>
-              </ul>
-            </div>
+      <AdminExplainer title={t('adminElo.howItWorks')}>
+        <div className="adm-explainer-columns">
+          <div>
+            <h3>{t('adminElo.process')}</h3>
+            <ul className="adm-bullets">
+              <li>{t('adminElo.resetRatings', { rating: config?.defaultRating || 1200 })}</li>
+              <li>{t('adminElo.chronologicalOrder')}</li>
+              <li>{t('adminElo.calculatesChanges')}</li>
+              <li>{t('adminElo.updatesStats')}</li>
+            </ul>
+          </div>
+          <div>
+            <h3>{t('adminElo.whenToUse')}</h3>
+            <ul className="adm-bullets">
+              <li>{t('adminElo.useCase1')}</li>
+              <li>{t('adminElo.useCase2')}</li>
+              <li>{t('adminElo.useCase3')}</li>
+              <li>{t('adminElo.useCase4')}</li>
+            </ul>
           </div>
         </div>
-      </div>
+      </AdminExplainer>
 
-      {/* Config Display */}
       {config && (
-        <div className="admin-section">
-          <div className="section-header">
-            <h2><TrophyIcon size={20} /> {t('adminElo.currentSettings')}</h2>
-          </div>
-          <div className="stats-grid">
-            <div className="stat-box">
-              <div className="stat-label">{t('adminElo.defaultRating')}</div>
-              <div className="stat-value">{config.defaultRating}</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-label">{t('adminElo.minRating')}</div>
-              <div className="stat-value">{config.minRating}</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-label">{t('adminElo.minGamesForRanking')}</div>
-              <div className="stat-value">{config.minGamesForRanking}</div>
-            </div>
-          </div>
-        </div>
+        <AdminStats>
+          <AdminStat icon="Trophy" tone="accent" label={t('adminElo.defaultRating')} value={config.defaultRating} />
+          <AdminStat label={t('adminElo.minRating')} value={config.minRating} />
+          <AdminStat label={t('adminElo.minGamesForRanking')} value={config.minGamesForRanking} />
+        </AdminStats>
       )}
 
-      {/* Actions Section */}
-      <div className="admin-section">
-        <div className="section-header">
-          <h2><CalculatorIcon size={20} /> {t('adminElo.recalculateTitle')}</h2>
-          <p>{t('adminElo.recalculateDesc')}</p>
-        </div>
-
-        {/* Game Type Selector */}
-        <div className="filter-group" style={{ marginBottom: '1rem' }}>
-          <label htmlFor="game-type-select">{t('adminElo.gameTypeFilter')}</label>
-          <select
-            id="game-type-select"
+      <AdminSection icon="Calculator" title={t('adminElo.recalculateTitle')} description={t('adminElo.recalculateDesc')}>
+        <div className="adm-field">
+          <span className="adm-field-label">{t('adminElo.gameTypeFilter')}</span>
+          <AdminTabs
             value={selectedGameType}
-            onChange={(e) => setSelectedGameType(e.target.value)}
-            className="filter-select"
-          >
-            <option value="">{t('adminElo.allGameTypes')}</option>
-            <option value="wizard">{t('adminElo.wizard')}</option>
-            <option value="flip-7">{t('adminElo.flip7')}</option>
-            <option value="dutch">{t('adminElo.dutch')}</option>
-          </select>
+            onChange={setSelectedGameType}
+            label={t('adminElo.gameTypeFilter')}
+            options={[
+              { value: '', label: t('adminElo.allGameTypes') },
+              { value: 'wizard', label: t('adminElo.wizard') },
+              { value: 'flip-7', label: t('adminElo.flip7') },
+              { value: 'dutch', label: t('adminElo.dutch') },
+            ]}
+          />
         </div>
 
-        <div className="action-buttons-row">
-          <button
-            className="btn btn-secondary btn-with-icon"
-            onClick={handlePreview}
-            disabled={loading || previewLoading}
-          >
-            {previewLoading ? (
-              <>
-                <RefreshCwIcon size={18} className="spinning" />
-                {t('adminElo.analyzing')}
-              </>
-            ) : (
-              <>
-                <EyeIcon size={18} />
-                {t('adminElo.previewChanges')}
-              </>
-            )}
+        <div className="adm-actions">
+          <button type="button" className="adm-btn adm-btn--secondary" onClick={handlePreview} disabled={busy}>
+            <Icon name={previewLoading ? 'RefreshCw' : 'Eye'} size={16} className={previewLoading ? 'adm-spin' : ''} />
+            {previewLoading ? t('adminElo.analyzing') : t('adminElo.previewChanges')}
           </button>
-          <button
-            className="btn btn-primary btn-with-icon"
-            onClick={handleRecalculate}
-            disabled={loading || previewLoading}
-          >
-            {loading ? (
-              <>
-                <RefreshCwIcon size={18} className="spinning" />
-                {t('adminElo.recalculating')}
-              </>
-            ) : (
-              <>
-                <PlayIcon size={18} />
-                {t('adminElo.recalculateNow')}
-              </>
-            )}
+          <button type="button" className="adm-btn adm-btn--primary" onClick={handleRecalculate} disabled={busy}>
+            <Icon name={loading ? 'RefreshCw' : 'Play'} size={16} className={loading ? 'adm-spin' : ''} />
+            {loading ? t('adminElo.recalculating') : t('adminElo.recalculateNow')}
           </button>
         </div>
 
-        {error && (
-          <div className="alert alert-error">
-            <AlertTriangleIcon size={18} />
-            <span>{error}</span>
-          </div>
-        )}
-      </div>
+        {error && <AdminNotice tone="error">{error}</AdminNotice>}
+      </AdminSection>
 
-      {/* Preview Results */}
-      {previewData && (
-        <div className="admin-section results-section">
-          <div className="section-header">
-            <h2><EyeIcon size={20} /> {t('adminElo.previewResults')}</h2>
-            <span className="badge badge-info">{t('adminElo.noChangesApplied')}</span>
-          </div>
-          
-          <div className="stats-grid">
-            <div className="stat-box">
-              <div className="stat-label">{t('adminElo.gamesProcessed')}</div>
-              <div className="stat-value">{formatNumber(previewData.gamesProcessed)}</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-label">{t('adminElo.playersUpdated')}</div>
-              <div className="stat-value">{formatNumber(previewData.playersUpdated)}</div>
-            </div>
-            {previewData.gameType && (
-              <div className="stat-box">
-              <div className="stat-label">{t('adminElo.gameType')}</div>
-                <div className="stat-value">{previewData.gameType}</div>
-              </div>
-            )}
-          </div>
+      {previewData && <RunResult data={previewData} applied={false} />}
+      {results && <RunResult data={results} applied />}
 
-          {previewData.breakdown && (
-            <div className="breakdown-section" style={{ marginTop: '1rem' }}>
-              <h4>{t('adminElo.breakdownByType')}</h4>
-              <div className="breakdown-grid">
-                {Object.entries(previewData.breakdown).map(([type, count]) => (
-                  <div key={type} className="breakdown-item">
-                    <span className="breakdown-type">{type}</span>
-                    <span className="breakdown-count">{t('adminElo.gamesCount', { count: formatNumber(count) })}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Actual Results */}
-      {results && (
-        <div className="admin-section results-section success-section">
-          <div className="section-header">
-            <h2><CheckCircleIcon size={20} /> {t('adminElo.recalculationComplete')}</h2>
-            <span className="badge badge-success">{t('adminElo.applied')}</span>
-          </div>
-          
-          <div className="stats-grid">
-            <div className="stat-box success">
-              <div className="stat-label">{t('adminElo.gamesProcessed')}</div>
-              <div className="stat-value">{formatNumber(results.gamesProcessed)}</div>
-            </div>
-            <div className="stat-box success">
-              <div className="stat-label">{t('adminElo.playersUpdated')}</div>
-              <div className="stat-value">{formatNumber(results.playersUpdated)}</div>
-            </div>
-            {results.gameType && (
-              <div className="stat-box">
-              <div className="stat-label">{t('adminElo.gameType')}</div>
-                <div className="stat-value">{results.gameType}</div>
-              </div>
-            )}
-          </div>
-
-          <div className="success-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '8px' }}>
-            <ActivityIcon size={18} style={{ color: '#22c55e' }} />
-            <span style={{ marginLeft: '0.5rem' }}>
-              {t('adminElo.successMessage')}
-            </span>
-          </div>
-        </div>
-      )}
+      {confirmDialog}
     </div>
   );
 };
