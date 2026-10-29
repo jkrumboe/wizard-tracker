@@ -45,11 +45,11 @@ const TrackedCardIcons = ({ edition }) => {
 /**
  * Edition selector on a game's page: shows the edition that "Start new game" and
  * the info page use, opens a list with each edition's box art to pick another,
- * and a + button to add an edition of your own.
+ * and a + button to add an edition of your own (only when `onAdded` is given).
  * @param {{ template: Object, editions: Array, value: string|null,
- *   onChange: (edition: Object) => void, onAdded: (editionId: string) => void }} props
+ *   onChange: (edition: Object) => void, onAdded?: (editionId: string) => void, label?: string }} props
  */
-const EditionSwitcher = ({ template, editions, value, onChange, onAdded }) => {
+const EditionSwitcher = ({ template, editions, value, onChange, onAdded, label }) => {
   const { t } = useTranslation();
   const { user } = useUser();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -70,10 +70,11 @@ const EditionSwitcher = ({ template, editions, value, onChange, onAdded }) => {
 
   if (!selected) return null;
   const selectedLabel = labelOf(selected);
+  const sectionLabel = label || t('editions.sectionLabel');
 
   return (
-    <section className="edition-switcher" aria-label={t('editions.sectionLabel')}>
-      <span className="games-section-label">{t('editions.sectionLabel')}</span>
+    <section className="edition-switcher" aria-label={sectionLabel}>
+      <span className="games-section-label">{sectionLabel}</span>
       <div className="edition-switcher-row">
         <button
           type="button"
@@ -86,15 +87,17 @@ const EditionSwitcher = ({ template, editions, value, onChange, onAdded }) => {
           <TrackedCardIcons edition={selected} />
           <ChevronDownIcon size={18} className="edition-select-chevron" aria-hidden="true" />
         </button>
-        <button
-          type="button"
-          className="edition-add-btn"
-          onClick={() => setAdding(true)}
-          aria-label={t('editions.addEditionLong')}
-          title={t('editions.addEditionLong')}
-        >
-          <PlusIcon size={18} aria-hidden="true" />
-        </button>
+        {onAdded && (
+          <button
+            type="button"
+            className="edition-add-btn"
+            onClick={() => setAdding(true)}
+            aria-label={t('editions.addEditionLong')}
+            title={t('editions.addEditionLong')}
+          >
+            <PlusIcon size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {pickerOpen && (
@@ -154,12 +157,14 @@ const EditionSwitcher = ({ template, editions, value, onChange, onAdded }) => {
         </div>
       )}
 
-      <AddEditionModal
-        isOpen={adding}
-        templateName={template.name}
-        onClose={() => setAdding(false)}
-        onAdded={onAdded}
-      />
+      {onAdded && (
+        <AddEditionModal
+          isOpen={adding}
+          templateName={template.name}
+          onClose={() => setAdding(false)}
+          onAdded={onAdded}
+        />
+      )}
 
       <FindGameInfoModal
         isOpen={Boolean(findingArtFor)}

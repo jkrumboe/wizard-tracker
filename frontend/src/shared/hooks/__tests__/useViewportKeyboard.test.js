@@ -181,4 +181,38 @@ describe('useViewportKeyboard', () => {
     blurField(input);
     expect(keyboardState()).toBeUndefined();
   });
+
+  it('keeps the keyboard flagged when focus moves straight to another field', () => {
+    const resize = makeViewport({ resizesContent: true });
+    mountHook(useViewportKeyboard);
+
+    const first = focusField();
+    resize(FULL_HEIGHT - KEYBOARD_HEIGHT);
+    expect(keyboardState()).toBe('open');
+
+    // The keyboard never closes in between, so the shrunk height must not be
+    // taken as the new unobstructed one while focus is briefly on nothing.
+    const second = document.createElement('input');
+    document.body.append(second);
+    act(() => second.focus());
+    expect(document.activeElement).toBe(second);
+    expect(keyboardState()).toBe('open');
+
+    first.remove();
+    resize(FULL_HEIGHT - KEYBOARD_HEIGHT - 10);
+    expect(keyboardState()).toBe('open');
+  });
+
+  it('still spots the keyboard on a field tapped before the last one finished closing', () => {
+    const resize = makeViewport({ resizesContent: true });
+    mountHook(useViewportKeyboard);
+
+    const first = focusField();
+    resize(FULL_HEIGHT - KEYBOARD_HEIGHT);
+    blurField(first);
+
+    focusField();
+    resize(FULL_HEIGHT - KEYBOARD_HEIGHT);
+    expect(keyboardState()).toBe('open');
+  });
 });

@@ -11,7 +11,7 @@ import ScanBarcodeModal from '@/components/modals/ScanBarcodeModal'
 import GameThumbnail from '@/components/game/GameThumbnail'
 import PlayerSetup from '@/components/game/PlayerSetup'
 import TeamBuilderSetup from '@/components/game/TeamBuilderSetup'
-import EditionPicker from '@/components/game/EditionPicker'
+import EditionSwitcher from '@/components/game/EditionSwitcher'
 import { useTranslation } from 'react-i18next'
 import { ClockIcon, PauseIcon, PlusIcon, ScanBarcodeIcon, SearchIcon, XIcon } from '@/components/ui/Icon'
 import BackButton from '@/components/ui/BackButton'
@@ -650,151 +650,156 @@ const StartGame = () => {
   // Setup view
   return (
     <div className="start-game-page">
-      <div className="setup-view">
+      {/* Wide screens: players on the left, settings and Start on the right.
+          The team builder keeps the stacked layout, it already has two columns. */}
+      <div className={`setup-view${isTwoSideScoreboard ? '' : ' is-split'}`}>
         <div className="setup-header">
           <BackButton onClick={handleBack} />
           <h2>{selectedGameType?.name}</h2>
         </div>
 
-        {isTwoSideScoreboard ? (
-          <TeamBuilderSetup
-            players={players}
-            onAddPlayer={handleAddPlayer}
-            onRemovePlayer={handleRemovePlayer}
-            onPlayerNameChange={handlePlayerNameChange}
-            onMovePlayerToOtherTeam={handleMovePlayerToOtherTeam}
-            onRandomize={handleRandomize}
-            onAddFriends={() => setShowAddPlayersChoiceModal(true)}
-            maxPlayers={maxPlayers}
-            teamNames={teamNames}
-            onTeamNameChange={handleTeamNameChange}
-          />
-        ) : (
-          <PlayerSetup
-            players={players}
-            onAddPlayer={handleAddPlayer}
-            onRemovePlayer={handleRemovePlayer}
-            onReorderPlayers={handleReorderPlayers}
-            onPlayerNameChange={handlePlayerNameChange}
-            onRandomize={handleRandomize}
-            onAddFriends={() => setShowAddPlayersChoiceModal(true)}
-            onPlayerTeamChange={handlePlayerTeamChange}
-            isTwoSideScoreboard={isTwoSideScoreboard}
-            maxPlayers={maxPlayers}
-            minPlayers={minPlayers}
-          />
-        )}
-
-        {/* Edition (e.g. Wizard Classic vs. anniversary editions with special cards) */}
-        {selectedEditions.length > 0 && (
-          <div className="game-settings-section">
-            <span className="edition-section-label">{t('editions.label')}</span>
-            <EditionPicker
-              editions={selectedEditions}
-              value={edition?.id ?? null}
-              onChange={setEdition}
-              showCards={isCallAndMade}
-            />
+        <div className="setup-layout">
+          <div className="setup-players">
+            {isTwoSideScoreboard ? (
+              <TeamBuilderSetup
+                players={players}
+                onAddPlayer={handleAddPlayer}
+                onRemovePlayer={handleRemovePlayer}
+                onPlayerNameChange={handlePlayerNameChange}
+                onMovePlayerToOtherTeam={handleMovePlayerToOtherTeam}
+                onRandomize={handleRandomize}
+                onAddFriends={() => setShowAddPlayersChoiceModal(true)}
+                maxPlayers={maxPlayers}
+                teamNames={teamNames}
+                onTeamNameChange={handleTeamNameChange}
+              />
+            ) : (
+              <PlayerSetup
+                players={players}
+                onAddPlayer={handleAddPlayer}
+                onRemovePlayer={handleRemovePlayer}
+                onReorderPlayers={handleReorderPlayers}
+                onPlayerNameChange={handlePlayerNameChange}
+                onRandomize={handleRandomize}
+                onAddFriends={() => setShowAddPlayersChoiceModal(true)}
+                onPlayerTeamChange={handlePlayerTeamChange}
+                isTwoSideScoreboard={isTwoSideScoreboard}
+                maxPlayers={maxPlayers}
+                minPlayers={minPlayers}
+              />
+            )}
           </div>
-        )}
 
-        {/* Call & Made game settings */}
-        {isCallAndMade && (
-          <div className="game-settings-section">
-            <div className="settings-group">
-              <div className="setting-item">
-                <div className="setting-content">
-                  <div className="game-settings-input">
-                    <div id="rounds">
-                      <label htmlFor="rounds-input">{t('game.roundsLabel')}</label>
-                      <input
-                        id="rounds-input"
-                        type="tel"
-                        value={maxRounds}
-                        onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
-                        min={1}
-                        max={recommendedRounds ? recommendedRounds : 20}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
-                    </div>
-                    <div id="cards">
-                      <label htmlFor="cards-input">{t('game.cardsLabel')}</label>
-                      <input
-                        id="cards-input"
-                        type="tel"
-                        value={totalCards}
-                        onChange={(e) => setTotalCards(parseInt(e.target.value) || 60)}
-                        min={1}
-                        max={100}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                      />
+          <div className="setup-options">
+            {/* One card for all settings keeps the setup on one screen */}
+            <div className="game-settings-section">
+              {/* Edition (e.g. Wizard Classic vs. anniversary editions with special cards) */}
+              {selectedEditions.length > 0 && (
+                <EditionSwitcher
+                  template={selectedGameType}
+                  editions={selectedEditions}
+                  value={edition?.id ?? null}
+                  onChange={setEdition}
+                  label={t('editions.label')}
+                />
+              )}
+
+              {/* Call & Made game settings */}
+              {isCallAndMade && (
+                <div className="settings-group">
+                  <div className="setting-item">
+                    <div className="setting-content">
+                      <div className="game-settings-input">
+                        <div id="rounds">
+                          <label htmlFor="rounds-input">{t('game.roundsLabel')}</label>
+                          <input
+                            id="rounds-input"
+                            type="tel"
+                            value={maxRounds}
+                            onChange={(e) => handleMaxRoundsChange(parseInt(e.target.value) || 0)}
+                            min={1}
+                            max={recommendedRounds ? recommendedRounds : 20}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                          />
+                        </div>
+                        <div id="cards">
+                          <label htmlFor="cards-input">{t('game.cardsLabel')}</label>
+                          <input
+                            id="cards-input"
+                            type="tel"
+                            value={totalCards}
+                            onChange={(e) => setTotalCards(parseInt(e.target.value) || 60)}
+                            min={1}
+                            max={100}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                          />
+                        </div>
+                      </div>
+                      <div className="rounds-hint">
+                        {t('game.recommendedRounds', { n: recommendedRounds })}
+                      </div>
                     </div>
                   </div>
-                  <div className="rounds-hint">
-                    {t('game.recommendedRounds', { n: recommendedRounds })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Table game settings display */}
-        {!isCallAndMade && selectedGameType && (
-          <div className="game-settings-section">
-            <div className="table-settings-display">
-              {playedTemplate.targetNumber && (
-                <div className="setting-item">
-                  <span>{t('startTableGame.target')}: </span>
-                  <p>{playedTemplate.targetNumber}</p>
                 </div>
               )}
 
-              {playedTemplate.lowIsBetter !== undefined && (
-                <div className="setting-item">
-                  <span>{t('startTableGame.goal')}: </span>
-                  <p>{playedTemplate.lowIsBetter ? t('startTableGame.lowScore') : t('startTableGame.highScore')}</p>
+              {/* Table game settings display */}
+              {!isCallAndMade && selectedGameType && (
+                <div className="table-settings-display">
+                  {playedTemplate.targetNumber && (
+                    <div className="setting-item">
+                      <span>{t('startTableGame.target')}: </span>
+                      <p>{playedTemplate.targetNumber}</p>
+                    </div>
+                  )}
+
+                  {playedTemplate.lowIsBetter !== undefined && (
+                    <div className="setting-item">
+                      <span>{t('startTableGame.goal')}: </span>
+                      <p>{playedTemplate.lowIsBetter ? t('startTableGame.lowScore') : t('startTableGame.highScore')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Start button */}
+            <div className="start-game-actions">
+              <button
+                className="setup-start-btn"
+                disabled={!canStart}
+                onClick={handleStartGame}
+              >
+                {t('game.startGame')}
+              </button>
+
+              {players.length < minPlayers && (
+                <div className="error-message">
+                  {isCallAndMade ? t('game.minPlayersError') : t('startTableGame.minPlayersError')}
+                </div>
+              )}
+
+              {players.length > maxPlayers && (
+                <div className="error-message">
+                  {isCallAndMade ? t('game.maxPlayersError') : t('startTableGame.minPlayersError')}
+                </div>
+              )}
+
+              {players.length >= minPlayers && players.length <= maxPlayers && !players.every(p => p.name && p.name.trim().length > 0) && (
+                <div className="error-message">
+                  {t('startTableGame.allPlayersNamedError')}
+                </div>
+              )}
+
+              {players.length >= minPlayers && players.length <= maxPlayers && players.every(p => p.name && p.name.trim().length > 0) && !bothTeamsHavePlayers && (
+                <div className="error-message">
+                  {t('startTableGame.bothTeamsRequiredError')}
                 </div>
               )}
             </div>
           </div>
-        )}
-
-        {/* Start button */}
-        <div className="start-game-actions">
-          <button
-            className="setup-start-btn"
-            disabled={!canStart}
-            onClick={handleStartGame}
-          >
-            {t('game.startGame')}
-          </button>
-
-          {players.length < minPlayers && (
-            <div className="error-message">
-              {isCallAndMade ? t('game.minPlayersError') : t('startTableGame.minPlayersError')}
-            </div>
-          )}
-
-          {players.length > maxPlayers && (
-            <div className="error-message">
-              {isCallAndMade ? t('game.maxPlayersError') : t('startTableGame.minPlayersError')}
-            </div>
-          )}
-
-          {players.length >= minPlayers && players.length <= maxPlayers && !players.every(p => p.name && p.name.trim().length > 0) && (
-            <div className="error-message">
-              {t('startTableGame.allPlayersNamedError')}
-            </div>
-          )}
-
-          {players.length >= minPlayers && players.length <= maxPlayers && players.every(p => p.name && p.name.trim().length > 0) && !bothTeamsHavePlayers && (
-            <div className="error-message">
-              {t('startTableGame.bothTeamsRequiredError')}
-            </div>
-          )}
         </div>
       </div>
 

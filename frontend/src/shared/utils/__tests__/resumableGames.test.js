@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getResumableGames } from '../resumableGames';
+import { getResumableGames, getResumableGameLabel } from '../resumableGames';
 import { LocalGameStorage } from '../../api/localGameStorage.js';
+
+const t = (key, { game, current, max } = {}) =>
+  key === 'home.resumeGameLabel' ? `${game} - Round ${current}/${max}` : key;
 
 const WIZARD_KEY = 'wizardTracker_localGames';
 const TABLE_KEY = 'wizardTracker_tableGames';
@@ -147,6 +150,33 @@ describe('getResumableGames', () => {
     expect(game.name).toBe('Paused Game - Round 2/3');
     expect(game.currentRound).toBe(2);
     expect(game.maxRounds).toBe(3);
+  });
+
+  it('labels a paused Call & Made game by its game type, not the generic paused name', () => {
+    localStorage.setItem(WIZARD_KEY, JSON.stringify({ 'game-1': wizardGame() }));
+
+    const [game] = getResumableGames();
+
+    expect(getResumableGameLabel(game, t)).toBe('Wizard - Round 2/3');
+  });
+
+  it('labels a templated Call & Made game with its template name', () => {
+    localStorage.setItem(WIZARD_KEY, JSON.stringify({
+      'game-1': wizardGame({
+        _internalState: {
+          ...wizardGame()._internalState,
+          templateConfig: { templateName: 'Skull King' },
+        },
+      }),
+    }));
+
+    expect(getResumableGameLabel(getResumableGames()[0], t)).toBe('Skull King - Round 2/3');
+  });
+
+  it('keeps a name the player gave the game next to the game type', () => {
+    expect(getResumableGameLabel({ name: 'Friday night', gameTypeName: 'Rummy' }, t))
+      .toBe('Rummy · Friday night');
+    expect(getResumableGameLabel({ name: 'Rummy', gameTypeName: null }, t)).toBe('Rummy');
   });
 
   it('honours the limit', () => {

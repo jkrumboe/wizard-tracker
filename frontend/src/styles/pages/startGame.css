@@ -295,7 +295,8 @@
  * with the in-game modals.
  */
 .start-game-page .setup-view {
-  gap: var(--spacing-md);
+  /* Spacing and type scale with the screen height so phones fit without scrolling */
+  gap: clamp(var(--spacing-sm), 1.6dvh, var(--spacing-md));
 }
 
 .start-game-page .setup-header {
@@ -304,17 +305,18 @@
 }
 
 .start-game-page .setup-header h2 {
-  font-size: 1.35rem;
+  font-size: clamp(1.15rem, 2.8dvh, 1.35rem);
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Phones: the card takes all the free height so Start sits at the bottom */
+/* Phones: the card takes the height left over by the settings, so Start sits at
+   the bottom and the player list scrolls inside the card instead of the page */
 .start-game-page .setup-section {
-  flex: 1 1 auto;
-  min-height: min(45dvh, 420px);
+  flex: 1 1 0;
+  min-height: 9.5rem;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
   background: var(--card-bg);
@@ -374,7 +376,7 @@
 }
 
 .start-game-page .player-item {
-  min-height: 48px;
+  min-height: clamp(42px, 5.6dvh, 48px);
   max-height: none;
   margin: 0;
   padding: var(--spacing-xs) var(--spacing-xs) var(--spacing-xs) var(--spacing-sm);
@@ -436,7 +438,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  min-height: 44px;
+  min-height: clamp(40px, 5.4dvh, 44px);
   padding: 0 var(--spacing-md);
   border-radius: var(--radius-lg);
   font-size: 0.95rem;
@@ -451,7 +453,7 @@
 
 .start-game-page .player-actions .randomizer-btn,
 .start-game-page .player-actions .add-friends-btn {
-  width: 44px;
+  width: clamp(40px, 5.4dvh, 44px);
   padding: 0;
   flex-shrink: 0;
   background: var(--card-bg-alt);
@@ -475,12 +477,42 @@
   cursor: not-allowed;
 }
 
-/* Settings read as one quiet card under the players. */
+/* Settings read as one quiet card under the players, each block split by a rule */
 .start-game-page .game-settings-section {
-  padding: var(--spacing-sm) var(--spacing-md);
+  flex-shrink: 0;
+  gap: clamp(6px, 1.2dvh, var(--spacing-sm));
+  padding: clamp(6px, 1.2dvh, var(--spacing-sm)) var(--spacing-md);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
+}
+
+.start-game-page .game-settings-section > * + * {
+  padding-top: clamp(6px, 1.2dvh, var(--spacing-sm));
+  border-top: 1px solid var(--border);
+}
+
+.start-game-page .edition-switcher {
+  gap: 4px;
+}
+
+.start-game-page .edition-select {
+  min-height: clamp(40px, 5.6dvh, 48px);
+}
+
+.start-game-page .edition-select .edition-art {
+  width: clamp(32px, 4.6dvh, 40px);
+  height: clamp(32px, 4.6dvh, 40px);
+}
+
+.start-game-page #rounds label,
+.start-game-page #cards label {
+  font-size: clamp(0.95rem, 2.2dvh, 1.1rem);
+}
+
+.start-game-page #rounds-input,
+.start-game-page #cards-input {
+  font-size: 1rem;
 }
 
 .start-game-page .table-settings-display {
@@ -495,18 +527,25 @@
 }
 
 .start-game-page .start-game-actions .setup-start-btn {
-  min-height: 52px;
+  min-height: clamp(44px, 6dvh, 52px);
   border-radius: var(--radius-xl);
   font-size: 1.1rem;
 }
 
 .start-game-page .start-game-actions .error-message {
   position: static;
-  margin: var(--spacing-sm) 0 0;
+  margin: var(--spacing-xs) 0 0;
   padding: 0;
   background: none;
   border: none;
   font-size: 0.85rem;
+}
+
+/* Column wrappers only matter on wide screens; on phones everything stacks as before */
+.start-game-page .setup-layout,
+.start-game-page .setup-players,
+.start-game-page .setup-options {
+  display: contents;
 }
 
 /* Wide screens: keep the setup a comfortable column instead of edge to edge */
@@ -519,5 +558,48 @@
     width: 100%;
     max-width: 560px;
     margin: 0 auto;
+  }
+
+  /* Players on the left, settings and Start on the right. The players card
+     grows with its players and only scrolls once it reaches the window height. */
+  .start-game-page .setup-view.is-split {
+    max-width: 880px;
+  }
+
+  .start-game-page .is-split .setup-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: var(--spacing-md);
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .start-game-page .is-split .setup-players {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .start-game-page .is-split .setup-players .setup-section {
+    flex: 0 1 auto;
+    min-height: min(100%, 18rem);
+  }
+
+  .start-game-page .is-split .setup-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+/* Desktop: the shell already pads the top and bottom, so leave that room
+   instead of running past the window */
+@media (min-width: 1024px) {
+  .start-game-page {
+    height: calc(100dvh - 2 * var(--spacing-lg));
+    padding-top: 0;
   }
 }

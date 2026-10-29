@@ -5,7 +5,7 @@ import FriendsModal from '@/components/modals/FriendsModal'
 import ScanBarcodeModal from '@/components/modals/ScanBarcodeModal'
 import { useGameStateContext } from '@/shared/hooks/useGameState'
 import { useUser } from '@/shared/hooks/useUser'
-import { getResumableGames } from '@/shared/utils/resumableGames'
+import { getResumableGames, getResumableGameLabel, WIZARD_TYPE_NAME } from '@/shared/utils/resumableGames'
 import { UsersIcon, PlayIcon, ScanBarcodeIcon } from '@/components/ui/Icon'
 import "@/styles/pages/home.css"
 
@@ -36,6 +36,7 @@ const Home = () => {
         id: gameState.gameId,
         type: 'wizard',
         name: gameState.gameName || null,
+        gameTypeName: gameState.templateConfig?.templateName || WIZARD_TYPE_NAME,
         players: gameState.players.map((player) => player.name),
         currentRound: gameState.currentRound,
         maxRounds: gameState.maxRounds,
@@ -100,7 +101,7 @@ const Home = () => {
           >
             <PlayIcon size={16} />
             <span className="active-game-banner-label">
-              {resumableGame.name || t('home.continueGame')}
+              {getResumableGameLabel(resumableGame, t)}
             </span>
           </button>
         )}

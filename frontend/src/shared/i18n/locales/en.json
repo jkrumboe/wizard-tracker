@@ -110,6 +110,7 @@
     "activeGameLabel": "Game in progress",
     "activeGameProgress": "Round {{current}} of {{max}}",
     "continueGame": "Continue",
+    "resumeGameLabel": "{{game}} - Round {{current}}/{{max}}",
     "scanGame": "Scan game"
   },
 

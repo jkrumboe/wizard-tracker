@@ -520,6 +520,12 @@
     color: var(--text);
   }
 
+  /* The global button press-scale is too much for a full-width control */
+  .edition-select:hover:not(:disabled) {
+    transform: none;
+    border-color: var(--primary-border);
+  }
+
   .edition-text-btn:hover {
     background: rgba(var(--primary-rgb), 0.1);
   }

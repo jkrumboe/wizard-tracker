@@ -30,18 +30,20 @@ export function useViewportKeyboard() {
     let lastInset = -1;
     // The unobstructed height, remembered from moments when nothing is focused.
     let baseHeight = 0;
+    // When the keyboard was last released, while it may still be on screen.
+    let releasedAt = -Infinity;
 
     // A keyboard takes a serious bite out of the viewport; browser chrome does
     // not. The gap between the two thresholds stops the state from flapping
     // while the keyboard animates.
     const KEYBOARD_OPEN_PX = 120;
     const KEYBOARD_CLOSED_PX = 60;
+    // Long enough for the keyboard to slide away after its field is released.
+    const KEYBOARD_SETTLE_MS = 1000;
 
-    const isTextEntryFocused = () => {
-      const active = document.activeElement;
-      if (!active) return false;
-      return active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable;
-    };
+    const isTextEntry = (el) =>
+      !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    const isTextEntryFocused = () => isTextEntry(document.activeElement);
 
     const resetPagePan = () => {
       globalThis.scrollTo(0, 0);
@@ -59,7 +61,16 @@ export function useViewportKeyboard() {
       // the tallest ever seen matters because the address bar legitimately
       // comes and goes: a remembered peak would leave the baseline permanently
       // too high and make an ordinary layout look like a keyboard.
-      if (!typing) baseHeight = visibleHeight;
+      //
+      // Right after a field is let go the keyboard is still on screen, though,
+      // so for a moment the baseline may only rise, never drop. Otherwise the
+      // shrunk height would be adopted and the next field tapped before the
+      // keyboard finished closing would not register a keyboard at all.
+      if (!typing && keyboardOpen) releasedAt = performance.now();
+      if (!typing) {
+        const settling = performance.now() - releasedAt < KEYBOARD_SETTLE_MS;
+        if (!settling || visibleHeight > baseHeight) baseHeight = visibleHeight;
+      }
 
       const keyboardInset = Math.max(0, baseHeight - visibleHeight);
 
@@ -111,7 +122,11 @@ export function useViewportKeyboard() {
     // Once the keyboard is gone and nothing is focused, undo any pan the
     // browser left behind. Waiting for the field to be released keeps this
     // clear of the browser's own scrolling, which is what causes the shake.
-    const handleFocusOut = () => {
+    const handleFocusOut = (event) => {
+      // Focus hopping straight to another field keeps the keyboard up. During
+      // focusout nothing has focus yet, so measuring now would read the
+      // keyboard as gone; the focusin that follows takes care of it.
+      if (isTextEntry(event.relatedTarget)) return;
       applyViewportMetrics();
       setTimeout(() => {
         if (!isTextEntryFocused()) {

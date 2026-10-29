@@ -528,7 +528,9 @@ const AddGameTemplateModal = ({
                   onKeyDown={handleKeyDown}
                   placeholder={editionAwarePlaceholder}
                   className="agm-input"
-                  autoFocus
+                  // Only a brand-new game starts by typing its name. Editing an
+                  // existing one should not throw the keyboard up on open.
+                  autoFocus={!editMode}
                 />
 
                 {isEdition && gameName.trim() && (

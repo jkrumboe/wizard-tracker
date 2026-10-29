@@ -59,8 +59,9 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  background: transparent;
-  border: 2px solid var(--border);
+  /* Tonal accent fill: reads as "in progress", not as a disabled control */
+  background: var(--primary-soft);
+  border: 2px solid var(--primary-border);
   border-radius: var(--radius-md);
   padding: var(--spacing-xs) var(--spacing-md);
   color: var(--primary);

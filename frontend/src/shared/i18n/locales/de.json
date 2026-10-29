@@ -110,6 +110,7 @@
     "activeGameLabel": "Spiel läuft",
     "activeGameProgress": "Runde {{current}} von {{max}}",
     "continueGame": "Weiterspielen",
+    "resumeGameLabel": "{{game}} – Runde {{current}}/{{max}}",
     "scanGame": "Spiel scannen"
   },
 

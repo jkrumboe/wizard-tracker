@@ -14,6 +14,40 @@ import { LocalScoreboardGameStorage } from '../api/localScoreboardGameStorage.js
 // Those entries are deleted by the startup cleanup, so they are not offered.
 const AUTO_SAVE_NAME = /auto-save/i;
 
+// Call & Made games without a template are plain Wizard games
+export const WIZARD_TYPE_NAME = 'Wizard';
+
+// Names the pause flow stores by default ("Paused Game - Round 2/20" and its
+// German form). They say nothing about the game, so they are never shown.
+const GENERIC_PAUSED_NAME = /^(paused game|pausiertes spiel)\b/i;
+
+/**
+ * Label for a resumable game: the game type, the round progress when known,
+ * and the game's own name when the player gave it one.
+ * @param {Object} game - Entry from getResumableGames
+ * @param {Function} t - i18next translate function
+ * @returns {string} - Display label
+ */
+export function getResumableGameLabel(game, t) {
+  const typeName = game.gameTypeName || game.name || t('home.continueGame');
+  const customName = game.name
+    && !GENERIC_PAUSED_NAME.test(game.name)
+    && game.name !== typeName
+    ? game.name
+    : null;
+  const title = customName ? `${typeName} · ${customName}` : typeName;
+
+  if (game.currentRound && game.maxRounds) {
+    return t('home.resumeGameLabel', {
+      game: title,
+      current: game.currentRound,
+      max: game.maxRounds,
+    });
+  }
+
+  return title;
+}
+
 const isScoreboardGame = (game, gameData) =>
   gameData?.scoreEntryMode === 'twoSideGesture'
   || gameData?.gameType === 'scoreboard'
@@ -40,6 +74,7 @@ function getResumableWizardGames() {
           id,
           type: 'wizard',
           name: game.name || null,
+          gameTypeName: internalState.templateConfig?.templateName || WIZARD_TYPE_NAME,
           players: players.map(player => player?.name || player).filter(Boolean),
           templateName: internalState.templateConfig?.templateName || null,
           currentRound: internalState.currentRound || null,
@@ -75,6 +110,7 @@ function getResumableTableStyleGames(storage, defaultType) {
           id: game.id,
           type: isScoreboard ? 'scoreboard' : defaultType,
           name: game.name || game.gameTypeName || null,
+          gameTypeName: game.gameTypeName || gameData?.gameName || null,
           players: game.players || [],
           currentRound: null,
           maxRounds: null,
@@ -95,7 +131,7 @@ function getResumableTableStyleGames(storage, defaultType) {
  * first entry is the game the player was in most recently.
  * @param {Object} options - Options
  * @param {number} options.limit - Maximum number of entries to return
- * @returns {Array<Object>} - Entries of { id, type, name, players, currentRound, maxRounds, lastPlayed, route }
+ * @returns {Array<Object>} - Entries of { id, type, name, gameTypeName, players, currentRound, maxRounds, lastPlayed, route }
  */
 export function getResumableGames({ limit = 4 } = {}) {
   const entries = [
