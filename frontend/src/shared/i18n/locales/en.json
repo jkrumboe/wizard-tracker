@@ -769,6 +769,7 @@
     "winsHeader": "Wins",
     "winPercentHeader": "Win%",
     "eloHeader": "ELO",
+    "eloChangeHeader": "ELO ±",
     "lossesHeader": "Losses",
     "avgScoreHeader": "Ø Score",
     "errorLoading": "Error Loading Leaderboard",

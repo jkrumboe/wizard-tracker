@@ -27,6 +27,9 @@ module.exports = {
 
   // Cache TTLs (seconds)
   LEADERBOARD_CACHE_TTL: 300, // 5 minutes
+  // The leaderboard snapshot is dropped whenever a game finishes or changes;
+  // this only bounds how stale it can get if some write path misses that
+  LEADERBOARD_SNAPSHOT_TTL: 1800, // 30 minutes
   RECENT_GAMES_CACHE_TTL: 120, // 2 minutes
 
   // Rate Limiting

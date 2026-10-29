@@ -769,6 +769,7 @@
     "winsHeader": "Siege",
     "winPercentHeader": "Sieg%",
     "eloHeader": "ELO",
+    "eloChangeHeader": "ELO ±",
     "lossesHeader": "Niederlagen",
     "avgScoreHeader": "Ø Punkte",
     "errorLoading": "Fehler beim Laden der Rangliste",

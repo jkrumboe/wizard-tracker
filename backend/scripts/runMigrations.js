@@ -74,6 +74,12 @@ const migrations = [
     version: '1.0.0',
     description: 'Drop the share fields and their indexes left behind by the removed game sharing feature',
     run: removeGameSharing
+  },
+  {
+    name: '010_recalculate_elo_margin_and_wins',
+    version: '1.0.0',
+    description: 'Recalculate ELO with the per-opponent, scale-aware score margin, nested table game data, merged identities and spelling-independent game type keys ("Flip 7" = "Flip7" = "flip7"), and record per-game-type wins',
+    run: recalculateEloWithGameTypeKeys
   }
 ];
 
@@ -509,6 +515,7 @@ async function linkOrphanedIdentities() {
 /**
  * Migration 005: Recalculate ELO ratings
  * Migration 006: Re-run with fixed dates (game date instead of recalculation date)
+ * Migration 010: Re-run with the corrected score margin and per-type wins
  * Resets and recalculates ELO for all finished games chronologically.
  * Ensures all players (including previously orphaned guest identities)
  * have accurate ELO ratings with correct game dates in history.
@@ -527,6 +534,26 @@ async function recalculateEloMigration() {
     gameTypeStats: result.gameTypeStats,
     errors: result.errors?.length || 0
   };
+}
+
+/**
+ * Migration 010: Recalculate ELO under the new game type keys
+ * Ratings were keyed "flip-7"; they are now "flip7", so every spelling of a
+ * game shares one rating. The full recalculation rewrites every key; the index
+ * on the old "flip-7" path would only ever be empty, so it is dropped.
+ */
+async function recalculateEloWithGameTypeKeys() {
+  const PlayerIdentity = require('../models/PlayerIdentity');
+  let indexesDropped = 0;
+  // A fresh database has no collection (and so no indexes) yet
+  const indexes = await PlayerIdentity.collection.indexes().catch(() => []);
+  for (const index of indexes) {
+    if (Object.keys(index.key).some(field => field.startsWith('eloByGameType.flip-7.'))) {
+      await PlayerIdentity.collection.dropIndex(index.name);
+      indexesDropped++;
+    }
+  }
+  return { ...(await recalculateEloMigration()), indexesDropped };
 }
 
 /**

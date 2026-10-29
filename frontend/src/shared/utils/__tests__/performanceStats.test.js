@@ -162,4 +162,27 @@ describe('calculatePerformanceStats', () => {
       expect(topOpponents.map(o => o.name)).toEqual(['Bert', 'Cindy']);
     });
   });
+  it('reads the round count from profile API games (gameData.total_rounds)', () => {
+    const wizardGame = {
+      id: 'wizard-1',
+      gameType: 'wizard',
+      created_at: new Date(Date.UTC(2026, 5, 1)).toISOString(),
+      userPlayerIndex: 0,
+      userWon: true,
+      gameData: {
+        players: [
+          { id: 'p1', name: 'Justin', identityId: 'identity-justin' },
+          { id: 'p2', name: 'Cindy', identityId: 'identity-cindy' },
+        ],
+        final_scores: { p1: 120, p2: 80 },
+        total_rounds: 15,
+        winner_ids: ['p1'],
+      },
+    };
+
+    const stats = calculatePerformanceStats([wizardGame], user);
+
+    expect(stats.totalRounds).toBe(15);
+    expect(stats.averageRoundsPerGame).toBe('15.0');
+  });
 });

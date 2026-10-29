@@ -115,6 +115,58 @@ function resolveTableGameData(game) {
   return outer.gameData || outer;
 }
 
+/**
+ * Whether a table game is finished, wherever the flag was stored.
+ *
+ * @param {Object} game - Table game document
+ * @returns {boolean}
+ */
+function isTableGameFinished(game) {
+  return game.gameFinished === true
+    || game.gameData?.gameFinished === true
+    || game.gameData?.gameData?.gameFinished === true;
+}
+
+/**
+ * Work out who won a table game.
+ *
+ * The recorded points are the source of truth: they account for lowIsBetter and
+ * are indexed against this exact players array. The stored winner id/name come
+ * from the client and may reference ids from before identity migration, so they
+ * are only consulted when the game has no scores to decide with - ORing them in
+ * hands a player someone else's win.
+ *
+ * @param {Object} game - Table game document
+ * @param {Object} gameData - Resolved inner game data (see resolveTableGameData)
+ * @returns {{ finalScores: Object, winnerIds: string[], isWinner: (player: Object, index: number) => boolean }}
+ */
+function getTableGameResult(game, gameData) {
+  const players = gameData?.players || [];
+  const finalScores = calculateTableGameScores(players);
+  const calculatedWinnerIds = calculateWinnersByScore(finalScores, resolveTableGameLowIsBetter(game));
+  const hasScores = players.some(p => Array.isArray(p.points) && p.points.length > 0);
+  const canDecideByScore = hasScores && calculatedWinnerIds.length > 0;
+
+  if (canDecideByScore) {
+    return {
+      finalScores,
+      winnerIds: calculatedWinnerIds,
+      isWinner: (player, index) => calculatedWinnerIds.includes(`player_${index}`),
+    };
+  }
+
+  const storedWinnerIds = getWinnerIds(gameData);
+  const winnerName = gameData?.winner_name || game.gameData?.winner_name;
+  const winnerNameLower = winnerName ? winnerName.toLowerCase() : null;
+
+  return {
+    finalScores,
+    winnerIds: storedWinnerIds,
+    isWinner: (player) => isPlayerWinner(player, storedWinnerIds)
+      || Boolean(winnerNameLower && player.name && player.name.toLowerCase() === winnerNameLower),
+  };
+}
+
 module.exports = {
   getWinnerIds,
   isPlayerWinner,
@@ -122,4 +174,6 @@ module.exports = {
   calculateWinnersByScore,
   resolveTableGameLowIsBetter,
   resolveTableGameData,
+  isTableGameFinished,
+  getTableGameResult,
 };

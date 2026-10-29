@@ -20,7 +20,7 @@
   flex-shrink: 0;
   text-align: center;
   margin-bottom: var(--spacing-sm);
-  font-size: 1.9rem;
+  font-size: 1.55rem;
   color: var(--text);
 }
 
@@ -283,16 +283,29 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-bottom: var(--spacing-md);
+  scrollbar-width: none;
+}
+
+.flb-tab-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .flb-results-toolbar {
   flex-shrink: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: var(--spacing-xs);
 }
 
+.friend-leaderboard-container .back-btn,
+.friend-leaderboard-container .game-type-selector {
+  box-sizing: border-box;
+  min-height: 40px;
+  margin: 0;
+}
+
 .friend-leaderboard-container .back-btn {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
@@ -318,8 +331,7 @@
 .friend-leaderboard-container .game-type-selector {
   flex: 1;
   min-width: 0;
-  margin: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0 var(--spacing-md);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -334,10 +346,10 @@
 }
 
 /* Summary strip */
+/* One row of equal tiles, however many there are (3 or 4) */
 .flb-summary {
   flex-shrink: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  display: flex;
   gap: var(--spacing-xs);
 }
 
@@ -346,17 +358,17 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  flex: 1 1 0;
+  min-width: 0;
   padding: var(--spacing-sm) var(--spacing-xs);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  color: var(--primary);
   text-align: center;
-  min-width: 0;
 }
 
 .flb-summary-value {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   line-height: 1.2;
@@ -371,10 +383,14 @@
 }
 
 .flb-summary-label {
-  font-size: 0.7rem;
+  max-width: 100%;
+  font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Tabs - same shape as the account page tabs */
@@ -393,7 +409,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: transparent;
   color: var(--text-light);
   border: none;
@@ -401,7 +417,7 @@
   box-shadow: none;
   cursor: pointer;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
 }
 
@@ -434,7 +450,7 @@
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm);
   transition: border-color 0.2s ease;
 }
 
@@ -628,7 +644,7 @@
 }
 
 .flb-stat-label {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-light);
@@ -694,13 +710,13 @@
 }
 
 /* Keep the player column readable while the matrix scrolls sideways */
-.h2h-corner,
-.h2h-player-name {
+.h2h-matrix .h2h-corner,
+.h2h-matrix .h2h-player-name {
   position: sticky;
   left: 0;
   z-index: 2;
   background: var(--card-bg-light);
-  text-align: left !important;
+  text-align: left;
   min-width: 92px;
   max-width: 140px;
   overflow: hidden;
@@ -708,10 +724,10 @@
   white-space: nowrap;
 }
 
-.h2h-player-name {
+.h2h-matrix .h2h-player-name {
   font-weight: 600;
   font-size: 0.85rem;
-  padding-left: var(--spacing-sm) !important;
+  padding-left: var(--spacing-sm);
 }
 
 .h2h-header {
@@ -778,63 +794,132 @@
   gap: var(--spacing-sm);
 }
 
+/* One shared game; the whole card opens its details (same shape as history-card) */
 .flb-game-card {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: var(--spacing-sm);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
+  box-shadow: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.flb-game-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .flb-game-card:hover {
+    border-color: var(--primary);
+  }
 }
 
 .flb-game-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+/* Box art, or the game's initial when there is none */
+.flb-game-art {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 14%, var(--card-bg));
+}
+
+.flb-game-initial {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+/* Art comes after the initial in the markup, so it covers it */
+.flb-game-art .game-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.flb-game-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .flb-game-type {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.flb-game-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  flex-shrink: 0;
-}
-
 .flb-game-date {
-  font-size: 0.8rem;
-  color: var(--text-light);
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.flb-game-open {
-  display: inline-flex;
+.flb-game-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* Standings: icon | name | ELO change | score, columns aligned across rows */
+.flb-game-columns,
+.flb-game-player {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 3.5rem 3rem;
   align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-light);
-  padding: 4px 6px;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+  column-gap: var(--spacing-sm);
 }
 
-@media (hover: hover) {
-  .flb-game-open:hover {
-    color: var(--primary);
-    border-color: var(--primary);
-    background: var(--primary-hover);
-  }
+/* Column headings, aligned with the cells below */
+.flb-game-columns {
+  margin-bottom: calc(var(--spacing-sm) * -1);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--border);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.flb-game-columns .flb-gp-name {
+  grid-column: 1 / 3;
+}
+
+.flb-gp-elo-head,
+.flb-gp-score-head {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .flb-game-players {
@@ -843,68 +928,68 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
 }
 
 .flb-game-player {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: 6px var(--spacing-sm);
-  background: var(--input-bg);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font-size: 0.88rem;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
 }
 
-.flb-game-player.winner {
-  background: rgba(var(--success-rgb), 0.1);
-  border-color: rgba(var(--success-rgb), 0.4);
-  color: var(--success-color);
-  font-weight: 600;
+.flb-game-player:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.flb-gp-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--warning-color);
 }
 
 .flb-gp-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.flb-gp-right {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  flex-shrink: 0;
+.flb-game-player.winner .flb-gp-name {
+  font-weight: 700;
+}
+
+.flb-gp-elo-cell {
+  justify-self: end;
+}
+
+/* Tinted pill so the rating change reads apart from the score */
+.flb-gp-elo {
+  display: inline-block;
+  min-width: 2.5rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.flb-gp-elo.positive {
+  background: rgba(var(--success-rgb), 0.15);
+  color: var(--success-color);
+}
+
+.flb-gp-elo.negative {
+  background: rgba(var(--danger-rgb), 0.15);
+  color: var(--error-color);
 }
 
 .flb-gp-score {
+  justify-self: end;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.friend-leaderboard-container .elo-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  background: var(--card-bg);
-  color: var(--text-light);
-  font-variant-numeric: tabular-nums;
-}
-
-.friend-leaderboard-container .elo-badge.positive {
-  color: var(--success-color);
-  background: rgba(var(--success-rgb), 0.15);
-}
-
-.friend-leaderboard-container .elo-badge.negative {
-  color: var(--error-color);
-  background: rgba(var(--danger-rgb), 0.15);
 }
 
 .flb-show-more {
@@ -979,34 +1064,41 @@
 /* Responsive                                                           */
 /* ------------------------------------------------------------------ */
 
-@media (min-width: 720px) {
+@media (min-width: 600px) {
+  .friend-leaderboard-container h1 {
+    font-size: 1.9rem;
+  }
+
+  .flb-player-card {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .flb-stat-label {
+    font-size: 0.68rem;
+  }
+
+  .flb-summary-value {
+    font-size: 1.25rem;
+  }
+
+  .flb-summary-label {
+    font-size: 0.7rem;
+  }
+
+  .flb-tab {
+    font-size: 0.9rem;
+    padding: var(--spacing-sm);
+  }
+
+  .flb-game-card {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+@media (min-width: 768px) {
   /* Two players side by side once there is room for it */
   .flb-player-list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .friend-leaderboard-container h1 {
-    font-size: 1.55rem;
-  }
-
-  .friend-leaderboard-container .back-btn,
-  .friend-leaderboard-container .game-type-selector {
-    flex: 1 1 100%;
-  }
-
-  .flb-player-card {
-    padding: var(--spacing-sm);
-  }
-
-  .flb-stat-label {
-    font-size: 0.62rem;
-  }
-
-  .flb-tab {
-    font-size: 0.82rem;
-    padding: var(--spacing-xs) var(--spacing-sm);
   }
 }

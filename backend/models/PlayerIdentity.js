@@ -71,7 +71,7 @@ const playerIdentitySchema = new mongoose.Schema({
   },
   
   // ELO Rating System - Per Game Type
-  // Key is game type: 'wizard', 'flip-7', 'dutch', etc.
+  // Key is the normalized game type (eloService.normalizeGameType): 'wizard', 'flip7', 'dutch', etc.
   eloByGameType: {
     type: Map,
     of: {
@@ -79,6 +79,7 @@ const playerIdentitySchema = new mongoose.Schema({
       peak: { type: Number, default: 1000 },             // Highest rating achieved
       floor: { type: Number, default: 1000 },            // Lowest rating achieved
       gamesPlayed: { type: Number, default: 0 },         // Games counted for ELO
+      wins: { type: Number },                            // First places counted for ELO (no default: absent on entries from before it was tracked)
       lastUpdated: { type: Date, default: null },        // Last rating update
       streak: { type: Number, default: 0 },              // Current win/loss streak (positive = wins)
       history: [{                                         // Rating change history
@@ -136,8 +137,8 @@ playerIdentitySchema.index(
 
 // Index for table game types
 playerIdentitySchema.index(
-  { 'eloByGameType.flip-7.rating': -1, 'eloByGameType.flip-7.gamesPlayed': -1 },
-  { sparse: true, partialFilterExpression: { 'eloByGameType.flip-7': { $exists: true }, isDeleted: false } }
+  { 'eloByGameType.flip7.rating': -1, 'eloByGameType.flip7.gamesPlayed': -1 },
+  { sparse: true, partialFilterExpression: { 'eloByGameType.flip7': { $exists: true }, isDeleted: false } }
 );
 
 playerIdentitySchema.index(

@@ -214,6 +214,7 @@ export const calculatePerformanceStats = (games, currentPlayer, { isWizardGame =
     totalRounds +=
       game.totalRounds ||
       game.total_rounds ||
+      game.gameData?.total_rounds ||
       game.gameState?.total_rounds ||
       game.gameState?.maxRounds ||
       0;

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { createPlayerMatcher, resolveUserGameResult } from '@/shared/utils/playerMatching';
+import { getGameTypeKey } from '@/shared/utils/gameTypes';
 
 /**
  * Resolve the label a game is grouped under on the overview.
@@ -64,12 +65,14 @@ export const calculateGameStats = (games, user) => {
 
   evaluatedGames.forEach(({ game, won }) => {
     const name = getGameTypeName(game);
+    // "Flip 7" and "Flip7" are one game; the newest game's spelling names the card
+    const key = getGameTypeKey(name);
 
-    if (!gameTypeStats[name]) {
-      gameTypeStats[name] = { name, matches: 0, wins: 0, recentResults: [] };
+    if (!gameTypeStats[key]) {
+      gameTypeStats[key] = { name, matches: 0, wins: 0, recentResults: [] };
     }
 
-    const stats = gameTypeStats[name];
+    const stats = gameTypeStats[key];
     stats.matches++;
     if (won) stats.wins++;
     if (stats.recentResults.length < MAX_RECENT_RESULTS) {

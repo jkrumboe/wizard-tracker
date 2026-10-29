@@ -1047,8 +1047,12 @@ router.post('/elo/recalculate',
       console.log('✅ Leaderboard cache invalidated after ELO recalculation');
     }
     
+    let message = dryRun ? 'Dry run complete' : 'ELO ratings recalculated';
+    if (result.queued) {
+      message = 'A recalculation is already running - it will run again when it finishes';
+    }
     res.json({
-      message: dryRun ? 'Dry run complete' : 'ELO ratings recalculated',
+      message,
       ...result
     });
   } catch (error) {

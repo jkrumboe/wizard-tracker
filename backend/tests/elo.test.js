@@ -52,12 +52,19 @@ describe('ELO Service', () => {
   describe('normalizeGameType', () => {
     it('should normalize game type to lowercase', () => {
       expect(eloService.normalizeGameType('Wizard')).toBe('wizard');
-      expect(eloService.normalizeGameType('FLIP-7')).toBe('flip-7');
+      expect(eloService.normalizeGameType('FLIP-7')).toBe('flip7');
     });
 
-    it('should replace spaces with hyphens', () => {
-      expect(eloService.normalizeGameType('Flip 7')).toBe('flip-7');
-      expect(eloService.normalizeGameType('My Game Type')).toBe('my-game-type');
+    it('should give every spelling of one game the same key', () => {
+      expect(eloService.normalizeGameType('Flip 7')).toBe('flip7');
+      expect(eloService.normalizeGameType('Flip7')).toBe('flip7');
+      expect(eloService.normalizeGameType('flip-7')).toBe('flip7');
+      expect(eloService.normalizeGameType('My Game Type')).toBe('mygametype');
+    });
+
+    it('should drop accents but keep other letters', () => {
+      expect(eloService.normalizeGameType('Mölkky')).toBe('molkky');
+      expect(eloService.normalizeGameType('6 nimmt!')).toBe('6nimmt');
     });
 
     it('should trim whitespace', () => {
@@ -127,7 +134,7 @@ describe('ELO Service', () => {
 
     it('should normalize game type when looking up', () => {
       const eloByGameType = new Map();
-      eloByGameType.set('flip-7', { rating: 1100, gamesPlayed: 5 });
+      eloByGameType.set('flip7', { rating: 1100, gamesPlayed: 5 });
       
       const identity = createMockIdentity('player1', { eloByGameType });
       const elo = eloService.getEloForGameType(identity, 'Flip 7');
@@ -379,25 +386,71 @@ describe('ELO Service', () => {
 
     it('should skip players without identityId', () => {
       const player1Id = new mongoose.Types.ObjectId().toString();
+      const player2Id = new mongoose.Types.ObjectId().toString();
       
       const gameData = {
         gameFinished: true,
         players: [
           { id: 'p1', name: 'Alice', identityId: player1Id },
-          { id: 'p2', name: 'GuestWithNoId' } // No identityId
+          { id: 'p2', name: 'GuestWithNoId' }, // No identityId
+          { id: 'p3', name: 'Bob', identityId: player2Id }
+        ],
+        final_scores: { p1: 100, p2: 80, p3: 60 },
+        winner_id: 'p1'
+      };
+
+      const identityMap = new Map();
+      identityMap.set(player1Id, createMockIdentity(player1Id, { displayName: 'Alice' }));
+      identityMap.set(player2Id, createMockIdentity(player2Id, { displayName: 'Bob' }));
+
+      const result = eloService.calculateGameEloChanges(gameData, identityMap, 'wizard');
+
+      // Only rated players get a result; the guest still holds 2nd place
+      expect(result.map(r => r.playerName).sort()).toEqual(['Alice', 'Bob']);
+      expect(result.find(r => r.playerName === 'Bob').placement).toBe(3);
+    });
+
+    it('should not rate a player who has no rated opponents', () => {
+      const player1Id = new mongoose.Types.ObjectId().toString();
+
+      const gameData = {
+        gameFinished: true,
+        players: [
+          { id: 'p1', name: 'Alice', identityId: player1Id },
+          { id: 'p2', name: 'GuestWithNoId' }
         ],
         final_scores: { p1: 100, p2: 80 },
         winner_id: 'p1'
       };
-      
+
       const identityMap = new Map();
       identityMap.set(player1Id, createMockIdentity(player1Id, { displayName: 'Alice' }));
-      
+
+      expect(eloService.calculateGameEloChanges(gameData, identityMap, 'wizard')).toEqual([]);
+    });
+
+    it('should not throw when an opponent identity is missing (deleted or merged)', () => {
+      const aliceId = new mongoose.Types.ObjectId().toString();
+      const bobId = new mongoose.Types.ObjectId().toString();
+      const deletedId = new mongoose.Types.ObjectId().toString();
+
+      const gameData = {
+        gameFinished: true,
+        players: [
+          { id: 'p1', name: 'Alice', identityId: aliceId },
+          { id: 'p2', name: 'Bob', identityId: bobId },
+          { id: 'p3', name: 'Gone', identityId: deletedId } // not in the map
+        ],
+        final_scores: { p1: 100, p2: 80, p3: 60 },
+        winner_id: 'p1'
+      };
+
+      const identityMap = new Map();
+      identityMap.set(aliceId, createMockIdentity(aliceId, { displayName: 'Alice' }));
+      identityMap.set(bobId, createMockIdentity(bobId, { displayName: 'Bob' }));
+
       const result = eloService.calculateGameEloChanges(gameData, identityMap, 'wizard');
-      
-      // Should only have result for Alice
-      expect(result).toHaveLength(1);
-      expect(result[0].playerName).toBe('Alice');
+      expect(result).toHaveLength(2);
     });
   });
 
@@ -428,10 +481,10 @@ describe('ELO Service', () => {
       const result = eloService.calculateGameEloChanges(gameData, identityMap, 'wizard');
       
       // Sum of all rating changes should be close to zero
-      // Note: Due to asymmetric margin multipliers (winners get more bonus
-      // than losers get penalty) and rounding, there will be some imbalance
+      // Note: The loser's margin multiplier is capped lower than the winner's,
+      // and changes are rounded, so there can be a small imbalance
       const totalChange = result.reduce((sum, r) => sum + r.change, 0);
-      expect(Math.abs(totalChange)).toBeLessThanOrEqual(10);
+      expect(Math.abs(totalChange)).toBeLessThanOrEqual(3);
     });
 
     it('should give larger gains when beating higher-rated opponents', () => {
@@ -464,6 +517,132 @@ describe('ELO Service', () => {
       
       // Underdog beating a much higher-rated player should gain significantly
       expect(underdog.change).toBeGreaterThan(5); // More than standard expected
+    });
+  });
+  describe('score margin', () => {
+    const playTwoPlayerGame = (aliceScore, bobScore, gameType = 'wizard', extra = {}) => {
+      const aliceId = new mongoose.Types.ObjectId().toString();
+      const bobId = new mongoose.Types.ObjectId().toString();
+      const identityMap = new Map([
+        [aliceId, createMockIdentity(aliceId, { displayName: 'Alice' })],
+        [bobId, createMockIdentity(bobId, { displayName: 'Bob' })]
+      ]);
+      const result = eloService.calculateGameEloChanges({
+        gameFinished: true,
+        players: [
+          { id: 'p1', name: 'Alice', identityId: aliceId },
+          { id: 'p2', name: 'Bob', identityId: bobId }
+        ],
+        final_scores: { p1: aliceScore, p2: bobScore },
+        ...extra
+      }, identityMap, gameType);
+      return {
+        alice: result.find(r => r.playerName === 'Alice'),
+        bob: result.find(r => r.playerName === 'Bob')
+      };
+    };
+
+    it("grows the winner's gain with the margin", () => {
+      const close = playTwoPlayerGame(105, 100);
+      const blowout = playTwoPlayerGame(200, 100);
+      expect(blowout.alice.change).toBeGreaterThan(close.alice.change);
+    });
+
+    it('makes a blowout loss cost more than a close loss, never less', () => {
+      const close = playTwoPlayerGame(105, 100);
+      const blowout = playTwoPlayerGame(200, 100);
+      expect(blowout.bob.change).toBeLessThan(close.bob.change);
+    });
+
+    it("caps the loser's extra loss below the winner's extra gain", () => {
+      const { alice, bob } = playTwoPlayerGame(200, 100);
+      expect(Math.abs(bob.change)).toBeLessThanOrEqual(Math.abs(alice.change));
+    });
+
+    it('uses absolute points for Wizard', () => {
+      expect(eloService.getMarginBonus(160, 100, 'wizard')).toBe(eloService.CONFIG.MARGIN_BONUS.BLOWOUT);
+      expect(eloService.getMarginBonus(105, 100, 'wizard')).toBe(0);
+    });
+
+    it('uses a relative margin for other games', () => {
+      // Dutch ends in single digits - 5 vs 30 is a blowout, not "under 10 points"
+      expect(eloService.getMarginBonus(5, 30, 'dutch')).toBe(eloService.CONFIG.MARGIN_BONUS.BLOWOUT);
+      // 1000 vs 1060 is close in a game scored in the thousands
+      expect(eloService.getMarginBonus(1060, 1000, 'flip7')).toBe(0);
+    });
+
+    it('respects lowIsBetter when deciding who won the pair', () => {
+      const { alice, bob } = playTwoPlayerGame(5, 30, 'dutch', { lowIsBetter: true });
+      expect(alice.placement).toBe(1);
+      expect(alice.change).toBeGreaterThan(0);
+      expect(bob.change).toBeLessThan(0);
+    });
+  });
+
+  describe('normalizeGameType map-key safety', () => {
+    it('strips characters Mongoose maps reject', () => {
+      expect(eloService.normalizeGameType('Dr. Eureka')).toBe('dreureka');
+      expect(eloService.normalizeGameType('$money')).toBe('money');
+      expect(eloService.normalizeGameType('...')).toBe('unknown');
+    });
+  });
+
+  describe('getRatableGameData', () => {
+    it('unwraps nested table game data and reads document-level flags', () => {
+      const game = {
+        lowIsBetter: true,
+        gameFinished: true,
+        gameData: {
+          gameData: { players: [{ id: 'p1', points: [1] }, { id: 'p2', points: [2] }] }
+        }
+      };
+      const data = eloService.getRatableGameData(game);
+      expect(data.players).toHaveLength(2);
+      expect(data.lowIsBetter).toBe(true);
+      expect(data.gameFinished).toBe(true);
+    });
+
+    it('keeps wizard game data as is', () => {
+      const game = { gameData: { gameFinished: true, players: [{ id: 'p1' }], final_scores: { p1: 10 } } };
+      const data = eloService.getRatableGameData(game);
+      expect(data.final_scores).toEqual({ p1: 10 });
+      expect(data.lowIsBetter).toBe(false);
+    });
+  });
+
+  describe('applyEloChange', () => {
+    const game = { _id: new mongoose.Types.ObjectId(), gameData: { created_at: '2026-01-02T10:00:00Z' } };
+    const change = (newRating, won) => ({ newRating, change: newRating - 1000, won, placement: won ? 1 : 2, opponents: ['Bob'] });
+
+    it('tracks rating, peak, floor, wins and streak', () => {
+      const entry = eloService.getEloForGameType(createMockIdentity('x'), 'wizard');
+      eloService.applyEloChange(entry, change(1016, true), game);
+      eloService.applyEloChange(entry, change(1030, true), game);
+      eloService.applyEloChange(entry, change(1010, false), game);
+
+      expect(entry.rating).toBe(1010);
+      expect(entry.peak).toBe(1030);
+      expect(entry.floor).toBe(1000);
+      expect(entry.gamesPlayed).toBe(3);
+      expect(entry.wins).toBe(2);
+      expect(entry.streak).toBe(-1);
+      expect(entry.history[0].rating).toBe(1010);
+      expect(entry.history[0].date).toEqual(new Date('2026-01-02T10:00:00Z'));
+    });
+
+    it('does not start a wrong win tally on entries from before wins were tracked', () => {
+      const entry = { rating: 1100, gamesPlayed: 40, history: [] };
+      eloService.applyEloChange(entry, change(1110, true), game);
+      expect(entry.wins).toBeUndefined();
+    });
+
+    it('caps the history', () => {
+      const entry = eloService.getEloForGameType(createMockIdentity('x'), 'wizard');
+      for (let i = 0; i < eloService.CONFIG.MAX_HISTORY + 5; i++) {
+        eloService.applyEloChange(entry, change(1000 + i, true), game);
+      }
+      expect(entry.history).toHaveLength(eloService.CONFIG.MAX_HISTORY);
+      expect(entry.history[0].rating).toBe(1000 + eloService.CONFIG.MAX_HISTORY + 4);
     });
   });
 });

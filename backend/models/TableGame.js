@@ -307,6 +307,9 @@ tableGameSchema.post('save', async function(doc) {
     if (updates.length > 0) {
       console.log(`ELO updated for ${updates.length} players after ${gameType} game ${doc._id}`);
     }
+    
+    // A finished game changes standings; the leaderboard is rebuilt on next read
+    await require('../utils/leaderboardService').invalidateLeaderboard();
   } catch (error) {
     // Enhanced error logging with game context
     const gameType = doc.gameTypeName || doc.gameType || 'table';

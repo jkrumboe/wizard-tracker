@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
 const { calculateLeaderboard } = require('../utils/leaderboardService');
+const { normalizeGameType } = require('../utils/eloService');
 const { DUPLICATE_CHECK_WINDOW_MS, DUPLICATE_CHECK_GAME_LIMIT, LEADERBOARD_CACHE_TTL, RECENT_GAMES_CACHE_TTL, MAX_BATCH_CHECK_SIZE, MAX_GAMES_PER_PAGE } = require('../utils/constants');
 const { getWinnerIds } = require('../utils/gameHelpers');
 const catchAsync = require('../utils/catchAsync');
@@ -629,10 +630,21 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       'createdAt': 1
     }).lean();
     
+    // One label per game whatever spelling each game was saved under
+    // ("Flip 7" / "Flip7"), keyed like its ELO rating
+    const gameTypeLabels = new Map();
+    const labelGameType = (name) => {
+      const key = normalizeGameType(name);
+      if (!gameTypeLabels.has(key)) gameTypeLabels.set(key, name);
+      return gameTypeLabels.get(key);
+    };
+    const isSelectedGameType = (name) =>
+      !gameType || gameType === 'all' || normalizeGameType(gameType) === normalizeGameType(name);
+    
     // Scoring direction per game type, used to label the average score column
-    const gameTypeSettings = { 'Wizard': { lowIsBetter: false } };
+    const gameTypeSettings = { [labelGameType('Wizard')]: { lowIsBetter: false } };
     tableGames.forEach(game => {
-      const gm = game.gameTypeName || game.gameData?.gameName || 'Table Game';
+      const gm = labelGameType(game.gameTypeName || game.gameData?.gameName || 'Table Game');
       if (gm && gm !== 'Table Game') {
         const lib = game.lowIsBetter || game.gameData?.lowIsBetter || game.gameData?.gameData?.lowIsBetter || false;
         if (!gameTypeSettings[gm]) {
@@ -678,7 +690,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       const gameData = game.gameData;
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
-      const gameMode = 'Wizard';
+      const gameMode = labelGameType('Wizard');
 
       // Get participants from this game that are in our target list
       const participantsInGame = [];
@@ -705,7 +717,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       // Record the type before filtering, so the client can offer only the game
       // types these players actually share.
       sharedGameTypeSet.add(gameMode);
-      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+      if (!isSelectedGameType(gameMode)) return;
 
       const winnerIdRaw = gameData.winner_ids || gameData.winner_id || gameData.totals?.winner_ids || gameData.totals?.winner_id;
       const winnerIds = Array.isArray(winnerIdRaw) ? winnerIdRaw : (winnerIdRaw ? [winnerIdRaw] : []);
@@ -786,7 +798,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       
       if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
       
-      const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
+      const gameMode = labelGameType(game.gameTypeName || game.gameData?.gameName || 'Table Game');
 
       // Get participants from this game that are in our target list
       const participantsInGame = [];
@@ -815,7 +827,7 @@ router.post('/friend-leaderboard', async (req, res, next) => {
       // Record the type before filtering, so the client can offer only the game
       // types these players actually share.
       sharedGameTypeSet.add(gameMode);
-      if (gameType && gameType !== 'all' && gameType !== gameMode) return;
+      if (!isSelectedGameType(gameMode)) return;
 
       // Calculate final scores from points arrays
       const finalScores = {};
@@ -924,12 +936,6 @@ router.post('/friend-leaderboard', async (req, res, next) => {
         }))
       });
     });
-    
-    // Helper function to normalize game type for ELO lookup
-    const normalizeGameType = (type) => {
-      if (!type) return 'wizard';
-      return type.toLowerCase().replace(/\s+/g, '-');
-    };
     
     // Calculate derived stats and build response
     const leaderboard = Object.values(playerStats)

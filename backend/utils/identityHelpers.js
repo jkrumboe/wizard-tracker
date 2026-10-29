@@ -20,9 +20,30 @@ async function buildIdentityMaps() {
     userIdMap[user._id.toString()] = user;
   });
 
-  const allIdentities = await PlayerIdentity.find({ isDeleted: false })
-    .select('_id userId displayName eloByGameType mergedInto')
-    .lean();
+  // Only each game type's rating and game count - not its rating history,
+  // which is most of an identity document
+  const allIdentities = await PlayerIdentity.aggregate([
+    { $match: { isDeleted: false } },
+    {
+      $project: {
+        userId: 1,
+        displayName: 1,
+        mergedInto: 1,
+        eloByGameType: {
+          $arrayToObject: {
+            $map: {
+              input: { $objectToArray: { $ifNull: ['$eloByGameType', {}] } },
+              as: 'entry',
+              in: {
+                k: '$$entry.k',
+                v: { rating: '$$entry.v.rating', gamesPlayed: '$$entry.v.gamesPlayed' }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]);
 
   const identityMap = new Map();
   allIdentities.forEach(identity => {

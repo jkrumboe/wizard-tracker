@@ -5,7 +5,7 @@
  * This script processes all historical WizardGame and TableGame records 
  * chronologically and calculates ELO ratings for all players per game type.
  * 
- * Each game type (wizard, flip-7, dutch, etc.) has its own separate ELO rating.
+ * Each game type (wizard, flip7, dutch, etc.) has its own separate ELO rating.
  * 
  * Usage:
  *   # Dry run (no changes)
@@ -16,7 +16,7 @@
  * 
  *   # Recalculate specific game type only
  *   node scripts/calculate-initial-elo.js --game-type=wizard
- *   node scripts/calculate-initial-elo.js --game-type=flip-7
+ *   node scripts/calculate-initial-elo.js --game-type="Flip 7"
  * 
  *   # Use ELO development database
  *   MONGO_URI=$MONGO_URI_ELO_DEV node scripts/calculate-initial-elo.js

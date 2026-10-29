@@ -604,7 +604,7 @@ router.get('/:usernameOrId/profile', async (req, res, next) => {
       createdAt: user.createdAt,
       profilePicture: user.profilePicture,
       isRegisteredUser: true,
-      totalGames: profileData.games.length,
+      totalGames: profileData.totalGames,
       totalWins: profileData.totalWins,
       identities: [
         ...profileData.identities.map(i => i.displayName),

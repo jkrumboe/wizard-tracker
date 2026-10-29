@@ -6,6 +6,7 @@ import { Lock, CircleCheck, ExternalLink } from 'lucide-react';
 import StatTile from '@/components/stats/StatTile';
 import { useUserElo } from '@/shared/hooks/useElo';
 import { calculatePerformanceStats } from '@/shared/utils/performanceStats';
+import { getGameTypeKey, WIZARD_GAME_TYPE } from '@/shared/utils/gameTypes';
 import { formatAchievementProgress, getAchievementGateKey } from '@/shared/utils/achievements';
 import '@/styles/pages/account.css';
 import "@/styles/pages/performancestats.css";
@@ -240,7 +241,7 @@ const PerformanceStatsContent = ({ stats, isWizardGame, gameType, identityId = n
   const { t } = useTranslation();
 
   // Normalize game type for the ELO API
-  const normalizedGameType = gameType?.toLowerCase().trim().replace(/\s+/g, '-') || 'wizard';
+  const normalizedGameType = gameType ? getGameTypeKey(gameType) : WIZARD_GAME_TYPE;
   const { elo, loading: eloLoading } = useUserElo(normalizedGameType, identityId);
   const eloHistory = useEloHistory(elo?.history);
   // Only show a rating once there is one - not the 1000 every player starts at

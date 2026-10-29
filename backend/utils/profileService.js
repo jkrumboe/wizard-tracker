@@ -9,10 +9,10 @@ const { getUserIdentityIds } = require('./identityHelpers');
 const {
   getWinnerIds,
   isPlayerWinner,
-  calculateTableGameScores,
-  calculateWinnersByScore,
   resolveTableGameData,
   resolveTableGameLowIsBetter,
+  isTableGameFinished,
+  getTableGameResult,
 } = require('./gameHelpers');
 const { MAX_PROFILE_GAMES } = require('./constants');
 
@@ -20,7 +20,7 @@ const { MAX_PROFILE_GAMES } = require('./constants');
  * Fetch and process all games for a user profile.
  *
  * @param {string} userId - The user's ObjectId
- * @returns {Object} { games, totalWins, identities, mergedGuestIdentities, primaryIdentityId }
+ * @returns {Object} { games, totalGames, totalWins, identities, mergedGuestIdentities, primaryIdentityId }
  */
 async function getProfileGames(userId) {
   const {
@@ -100,7 +100,7 @@ async function getProfileGames(userId) {
   // Process table games
   tableGames.forEach(game => {
     const gameData = resolveTableGameData(game);
-    if (!gameData || !game.gameFinished || !gameData.players) return;
+    if (!gameData || !isTableGameFinished(game) || !gameData.players) return;
 
     const userPlayer = gameData.players.find(p =>
       p.identityId && identityIdStrings.includes(p.identityId.toString())
@@ -108,31 +108,9 @@ async function getProfileGames(userId) {
     if (!userPlayer) return;
 
     const userPlayerIndex = gameData.players.indexOf(userPlayer);
-    const finalScores = calculateTableGameScores(gameData.players);
-    const lowIsBetter = resolveTableGameLowIsBetter(game);
-    const calculatedWinnerIds = calculateWinnersByScore(finalScores, lowIsBetter);
-    const storedWinnerIds = getWinnerIds(gameData);
-
-    const winnerName = gameData.winner_name || game.gameData?.winner_name;
-    const winnerNamesLower = winnerName ? [winnerName.toLowerCase()] : [];
-
-    const userPlayerId = `player_${userPlayerIndex}`;
-
-    // The recorded points are the source of truth for table games: they account
-    // for lowIsBetter and are indexed against this exact players array. The
-    // stored winner id/name come from the client and may reference ids from
-    // before identity migration, so they are only consulted when the game has
-    // no scores to decide with - ORing them in used to hand a player someone
-    // else's win.
-    const hasScores = gameData.players.some(p => Array.isArray(p.points) && p.points.length > 0);
-    const canDecideByScore = hasScores && calculatedWinnerIds.length > 0;
-
-    const isWinner = canDecideByScore
-      ? calculatedWinnerIds.includes(userPlayerId)
-      : isPlayerWinner(userPlayer, storedWinnerIds) ||
-        Boolean(userPlayer.name && winnerNamesLower.includes(userPlayer.name.toLowerCase()));
-
-    const winnerIds = canDecideByScore ? calculatedWinnerIds : storedWinnerIds;
+    // Scores decide the winner; stored winner ids/names only when there are none
+    const { winnerIds, isWinner: didWin } = getTableGameResult(game, gameData);
+    const isWinner = didWin(userPlayer, userPlayerIndex);
     if (isWinner) totalWins++;
 
     const eloInfo = gameEloMap.get(game._id.toString());
@@ -168,6 +146,9 @@ async function getProfileGames(userId) {
 
   return {
     games: limitedGames,
+    // Counted before the MAX_PROFILE_GAMES cut, like totalWins, so the two
+    // always describe the same set of games
+    totalGames: allGames.length,
     totalWins,
     identities,
     mergedGuestIdentities,

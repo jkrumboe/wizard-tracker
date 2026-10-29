@@ -2,38 +2,53 @@
  * LeaderboardService
  * Encapsulates all leaderboard calculation logic previously inlined in games.js route.
  * Computes player statistics across Wizard and Table games using the identity system.
+ *
+ * Reading every game is the expensive part, so it happens once per change, not
+ * once per request: one pass builds a snapshot holding every player's stats for
+ * every game type, and each filter / page is a cheap selection from it. The
+ * snapshot is cached in Redis under `leaderboard:snapshot` and dropped by the
+ * existing `leaderboard:*` invalidations whenever a game is finished, edited or
+ * relinked. Concurrent cache misses in one process share a single build.
  */
 const WizardGame = require('../models/WizardGame');
 const TableGame = require('../models/TableGame');
+const cache = require('./redis');
 const { buildIdentityMaps } = require('./identityHelpers');
 const {
   getWinnerIds,
   isPlayerWinner,
-  calculateTableGameScores,
-  calculateWinnersByScore,
   resolveTableGameData,
   resolveTableGameLowIsBetter,
+  getTableGameResult,
 } = require('./gameHelpers');
-const { DEFAULT_ELO_RATING } = require('./constants');
+const { normalizeGameType } = require('./eloService');
+const { DEFAULT_ELO_RATING, LEADERBOARD_CACHE_TTL, LEADERBOARD_SNAPSHOT_TTL } = require('./constants');
+
+const SNAPSHOT_CACHE_KEY = 'leaderboard:snapshot';
+const WIZARD_LABEL = 'Wizard';
+const TABLE_GAME_FALLBACK = 'Table Game';
+
+// Only the player fields the leaderboard reads - not round data or scores per round
+const PLAYER_FIELDS = ['id', 'originalId', 'name', 'identityId', 'points'];
+const tablePlayerProjection = (prefix) =>
+  Object.fromEntries(PLAYER_FIELDS.map(field => [`${prefix}.players.${field}`, 1]));
+const tableGameDataProjection = (prefix) => ({
+  ...tablePlayerProjection(prefix),
+  [`${prefix}.winner_id`]: 1,
+  [`${prefix}.winner_ids`]: 1,
+  [`${prefix}.winner_name`]: 1,
+  [`${prefix}.gameName`]: 1,
+  [`${prefix}.lowIsBetter`]: 1,
+});
 
 /**
- * Normalize a game type string for ELO lookup (e.g. "Flip-7" -> "flip-7").
- */
-function normalizeGameType(type) {
-  if (!type) return 'wizard';
-  return type.toLowerCase().replace(/\s+/g, '-');
-}
-
-/**
- * Calculate the full leaderboard.
+ * Read every finished game once and collect every player's stats per game type.
  *
- * @param {Object} options
- * @param {string} [options.gameType] - Filter by game type
- * @param {number} [options.page=1]
- * @param {number} [options.limit=50]
- * @returns {Object} { leaderboard, gameTypes, gameTypeSettings, totalGames, pagination }
+ * @returns {Promise<Object>} { players, gameTypes, gameTypeSettings, totalGames }
+ *   players[].gameTypes is keyed by normalized game type; gameTypes lists the
+ *   label of each game type (one per game, whatever spellings it was saved under).
  */
-async function calculateLeaderboard({ gameType, page = 1, limit = 50 } = {}) {
+async function buildLeaderboardSnapshot() {
   const {
     identityToPlayerKeyMap,
     playerKeyIsGuest,
@@ -41,104 +56,112 @@ async function calculateLeaderboard({ gameType, page = 1, limit = 50 } = {}) {
     userEloByGameType,
   } = await buildIdentityMaps();
 
-  // Fetch wizard games (only finished)
-  const wizardGames = await WizardGame.find({
-    $or: [
-      { 'gameData.gameFinished': true },
-      { 'gameData.winner_id': { $exists: true, $ne: null } },
-      { 'gameData.winner_ids.0': { $exists: true } }
-    ]
-  }, {
-    'gameData.players': 1,
-    'gameData.winner_id': 1,
-    'gameData.winner_ids': 1,
-    'gameData.final_scores': 1,
-    'userId': 1,
-    'createdAt': 1
-  }).lean();
+  const [wizardGames, tableGames] = await Promise.all([
+    // Wizard games (only finished)
+    WizardGame.find({
+      $or: [
+        { 'gameData.gameFinished': true },
+        { 'gameData.winner_id': { $exists: true, $ne: null } },
+        { 'gameData.winner_ids.0': { $exists: true } }
+      ]
+    }, {
+      ...Object.fromEntries(PLAYER_FIELDS.map(field => [`gameData.players.${field}`, 1])),
+      'gameData.winner_id': 1,
+      'gameData.winner_ids': 1,
+      'gameData.totals.winner_id': 1,
+      'gameData.totals.winner_ids': 1,
+      'gameData.final_scores': 1,
+      'gameData.gameFinished': 1,
+      'gameData.isPaused': 1,
+      'createdAt': 1
+    }).lean(),
+    // Table games (only finished - an abandoned game is neither a win nor a loss)
+    TableGame.find({
+      $or: [
+        { gameFinished: true },
+        { 'gameData.gameFinished': true },
+        { 'gameData.gameData.gameFinished': true }
+      ]
+    }, {
+      ...tableGameDataProjection('gameData'),
+      ...tableGameDataProjection('gameData.gameData'),
+      'gameFinished': 1,
+      'gameTypeName': 1,
+      'lowIsBetter': 1,
+      'createdAt': 1
+    }).lean(),
+  ]);
 
-  // Fetch table games
-  const tableGames = await TableGame.find({}, {
-    'gameData': 1,
-    'gameTypeName': 1,
-    'lowIsBetter': 1,
-    'createdAt': 1
-  }).lean();
-
-  const playerStats = {};
-  const gameTypeSet = new Set(['Wizard']);
-  const gameTypeSettings = { 'Wizard': { lowIsBetter: false } };
-
-  // Collect game types from table games
+  // One label and one scoring direction per game type key
+  const gameTypeLabels = new Map([[normalizeGameType(WIZARD_LABEL), WIZARD_LABEL]]);
+  const gameTypeSettings = { [WIZARD_LABEL]: { lowIsBetter: false } };
   tableGames.forEach(game => {
-    const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-    if (gameMode && gameMode !== 'Table Game') {
-      gameTypeSet.add(gameMode);
-      if (!gameTypeSettings[gameMode]) {
-        gameTypeSettings[gameMode] = { lowIsBetter: resolveTableGameLowIsBetter(game) };
-      }
+    const name = game.gameTypeName || game.gameData?.gameName || TABLE_GAME_FALLBACK;
+    const key = normalizeGameType(name);
+    if (gameTypeLabels.has(key)) return;
+    gameTypeLabels.set(key, name);
+    if (name !== TABLE_GAME_FALLBACK) {
+      gameTypeSettings[name] = { lowIsBetter: resolveTableGameLowIsBetter(game) };
     }
   });
 
+  const playerStats = {};
+
+  const recordResult = ({ identityId, playerName, gameTypeKey, won, score, playedAt }) => {
+    if (!identityId) return;
+    const playerKey = identityToPlayerKeyMap[identityId.toString()];
+    if (!playerKey) return;
+
+    if (!playerStats[playerKey]) {
+      const isGuest = playerKeyIsGuest[playerKey] || false;
+      playerStats[playerKey] = {
+        id: playerKey,
+        name: userDisplayNames[playerKey] || playerName,
+        userId: isGuest ? null : playerKey,
+        gameTypes: {},
+        elo: {}
+      };
+    }
+
+    const stats = playerStats[playerKey];
+    const typeStats = (stats.gameTypes[gameTypeKey] ||= {
+      label: gameTypeLabels.get(gameTypeKey),
+      games: 0,
+      wins: 0,
+      totalScore: 0,
+      lastPlayed: playedAt
+    });
+    typeStats.games++;
+    if (won) typeStats.wins++;
+    if (score !== undefined) typeStats.totalScore += score;
+    if (playedAt && new Date(playedAt) > new Date(typeStats.lastPlayed)) {
+      typeStats.lastPlayed = playedAt;
+    }
+
+    const eloData = userEloByGameType[playerKey]?.[gameTypeKey];
+    if (eloData) stats.elo[gameTypeKey] = eloData.rating || DEFAULT_ELO_RATING;
+  };
+
   // Process Wizard games
+  const wizardKey = normalizeGameType(WIZARD_LABEL);
   wizardGames.forEach(game => {
     const gameData = game.gameData;
     if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
+    // Same rule as the profile: an explicitly unfinished or paused game doesn't count
+    if (gameData.isPaused || gameData.gameFinished === false) return;
 
-    const gameMode = 'Wizard';
     const winnerIds = getWinnerIds(gameData);
     const finalScores = gameData.final_scores || gameData.totals?.final_scores || {};
 
     gameData.players.forEach(player => {
-      const identityId = player.identityId;
-      if (!identityId) return;
-      if (gameType && gameType !== gameMode) return;
-
-      const identityIdStr = identityId.toString();
-      const playerKey = identityToPlayerKeyMap[identityIdStr];
-      if (!playerKey) return;
-
-      const displayName = userDisplayNames[playerKey] || player.name;
-      const isGuest = playerKeyIsGuest[playerKey] || false;
-
-      if (!playerStats[playerKey]) {
-        playerStats[playerKey] = {
-          id: playerKey,
-          name: displayName,
-          userId: isGuest ? null : playerKey,
-          totalGames: 0,
-          wins: 0,
-          totalScore: 0,
-          gameTypes: {},
-          lastPlayed: game.createdAt
-        };
-      }
-
-      const stats = playerStats[playerKey];
-      stats.totalGames++;
-
-      if (isPlayerWinner(player, winnerIds)) {
-        stats.wins++;
-      }
-
-      if (finalScores[player.id] !== undefined) {
-        stats.totalScore += finalScores[player.id];
-      }
-
-      if (!stats.gameTypes[gameMode]) {
-        stats.gameTypes[gameMode] = { games: 0, wins: 0, totalScore: 0 };
-      }
-      stats.gameTypes[gameMode].games++;
-      if (isPlayerWinner(player, winnerIds)) {
-        stats.gameTypes[gameMode].wins++;
-      }
-      if (finalScores[player.id] !== undefined) {
-        stats.gameTypes[gameMode].totalScore += finalScores[player.id];
-      }
-
-      if (game.createdAt && new Date(game.createdAt) > new Date(stats.lastPlayed)) {
-        stats.lastPlayed = game.createdAt;
-      }
+      recordResult({
+        identityId: player.identityId,
+        playerName: player.name,
+        gameTypeKey: wizardKey,
+        won: isPlayerWinner(player, winnerIds),
+        score: finalScores[player.id],
+        playedAt: game.createdAt
+      });
     });
   });
 
@@ -147,101 +170,81 @@ async function calculateLeaderboard({ gameType, page = 1, limit = 50 } = {}) {
     const gameData = resolveTableGameData(game);
     if (!gameData || !gameData.players || !Array.isArray(gameData.players)) return;
 
-    const gameMode = game.gameTypeName || game.gameData?.gameName || 'Table Game';
-    const finalScores = calculateTableGameScores(gameData.players);
-    const lowIsBetter = resolveTableGameLowIsBetter(game);
-    const winnerIds = calculateWinnersByScore(finalScores, lowIsBetter);
-
-    // Fallback winner name
-    const winnerName = gameData.winner_name || game.gameData?.winner_name;
-    const winnerNameLower = winnerName ? winnerName.toLowerCase() : null;
+    const gameTypeKey = normalizeGameType(game.gameTypeName || game.gameData?.gameName || TABLE_GAME_FALLBACK);
+    // Scores decide the winner; stored winner ids/names only when there are none
+    const { finalScores, isWinner } = getTableGameResult(game, gameData);
 
     gameData.players.forEach((player, index) => {
-      const playerId = `player_${index}`;
-      const identityId = player.identityId;
-      if (!identityId) return;
-      if (gameType && gameType !== gameMode) return;
-
-      const identityIdStr = identityId.toString();
-      const playerKey = identityToPlayerKeyMap[identityIdStr];
-      if (!playerKey) return;
-
-      const displayName = userDisplayNames[playerKey] || player.name;
-      const isGuest = playerKeyIsGuest[playerKey] || false;
-
-      if (!playerStats[playerKey]) {
-        playerStats[playerKey] = {
-          id: playerKey,
-          name: displayName,
-          userId: isGuest ? null : playerKey,
-          totalGames: 0,
-          wins: 0,
-          totalScore: 0,
-          gameTypes: {},
-          lastPlayed: game.createdAt
-        };
-      }
-
-      const stats = playerStats[playerKey];
-      stats.totalGames++;
-
-      const isWinnerById = winnerIds.includes(playerId);
-      const isWinnerByName = winnerNameLower && player.name && player.name.toLowerCase() === winnerNameLower;
-      if (isWinnerById || isWinnerByName) {
-        stats.wins++;
-      }
-
-      if (finalScores[playerId] !== undefined) {
-        stats.totalScore += finalScores[playerId];
-      }
-
-      if (!stats.gameTypes[gameMode]) {
-        stats.gameTypes[gameMode] = { games: 0, wins: 0, totalScore: 0 };
-      }
-      stats.gameTypes[gameMode].games++;
-      if (isWinnerById || isWinnerByName) {
-        stats.gameTypes[gameMode].wins++;
-      }
-      if (finalScores[playerId] !== undefined) {
-        stats.gameTypes[gameMode].totalScore += finalScores[playerId];
-      }
-
-      if (game.createdAt && new Date(game.createdAt) > new Date(stats.lastPlayed)) {
-        stats.lastPlayed = game.createdAt;
-      }
+      recordResult({
+        identityId: player.identityId,
+        playerName: player.name,
+        gameTypeKey,
+        won: isWinner(player, index),
+        score: finalScores[`player_${index}`],
+        playedAt: game.createdAt
+      });
     });
   });
 
-  // Build leaderboard array with derived stats
-  const selectedGameLowIsBetter = gameType
-    ? gameTypeSettings[gameType]?.lowIsBetter || false
-    : false;
+  return {
+    players: Object.values(playerStats),
+    gameTypes: Array.from(gameTypeLabels.values()).filter(label => label !== TABLE_GAME_FALLBACK).sort(),
+    gameTypeSettings,
+    totalGames: wizardGames.length + tableGames.length
+  };
+}
 
-  const leaderboard = Object.values(playerStats).map(player => {
-    const winRate = player.totalGames > 0
-      ? ((player.wins / player.totalGames) * 100).toFixed(1)
-      : 0;
-    const avgScore = player.totalGames > 0
-      ? (player.totalScore / player.totalGames).toFixed(1)
-      : 0;
+/**
+ * One page of the leaderboard, optionally for a single game type.
+ *
+ * @param {Object} snapshot - From buildLeaderboardSnapshot
+ * @param {Object} options - { gameType, page, limit }
+ * @returns {Object} { leaderboard, gameTypes, gameTypeSettings, totalGames, pagination }
+ */
+function selectLeaderboard(snapshot, { gameType, page = 1, limit = 50 } = {}) {
+  const typeKey = gameType ? normalizeGameType(gameType) : null;
+  const selectedLabel = typeKey
+    ? snapshot.gameTypes.find(label => normalizeGameType(label) === typeKey) || gameType
+    : null;
 
-    let elo = DEFAULT_ELO_RATING;
-    const userElo = userEloByGameType[player.id];
-    if (userElo && gameType) {
-      const normalizedType = normalizeGameType(gameType);
-      const eloData = userElo[normalizedType] || userElo.get?.(normalizedType);
-      if (eloData) {
-        elo = eloData.rating || DEFAULT_ELO_RATING;
-      }
-    }
+  const leaderboard = [];
+  snapshot.players.forEach(player => {
+    const types = typeKey
+      ? (player.gameTypes[typeKey] ? { [typeKey]: player.gameTypes[typeKey] } : {})
+      : player.gameTypes;
+    const entries = Object.values(types);
+    if (entries.length === 0) return;
 
-    return {
-      ...player,
-      winRate: parseFloat(winRate),
-      avgScore: parseFloat(avgScore),
-      elo: Math.round(elo)
-    };
+    const totalGames = entries.reduce((sum, t) => sum + t.games, 0);
+    const wins = entries.reduce((sum, t) => sum + t.wins, 0);
+    const totalScore = entries.reduce((sum, t) => sum + t.totalScore, 0);
+    const lastPlayed = entries
+      .map(t => t.lastPlayed)
+      .reduce((latest, date) => (!latest || new Date(date) > new Date(latest) ? date : latest), null);
+
+    leaderboard.push({
+      id: player.id,
+      name: player.name,
+      userId: player.userId,
+      totalGames,
+      wins,
+      totalScore,
+      // Keyed by label, as the API always returned it
+      gameTypes: Object.fromEntries(
+        Object.values(types).map(({ label, games, wins: typeWins, totalScore: typeScore }) =>
+          [label, { games, wins: typeWins, totalScore: typeScore }])
+      ),
+      lastPlayed,
+      winRate: totalGames > 0 ? parseFloat(((wins / totalGames) * 100).toFixed(1)) : 0,
+      avgScore: totalGames > 0 ? parseFloat((totalScore / totalGames).toFixed(1)) : 0,
+      // A rating only means something within one game type
+      elo: Math.round(typeKey ? player.elo[typeKey] || DEFAULT_ELO_RATING : DEFAULT_ELO_RATING)
+    });
   });
+
+  const selectedGameLowIsBetter = selectedLabel
+    ? snapshot.gameTypeSettings[selectedLabel]?.lowIsBetter || false
+    : false;
 
   // Sort by ELO -> wins -> avgScore -> winRate
   leaderboard.sort((a, b) => {
@@ -256,18 +259,16 @@ async function calculateLeaderboard({ gameType, page = 1, limit = 50 } = {}) {
   });
 
   // Pagination
-  const gameTypes = Array.from(gameTypeSet).sort();
   const pageNum = parseInt(page) || 1;
   const limitNum = Math.min(parseInt(limit) || 50, 100);
   const startIndex = (pageNum - 1) * limitNum;
   const endIndex = startIndex + limitNum;
-  const paginatedLeaderboard = leaderboard.slice(startIndex, endIndex);
 
   return {
-    leaderboard: paginatedLeaderboard,
-    gameTypes,
-    gameTypeSettings,
-    totalGames: wizardGames.length + tableGames.length,
+    leaderboard: leaderboard.slice(startIndex, endIndex),
+    gameTypes: snapshot.gameTypes,
+    gameTypeSettings: snapshot.gameTypeSettings,
+    totalGames: snapshot.totalGames,
     pagination: {
       currentPage: pageNum,
       totalPages: Math.ceil(leaderboard.length / limitNum),
@@ -278,4 +279,67 @@ async function calculateLeaderboard({ gameType, page = 1, limit = 50 } = {}) {
   };
 }
 
-module.exports = { calculateLeaderboard };
+// Without Redis, the snapshot is kept here for the normal (short) cache TTL,
+// since nothing can invalidate it across processes
+let localSnapshot = null;
+let localSnapshotExpiresAt = 0;
+let pendingBuild = null;
+
+/**
+ * The current snapshot: Redis, else this process's copy, else a fresh build
+ * (shared by every request that misses at the same time).
+ */
+async function getLeaderboardSnapshot() {
+  if (cache.isConnected) {
+    const cached = await cache.get(SNAPSHOT_CACHE_KEY);
+    if (cached) return cached;
+  } else if (localSnapshot && Date.now() < localSnapshotExpiresAt) {
+    return localSnapshot;
+  }
+
+  if (!pendingBuild) {
+    pendingBuild = (async () => {
+      const snapshot = await buildLeaderboardSnapshot();
+      if (cache.isConnected) {
+        await cache.set(SNAPSHOT_CACHE_KEY, snapshot, LEADERBOARD_SNAPSHOT_TTL);
+      } else {
+        localSnapshot = snapshot;
+        localSnapshotExpiresAt = Date.now() + LEADERBOARD_CACHE_TTL * 1000;
+      }
+      return snapshot;
+    })().finally(() => {
+      pendingBuild = null;
+    });
+  }
+  return pendingBuild;
+}
+
+/**
+ * Drop the cached leaderboard after a change to games or identities.
+ */
+async function invalidateLeaderboard() {
+  localSnapshot = null;
+  if (cache.isConnected) {
+    await cache.delPattern('leaderboard:*');
+  }
+}
+
+/**
+ * Calculate the full leaderboard.
+ *
+ * @param {Object} options
+ * @param {string} [options.gameType] - Filter by game type (any spelling)
+ * @param {number} [options.page=1]
+ * @param {number} [options.limit=50]
+ * @returns {Object} { leaderboard, gameTypes, gameTypeSettings, totalGames, pagination }
+ */
+async function calculateLeaderboard(options = {}) {
+  return selectLeaderboard(await getLeaderboardSnapshot(), options);
+}
+
+module.exports = {
+  calculateLeaderboard,
+  buildLeaderboardSnapshot,
+  selectLeaderboard,
+  invalidateLeaderboard,
+};

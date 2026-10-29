@@ -10,12 +10,13 @@
  * - Game-type-specific ratings (Wizard, Flip 7, Dutch, etc.)
  * - Dynamic K-factor based on games played
  * - Placement-based scoring (not binary win/loss)
- * - Score margin bonus for winners, capped penalty for losers
- * - Player count scaling (normalized to 4-player baseline)
+ * - Per-opponent score margin multiplier (scale-aware, capped for losers)
+ * - Normalized by the number of rated opponents
  * - Provisional player dampening
  */
 
 const mongoose = require('mongoose');
+const { resolveTableGameLowIsBetter } = require('./gameHelpers');
 
 // ELO Configuration
 const CONFIG = {
@@ -38,14 +39,30 @@ const CONFIG = {
     ESTABLISHED: 100
   },
   
-  // Score margin bonus (percentage of base change) — applied to winners
+  // Score margin bonus, applied per opponent to the result it reinforces:
+  // a winner's gain grows by the full bonus, a loser's loss by at most MARGIN_LOSS_MAX
   MARGIN_BONUS: {
-    BLOWOUT: 0.15,            // Win by 50+ points: +15% bonus
-    DECISIVE: 0.10,           // Win by 30-49 points: +10% bonus
-    CLOSE: 0.05               // Win by 10-29 points: +5% bonus
+    BLOWOUT: 0.15,            // +15%
+    DECISIVE: 0.10,           // +10%
+    CLOSE: 0.05               // +5%
   },
   
-  // Loss margin penalty cap (losers never get more than -10% regardless of margin)
+  // Wizard scores share one scale, so its margins are absolute points
+  WIZARD_MARGIN_POINTS: {
+    BLOWOUT: 50,
+    DECISIVE: 30,
+    CLOSE: 10
+  },
+  
+  // Other games score on arbitrary scales (Dutch ends in single digits, others in
+  // the thousands), so their margins are relative to the larger of the two scores
+  RELATIVE_MARGIN_RATIO: {
+    BLOWOUT: 0.5,
+    DECISIVE: 0.3,
+    CLOSE: 0.1
+  },
+  
+  // A blowout makes a loser's loss at most 10% larger
   MARGIN_LOSS_MAX: 0.10,
   
   // Per-game rating change cap (absolute value)
@@ -58,6 +75,15 @@ const CONFIG = {
   
   // Minimum games to appear on leaderboard
   MIN_GAMES_FOR_RANKING: 5,
+  
+  // Rating history entries kept per player and game type
+  MAX_HISTORY: 50,
+  
+  // Identities written per bulkWrite during a full recalculation
+  RECALC_WRITE_BATCH: 500,
+  
+  // A recalculation lock nobody refreshed for this long belongs to a crashed run
+  RECALC_LOCK_TTL_MS: 10 * 60 * 1000,
   
   // Known game types (for normalization)
   GAME_TYPES: {
@@ -85,12 +111,25 @@ function isGameFinished(gameData) {
 
 /**
  * Normalize game type string for consistent storage
+ *
+ * Table games only carry the name they were played under, so "Flip 7",
+ * "Flip7" and "flip-7" are one game typed three ways. The key ignores case,
+ * spacing, punctuation and accents so they share one rating ("Flip 7" ->
+ * "flip7"). Being letters and digits only, it is also always a valid Mongoose
+ * Map key (no '.' or '$'). Must match getGameTypeKey in
+ * frontend/src/shared/utils/gameTypes.js.
+ *
  * @param {string} gameType - Raw game type
  * @returns {string} Normalized game type key
  */
 function normalizeGameType(gameType) {
   if (!gameType) return 'unknown';
-  return gameType.toLowerCase().trim().replace(/\s+/g, '-');
+  const normalized = String(gameType)
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '');
+  return normalized || 'unknown';
 }
 
 /**
@@ -108,15 +147,7 @@ function getEloForGameType(identity, gameType) {
   }
   
   // Return default ELO structure
-  return {
-    rating: CONFIG.DEFAULT_RATING,
-    peak: CONFIG.DEFAULT_RATING,
-    floor: CONFIG.DEFAULT_RATING,
-    gamesPlayed: 0,
-    streak: 0,
-    lastUpdated: null,
-    history: []
-  };
+  return createEloEntry();
 }
 
 /**
@@ -144,23 +175,19 @@ function getExpectedScore(playerRating, opponentRating) {
 }
 
 /**
- * Calculate score margin multiplier
- * Winners get full bonus, losers get capped penalty (max MARGIN_LOSS_MAX)
+ * Score margin bonus for one pairwise result (0 to MARGIN_BONUS.BLOWOUT).
+ * Wizard uses absolute point gaps; every other game a gap relative to its scores.
  */
-function getMarginMultiplier(playerScore, opponentScore, won) {
-  const margin = Math.abs(playerScore - opponentScore);
+function getMarginBonus(scoreA, scoreB, gameType) {
+  const margin = Math.abs(scoreA - scoreB);
+  const isWizard = normalizeGameType(gameType) === CONFIG.GAME_TYPES.WIZARD;
+  const thresholds = isWizard ? CONFIG.WIZARD_MARGIN_POINTS : CONFIG.RELATIVE_MARGIN_RATIO;
+  const value = isWizard ? margin : margin / Math.max(Math.abs(scoreA), Math.abs(scoreB), 1);
   
-  let bonus = 0;
-  if (margin >= 50) bonus = CONFIG.MARGIN_BONUS.BLOWOUT;
-  else if (margin >= 30) bonus = CONFIG.MARGIN_BONUS.DECISIVE;
-  else if (margin >= 10) bonus = CONFIG.MARGIN_BONUS.CLOSE;
-  
-  if (won) {
-    return 1 + bonus;
-  } else {
-    // Cap loss penalty at MARGIN_LOSS_MAX (e.g. -10% max instead of -25%)
-    return 1 - Math.min(bonus, CONFIG.MARGIN_LOSS_MAX);
-  }
+  if (value >= thresholds.BLOWOUT) return CONFIG.MARGIN_BONUS.BLOWOUT;
+  if (value >= thresholds.DECISIVE) return CONFIG.MARGIN_BONUS.DECISIVE;
+  if (value >= thresholds.CLOSE) return CONFIG.MARGIN_BONUS.CLOSE;
+  return 0;
 }
 
 /**
@@ -225,7 +252,6 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
   const normalizedGameType = normalizeGameType(gameType);
   const players = gameData.players || [];
   const finalScores = gameData.final_scores || {};
-  const winnerId = gameData.winner_id;
   
   if (players.length < 2) {
     return [];
@@ -266,67 +292,76 @@ function calculateGameEloChanges(gameData, playerIdentities, gameType) {
   
   const results = [];
   const numPlayers = rankedPlayers.length;
-  
-  for (const player of rankedPlayers) {
-    if (!player.identityId) continue;
-    
+
+  // Only players whose identity was loaded can be rated or rated against. A
+  // missing one (deleted, or never resolved) still holds its placement, but
+  // must not count as an opponent - looking up its rating used to throw and
+  // abort the update for the whole game.
+  const ratedPlayers = rankedPlayers.filter(
+    p => p.identityId && playerIdentities.get(p.identityId.toString())
+  );
+
+  for (const player of ratedPlayers) {
     const identity = playerIdentities.get(player.identityId.toString());
-    if (!identity) continue;
-    
+
     // Get ELO for this specific game type
     const playerElo = getEloForGameType(identity, normalizedGameType);
     const currentRating = playerElo.rating || CONFIG.DEFAULT_RATING;
     const gamesPlayed = playerElo.gamesPlayed || 0;
     const kFactor = getKFactor(gamesPlayed);
-    
-    // Calculate expected and actual scores against all opponents
-    let expectedTotal = 0;
-    let actualTotal = 0;
-    let marginMultiplier = 1;
-    
-    for (const opponent of rankedPlayers) {
-      if (opponent.id === player.id || !opponent.identityId) continue;
-      
+
+    // Sum of (actual - expected) over all rated opponents
+    let weightedDiff = 0;
+    let numOpponents = 0;
+
+    for (const opponent of ratedPlayers) {
+      if (opponent === player) continue;
+      numOpponents++;
+
       const opponentIdentity = playerIdentities.get(opponent.identityId.toString());
       const opponentElo = getEloForGameType(opponentIdentity, normalizedGameType);
-      const opponentRating = opponentElo?.rating || CONFIG.DEFAULT_RATING;
-      const opponentGamesPlayed = opponentElo?.gamesPlayed || 0;
-      
+      const opponentRating = opponentElo.rating || CONFIG.DEFAULT_RATING;
+      const opponentGamesPlayed = opponentElo.gamesPlayed || 0;
+
       // Provisional dampening: reduce impact when established players face new players
       const provisionalFactor = getProvisionalDampening(gamesPlayed, opponentGamesPlayed);
-      
-      // Expected score against this opponent (dampened for provisional matchups)
-      expectedTotal += getExpectedScore(currentRating, opponentRating) * provisionalFactor;
-      
-      // Placement-based actual score (not binary win/loss)
-      // Gives fractional credit based on placement gap
-      actualTotal += getPlacementScore(player.placement, opponent.placement, numPlayers) * provisionalFactor;
-      
-      // Score margin multiplier (full bonus for winners, capped penalty for losers)
-      // For lowIsBetter games, having a lower score means beating the opponent
-      const playerBeatOpponent = lowIsBetter 
-        ? player.score < opponent.score 
+
+      // Placement-based actual score (not binary win/loss) against the expected one
+      const pairDiff = getPlacementScore(player.placement, opponent.placement, numPlayers)
+        - getExpectedScore(currentRating, opponentRating);
+
+      // The score margin only reinforces the result it belongs to: a big win
+      // grows a gain, a big loss grows a loss (capped). It never flips into
+      // the other direction - multiplying the net change made a blowout winner
+      // who still underperformed lose more, and a crushed loser lose less.
+      // For lowIsBetter games, having a lower score means beating the opponent.
+      const playerBeatOpponent = lowIsBetter
+        ? player.score < opponent.score
         : player.score > opponent.score;
       const opponentBeatPlayer = lowIsBetter
         ? player.score > opponent.score
         : player.score < opponent.score;
-      if (playerBeatOpponent) {
-        marginMultiplier *= getMarginMultiplier(player.score, opponent.score, true);
-      } else if (opponentBeatPlayer) {
-        marginMultiplier *= getMarginMultiplier(player.score, opponent.score, false);
+      let marginMultiplier = 1;
+      if (playerBeatOpponent && pairDiff > 0) {
+        marginMultiplier += getMarginBonus(player.score, opponent.score, normalizedGameType);
+      } else if (opponentBeatPlayer && pairDiff < 0) {
+        marginMultiplier += Math.min(
+          getMarginBonus(player.score, opponent.score, normalizedGameType),
+          CONFIG.MARGIN_LOSS_MAX
+        );
       }
+
+      weightedDiff += pairDiff * marginMultiplier * provisionalFactor;
     }
-    
-    // Normalize margin multiplier across all opponents
-    marginMultiplier = Math.pow(marginMultiplier, 1 / (numPlayers - 1));
-    
-    // Calculate base rating change
+
+    // Nobody rated to compare against - nothing to learn from this game
+    if (numOpponents === 0) continue;
+
     // Normalize by number of opponents so K represents max change per game,
     // not per opponent. Without this, 6-player games produce ~3x the change
     // of 2-player games just from having more pairwise comparisons.
     const won = player.placement === 1;
-    const numOpponents = numPlayers - 1;
-    let ratingChange = kFactor * ((actualTotal - expectedTotal) / numOpponents) * marginMultiplier;
+    let ratingChange = kFactor * (weightedDiff / numOpponents);
     
     // Round to integer
     ratingChange = Math.round(ratingChange);
@@ -505,10 +540,132 @@ function remapGameIdentities(gameData, mergeMap) {
 }
 
 /**
+ * Fresh ELO entry for a player's first game of a type
+ */
+function createEloEntry() {
+  return {
+    rating: CONFIG.DEFAULT_RATING,
+    peak: CONFIG.DEFAULT_RATING,
+    floor: CONFIG.DEFAULT_RATING,
+    gamesPlayed: 0,
+    wins: 0,
+    streak: 0,
+    lastUpdated: null,
+    history: []
+  };
+}
+
+/**
+ * When a game was played - orders the recalculation and dates the history
+ */
+function getGameDate(game) {
+  return new Date(game.gameData?.created_at || game.createdAt || Date.now());
+}
+
+/**
+ * The game data ELO is calculated from. Table games may nest the real data one
+ * level deeper (gameData.gameData) and keep lowIsBetter / gameFinished on the
+ * document itself, which reading game.gameData alone missed.
+ *
+ * @param {Object} game - WizardGame or TableGame document (or plain object)
+ * @returns {Object|null}
+ */
+function getRatableGameData(game) {
+  const outer = game?.gameData;
+  if (!outer) return null;
+  const inner = Array.isArray(outer.gameData?.players) ? outer.gameData : outer;
+  return {
+    ...inner,
+    lowIsBetter: resolveTableGameLowIsBetter(game),
+    gameFinished: inner.gameFinished === true || outer.gameFinished === true || game.gameFinished === true
+  };
+}
+
+/**
+ * Apply one calculated change to a player's ELO entry for a game type.
+ * Shared by the live update and the full recalculation so both produce
+ * identical entries.
+ *
+ * @param {Object} entry - Plain ELO entry (see createEloEntry), mutated
+ * @param {Object} change - One result from calculateGameEloChanges
+ * @param {Object} game - The game the change came from
+ * @returns {Object} the updated entry
+ */
+function applyEloChange(entry, change, game) {
+  // Entries written before wins were tracked have no count to add to; leave
+  // them without one rather than start a wrong tally (a recalculation fills it)
+  if (typeof entry.wins === 'number' || !entry.gamesPlayed) {
+    entry.wins = (entry.wins || 0) + (change.won ? 1 : 0);
+  }
+  entry.rating = change.newRating;
+  entry.gamesPlayed = (entry.gamesPlayed || 0) + 1;
+  entry.lastUpdated = new Date();
+  entry.peak = Math.max(entry.peak || CONFIG.DEFAULT_RATING, change.newRating);
+  entry.floor = Math.min(entry.floor || CONFIG.DEFAULT_RATING, change.newRating);
+  entry.streak = change.won
+    ? Math.max(1, (entry.streak || 0) + 1)
+    : Math.min(-1, (entry.streak || 0) - 1);
+
+  // Newest first, capped
+  entry.history = [{
+    rating: change.newRating,
+    change: change.change,
+    gameId: game._id,
+    opponents: change.opponents,
+    placement: change.placement,
+    date: getGameDate(game)
+  }, ...(entry.history || [])].slice(0, CONFIG.MAX_HISTORY);
+
+  return entry;
+}
+
+/**
+ * Resolve identities that were merged into another one (following chains), so
+ * a game recorded before the merge still rates the surviving identity instead
+ * of a soft-deleted one.
+ *
+ * @param {Array} identityIds
+ * @returns {Promise<Map<string, string>>} Only the ids that resolve elsewhere
+ */
+async function resolveMergedIdentities(identityIds) {
+  const PlayerIdentity = mongoose.model('PlayerIdentity');
+  const ids = identityIds.map(String);
+  const mergedInto = new Map();
+  const seen = new Set();
+  let pending = ids;
+
+  while (pending.length > 0) {
+    pending.forEach(id => seen.add(id));
+    const merged = await PlayerIdentity.find(
+      { _id: { $in: pending }, mergedInto: { $ne: null } },
+      { mergedInto: 1 }
+    ).lean();
+    pending = [];
+    for (const identity of merged) {
+      const target = identity.mergedInto.toString();
+      mergedInto.set(identity._id.toString(), target);
+      if (!seen.has(target)) pending.push(target);
+    }
+  }
+
+  const mergeMap = new Map();
+  for (const id of ids) {
+    let current = id;
+    const visited = new Set();
+    while (mergedInto.has(current) && !visited.has(current)) {
+      visited.add(current);
+      current = mergedInto.get(current);
+    }
+    if (current !== id) mergeMap.set(id, current);
+  }
+  return mergeMap;
+}
+
+/**
  * Update player ELO ratings after a game
  * Uses MongoDB transactions when available to ensure atomic updates across all players
  * Falls back to non-transactional updates if transactions aren't supported
- * 
+ *
  * @param {Object} game - WizardGame or TableGame document
  * @param {string} gameType - Game type (e.g., 'wizard', 'flip-7', 'dutch')
  * @param {Object} options - Optional settings
@@ -518,33 +675,44 @@ function remapGameIdentities(gameData, mergeMap) {
 async function updateRatingsForGame(game, gameType, options = {}) {
   const { maxRetries = 3 } = options;
   const PlayerIdentity = mongoose.model('PlayerIdentity');
-  const gameData = game.gameData;
-  
+  let gameData = getRatableGameData(game);
+
   if (!isGameFinished(gameData)) {
     return [];
   }
-  
+
+  // A running recalculation would overwrite this update - let it apply the game afterwards
+  if (await deferLiveUpdate(game, gameType)) {
+    console.log(`[ELO] Recalculation running - game ${game._id} will be rated when it finishes`);
+    return [];
+  }
+
   const normalizedGameType = normalizeGameType(gameType);
-  
-  // Get all player identities
-  const identityIds = (gameData.players || [])
+
+  const recordedIdentityIds = (gameData.players || [])
     .filter(p => p.identityId)
     .map(p => p.identityId);
-  
-  if (identityIds.length === 0) {
+
+  if (recordedIdentityIds.length === 0) {
     console.warn(`[ELO] No player identities found for game ${game._id} (${gameData.players?.length || 0} players) — skipping ELO update`);
     return [];
   }
-  
+
+  // Rate the identities players were merged into, not the merged-away ones
+  gameData = remapGameIdentities(gameData, await resolveMergedIdentities(recordedIdentityIds));
+  const identityIds = gameData.players
+    .filter(p => p.identityId)
+    .map(p => p.identityId);
+
   // Check if transactions are supported (requires replica set)
   // Try transactional update first, fall back to non-transactional if unsupported
   let useTransactions = true;
-  
+
   // Retry logic for transient failures
   let lastError = null;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     let session = null;
-    
+
     try {
       if (useTransactions) {
         session = await mongoose.startSession();
@@ -553,12 +721,14 @@ async function updateRatingsForGame(game, gameType, options = {}) {
           writeConcern: { w: 'majority' }
         });
       }
-      
+
+      // Read inside the transaction so the idempotency check and the ratings
+      // it calculates from are the ones that get committed against
       const identities = await PlayerIdentity.find({
         _id: { $in: identityIds },
         isDeleted: false
-      });
-      
+      }).session(session);
+
       // Idempotency guard: check if ELO for this game was already applied
       // by looking for the gameId in any player's history
       const gameIdStr = game._id.toString();
@@ -566,7 +736,7 @@ async function updateRatingsForGame(game, gameType, options = {}) {
         const gameTypeElo = identity.eloByGameType?.get(normalizedGameType);
         return gameTypeElo?.history?.some(h => h.gameId?.toString() === gameIdStr);
       });
-      
+
       if (alreadyApplied) {
         if (session) {
           await session.abortTransaction();
@@ -575,103 +745,55 @@ async function updateRatingsForGame(game, gameType, options = {}) {
         console.log(`[ELO] Skipping game ${game._id} - ratings already applied`);
         return [];
       }
-      
+
       const identityMap = new Map(
         identities.map(i => [i._id.toString(), i])
       );
-      
+
       // Calculate ELO changes for this game type
       const changes = calculateGameEloChanges(gameData, identityMap, normalizedGameType);
-      
+
       // Apply changes to identities within transaction
       const updatedIdentities = [];
-      
+
       for (const change of changes) {
         const identity = identityMap.get(change.identityId.toString());
         if (!identity) continue;
-        
-        // Initialize eloByGameType map if needed
+
         if (!identity.eloByGameType) {
           identity.eloByGameType = new Map();
         }
-        
-        // Get or create ELO entry for this game type
-        let gameTypeElo = identity.eloByGameType.get(normalizedGameType);
-        if (!gameTypeElo) {
-          gameTypeElo = {
-            rating: CONFIG.DEFAULT_RATING,
-            peak: CONFIG.DEFAULT_RATING,
-            floor: CONFIG.DEFAULT_RATING,
-            gamesPlayed: 0,
-            streak: 0,
-            lastUpdated: null,
-            history: []
-          };
-        }
-        
-        // Update ELO fields
-        gameTypeElo.rating = change.newRating;
-        gameTypeElo.gamesPlayed = (gameTypeElo.gamesPlayed || 0) + 1;
-        gameTypeElo.lastUpdated = new Date();
-        
-        // Update peak/floor
-        if (change.newRating > (gameTypeElo.peak || CONFIG.DEFAULT_RATING)) {
-          gameTypeElo.peak = change.newRating;
-        }
-        if (change.newRating < (gameTypeElo.floor || CONFIG.DEFAULT_RATING)) {
-          gameTypeElo.floor = change.newRating;
-        }
-        
-        // Update streak
-        if (change.won) {
-          gameTypeElo.streak = Math.max(1, (gameTypeElo.streak || 0) + 1);
-        } else {
-          gameTypeElo.streak = Math.min(-1, (gameTypeElo.streak || 0) - 1);
-        }
-        
-        // Add to history (keep last 50 entries)
-        if (!gameTypeElo.history) {
-          gameTypeElo.history = [];
-        }
-        gameTypeElo.history.unshift({
-          rating: change.newRating,
-          change: change.change,
-          gameId: game._id,
-          opponents: change.opponents,
-          placement: change.placement,
-          date: game.gameData?.created_at ? new Date(game.gameData.created_at) : (game.createdAt || new Date())
-        });
-        
-        if (gameTypeElo.history.length > 50) {
-          gameTypeElo.history = gameTypeElo.history.slice(0, 50);
-        }
-        
-        // Save back to map
-        identity.eloByGameType.set(normalizedGameType, gameTypeElo);
+
+        // Map values are subdocuments - update a plain copy and set it back
+        const stored = identity.eloByGameType.get(normalizedGameType);
+        const entry = stored
+          ? (stored.toObject ? stored.toObject() : { ...stored })
+          : createEloEntry();
+        identity.eloByGameType.set(normalizedGameType, applyEloChange(entry, change, game));
         identity.markModified('eloByGameType');
-        
+
         // Save with or without session
         if (session) {
           await identity.save({ session });
         } else {
           await identity.save();
         }
-        
+
         updatedIdentities.push({
           identity,
           change,
           gameType: normalizedGameType
         });
       }
-      
+
       // Commit transaction if using one
       if (session) {
         await session.commitTransaction();
         session.endSession();
       }
-      
+
       return updatedIdentities;
-      
+
     } catch (error) {
       // Clean up session if it exists
       if (session) {
@@ -682,49 +804,169 @@ async function updateRatingsForGame(game, gameType, options = {}) {
           // Ignore cleanup errors
         }
       }
-      
+
       lastError = error;
-      
+
       // Check if transactions aren't supported (standalone MongoDB)
-      const isTransactionNotSupported = 
+      const isTransactionNotSupported =
         error.message?.includes('Transaction numbers are only allowed') ||
         error.message?.includes('not supported') ||
         error.codeName === 'IllegalOperation' ||
         error.code === 20; // IllegalOperation
-      
+
       if (isTransactionNotSupported && useTransactions) {
         console.warn('MongoDB transactions not supported (standalone mode), falling back to non-transactional updates');
         useTransactions = false;
         // Retry immediately without transactions
         continue;
       }
-      
+
       // Check if it's a transient error worth retrying
       const isTransient = error.hasErrorLabel?.('TransientTransactionError') ||
         error.code === 112 || // WriteConflict
         error.code === 251;   // TransactionCoordinatorSteppingDown
-      
+
       if (isTransient && attempt < maxRetries) {
         console.warn(`ELO update attempt ${attempt} failed with transient error, retrying...`, error.message);
         // Exponential backoff: 100ms, 200ms, 400ms
         await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt - 1)));
         continue;
       }
-      
+
       // Non-transient error or max retries reached
       console.error(`ELO update failed for game ${game._id} after ${attempt} attempt(s):`, error.message);
       throw error;
     }
   }
-  
+
   // Should not reach here, but just in case
   throw lastError || new Error('ELO update failed after max retries');
 }
 
+// ============================================
+// Recalculation lock
+// ============================================
+//
+// A recalculation replays every game in memory and then overwrites every
+// identity's ratings. A live update written in between would be lost, so while
+// the lock is held live updates queue their game instead of applying it, and
+// the queue is applied once the recalculation has written its results. The
+// lock is one document in Mongo so it holds across backend instances; it
+// expires so a crashed run can't block ratings forever.
+
+const RECALC_LOCK_ID = 'elo-recalculation';
+
+function getLockCollection() {
+  return mongoose.connection.collection('elolocks');
+}
+
+/** Driver 5 wraps findOneAndX results in { value }, driver 6 doesn't. */
+function unwrapFindAndModify(result) {
+  return result && typeof result === 'object' && 'value' in result && 'ok' in result
+    ? result.value
+    : result;
+}
+
+/**
+ * Take the lock. Returns false when another recalculation holds it.
+ */
+async function acquireRecalculationLock() {
+  const now = new Date();
+  try {
+    await getLockCollection().updateOne(
+      // Only a missing or expired lock can be taken
+      { _id: RECALC_LOCK_ID, expiresAt: { $lte: now } },
+      {
+        $set: { startedAt: now, expiresAt: new Date(now.getTime() + CONFIG.RECALC_LOCK_TTL_MS), rerun: false },
+        $setOnInsert: { pending: [] }
+      },
+      { upsert: true }
+    );
+    return true;
+  } catch (error) {
+    // The upsert collided with a live lock's _id
+    if (error.code === 11000) return false;
+    throw error;
+  }
+}
+
+/** Keep a long recalculation's lock from expiring. */
+async function extendRecalculationLock() {
+  await getLockCollection().updateOne(
+    { _id: RECALC_LOCK_ID },
+    { $set: { expiresAt: new Date(Date.now() + CONFIG.RECALC_LOCK_TTL_MS) } }
+  );
+}
+
+/**
+ * Ask the running recalculation to run once more when it finishes - its replay
+ * may have read the games before the change that prompted this request.
+ * Returns false when no recalculation is running.
+ */
+async function requestRecalculationRerun() {
+  const result = await getLockCollection().updateOne(
+    { _id: RECALC_LOCK_ID, expiresAt: { $gt: new Date() } },
+    { $set: { rerun: true } }
+  );
+  return result.matchedCount > 0;
+}
+
+/** Clear and return the rerun flag, keeping the lock. */
+async function takeRerunRequest() {
+  const lock = unwrapFindAndModify(await getLockCollection().findOneAndUpdate(
+    { _id: RECALC_LOCK_ID },
+    { $set: { rerun: false } }
+  ));
+  return lock?.rerun === true;
+}
+
+/**
+ * Release the lock and return the games queued while it was held. Atomic with
+ * deferLiveUpdate: a game is either in the returned queue or applied live.
+ */
+async function releaseRecalculationLock() {
+  const lock = unwrapFindAndModify(await getLockCollection().findOneAndDelete({ _id: RECALC_LOCK_ID }));
+  return lock?.pending || [];
+}
+
+/**
+ * Queue a finished game while a recalculation holds the lock.
+ * Returns true when the game was queued and must not be applied now.
+ */
+async function deferLiveUpdate(game, gameType) {
+  const modelName = game?.constructor?.modelName;
+  // Only documents can be reloaded later; anything else is applied right away
+  if (!modelName || !game._id) return false;
+  const result = await getLockCollection().updateOne(
+    { _id: RECALC_LOCK_ID, expiresAt: { $gt: new Date() } },
+    { $addToSet: { pending: { gameId: game._id, modelName, gameType } } }
+  );
+  return result.matchedCount > 0;
+}
+
+/** Apply the live updates that waited for a recalculation. */
+async function applyDeferredUpdates(pending) {
+  for (const { gameId, modelName, gameType } of pending) {
+    try {
+      const game = await mongoose.model(modelName).findById(gameId);
+      // Already counted if the replay saw it - the idempotency guard skips those
+      if (game) await updateRatingsForGame(game, gameType);
+    } catch (error) {
+      console.error(`[ELO] Failed to apply deferred update for ${modelName} ${gameId}:`, error.message);
+    }
+  }
+}
+
 /**
  * Recalculate ELO ratings for all players from scratch
- * Processes all finished games chronologically for all game types
- * 
+ * Replays all finished games chronologically in memory, then writes every
+ * identity's result in bulk. A dry run replays the same way without writing,
+ * so its numbers are the ones a real run would produce.
+ *
+ * Only one recalculation runs at a time (see the lock above). Asking for one
+ * while another runs makes the running one go again when it finishes, and
+ * returns right away with `queued: true`.
+ *
  * @param {Object} options - Options for recalculation
  * @param {boolean} options.dryRun - If true, don't save changes
  * @param {string} options.gameType - If specified, only recalculate for this game type
@@ -732,11 +974,47 @@ async function updateRatingsForGame(game, gameType, options = {}) {
  * @returns {Object} Summary of recalculation
  */
 async function recalculateAllElo(options = {}) {
-  const { dryRun = false, gameType = null, onProgress = null } = options;
-  
+  if (options.dryRun) {
+    return replayAllGames(options);
+  }
+
+  if (!(await acquireRecalculationLock())) {
+    if (await requestRecalculationRerun()) {
+      console.log('[ELO] Recalculation already running - it will run again when finished');
+      return { gamesProcessed: 0, playerUpdates: 0, gameTypeStats: {}, errors: [], dryRun: false, queued: true };
+    }
+    // The other run finished in the meantime
+    return recalculateAllElo(options);
+  }
+
+  let pending = [];
+  try {
+    let result = await replayAllGames({ ...options, heartbeat: extendRecalculationLock });
+    // Changes made during the run asked for another; a full one covers any game type
+    while (await takeRerunRequest()) {
+      console.log('[ELO] Running the recalculation again for changes made while it ran');
+      result = await replayAllGames({ ...options, gameType: null, heartbeat: extendRecalculationLock });
+    }
+    return result;
+  } finally {
+    pending = await releaseRecalculationLock();
+    if (pending.length > 0) {
+      console.log(`[ELO] Applying ${pending.length} game(s) finished during the recalculation`);
+      await applyDeferredUpdates(pending);
+    }
+  }
+}
+
+/**
+ * The replay behind recalculateAllElo - no locking.
+ * @param {Function} [options.heartbeat] - Called periodically during long runs
+ */
+async function replayAllGames(options = {}) {
+  const { dryRun = false, gameType = null, onProgress = null, heartbeat = null } = options;
+
   const PlayerIdentity = mongoose.model('PlayerIdentity');
   const WizardGame = mongoose.model('WizardGame');
-  
+
   // Try to load TableGame model if it exists
   let TableGame;
   try {
@@ -745,43 +1023,20 @@ async function recalculateAllElo(options = {}) {
     // TableGame model not loaded
     TableGame = null;
   }
-  
+
+  const onlyGameType = gameType ? normalizeGameType(gameType) : null;
+
   console.log('🎯 Starting ELO recalculation...');
-  
+
   // Build identity merge map to consolidate linked/merged identities
   const mergeMap = await buildIdentityMergeMap();
   if (mergeMap.size > 0) {
     console.log(`✓ Built identity merge map: ${mergeMap.size} identities will be consolidated`);
   }
-  
-  // Reset all ELO ratings if not dry run
-  if (!dryRun) {
-    if (gameType) {
-      // Reset only specific game type
-      const normalizedType = normalizeGameType(gameType);
-      console.log(`✓ Resetting ELO for game type: ${normalizedType}`);
-      
-      const identities = await PlayerIdentity.find({ isDeleted: false });
-      for (const identity of identities) {
-        if (identity.eloByGameType && identity.eloByGameType.has(normalizedType)) {
-          identity.eloByGameType.delete(normalizedType);
-          identity.markModified('eloByGameType');
-          await identity.save();
-        }
-      }
-    } else {
-      // Reset all game types
-      await PlayerIdentity.updateMany(
-        { isDeleted: false },
-        { $set: { eloByGameType: {} } }
-      );
-      console.log('✓ Reset all player ELO ratings');
-    }
-  }
-  
+
   // Collect all games to process
   const allGames = [];
-  
+
   // Get Wizard games (non-lean so we can update identities if needed)
   // Include games that are finished OR have completion indicators (winner + scores)
   const wizardGames = await WizardGame.find({
@@ -791,38 +1046,35 @@ async function recalculateAllElo(options = {}) {
       { 'gameData.winner_ids.0': { $exists: true } }
     ]
   });
-  
+
   for (const game of wizardGames) {
-    allGames.push({
-      game,
-      gameType: 'wizard',
-      date: new Date(game.gameData?.created_at || game.createdAt || 0)
-    });
+    allGames.push({ game, gameType: 'wizard', date: getGameDate(game) });
   }
-  
+
   // Get Table games (non-lean so we can update identities if needed)
   if (TableGame) {
     const tableGames = await TableGame.find({
       $or: [
         { gameFinished: true },
-        { 'gameData.gameFinished': true }
+        { 'gameData.gameFinished': true },
+        { 'gameData.gameData.gameFinished': true }
       ]
     });
-    
+
     for (const game of tableGames) {
       // Table game type is stored in gameTypeName or gameData.gameType or game.gameType
       const tableGameType = game.gameTypeName || game.gameData?.gameType || game.gameType || 'table';
       allGames.push({
         game,
         gameType: normalizeGameType(tableGameType),
-        date: new Date(game.gameData?.created_at || game.createdAt || 0)
+        date: getGameDate(game)
       });
     }
   }
-  
+
   // Sort all games chronologically
   allGames.sort((a, b) => a.date - b.date);
-  
+
   // Phase: Normalize gameFinished and resolve missing identities on games
   if (!dryRun) {
     let gamesNormalized = 0;
@@ -830,14 +1082,14 @@ async function recalculateAllElo(options = {}) {
     for (const { game } of allGames) {
       if (!game.gameData?.players) continue;
       let needsSave = false;
-      
+
       // Normalize gameFinished: set to true if missing but game is clearly finished
       if (!game.gameData.gameFinished && isGameFinished(game.gameData)) {
         game.gameData.gameFinished = true;
         needsSave = true;
         gamesNormalized++;
       }
-      
+
       for (const player of game.gameData.players) {
         if (!player.identityId && player.name) {
           try {
@@ -856,7 +1108,7 @@ async function recalculateAllElo(options = {}) {
           const GameModel = game.constructor;
           await GameModel.updateOne(
             { _id: game._id },
-            { $set: { 
+            { $set: {
               'gameData.players': game.gameData.players,
               'gameData.gameFinished': game.gameData.gameFinished
             } }
@@ -873,72 +1125,91 @@ async function recalculateAllElo(options = {}) {
       console.log(`✓ Resolved ${identitiesResolved} missing player identities across games`);
     }
   }
-  
+
   // Filter by game type if specified
-  const gamesToProcess = gameType 
-    ? allGames.filter(g => g.gameType === normalizeGameType(gameType))
+  const gamesToProcess = onlyGameType
+    ? allGames.filter(g => g.gameType === onlyGameType)
     : allGames;
-  
+
   console.log(`📊 Processing ${gamesToProcess.length} finished games...`);
-  
+
+  // Everyone starts from a clean slate; ratings live in memory until the end.
+  // Loaded after the normalization phase so identities it created are included.
+  const identities = await PlayerIdentity.find({ isDeleted: false }, { _id: 1, eloByGameType: 1 }).lean();
+  const ratingState = new Map(
+    identities.map(i => [i._id.toString(), { _id: i._id, eloByGameType: new Map() }])
+  );
+
   let processed = 0;
   let playersUpdated = 0;
   const errors = [];
   const gameTypeCounts = {};
-  
+
   for (const { game: gameDoc, gameType: gt } of gamesToProcess) {
     try {
       gameTypeCounts[gt] = (gameTypeCounts[gt] || 0) + 1;
-      
+
       // Convert Mongoose document to plain object for processing
       const game = gameDoc.toObject ? gameDoc.toObject() : gameDoc;
-      
+
       // Remap identity IDs for merged/linked players so they share one ELO
-      const remappedGameData = remapGameIdentities(game.gameData, mergeMap);
-      const remappedGame = { ...game, gameData: remappedGameData };
-      
-      if (!dryRun) {
-        const updates = await updateRatingsForGame(remappedGame, gt);
-        playersUpdated += updates.length;
-      } else {
-        // Dry run: just calculate
-        const identityIds = (remappedGameData.players || [])
-          .filter(p => p.identityId)
-          .map(p => p.identityId);
-        
-        const identities = await PlayerIdentity.find({
-          _id: { $in: identityIds },
-          isDeleted: false
-        });
-        
-        const identityMap = new Map(
-          identities.map(i => [i._id.toString(), i])
-        );
-        
-        const changes = calculateGameEloChanges(remappedGameData, identityMap, gt);
-        playersUpdated += changes.length;
+      const gameData = remapGameIdentities(getRatableGameData(game), mergeMap);
+      const changes = calculateGameEloChanges(gameData, ratingState, gt);
+
+      for (const change of changes) {
+        const state = ratingState.get(change.identityId.toString());
+        const entry = state.eloByGameType.get(gt) || createEloEntry();
+        state.eloByGameType.set(gt, applyEloChange(entry, change, game));
       }
-      
+      playersUpdated += changes.length;
+
       processed++;
-      
+
       if (onProgress) {
         onProgress(processed, gamesToProcess.length);
       }
-      
+
       if (processed % 100 === 0) {
         console.log(`   Progress: ${processed}/${gamesToProcess.length} (${((processed / gamesToProcess.length) * 100).toFixed(1)}%)`);
+        if (heartbeat) await heartbeat();
       }
     } catch (error) {
       errors.push({ gameId: gameDoc._id, gameType: gt, error: error.message });
     }
   }
-  
+
+  if (!dryRun) {
+    const ops = [];
+    for (const identity of identities) {
+      const computed = ratingState.get(identity._id.toString()).eloByGameType;
+      const stored = identity.eloByGameType || {};
+      const filter = { _id: identity._id };
+
+      if (onlyGameType) {
+        // Leave every other game type untouched
+        const key = `eloByGameType.${onlyGameType}`;
+        if (computed.has(onlyGameType)) {
+          ops.push({ updateOne: { filter, update: { $set: { [key]: computed.get(onlyGameType) } } } });
+        } else if (stored[onlyGameType]) {
+          ops.push({ updateOne: { filter, update: { $unset: { [key]: '' } } } });
+        }
+      } else if (computed.size > 0 || Object.keys(stored).length > 0) {
+        ops.push({ updateOne: { filter, update: { $set: { eloByGameType: Object.fromEntries(computed) } } } });
+      }
+    }
+
+    for (let i = 0; i < ops.length; i += CONFIG.RECALC_WRITE_BATCH) {
+      await PlayerIdentity.bulkWrite(ops.slice(i, i + CONFIG.RECALC_WRITE_BATCH), { ordered: false });
+    }
+    console.log(`✓ Saved ELO for ${ops.length} identities`);
+  }
+
   console.log(`✅ ELO recalculation complete!`);
   console.log(`   Games processed: ${processed}`);
   console.log(`   Player updates: ${playersUpdated}`);
   console.log(`   Errors: ${errors.length}`);
   console.log(`   Games by type:`, gameTypeCounts);
-  
+
   return {
     gamesProcessed: processed,
     playerUpdates: playersUpdated,
@@ -946,6 +1217,20 @@ async function recalculateAllElo(options = {}) {
     errors,
     dryRun
   };
+}
+
+/**
+ * Win rate (percent, one decimal) for a player in one game type.
+ * Uses the per-type win count; entries from before it was tracked fall back
+ * to the identity's overall stats until the next recalculation.
+ */
+function getWinRate(elo, overallStats) {
+  if (typeof elo.wins === 'number' && elo.gamesPlayed > 0) {
+    return ((elo.wins / elo.gamesPlayed) * 100).toFixed(1);
+  }
+  return overallStats?.totalGames > 0
+    ? ((overallStats.totalWins / overallStats.totalGames) * 100).toFixed(1)
+    : '0.0';
 }
 
 /**
@@ -1005,9 +1290,7 @@ async function getEloRankings(options = {}) {
       floor: item.elo.floor || CONFIG.DEFAULT_RATING,
       gamesPlayed: item.elo.gamesPlayed || 0,
       streak: item.elo.streak || 0,
-      winRate: item.identity.stats?.totalGames > 0 
-        ? ((item.identity.stats.totalWins / item.identity.stats.totalGames) * 100).toFixed(1)
-        : '0.0'
+      winRate: getWinRate(item.elo, item.identity.stats)
     })),
     pagination: {
       page,
@@ -1107,11 +1390,18 @@ module.exports = {
   getEloForGameType,
   getPlacementScore,
   getProvisionalDampening,
+  getMarginBonus,
+  getRatableGameData,
+  applyEloChange,
   calculateGameEloChanges,
   buildIdentityMergeMap,
   remapGameIdentities,
   updateRatingsForGame,
   recalculateAllElo,
+  // Recalculation lock steps, exposed for tests
+  acquireRecalculationLock,
+  releaseRecalculationLock,
+  applyDeferredUpdates,
   getEloRankings,
   getEloHistory,
   getAllEloForIdentity

@@ -164,6 +164,9 @@ wizardGameSchema.post('save', async function(doc) {
     if (updates.length > 0) {
       console.log(`ELO updated for ${updates.length} players after wizard game ${doc._id}`);
     }
+    
+    // A finished game changes standings; the leaderboard is rebuilt on next read
+    await require('../utils/leaderboardService').invalidateLeaderboard();
   } catch (error) {
     // Enhanced error logging with game context
     console.error(`[ELO ERROR] Failed to update ELO ratings for wizard game ${doc._id}:`, {

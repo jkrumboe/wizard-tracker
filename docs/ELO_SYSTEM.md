@@ -9,8 +9,8 @@ The ELO system provides competitive rankings for players based on their game per
 - **Multi-player support**: Handles 3-6 player games using pairwise comparisons
 - **Dynamic K-factor**: Rating volatility decreases as players complete more games
 - **Placement-based scoring**: Fractional scores based on placement gap, not binary win/loss
-- **Opponent-normalized**: Pairwise changes divided by opponent count so K represents max change per game
-- **Score margin bonuses**: Decisive wins earn extra rating points (capped penalty for losers)
+- **Opponent-normalized**: Pairwise changes divided by the number of rated opponents so K represents max change per game
+- **Score margin**: Per opponent, a decisive result grows the winner's gain and (capped) the loser's loss; Wizard uses absolute points, other games a relative margin
 - **Per-game cap**: Maximum ±50 rating change per game to prevent extreme swings
 - **Provisional dampening**: Reduced impact when established players face new players
 
@@ -27,7 +27,10 @@ Default ELO parameters (configurable in `backend/utils/eloService.js`):
 | K-factor (developing) | 24 | 10-30 games |
 | K-factor (established) | 20 | 30-100 games |
 | K-factor (veteran) | 16 | 100+ games |
-| Loss Margin Cap | 10% | Max loss penalty regardless of score margin |
+| Margin Bonus | +5% / +10% / +15% | Close / decisive / blowout result |
+| Wizard margins | 10 / 30 / 50 points | Absolute score gap |
+| Other games' margins | 10% / 30% / 50% | Gap relative to the larger score |
+| Loss Margin Cap | 10% | Max extra loss for the loser of a blowout |
 | Max Change Per Game | ±50 | Hard cap on rating change per game |
 | Provisional Dampening | 50% | Reduced impact vs players with < 10 games |
 
@@ -144,7 +147,9 @@ Each player's rating is compared against every other player in the game:
 
 1. **Expected Score** vs opponent: `E = 1 / (1 + 10^((Rb - Ra) / 400))`
 2. **Actual Score**: Placement-based (fractional, not binary) — e.g. 2nd vs 1st in a 6-player game = 0.4 instead of 0
-3. **Rating Change**: `ΔR = K × ((ΣActual - ΣExpected) / numOpponents) × MarginMultiplier`
+3. **Rating Change**: `ΔR = K × Σ((Actual - Expected) × Margin × Dampening) / numOpponents`
+
+Only opponents with a loaded identity count. An unidentified or deleted player keeps its placement but is not an opponent, and a player with no rated opponents is not rated. Players merged into another identity are rated as that identity.
 
 The division by `numOpponents` normalizes the pairwise sum so that K represents the approximate maximum change per game, regardless of how many players are in the game.
 
@@ -166,8 +171,8 @@ Examples in a 6-player game:
 
 ### Multipliers
 
-- **Score Margin (winners)**: +15% for 50+ point wins, +10% for 30-49, +5% for 10-29
-- **Score Margin (losers)**: Capped at -10% maximum, regardless of margin
+- **Score Margin**: Applied per opponent, and only to the result it reinforces. If a player beat an opponent and gained on that pair, the gain grows by +5% / +10% / +15% (close / decisive / blowout). If a player lost to an opponent and lost on that pair, the loss grows by the same bonus capped at +10%. A margin never turns a gain into a bigger loss or the other way round.
+- **Margin scale**: Wizard margins are absolute (10 / 30 / 50 points). Every other game uses the gap relative to the larger of the two scores (10% / 30% / 50%), so Dutch (single digits) and high-scoring games are treated alike. `lowIsBetter` decides who beat whom.
 - **Per-game cap**: Rating change is hard-capped at ±50 to prevent extreme outlier swings
 
 ### Provisional Dampening
@@ -182,7 +187,7 @@ A 1200-rated established player beats a 1000-rated player by 40 points in a 5-pl
 - Average diff: (0.88 - 0.76) = 0.12
 - Margin bonus: 1.10 (decisive win)
 - K-factor: 20 (established player)
-- Change: `20 × 0.12 × 1.10 ≈ +3 rating`
+- Change: `20 × 0.12 × 1.10 ≈ +3 rating` (the margin bonus applies to each opponent the player beat and gained on)
 - Cap check: 3 < 50, no cap applied
 
 ## Production Deployment
@@ -205,14 +210,15 @@ Once ELO is tested and working:
 
 ## Database Schema Changes
 
-The `PlayerIdentity` model now includes:
+The `PlayerIdentity` model stores one entry per game type in `eloByGameType`, a Map keyed by the normalized game type. Table games only store the name they were played under, so the key keeps only letters and digits, lowercased and without accents. That way every spelling of a game shares one rating: "Flip 7", "Flip7" and "FLIP-7" are all `flip7`, and "Dr. Eureka" is `dreureka`. The backend's `normalizeGameType` and the frontend's `getGameTypeKey` (`frontend/src/shared/utils/gameTypes.js`) must produce the same key.
 
 ```javascript
-elo: {
+eloByGameType: Map<string, {
   rating: Number,        // Current ELO (default: 1000)
   peak: Number,          // Highest achieved
   floor: Number,         // Lowest achieved
   gamesPlayed: Number,   // Games counted for ELO
+  wins: Number,          // First places (rankings' win rate); absent on entries from before it was tracked
   lastUpdated: Date,     // Last rating update
   streak: Number,        // Win/loss streak (positive = wins)
   history: [{            // Last 50 rating changes
@@ -223,8 +229,22 @@ elo: {
     placement: Number,
     date: Date
   }]
-}
+}>
 ```
+
+## Recalculation
+
+`recalculateAllElo` replays every finished game in chronological order **in memory**, starting every player at 1000, and then writes all identities with one `bulkWrite` batch per 500 identities. A dry run does the same replay without writing, so its numbers match a real run. With `gameType` set, only that type's entries are replaced.
+
+Live updates (the post-save hooks on `WizardGame` / `TableGame`) and a recalculation share `calculateGameEloChanges` and `applyEloChange`, so they produce the same ratings.
+
+### Recalculation lock
+
+A recalculation overwrites every identity's ratings at the end. A live update written in the meantime would be lost, so a real run (not a dry run) holds a lock: one document in the `elolocks` collection, which works across backend instances.
+
+- While the lock is held, a finished game is **queued** on the lock instead of rated. When the run has written its results, it releases the lock and rates the queued games. A queued game the replay already counted is skipped by the idempotency guard.
+- A recalculation requested while another one runs is not run alongside it. It returns `queued: true`, and the running one goes again (as a full recalculation) when it finishes, so changes made during the run are included.
+- The lock expires 10 minutes after its last refresh (it is refreshed every 100 games), so a crashed run can't block ratings.
 
 ## Troubleshooting
 

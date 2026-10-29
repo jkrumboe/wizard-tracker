@@ -5,6 +5,7 @@ import { getUserPublicProfile } from '@/shared/api/userService'
 import { LocalGameStorage, LocalTableGameStorage } from '@/shared/api'
 import PerformanceStatsEnhanced from '@/pages/profile/PerformanceStatsEnhanced'
 import StatsOverview from '@/components/stats/StatsOverview'
+import { getGameTypeKey, getStatsGameTypes, filterGamesByType } from '@/shared/utils/gameTypes'
 import { TrophyIcon, BarChartIcon } from "@/components/ui/Icon"
 import BackButton from "@/components/ui/BackButton"
 import AvatarEditor from '@/components/profile/AvatarEditor'
@@ -95,59 +96,24 @@ const UserProfile = () => {
 
   // Handler for game type card clicks
   const handleGameTypeClick = useCallback((gameTypeName) => {
-    setStatsGameType(gameTypeName.toLowerCase() === 'wizard' ? 'wizard' : gameTypeName);
+    setStatsGameType(getGameTypeKey(gameTypeName));
     setActiveTab('stats');
   }, []);
 
-  // Get games for stats tab (always use API data from profileUser)
-  const allGamesForStats = useMemo(() => {
-    // Always use profileUser games (from API) to include identity consolidation
-    const gamesSource = profileUser?.games || [];
-    
-    if (!gamesSource || gamesSource.length === 0) return [];
-    
-    // Filter by game type
-    const wizardGames = gamesSource.filter(g => g.gameType !== 'table');
-    const tableGames = gamesSource.filter(g => g.gameType === 'table');
-    
-    if (statsGameType === 'wizard') {
-      return wizardGames;
-    } else {
-      // Filter by specific table game type
-      return tableGames.filter(game => 
-        (game.gameTypeName || game.name) === statsGameType
-      );
-    }
-  }, [profileUser?.games, statsGameType]);
+  // Get games for stats tab (always use API data from profileUser, which
+  // includes identity consolidation)
+  const allGamesForStats = useMemo(
+    () => filterGamesByType(profileUser?.games, statsGameType),
+    [profileUser?.games, statsGameType]
+  );
 
-  // Get available game types for stats selector
-  const availableGameTypes = useMemo(() => {
-    if (!profileUser?.games) return []
-    
-    const types = []
-    
-    const wizardGames = profileUser.games.filter(g => g.gameType !== 'table')
-    if (wizardGames.length > 0) {
-      types.push({ value: 'wizard', label: 'Wizard' })
-    }
-    
-    // Add table game types
-    const tableGameTypes = new Set()
-    profileUser.games
-      .filter(g => g.gameType === 'table')
-      .forEach(game => {
-        const gameType = game.gameTypeName || game.name
-        if (gameType) {
-          tableGameTypes.add(gameType)
-        }
-      })
-    
-    tableGameTypes.forEach(type => {
-      types.push({ value: type, label: type })
-    })
-    
-    return types
-  }, [profileUser?.games])
+  // Game types for the stats selector - spellings of one game share one entry
+  const availableGameTypes = useMemo(
+    () => getStatsGameTypes(profileUser?.games),
+    [profileUser?.games]
+  )
+
+  const statsGameTypeLabel = availableGameTypes.find(type => type.value === statsGameType)?.label || statsGameType
 
   // Auto-select first available game type if invalid selection
   useEffect(() => {
@@ -358,7 +324,7 @@ const UserProfile = () => {
               ) : (
                 <div className="settings-section">
                   <p style={{ textAlign: 'center', padding: '40px 20px' }}>
-                    {t('profile.noGamesForType', { type: statsGameType })}
+                    {t('profile.noGamesForType', { type: statsGameTypeLabel })}
                   </p>
                 </div>
               )}

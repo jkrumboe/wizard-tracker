@@ -5,15 +5,14 @@ import { getFriendLeaderboard } from '@/shared/api/gameService'
 import { userService } from '@/shared/api'
 import { useUser } from '@/shared/hooks/useUser'
 import { sanitizeImageUrl } from '@/shared/utils/urlSanitizer'
+import { useTemplateLookup } from '@/shared/hooks/useGameTemplates'
 import BackButton from '@/components/ui/BackButton'
+import GameThumbnail from '@/components/game/GameThumbnail'
 import {
   ArrowLeftIcon,
-  ExternalLinkIcon,
+  ChevronRightIcon,
   SearchIcon,
   TrophyIcon,
-  UsersIcon,
-  GamepadIcon,
-  TrendingUpIcon,
 } from '@/components/ui/Icon'
 import "@/styles/pages/friend-leaderboard.css"
 
@@ -70,6 +69,7 @@ const FriendLeaderboard = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useUser()
+  const findTemplate = useTemplateLookup()
 
   // Friends selection state
   const [friends, setFriends] = useState([])
@@ -735,48 +735,66 @@ const FriendLeaderboard = () => {
                     {currentTab === 'games' && (
                       <div className="flb-games-list">
                         {recentGames.slice(0, visibleGames).map((game, index) => (
-                          <article key={game.id ?? index} className="flb-game-card">
+                          // Not a <button>: it holds a list, which buttons may not contain
+                          <div
+                            key={game.id ?? index}
+                            role="button"
+                            tabIndex={0}
+                            className="flb-game-card"
+                            onClick={() => navigateToGame(game)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                navigateToGame(game)
+                              }
+                            }}
+                            title={t('leaderboard.viewGameDetails')}
+                          >
                             <header className="flb-game-head">
-                              <span className="flb-game-type">{game.type}</span>
-                              <span className="flb-game-meta">
+                              <span className="flb-game-art" aria-hidden="true">
+                                <span className="flb-game-initial">{(game.type || '?').charAt(0)}</span>
+                                <GameThumbnail template={findTemplate(game.type) || { name: game.type }} />
+                              </span>
+                              <span className="flb-game-title">
+                                <span className="flb-game-type">{game.type}</span>
                                 <span className="flb-game-date">
                                   {new Date(game.date).toLocaleDateString()}
                                 </span>
-                                <button
-                                  type="button"
-                                  className="flb-game-open"
-                                  onClick={() => navigateToGame(game)}
-                                  title={t('leaderboard.viewGameDetails')}
-                                  aria-label={t('leaderboard.viewGameDetails')}
-                                >
-                                  <ExternalLinkIcon size={14} />
-                                </button>
                               </span>
+                              <ChevronRightIcon size={18} className="flb-game-chevron" aria-hidden="true" />
                             </header>
+
+                            <div className="flb-game-columns" aria-hidden="true">
+                              <span className="flb-gp-name">{t('leaderboard.playerHeader')}</span>
+                              <span className="flb-gp-elo-head">{t('leaderboard.eloChangeHeader')}</span>
+                              <span className="flb-gp-score-head">{t('common.score')}</span>
+                            </div>
 
                             <ul className="flb-game-players">
                               {game.players.map((p, i) => (
                                 <li key={i} className={`flb-game-player ${p.won ? 'winner' : ''}`}>
-                                  <span className="flb-gp-name">
-                                    {p.won && <TrophyIcon size={13} />}
-                                    {p.name}
+                                  <span className="flb-gp-icon" aria-hidden="true">
+                                    {p.won && <TrophyIcon size={14} />}
                                   </span>
-                                  <span className="flb-gp-right">
+                                  <span className="flb-gp-name">{p.name}</span>
+                                  <span className="flb-gp-elo-cell">
                                     {p.eloChange != null && (
                                       <span
-                                        className={`elo-badge ${p.eloChange > 0
+                                        className={`flb-gp-elo ${p.eloChange > 0
                                           ? 'positive'
                                           : p.eloChange < 0 ? 'negative' : ''}`}
+                                        title={t('leaderboard.eloChangeHeader')}
                                       >
-                                        {p.eloChange > 0 ? '+' : ''}{p.eloChange}
+                                        {p.eloChange > 0 ? '+' : p.eloChange < 0 ? '−' : '±'}
+                                        {Math.abs(p.eloChange)}
                                       </span>
                                     )}
-                                    <span className="flb-gp-score">{p.score}</span>
                                   </span>
+                                  <span className="flb-gp-score">{p.score}</span>
                                 </li>
                               ))}
                             </ul>
-                          </article>
+                          </div>
                         ))}
 
                         {recentGames.length > visibleGames && (

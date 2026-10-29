@@ -6,15 +6,8 @@ import { useGameStats } from '@/shared/hooks/useGameStats';
 import { useAllUserElo } from '@/shared/hooks/useElo';
 import { useTemplateLookup } from '@/shared/hooks/useGameTemplates';
 import GameThumbnail from '@/components/game/GameThumbnail';
+import { getGameTypeKey } from '@/shared/utils/gameTypes';
 import '@/styles/pages/account.css';
-
-/**
- * Normalize game type to match ELO keys (e.g., "Flip 7" -> "flip-7")
- */
-const normalizeGameType = (gameType) => {
-  if (!gameType) return 'unknown';
-  return gameType.toLowerCase().replace(/\s+/g, '-');
-};
 
 /**
  * Unified stats overview component used by both Account and UserProfile pages
@@ -51,7 +44,7 @@ const StatsOverview = ({ games, user, onGameTypeClick, identityId }) => {
       {/* Game Types Grid with Recent Performance */}
       <div className="overview-grid">
         {overviewStats.gameTypes.map(gameType => {
-          const normalizedType = normalizeGameType(gameType.name);
+          const normalizedType = getGameTypeKey(gameType.name);
           const eloData = eloByGameType?.[normalizedType];
           const currentElo = eloData?.rating;
           const template = findTemplate(gameType.name) || { name: gameType.name };

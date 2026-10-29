@@ -94,11 +94,6 @@
     "nonStandard": 8,
     "important": 4
   },
-  "pages/friend-leaderboard.css": {
-    "maxWidth": 1,
-    "nonStandard": 2,
-    "important": 2
-  },
   "pages/gameDetails.css": {
     "maxWidth": 0,
     "nonStandard": 0,
