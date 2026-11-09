@@ -201,9 +201,13 @@ registerRoute(
   })
 );
 
-// Cache images with CacheFirst strategy
+// Cache same-origin images with CacheFirst strategy.
+// Cross-origin images (e.g. BGG box art on cf.geekdo-images.com) must NOT be
+// routed here: a fetch() from the SW is checked against CSP connect-src (not
+// img-src), so it gets blocked and the <img> fails. Opaque responses would
+// also bloat cache quota. Let the browser load them directly instead.
 registerRoute(
-  ({ request }) => request.destination === 'image',
+  ({ request, url }) => request.destination === 'image' && url.origin === self.location.origin,
   new CacheFirst({
     cacheName: 'images-cache',
     plugins: [
