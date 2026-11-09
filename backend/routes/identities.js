@@ -3,7 +3,7 @@ const { query, param, body, validationResult } = require('express-validator');
 const PlayerIdentity = require('../models/PlayerIdentity');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { eloPublicLimiter } = require('../middleware/rateLimiter');
+const { eloPublicLimiter, eloAdminLimiter } = require('../middleware/rateLimiter');
 const identityService = require('../utils/identityService');
 const eloService = require('../utils/eloService');
 const cache = require('../utils/redis');
@@ -1017,8 +1017,9 @@ router.get('/elo/me/all', auth, async (req, res, next) => {
  * Admin: Recalculate all ELO ratings from scratch
  * Body: { dryRun: boolean, gameType?: string }
  */
-router.post('/elo/recalculate', 
-  auth, 
+router.post('/elo/recalculate',
+  eloAdminLimiter,
+  auth,
   requireAdmin,
   [
     body('dryRun')

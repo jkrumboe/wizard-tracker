@@ -69,8 +69,7 @@ const apiLimiter = createLimiter({
   message: 'Too many API requests, please try again later.',
   skip: (req) => {
     // Skip for routes that have their own dedicated rate limiters
-    return req.path.startsWith('/elo/recalculate') || 
-           req.path.startsWith('/admin/');
+    return req.path.startsWith('/elo/recalculate');
   },
 });
 
