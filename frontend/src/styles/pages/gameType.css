@@ -605,11 +605,14 @@
   overflow: hidden;
 }
 
+/* Two per row: four in one row is too tight in the sidebar ("60–120 min").
+   The 1px gap over a border-coloured background draws the dividers. */
 .game-type-stats {
   display: grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
   margin: 0;
+  background: var(--border);
   border-bottom: 1px solid var(--border);
 }
 
@@ -617,14 +620,17 @@
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
   padding: var(--spacing-sm) var(--spacing-xs);
+  background: var(--card-bg);
   text-align: center;
 }
 
-.game-type-stat + .game-type-stat {
-  border-left: 1px solid var(--border);
+/* An odd last stat takes the full row instead of leaving a hole */
+.game-type-stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .game-type-stat dt {
@@ -632,11 +638,9 @@
   align-items: center;
   gap: 4px;
   max-width: 100%;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   line-height: 1.2;
   color: var(--text-muted);
-  /* Long labels ("Playing time", "Komplexität") wrap rather than get cut */
-  overflow-wrap: anywhere;
 }
 
 .game-type-stat dt svg {
