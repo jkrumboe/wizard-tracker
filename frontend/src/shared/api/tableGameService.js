@@ -3,6 +3,7 @@
 import { API_ENDPOINTS } from "@/shared/api/config";
 import { LocalTableGameStorage } from "@/shared/api/localTableGameStorage";
 import { getGameContentKey } from "@/shared/utils/gameDedup";
+import { withTemplateSnapshot } from "@/shared/utils/templateSnapshot";
 
 /**
  * Build a content key for a table game from whichever shape it comes in, so a
@@ -44,7 +45,8 @@ export async function createTableGame(gameData, localId) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify({ gameData, localId })
+    // The template copy lets an admin publish this game for everyone later
+    body: JSON.stringify({ gameData: withTemplateSnapshot(gameData), localId })
   });
   
   if (res.status === 401) {

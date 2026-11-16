@@ -15,6 +15,10 @@ import RankBadge from "@/components/game/RankBadge"
 import { GameHighlights } from "@/components/game/GameHighlights"
 import { computeHighlights } from "@/shared/utils/gameHighlights"
 import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
+import { useUser } from "@/shared/hooks/useUser"
+import { useTemplateLookup, notifyTemplatesChanged } from "@/shared/hooks/useGameTemplates"
+import { isSystemTemplate } from "@/shared/utils/attachGameInfo"
+import PublishGameModal from "@/components/modals/PublishGameModal"
 
 const GameDetailsSkeleton = () => (
   <div className="game-details-container">
@@ -48,6 +52,10 @@ const TableGameDetails = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('standings')
+  const { user } = useUser()
+  const findTemplate = useTemplateLookup()
+  const [showPublish, setShowPublish] = useState(false)
+  const [publishedName, setPublishedName] = useState(null)
   const [isLandscape] = useState(() => {
     if (typeof window !== 'undefined' && globalThis.screen && globalThis.screen.orientation) {
       return globalThis.screen.orientation.type.startsWith('landscape')
@@ -216,6 +224,50 @@ const TableGameDetails = () => {
     lowIsBetter,
   })
 
+  // The name opens the game's page; for a game that isn't one yet, admins publish it from here.
+  // The state lets that page's back button return here instead of to the game list.
+  const knownTemplate = findTemplate(gameName)
+  const isPublic = publishedName === gameName || Boolean(knownTemplate && isSystemTemplate(knownTemplate))
+  const publishId = String(game.cloudId || game.cloudGameId || game.localId || game.id || id)
+  const canPublish = user?.role === 'admin' && !isPublic
+  const gameTypePath = `/game-types/${encodeURIComponent(knownTemplate?.name || gameName)}/info`
+  const openGameType = () => navigate(gameTypePath, { state: { fromGameDetails: true } })
+
+  const handlePublished = ({ alreadyPublic }) => {
+    setShowPublish(false)
+    setPublishedName(gameName)
+    notifyTemplatesChanged()
+    if (alreadyPublic) alert(t('gameTemplates.alreadyPublic', { name: gameName }))
+    // Finish it there: edit settings, change box art, scan the barcode
+    openGameType()
+  }
+
+  let gameNameElement = <div className="game-name">{gameName}</div>
+  if (canPublish) {
+    gameNameElement = (
+      <button
+        type="button"
+        className="game-name game-name-action"
+        onClick={() => setShowPublish(true)}
+        aria-haspopup="dialog"
+        title={t('gameType.publish')}
+      >
+        {gameName}
+      </button>
+    )
+  } else if (knownTemplate || isPublic) {
+    gameNameElement = (
+      <Link
+        to={gameTypePath}
+        state={{ fromGameDetails: true }}
+        className="game-name game-name-action"
+        title={t('gameDetails.openGame', { name: gameName })}
+      >
+        {gameName}
+      </Link>
+    )
+  }
+
   // Side-by-side panels on landscape and wide screens, tabs otherwise
   const showAllPanels = isLandscape || windowWidth > 768
 
@@ -226,9 +278,17 @@ const TableGameDetails = () => {
         <BackButton className="game-details-back" fallback="/games" />
 
         <div className="game-title-section">
-          <div className="game-name">{gameName}</div>
+          {gameNameElement}
           <div className="game-date">{formattedDate}</div>
         </div>
+
+        <PublishGameModal
+          isOpen={showPublish}
+          onClose={() => setShowPublish(false)}
+          gameName={gameName}
+          gameId={publishId}
+          onPublished={handlePublished}
+        />
 
       </div>
 

@@ -426,6 +426,7 @@
   },
 
   "gameDetails": {
+    "openGame": "{{name}} öffnen",
     "goBack": "Zurück",
     "gameName": "Wizard",
     "standingsTab": "Platzierung",
@@ -548,8 +549,21 @@
     "suggestNote": "Füge eine optionale Notiz für den Admin hinzu (warum dies eine Systemvorlage sein sollte):",
     "suggestionSubmitted": "Vorschlag erfolgreich eingereicht!",
     "suggestionFailed": "Vorschlag konnte nicht eingereicht werden. Bitte versuche es erneut.",
+    "publishConfirm": "\"{{name}}\" als Spiel für alle veröffentlichen?",
+    "publishedDirectly": "\"{{name}}\" ist jetzt für alle verfügbar.",
+    "publishKeptForReview": "Noch nicht veröffentlicht: {{reason}}\n\nDer Vorschlag wartet unter Admin › Vorlagenvorschläge, wo du ihn trotzdem hinzufügen kannst.",
+    "alreadyPublic": "\"{{name}}\" ist bereits für alle verfügbar.",
+    "publishFailed": "Das Spiel konnte nicht veröffentlicht werden. Bitte versuche es erneut.",
     "changeRequestSubmitted": "Änderungsanfrage erfolgreich eingereicht!",
     "changeRequestFailed": "Änderungsanfrage konnte nicht eingereicht werden. Bitte versuche es erneut."
+  },
+  "publishGame": {
+    "title": "Für alle veröffentlichen",
+    "pointEveryone": "Alle können dieses Spiel aus der Spieleliste starten.",
+    "pointLinked": "Alle als \"{{name}}\" gespielten Partien erscheinen darunter, auch die deiner Freunde.",
+    "pointBgg": "Schachtelbild, Spielerzahl und Regeln werden über den Namen auf BoardGameGeek gesucht.",
+    "pointEditLater": "Danach landest du auf der Spielseite, um Einstellungen zu prüfen oder das Schachtelbild zu ändern.",
+    "publishing": "Wird veröffentlicht..."
   },
 
   "loadGameDialog": {
@@ -1143,6 +1157,7 @@
     "makeLocalChanges": "Lokale Änderungen vornehmen",
     "requestChanges": "Änderungen vorschlagen",
     "suggestGameType": "Spieltyp vorschlagen",
+    "publishGameType": "Für alle veröffentlichen",
     "saveChanges": "Änderungen speichern",
     "createGame": "Spiel erstellen",
     "enterGameNameError": "Bitte gib einen Spielnamen ein",
@@ -1857,6 +1872,7 @@
     "edit": "Bearbeiten",
     "customize": "Anpassen",
     "suggest": "Für alle vorschlagen",
+    "publish": "Für alle veröffentlichen",
     "findBoxArt": "Schachtelbild finden",
     "resetToDefault": "Auf Standard zurücksetzen",
     "resetConfirm": "Deine Änderungen entfernen und zur gemeinsamen Version dieses Spiels zurückkehren?",

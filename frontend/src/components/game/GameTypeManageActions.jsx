@@ -95,11 +95,20 @@ const GameTypeManageActions = ({ template, children }) => {
   };
 
   const handleSuggestToAdmin = async () => {
-    const note = prompt(t('gameTemplates.suggestNote'));
+    // Admins publish directly, so there is nobody to leave a note for
+    const note = isAdmin ? '' : prompt(t('gameTemplates.suggestNote'));
     if (note === null) return;
+    if (isAdmin && !confirm(t('gameTemplates.publishConfirm', { name: template.name }))) return;
     try {
-      await LocalTableGameTemplate.suggestToAdmin(template.id, note);
-      alert(t('gameTemplates.suggestionSubmitted'));
+      const result = await LocalTableGameTemplate.suggestToAdmin(template.id, note);
+      if (result?.applied) {
+        notifyTemplatesChanged();
+        alert(t('gameTemplates.publishedDirectly', { name: template.name }));
+      } else if (result?.reviewError) {
+        alert(t('gameTemplates.publishKeptForReview', { reason: result.reviewError }));
+      } else {
+        alert(t('gameTemplates.suggestionSubmitted'));
+      }
     } catch (error) {
       console.error('Error suggesting to admin:', error);
       alert(error?.message
@@ -223,7 +232,7 @@ ${error.message}`
       {isLocal && user && !template.isVariant && (
         <button type="button" className="game-type-pill" onClick={() => void handleSuggestToAdmin()}>
           <Icon name="Megaphone" size={16} aria-hidden="true" />
-          <span>{t('gameType.suggest')}</span>
+          <span>{isAdmin ? t('gameType.publish') : t('gameType.suggest')}</span>
         </button>
       )}
       {isLocal && (

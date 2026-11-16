@@ -5,6 +5,7 @@ const TemplateSuggestion = require('../models/TemplateSuggestion');
 const SystemGameTemplate = require('../models/SystemGameTemplate');
 const UserGameTemplate = require('../models/UserGameTemplate');
 const User = require('../models/User');
+const TableGame = require('../models/TableGame');
 const cache = require('../utils/redis');
 
 // A BGG token without network: tests that need BGG answers mock them per call
@@ -14,7 +15,7 @@ jest.mock('../utils/bggClient', () => ({
   fetchBggXml: jest.fn(() => Promise.reject(new Error('BGG not reachable in tests'))),
   fetchBggThingXml: jest.fn(() => Promise.reject(new Error('BGG not reachable in tests'))),
 }));
-const { fetchBggThingXml } = require('../utils/bggClient');
+const { fetchBggXml, fetchBggThingXml } = require('../utils/bggClient');
 
 let mongoConnected = false;
 let token;
@@ -664,6 +665,235 @@ describe('Suggestion review workflow', () => {
 
     const stored = await SystemGameTemplate.findById(template._id).lean();
     expect(stored.targetNumber).toBe(100);
+  });
+
+  test('an admin publishing their own template skips the review queue', async () => {
+    if (!mongoConnected) return;
+
+    const userTemplate = await UserGameTemplate.create({ userId, name: `Admin Direct ${Date.now()}`, targetNumber: 42 });
+    let createdId = null;
+    try {
+      const published = await request(app)
+        .post(`/api/game-templates/${userTemplate._id}/suggest`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ suggestionNote: '' })
+        .expect(201);
+      expect(published.body.applied).toBe(true);
+      createdId = published.body.template._id;
+
+      const stored = await SystemGameTemplate.findById(createdId).lean();
+      expect(stored).toMatchObject({ name: userTemplate.name, targetNumber: 42, isActive: true });
+
+      // Kept in the history as approved, not left in the queue
+      const suggestion = await TemplateSuggestion.findById(published.body.suggestion._id).lean();
+      expect(suggestion.status).toBe('approved');
+      expect(String(suggestion.reviewedBy)).toBe(String(userId));
+      expect((await UserGameTemplate.findById(userTemplate._id).lean()).approvedAsSystemTemplate).toBe(true);
+    } finally {
+      await UserGameTemplate.findByIdAndDelete(userTemplate._id);
+      if (createdId) await SystemGameTemplate.findByIdAndDelete(createdId);
+    }
+  });
+
+  test('a regular user template suggestion still waits for review', async () => {
+    if (!mongoConnected) return;
+    await setRole('user');
+
+    const userTemplate = await UserGameTemplate.create({ userId, name: `User Queued ${Date.now()}` });
+    try {
+      const suggested = await request(app)
+        .post(`/api/game-templates/${userTemplate._id}/suggest`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ suggestionNote: 'please' })
+        .expect(201);
+      expect(suggested.body.applied).toBe(false);
+      expect((await TemplateSuggestion.findById(suggested.body.suggestion._id).lean()).status).toBe('pending');
+      expect(await SystemGameTemplate.findOne({ name: userTemplate.name })).toBeNull();
+    } finally {
+      await UserGameTemplate.findByIdAndDelete(userTemplate._id);
+    }
+  });
+
+  test('an admin can publish a game another player created, straight from a played game', async () => {
+    if (!mongoConnected) return;
+
+    // The friend's cloud template and a game they uploaded with it
+    const friendId = new mongoose.Types.ObjectId();
+    const name = `Friend Game ${Date.now()}`;
+    const friendTemplate = await UserGameTemplate.create({
+      userId: friendId, name, targetNumber: 10, lowIsBetter: true, description: 'Friend rules',
+    });
+    const game = await TableGame.create({
+      userId: friendId, localId: `table_${Date.now()}`, name, gameTypeName: name,
+      gameData: { gameName: name, players: [{ name: 'A', points: [3] }], gameFinished: true },
+      gameFinished: true,
+    });
+    let createdId = null;
+    try {
+      const published = await request(app)
+        .post(`/api/game-templates/admin/publish-from-game/${game._id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(201);
+      createdId = published.body.template._id;
+      expect(published.body.source).toBe('userTemplate');
+
+      const stored = await SystemGameTemplate.findById(createdId).lean();
+      expect(stored).toMatchObject({ name, targetNumber: 10, lowIsBetter: true, description: 'Friend rules', isActive: true });
+      expect(String(stored.createdBy)).toBe(String(friendId));
+      expect((await UserGameTemplate.findById(friendTemplate._id).lean().exec()).approvedAsSystemTemplate).toBe(true);
+
+      const history = await TemplateSuggestion.findOne({ systemTemplateId: createdId }).lean();
+      expect(history).toMatchObject({ status: 'approved', suggestionType: 'new' });
+      expect(String(history.reviewedBy)).toBe(String(userId));
+
+      // Publishing again (also by localId) reports it is already public
+      const again = await request(app)
+        .post(`/api/game-templates/admin/publish-from-game/${game.localId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(409);
+      expect(again.body.code).toBe('DUPLICATE_NAME');
+
+      // Regular users can't do this
+      await setRole('user');
+      await request(app)
+        .post(`/api/game-templates/admin/publish-from-game/${game._id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+    } finally {
+      await TemplateSuggestion.deleteMany({ userId: friendId });
+      await UserGameTemplate.findByIdAndDelete(friendTemplate._id);
+      await TableGame.findByIdAndDelete(game._id);
+      if (createdId) await SystemGameTemplate.findByIdAndDelete(createdId);
+    }
+  });
+
+  test('a template copy uploaded with the game is what gets published', async () => {
+    if (!mongoConnected) return;
+
+    const name = `Snapshot Game ${Date.now()}`;
+    // Uploaded by a regular player whose template only ever lived on their phone
+    await setRole('user');
+    const uploaded = await request(app)
+      .post('/api/table-games')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        localId: `table_snap_${Date.now()}`,
+        gameData: {
+          gameName: name,
+          targetNumber: 10,
+          gameFinished: true,
+          players: [{ name: 'A', points: [1] }],
+          templateSnapshot: {
+            name,
+            targetNumber: 10,
+            lowIsBetter: true,
+            minPlayers: 3,
+            maxPlayers: 4,
+            description: 'Phone-only rules',
+            descriptionMarkdown: '# Rules',
+            gameInfo: { bggId: 13, thumbnailUrl: thumb },
+            roundPattern: 'not-a-pattern',
+            $where: 'ignored',
+          },
+        },
+      })
+      .expect(201);
+    const gameId = uploaded.body.game._id;
+    // Only known template fields are kept
+    expect(uploaded.body.game.gameData.templateSnapshot.$where).toBeUndefined();
+    expect(uploaded.body.game.gameData.templateSnapshot.roundPattern).toBeNull();
+
+    await setRole('admin');
+    let createdId = null;
+    try {
+      const published = await request(app)
+        .post(`/api/game-templates/admin/publish-from-game/${gameId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(201);
+      createdId = published.body.template._id;
+      expect(published.body.source).toBe('gameSnapshot');
+      expect(await SystemGameTemplate.findById(createdId).lean()).toMatchObject({
+        name,
+        targetNumber: 10,
+        lowIsBetter: true,
+        minPlayers: 3,
+        maxPlayers: 4,
+        description: 'Phone-only rules',
+        descriptionMarkdown: '# Rules',
+        gameInfo: { bggId: 13, thumbnailUrl: thumb },
+      });
+    } finally {
+      await TemplateSuggestion.deleteMany({ systemTemplateId: createdId });
+      await TableGame.findByIdAndDelete(gameId);
+      if (createdId) await SystemGameTemplate.findByIdAndDelete(createdId);
+    }
+  });
+
+  test('publishing links the game to BoardGameGeek by its name', async () => {
+    if (!mongoConnected) return;
+
+    const name = 'Die Siedler von Catan';
+    await SystemGameTemplate.deleteMany({ name });
+    const game = await TableGame.create({
+      userId: new mongoose.Types.ObjectId(), localId: `table_bgg_${Date.now()}`, name, gameTypeName: name,
+      gameData: { gameName: name, gameFinished: true }, gameFinished: true,
+    });
+    // BGG finds the German title as an alternate name of Catan (and a later reprint)
+    fetchBggXml.mockResolvedValueOnce(`<items total="3">
+      <item type="boardgame" id="99999"><name type="alternate" value="Die Siedler von Catan"/><yearpublished value="2015"/></item>
+      <item type="boardgame" id="13"><name type="alternate" value="Die Siedler von Catan"/><yearpublished value="1995"/></item>
+      <item type="boardgame" id="5"><name type="alternate" value="Die Siedler von Catan: Junior"/><yearpublished value="2011"/></item>
+    </items>`);
+    fetchBggThingXml.mockResolvedValueOnce(`<items><item type="boardgame" id="13">
+      <thumbnail>https://cf.geekdo-images.com/catan__thumb.jpg</thumbnail>
+      <image>https://cf.geekdo-images.com/catan.jpg</image>
+      <minplayers value="3" /><maxplayers value="4" /><playingtime value="120" />
+    </item></items>`);
+    let createdId = null;
+    try {
+      const published = await request(app)
+        .post(`/api/game-templates/admin/publish-from-game/${game._id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(201);
+      createdId = published.body.template._id;
+      expect(published.body.bggLinked).toBe(true);
+      expect(fetchBggThingXml).toHaveBeenLastCalledWith([13]);
+
+      const stored = await SystemGameTemplate.findById(createdId).lean();
+      expect(stored).toMatchObject({ name, minPlayers: 3, maxPlayers: 4 });
+      expect(stored.gameInfo).toMatchObject({
+        bggId: 13, thumbnailUrl: 'https://cf.geekdo-images.com/catan__thumb.jpg', playingTime: 120, yearPublished: 1995,
+      });
+    } finally {
+      await TemplateSuggestion.deleteMany({ systemTemplateId: createdId });
+      await TableGame.findByIdAndDelete(game._id);
+      if (createdId) await SystemGameTemplate.findByIdAndDelete(createdId);
+    }
+  });
+
+  test('without a cloud template the games own settings are published', async () => {
+    if (!mongoConnected) return;
+
+    const name = `Loose Game ${Date.now()}`;
+    const game = await TableGame.create({
+      userId: new mongoose.Types.ObjectId(), localId: `table_loose_${Date.now()}`, name, gameTypeName: name,
+      gameData: { gameName: name, targetNumber: 50, lowIsBetter: false, gameFinished: true },
+      targetNumber: 50, gameFinished: true,
+    });
+    let createdId = null;
+    try {
+      const published = await request(app)
+        .post(`/api/game-templates/admin/publish-from-game/${game._id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(201);
+      createdId = published.body.template._id;
+      expect(published.body.source).toBe('game');
+      expect(await SystemGameTemplate.findById(createdId).lean()).toMatchObject({ name, targetNumber: 50, gameCategory: 'table' });
+    } finally {
+      await TemplateSuggestion.deleteMany({ systemTemplateId: createdId });
+      await TableGame.findByIdAndDelete(game._id);
+      if (createdId) await SystemGameTemplate.findByIdAndDelete(createdId);
+    }
   });
 
   test('a new template named like an existing one needs explicit confirmation', async () => {

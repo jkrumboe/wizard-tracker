@@ -426,6 +426,7 @@
   },
 
   "gameDetails": {
+    "openGame": "Open {{name}}",
     "goBack": "Go back",
     "gameName": "Wizard",
     "standingsTab": "Standings",
@@ -548,8 +549,21 @@
     "suggestNote": "Add an optional note for the admin (why this should be a system template):",
     "suggestionSubmitted": "Suggestion submitted successfully!",
     "suggestionFailed": "Failed to submit suggestion. Please try again.",
+    "publishConfirm": "Publish \"{{name}}\" as a game for everyone?",
+    "publishedDirectly": "\"{{name}}\" is now available to everyone.",
+    "publishKeptForReview": "Not published yet: {{reason}}\n\nIt is waiting in Admin › Template suggestions, where you can add it anyway.",
+    "alreadyPublic": "\"{{name}}\" is already available to everyone.",
+    "publishFailed": "Could not publish this game. Please try again.",
     "changeRequestSubmitted": "Change request submitted successfully!",
     "changeRequestFailed": "Failed to submit change request. Please try again."
+  },
+  "publishGame": {
+    "title": "Publish for everyone",
+    "pointEveryone": "Everyone can start this game from the game list.",
+    "pointLinked": "All games played as \"{{name}}\" appear under it, including your friends' games.",
+    "pointBgg": "Box art, player counts and rules are looked up on BoardGameGeek by the name.",
+    "pointEditLater": "You land on the game page afterwards to check settings or change the box art.",
+    "publishing": "Publishing..."
   },
 
   "loadGameDialog": {
@@ -1143,6 +1157,7 @@
     "makeLocalChanges": "Make Local Changes",
     "requestChanges": "Request Changes",
     "suggestGameType": "Suggest Game Type",
+    "publishGameType": "Publish for everyone",
     "saveChanges": "Save Changes",
     "createGame": "Create Game",
     "enterGameNameError": "Please enter a game name",
@@ -1857,6 +1872,7 @@
     "edit": "Edit",
     "customize": "Customize",
     "suggest": "Suggest for everyone",
+    "publish": "Publish for everyone",
     "findBoxArt": "Find box art",
     "resetToDefault": "Reset to default",
     "resetConfirm": "Remove your changes and go back to the shared version of this game?",

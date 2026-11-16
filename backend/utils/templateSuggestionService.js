@@ -340,6 +340,128 @@ const rejectSuggestion = async (id, reviewer, reviewNote) => {
   return rejected;
 };
 
+const finiteOrNull = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+const textOrEmpty = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '');
+
+/**
+ * The template copy a client uploads with a table game, reduced to known
+ * template fields with sane types and lengths. Null when there is nothing usable.
+ * @param {*} input
+ * @returns {Object|null}
+ */
+const sanitizeTemplateSnapshot = (input) => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const name = textOrEmpty(input.name, 100).trim();
+  if (!name) return null;
+  const formula = input.scoringFormula && typeof input.scoringFormula === 'object'
+    ? {
+      baseCorrect: finiteOrNull(input.scoringFormula.baseCorrect),
+      bonusPerTrick: finiteOrNull(input.scoringFormula.bonusPerTrick),
+      penaltyPerDiff: finiteOrNull(input.scoringFormula.penaltyPerDiff),
+    }
+    : null;
+  return {
+    name,
+    targetNumber: finiteOrNull(input.targetNumber),
+    lowIsBetter: input.lowIsBetter === true,
+    gameCategory: ['table', 'callAndMade'].includes(input.gameCategory) ? input.gameCategory : 'table',
+    scoringFormula: formula && Object.values(formula).some((value) => value !== null) ? formula : null,
+    roundPattern: ['pyramid', 'ascending', 'fixed'].includes(input.roundPattern) ? input.roundPattern : null,
+    maxRounds: finiteOrNull(input.maxRounds),
+    minPlayers: finiteOrNull(input.minPlayers),
+    maxPlayers: finiteOrNull(input.maxPlayers),
+    hasDealerRotation: input.hasDealerRotation !== false,
+    hasForbiddenCall: input.hasForbiddenCall !== false,
+    description: textOrEmpty(input.description, 5000),
+    descriptionMarkdown: textOrEmpty(input.descriptionMarkdown, 7500),
+    gameInfo: sanitizeGameInfo(input.gameInfo) || null,
+  };
+};
+
+/**
+ * Make the game a played table game belongs to available to everyone, without
+ * the player who created it having to suggest it. Settings come from, in order:
+ * the template copy uploaded with the game (what was actually played), the
+ * player's cloud template (the uploader's first, then anyone's with the same
+ * name), or the game's own scoring settings. Recorded as an approved
+ * suggestion by the template's creator so it shows in the review history.
+ * @param {string} gameId - TableGame _id or the client's localId
+ * @param {Object} admin - The admin user
+ * @returns {Promise<{template: Object, source: 'gameSnapshot'|'userTemplate'|'game'}>}
+ */
+const publishFromGame = async (gameId, admin) => {
+  const TableGame = require('../models/TableGame');
+  const id = String(gameId || '');
+  const game = mongoose.Types.ObjectId.isValid(id)
+    ? await TableGame.findById(id)
+    : await TableGame.findOne({ localId: { $eq: id } });
+  if (!game) throw new SuggestionReviewError('Game not found', 404);
+
+  const gameData = toPlain(game).gameData?.gameData || toPlain(game).gameData || {};
+  const name = String(game.gameTypeName || game.name || gameData.gameName || '').trim();
+  if (!name) throw new SuggestionReviewError('This game has no name to publish', 400);
+
+  const duplicate = await findTemplateNamed(name);
+  if (duplicate) {
+    throw new SuggestionReviewError(
+      `"${duplicate.name}" is already available to everyone`,
+      409,
+      { code: 'DUPLICATE_NAME', duplicateOf: duplicate }
+    );
+  }
+
+  const sameName = { name: new RegExp(`^${escapeRegex(name)}$`, 'i') };
+  const userTemplate = (game.userId && await UserGameTemplate.findOne({ ...sameName, userId: game.userId }))
+    || await UserGameTemplate.findOne(sameName).sort({ updatedAt: -1 });
+
+  const snapshot = sanitizeTemplateSnapshot(gameData.templateSnapshot);
+  const templateSource = snapshot || userTemplate;
+  let source = 'game';
+  if (snapshot) source = 'gameSnapshot';
+  else if (userTemplate) source = 'userTemplate';
+
+  const fields = templateSource
+    ? Object.fromEntries(CHANGE_FIELDS.map((field) => [field, valueForTemplate(templateSource, field)]))
+    : {
+      name,
+      targetNumber: game.targetNumber ?? gameData.targetNumber ?? null,
+      lowIsBetter: Boolean(game.lowIsBetter ?? gameData.lowIsBetter),
+    };
+  fields.name = name;
+
+  const creatorId = userTemplate?.userId || game.userId || admin._id;
+  const template = new SystemGameTemplate({
+    ...fields,
+    gameCategory: fields.gameCategory || 'table',
+    hasDealerRotation: fields.hasDealerRotation !== false,
+    hasForbiddenCall: fields.hasForbiddenCall !== false,
+    descriptionMarkdown: fields.descriptionMarkdown || '',
+    createdBy: creatorId,
+    isActive: true,
+  });
+  await template.save();
+
+  if (userTemplate) {
+    userTemplate.approvedAsSystemTemplate = true;
+    userTemplate.systemTemplateId = template._id;
+    await userTemplate.save();
+  }
+
+  await TemplateSuggestion.create({
+    ...fields,
+    userId: creatorId,
+    userTemplateId: userTemplate?._id || null,
+    systemTemplateId: template._id,
+    suggestionType: 'new',
+    status: 'approved',
+    reviewedAt: new Date(),
+    reviewedBy: admin._id,
+    reviewNote: 'Published by admin from a played game',
+  });
+
+  return { template, source };
+};
+
 module.exports = {
   CHANGE_FIELDS,
   STATUSES,
@@ -350,7 +472,9 @@ module.exports = {
   findSystemTemplate,
   findTemplateNamed,
   listSuggestions,
+  publishFromGame,
   rejectSuggestion,
   sameValue,
+  sanitizeTemplateSnapshot,
   snapshotTemplate,
 };

@@ -16,6 +16,33 @@ const ENDPOINTS = {
   approveSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}/approve`,
   rejectSuggestion: (id) => `${API_BASE_URL}/api/game-templates/admin/suggestions/${id}`,
   templateById: (id) => `${API_BASE_URL}/api/game-templates/${id}`,
+  publishFromGame: (gameId) => `${API_BASE_URL}/api/game-templates/admin/publish-from-game/${encodeURIComponent(gameId)}`,
+};
+
+/**
+ * Make the game a played table game belongs to available to everyone (admin only),
+ * even when another player created it.
+ * @param {string} gameId - Cloud game id or the game's localId
+ * @returns {Promise<{template: Object, source: string}>}
+ * @throws {Error} With `status` and, for an existing public game, `code: 'DUPLICATE_NAME'`
+ */
+export const publishGameFromPlayedGame = async (gameId) => {
+  const token = localStorage.getItem('auth_token');
+  if (!token) throw new Error('Not authenticated');
+
+  const response = await fetch(ENDPOINTS.publishFromGame(gameId), {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(body.error || `Failed to publish game (HTTP ${response.status})`);
+    err.status = response.status;
+    err.code = body.code;
+    throw err;
+  }
+  void invalidateSystemTemplates();
+  return body;
 };
 
 /**

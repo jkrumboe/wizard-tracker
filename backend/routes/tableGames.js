@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
 const catchAsync = require('../utils/catchAsync');
+const { sanitizeTemplateSnapshot } = require('../utils/templateSuggestionService');
 
 const router = express.Router();
 
@@ -138,6 +139,12 @@ router.post('/', auth, catchAsync(async (req, res) => {
 
     // Resolve player identities before saving
     const resolvedGameData = { ...gameData };
+    // Copy of the template the game was played with, so an admin can publish it later
+    if (resolvedGameData.templateSnapshot !== undefined) {
+      const snapshot = sanitizeTemplateSnapshot(resolvedGameData.templateSnapshot);
+      if (snapshot) resolvedGameData.templateSnapshot = snapshot;
+      else delete resolvedGameData.templateSnapshot;
+    }
     if (resolvedGameData.players && Array.isArray(resolvedGameData.players)) {
       for (const player of resolvedGameData.players) {
         if (player.name && !player.identityId) {

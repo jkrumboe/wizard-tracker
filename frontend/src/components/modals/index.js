@@ -13,3 +13,4 @@ export { default as SaveGameDialog } from './SaveGameDialog.jsx';
 export { default as PauseConfirmationModal } from './PauseConfirmationModal.jsx';
 export { default as SelectFriendsModal } from './SelectFriendsModal.jsx';
 export { default as SelectRecentGroupModal } from './SelectRecentGroupModal.jsx';
+export { default as PublishGameModal } from './PublishGameModal.jsx';

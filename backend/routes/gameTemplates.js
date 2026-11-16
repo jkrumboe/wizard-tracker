@@ -11,6 +11,7 @@ const {
   approveSuggestion,
   findSystemTemplate,
   listSuggestions,
+  publishFromGame,
   rejectSuggestion,
   snapshotTemplate,
 } = require('../utils/templateSuggestionService');
@@ -463,8 +464,36 @@ router.post('/:id/suggest', auth, catchAsync(async (req, res) => {
 
     await suggestion.save();
 
+    // Admins would only be approving their own suggestion, so apply it right away.
+    // It is still recorded (as approved) for the review history.
+    if (req.user.role === 'admin') {
+      try {
+        const { template } = await approveSuggestion(suggestion._id, req.user, {
+          reviewNote: 'Published directly by admin',
+        });
+        await fillFromBggByName(template);
+        return res.status(201).json({
+          message: 'Template published as a system template',
+          applied: true,
+          suggestion,
+          template,
+        });
+      } catch (error) {
+        if (!(error instanceof SuggestionReviewError)) throw error;
+        // e.g. a system template with that name already exists: leave it in the
+        // queue so the admin can decide there whether to add it anyway
+        return res.status(201).json({
+          message: `Suggestion kept for review: ${error.message}`,
+          applied: false,
+          reviewError: error.message,
+          suggestion,
+        });
+      }
+    }
+
     res.status(201).json({
       message: 'Template suggestion submitted successfully',
+      applied: false,
       suggestion
     });
 }));
@@ -485,6 +514,41 @@ const fetchBggGameInfo = async (bggId) => {
     return null;
   }
 };
+
+/**
+ * Fill a freshly published system template from BoardGameGeek by its name: box art,
+ * player counts and the description, for whatever the template doesn't have yet.
+ * Only an exact name match (BGG also matches alternate names, e.g. German titles)
+ * is used; among several, the original (earliest) game. Never fails the publish.
+ * @param {Object} template - SystemGameTemplate document, saved when anything was filled
+ * @returns {Promise<boolean>} Whether BGG info was added
+ */
+const fillFromBggByName = async (template) => {
+  const current = template.gameInfo?.toObject?.() || template.gameInfo;
+  if (!BGG_API_TOKEN || current?.bggId || current?.thumbnailUrl || current?.imageUrl) return false;
+  try {
+    const exact = rankGameSearchResults(
+      parseBggSearch(await fetchBggXml(`search?query=${encodeURIComponent(template.name)}&type=boardgame&exact=1`)),
+      template.name,
+    ).filter((hit) => squashGameName(hit.name) === squashGameName(template.name));
+    if (exact.length === 0) return false;
+    const [hit] = [...exact].sort((a, b) => (a.yearPublished || 9999) - (b.yearPublished || 9999));
+
+    const thing = parseBggThings(await fetchBggThingXml([hit.bggId])).get(hit.bggId);
+    if (!thing) return false;
+    template.gameInfo = sanitizeGameInfo({ ...thing, bggId: hit.bggId, yearPublished: hit.yearPublished ?? thing.yearPublished });
+    if (template.minPlayers == null && thing.minPlayers != null) template.minPlayers = thing.minPlayers;
+    if (template.maxPlayers == null && thing.maxPlayers != null) template.maxPlayers = thing.maxPlayers;
+    if (!template.description && thing.description) template.description = String(thing.description).slice(0, 5000);
+    await template.save();
+    return true;
+  } catch (error) {
+    console.warn('BGG lookup by name failed:', error.message);
+    return false;
+  }
+};
+
+const squashGameName = (text) => String(text || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 
 // A barcode lookup (GameUPC) only knows these; everything else comes from BGG itself
 const LOOKUP_GAME_INFO_FIELDS = new Set(['bggId', 'imageUrl', 'thumbnailUrl', 'yearPublished']);
@@ -722,6 +786,18 @@ const sendReviewError = (res, error) => {
 router.get('/admin/suggestions', auth, requireAdmin, catchAsync(async (req, res) => {
     const status = typeof req.query.status === 'string' ? req.query.status : 'pending';
     res.json(await listSuggestions({ status }));
+}));
+
+// POST /api/game-templates/admin/publish-from-game/:gameId - Make the game a table game was
+// played with available to everyone, even when another player created it (admin only)
+router.post('/admin/publish-from-game/:gameId', auth, requireAdmin, catchAsync(async (req, res) => {
+    try {
+      const { template, source } = await publishFromGame(req.params.gameId, req.user);
+      const bggLinked = await fillFromBggByName(template);
+      res.status(201).json({ message: 'Game published for everyone', template, source, bggLinked });
+    } catch (error) {
+      sendReviewError(res, error);
+    }
 }));
 
 // POST /api/game-templates/admin/suggestions/:id/approve - Approve a suggestion (admin only)

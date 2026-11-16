@@ -65,10 +65,10 @@ const GameTypeInfoPage = () => {
 
   const gamePath = `/game-types/${encodeURIComponent(template?.name || name)}`;
 
-  // Opened from the game page: step back to it. Pushing it again would leave
-  // this page behind it in history, so its back button would return here.
+  // Opened from the game page or a played game's details: step back to it. Pushing
+  // it again would leave this page behind it in history, so its back button would return here.
   const handleBack = () => {
-    if (location.state?.fromGamePage) navigate(-1);
+    if (location.state?.fromGamePage || location.state?.fromGameDetails) navigate(-1);
     else navigate(gamePath, { replace: true });
   };
 

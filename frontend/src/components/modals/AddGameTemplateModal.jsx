@@ -855,7 +855,7 @@ const AddGameTemplateModal = ({
           )}
           {editMode && !isSystemTemplate && onSuggest && (
             <button className="modal-btn suggest-btn" onClick={onSuggest}>
-              {t('templateModal.suggestGameType')}
+              {isAdmin ? t('templateModal.publishGameType') : t('templateModal.suggestGameType')}
             </button>
           )}
           {!isSystemTemplate && (
