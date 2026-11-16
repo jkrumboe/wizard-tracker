@@ -71,4 +71,32 @@ const auth = async (req, res, next) => {
   }
 };
 
+/**
+ * Like auth, but never rejects: a valid Bearer token sets req.user, anything
+ * else (no header, bad or expired token, unknown user) continues anonymously.
+ * For public endpoints whose answer depends on who is asking.
+ */
+const optionalAuth = async (req, res, next) => {
+  const authHeader = req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(authHeader.substring(7), process.env.JWT_SECRET);
+    const cacheKey = `user:${decoded.userId}`;
+    let user = cache.isConnected ? await cache.get(cacheKey) : null;
+    if (!user) {
+      user = await User.findById(decoded.userId).select('-passwordHash').lean();
+    }
+    if (user) {
+      req.user = { ...user, role: user.role || 'user' };
+    }
+  } catch {
+    // Invalid or expired token: treat as anonymous
+  }
+  next();
+};
+
 module.exports = auth;
+module.exports.optionalAuth = optionalAuth;

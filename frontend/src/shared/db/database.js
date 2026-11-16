@@ -28,13 +28,24 @@ class WizardTrackerDB extends Dexie {
       clientState: 'key',
       friends: 'id, userId, username' // Friends stored locally
     });
-    
+
+    // Add gamePhotos table in version 3 (photos of the board etc., stored as Blobs)
+    this.version(3).stores({
+      gameSnapshots: 'id, gameId, localVersion, serverVersion, userId, timestamp, dirty, syncStatus',
+      gameEvents: 'id, gameId, timestamp, localVersion, userId, acknowledged, actionType',
+      syncMetadata: 'gameId, syncStatus, lastSyncedVersion, hasConflict',
+      clientState: 'key',
+      friends: 'id, userId, username',
+      gamePhotos: 'id, gameKey, createdAt'
+    });
+
     // Type definitions for TypeScript-like intellisense
     this.gameSnapshots = this.table('gameSnapshots');
     this.gameEvents = this.table('gameEvents');
     this.syncMetadata = this.table('syncMetadata');
     this.clientState = this.table('clientState');
     this.friends = this.table('friends');
+    this.gamePhotos = this.table('gamePhotos');
   }
   
   /**

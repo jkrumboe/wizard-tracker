@@ -425,6 +425,27 @@
     "gameRecoveryNotAvailable": "Game recovery is not available. Please refresh the page."
   },
 
+  "gamePhotos": {
+    "title": "Photos",
+    "add": "Add photo",
+    "emptyTitle": "Add a photo of the game",
+    "emptyHint": "Capture the final board or the table to remember this game",
+    "saving": "Saving photo…",
+    "open": "Photo {{n}}",
+    "delete": "Delete photo",
+    "deleteConfirm": "Delete this photo?",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "addFailed": "Could not add the photo. Please try a different image.",
+    "deleteFailed": "Could not delete the photo.",
+    "deviceOnlyNote": "Photos are stored on this device only.",
+    "pendingUploadNote": "Some photos are only on this device and will be uploaded when possible.",
+    "addedBy": "Added by {{name}}",
+    "signInRequired": "Sign in to add photos.",
+    "notAllowed": "Only players of this game can add photos.",
+    "limitReached": "A game can have at most {{max}} photos."
+  },
+
   "gameDetails": {
     "openGame": "Open {{name}}",
     "goBack": "Go back",

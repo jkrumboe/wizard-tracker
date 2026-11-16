@@ -19,6 +19,8 @@ import { useUser } from "@/shared/hooks/useUser"
 import { useTemplateLookup, notifyTemplatesChanged } from "@/shared/hooks/useGameTemplates"
 import { isSystemTemplate } from "@/shared/utils/attachGameInfo"
 import PublishGameModal from "@/components/modals/PublishGameModal"
+import GamePhotos from "@/components/game/GamePhotos"
+import { getGamePhotoKeys } from "@/shared/api/gamePhotoStorage"
 
 const GameDetailsSkeleton = () => (
   <div className="game-details-container">
@@ -224,6 +226,9 @@ const TableGameDetails = () => {
     lowIsBetter,
   })
 
+  // Server id of the game for its photos: local copies know it once uploaded
+  const photoCloudId = game.is_local ? (game.cloudGameId || null) : (game.cloudId || game.id || null)
+
   // The name opens the game's page; for a game that isn't one yet, admins publish it from here.
   // The state lets that page's back button return here instead of to the game list.
   const knownTemplate = findTemplate(gameName)
@@ -334,6 +339,14 @@ const TableGameDetails = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {(activeTab === 'standings' || showAllPanels || !hasMultipleRounds) && (
+          <GamePhotos
+            cloudGameId={photoCloudId}
+            localKeys={getGamePhotoKeys(game, id)}
+            canEditLocal={Boolean(game.is_local)}
+          />
         )}
 
         {hasMultipleRounds && (activeTab === 'chart' || showAllPanels) && (

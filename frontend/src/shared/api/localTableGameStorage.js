@@ -124,8 +124,14 @@ export class LocalTableGameStorage {
       return;
     }
     const games = this.getAllSavedTableGames();
+    const game = games[gameId];
     delete games[gameId];
     localStorage.setItem(LOCAL_TABLE_GAMES_STORAGE_KEY, JSON.stringify(games));
+
+    // Photos live in IndexedDB; drop them with the game (lazy import keeps Dexie out of this module)
+    import('./gamePhotoStorage.js')
+      .then(({ deleteGamePhotos, getGamePhotoKeys }) => deleteGamePhotos(getGamePhotoKeys(game, gameId)))
+      .catch((err) => console.debug('Could not delete game photos:', err?.message));
   }
 
   /**

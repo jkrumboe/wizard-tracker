@@ -7,8 +7,14 @@ const cache = require('../utils/redis');
 const identityService = require('../utils/identityService');
 const catchAsync = require('../utils/catchAsync');
 const { sanitizeTemplateSnapshot } = require('../utils/templateSuggestionService');
+const { getTableGameAccess } = require('../utils/tableGameAccess');
+const GamePhoto = require('../models/GamePhoto');
+const tableGamePhotoRoutes = require('./tableGamePhotos');
 
 const router = express.Router();
+
+// Photos: /photos/:photoId/image and /:id/photos (see tableGamePhotos.js)
+router.use(tableGamePhotoRoutes);
 
 // GET /api/table-games/public/:id - Get table game by ID (public, no auth required)
 // PUBLIC ENDPOINT - No authentication required
@@ -277,54 +283,8 @@ router.get('/:id', auth, catchAsync(async (req, res) => {
       return res.status(404).json({ error: 'Table game not found' });
     }
 
-    // Check if user has access: either owner or participant
-    const isOwner = tableGame.userId && tableGame.userId.toString() === userId.toString();
-    
-    // Get user's identity to check for participation
-    const userIdentity = await PlayerIdentity.findOne({ 
-      userId: { $eq: userId },
-      isDeleted: false 
-    });
-    
-    // Get all identity IDs associated with this user (including linked/merged identities)
-    const userIdentityIds = new Set();
-    if (userIdentity) {
-      userIdentityIds.add(userIdentity._id.toString());
-      // Add linked identities
-      if (userIdentity.linkedIdentities) {
-        userIdentity.linkedIdentities.forEach(li => {
-          userIdentityIds.add(li.identityId.toString());
-        });
-      }
-    }
-    
-    // Also find any guest identities that were merged into this user's identity
-    const mergedIdentities = await PlayerIdentity.find({
-      mergedInto: userIdentity?._id,
-      isDeleted: false
-    }).select('_id');
-    mergedIdentities.forEach(mi => {
-      userIdentityIds.add(mi._id.toString());
-    });
-    
-    // Check by name for legacy support
-    const usernameLower = username?.toLowerCase();
-    const namesToCheck = new Set([usernameLower].filter(Boolean));
-    
-    // Check if user is a participant
-    const gameData = tableGame.gameData?.gameData || tableGame.gameData;
-    const players = gameData?.players || [];
-    
-    const isParticipant = players.some(player => {
-      if (!player) return false;
-      // Check by identity ID
-      if (player.identityId && userIdentityIds.has(player.identityId.toString())) return true;
-      // Check by player ID matching user ID
-      if (player.id && player.id === userId.toString()) return true;
-      // Check by player name matching username or any alias (case-insensitive)
-      if (player.name && namesToCheck.has(player.name.toLowerCase())) return true;
-      return false;
-    });
+    // Users can view games they own or played in
+    const { isOwner, isParticipant } = await getTableGameAccess(tableGame, { _id: userId, username });
 
     if (!isOwner && !isParticipant) {
       return res.status(403).json({ error: 'You do not have permission to view this game' });
@@ -359,6 +319,9 @@ router.delete('/:id', auth, catchAsync(async (req, res) => {
     }
 
     console.log(`[DELETE /api/table-games/${gameId}] Deleted by user ${userId} (role: ${req.user.role})`);
+    // Photos belong to the game; remove them with it
+    await GamePhoto.deleteMany({ gameId: tableGame._id });
+
     res.json({ message: 'Table game deleted successfully' });
 }));
 

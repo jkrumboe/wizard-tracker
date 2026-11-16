@@ -1,0 +1,298 @@
+/* Game photos (final board etc.) on the game details pages. Mobile-first. */
+
+.game-photos-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-sizing: border-box;
+}
+
+.game-photos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.game-photos-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.game-photos-title svg {
+  color: var(--primary);
+}
+
+.game-photos-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--primary);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+/* Visually hidden; opened from the buttons. accept="image/*" lets phones offer the camera. */
+.game-photos-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.game-photos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  min-height: 160px;
+  padding: var(--spacing-lg) var(--spacing-md);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.game-photos-empty svg {
+  color: var(--primary);
+}
+
+.game-photos-empty-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.game-photos-empty-hint {
+  font-size: 0.85rem;
+  max-width: 32ch;
+}
+
+.game-photos-empty:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+@media (hover: hover) {
+  /* The global button:hover scale(0.95) shrinks a large photo by ~25px;
+     keep the frame still and zoom the image slightly inside it instead */
+  .game-photo-thumb:hover:not(:disabled),
+  .game-photos-empty:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .game-photo-thumb:hover:not(:disabled) img {
+    transform: scale(1.02);
+    filter: brightness(1.06);
+  }
+
+  .game-photos-empty:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
+
+  .game-photos-add-button:hover:not(:disabled) {
+    border-color: var(--primary);
+  }
+}
+
+.game-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.game-photo-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--background);
+  box-shadow: none;
+  cursor: zoom-in;
+}
+
+.game-photo-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+/* A single photo gets the full width and keeps more of its shape */
+.game-photos-grid.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.game-photos-grid.single .game-photo-thumb {
+  aspect-ratio: auto;
+  max-height: 60dvh;
+}
+
+.game-photos-grid.single .game-photo-thumb img {
+  height: auto;
+  max-height: 60dvh;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.game-photo-pending {
+  cursor: default;
+}
+
+.game-photos-note,
+.game-photos-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.game-photos-error {
+  color: var(--error-color);
+}
+
+/* Full-screen viewer (portalled to <body>) */
+.game-photo-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  padding-top: calc(env(safe-area-inset-top, 0px) + var(--spacing-md));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--spacing-md));
+  background-color: rgba(0, 0, 0, 0.9);
+  box-sizing: border-box;
+}
+
+.game-photo-viewer img {
+  max-width: 100%;
+  max-height: calc(100% - 64px);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+.game-photo-viewer-caption {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #e5e7eb;
+}
+
+.game-photo-viewer-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.game-photo-viewer-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+/* Light red: the viewer backdrop is always near-black, whatever the theme */
+.game-photo-viewer-button.danger {
+  color: #fca5a5;
+}
+
+/*
+ * Tablet and up: .game-summary is a flex row (tablet.css). With a single
+ * round only the standings show, so the photos fill the other half.
+ */
+@media (min-width: 768px) {
+  .game-summary > .game-photos-section {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-top: 0;
+    align-self: flex-start;
+  }
+
+  .game-photos-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .game-photos-grid.single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-photos-empty {
+    min-height: 220px;
+  }
+
+  /* With chart and scorecard beside the standings, photos get their own row */
+  .game-summary:has(> .chart-section):has(> .game-photos-section) {
+    flex-wrap: wrap;
+  }
+
+  .game-summary:has(> .chart-section) > .game-photos-section {
+    flex-basis: 100%;
+    order: 10;
+  }
+}
+
+/*
+ * Desktop grid (see gameDetails.css): photos sit under the standings,
+ * next to the chart, instead of below everything.
+ */
+@media (min-width: 1024px) {
+  .game-details-container > .game-summary:has(> .game-highlights):has(> .game-photos-section) {
+    grid-template-areas:
+      "highlights highlights"
+      "results chart"
+      "photos chart"
+      "rounds rounds";
+    /* The chart spans two rows; let the photos row absorb its extra height
+       so no gap opens up under the standings */
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  .game-summary:has(> .game-highlights) > .game-photos-section {
+    grid-area: photos;
+    order: 0;
+  }
+
+  .game-summary:has(> .game-highlights) .game-photos-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-summary:has(> .game-highlights) .game-photos-grid.single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
