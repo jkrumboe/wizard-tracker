@@ -14,7 +14,7 @@ export function GameHighlights({ highlights, inProgress = false }) {
   return (
     <div className="game-highlights">
       <div className="highlight-card">
-        <TrophyIcon size={20} className="highlight-icon" />
+        <TrophyIcon size={26} className="highlight-icon" />
         <div className="highlight-body">
           <span className="highlight-label">
             {inProgress ? t('gameDetails.highlightLeader') : t('gameDetails.highlightWinner')}
@@ -28,7 +28,7 @@ export function GameHighlights({ highlights, inProgress = false }) {
         </div>
       </div>
       <div className="highlight-card">
-        <ClockIcon size={20} className="highlight-icon" />
+        <ClockIcon size={26} className="highlight-icon" />
         <div className="highlight-body">
           <span className="highlight-label">{t('gameDetails.highlightRounds')}</span>
           <span className="highlight-value">{roundCount}</span>
@@ -37,7 +37,7 @@ export function GameHighlights({ highlights, inProgress = false }) {
       </div>
       {bestRound && (
         <div className="highlight-card">
-          <StarIcon size={20} className="highlight-icon" />
+          <StarIcon size={26} className="highlight-icon" />
           <div className="highlight-body">
             <span className="highlight-label">{t('gameDetails.highlightBestRound')}</span>
             <span className="highlight-value">{bestRound.score > 0 ? '+' : ''}{bestRound.score}</span>
@@ -47,7 +47,7 @@ export function GameHighlights({ highlights, inProgress = false }) {
       )}
       {bestBidder && (
         <div className="highlight-card">
-          <BarChartIcon size={20} className="highlight-icon" />
+          <BarChartIcon size={26} className="highlight-icon" />
           <div className="highlight-body">
             <span className="highlight-label">{t('gameDetails.highlightBidAccuracy')}</span>
             <span className="highlight-value">{bestBidder.accuracy}%</span>
