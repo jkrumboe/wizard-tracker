@@ -55,6 +55,26 @@ const DIVERGING_COLORS = {
   dark: { positive: '#3987e5', negative: '#e66767' }
 };
 
+// The points-per-round grid runs rounds across only on tablets, where the chart has a
+// full-width tab to itself. Phones and the desktop two-column layout have height to
+// spare instead, so there it runs rounds down.
+const WIDE_GRID_QUERY = '(min-width: 768px) and (max-width: 1023px)';
+
+const useMatchMedia = (query) => {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(query).matches : true
+  );
+  useEffect(() => {
+    if (!window.matchMedia) return undefined;
+    const mql = window.matchMedia(query);
+    const onChange = (e) => setMatches(e.matches);
+    setMatches(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return matches;
+};
+
 const isDarkTheme = () => document.documentElement.getAttribute('data-theme') === 'dark';
 
 const getSeriesColor = (index) => {
@@ -105,6 +125,7 @@ const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
   const [surfaceColor, setSurfaceColor] = useState(null);
   const [themeVersion, setThemeChange] = useState(0);
   const wrapperRef = useRef(null);
+  const isWideGrid = useMatchMedia(WIDE_GRID_QUERY);
 
   // Re-render with the right palette when the theme changes
   useEffect(() => {
@@ -382,6 +403,56 @@ const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
       if (value === null) return '–';
       return value > 0 ? `+${value}` : `${value}`;
     };
+    // Vertical grid pins both the header row and the round column, so paint the gaps all round
+    const stickyTopStyle = surfaceColor
+      ? { backgroundColor: surfaceColor, boxShadow: `0 0 0 2px ${surfaceColor}` }
+      : undefined;
+    const rowState = (playerId) => `${isFocused(playerId) ? 'focused' : ''} ${isDimmed(playerId) ? 'dimmed' : ''}`;
+    const cellTitle = (player, roundIndex, value) =>
+      `${player.name} · ${t('statsChart.roundNumber', { number: roundIndex + 1 })}: ${formatPoints(value)}`;
+
+    // Phones: rounds run down the page (players across) so the grid fills the
+    // free vertical space instead of scrolling sideways
+    if (!isWideGrid) {
+      return (
+        <div className="round-heatmap-scroll vertical">
+          <table className="round-heatmap vertical" style={{ '--round-count': roundData.length }}>
+            <thead>
+              <tr>
+                <th scope="col" className="round-heatmap-corner" style={stickyTopStyle}>
+                  <span className="round-heatmap-axis">{t('statsChart.round')}</span>
+                </th>
+                {rows.map(({ player, index }) => (
+                  <th key={player.id} scope="col" className={`round-heatmap-colhead ${rowState(player.id)}`} style={stickyTopStyle}>
+                    <button type="button" title={player.name} onClick={() => toggleFocus(player.id)} aria-pressed={isFocused(player.id)}>
+                      <span className="chart-legend-swatch" style={{ backgroundColor: getSeriesColor(index) }} />
+                      <span className="chart-legend-name">{player.name}</span>
+                    </button>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {roundData.map((_, roundIndex) => (
+                <tr key={roundIndex}>
+                  <th scope="row" className="round-heatmap-round" style={stickyTopStyle}>{roundIndex + 1}</th>
+                  {rows.map(({ player, points }) => (
+                    <td
+                      key={player.id}
+                      className={rowState(player.id)}
+                      style={cellStyle(points[roundIndex])}
+                      title={cellTitle(player, roundIndex, points[roundIndex])}
+                    >
+                      {formatPoints(points[roundIndex])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
 
     return (
       <div className="round-heatmap-scroll">
@@ -400,7 +471,7 @@ const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
             {rows.map(({ player, index, points }) => (
               <tr
                 key={player.id}
-                className={`${isFocused(player.id) ? 'focused' : ''} ${isDimmed(player.id) ? 'dimmed' : ''}`}
+                className={rowState(player.id)}
               >
                 <th scope="row" className="round-heatmap-player" style={stickyStyle}>
                   <button type="button" onClick={() => toggleFocus(player.id)} aria-pressed={isFocused(player.id)}>
@@ -412,7 +483,7 @@ const StatsChart = ({ playersData, roundData, supportsBids = true }) => {
                   <td
                     key={roundIndex}
                     style={cellStyle(value)}
-                    title={`${player.name} · ${t('statsChart.roundNumber', { number: roundIndex + 1 })}: ${formatPoints(value)}`}
+                    title={cellTitle(player, roundIndex, value)}
                   >
                     {formatPoints(value)}
                   </td>

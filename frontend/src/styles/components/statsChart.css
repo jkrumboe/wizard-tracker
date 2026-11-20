@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-sm);
-  padding: 0 var(--spacing-sm);
+  padding: 0;
 }
 
 .chart-select {
@@ -27,16 +27,19 @@
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius-md);
-  padding: 0.4rem 2rem 0.4rem 0.75rem;
+  padding: 0.45rem 2rem 0.45rem 0.75rem;
   margin: 0;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
 }
 
+.chart-select:focus,
 .chart-select:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--primary);
 }
 
 .show-all-btn {
@@ -136,7 +139,7 @@
   overscroll-behavior-x: none;
   /* Margin, not padding: sticky cells pin inside the padding, letting
      scrolled cells show to the left of the player names */
-  margin: 0 var(--spacing-sm);
+  margin: 0;
   scrollbar-width: thin;
 }
 
@@ -223,10 +226,94 @@
   opacity: 0.35;
 }
 
+.round-heatmap td.dimmed,
+.round-heatmap-colhead.dimmed button {
+  opacity: 0.35;
+}
+
+/* ---- Vertical grid (phones): rounds down, players across ---- */
+.round-heatmap-scroll.vertical {
+  overflow: auto;
+  overscroll-behavior: contain;
+  /* Bounded so the player header stays pinned while long games scroll */
+  max-height: 65svh;
+}
+
+.round-heatmap.vertical {
+  table-layout: fixed;
+}
+
+.round-heatmap.vertical td {
+  height: 1.9rem;
+}
+
+.round-heatmap.vertical thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--card-bg);
+  padding-bottom: 0.35rem;
+  vertical-align: bottom;
+}
+
+.round-heatmap.vertical .round-heatmap-corner {
+  left: 0;
+  z-index: 2;
+  width: 2.25rem;
+  text-align: center;
+}
+
+.round-heatmap.vertical .round-heatmap-axis {
+  padding-left: 0;
+}
+
+.round-heatmap-round {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding: 0 0.4rem;
+  background-color: var(--card-bg);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.round-heatmap-colhead button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.15rem 0.1rem;
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.round-heatmap-colhead .chart-legend-name {
+  max-width: 100%;
+}
+
+.round-heatmap-colhead.focused button {
+  font-weight: 700;
+}
+
+@media (hover: hover) {
+  .round-heatmap-colhead button:hover:not(:disabled) {
+    transform: none;
+    text-decoration: underline;
+  }
+}
+
 /* ---- Small screens ---- */
 @media (max-width: 768px) {
   .chart-wrapper {
-    height: 240px;
+    height: 260px;
   }
 
   .chart-legend-item {
