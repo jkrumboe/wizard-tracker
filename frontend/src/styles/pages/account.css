@@ -199,6 +199,50 @@
   font-size: 0.85rem;
 }
 
+/* Desktop: use the extra width for larger cards */
+@media (min-width: 1024px) {
+  .overview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .game-type-card {
+    padding: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+
+  .game-type-card--with-art {
+    column-gap: var(--spacing-md);
+    row-gap: var(--spacing-sm);
+  }
+
+  .game-type-art {
+    width: 96px;
+    height: 96px;
+  }
+
+  .game-type-initial {
+    font-size: 2.5rem;
+  }
+
+  .game-type-name {
+    font-size: 1.5rem;
+  }
+
+  .game-type-elo {
+    padding: 4px 10px;
+    font-size: 0.95rem;
+  }
+
+  .game-type-stats .stat-value {
+    font-size: 1.35rem;
+  }
+
+  .game-type-card .result-letter {
+    font-size: 1rem;
+  }
+}
+
 .stat-item {
   display: flex;
   flex-direction: row;
@@ -507,6 +551,12 @@ html:not([data-theme="dark"]) .game-type-selector {
   overflow: hidden;
   height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
   border-radius: var(--radius-sm);
+}
+
+@media (min-width: 1024px) {
+  .settings-container {
+    max-width: 1200px;
+  }
 }
 
 .settings-container:has(.error-container) {
