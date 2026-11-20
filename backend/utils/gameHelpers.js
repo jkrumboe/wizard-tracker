@@ -167,8 +167,61 @@ function getTableGameResult(game, gameData) {
   };
 }
 
+/**
+ * Work out corrected winner ids for a wizard game whose stored winners no
+ * longer match its players - left behind when player ids were rewritten
+ * (identity normalization) without rewriting winner_id.
+ *
+ * The final scores are the source of truth (highest wins, ties share the win).
+ * Without a complete set of scores, stale ids are mapped through
+ * player.originalId and any that still match nobody are dropped.
+ *
+ * @param {Object} gameData - Wizard v3.0 game data
+ * @returns {string[]|null} Corrected winner ids, or null when nothing needs fixing
+ */
+function repairWizardWinnerIds(gameData) {
+  const players = Array.isArray(gameData?.players) ? gameData.players : [];
+  if (players.length === 0) return null;
+
+  const playerIds = new Set(players.map(p => String(p.id)));
+  const current = getWinnerIds(gameData).map(String);
+  // Also true for no winners at all - nothing to repair then either
+  if (current.every(id => playerIds.has(id))) return null;
+
+  const finalScores = gameData.final_scores || {};
+  const scores = {};
+  for (const id of playerIds) {
+    if (typeof finalScores[id] === 'number') scores[id] = finalScores[id];
+  }
+  if (Object.keys(scores).length === playerIds.size) {
+    return calculateWinnersByScore(scores, false);
+  }
+
+  const byOriginalId = new Map(
+    players.filter(p => p.originalId).map(p => [String(p.originalId), String(p.id)])
+  );
+  const mapped = current
+    .map(id => (playerIds.has(id) ? id : byOriginalId.get(id)))
+    .filter(Boolean);
+  return [...new Set(mapped)];
+}
+
+/**
+ * WizardGame query for every game that has stored winners, i.e. every game
+ * repairWizardWinnerIds might change. Shared by migration 011 and its dry run.
+ */
+const WIZARD_GAMES_WITH_WINNERS_QUERY = Object.freeze({
+  $or: [
+    { 'gameData.winner_id.0': { $exists: true } },
+    { 'gameData.winner_id': { $type: 'string' } },
+    { 'gameData.winner_ids.0': { $exists: true } }
+  ]
+});
+
 module.exports = {
   getWinnerIds,
+  repairWizardWinnerIds,
+  WIZARD_GAMES_WITH_WINNERS_QUERY,
   isPlayerWinner,
   calculateTableGameScores,
   calculateWinnersByScore,

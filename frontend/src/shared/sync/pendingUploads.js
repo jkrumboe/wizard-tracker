@@ -209,7 +209,7 @@ let flushInFlight = null;
  * @param {Object} [options]
  * @param {boolean} [options.force] Also retry games that exhausted their
  *   automatic attempts (use for an explicit, user-initiated retry).
- * @returns {Promise<{uploaded: number, failed: number, remaining: number, skipped: number, reason?: string}>}
+ * @returns {Promise<{uploaded: number, failed: number, remaining: number, skipped: number, reason?: string, error?: string}>}
  */
 export async function flushPendingUploads(options = {}) {
   const { force = false } = options;
@@ -233,6 +233,7 @@ export async function flushPendingUploads(options = {}) {
     let uploaded = 0;
     let failed = 0;
     let skipped = 0;
+    let lastError = null;
 
     for (const entry of pending) {
       if (!force && entry.attempts >= MAX_AUTO_ATTEMPTS) {
@@ -247,6 +248,7 @@ export async function flushPendingUploads(options = {}) {
         logger.debug('Uploaded queued game', { id: entry.id, kind: entry.kind });
       } catch (error) {
         failed += 1;
+        if (!lastError) lastError = error?.message || 'Upload failed';
         const attempts = recordAttempt(entry.id);
         logger.warn('Queued upload failed; game stays on device', {
           id: entry.id,
@@ -263,6 +265,7 @@ export async function flushPendingUploads(options = {}) {
 
     const remaining = getPendingUploadCount();
     const result = { uploaded, failed, skipped, remaining };
+    if (lastError) result.error = lastError;
     logger.info('Finished upload run', result);
     emitChange({ status: 'idle', pending: remaining, uploaded });
 

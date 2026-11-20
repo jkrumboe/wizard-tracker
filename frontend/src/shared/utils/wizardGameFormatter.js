@@ -124,6 +124,44 @@ export function formatWizardGameForBackend(gameData) {
 }
 
 /**
+ * Return the game with its winner ids corrected when they no longer match its
+ * players. Older cloud games had their player ids rewritten server-side without
+ * their winner_id, and local copies downloaded from them carry the stale ids,
+ * which upload validation (rightly) rejects.
+ *
+ * Final scores decide (highest wins, ties share); without a complete set of
+ * scores, ids that match no player are dropped. Mirrors the backend's
+ * repairWizardWinnerIds.
+ *
+ * @param {Object} gameData - Wizard game in v3.0 shape
+ * @returns {Object} The same object when nothing needed fixing, otherwise a corrected copy
+ */
+export function repairWinnerIds(gameData) {
+  const players = Array.isArray(gameData?.players) ? gameData.players : [];
+  const raw = gameData?.winner_ids || gameData?.winner_id;
+  if (!raw || players.length === 0) return gameData;
+
+  const playerIds = players.map(p => String(p.id));
+  const known = new Set(playerIds);
+  const current = (Array.isArray(raw) ? raw : [raw]).map(String);
+  if (current.every(id => known.has(id))) return gameData;
+
+  const finalScores = gameData.final_scores || {};
+  const hasAllScores = playerIds.every(id => typeof finalScores[id] === 'number');
+  let winners;
+  if (hasAllScores) {
+    const best = Math.max(...playerIds.map(id => finalScores[id]));
+    winners = playerIds.filter(id => finalScores[id] === best);
+  } else {
+    winners = current.filter(id => known.has(id));
+  }
+
+  const repaired = { ...gameData, winner_id: winners };
+  if ('winner_ids' in gameData) repaired.winner_ids = winners;
+  return repaired;
+}
+
+/**
  * Comprehensive validation for game data before upload
  * @param {Object} gameData - Game data to validate
  * @returns {{isValid: boolean, errors: Array<string>, warnings: Array<string>}} Validation result

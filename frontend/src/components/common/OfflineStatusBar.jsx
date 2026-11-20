@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { WifiOff, UploadCloud, RefreshCw } from 'lucide-react';
 import {
   PENDING_UPLOADS_EVENT,
@@ -24,6 +25,8 @@ const OfflineStatusBar = () => {
   );
   const [pending, setPending] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  // Why the last explicit retry left games behind, so Retry never fails silently.
+  const [retryProblem, setRetryProblem] = useState(null);
 
   const refreshCount = useCallback(() => {
     try {
@@ -67,9 +70,17 @@ const OfflineStatusBar = () => {
 
   const handleRetry = useCallback(async () => {
     setIsUploading(true);
+    setRetryProblem(null);
     try {
       // Explicit retry, so also pick up games that used up their automatic attempts.
-      await flushPendingUploads({ force: true });
+      const result = await flushPendingUploads({ force: true });
+      if (result?.reason === 'signed-out') {
+        setRetryProblem({ type: 'signed-out' });
+      } else if (result?.remaining > 0) {
+        setRetryProblem({ type: 'failed', error: result.error });
+      }
+    } catch (error) {
+      setRetryProblem({ type: 'failed', error: error?.message });
     } finally {
       setIsUploading(false);
       refreshCount();
@@ -95,6 +106,20 @@ const OfflineStatusBar = () => {
     message = t('sync.gamesWaiting', { count: pending });
   }
 
+  const showProblem = isOnline && !isUploading && pending > 0 && retryProblem;
+  let problemMessage = null;
+  if (showProblem && retryProblem.type === 'signed-out') {
+    problemMessage = (
+      <>
+        {t('sync.signInToUpload')} <Link to="/login">{t('sync.signIn')}</Link>
+      </>
+    );
+  } else if (showProblem) {
+    problemMessage = retryProblem.error
+      ? t('sync.uploadFailedDetail', { error: retryProblem.error })
+      : t('sync.uploadFailed');
+  }
+
   return (
     <div
       className={`offline-status-bar ${isOnline ? 'is-pending' : 'is-offline'}`}
@@ -102,7 +127,10 @@ const OfflineStatusBar = () => {
       aria-live="polite"
     >
       <span className="offline-bar-icon">{icon}</span>
-      <span className="offline-bar-message">{message}</span>
+      <span className="offline-bar-message">
+        {message}
+        {problemMessage && <span className="offline-bar-problem">{problemMessage}</span>}
+      </span>
 
       {!isOnline && pending > 0 && (
         <span className="offline-bar-count">{t('sync.pending', { count: pending })}</span>

@@ -9,7 +9,7 @@ import {
   GameStatus,
   GameMode 
 } from "@/shared/schemas/gameSchema";
-import { formatWizardGameForBackend, validateGameForUpload } from "@/shared/utils/wizardGameFormatter";
+import { formatWizardGameForBackend, repairWinnerIds, validateGameForUpload } from "@/shared/utils/wizardGameFormatter";
 import { getGameContentKey } from "@/shared/utils/gameDedup";
 
 //=== Game Management ===//
@@ -548,8 +548,10 @@ export async function getAllLocalGames() {
 }
 
 // Create game (v3.0 format - uploads to wizard collection)
-export async function createGame(gameData, localId) {
+export async function createGame(rawGameData, localId) {
   const token = localStorage.getItem('auth_token');
+  // Copies of older cloud games can name winners by pre-migration player ids
+  const gameData = repairWinnerIds(rawGameData);
   
   // Check if user is authenticated
   if (!token) {

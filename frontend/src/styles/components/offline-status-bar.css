@@ -37,6 +37,18 @@
   min-width: 0;
 }
 
+.offline-bar-problem {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.offline-bar-problem a {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .offline-bar-count {
   flex-shrink: 0;
   padding: 3px 9px;

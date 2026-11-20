@@ -90,6 +90,12 @@ const migrations = [
     version: '1.0.0',
     description: 'Recalculate ELO with the per-opponent, scale-aware score margin, nested table game data, merged identities and spelling-independent game type keys ("Flip 7" = "Flip7" = "flip7"), and record per-game-type wins',
     run: recalculateEloWithGameTypeKeys
+  },
+  {
+    name: '011_repair_wizard_winner_ids',
+    version: '1.0.0',
+    description: 'Repair wizard game winner ids left pointing at pre-normalization player ids (003 skipped array winner_id), then recalculate ELO',
+    run: repairWizardWinnerIdsMigration
   }
 ];
 
@@ -430,10 +436,18 @@ async function normalizeGameIds(game, identityCache) {
     gameData.final_scores = newScores;
   }
 
-  // Update winner_id
-  if (gameData.winner_id && idMapping.has(gameData.winner_id)) {
-    gameData.winner_id = idMapping.get(gameData.winner_id);
-    result.updated = true;
+  // Update winner_id / winner_ids - wizard v3.0 stores these as arrays
+  for (const field of ['winner_id', 'winner_ids']) {
+    const value = gameData[field];
+    if (Array.isArray(value)) {
+      if (value.some(id => idMapping.has(id))) {
+        gameData[field] = value.map(id => idMapping.get(id) || id);
+        result.updated = true;
+      }
+    } else if (value && idMapping.has(value)) {
+      gameData[field] = idMapping.get(value);
+      result.updated = true;
+    }
   }
 
   if (result.updated) {
@@ -564,6 +578,42 @@ async function recalculateEloWithGameTypeKeys() {
     }
   }
   return { ...(await recalculateEloMigration()), indexesDropped };
+}
+
+/**
+ * Migration 011: Repair wizard winner ids
+ * Migration 003 rewrote player ids in players/round_data/final_scores but
+ * skipped winner_id when it was an array (the v3.0 shape), so those games name
+ * winners that are not in the game. They fail upload validation when a client
+ * re-uploads its local copy, and wins are miscounted.
+ */
+async function repairWizardWinnerIdsMigration() {
+  const { repairWizardWinnerIds, WIZARD_GAMES_WITH_WINNERS_QUERY } = require('../utils/gameHelpers');
+  const stats = { gamesScanned: 0, gamesRepaired: 0 };
+
+  const cursor = WizardGame.find(WIZARD_GAMES_WITH_WINNERS_QUERY).lean().cursor();
+
+  for await (const game of cursor) {
+    stats.gamesScanned++;
+    const gameData = game.gameData;
+    const repaired = repairWizardWinnerIds(gameData);
+    if (!repaired) continue;
+
+    const update = { 'gameData.winner_id': repaired };
+    if ('winner_ids' in gameData) update['gameData.winner_ids'] = repaired;
+    // updateOne skips the post-save ELO hook; the full recalculation below covers it
+    await WizardGame.updateOne({ _id: game._id }, { $set: update });
+    stats.gamesRepaired++;
+  }
+
+  console.log(`  Repaired winner ids on ${stats.gamesRepaired} of ${stats.gamesScanned} wizard games`);
+
+  // Wins feed ELO and leaderboards, so recount only if anything changed
+  if (stats.gamesRepaired > 0) {
+    stats.elo = await recalculateEloMigration();
+    await require('../utils/leaderboardService').invalidateLeaderboard();
+  }
+  return stats;
 }
 
 /**

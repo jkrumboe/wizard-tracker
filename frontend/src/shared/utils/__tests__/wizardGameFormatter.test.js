@@ -1,4 +1,4 @@
-import { formatWizardGameForBackend, validateGameForUpload } from '../wizardGameFormatter';
+import { formatWizardGameForBackend, repairWinnerIds, validateGameForUpload } from '../wizardGameFormatter';
 
 describe('Wizard Game Formatter', () => {
   
@@ -347,4 +347,36 @@ describe('Wizard Game Formatter', () => {
     
   });
   
+
+  describe('repairWinnerIds', () => {
+    const base = {
+      version: '3.0',
+      players: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }],
+      final_scores: { a: 40, b: 70, c: 70 },
+    };
+
+    it('returns the same object when winners match players', () => {
+      const game = { ...base, winner_id: ['b', 'c'] };
+      expect(repairWinnerIds(game)).toBe(game);
+    });
+
+    it('recomputes stale winners from final scores, keeping ties', () => {
+      const game = { ...base, winner_id: ['1766599013192171'], winner_ids: ['1766599013192171'] };
+      const repaired = repairWinnerIds(game);
+      expect(repaired.winner_id).toEqual(['b', 'c']);
+      expect(repaired.winner_ids).toEqual(['b', 'c']);
+      expect(game.winner_id).toEqual(['1766599013192171']);
+      expect(validateGameForUpload({ ...repaired, round_data: [] }).errors.join()).not.toMatch(/winner_id/);
+    });
+
+    it('drops unknown ids when scores are incomplete', () => {
+      const game = { ...base, final_scores: { a: 1 }, winner_id: ['a', 'stale'] };
+      expect(repairWinnerIds(game).winner_id).toEqual(['a']);
+    });
+
+    it('accepts a single string winner id', () => {
+      expect(repairWinnerIds({ ...base, winner_id: 'stale' }).winner_id).toEqual(['b', 'c']);
+    });
+  });
+
 });
