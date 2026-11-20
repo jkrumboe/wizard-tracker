@@ -580,10 +580,8 @@
   },
   "publishGame": {
     "title": "Publish for everyone",
-    "pointEveryone": "Everyone can start this game from the game list.",
-    "pointLinked": "All games played as \"{{name}}\" appear under it, including your friends' games.",
-    "pointBgg": "Box art, player counts and rules are looked up on BoardGameGeek by the name.",
-    "pointEditLater": "You land on the game page afterwards to check settings or change the box art.",
+    "description": "Everyone can start this game, and all games played under this name are linked to it.",
+    "confirm": "Publish",
     "publishing": "Publishing..."
   },
 
@@ -1894,6 +1892,9 @@
     "customize": "Customize",
     "suggest": "Suggest for everyone",
     "publish": "Publish for everyone",
+    "deleteForEveryone": "Delete for everyone",
+    "deleteForEveryoneConfirm": "Delete \"{{name}}\" for everyone? It disappears from everyone's game list. Games already played keep their scores.",
+    "deleteForEveryoneFailed": "Could not delete this game.",
     "findBoxArt": "Find box art",
     "resetToDefault": "Reset to default",
     "resetConfirm": "Remove your changes and go back to the shared version of this game?",

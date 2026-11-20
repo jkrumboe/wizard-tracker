@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { safeMarkdownToHtml } from '@/shared/utils/markdownSanitizer';
-import { XIcon, MinusIcon, PlusIcon, UsersIcon, TrophyIcon, RefreshIcon, EyeIcon, EditIcon } from '@/components/ui/Icon';
+import { XIcon, MinusIcon, PlusIcon, UsersIcon, TrophyIcon, RefreshIcon, EyeIcon, EditIcon, Trash2Icon } from '@/components/ui/Icon';
 import { calculateScore, generateRoundPattern } from '@/shared/utils/scoringFormulas';
 import '@/styles/components/AddGameTemplateModal.css';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
@@ -171,6 +171,8 @@ const AddGameTemplateModal = ({
   onSuggest,
   onSuggestChange,
   onMakeLocalChanges,
+  // Admins only: deletes the edited game for everyone (asks first, outside this modal)
+  onDelete = null,
   editMode = false,
   initialData = null,
   isSystemTemplate = false,
@@ -833,6 +835,17 @@ const AddGameTemplateModal = ({
         {error && <div className="modal-error agm-error" role="alert">{error}</div>}
 
         <div className="add-game-modal-actions">
+          {editMode && onDelete && (
+            <button
+              type="button"
+              className="modal-btn delete-template-btn"
+              onClick={onDelete}
+              aria-label={t('gameType.deleteForEveryone')}
+              title={t('gameType.deleteForEveryone')}
+            >
+              <Trash2Icon size={18} aria-hidden="true" />
+            </button>
+          )}
           {!editMode && (
             <button className="modal-btn cancel-btn" onClick={onClose}>
               {t('common.cancel')}

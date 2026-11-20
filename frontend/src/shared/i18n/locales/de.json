@@ -580,10 +580,8 @@
   },
   "publishGame": {
     "title": "Für alle veröffentlichen",
-    "pointEveryone": "Alle können dieses Spiel aus der Spieleliste starten.",
-    "pointLinked": "Alle als \"{{name}}\" gespielten Partien erscheinen darunter, auch die deiner Freunde.",
-    "pointBgg": "Schachtelbild, Spielerzahl und Regeln werden über den Namen auf BoardGameGeek gesucht.",
-    "pointEditLater": "Danach landest du auf der Spielseite, um Einstellungen zu prüfen oder das Schachtelbild zu ändern.",
+    "description": "Alle können dieses Spiel starten, und alle unter diesem Namen gespielten Partien werden damit verknüpft.",
+    "confirm": "Veröffentlichen",
     "publishing": "Wird veröffentlicht..."
   },
 
@@ -1894,6 +1892,9 @@
     "customize": "Anpassen",
     "suggest": "Für alle vorschlagen",
     "publish": "Für alle veröffentlichen",
+    "deleteForEveryone": "Für alle löschen",
+    "deleteForEveryoneConfirm": "\"{{name}}\" für alle löschen? Das Spiel verschwindet aus der Spieleliste aller. Bereits gespielte Partien behalten ihre Punkte.",
+    "deleteForEveryoneFailed": "Das Spiel konnte nicht gelöscht werden.",
     "findBoxArt": "Schachtelbild finden",
     "resetToDefault": "Auf Standard zurücksetzen",
     "resetConfirm": "Deine Änderungen entfernen und zur gemeinsamen Version dieses Spiels zurückkehren?",

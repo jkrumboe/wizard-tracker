@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import Icon, { XIcon } from '@/components/ui/Icon';
+import Icon from '@/components/ui/Icon';
 import { useModalDismiss } from '@/shared/hooks/useModalDismiss';
 import { publishGameFromPlayedGame } from '@/shared/api/gameTemplateService';
 import '@/styles/components/modal.css';
@@ -47,50 +48,36 @@ const PublishGameModal = ({ isOpen, onClose, gameName, gameId, onPublished }) =>
     }
   };
 
-  const points = [
-    { icon: 'Users', text: t('publishGame.pointEveryone') },
-    { icon: 'Link', text: t('publishGame.pointLinked', { name: gameName }) },
-    { icon: 'ImagePlus', text: t('publishGame.pointBgg') },
-    { icon: 'Edit', text: t('publishGame.pointEditLater') },
-  ];
-
-  return (
-    <div className="modal-overlay" {...backdrop}>
+  // Portaled to <body>: the details header is its own stacking context and
+  // would otherwise trap the fixed overlay underneath the bottom navigation.
+  return createPortal(
+    <div className="modal-overlay publish-game-overlay" {...backdrop}>
       <div
         className="modal-container publish-game-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="publish-game-title"
+        aria-describedby="publish-game-desc"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-header">
-          <h2 id="publish-game-title">{t('publishGame.title')}</h2>
-          <button className="close-btn" onClick={close} aria-label={t('common.close')} disabled={busy}>
-            <XIcon size={20} />
-          </button>
+        <div className="publish-game-icon" aria-hidden="true">
+          <Icon name="Users" size={22} />
         </div>
-        <div className="modal-content">
-          <p className="publish-game-name">{gameName}</p>
-          <ul className="publish-game-points">
-            {points.map((point) => (
-              <li key={point.icon}>
-                <Icon name={point.icon} size={16} aria-hidden="true" />
-                <span>{point.text}</span>
-              </li>
-            ))}
-          </ul>
-          {error && <p className="modal-error" role="alert">{error}</p>}
-        </div>
-        <div className="modal-actions">
+        <h2 id="publish-game-title" className="publish-game-title">{t('publishGame.title')}</h2>
+        <p className="publish-game-name">{gameName}</p>
+        <p id="publish-game-desc" className="publish-game-desc">{t('publishGame.description')}</p>
+        {error && <p className="modal-error" role="alert">{error}</p>}
+        <div className="publish-game-actions">
           <button className="modal-button secondary" onClick={close} disabled={busy}>
             {t('common.cancel')}
           </button>
           <button className="modal-button primary" onClick={() => void handlePublish()} disabled={busy}>
-            {busy ? t('publishGame.publishing') : t('gameType.publish')}
+            {busy ? t('publishGame.publishing') : t('publishGame.confirm')}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

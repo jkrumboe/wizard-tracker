@@ -47,6 +47,9 @@ const GameTypeManageActions = ({ template, children }) => {
   // Shared box art is replaced by admins directly; everyone else suggests other art for review
   const sharedTemplate = isSystemTemplate(template) ? template : template.systemTemplate;
   const canChangeArt = Boolean(user && sharedTemplate?.gameInfo);
+  // Admins can remove a published game; built-ins ship with the app and stay
+  const canDeleteSystem = isAdmin && isSystem && template.type === 'system'
+    && Boolean(template._id) && !String(template._id).startsWith('__builtin_');
 
   const closeEdit = () => {
     setEditingTemplate(null);
@@ -79,6 +82,26 @@ const GameTypeManageActions = ({ template, children }) => {
     // in history for the back button to land on
     if (location.state?.fromGamePage) navigate(-2);
     else navigate('/start', { replace: true });
+  };
+
+  const handleDeleteSystem = async () => {
+    setBusy(true);
+    try {
+      await gameTemplateService.deleteSystemTemplate(template._id);
+      setShowDeleteConfirm(false);
+      notifyTemplatesChanged();
+      if (location.state?.fromGamePage) navigate(-2);
+      else navigate('/start', { replace: true });
+    } catch (error) {
+      console.error('Error deleting system template:', error);
+      alert(error?.message
+        ? `${t('gameType.deleteForEveryoneFailed')}
+
+${error.message}`
+        : t('gameType.deleteForEveryoneFailed'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSyncToCloud = async () => {
@@ -261,6 +284,7 @@ ${error.message}`
         onSuggest={editingTemplate && user ? () => void handleSuggestToAdmin() : null}
         onSuggestChange={editingSystemTemplate && user ? handleSuggestSystemChanges : null}
         onMakeLocalChanges={editingSystemTemplate ? handleMakeLocalChanges : null}
+        onDelete={editingSystemTemplate && canDeleteSystem ? () => { closeEdit(); setShowDeleteConfirm(true); } : null}
         editMode
         initialData={editingSystemTemplate || editingTemplate}
         isSystemTemplate={Boolean(editingSystemTemplate)}
@@ -290,10 +314,16 @@ ${error.message}`
       <DeleteConfirmationModal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title={template.isVariant ? t('gameType.resetToDefault') : t('gameTemplates.deleteGameTitle')}
-        message={template.isVariant ? t('gameType.resetConfirm') : t('gameTemplates.deleteGameConfirm')}
-        confirmText={template.isVariant ? t('gameType.resetToDefault') : undefined}
+        onConfirm={canDeleteSystem ? () => void handleDeleteSystem() : handleDelete}
+        title={(() => {
+          if (canDeleteSystem) return t('gameType.deleteForEveryone');
+          return template.isVariant ? t('gameType.resetToDefault') : t('gameTemplates.deleteGameTitle');
+        })()}
+        message={(() => {
+          if (canDeleteSystem) return t('gameType.deleteForEveryoneConfirm', { name: template.name });
+          return template.isVariant ? t('gameType.resetConfirm') : t('gameTemplates.deleteGameConfirm');
+        })()}
+        confirmText={template.isVariant && !canDeleteSystem ? t('gameType.resetToDefault') : undefined}
       />
     </>
   );

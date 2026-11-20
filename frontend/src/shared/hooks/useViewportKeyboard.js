@@ -32,6 +32,8 @@ export function useViewportKeyboard() {
     let baseHeight = 0;
     // When the keyboard was last released, while it may still be on screen.
     let releasedAt = -Infinity;
+    // The post-blur remeasure, cancelled on unmount so it never outlives us.
+    let settleTimer;
 
     // A keyboard takes a serious bite out of the viewport; browser chrome does
     // not. The gap between the two thresholds stops the state from flapping
@@ -128,7 +130,9 @@ export function useViewportKeyboard() {
       // keyboard as gone; the focusin that follows takes care of it.
       if (isTextEntry(event.relatedTarget)) return;
       applyViewportMetrics();
-      setTimeout(() => {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        settleTimer = undefined;
         if (!isTextEntryFocused()) {
           applyViewportMetrics();
           resetPagePan();
@@ -152,6 +156,7 @@ export function useViewportKeyboard() {
     globalThis.addEventListener('orientationchange', handleOrientationChange);
 
     return () => {
+      clearTimeout(settleTimer);
       globalThis.removeEventListener('focusin', handleFocusIn);
       globalThis.removeEventListener('focusout', handleFocusOut);
       viewport?.removeEventListener('resize', applyViewportMetrics);

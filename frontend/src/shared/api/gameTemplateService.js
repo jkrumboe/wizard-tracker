@@ -409,6 +409,31 @@ export const updateSystemTemplate = async (id, data) => {
 };
 
 /**
+ * Delete a system template for everyone (admin only). Built-in games can't be deleted.
+ * @param {string} id - Mongo id of the system template
+ * @returns {Promise<Object>}
+ */
+export const deleteSystemTemplate = async (id) => {
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(ENDPOINTS.updateSystemTemplate(id), {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete system template');
+  }
+
+  void invalidateSystemTemplates();
+  return await response.json();
+};
+
+/**
  * Share box art from a scan on a system game with everyone. The server only
  * takes it when the game has none yet.
  * @param {string} id - System template ID (Mongo or built-in)
@@ -578,6 +603,7 @@ export default {
   deleteTemplate,
   suggestTemplate,
   updateSystemTemplate,
+  deleteSystemTemplate,
   shareSystemGameInfo,
   suggestSystemBoxArt,
   suggestSystemTemplateChanges,

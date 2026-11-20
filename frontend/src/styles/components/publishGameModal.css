@@ -1,34 +1,76 @@
-/* Admin dialog: publish a played game for everyone */
-.publish-game-modal .publish-game-name {
-  margin: 0 0 var(--spacing-md);
-  font-size: 1.2rem;
+/* Admin dialog: publish a played game for everyone. A compact, centred
+   confirm card; portaled to <body> so it sits above the bottom navigation. */
+.publish-game-overlay {
+  z-index: 2000;
+  padding: var(--spacing-md);
+  /* Centre in the space above the bottom nav (0 where there is none) */
+  padding-bottom: calc(var(--spacing-md) + var(--bottom-nav-reserve, 0px));
+}
+
+.publish-game-modal {
+  width: 100%;
+  max-width: 360px;
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md);
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-xs);
+  overflow-y: auto;
+}
+
+.publish-game-modal .publish-game-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--spacing-xs);
+  border-radius: 50%;
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.publish-game-modal .publish-game-title {
+  margin: 0;
+  padding: 0;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text);
+}
+
+.publish-game-modal .publish-game-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
   overflow-wrap: anywhere;
 }
 
-.publish-game-modal .publish-game-points {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.publish-game-modal .publish-game-points li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-sm);
-  color: var(--text-light);
-  font-size: 0.95rem;
+.publish-game-modal .publish-game-desc {
+  margin: var(--spacing-xs) 0 0;
+  font-size: 0.9rem;
   line-height: 1.4;
+  color: var(--text-light);
 }
 
-.publish-game-modal .publish-game-points li svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: var(--primary);
+.publish-game-modal .modal-error {
+  margin: var(--spacing-xs) 0 0;
+}
+
+.publish-game-modal .publish-game-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  width: 100%;
+  margin-top: var(--spacing-md);
+}
+
+.publish-game-modal .publish-game-actions .modal-button {
+  flex: 1;
+  margin: 0;
+}
+
+/* Small centred card: no accent underline under the title */
+.publish-game-modal .publish-game-title::after {
+  content: none;
 }
 
 /* The game name on a game's details page: plain text that opens the game's page

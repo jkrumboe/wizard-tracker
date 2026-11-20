@@ -8,6 +8,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // The hook is a bare effect, so it only needs somewhere to be mounted. Pulling
 // in a renderer library for that would be a new dependency for one test file.
+let unmountCurrent = null;
+
 const mountHook = (hook) => {
   const host = document.createElement('div');
   document.body.append(host);
@@ -16,7 +18,8 @@ const mountHook = (hook) => {
     hook();
     return null;
   })));
-  return () => act(() => root.unmount());
+  unmountCurrent = () => act(() => root.unmount());
+  return unmountCurrent;
 };
 
 const FULL_HEIGHT = 800;
@@ -73,6 +76,10 @@ describe('useViewportKeyboard', () => {
   });
 
   afterEach(() => {
+    // Unmounting cancels the hook's pending post-blur timer, which would
+    // otherwise fire after the environment is torn down.
+    unmountCurrent?.();
+    unmountCurrent = null;
     delete globalThis.visualViewport;
   });
 

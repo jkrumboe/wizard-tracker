@@ -685,6 +685,26 @@ router.put('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
     res.json({ message: 'System template updated', template: systemTemplate });
 }));
 
+// DELETE /api/game-templates/system/:id - Remove a game for everyone (admin only).
+// Played games keep their scores (they're typed by name); built-in games ship
+// with the app and can't be deleted.
+router.delete('/system/:id', auth, requireAdmin, catchAsync(async (req, res) => {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Built-in games cannot be deleted' });
+    }
+
+    const template = await SystemGameTemplate.findByIdAndDelete(id);
+    if (!template) {
+      return res.status(404).json({ error: 'System template not found' });
+    }
+
+    // Users' own copies stay, they just no longer point at the shared game
+    await UserGameTemplate.updateMany({ systemTemplateId: template._id }, { $set: { systemTemplateId: null } });
+
+    res.json({ message: 'System template deleted', template });
+}));
+
 // POST /api/game-templates/system/:id/suggest-change - Suggest changes to a system template
 router.post('/system/:id/suggest-change', auth, catchAsync(async (req, res) => {
     const { id } = req.params;

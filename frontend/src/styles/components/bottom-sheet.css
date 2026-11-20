@@ -15,8 +15,8 @@
  * loaded with their component and can arrive later in the cascade. The
  * overlay selectors carry a `body` prefix and the box selectors name their
  * overlay, so both outrank the single-class rules in those files without
- * !important. Admin modals, the friends modal and delete confirmations
- * are excluded and stay centred dialogs.
+ * !important. Admin modals, the friends modal, delete confirmations and the
+ * publish-game dialog are excluded and stay centred dialogs.
  */
 @media (max-width: 599px) {
   body :is(
@@ -24,7 +24,7 @@
     .add-game-modal-overlay,
     .game-details-modal-overlay,
     .delete-modal-overlay
-  ):not(.admin-layout *, .admin-container *, :has(> .friends-modal), :has(> .delete-confirmation-modal)) {
+  ):not(.admin-layout *, .admin-container *, :has(> .friends-modal), :has(> .delete-confirmation-modal), :has(> .publish-game-modal)) {
     top: 0;
     bottom: auto;
     height: var(--app-height, 100dvh);
@@ -37,7 +37,7 @@
     .modal-overlay > .modal-content,
     .add-game-modal-overlay > .add-game-modal,
     .game-details-modal-overlay > .game-details-modal,
-    .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *, .friends-modal, .delete-confirmation-modal) {
+    .delete-modal-overlay > .delete-modal):not(.admin-layout *, .admin-container *, .friends-modal, .delete-confirmation-modal, .publish-game-modal) {
     width: 100%;
     max-width: 100%;
     max-height: calc(100% - env(safe-area-inset-top, 0px) - var(--spacing-lg));
