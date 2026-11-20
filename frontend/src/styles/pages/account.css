@@ -556,6 +556,9 @@ html:not([data-theme="dark"]) .game-type-selector {
 @media (min-width: 1024px) {
   .settings-container {
     max-width: 1200px;
+    /* The desktop shell pads .main-container top and bottom, and there is no
+       bottom nav; size to what is left so nothing is clipped at the bottom. */
+    height: calc(100dvh - 2 * var(--spacing-lg));
   }
 }
 

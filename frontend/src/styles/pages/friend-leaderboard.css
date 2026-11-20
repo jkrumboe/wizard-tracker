@@ -152,8 +152,16 @@
 }
 
 @media (hover: hover) {
+  /* A quiet tint; cancels the global button press-scale, which shifts the row */
   .friend-leaderboard-container .friend-item:hover:not(:disabled) {
+    transform: none;
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    background: color-mix(in srgb, var(--primary) 5%, var(--input-bg));
+  }
+
+  .friend-leaderboard-container .friend-item.selected:hover:not(:disabled) {
     border-color: var(--primary);
+    background: var(--primary-hover);
   }
 }
 
@@ -1092,6 +1100,14 @@
 
   .flb-game-card {
     padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* The desktop shell pads .main-container top and bottom, and there is no
+     bottom nav; size to what is left so the Compare button is not clipped. */
+  .friend-leaderboard-container {
+    height: calc(100dvh - 2 * var(--spacing-lg));
   }
 }
 
