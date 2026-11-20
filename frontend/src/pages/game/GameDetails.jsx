@@ -283,8 +283,9 @@ const GameDetails = () => {
 
       const totalRounds = playerRounds.length;
       const totalPoints = playerRounds.reduce((sum, round) => sum + (round.score ?? 0), 0);
-      const highestScore = Math.max(...playerRounds.map((round) => round.score ?? 0));
-      const lowestScore = Math.min(...playerRounds.map((round) => round.score ?? 0));
+      const roundScores = playerRounds.map((round) => round.score ?? 0);
+      const highestScore = roundScores.length ? Math.max(...roundScores) : 0;
+      const lowestScore = roundScores.length ? Math.min(...roundScores) : 0;
       const totalBids = playerRounds.reduce((sum, round) => sum + (round.call ?? 0), 0);
       const totalTricks = playerRounds.reduce((sum, round) => sum + (round.made ?? 0), 0);
       const correctBids = playerRounds.filter((round) => round.call === round.made).length;

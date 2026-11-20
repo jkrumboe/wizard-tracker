@@ -28,8 +28,8 @@ const AdvancedStats = ({ playerStats, isVisible }) => {
   if (!isVisible) return null;
 
   // Normalize data structure to handle different property names from different pages
-  const bestRound = playerStats.bestRound || playerStats.highestScore || 0;
-  const worstRound = playerStats.worstRound || 0;
+  const bestRound = playerStats.bestRound ?? playerStats.highestScore ?? 0;
+  const worstRound = playerStats.worstRound ?? playerStats.lowestScore ?? 0;
   const correctBids = playerStats.correctBids || 0;
   const overBids = playerStats.overBids || playerStats.overbids || 0;
   const underBids = playerStats.underBids || playerStats.underbids || 0;
