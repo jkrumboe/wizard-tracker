@@ -1,5 +1,6 @@
 const request = require('supertest');
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const Game = require('../models/Game');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
@@ -10,10 +11,13 @@ const mockAuth = (req, res, next) => {
   next();
 };
 
-// Mock rate limiter for tests (to satisfy security scanning)
-const mockRateLimiter = (req, res, next) => {
-  next();
-};
+// Real rate limiter (generous limit so tests are never throttled)
+const testRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 1000,
+  standardHeaders: false,
+  legacyHeaders: false
+});
 
 // Mock the cache module
 jest.mock('../utils/redis', () => ({
@@ -28,11 +32,8 @@ describe('Wizard Game Upload Integration Test', () => {
     app = express();
     app.use(express.json());
     
-    // Apply mock rate limiter to test routes
-    app.use(mockRateLimiter);
-    
     // Create a test route that mimics the games route
-    app.post('/api/games', mockAuth, async (req, res) => {
+    app.post('/api/games', testRateLimiter, mockAuth, async (req, res) => {
       try {
         const { gameData, localId } = req.body;
 
