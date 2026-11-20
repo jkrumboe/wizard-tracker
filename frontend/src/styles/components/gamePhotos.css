@@ -278,11 +278,17 @@
       "results chart"
       "photos chart"
       "rounds rounds";
-    /* The chart spans two rows; let the photos row absorb its extra height
-       so no gap opens up under the standings */
-    grid-template-rows: auto auto 1fr auto;
+    /* The chart spans two rows; the photos row must absorb its extra height
+       so no gap opens up under the standings. Not with 1fr: .game-summary is
+       the fixed-height scroll container, so a fr row stretches to fill the
+       viewport and shoves the scorecard down. Instead the standings row gets a
+       fixed (0) max, which floors to its content height and keeps it out of
+       the spanning chart's extra space - that all goes to the auto photos row. */
+    grid-template-rows: auto minmax(min-content, 0) auto minmax(280px, 1fr);
   }
 
+  /* Stretch to the bottom of the chart beside it so the left column ends flush;
+     the grid gap already spaces it from the standings */
   .game-summary:has(> .game-highlights) > .game-photos-section {
     grid-area: photos;
     order: 0;

@@ -8,6 +8,13 @@
   overflow-y: hidden;
 }
 
+/* The desktop shell pads .main-container top and bottom instead */
+@media (min-width: 1024px) {
+  .start-game-page {
+    height: calc(100dvh - var(--bottom-nav-reserve));
+  }
+}
+
 /* Setup View */
 .setup-view {
   display: flex;

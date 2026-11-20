@@ -22,6 +22,11 @@
   html:root {
     --sidebar-width: 232px;
     --bottom-nav-height: 0px;
+    /* No bottom bar, but .main-container is padded --spacing-lg top and
+       bottom (below). Pages sized to the viewport subtract this reserve, so
+       it has to cover that padding or they run past the window and the
+       bottom of the page is clipped. */
+    --bottom-nav-reserve: calc(2 * var(--spacing-lg));
     --content-max-width: 1280px;
   }
 

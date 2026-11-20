@@ -350,12 +350,6 @@
  * highlights strip (Wizard and table games).
  */
 @media (min-width: 1024px) {
-  /* desktop.css pads .main-container top and bottom; without subtracting
-     that the page runs past the window and body clips its bottom edge */
-  .game-details-container {
-    height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - 2 * var(--spacing-lg));
-  }
-
   /* The scorecard takes whatever height is left and scrolls on its own, so
      the page fits the window instead of cutting the table off. Its 280px
      floor makes the page itself scroll on a very short window. */
