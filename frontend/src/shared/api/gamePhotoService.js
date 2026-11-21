@@ -1,5 +1,5 @@
 /**
- * Cloud photos of table games (see backend routes/tableGamePhotos.js).
+ * Cloud photos of table and Wizard games (see backend routes/gamePhotoRoutes.js).
  *
  * Everyone who can open a game sees its photos. Players of the game who have an
  * account can add photos; the game's owner (and admins) can delete any photo,
@@ -21,6 +21,11 @@ const toError = async (response, fallback) => {
   return err;
 };
 
+// Each game collection serves its own photos
+const endpointsFor = (gameType) => (
+  gameType === 'wizard' ? API_ENDPOINTS.wizardGames : API_ENDPOINTS.tableGames
+);
+
 const withAbsoluteUrl = (photo) => ({
   ...photo,
   src: photo.url?.startsWith('http') ? photo.url : `${API_BASE_URL}${photo.url}`,
@@ -28,10 +33,11 @@ const withAbsoluteUrl = (photo) => ({
 
 /**
  * @param {string} cloudGameId
+ * @param {'table'|'wizard'} [gameType]
  * @returns {Promise<{photos: Array, canAdd: boolean, maxPhotos: number}>}
  */
-export async function listCloudGamePhotos(cloudGameId) {
-  const response = await fetch(API_ENDPOINTS.tableGames.photos(cloudGameId), {
+export async function listCloudGamePhotos(cloudGameId, gameType = 'table') {
+  const response = await fetch(endpointsFor(gameType).photos(cloudGameId), {
     headers: authHeaders(),
   });
   if (!response.ok) throw await toError(response, 'Failed to load photos');
@@ -47,9 +53,10 @@ export async function listCloudGamePhotos(cloudGameId) {
  * @param {string} cloudGameId
  * @param {string} dataUrl - compressed image as a data URL
  * @param {{width?: number, height?: number}} [meta]
+ * @param {'table'|'wizard'} [gameType]
  */
-export async function uploadCloudGamePhoto(cloudGameId, dataUrl, meta = {}) {
-  const response = await fetch(API_ENDPOINTS.tableGames.photos(cloudGameId), {
+export async function uploadCloudGamePhoto(cloudGameId, dataUrl, meta = {}, gameType = 'table') {
+  const response = await fetch(endpointsFor(gameType).photos(cloudGameId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ image: dataUrl, width: meta.width, height: meta.height }),
@@ -62,9 +69,10 @@ export async function uploadCloudGamePhoto(cloudGameId, dataUrl, meta = {}) {
 /**
  * @param {string} cloudGameId
  * @param {string} photoId
+ * @param {'table'|'wizard'} [gameType]
  */
-export async function deleteCloudGamePhoto(cloudGameId, photoId) {
-  const response = await fetch(API_ENDPOINTS.tableGames.photo(cloudGameId, photoId), {
+export async function deleteCloudGamePhoto(cloudGameId, photoId, gameType = 'table') {
+  const response = await fetch(endpointsFor(gameType).photo(cloudGameId, photoId), {
     method: 'DELETE',
     headers: authHeaders(),
   });

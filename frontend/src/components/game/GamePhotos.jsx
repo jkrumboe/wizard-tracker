@@ -15,6 +15,7 @@ import {
   uploadCloudGamePhoto,
 } from '@/shared/api/gamePhotoService'
 import { compressImage } from '@/shared/utils/imageCompression'
+import { useUser } from '@/shared/hooks/useUser'
 import '@/styles/components/gamePhotos.css'
 
 const COMPRESS_OPTIONS = { maxWidth: 1600, maxHeight: 1600, quality: 0.82, maxSizeKB: 450 }
@@ -30,9 +31,15 @@ const COMPRESS_OPTIONS = { maxWidth: 1600, maxHeight: 1600, quality: 0.82, maxSi
  * @param {string|null} cloudGameId - server id of the game, if it was uploaded
  * @param {string[]} localKeys - every id the game is known by on this device
  * @param {boolean} canEditLocal - whether this device owns the local copy of the game
+ * @param {'table'|'wizard'} gameType - which game collection serves the cloud photos
+ * @param {string} [hint] - empty-state text; defaults to the generic hint
  */
-export default function GamePhotos({ cloudGameId = null, localKeys = [], canEditLocal = false }) {
+export default function GamePhotos({ cloudGameId = null, localKeys = [], canEditLocal = false, gameType = 'table', hint }) {
   const { t } = useTranslation()
+  const { user } = useUser()
+  // Admins may always add photos, also while the server can't be reached:
+  // they are kept on this device and uploaded the next time the page opens online
+  const canEditDevice = canEditLocal || user?.role === 'admin'
   const fileInputRef = useRef(null)
   const [cloudPhotos, setCloudPhotos] = useState([])
   const [localPhotos, setLocalPhotos] = useState([])
@@ -61,21 +68,21 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
     }
 
     try {
-      let result = await listCloudGamePhotos(cloudGameId)
+      let result = await listCloudGamePhotos(cloudGameId, gameType)
 
       // Photos taken before the game was uploaded: move them to the server
       if (stored.length > 0 && result.canAdd) {
         const room = Math.max(0, (result.maxPhotos || MAX_PHOTOS_PER_GAME) - result.photos.length)
         for (const photo of stored.slice(0, room)) {
           try {
-            await uploadCloudGamePhoto(cloudGameId, await blobToDataUrl(photo.blob), photo)
+            await uploadCloudGamePhoto(cloudGameId, await blobToDataUrl(photo.blob), photo, gameType)
             await deleteGamePhoto(photo.id)
           } catch (err) {
             console.warn('Could not upload a local game photo:', err.message)
             break
           }
         }
-        result = await listCloudGamePhotos(cloudGameId)
+        result = await listCloudGamePhotos(cloudGameId, gameType)
         stored = await getGamePhotos(keys)
       }
 
@@ -83,13 +90,13 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
       setCloudPhotos(result.photos)
       setCloudCanAdd(result.canAdd)
       // Whatever could not be uploaded stays visible from this device
-      setLocalPhotos(canEditLocal ? stored : [])
+      setLocalPhotos(canEditDevice ? stored : [])
     } catch (err) {
       console.debug('Cloud photos unavailable, showing local ones:', err.message)
       setCloudMode(false)
       setLocalPhotos(stored)
     }
-  }, [cloudGameId, keysSignature, canEditLocal])
+  }, [cloudGameId, keysSignature, canEditDevice, gameType])
 
   useEffect(() => {
     let cancelled = false
@@ -118,10 +125,10 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
       id: photo.id,
       src: localUrls[index],
       uploaderName: null,
-      canDelete: canEditLocal,
+      canDelete: canEditDevice,
       source: 'local',
     })),
-  ], [cloudPhotos, localPhotos, localUrls, canEditLocal])
+  ], [cloudPhotos, localPhotos, localUrls, canEditDevice])
 
   const closeViewer = useCallback(() => setViewerIndex(null), [])
 
@@ -138,7 +145,7 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
 
   const remainingSlots = MAX_PHOTOS_PER_GAME - photos.length
   const canAdd = remainingSlots > 0 && (
-    cloudMode ? cloudCanAdd : (canEditLocal && localKeys.length > 0)
+    cloudMode ? cloudCanAdd : (canEditDevice && localKeys.length > 0)
   )
   const hasLocalOnly = localPhotos.length > 0
 
@@ -153,7 +160,7 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
       for (const file of files) {
         const { blob, dataUrl, width, height } = await compressImage(file, COMPRESS_OPTIONS)
         if (cloudMode) {
-          const uploaded = await uploadCloudGamePhoto(cloudGameId, dataUrl, { width, height })
+          const uploaded = await uploadCloudGamePhoto(cloudGameId, dataUrl, { width, height }, gameType)
           setCloudPhotos((prev) => [...prev, uploaded])
         } else {
           const stored = await addGamePhoto(localKeys[0], blob, { width, height })
@@ -175,7 +182,7 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
     if (!confirm(t('gamePhotos.deleteConfirm'))) return
     try {
       if (photo.source === 'cloud') {
-        await deleteCloudGamePhoto(cloudGameId, photo.id)
+        await deleteCloudGamePhoto(cloudGameId, photo.id, gameType)
         setCloudPhotos((prev) => prev.filter((p) => p.id !== photo.id))
       } else {
         await deleteGamePhoto(photo.id)
@@ -239,7 +246,7 @@ export default function GamePhotos({ cloudGameId = null, localKeys = [], canEdit
           <span className="game-photos-empty-title">
             {busy ? t('gamePhotos.saving') : t('gamePhotos.emptyTitle')}
           </span>
-          <span className="game-photos-empty-hint">{t('gamePhotos.emptyHint')}</span>
+          <span className="game-photos-empty-hint">{hint || t('gamePhotos.emptyHint')}</span>
         </button>
       ) : (
         <div className={`game-photos-grid${photos.length === 1 ? ' single' : ''}`}>

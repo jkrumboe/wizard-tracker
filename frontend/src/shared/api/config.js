@@ -44,6 +44,8 @@ export const API_ENDPOINTS = {
     batchCheck: `${API_BASE_URL}/api/wizard-games/batch-check`,
     stats: `${API_BASE_URL}/api/wizard-games/stats`,
     migrate: `${API_BASE_URL}/api/wizard-games/migrate`,
+    photos: (id) => `${API_BASE_URL}/api/wizard-games/${id}/photos`,
+    photo: (id, photoId) => `${API_BASE_URL}/api/wizard-games/${id}/photos/${photoId}`,
   },
   tableGames: {
     list: `${API_BASE_URL}/api/table-games`,

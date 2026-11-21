@@ -430,6 +430,7 @@
     "add": "Add photo",
     "emptyTitle": "Add a photo of the game",
     "emptyHint": "Capture the final board or the table to remember this game",
+    "wizardHint": "Got a nice hand of cards? Snap it so you remember it",
     "saving": "Saving photo…",
     "open": "Photo {{n}}",
     "delete": "Delete photo",

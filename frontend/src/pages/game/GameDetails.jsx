@@ -24,6 +24,8 @@ import { BarChartIcon, ChevronDownIcon } from "@/components/ui/Icon"
 import BackButton from "@/components/ui/BackButton"
 import RankBadge from "@/components/game/RankBadge"
 import { GameHighlights } from "@/components/game/GameHighlights"
+import GamePhotos from "@/components/game/GamePhotos"
+import { getGamePhotoKeys } from "@/shared/api/gamePhotoStorage"
 import { useIsScrolled } from "@/shared/hooks/useIsScrolled"
 
 // Skeleton Loading Component
@@ -593,6 +595,18 @@ const GameDetails = () => {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Photos sit under the standings (grid area "photos" on desktop).
+              Uploaded games keep them on the server (/api/wizard-games/:id/photos). */}
+          {(isLandscape || windowWidth > 768 || activeTab === 'stats') && (
+            <GamePhotos
+              gameType="wizard"
+              cloudGameId={game.is_local ? (game.cloudGameId || null) : (game.cloudId || game.id || null)}
+              localKeys={getGamePhotoKeys(game, id)}
+              canEditLocal={Boolean(game.is_local)}
+              hint={t('gamePhotos.wizardHint')}
+            />
           )}
 
           {/* Chart Tab */}

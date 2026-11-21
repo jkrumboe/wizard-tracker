@@ -7,6 +7,11 @@ const WizardGame = require('../models/WizardGame');
 const { migrateWizardGame, validateMigratedGame } = require('../utils/wizardGameMigration');
 const { validateWizardGameData } = require('../schemas/wizardGameSchema');
 const catchAsync = require('../utils/catchAsync');
+const GamePhoto = require('../models/GamePhoto');
+const wizardGamePhotoRoutes = require('./wizardGamePhotos');
+
+// Photos: /photos/:photoId/image and /:id/photos (see gamePhotoRoutes.js)
+router.use(wizardGamePhotoRoutes);
 
 /**
  * GET /api/wizard-games/public/:id
@@ -522,15 +527,21 @@ router.delete('/:id', auth, catchAsync(async (req, res) => {
   }
 
   const isAdmin = req.user.role === 'admin';
+  // userId is Mixed (no casting) and req.user._id is a string when it comes from
+  // the Redis cache, an ObjectId otherwise - so games hold either; match both
+  const ownerId = String(req.user._id);
   const query = isAdmin
     ? { _id: { $eq: gameId } }
-    : { _id: { $eq: gameId }, userId: req.user._id };
+    : { _id: { $eq: gameId }, userId: { $in: [ownerId, new mongoose.Types.ObjectId(ownerId)] } };
 
   const game = await WizardGame.findOneAndDelete(query);
 
   if (!game) {
     return res.status(404).json({ error: 'Game not found or you do not have permission to delete it' });
   }
+
+  // Photos belong to the game; remove them with it
+  await GamePhoto.deleteMany({ gameId: game._id });
 
   console.log(`[DELETE /api/wizard-games/${gameId}] Deleted by user ${req.user._id} (role: ${req.user.role})`);
   res.json({ message: 'Wizard game deleted successfully' });

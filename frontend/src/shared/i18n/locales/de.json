@@ -430,6 +430,7 @@
     "add": "Foto hinzufügen",
     "emptyTitle": "Foto vom Spiel hinzufügen",
     "emptyHint": "Halte das Spielbrett oder den Tisch fest, um dich an diese Partie zu erinnern",
+    "wizardHint": "Schöne Kartenhand auf der Hand? Mach ein Foto davon, um dich daran zu erinnern",
     "saving": "Foto wird gespeichert…",
     "open": "Foto {{n}}",
     "delete": "Foto löschen",

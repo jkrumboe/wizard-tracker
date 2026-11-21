@@ -292,6 +292,29 @@
   .game-summary:has(> .game-highlights) > .game-photos-section {
     grid-area: photos;
     order: 0;
+    align-self: stretch;
+    margin-top: 0;
+  }
+
+  /* The empty drop zone is compact (icon beside the text) so the photos card
+     never makes the left column taller than the chart, which would stretch the
+     chart card; it still grows to fill whatever height the chart leaves over */
+  .game-summary:has(> .game-highlights) > .game-photos-section .game-photos-empty {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: auto minmax(0, 32ch);
+    align-content: center;
+    justify-content: center;
+    column-gap: var(--spacing-md);
+    row-gap: 2px;
+    min-height: 96px;
+    padding: var(--spacing-md);
+    text-align: left;
+  }
+
+  .game-summary:has(> .game-highlights) > .game-photos-section .game-photos-empty svg {
+    grid-row: span 2;
+    align-self: center;
   }
 
   .game-summary:has(> .game-highlights) .game-photos-grid {
